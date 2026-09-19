@@ -43,7 +43,8 @@ import {
 } from './campaign/replay';
 import { createIndexedDbCampaignStorage } from './campaign/storage';
 import { HUD } from './ui/HUD';
-import { Lobby, type LobbyConfig } from './ui/Lobby';
+import { Lobby, type LobbyConfig, type LobbyLaunchFocusSnapshot } from './ui/Lobby';
+import { ApplicationLaunchLifecycle, ApplicationSurfaceController } from './ui/ApplicationSurface';
 import { mountOrientationGate } from './ui/OrientationGate';
 import { crtCssVars } from './ui/theme';
 import {
@@ -306,8 +307,6 @@ function restoreVerifiedController(
  * with the SAME players.
  */
 function bootstrap(): void {
-  mountOrientationGate();
-
   const canvasEl = document.getElementById('game');
   if (!(canvasEl instanceof HTMLCanvasElement)) {
     throw new Error('Missing #game canvas element');
@@ -318,7 +317,13 @@ function bootstrap(): void {
   const overlayRoot = requireElement('game-overlay');
   const battleRailRoot = requireElement('battle-rail');
   const modalRoot = requireElement('modal-layer');
+  const battleRoot = requireElement('app');
   const lobbyRoot = requireElement('lobby');
+  const applicationSurfaces = new ApplicationSurfaceController({ battle: battleRoot, pregame: lobbyRoot }, 'pregame');
+  const applicationLaunch = new ApplicationLaunchLifecycle<LobbyLaunchFocusSnapshot | null>(
+    applicationSurfaces,
+  );
+  mountOrientationGate(document, undefined, { battle: battleRoot, pregame: lobbyRoot });
 
   // Project the canonical CRT intensities (theme.ts) onto the DOM chrome's CSS
   // custom properties so the canvas tokens and the --crt-* vars share one source. (P3-16)
@@ -846,19 +851,25 @@ function bootstrap(): void {
 
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
-    // Validate campaign launch data before retiring or acquiring any session resource.
-    const constructionSetup = clientModeSetupFor(config);
     let hotSeatProgression: ReturnType<typeof createHotSeatProgressionReporter> | null = null;
     let campaignSaveSession: CampaignSaveSession | null = null;
     let campaignSaveKey: string | null = null;
     let campaignSaveChain = Promise.resolve();
     let campaignSaveHealthy = true;
-    await gameSession.start({
+    let acquisitionFailure: unknown;
+    let networkRecoveryOwned = false;
+    await applicationLaunch.launch({
+      captureFocus: captureLaunchFocus,
+      acquire: async () => {
+        try {
+          // Validate launch data inside the surface boundary so synchronous
+          // validation failures restore the exact initiating preparation state.
+          const constructionSetup = clientModeSetupFor(config);
+          const session = await gameSession.start({
       retirePresentation: resetMatchPresentation,
       afterRetire: releaseTankLoadoutPreviewResources,
       prepareAcquisition: () => {
         progressionSignInHandled = false;
-        lobby.hide();
         currentConfig = config;
         campaignRunState = config.experience === 'campaign'
           ? config.campaignRunState ?? null
@@ -868,7 +879,8 @@ function bootstrap(): void {
       acquireClient: async (setup) => {
         if (config.verifiedChallenge) {
           if (config.mode !== 'hotseat' || config.verifiedDeployment || config.publicSeedChallenge) {
-            lobby.show(); return { status: 'unavailable' };
+            acquisitionFailure = new Error('Challenge launch data is unavailable.');
+            return { status: 'unavailable' };
           }
           try {
             challengeClient = new VerifiedChallengeClient({
@@ -882,7 +894,8 @@ function bootstrap(): void {
             return { status: 'acquired', client: challengeClient, verifiedComplete: challengeClient.terminalResult !== null };
           } catch {
             challengeClient = null;
-            lobby.show(); return { status: 'unavailable' };
+            acquisitionFailure = new Error('Challenge recovery could not be restored.');
+            return { status: 'unavailable' };
           }
         }
         if (!config.verifiedDeployment) {
@@ -941,15 +954,13 @@ function bootstrap(): void {
           return { status: 'acquired', client: verifiedClient, verifiedComplete: verifiedController.complete };
         } catch {
           hud.setVerifiedDeployment({ status: 'failed' });
-          lobby.show();
+          acquisitionFailure = new Error('Verified deployment recovery could not be restored.');
           return { status: 'unavailable' };
         }
       },
       onAcquisitionFailure: (error) => {
-        const message = error instanceof Error
-          ? error.message
-          : 'Game recovery failed. Return to Online and try joining again.';
-        lobby.showNetworkRecovery(message, () => { void startGame(config); });
+        acquisitionFailure = error;
+        networkRecoveryOwned = config.mode === 'network';
       },
       constructRenderer: () => new Renderer(canvas),
       configureRendererEvents,
@@ -1178,7 +1189,7 @@ function bootstrap(): void {
               try { newClient.sendAction(forwardedAction); }
               catch (error) {
                 if (!config.verifiedChallenge) throw error;
-                void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
+                returnToPregame({ focusVerifiedChallenge: true });
                 return;
               }
               if (forwardedAction.type === 'select_weapon') {
@@ -1530,6 +1541,33 @@ function bootstrap(): void {
       },
       subscribe: (client, listener) => client.onStateChange(listener),
       start: (client) => client.start(),
+          });
+          if (session === null && config.experience === 'campaign') {
+            await refreshCampaignSaveAfterLaunchFailure();
+          }
+          return session;
+        } catch (error) {
+          if (config.experience === 'campaign') {
+            await refreshCampaignSaveAfterLaunchFailure();
+          }
+          throw error;
+        }
+      },
+      commit: () => { lobby.hide(); },
+      restore: (focus, error) => {
+        const failure = error ?? acquisitionFailure;
+        const message = failure instanceof Error
+          ? failure.message
+          : networkRecoveryOwned
+            ? 'Game recovery failed. Return to Online and try joining again.'
+            : 'Game could not start. Check preparation and try again.';
+        if (networkRecoveryOwned) {
+          lobby.showNetworkRecovery(message, () => { void startGame(config); });
+        } else {
+          showLaunchFailure(message);
+        }
+        restoreLaunchFocus(focus);
+      },
     });
   }
 
@@ -1642,7 +1680,7 @@ function bootstrap(): void {
     if (!matchSession.pageAuthorityReady || !currentConfig) return;
     if (currentConfig.experience === 'campaign' && currentConfig.campaignRunState) return;
     if (currentConfig.verifiedChallenge) {
-      void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
+      returnToPregame({ focusVerifiedChallenge: true });
     } else if (currentConfig.mode === 'network') {
       void matchSession.client?.requestRematch?.();
     } else {
@@ -1792,15 +1830,39 @@ function bootstrap(): void {
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
-    // startGame() now hides the lobby itself (see its body), so the start callback no
-    // longer needs to — keeping lobby-visibility owned by a single place (#13).
     return startGame(config);
   });
+  function captureLaunchFocus(): LobbyLaunchFocusSnapshot | null {
+    const owner = lobby as unknown as Partial<Pick<Lobby, 'captureLaunchFocus'>>;
+    return owner.captureLaunchFocus?.call(lobby) ?? null;
+  }
+  function restoreLaunchFocus(snapshot: LobbyLaunchFocusSnapshot | null): void {
+    const owner = lobby as unknown as Partial<Pick<Lobby, 'restoreLaunchFocus'>>;
+    owner.restoreLaunchFocus?.call(lobby, snapshot);
+  }
+  function showLaunchFailure(message: string): void {
+    const owner = lobby as unknown as Partial<Pick<Lobby, 'showLaunchFailure'>>;
+    if (owner.showLaunchFailure) owner.showLaunchFailure.call(lobby, message);
+    else lobby.show();
+  }
+  async function refreshCampaignSaveAfterLaunchFailure(): Promise<void> {
+    const owner = lobby as unknown as Partial<Pick<Lobby, 'refreshCampaignSaveAfterLaunchFailure'>>;
+    await owner.refreshCampaignSaveAfterLaunchFailure?.call(lobby);
+  }
+  function returnToPregame(
+    options: Parameters<Lobby['show']>[0] = {},
+    afterShow?: () => void,
+  ): void {
+    void applicationLaunch.returnToPregameAfter(teardown(), () => {
+      lobby.show(options);
+      afterShow?.();
+    });
+  }
   const syncAccountOwnedPresentation = (identityChanged: boolean): void => {
     if (identityChanged) {
       matchSession.client?.invalidatePendingCommands?.();
       if (currentConfig?.verifiedChallenge) {
-        void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
+        returnToPregame({ focusVerifiedChallenge: true });
         return;
       }
       if (currentConfig?.verifiedDeployment) {
@@ -1828,7 +1890,7 @@ function bootstrap(): void {
     };
     update(); void request.then(update, update);
   });
-  hud.onVerifiedChallengeReturn?.(() => { void teardown().then(() => lobby.show({ focusVerifiedChallenge: true })); });
+  hud.onVerifiedChallengeReturn?.(() => { returnToPregame({ focusVerifiedChallenge: true }); });
 
   hud.onVerifiedRetry(() => {
     if (!matchSession.pageAuthorityReady
@@ -1870,7 +1932,7 @@ function bootstrap(): void {
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
     if (deployment.status !== 'expired') return;
     if (!lobby.returnVerifiedDeploymentToBattery()) return;
-    void teardown().then(() => lobby.show());
+    returnToPregame();
   });
 
   hud.onVerifiedNextOrder(() => {
@@ -1884,7 +1946,7 @@ function bootstrap(): void {
       || deployment.receipt.result.sessionId !== descriptor.sessionId
       || !lobby.returnVerifiedDeploymentToBattery()
     ) return;
-    void teardown().then(() => lobby.show({ focusVerifiedDeployment: true }));
+    returnToPregame({ focusVerifiedDeployment: true });
   });
 
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
@@ -1893,16 +1955,13 @@ function bootstrap(): void {
   // client. Only this explicit player intent retires the network seat immediately.
   hud.onQuit(() => {
     void matchSession.client?.leaveRoom?.();
-    void teardown().then(() => lobby.show({ focusLobby: true }));
+    returnToPregame({ focusLobby: true });
   });
 
   hud.onProgressionSignIn(() => {
     if (progressionSignInHandled) return;
     progressionSignInHandled = true;
-    void teardown().then(() => {
-      lobby.show();
-      lobby.showAccountSignIn();
-    });
+    returnToPregame({}, () => { lobby.showAccountSignIn(); });
   });
 
   hud.onPauseChange((paused) => {
@@ -2113,6 +2172,7 @@ function bootstrap(): void {
     appEl.style.setProperty('--st-weapon-intel-label-size', `${Math.max(7, Math.ceil(9 / s))}px`);
     appEl.style.setProperty('--st-weapon-intel-value-size', `${Math.max(9, Math.ceil(11 / s))}px`);
     appEl.classList.toggle('is-compact', s < COMPACT_SCALE);
+    lobbyRoot.classList.toggle('is-compact', s < COMPACT_SCALE);
   }
   window.addEventListener('resize', updateScale);
   // visualViewport fires separately on mobile when the address bar animates —

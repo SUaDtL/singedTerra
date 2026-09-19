@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { installConnectedRealtimeFixture } from './realtime-fixture';
+import { openOnlinePreparation } from './support';
 
 test.use({
   channel: 'chromium',
@@ -150,7 +151,7 @@ async function enterRecoveryMatch(page: Page) {
   await page.addInitScript(() => localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped'));
   await page.goto('./');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
-  await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+  await openOnlinePreparation(page);
   await page.locator('#lobby .lobby-name').fill('Ranger');
   await page.locator('.lobby-field').filter({ hasText: 'CPU opponents' })
     .locator('select').first().selectOption('1');

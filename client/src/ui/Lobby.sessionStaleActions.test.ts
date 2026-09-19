@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { TankLoadout } from '@shared/types/TankLoadout'
 import type {
   LobbySession,
   LobbySessionStaleOutcome,
@@ -21,7 +22,7 @@ interface LobbyInternals {
   session: LobbySession
   transport: LobbyTransport
   handleReadyUp(): Promise<void>
-  updateMe(fields: { name?: string; color?: string }): Promise<void>
+  updateMe(fields: { name?: string; color?: string; loadout?: TankLoadout }): Promise<void>
   handleLeaveRoom(): Promise<void>
   render(): void
   onlineBusy: boolean
@@ -43,7 +44,7 @@ function seedWaitingRoom(lobby: Lobby): void {
     waitingRoomId: 'room-1',
     waitingRoomCode: 'ABCD',
     waitingPlayerId: 'p-1',
-    waitingToken: 'room-a-token',
+    waitingToken: 't1',
     waitingPlayers: [
       { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: false },
       { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: false },
@@ -72,7 +73,7 @@ describe('Lobby stale session actions', () => {
       waitingRoomId: 'room-2',
       waitingRoomCode: 'WXYZ',
       waitingPlayerId: 'p-9',
-      waitingToken: 'room-b-token',
+      waitingToken: 't2',
       onlineBusy: true,
       onlineError: 'Room B status',
     })
@@ -86,21 +87,27 @@ describe('Lobby stale session actions', () => {
     expect(render).not.toHaveBeenCalled()
   })
 
-  it('ignores a stale player-update outcome without changing or rendering the replacement room', async () => {
+  it('ignores a stale Garage loadout outcome without changing or rendering the replacement room', async () => {
     const updating = deferred<LobbySessionStaleOutcome>()
     const updatePlayer = vi.spyOn(internals(lobby).session, 'updatePlayer')
       .mockReturnValueOnce(updating.promise)
     const render = vi.spyOn(internals(lobby), 'render')
+    const loadout: TankLoadout = {
+      treads: 'ranger',
+      hull: 'foundry',
+      turret: 'bulwark',
+      barrel: 'jackal',
+    }
 
-    const pendingUpdate = internals(lobby).updateMe({ name: 'Room A Alice' })
-    expect(updatePlayer).toHaveBeenCalledWith({ name: 'Room A Alice' })
+    const pendingUpdate = internals(lobby).updateMe({ loadout })
+    expect(updatePlayer).toHaveBeenCalledWith({ loadout })
     expect(internals(lobby).onlineBusy).toBe(true)
 
     Object.assign(internals(lobby), {
       waitingRoomId: 'room-2',
       waitingRoomCode: 'WXYZ',
       waitingPlayerId: 'p-9',
-      waitingToken: 'room-b-token',
+      waitingToken: 't2',
       onlineBusy: true,
       onlineError: 'Room B status',
     })

@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [ ] T02's design review noted two unchanged OrientationGate fallback strings using em dashes as prose separators. This is outside the surface-lifecycle slice and does not affect behavior.  (from sprint:command-center-launcher-overhaul#triage-1)
+  - Boundaries: client, pre-game-ux
 - [ ] ci.efficiency.0001 - Measure removal of duplicated typecheck and prebuild work in CI check-work while preserving full browser shards, release provenance, and required results; deliver only if a material benefit is demonstrated.  (from post-campaign-ci-review-2026-09-16)
   - Boundaries: ci, release-provenance
 - [ ] campaign.distribution.0001 - Use the T14 desktop report and T15 player or device evidence to choose the next distribution and retention action; keep the current Pages deployment unless evidence changes that decision.  (from reassessment-v3:T18)
@@ -201,7 +203,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - [x] ux.pregame.0002 - Repair Account and Operations Settings as opaque stage-owned overlays with no ghosted or reflowed pregame composition and real-browser desktop/touch proof.  (from user-overlay-containment-regression)  (done 2026-08-10)
   - Boundaries: client, pregame-ux
 - [x] mvp2.progression.0008 - Show earned post-match XP and the next visible level milestone  (from adversarial-player-experience-audit-2026-08-10)  (done 2026-08-10)
-- [ ] ux.pregame.0001 - Redesign the entire pre-game player journey as one coherent polished game experience: landing, identity, mode selection, room/lobby, loadout, store, and transitions into a match; replace cheerful generic UI language with a deliberate visual system that belongs to the battlefield.  (from user-menu-overhaul-scope-correction)
+- [x] ux.pregame.0001 - Redesign the entire pre-game player journey as one coherent polished game experience: landing, identity, mode selection, room/lobby, loadout, store, and transitions into a match; replace cheerful generic UI language with a deliberate visual system that belongs to the battlefield.  (from user-menu-overhaul-scope-correction)  (done 2026-09-18)
   - Boundaries: client, pre-game-ux
 - [x] ux.impact.0001 - Restore the cinematic impact-window camera feedback on mobile without weakening reduced-motion or battlefield input behavior.  (from user-mobile-impact-window)  (done 2026-08-09)
   - Desc: Recover the player's favorite shot-impact framing across compact touch layouts.

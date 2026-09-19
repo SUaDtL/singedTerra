@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { gotoLobby } from './support';
+import { gotoLobby, openLocalPreparation } from './support';
 
 test('keeps battle commands usable when a deployment removes deferred presentation chunks', async ({ page }) => {
   await gotoLobby(page);
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
   const deploy = page.getByRole('button', { name: 'Deploy local battle', exact: true });
   await expect(deploy).toBeVisible();
 

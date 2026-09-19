@@ -62,7 +62,6 @@ interface LobbyInternals {
   waitingOptions: RoomOptions;
   waitingThisPlayerReady: boolean;
   waitingChannel: unknown;
-  surface: 'chooser' | 'preparation';
   activeTab: string;
   onlineSubView: string;
   onlineError: string;
@@ -156,7 +155,6 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
       waitingSeed: 0,
       waitingOptions: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4 },
       waitingThisPlayerReady: true,
-      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       onlineError: '',
@@ -172,7 +170,6 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     expect(internals(lobby).waitingThisPlayerReady).toBe(false);
     expect(internals(lobby).onlineSubView).toBe('create');
     expect(internals(lobby).onlineError).toBe(message);
-    expect(root.textContent).toContain(message);
   }
 
   beforeEach(() => {
@@ -181,6 +178,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     realtime.channel.mockClear();
     realtime.removeChannel.mockClear();
     localStorage.clear();
+    sessionStorage.clear();
     root = document.createElement('div');
     document.body.appendChild(root);
     onReady = vi.fn();
@@ -348,26 +346,27 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     expect(render).toHaveBeenCalledTimes(1);
   });
 
-  it('stops Browse before returning to chooser/create and ignores its late response', async () => {
+  it('stops Browse when its Online workspace is replaced and ignores its late response', async () => {
     let resolveList!: (value: unknown) => void;
     const pendingList = new Promise<unknown>((resolve) => { resolveList = resolve; });
     const listRooms = vi.spyOn(internals(lobby).transport, 'listRooms')
       .mockReturnValue(pendingList);
-    Object.assign(internals(lobby), {
-      surface: 'preparation',
-      activeTab: 'online',
-      onlineSubView: 'create',
-    });
     const render = vi.spyOn(internals(lobby), 'render');
-    internals(lobby).render();
+    lobby.show();
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )!.click();
+    root.querySelector<HTMLButtonElement>('[data-command-item="online"]')!.click();
 
     clickButton(root, 'Browse public rooms');
     expect(internals(lobby).onlineSubView).toBe('browse');
     expect(listRooms).toHaveBeenCalledOnce();
 
-    clickButton(root, 'Back to deployment choices');
-    expect.soft(internals(lobby).surface).toBe('chooser');
-    expect.soft(internals(lobby).onlineSubView).toBe('create');
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="skirmishes"]',
+    )!.click();
+    await Promise.resolve();
+    expect.soft(internals(lobby).onlineSubView).toBe('browse');
     await vi.advanceTimersByTimeAsync(3_000);
     expect.soft(listRooms).toHaveBeenCalledOnce();
     const rendersAfterBack = render.mock.calls.length;
@@ -391,13 +390,17 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     expect(root.textContent).not.toContain('Late response');
   });
 
-  it('does not expose generic Back from a committed waiting room', () => {
+  it('keeps a committed waiting room in its Online-owned workspace', () => {
     seedWaiting();
-    internals(lobby).render();
+    lobby.show();
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )!.click();
+    root.querySelector<HTMLButtonElement>('[data-command-item="online"]')!.click();
     const actions = [...root.querySelectorAll<HTMLButtonElement>('button')]
       .map((candidate) => candidate.textContent);
 
     expect(actions).toContain('Leave');
-    expect(actions).not.toContain('Back to deployment choices');
+    expect(root.querySelector('[data-multiplayer-command-view="online"]')).not.toBeNull();
   });
 });

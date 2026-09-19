@@ -157,8 +157,15 @@ function accountBackedLobby(root: HTMLElement, displayName = 'Ranger'): {
 }
 
 function clickLobbyButton(root: HTMLElement, text: string): void {
-  const match = [...root.querySelectorAll<HTMLButtonElement>('button')]
+  let match = [...root.querySelectorAll<HTMLButtonElement>('button')]
     .find((candidate) => candidate.textContent === text);
+  if (!match && text === 'Play Online') {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )?.click();
+    root.querySelector<HTMLButtonElement>('[data-command-item="online"]')?.click();
+    return;
+  }
   if (!match) throw new Error(`Missing ${text} button`);
   match.click();
 }
@@ -175,6 +182,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-test');
     try {
       localStorage.clear();
+      sessionStorage.clear();
     } catch {
       /* jsdom localStorage always present, but stay defensive */
     }
@@ -206,6 +214,8 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       descriptor: { roomId: 'room-recovery', roomCode: 'NEXT', playerId: 'player-recovery' },
       room: { status: 'active', players: [{ id: 'player-recovery' }] },
     };
+    lobby.show();
+    clickLobbyButton(root, 'Play Online');
 
     lobby.showNetworkRecovery(
       'Game recovery timed out. Return to Online and try joining again.',
@@ -217,7 +227,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
     expect(alert?.textContent).toContain(
       'Game recovery timed out. Return to Online and try joining again.',
     );
-    expect(alert?.parentElement?.classList.contains('lobby-online-recovery')).toBe(true);
+    expect(alert?.closest('.multiplayer-command__online-context')).not.toBeNull();
     expect([...root.querySelectorAll('button')].some((button) => button.textContent === 'Rejoin your game')).toBe(false);
     clickLobbyButton(root, 'Retry game recovery');
     expect(retry).toHaveBeenCalledOnce();
@@ -239,9 +249,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
     it('associates the side-wall label and hint with its select', () => {
       lobby.show();
-      const playOnline = Array.from(root.querySelectorAll('button'))
-        .find((button) => button.textContent === 'Play Online')!;
-      playOnline.click();
+      clickLobbyButton(root, 'Play Online');
       Array.from(root.querySelectorAll('button'))
         .find((button) => button.textContent === 'Advanced settings')!.click();
 
@@ -261,8 +269,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
     it('offers Automatic plus every authored battlefield world', () => {
       lobby.show();
-      Array.from(root.querySelectorAll('button'))
-        .find((button) => button.textContent === 'Play Online')!.click();
+      clickLobbyButton(root, 'Play Online');
       Array.from(root.querySelectorAll('button'))
         .find((button) => button.textContent === 'Advanced settings')!.click();
 
@@ -835,8 +842,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         return account;
       });
       browseLobby.show();
-      [...browseRoot.querySelectorAll('button')]
-        .find((candidate) => candidate.textContent === 'Play Online')!.click();
+      clickLobbyButton(browseRoot, 'Play Online');
       [...browseRoot.querySelectorAll('button')]
         .find((candidate) => candidate.textContent === 'Browse public rooms')!.click();
       await vi.waitFor(() => expect(browseRoot.querySelector('.lobby-name')).not.toBeNull());
@@ -1237,6 +1243,30 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       expect(internals(lobby).onlineError).toBe('');
     });
 
+    it('SUCCESS (Garage loadout): adopts the server-acknowledged mixed assembly', async () => {
+      const loadout: TankLoadout = {
+        treads: 'ranger',
+        hull: 'foundry',
+        turret: 'bulwark',
+        barrel: 'jackal',
+      };
+      const players = [{
+        id: 'p-1',
+        name: 'Alice',
+        color: '#e84d4d',
+        ready: false,
+        loadout,
+      }];
+      stubFetch({ json: () => ({ players }) });
+      seedWaiting();
+
+      await internals(lobby).updateMe({ loadout });
+
+      expect(internals(lobby).waitingPlayers).toEqual(players);
+      expect(internals(lobby).onlineBusy).toBe(false);
+      expect(internals(lobby).onlineError).toBe('');
+    });
+
     it('ERROR (taken): surfaces the server error WITHOUT mutating local players', async () => {
       const before = [{ id: 'p-1', name: 'Alice', color: '#e84d4d', ready: false }];
       stubFetch({ ok: false, json: () => ({ error: 'Color already taken' }) });
@@ -1246,6 +1276,31 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
       expect(internals(lobby).onlineError).toBe('Color already taken');
       expect(internals(lobby).waitingPlayers).toEqual(before); // unchanged
+    });
+
+    it('ERROR (Garage loadout): restores editing after rejection without optimistic mutation', async () => {
+      const before = [{
+        id: 'p-1',
+        name: 'Alice',
+        color: '#e84d4d',
+        ready: false,
+        loadout: DEFAULT_TANK_LOADOUT,
+      }];
+      const rejected: TankLoadout = {
+        treads: 'jackal',
+        hull: 'jackal',
+        turret: 'jackal',
+        barrel: 'jackal',
+      };
+      stubFetch({ ok: false, json: () => ({ error: 'Appearance update rejected' }) });
+      seedWaiting();
+      Object.assign(internals(lobby), { waitingPlayers: before });
+
+      await internals(lobby).updateMe({ loadout: rejected });
+
+      expect(internals(lobby).onlineError).toBe('Appearance update rejected');
+      expect(internals(lobby).onlineBusy).toBe(false);
+      expect(internals(lobby).waitingPlayers).toEqual(before);
     });
   });
 });

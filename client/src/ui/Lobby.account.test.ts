@@ -191,6 +191,7 @@ let initialUrl = ''
 beforeEach(() => {
   initialUrl = window.location.href
   localStorage.clear()
+  sessionStorage.clear()
 })
 
 afterEach(() => {
@@ -201,10 +202,35 @@ afterEach(() => {
 })
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text)
+  const category = text === 'Local Battle' || text === 'Play Online'
+    ? 'multiplayer'
+    : text.includes('Ash Road') ? 'campaigns' : null
+  if (!match && category) {
+    root.querySelector<HTMLButtonElement>(
+      `[data-command-surface="rail"][data-command-category="${category}"]`,
+    )?.click()
+    if (category === 'multiplayer') {
+      const item = root.querySelector<HTMLButtonElement>(
+        `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
+      )
+      item?.click()
+      if (item) return item
+    }
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === text)
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`)
   return match
+}
+
+function closeDiagnostics(root: HTMLElement): void {
+  const control = root.querySelector<HTMLButtonElement>(
+    '[aria-label="Production diagnostics"] .lobby-overlay__close',
+  )
+  if (!control) throw new Error('Missing diagnostics close control')
+  control.click()
 }
 
 function deferred<T>() {
@@ -225,21 +251,21 @@ describe('Lobby account composition', () => {
     }, undefined, () => 42)
     lobby.show()
 
+    const crosswind = () => root.querySelector<HTMLButtonElement>(
+      '[data-command-item="crosswind-range"]',
+    )
     expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
-    button(root, 'Local Battle').click()
-
-    expect(root.querySelector('.lobby-verified-deployment')).toBeNull()
-    button(root, 'Practice vs CPU').click()
-    expect(root.querySelector('[data-operation-lane="practice"]')).not.toBeNull()
+    expect(crosswind()).toBeInstanceOf(HTMLButtonElement)
 
     account.emit({ status: 'anonymous', busy: false, error: '' })
     expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
-    expect(root.querySelector('[data-operation-lane="practice"]')).not.toBeNull()
+    expect(crosswind()).toBeInstanceOf(HTMLButtonElement)
 
     account.emit(verifiedAccountState(0))
-    const restoredPractice = root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')
+    const restoredPractice = crosswind()
     expect(restoredPractice).toBeInstanceOf(HTMLButtonElement)
     restoredPractice!.click()
+    root.querySelector<HTMLButtonElement>('[data-command-primary]')!.click()
     expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
       mode: 'hotseat',
       quickOperation: expect.objectContaining({ id: 'crosswind-range' }),
@@ -338,7 +364,7 @@ describe('Lobby account composition', () => {
       profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     })
     expect(document.activeElement).toBe(button(root, 'Sign out'))
-    button(root, 'Close').click()
+    root.querySelector<HTMLButtonElement>('.lobby-overlay__close')!.click()
     expect(root.querySelector<HTMLElement>('.lobby-card')?.hasAttribute('inert')).toBe(false)
     root.remove()
   })
@@ -369,7 +395,7 @@ describe('Lobby account composition', () => {
     const openTrigger = button(root, 'Commander Ranger')
     expect(openTrigger.getAttribute('aria-expanded')).toBe('true')
     expect(document.activeElement).toBe(root.querySelector('.lobby-overlay__close'))
-    button(root, 'Close').click()
+    root.querySelector<HTMLButtonElement>('.lobby-overlay__close')!.click()
     const restoredTrigger = button(root, 'Commander Ranger')
     expect(restoredTrigger.getAttribute('aria-expanded')).toBe('false')
     expect(document.activeElement).toBe(restoredTrigger)
@@ -575,7 +601,7 @@ describe('Lobby account composition', () => {
       ?.dataset.diagnosticsState).toBe('FAIL')
   })
 
-  it('cancels a pending autorun when diagnostics closes and restores focus to a live lobby control', () => {
+  it('cancels a pending autorun while retaining the command center and restores live selection focus', () => {
     window.history.replaceState(null, '', '/pregame?keep=1&diagnostics=1&autorun=1#deck')
     const root = document.createElement('div')
     document.body.append(root)
@@ -591,9 +617,11 @@ describe('Lobby account composition', () => {
     )
 
     lobby.show()
-    const detachedControl = [...root.querySelectorAll<HTMLButtonElement>('button')]
-      .find((candidate) => candidate.textContent === 'Local Battle')
-    if (!detachedControl) throw new Error('Missing Local Battle control')
+    const detachedControl = root.querySelector<HTMLButtonElement>(
+      '.command-center__library-items [data-command-item][aria-current="true"]',
+    )
+    if (!detachedControl) throw new Error('Missing selected Command Center control')
+    expect(root.querySelector('.command-center')).not.toBeNull()
     const replaceState = vi.spyOn(window.history, 'replaceState')
     root.querySelector<HTMLButtonElement>('[aria-label="Production diagnostics"] .lobby-overlay__close')?.click()
     account.emit(authenticatedState())
@@ -601,10 +629,10 @@ describe('Lobby account composition', () => {
     expect(diagnostics.runChecks).not.toHaveBeenCalled()
     expect(diagnostics.dispose).toHaveBeenCalledOnce()
     expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
-    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(0)
+    expect(root.querySelectorAll('[role="dialog"]:not([hidden])')).toHaveLength(0)
     expect(root.querySelector('.lobby-card')?.hasAttribute('inert')).toBe(false)
     expect(detachedControl.isConnected).toBe(false)
-    expect(document.activeElement).toBe([...root.querySelectorAll('button')].find((candidate) => candidate.textContent === 'Local Battle'))
+    expect(document.activeElement).toBe(root.querySelector('[data-command-item][aria-current="true"]'))
     expect(window.location.pathname).toBe('/pregame')
     expect(window.location.search).toBe('?keep=1')
     expect(window.location.hash).toBe('#deck')
@@ -632,7 +660,7 @@ describe('Lobby account composition', () => {
     await vi.waitFor(() => expect(root.querySelector('[aria-label="Production diagnostics"]')).not.toBeNull())
     expect(root.querySelectorAll('.lobby-card')).toHaveLength(1)
     expect(root.querySelectorAll('.lobby-overlay')).toHaveLength(1)
-    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+    expect(root.querySelectorAll('[aria-label="Production diagnostics"][role="dialog"]')).toHaveLength(1)
   })
 
   it('disposes a lazy diagnostics instance that resolves after the console closes', async () => {
@@ -648,7 +676,7 @@ describe('Lobby account composition', () => {
     )
 
     lobby.show()
-    button(root, 'Close').click()
+    closeDiagnostics(root)
     factory.resolve(diagnostics)
     await Promise.resolve()
     await Promise.resolve()
@@ -676,7 +704,7 @@ describe('Lobby account composition', () => {
 
     lobby.show()
     button(root, 'Run checks').click()
-    button(root, 'Close').click()
+    closeDiagnostics(root)
     run.reject(new Error('late-run-secret'))
     await Promise.resolve()
     await Promise.resolve()
@@ -713,7 +741,7 @@ describe('Lobby account composition', () => {
       )
       lobby.show()
       button(root, 'Copy receipt').click()
-      button(root, 'Close').click()
+      closeDiagnostics(root)
       if (settlement === 'resolve') copy.resolve()
       else copy.reject(new Error('late-clipboard-secret'))
       await Promise.resolve()
@@ -770,7 +798,7 @@ describe('Lobby account composition', () => {
     lobby.show()
     vi.spyOn(window.history, 'replaceState').mockImplementationOnce(() => { throw new Error('history failure') })
 
-    button(root, 'Close').click()
+    closeDiagnostics(root)
 
     expect(diagnostics.dispose).toHaveBeenCalledOnce()
     expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
@@ -1061,9 +1089,7 @@ describe('Lobby account composition', () => {
       .mockResolvedValueOnce(verifiedStart)
       .mockResolvedValueOnce({ resumed: false, descriptor: freshDescriptor })
 
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
     button(root, 'Start verified deployment').click()
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce())
     expect(onReady.mock.calls[0]?.[0].verifiedDeployment).toMatchObject({
@@ -1543,7 +1569,7 @@ describe('Lobby account composition', () => {
 
     expect(button(root, 'Deploy local battle').disabled).toBe(false)
     expect(root.querySelector('.lobby-verified-deployment')).toBeNull()
-    expect(button(root, 'Verified Deployment').disabled).toBe(true)
+    expect(root.textContent).not.toContain('Verified Deployment')
   })
 
   it('launches authenticated verified play from the server descriptor without identity re-entry or local-setting leakage', async () => {
@@ -1561,9 +1587,7 @@ describe('Lobby account composition', () => {
       maxWind: '10', gravity: '0.4', walls: 'wrap', hazards: 'sinkholes', seed: '999',
       rounds: '9', interestRate: '0.5', suddenDeathTurn: '2', armsLevel: '4', teamMode: 'true',
     })
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
 
     const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment')!
     expect(verified.querySelector('input')).toBeNull()
@@ -1610,9 +1634,7 @@ describe('Lobby account composition', () => {
     })
     await lobby.startVerifiedDeployment()
     expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(true)
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
 
     expect(root.querySelector('.lobby-verified-deployment')?.textContent)
       .toContain('Recovered 1 of 6 human salvos.')
@@ -1648,9 +1670,7 @@ describe('Lobby account composition', () => {
       })
       return account
     })
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
 
     expect(button(root, 'Verified deployment busy').disabled).toBe(true)
     expect(account.startVerifiedDeployment).not.toHaveBeenCalled()

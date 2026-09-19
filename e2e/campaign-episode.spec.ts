@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { gotoLobby } from './support';
+import { gotoLobby, openAshRoadWorkspace } from './support';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -84,7 +84,8 @@ async function checkpoint(page: Page): Promise<Locator> {
 
 async function startCampaignRun(page: Page, kit: 'assault' | 'breach'): Promise<void> {
   await gotoLobby(page);
-  await page.getByRole('combobox', { name: 'Ash Road loadout', exact: true })
+  await openAshRoadWorkspace(page);
+  await page.getByRole('combobox', { name: 'New run kit', exact: true })
     .selectOption(kit);
   await page.getByRole('button', { name: 'Start Ash Road', exact: true }).click();
   await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p1');

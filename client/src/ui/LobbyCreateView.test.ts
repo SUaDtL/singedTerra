@@ -61,7 +61,9 @@ describe('buildLobbyCreateView', () => {
     const status = section('status');
     const root = buildLobbyCreateView(options({ nameColor, garage, advanced, status }));
 
-    expect(root.className).toBe('lobby-route-brief lobby-route-brief--online');
+    expect(root.classList).toContain('lobby-route-brief');
+    expect(root.classList).toContain('lobby-route-brief--online');
+    expect(root.classList).toContain('preparation-frame');
     expect(root.querySelector('.lobby-route-brief__title')?.textContent).toBe('Open operation');
     expect(root.querySelector('.lobby-route-brief__purpose')?.textContent)
       .toBe('Set the battlefield, then issue a room code to your crew.');
@@ -107,11 +109,17 @@ describe('buildLobbyCreateView', () => {
       className: item.className,
       disabled: item.disabled,
     }))).toEqual([
-      { text: 'Create operation', className: 'lobby-btn primary lobby-online-primary', disabled: false },
       { text: 'Join with a code', className: 'lobby-btn secondary', disabled: false },
       { text: 'Browse public rooms', className: 'lobby-btn secondary', disabled: false },
     ]);
     expect(root.querySelector('nav')?.getAttribute('aria-label')).toBe('Other ways to play online');
+    expect(root.querySelector(':scope > .preparation-frame__heading')).not.toBeNull();
+    expect(root.querySelector(':scope > .preparation-frame__body')?.contains(
+      root.querySelector('.lobby-route-brief__setup'),
+    )).toBe(true);
+    expect(root.querySelector(':scope > .preparation-frame__dock .lobby-online-primary')?.textContent)
+      .toBe('Create operation');
+    expect(field(root, 'Visibility').closest('.preparation-frame__body')).not.toBeNull();
   });
 
   it('routes selector changes and all three actions', () => {

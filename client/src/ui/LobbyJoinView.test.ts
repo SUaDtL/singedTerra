@@ -36,7 +36,9 @@ describe('buildLobbyJoinView', () => {
     const status = section('status');
     const root = buildLobbyJoinView(options({ nameColor, garage, status }));
 
-    expect(root.className).toBe('lobby-route-brief lobby-route-brief--online');
+    expect(root.classList).toContain('lobby-route-brief');
+    expect(root.classList).toContain('lobby-route-brief--online');
+    expect(root.classList).toContain('preparation-frame');
     expect(root.querySelector('.lobby-route-brief__title')?.textContent).toBe('Rally to a signal');
     expect(root.querySelector('.lobby-route-brief__purpose')?.textContent)
       .toBe('Enter a room code and join the operation already in motion.');
@@ -60,7 +62,9 @@ describe('buildLobbyJoinView', () => {
       status,
     ]);
     expect([...root.querySelectorAll('.lobby-online-actions button')].map((item) => item.textContent))
-      .toEqual(['Join Room', 'Create a room', 'Browse public rooms']);
+      .toEqual(['Create a room', 'Browse public rooms']);
+    expect(root.querySelector('.preparation-frame__dock .lobby-online-primary')?.textContent)
+      .toBe('Join Room');
     expect(root.querySelector('nav')?.getAttribute('aria-label')).toBe('Other ways to play online');
   });
 

@@ -182,7 +182,22 @@ export class RoundOverView {
     const focusTarget = projection.tanks.length > 0
       ? this.tankSelect
       : this.root.querySelector<HTMLButtonElement>('[data-round-over-next]');
-    focusTarget?.focus({ preventScroll: true });
+    if (!focusTarget) return;
+    if (!this.root.closest('[inert]')) {
+      focusTarget.focus({ preventScroll: true });
+      return;
+    }
+    // Initial ROUND_OVER fixtures can render while the application surface is
+    // still `launching`. Focus cannot enter the inert battle root until commit
+    // flips it to `battle`, which happens before the next animation frame.
+    requestAnimationFrame(() => {
+      if (
+        this.visible
+        && focusTarget.isConnected
+        && !this.root.closest('[inert]')
+        && !this.root.contains(document.activeElement)
+      ) focusTarget.focus({ preventScroll: true });
+    });
   }
 
   update(projection: RoundOverViewProjection): void {

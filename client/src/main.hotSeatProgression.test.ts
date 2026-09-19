@@ -40,6 +40,7 @@ const seams = vi.hoisted(() => ({
   useActualGameEngine: false,
   useActualInputHandler: false,
   useActualAiPlan: false,
+  useActualOrientationGate: false,
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
   rendererPrimedStates: [] as GameState[],
   aimGuideUpdates: [] as Array<{ visible: boolean; gravity: number | undefined }>,
@@ -97,6 +98,10 @@ const seams = vi.hoisted(() => ({
   leaveBattleConsole: (): void | Promise<void> => undefined,
   lobbyShowOptions: [] as unknown[],
   lobbyRecovery: null as null | { message: string; retry: () => void },
+  lobbyLaunchFailures: [] as string[],
+  launchFocusSnapshot: { key: 'initiating-control' } as unknown,
+  restoredLaunchFocus: [] as unknown[],
+  campaignLaunchRefreshes: 0,
   hudDestroys: 0,
   accountRevalidations: 0,
   revalidateAccountIdentity: (): Promise<boolean> => Promise.resolve(true),
@@ -186,7 +191,15 @@ vi.mock('./input/inputGate', () => ({
   resolveActivePlayerOwnership: () => true,
   shouldAcceptLocalInput: () => true,
 }))
-vi.mock('./ui/OrientationGate', () => ({ mountOrientationGate: () => undefined }))
+vi.mock('./ui/OrientationGate', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./ui/OrientationGate')>()
+  return {
+    ...actual,
+    mountOrientationGate: (...args: Parameters<typeof actual.mountOrientationGate>) => {
+      if (seams.useActualOrientationGate) actual.mountOrientationGate(...args)
+    },
+  }
+})
 vi.mock('./ui/theme', () => ({ crtCssVars: () => ({}) }))
 vi.mock('./ui/firstSalvoController', () => ({
   FirstSalvoController: class {
@@ -378,6 +391,10 @@ vi.mock('./ui/Lobby', () => ({
       seams.lobbyShows += 1
       seams.lobbyShowOptions.push(options)
     }
+    captureLaunchFocus() { return seams.launchFocusSnapshot }
+    restoreLaunchFocus(snapshot: unknown) { seams.restoredLaunchFocus.push(snapshot) }
+    showLaunchFailure(message: string) { seams.lobbyLaunchFailures.push(message) }
+    refreshCampaignSaveAfterLaunchFailure() { seams.campaignLaunchRefreshes += 1; return Promise.resolve() }
     showNetworkRecovery(message: string, retry: () => void) {
       seams.lobbyShows += 1
       seams.lobbyRecovery = { message, retry }
@@ -649,8 +666,31 @@ function mountDom(): void {
     <div id="app">
       <div id="stage"><canvas id="game"></canvas><div id="game-overlay"></div><div id="battle-rail"></div></div>
       <div id="hud"></div>
-      <div id="modal-layer"></div><div id="lobby"></div>
+      <div id="modal-layer"></div>
+    </div>
+    <div id="lobby"></div>
+    <div id="portrait-warn" hidden>
+      <button id="portrait-launch" type="button">Enter fullscreen landscape</button>
+      <p id="portrait-warn-status"></p>
     </div>`
+}
+
+function expectBattleSurface(): void {
+  const battle = document.querySelector<HTMLElement>('#app')!
+  const pregame = document.querySelector<HTMLElement>('#lobby')!
+  expect(battle.hidden).toBe(false)
+  expect(battle.inert).toBe(false)
+  expect(pregame.hidden).toBe(true)
+}
+
+function expectPregameSurface(): void {
+  const battle = document.querySelector<HTMLElement>('#app')!
+  const pregame = document.querySelector<HTMLElement>('#lobby')!
+  expect(battle.hidden).toBe(true)
+  expect(battle.inert).toBe(true)
+  expect(pregame.hidden).toBe(false)
+  expect(pregame.inert).toBe(false)
+  expect(pregame.hasAttribute('aria-busy')).toBe(false)
 }
 
 async function localBotPreparationFixture(options: {
@@ -760,6 +800,7 @@ describe('production hot-seat progression composition', () => {
     seams.useActualGameEngine = false
     seams.useActualInputHandler = false
     seams.useActualAiPlan = false
+    seams.useActualOrientationGate = false
     seams.rendererEvents = null
     seams.rendererPrimedStates.length = 0
     seams.aimGuideUpdates.length = 0
@@ -814,6 +855,10 @@ describe('production hot-seat progression composition', () => {
     seams.leaveBattleConsole = () => undefined
     seams.lobbyShowOptions.length = 0
     seams.lobbyRecovery = null
+    seams.lobbyLaunchFailures.length = 0
+    seams.launchFocusSnapshot = { key: 'initiating-control' }
+    seams.restoredLaunchFocus.length = 0
+    seams.campaignLaunchRefreshes = 0
     seams.hudDestroys = 0
     seams.accountRevalidations = 0
     seams.revalidateAccountIdentity = () => Promise.resolve(true)
@@ -1214,6 +1259,7 @@ describe('production hot-seat progression composition', () => {
     await import('./main')
     await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
       settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [] } })
+    expectBattleSurface()
     client.emit(state)
     expect(seams.coachEligibility).toHaveLength(0)
     const priorShows = seams.lobbyShows
@@ -1226,6 +1272,7 @@ describe('production hot-seat progression composition', () => {
     expect(seams.completedChallenges).toBe(0)
     expect(seams.recorded).toHaveLength(0)
     expect(seams.lobbyShowOptions.at(-1)).toEqual({ focusVerifiedChallenge: true })
+    expectPregameSurface()
   })
 
   it('freezes challenge input when its admission expires while the battlefield stays open', async () => {
@@ -1503,6 +1550,84 @@ describe('production hot-seat progression composition', () => {
     expect(seams.inputAction).toBeNull()
   })
 
+  it('keeps preparation visible and busy until deferred acquisition commits the battle surface', async () => {
+    let resolveInitialization!: () => void
+    const candidate = fakeClient(gameState())
+    candidate.initialize = vi.fn(() => new Promise<undefined>((resolve) => {
+      resolveInitialization = () => resolve(undefined)
+    }))
+    seams.clients.push(candidate)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    const launch = seams.onLobbyReady({
+      mode: 'network', roomId: 'deferred', playerId: 'p1', players: [], playerNames: [],
+    })
+    await vi.waitFor(() => expect(candidate.initialize).toHaveBeenCalledOnce())
+
+    const battle = document.querySelector<HTMLElement>('#app')!
+    const pregame = document.querySelector<HTMLElement>('#lobby')!
+    expect(pregame.hidden).toBe(false)
+    expect(pregame.inert).toBe(true)
+    expect(pregame.getAttribute('aria-busy')).toBe('true')
+    expect(battle.hidden).toBe(true)
+    expect(battle.inert).toBe(true)
+
+    resolveInitialization()
+    await launch
+
+    expect(candidate.start).toHaveBeenCalledOnce()
+    expectBattleSurface()
+    expect(seams.lobbyHides).toBe(1)
+  })
+
+  it('keeps the portrait gate out of pregame and applies it through launching and battle only', async () => {
+    let resolveInitialization!: () => void
+    let syncOrientation!: () => void
+    const candidate = fakeClient(gameState())
+    candidate.initialize = vi.fn(() => new Promise<undefined>((resolve) => {
+      resolveInitialization = () => resolve(undefined)
+    }))
+    seams.clients.push(candidate)
+    seams.useActualOrientationGate = true
+    vi.stubGlobal('matchMedia', vi.fn(() => ({
+      matches: true,
+      media: '(orientation: portrait) and (max-width: 480px)',
+      onchange: null,
+      addEventListener: vi.fn((_event: string, listener: () => void) => { syncOrientation = listener }),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
+    })))
+
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onQuit) throw new Error('Expected lifecycle wiring')
+    const gate = document.querySelector<HTMLElement>('#portrait-warn')!
+    expect(gate.hidden).toBe(true)
+
+    const launch = seams.onLobbyReady({
+      mode: 'network', roomId: 'portrait', playerId: 'p1', players: [], playerNames: [],
+    })
+    await vi.waitFor(() => expect(candidate.initialize).toHaveBeenCalledOnce())
+    syncOrientation()
+    await vi.waitFor(() => expect(gate.hidden).toBe(false))
+    expect(document.querySelector<HTMLElement>('#lobby')!.getAttribute('aria-busy')).toBe('true')
+
+    resolveInitialization()
+    await launch
+    syncOrientation()
+    await vi.waitFor(() => expect(gate.hidden).toBe(false))
+    expect(document.querySelector<HTMLElement>('#app')!.inert).toBe(true)
+
+    seams.onQuit()
+    await vi.waitFor(() => expect(candidate.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expect(document.querySelector<HTMLElement>('#lobby')!.inert).toBe(false))
+    syncOrientation()
+    await vi.waitFor(() => expect(gate.hidden).toBe(true))
+    expectPregameSurface()
+  })
+
   it('cleans a rejected old factory candidate without disturbing a newer Lobby match', async () => {
     let rejectInitialization!: (reason: unknown) => void
     let oldResources = 0
@@ -1563,9 +1688,13 @@ describe('production hot-seat progression composition', () => {
     expect(seams.lobbyRecovery?.message).toBe(timeout.message)
     expect(timedOut.stop).toHaveBeenCalledOnce()
     expect(retryClient.start).not.toHaveBeenCalled()
+    expect(seams.lobbyLaunchFailures).toEqual([])
+    expect(seams.restoredLaunchFocus).toContain(seams.launchFocusSnapshot)
+    expectPregameSurface()
 
     seams.lobbyRecovery?.retry()
     await vi.waitFor(() => expect(retryClient.start).toHaveBeenCalledOnce())
+    expectBattleSurface()
     expect(seams.networkConstructorArgs.at(-1)?.slice(1, 3)).toEqual([
       config.roomId,
       config.playerId,
@@ -1603,7 +1732,7 @@ describe('production hot-seat progression composition', () => {
     expect(first.start).not.toHaveBeenCalled()
     expect(second.stop).not.toHaveBeenCalled()
     expect(seams.rendererConstructed).toBe(1)
-    expect(seams.lobbyHides).toBe(2)
+    expect(seams.lobbyHides).toBe(1)
   })
 
   it('signals an explicit network Quit once, while replacement teardown does not leave — RL-02/07', async () => {
@@ -1801,12 +1930,36 @@ describe('production hot-seat progression composition', () => {
     if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
     const failure = seams.onLobbyReady({ mode: 'hotseat', players: [] })
 
-    await expect(failure).rejects.toBe(setupFailure)
+    await expect(failure).resolves.toBeUndefined()
     expect(client.stop).toHaveBeenCalledOnce()
     expect(seams.rendererResets).toBe(rendererResets)
     expect(seams.inputDetaches).toBe(inputDetaches)
     expect(seams.unsubscribes).toBe(unsubscribes)
     expect(client.start).toHaveBeenCalledTimes(stage === 'start' ? 1 : 0)
+    expect(seams.lobbyRecovery).toBeNull()
+    expect(seams.lobbyLaunchFailures).toContain(setupFailure.message)
+    expect(seams.restoredLaunchFocus).toContain(seams.launchFocusSnapshot)
+    expectPregameSurface()
+  })
+
+  it('keeps a post-acquisition network setup failure with the local preparation owner', async () => {
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.setupFailureStage = 'renderer'
+    const setupFailure = new Error('network renderer setup failed')
+    seams.setupFailure = setupFailure
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    await seams.onLobbyReady({
+      mode: 'network', roomId: 'acquired', playerId: 'p1', players: [], playerNames: [],
+    })
+
+    expect(client.stop).toHaveBeenCalledOnce()
+    expect(seams.lobbyRecovery).toBeNull()
+    expect(seams.lobbyLaunchFailures).toContain(setupFailure.message)
+    expect(seams.restoredLaunchFocus).toContain(seams.launchFocusSnapshot)
+    expectPregameSurface()
   })
 
   it('does not let a stale setup failure retire the newer match generation', async () => {
@@ -1826,11 +1979,12 @@ describe('production hot-seat progression composition', () => {
     }
     const staleFailure = seams.onLobbyReady({ mode: 'hotseat', players: [] })
 
-    await expect(staleFailure).rejects.toBe(setupFailure)
+    await expect(staleFailure).resolves.toBeUndefined()
     await vi.waitFor(() => expect(newer.start).toHaveBeenCalledOnce())
     expect(older.stop).toHaveBeenCalledOnce()
     expect(seams.rendererResets).toBe(1)
     expect(newer.stop).not.toHaveBeenCalled()
+    expectBattleSurface()
     const frames = seams.hudFrames.length
     newer.emit(gameState({ winner: 'p2' }))
     expect(seams.hudFrames.length).toBeGreaterThan(frames)
@@ -2515,6 +2669,7 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(seams.lobbyShows).toBe(lobbyShowsBeforeHandoff + 1))
     expect(seams.lobbyShowOptions.at(-1)).toEqual({ focusVerifiedDeployment: true })
     expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
+    expectPregameSurface()
 
     seams.verifiedPresentationEvents.length = 0
 
@@ -2543,6 +2698,7 @@ describe('production hot-seat progression composition', () => {
       verifiedDeployment: { descriptor: freshDescriptor, transcript: [], fieldOrder: freshOrder },
     })
     await vi.waitFor(() => expect(freshClient.start).toHaveBeenCalledOnce())
+    expectBattleSurface()
     freshClient.emit(freshState)
 
     expect(seams.verifiedControllerSeeds).toEqual([17, 42])
@@ -2770,6 +2926,35 @@ describe('production hot-seat progression composition', () => {
     expect(casualClient.start).toHaveBeenCalledOnce()
     seams.onVerifiedReturnToBattery()
     expect(seams.returnedVerified).toBe(0)
+  })
+
+  it('returns an expired verified deployment through the pregame surface boundary', async () => {
+    const state = liveVerifiedState()
+    const controller = fakeVerifiedController(state)
+    const client = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(client)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor: verifiedDescriptor, transcript: [],
+      deadline: { remainingMs: 120_000, warning: 'five-minutes', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onVerifiedReturnToBattery) {
+      throw new Error('Expected verified return wiring')
+    }
+    await seams.onLobbyReady(verifiedConfig())
+    expectBattleSurface()
+
+    seams.verifiedDeployment = {
+      status: 'expired', descriptor: verifiedDescriptor, transcript: [],
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+      choices: ['continue-casual', 'return-to-battery'],
+    }
+    seams.onVerifiedReturnToBattery()
+
+    expect(seams.returnedVerified).toBe(1)
+    await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expectPregameSurface())
   })
 
   it('passes the real verified input gate and renderer-admitted cue through one HUD update cycle', async () => {
@@ -3122,6 +3307,8 @@ describe('production hot-seat progression composition', () => {
     await Promise.resolve()
 
     expect(seams.progressionReceipts).toHaveLength(0)
+    await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expectPregameSurface())
   })
 
   it('shows one anonymous local-human handoff without recording the completed match', async () => {
@@ -3187,6 +3374,7 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
     await vi.waitFor(() => expect(seams.accountSignInShows).toBe(1))
     expect(seams.lobbyShows).toBe(2)
+    expectPregameSurface()
   })
 
   it('ignores duplicate sign-in activations after the completed game is retired', async () => {

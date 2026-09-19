@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import { FIRST_SALVO_PREFERENCE_KEY } from './firstSalvoCoach';
 import { FUEL_STOP_FIXTURE } from '../campaign/content/fuel-stop';
+import type { CampaignStorage } from '../campaign/storage';
+import type { CampaignSavePresentationOwner } from './commandCenter/CampaignSavePresentation';
 import { Lobby, type LobbyConfig } from './Lobby';
 
 interface LobbyInternals {
@@ -11,6 +13,7 @@ interface LobbyInternals {
     ai?: 'easy' | 'medium' | 'hard';
     loadout: TankLoadout;
   }>;
+  readonly campaignSavePresentation: CampaignSavePresentationOwner;
 }
 
 function internals(lobby: Lobby): LobbyInternals {
@@ -18,10 +21,44 @@ function internals(lobby: Lobby): LobbyInternals {
 }
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  if (text === 'Quick Duel vs CPU') {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="skirmishes"]',
+    )?.click();
+    root.querySelector<HTMLButtonElement>('[data-command-item="standard"]')?.click();
+    text = 'Start Standard Duel';
+  }
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text);
+  if (!match && text.includes('Ash Road')) {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="campaigns"]',
+    )?.click();
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === text);
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`);
   return match;
+}
+
+function selectOperation(root: HTMLElement, operationId: string): void {
+  root.querySelector<HTMLButtonElement>(
+    '[data-command-surface="rail"][data-command-category="skirmishes"]',
+  )?.click();
+  root.querySelector<HTMLButtonElement>(`[data-command-item="${operationId}"]`)?.click();
+}
+
+function emptyCampaignStorage(): CampaignStorage {
+  return {
+    load: vi.fn(async () => null),
+    compareAndSwap: vi.fn(),
+  };
+}
+
+async function waitForEmptyCampaignSave(lobby: Lobby): Promise<void> {
+  await vi.waitFor(() => {
+    expect(internals(lobby).campaignSavePresentation.presentation).toEqual({ status: 'empty' });
+  });
 }
 
 describe('Lobby Quick Duel', () => {
@@ -29,6 +66,7 @@ describe('Lobby Quick Duel', () => {
   let onReady: ReturnType<typeof vi.fn<(config: LobbyConfig) => void>>;
 
   beforeEach(() => {
+    sessionStorage.clear();
     window.localStorage.setItem(FIRST_SALVO_PREFERENCE_KEY, 'v1:completed');
     root = document.createElement('div');
     document.body.append(root);
@@ -134,13 +172,16 @@ describe('Lobby Quick Duel', () => {
     expect(emitted.players[0]).not.toHaveProperty('ai');
   });
 
-  it('starts Ash Road from the canonical Fuel Stop checkpoint with two supplies', () => {
-    const lobby = new Lobby(root, onReady);
+  it('starts Ash Road from the canonical Fuel Stop checkpoint with two supplies', async () => {
+    const lobby = new Lobby(
+      root, onReady, undefined, undefined, undefined, undefined, emptyCampaignStorage(),
+    );
     lobby.show();
+    await waitForEmptyCampaignSave(lobby);
 
     button(root, 'Start Ash Road').click();
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
 
-    expect(onReady).toHaveBeenCalledOnce();
     const config = onReady.mock.calls[0]![0];
     expect(config).toMatchObject({
       mode: 'hotseat',
@@ -169,16 +210,20 @@ describe('Lobby Quick Duel', () => {
     expect(Object.isFrozen(config.campaignRunState)).toBe(true);
   });
 
-  it('acquires the public breach kit with Sandhog as granted carried ammunition', () => {
-    const lobby = new Lobby(root, onReady);
+  it('acquires the public breach kit with Sandhog as granted carried ammunition', async () => {
+    const lobby = new Lobby(
+      root, onReady, undefined, undefined, undefined, undefined, emptyCampaignStorage(),
+    );
     lobby.show();
-    const kit = root.querySelector<HTMLSelectElement>('[aria-label="Ash Road loadout"]')!;
+    await waitForEmptyCampaignSave(lobby);
+    button(root, 'Start Ash Road');
+    const kit = root.querySelector<HTMLSelectElement>('[aria-label="New run kit"]')!;
     kit.value = 'breach';
     kit.dispatchEvent(new Event('change'));
 
     button(root, 'Start Ash Road').click();
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
 
-    expect(onReady).toHaveBeenCalledOnce();
     expect(onReady.mock.calls[0]![0].campaignRunState?.loadout).toMatchObject({
       carried: {
         basicWeaponId: 'baby_missile',
@@ -204,8 +249,8 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
     lobby.show();
 
-    root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    selectOperation(root, 'crosswind-range');
+    button(root, 'Start Crosswind Range').click();
 
     expect(onReady).toHaveBeenCalledOnce();
     expect(onReady.mock.calls[0]![0]).toMatchObject({
@@ -225,8 +270,8 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
     lobby.show();
 
-    root.querySelector<HTMLButtonElement>('[data-operation-id="lean-arsenal"]')!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    selectOperation(root, 'lean-arsenal');
+    button(root, 'Start Lean Arsenal').click();
 
     expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
       settings: { seed: 42, rounds: 3, armsLevel: 0 },
@@ -242,8 +287,8 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, () => 0x1234abcd);
     lobby.show();
 
-    root.querySelector<HTMLButtonElement>('[data-operation-id="last-light-siege"]')!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    selectOperation(root, 'last-light-siege');
+    button(root, 'Start Last Light Siege').click();
 
     expect(onReady).toHaveBeenCalledOnce();
     expect(onReady.mock.calls[0]![0]).toMatchObject({
@@ -350,10 +395,10 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, () => 42);
     lobby.show();
 
-    const operation = root.querySelector<HTMLButtonElement>('[data-operation-id="caldera-run"]');
+    selectOperation(root, 'caldera-run');
+    const operation = root.querySelector<HTMLButtonElement>('[data-command-item="caldera-run"]');
     expect(operation).not.toBeNull();
-    operation!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    button(root, 'Start Caldera Run').click();
 
     expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
       mode: 'hotseat',

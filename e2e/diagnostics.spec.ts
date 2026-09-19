@@ -25,10 +25,10 @@ type LobbyGeometrySnapshot = Record<string, Box[]>;
 
 const STABLE_LOBBY_GEOMETRY_SELECTORS = [
   '#lobby .lobby-card > .lobby-deployment',
-  '#lobby .lobby-deployment__masthead',
-  '#lobby .lobby-command-header',
-  '#lobby .lobby-deployment-chooser',
-  '#lobby .lobby-deployment-chooser button',
+  '#lobby .lobby-command-rail',
+  '#lobby .command-center',
+  '#lobby .command-center__library',
+  '#lobby .command-center__workspace-host',
 ] as const;
 
 function assertContained(inner: Box, outer: Box, label: string): void {
@@ -400,7 +400,14 @@ test.describe('production diagnostics browser proof', () => {
         text: element instanceof HTMLButtonElement ? element.textContent?.trim() : null,
       };
     });
-    expect(focus).toEqual({ connected: true, insideLobby: true, usable: true, text: 'Local Battle' });
-    await expect(page.getByRole('button', { name: 'Local Battle', exact: true })).toBeFocused();
+    expect(focus).toEqual({
+      connected: true,
+      insideLobby: true,
+      usable: true,
+      text: 'First SalvoA one-round duel that starts with the essentials.',
+    });
+    await expect(page.locator(
+      '.command-center__library-items button[data-command-item="first-salvo"]',
+    )).toBeFocused();
   });
 });

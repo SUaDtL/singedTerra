@@ -80,22 +80,22 @@
           inset 0 0 0 1px rgba(255, 233, 168, 0.08),
           inset 0 -42px 55px rgba(29, 18, 11, 0.50);
       }
-      #lobby .lobby-preview::before,
-      #lobby .lobby-preview::after {
+      #lobby .lobby-preview:not(.lobby-preview--inspection)::before,
+      #lobby .lobby-preview:not(.lobby-preview--inspection)::after {
         content: '';
         position: absolute;
         left: 0;
         right: 0;
         pointer-events: none;
       }
-      #lobby .lobby-preview::before {
+      #lobby .lobby-preview:not(.lobby-preview--inspection)::before {
         bottom: 132px;
         height: 74px;
         background:
           linear-gradient(166deg, transparent 0 42%, rgba(22, 13, 46, 0.42) 42.4% 56%, transparent 56.4%),
           linear-gradient(12deg, transparent 0 54%, rgba(255, 122, 31, 0.10) 54.4% 63%, transparent 63.4%);
       }
-      #lobby .lobby-preview::after {
+      #lobby .lobby-preview:not(.lobby-preview--inspection)::after {
         bottom: 0;
         height: 140px;
         background:
@@ -103,6 +103,10 @@
           repeating-linear-gradient(to right, rgba(255, 210, 63, 0.045) 0 4px, transparent 4px 24px),
           linear-gradient(180deg, rgba(122, 79, 46, 0.54), rgba(29, 18, 11, 0.92));
         clip-path: polygon(0 24%, 18% 11%, 37% 22%, 55% 6%, 73% 18%, 100% 8%, 100% 100%, 0 100%);
+      }
+      #lobby .lobby-preview[aria-hidden='true'] {
+        visibility: hidden;
+        pointer-events: none;
       }
       #lobby .lobby-preview__label {
         position: absolute;
@@ -303,15 +307,17 @@
       #lobby .lobby-control:hover { border-color: var(--ember, #ff7a1f); }
       #lobby .lobby-garage {
         flex: 1 0 100%;
-        display: grid;
-        grid-template-columns: 42px minmax(174px, auto) 1fr;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 7px;
         box-sizing: border-box;
         border: 1px solid rgba(255, 210, 63, 0.16);
         border-radius: 7px;
         background: linear-gradient(90deg, rgba(255, 210, 63, 0.055), rgba(12, 7, 22, 0.45));
+      }
+      #lobby .lobby-garage:not(.editing) {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 7px;
       }
       #lobby .lobby-garage__heading {
         color: var(--text-gold);
@@ -319,18 +325,23 @@
         letter-spacing: 1px;
         text-transform: uppercase;
       }
-      #lobby .lobby-garage__open,
-      #lobby .lobby-garage__close {
-        display: none;
-      }
-      #lobby .lobby-garage__presets,
-      #lobby .lobby-garage__slots {
-        display: flex;
-        gap: 3px;
+      #lobby .lobby-garage__build-summary {
         min-width: 0;
+        margin: 0;
+        color: var(--text-dim);
+        font: 600 11px/1.3 var(--font-sans);
+        overflow-wrap: anywhere;
+      }
+      #lobby .lobby-garage__open {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 11px;
+        white-space: nowrap;
       }
       #lobby .lobby-garage button {
-        min-height: 28px;
+        min-width: 44px;
+        min-height: 44px;
         border: 1px solid rgba(255, 210, 63, 0.20);
         border-radius: 5px;
         background: rgba(12, 7, 22, 0.72);
@@ -343,105 +354,6 @@
         border-color: var(--ember);
         color: var(--text-gold);
       }
-      #lobby .lobby-garage__preset {
-        padding: 4px 5px;
-        font-size: 9px;
-      }
-      #lobby .lobby-garage__preset.selected {
-        border-color: var(--gold);
-        color: var(--ink);
-        background: linear-gradient(180deg, #ffe478, #d99b21);
-      }
-      #lobby .lobby-garage__slot {
-        flex: 1;
-        min-width: 0;
-        padding: 3px 2px;
-        text-align: left;
-      }
-      #app:not(.is-compact) #lobby .lobby-garage__slot {
-        flex: 1 0 auto;
-        min-width: max-content;
-      }
-      #app:not(.is-compact) #lobby .lobby-garage__slot strong { padding-right: 4px; }
-      #lobby .lobby-garage__slot span,
-      #lobby .lobby-garage__slot strong {
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      #lobby .lobby-garage__slot span {
-        color: rgba(255, 233, 168, 0.52);
-        font-size: 8px;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-      }
-      #lobby .lobby-garage__slot strong {
-        color: var(--text);
-        font-size: 9px;
-        font-weight: 700;
-      }
-      #lobby .lobby-hotseat.crowded .lobby-sub { display: none; }
-      #lobby .lobby-hotseat.crowded .lobby-field { margin-bottom: 4px; }
-      #lobby .lobby-rows.crowded {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px 8px;
-        margin: 2px 0 6px;
-      }
-      #lobby .lobby-rows.crowded .lobby-row {
-        display: grid;
-        grid-template-columns: minmax(68px, 1fr) auto 78px;
-        align-items: center;
-        gap: 4px;
-        padding: 4px;
-        min-width: 0;
-        border: 1px solid rgba(255, 210, 63, 0.13);
-        border-radius: 7px;
-        background: rgba(12, 7, 22, 0.36);
-      }
-      #lobby .lobby-rows.crowded .lobby-name { min-width: 0; }
-      #lobby .lobby-rows.crowded .lobby-row input[type="text"] {
-        padding: 6px 7px;
-        font-size: 11px;
-      }
-      #lobby .lobby-rows.crowded .lobby-swatches { gap: 2px; }
-      #lobby .lobby-rows.crowded .lobby-swatch {
-        width: 13px;
-        height: 13px;
-        border-width: 1px;
-        box-shadow: inset 0 -3px 4px rgba(0, 0, 0, 0.22);
-      }
-      #lobby .lobby-rows.crowded .lobby-control {
-        width: 78px;
-        min-width: 0;
-        padding: 6px 4px;
-        font-size: 9px;
-      }
-      #lobby .lobby-rows.crowded .lobby-garage {
-        grid-column: 1 / -1;
-        display: grid;
-        grid-template-columns: repeat(8, minmax(0, 1fr));
-        gap: 3px;
-        padding: 3px;
-      }
-      #lobby .lobby-rows.crowded .lobby-garage__heading { display: none; }
-      #lobby .lobby-rows.crowded .lobby-garage__presets,
-      #lobby .lobby-rows.crowded .lobby-garage__slots {
-        display: contents;
-      }
-      #lobby .lobby-rows.crowded .lobby-garage button {
-        min-height: 24px;
-        padding: 2px;
-        font-size: 0;
-        text-align: center;
-      }
-      #lobby .lobby-rows.crowded .lobby-garage button::after {
-        content: attr(data-short);
-        font-size: 9px;
-        font-weight: 700;
-      }
-      #lobby .lobby-rows.crowded .lobby-garage__slot > * { display: none; }
       #lobby .lobby-swatch {
         width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
         border: 2px solid transparent; padding: 0; background-clip: padding-box;
@@ -454,156 +366,22 @@
       /* Below 0.8 stage scale, tiny inline controls become a single large
          Garage trigger plus a focused editor. Logical dimensions account for
          the whole-stage CSS zoom, preserving >=24 rendered-pixel targets. */
-      #app.is-compact #lobby .lobby-swatch,
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-swatch {
+      #lobby.is-compact .lobby-swatch {
         width: 44px;
         height: 44px;
         border-width: 2px;
       }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-row {
-        grid-template-columns: minmax(60px, 1fr) 68px 48px;
-      }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-swatches {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        justify-content: center;
-        gap: 4px;
-      }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-control {
-        grid-column: 2;
-        grid-row: 1;
-        width: 68px;
-      }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-garage:not(.editing) {
-        grid-column: 3;
-        grid-row: 1;
-      }
-      #app.is-compact #lobby .lobby-garage:not(.editing),
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-garage:not(.editing) {
-        display: block;
-        padding: 0;
-        border: 0;
-        background: none;
-      }
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__heading,
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__presets,
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__slots,
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__close {
-        display: none;
-      }
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__open {
-        display: flex;
-        width: 100%;
-        min-height: 48px;
-        align-items: center;
-        justify-content: center;
-        padding: 8px 12px;
-        color: var(--text-gold);
-        font-size: 13px;
-        font-weight: 700;
-      }
-      #app.is-compact #lobby .lobby-rows.crowded
-        .lobby-garage:not(.editing) .lobby-garage__open {
-        padding: 4px;
-        font-size: 9px;
-        line-height: 1.05;
-      }
-      #app.is-compact #lobby .lobby-garage.editing {
-        position: fixed;
-        inset: 28px;
-        z-index: 100;
-        display: grid;
-        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
-        grid-template-rows: auto auto minmax(0, 1fr) auto;
-        align-content: stretch;
-        gap: 8px;
-        padding: 16px;
-        overflow: hidden;
-        border: 2px solid rgba(255, 210, 63, 0.66);
-        border-radius: 0;
-        background:
-          radial-gradient(circle at 80% 20%, rgba(142, 47, 83, 0.24), transparent 38%),
-          linear-gradient(145deg, #160d2e, #0c0716 72%);
-        box-shadow: 0 24px 90px rgba(0, 0, 0, 0.78);
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__editor-header {
-        display: block;
-        grid-column: 1 / -1;
-        color: var(--gold);
-        font-size: 14px;
-        letter-spacing: 1.5px;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__build-summary {
-        grid-column: 1 / -1;
-        margin: 0;
-        color: var(--text-dim);
-        font: 11px/1.25 var(--font-sans);
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__preset-group,
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__component-group {
-        display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
-        gap: 5px;
-        min-width: 0;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__group-label {
-        color: rgba(255, 233, 168, 0.56);
-        font: 700 9px/1 var(--font-display);
-        letter-spacing: 1px;
-        text-transform: uppercase;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__open {
-        display: none;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__presets,
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slots {
-        display: grid;
-        gap: 10px;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__presets {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slots {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      #app.is-compact #lobby .lobby-garage.editing button {
-        min-height: 52px;
-        padding: 8px 12px;
-        font-size: 13px;
-      }
-      #app.is-compact #lobby .lobby-garage.editing button::after {
-        content: none;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot {
-        text-align: left;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot > * {
-        display: block;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot span {
-        font-size: 10px;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot strong {
-        font-size: 13px;
-      }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__close {
-        display: block;
-        grid-column: 1 / -1;
-        color: var(--ink);
-        font-weight: 800;
-        background: linear-gradient(180deg, #ffe478, #d99b21);
-      }
       @media (pointer: coarse) {
-        #app.is-compact #lobby .lobby-swatch,
-        #app.is-compact #lobby .lobby-rows.crowded .lobby-swatch {
+        #lobby.is-compact .lobby-swatch,
+        #lobby.is-compact .lobby-rows.crowded .lobby-swatch {
           width: max(50px, calc(24px / var(--battle-ui-scale, 1)));
           height: max(50px, calc(24px / var(--battle-ui-scale, 1)));
           flex-shrink: 0;
         }
-        #app.is-compact #lobby .lobby-rows.crowded .lobby-row {
+        #lobby.is-compact .lobby-rows.crowded .lobby-row {
           grid-template-columns: minmax(60px, 1fr) 68px 50px;
         }
-        #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__open {
+        #lobby.is-compact .lobby-garage:not(.editing) .lobby-garage__open {
           min-height: 50px;
         }
       }
@@ -612,15 +390,7 @@
       #lobby .lobby-error:empty { display: none; }
       /* Rejoin affordance (T-09) — a prominent banner at the top of the lobby,
          shown only when a stored session validates as still live. */
-      #lobby .lobby-rejoin-banner {
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        margin: 0 0 18px; padding: 10px 14px;
-        background: rgba(255, 210, 63, 0.1);
-        border: 1px solid rgba(255, 210, 63, 0.35);
-        border-radius: 6px;
-      }
       #lobby .lobby-rejoin-text { color: var(--text-gold, #ffe9b0); font-size: 13px; }
-      #lobby .lobby-rejoin-banner .lobby-btn { padding: 6px 14px; font-size: 13px; flex: 0 0 auto; }
       #lobby .lobby-start {
         width: 100%; padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
         background:
@@ -650,63 +420,6 @@
         border-radius: 5px; padding: 6px 8px; font-size: 14px; width: 110px; font-family: var(--font-mono);
       }
       #lobby .lobby-advanced .lobby-hint { color: var(--text-dim); font-size: 12px; margin-left: 8px; }
-
-      /* Tab bar */
-      #lobby .lobby-tabs {
-        display: flex; gap: 6px; margin-bottom: 14px;
-        padding: 4px;
-        border: 1px solid rgba(255, 210, 63, 0.16);
-        border-radius: 9px;
-        background: rgba(12, 7, 22, 0.58);
-      }
-      #lobby .lobby-tab {
-        flex: 1;
-        padding: 9px 18px; font-size: 14px; font-weight: 700;
-        cursor: pointer; background: none; border: 1px solid transparent;
-        border-radius: 6px;
-        color: var(--text-dim);
-        font-family: var(--font-sans);
-        transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
-      }
-      #lobby .lobby-tab.active {
-        color: var(--text-gold);
-        border-color: rgba(255, 210, 63, 0.36);
-        background: rgba(255, 210, 63, 0.10);
-      }
-      #lobby .lobby-tab:hover:not(.active) { color: var(--text); }
-      #lobby .lobby-mode-context {
-        margin: 0 0 12px;
-        padding: 0 2px 10px;
-        border-bottom: 1px solid rgba(255, 210, 63, 0.16);
-      }
-      #lobby .lobby-mode-context h2 {
-        margin: 0 0 3px;
-        color: var(--text-gold);
-        font-family: var(--font-display);
-        font-size: 19px;
-        letter-spacing: 0.04em;
-      }
-      #lobby .lobby-mode-context p {
-        margin: 0;
-        color: var(--text-dim);
-        font-size: 13px;
-        line-height: 1.35;
-      }
-      @media (pointer: coarse) {
-        #lobby .lobby-mode-context {
-          display: flex;
-          align-items: baseline;
-          gap: 7px;
-          margin-bottom: 5px;
-          padding-bottom: 4px;
-        }
-        #lobby .lobby-mode-context h2 { margin: 0; font-size: 16px; }
-        #lobby .lobby-mode-context p { font-size: 11px; }
-        #lobby .lobby-mode-context + .lobby-hotseat .lobby-sub { display: none; }
-      }
-      #app.is-compact #lobby .lobby-mode-panel[aria-labelledby="lobby-mode-online"] .lobby-sub {
-        margin-bottom: 5px;
-      }
 
       /* Online sub-views */
       #lobby .lobby-btn {
@@ -806,34 +519,6 @@
       }
       /* Pre-canvas controls legend (P3-13b): non-blocking footer so keyboard
          players learn aim/power/fire before the play field is uncovered. */
-      #lobby .lobby-controls {
-        position: absolute;
-        right: 72px;
-        bottom: 72px;
-        left: auto;
-        z-index: 4;
-        width: min(478px, calc(42% - 30px));
-        max-width: none;
-        box-sizing: border-box;
-        display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-        gap: 5px 12px;
-        margin: 0; padding: 9px 12px;
-        border: 1px solid rgba(255, 210, 63, 0.16);
-        border-radius: 8px;
-        background: rgba(12, 7, 22, 0.78);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
-        color: var(--text-dim); font-size: 12px;
-      }
-      #lobby .lobby-controls .lobby-controls__title {
-        color: var(--text-gold); font-size: 11px;
-        text-transform: uppercase; letter-spacing: 0.5px;
-      }
-      #lobby .lobby-controls kbd {
-        font-family: var(--font-mono); font-size: 11px;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 210, 63, 0.25);
-        border-radius: 3px; padding: 1px 5px;
-      }
       #lobby .account-panel {
         position: absolute; top: 16px; right: 18px; z-index: 8;
         width: auto; max-width: none; margin: 0;
@@ -904,11 +589,11 @@
       #lobby .account-panel__progress dd {
         margin: 0; color: var(--text); font-family: var(--font-mono); font-size: 13px;
       }
-      #app.is-compact #lobby .account-panel__progress dt,
-      #app.is-compact #lobby .account-panel__summary-unavailable {
+      #lobby.is-compact .account-panel__progress dt,
+      #lobby.is-compact .account-panel__summary-unavailable {
         font-size: 14px; line-height: 1.25;
       }
-      #app.is-compact #lobby .account-panel__progress dd {
+      #lobby.is-compact .account-panel__progress dd {
         font-size: 16px; line-height: 1.2;
       }
       #lobby .account-panel__xp {
@@ -935,11 +620,11 @@
       #lobby .account-panel__xp-meter {
         display: block; width: 100%; height: 10px; accent-color: var(--gold);
       }
-      #app.is-compact #lobby .account-panel__xp-label,
-      #app.is-compact #lobby .account-panel__xp-remaining {
+      #lobby.is-compact .account-panel__xp-label,
+      #lobby.is-compact .account-panel__xp-remaining {
         font-size: 14px;
       }
-      #app.is-compact #lobby .account-panel__xp-value {
+      #lobby.is-compact .account-panel__xp-value {
         font-size: 16px;
       }
       #lobby .account-panel__form { display: grid; gap: 9px; }
@@ -1055,19 +740,19 @@
         #lobby .lobby-overlay .lobby-advanced-fields select,
         #lobby .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
       }
-      #app.is-compact #lobby .lobby-overlay__surface {
+      #lobby.is-compact .lobby-overlay__surface {
         width: calc(100% - 40px);
         max-height: calc(100% - 32px);
       }
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-field {
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields .lobby-field {
         grid-template-columns: minmax(0, 1fr);
         align-items: stretch;
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-field > label,
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields input[type="number"],
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields select,
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields .lobby-field > label,
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields input[type="number"],
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields select,
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
 
       /* Command preparation system: pre-game surfaces inherit the same
          austere field-console language as the battlefield HUD. */
@@ -1084,26 +769,9 @@
       #lobby .lobby-preview,
       #lobby .lobby-garage,
       #lobby .lobby-rows.crowded .lobby-row,
-      #lobby .lobby-rejoin-banner,
-      #lobby .lobby-tabs,
-      #lobby .lobby-controls,
       #lobby .account-panel--open,
-      #app.is-compact #lobby .lobby-garage.editing {
+      #lobby.is-compact .lobby-garage.editing {
         border-radius: 0;
-      }
-      #lobby .lobby-command-header {
-        display: flex;
-        align-items: center;
-        min-height: 10px;
-        margin: 0 0 4px;
-        padding: 0 0 2px;
-        border-bottom: 1px solid rgba(229, 161, 65, 0.58);
-      }
-      #lobby .lobby-command-header__kicker {
-        margin: 0;
-        color: rgba(255, 224, 159, 0.78);
-        font: 700 10px/1 var(--font-mono);
-        letter-spacing: 2.2px;
       }
       #lobby h1 {
         color: #ffd477;
@@ -1111,21 +779,16 @@
         text-shadow: 0 2px 0 rgba(0, 0, 0, 0.9), 0 0 18px rgba(214, 111, 29, 0.24);
       }
       #lobby .lobby-sub,
-      #lobby .lobby-mode-context p,
       #lobby .online-status,
-      #lobby .lobby-controls,
       #lobby .account-panel__xp-label,
       #lobby .account-panel__xp-remaining {
         color: rgba(225, 214, 191, 0.68);
       }
-      #lobby .lobby-mode-context,
       #lobby .lobby-advanced {
         border-color: rgba(229, 161, 65, 0.30);
       }
-      #lobby .lobby-mode-context h2,
       #lobby .lobby-preview__spotlight-identity,
-      #lobby .lobby-garage__heading,
-      #lobby .lobby-controls .lobby-controls__title {
+      #lobby .lobby-garage__heading {
         color: #ffd477;
       }
       #lobby select,
@@ -1139,37 +802,17 @@
       }
       #lobby .lobby-control,
       #lobby .lobby-garage button,
-      #lobby .lobby-tab,
       #lobby .online-code-char,
       #lobby .online-badge,
-      #lobby .lobby-controls kbd,
       #lobby .account-panel button {
         border-radius: 0;
       }
       #lobby .lobby-control,
       #lobby .lobby-garage button,
-      #lobby .lobby-tab,
-      #lobby .lobby-controls kbd,
       #lobby .account-panel button,
       #lobby .account-panel input {
         border-color: rgba(229, 161, 65, 0.34);
         background: rgba(7, 10, 12, 0.78);
-      }
-      #lobby .lobby-tabs {
-        gap: 0;
-        padding: 0;
-        background: rgba(4, 7, 9, 0.72);
-        border-color: rgba(229, 161, 65, 0.38);
-      }
-      #lobby .lobby-tab {
-        color: rgba(225, 214, 191, 0.64);
-        border-color: transparent;
-      }
-      #lobby .lobby-tab + .lobby-tab { border-left-color: rgba(229, 161, 65, 0.24); }
-      #lobby .lobby-tab.active {
-        color: #ffe0a0;
-        border-color: rgba(229, 161, 65, 0.58);
-        background: linear-gradient(180deg, rgba(169, 97, 27, 0.28), rgba(24, 18, 11, 0.86));
       }
       #lobby .lobby-start,
       #lobby .lobby-online-primary,
@@ -1222,10 +865,6 @@
         background: rgba(7, 10, 12, 0.36);
       }
       #lobby .online-player-list { gap: 4px; }
-      #lobby .lobby-controls {
-        background: rgba(4, 7, 9, 0.90);
-        border-color: rgba(229, 161, 65, 0.36);
-      }
       #lobby .account-panel--open {
         background: linear-gradient(155deg, rgba(19, 15, 10, 0.99), rgba(4, 7, 9, 0.99));
         border-color: rgba(229, 161, 65, 0.54);
@@ -1331,31 +970,31 @@
         height: 5px;
         accent-color: #d79a38;
       }
-      #app.is-compact #lobby .account-panel__record {
+      #lobby.is-compact .account-panel__record {
         gap: 1px;
         padding: 2px 3px;
       }
-      #app.is-compact #lobby .account-panel { top: 0; }
-      #app.is-compact #lobby .account-panel__record h2 {
-        font-size: calc(var(--st-store-buy-target) * 0.19);
+      #lobby.is-compact .account-panel { top: 0; }
+      #lobby.is-compact .account-panel__record h2 {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.19);
         letter-spacing: 1px;
       }
-      #app.is-compact #lobby .account-panel__record .account-panel__account-trigger {
-        min-height: calc(var(--st-store-buy-target) * 0.55);
-        font-size: calc(var(--st-store-buy-target) * 0.19);
+      #lobby.is-compact .account-panel__record .account-panel__account-trigger {
+        min-height: calc(var(--st-store-buy-target, 44px) * 0.55);
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.19);
       }
-      #app.is-compact #lobby .account-panel__record-milestone {
-        font-size: calc(var(--st-store-buy-target) * 0.16);
+      #lobby.is-compact .account-panel__record-milestone {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.16);
       }
-      #app.is-compact #lobby .account-panel__commander-rank,
-      #app.is-compact #lobby .account-panel__record .account-panel__career-next {
-        font-size: calc(var(--st-store-buy-target) * 0.2);
+      #lobby.is-compact .account-panel__commander-rank,
+      #lobby.is-compact .account-panel__record .account-panel__career-next {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.2);
       }
-      #app.is-compact #lobby .account-panel__commander-insignia {
-        font-size: calc(var(--st-store-buy-target) * 0.24);
+      #lobby.is-compact .account-panel__commander-insignia {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.24);
       }
-      #app.is-compact #lobby .account-panel__record-xp {
-        height: calc(var(--st-store-buy-target) * 0.1);
+      #lobby.is-compact .account-panel__record-xp {
+        height: calc(var(--st-store-buy-target, 44px) * 0.1);
       }
       #lobby .account-panel__xp-meter { accent-color: #d79a38; }
       #lobby .account-panel__career {
@@ -1382,18 +1021,11 @@
         letter-spacing: 0.35px;
       }
       #lobby .account-panel__career-insignia { font-size: 20px; }
-      #app.is-compact #lobby .account-panel__career > .account-panel__career-next {
+      #lobby.is-compact .account-panel__career > .account-panel__career-next {
         font-size: 16px;
       }
-      #app.is-compact #lobby .account-panel__career-current { font-size: 16px; }
-      #app.is-compact #lobby .account-panel__career-insignia { font-size: 24px; }
-      #app.is-compact #lobby .lobby-command-header {
-        min-height: 8px;
-        margin-bottom: 0;
-        padding-bottom: 0;
-      }
-      #app.is-compact #lobby .lobby-command-header__kicker { font-size: 8px; letter-spacing: 1.6px; }
-
+      #lobby.is-compact .account-panel__career-current { font-size: 16px; }
+      #lobby.is-compact .account-panel__career-insignia { font-size: 24px; }
       /* The online follow-through is an operations board, not a detached
          stack of setup controls. Discovery and staging share one field-report
          hierarchy while their transport actions remain local to each view. */
@@ -1402,10 +1034,8 @@
         background: linear-gradient(90deg, rgba(32, 22, 12, 0.56), rgba(7, 10, 12, 0.22) 72%, transparent);
         padding: 0 0 0 9px;
       }
-      #lobby .lobby-operations-board--waiting {
+      #lobby .multiplayer-command__online-workspace .lobby-operations-board--waiting {
         box-sizing: border-box;
-        position: absolute;
-        inset: 0;
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
@@ -1479,14 +1109,14 @@
         padding-top: 5px;
         border-top: 1px solid rgba(229, 161, 65, 0.18);
       }
-      #app.is-compact #lobby .lobby-operations-board { padding-left: 5px; }
-      #app.is-compact #lobby .lobby-operations-board__header { gap: 5px; }
-      #app.is-compact #lobby .lobby-operations-board__title { font-size: 10px; }
-      #app.is-compact #lobby .lobby-operations-board__purpose { display: none; }
-      #app.is-compact #lobby .lobby-operations-board__crew,
-      #app.is-compact #lobby .lobby-operations-board__section,
-      #app.is-compact #lobby .lobby-operations-board__mission,
-      #app.is-compact #lobby .lobby-operations-board__roster {
+      #lobby.is-compact .lobby-operations-board { padding-left: 5px; }
+      #lobby.is-compact .lobby-operations-board__header { gap: 5px; }
+      #lobby.is-compact .lobby-operations-board__title { font-size: 10px; }
+      #lobby.is-compact .lobby-operations-board__purpose { display: none; }
+      #lobby.is-compact .lobby-operations-board__crew,
+      #lobby.is-compact .lobby-operations-board__section,
+      #lobby.is-compact .lobby-operations-board__mission,
+      #lobby.is-compact .lobby-operations-board__roster {
         margin-top: 4px;
         padding-top: 3px;
       }
@@ -1659,7 +1289,7 @@
         margin: 0;
         padding-left: 17px;
         color: rgba(216, 239, 255, 0.7);
-        font: 10px/1.25 var(--font-mono);
+        font: 11px/1.25 var(--font-mono);
       }
       #lobby .lobby-verified-deployment__dossier {
         grid-column: 1;
@@ -1746,10 +1376,6 @@
       #lobby .lobby-hotseat:has(.lobby-hotseat-customization[open]) .lobby-route-brief__header {
         display: none;
       }
-      #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mission-brief {
-        display: none;
-      }
       #lobby .lobby-route-brief__setup {
         margin-top: 4px;
       }
@@ -1821,19 +1447,6 @@
         #lobby .lobby-route-brief--online .lobby-preparation-section[data-preparation-section="command-vehicle"] .lobby-name {
           flex: 1 1 140px; min-width: 0; width: auto;
         }
-        #lobby .lobby-route-brief--online .lobby-garage {
-          grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; padding: 3px;
-        }
-        #lobby .lobby-route-brief--online .lobby-garage__heading { display: none; }
-        #lobby .lobby-route-brief--online .lobby-garage__presets,
-        #lobby .lobby-route-brief--online .lobby-garage__slots { display: contents; }
-        #lobby .lobby-route-brief--online .lobby-garage button {
-          min-height: 24px; padding: 2px; font-size: 0; text-align: center;
-        }
-        #lobby .lobby-route-brief--online .lobby-garage button::after {
-          content: attr(data-short); font-size: 9px; font-weight: 700;
-        }
-        #lobby .lobby-route-brief--online .lobby-garage__slot > * { display: none; }
         #lobby .lobby-route-brief--online .lobby-preparation-section[data-preparation-section="operation-profile"] .lobby-preparation-section__body {
           grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; row-gap: 4px;
         }
@@ -1845,93 +1458,93 @@
         }
         #lobby .lobby-route-brief--online .online-status:empty { display: none; }
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-field:has(> .lobby-swatches) {
+      #lobby.is-compact .lobby-route-brief--online .lobby-field:has(> .lobby-swatches) {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-field > .lobby-swatches {
+      #lobby.is-compact .lobby-route-brief--online .lobby-field > .lobby-swatches {
         grid-column: 1 / -1;
         min-width: 0;
         flex-wrap: wrap;
       }
-      #app.is-compact #lobby .lobby-route-brief {
+      #lobby.is-compact .lobby-route-brief {
         padding-left: 5px;
       }
-      #app.is-compact #lobby .lobby-route-brief__header {
+      #lobby.is-compact .lobby-route-brief__header {
         gap: 5px;
       }
-      #app.is-compact #lobby .lobby-route-brief__title { font-size: 10px; }
-      #app.is-compact #lobby .lobby-route-brief__purpose { display: none; }
-      #app.is-compact #lobby .lobby-hotseat-ready {
+      #lobby.is-compact .lobby-route-brief__title { font-size: 10px; }
+      #lobby.is-compact .lobby-route-brief__purpose { display: none; }
+      #lobby.is-compact .lobby-hotseat-ready {
         grid-template-columns: auto minmax(0, 1fr);
         padding: 5px 7px;
       }
-      #app.is-compact #lobby .lobby-hotseat-ready p { display: none; }
-      #app.is-compact #lobby .lobby-verified-deployment {
+      #lobby.is-compact .lobby-hotseat-ready p { display: none; }
+      #lobby.is-compact .lobby-verified-deployment {
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 3px 6px;
         margin-top: 3px;
         padding: 5px 6px;
       }
-      #app.is-compact #lobby .lobby-verified-deployment__matchup { font-size: 9px; }
-      #app.is-compact #lobby .lobby-verified-deployment__rules {
+      #lobby.is-compact .lobby-verified-deployment__matchup { font-size: 9px; }
+      #lobby.is-compact .lobby-verified-deployment__rules {
         gap: 1px 8px;
         font-size: 8px;
       }
-      #app.is-compact #lobby .lobby-verified-deployment__dossier { padding: 4px 5px; }
-      #app.is-compact #lobby .lobby-verified-deployment__dossier p { font-size: 8px; }
-      #app.is-compact #lobby .lobby-verified-deployment__actions {
+      #lobby.is-compact .lobby-verified-deployment__dossier { padding: 4px 5px; }
+      #lobby.is-compact .lobby-verified-deployment__dossier p { font-size: 8px; }
+      #lobby.is-compact .lobby-verified-deployment__actions {
         min-width: 168px;
       }
-      #app.is-compact #lobby .lobby-verified-deployment__actions > .lobby-btn {
+      #lobby.is-compact .lobby-verified-deployment__actions > .lobby-btn {
         min-height: var(--st-deployment-choice-target, 44px);
       }
-      #app.is-compact #lobby .lobby-commander-operations {
+      #lobby.is-compact .lobby-commander-operations {
         grid-template-columns: minmax(0, 1fr);
         gap: 4px;
         margin-top: 4px;
         padding: 5px;
       }
-      #app.is-compact #lobby .lobby-commander-operations .lobby-verified-deployment {
+      #lobby.is-compact .lobby-commander-operations .lobby-verified-deployment {
         grid-template-columns: minmax(0, 1fr);
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-commander-operations .lobby-verified-deployment__actions {
+      #lobby.is-compact .lobby-commander-operations .lobby-verified-deployment__actions {
         grid-column: 1;
         grid-row: auto;
         min-width: 0;
         align-content: stretch;
       }
-      #app.is-compact #lobby .lobby-commander-operations__career {
+      #lobby.is-compact .lobby-commander-operations__career {
         gap: 6px;
         padding: 4px 5px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__career p {
+      #lobby.is-compact .lobby-commander-operations__career p {
         font-size: 9px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__practice {
+      #lobby.is-compact .lobby-commander-operations__practice {
         gap: 3px;
         padding: 5px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__practice > p {
+      #lobby.is-compact .lobby-commander-operations__practice > p {
         display: none;
       }
-      #app.is-compact #lobby .lobby-commander-operations__cards {
+      #lobby.is-compact .lobby-commander-operations__cards {
         display: none;
       }
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch {
+      #lobby.is-compact .lobby-commander-operations__compact-launch {
         min-height: var(--st-deployment-choice-target, 44px);
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch select,
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+      #lobby.is-compact .lobby-commander-operations__compact-launch select,
+      #lobby.is-compact .lobby-commander-operations__compact-launch button {
         min-width: 0;
         min-height: var(--st-deployment-choice-target, 44px);
         font-size: 9px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+      #lobby.is-compact .lobby-commander-operations__compact-launch button {
         min-width: var(--st-deployment-choice-target, 44px);
       }
       #lobby .lobby-commander-operations__career h3,
@@ -1946,522 +1559,124 @@
       #lobby .lobby-commander-operations .lobby-verified-deployment__dossier h4,
       #lobby .lobby-commander-operations .lobby-verified-deployment__dossier p,
       #lobby .lobby-commander-operations .lobby-verified-deployment__message,
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch select,
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+      #lobby.is-compact .lobby-commander-operations__compact-launch select,
+      #lobby.is-compact .lobby-commander-operations__compact-launch button {
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-hotseat-customization > summary { min-height: 34px; }
-      #app.is-compact #lobby .lobby-route-brief__setup {
+      #lobby.is-compact .lobby-hotseat-customization > summary { min-height: 34px; }
+      #lobby.is-compact .lobby-route-brief__setup {
         margin-top: 0;
       }
-      #app.is-compact #lobby .lobby-route-brief__setup > .lobby-field > label { width: 78px; }
-      #app.is-compact #lobby .lobby-preparation-section {
+      #lobby.is-compact .lobby-route-brief__setup > .lobby-field > label { width: 78px; }
+      #lobby.is-compact .lobby-preparation-section {
         margin-top: 2px;
         padding: 2px 5px 3px;
       }
-      #app.is-compact #lobby .lobby-preparation-section__title { font-size: 9px; }
-      #app.is-compact #lobby .lobby-preparation-section__purpose {
+      #lobby.is-compact .lobby-preparation-section__title { font-size: 9px; }
+      #lobby.is-compact .lobby-preparation-section__purpose {
         display: none;
       }
-      #app.is-compact #lobby .lobby-preparation-section__body {
+      #lobby.is-compact .lobby-preparation-section__body {
         gap: 2px;
         margin-top: 2px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+      #lobby.is-compact .lobby-route-brief--online .lobby-route-brief__setup {
         display: block;
       }
 
-      /* One route hierarchy, shared by every pre-game screen. The route
-         content beneath it keeps its established gameplay and network logic. */
-      #lobby .lobby-deployment {
-        position: relative;
-        z-index: 3;
-        width: 100%;
-        min-height: calc(100% - 32px);
-        display: grid;
-        grid-template-columns: minmax(0, 1.12fr) minmax(420px, 0.88fr);
-        grid-template-areas:
-          'masthead masthead'
-          'rail preview'
-          'brief preview'
-          'panel preview'
-          'controls preview';
-        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
-        column-gap: 32px;
-        row-gap: 9px;
-        align-content: center;
-      }
-      #lobby .lobby-card > .lobby-deployment {
-        width: calc(100% - 104px);
-        max-width: none;
-        margin-left: 52px;
-        margin-right: 52px;
-      }
-      #lobby .lobby-deployment__masthead {
-        grid-area: masthead;
-        position: relative;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
-      }
-      #lobby .lobby-deployment__masthead > h1,
-      #lobby .lobby-deployment__masthead > .lobby-command-header {
-        grid-column: 1;
-      }
-      #lobby .lobby-deployment__masthead > .account-panel {
-        grid-column: 2;
-        grid-row: 1 / span 2;
-        position: relative;
-        top: auto;
-        right: auto;
-        z-index: 4;
-        margin: 0;
-      }
-      #lobby .lobby-deployment__masthead > .account-panel--open {
-        grid-column: 1 / -1;
-        grid-row: 3;
-        justify-self: end;
-        margin-top: 8px;
-      }
-      #lobby .lobby-deployment__masthead > .lobby-rejoin-banner {
-        grid-column: 1 / -1;
-        margin: 8px 0 0;
-      }
-      #lobby .lobby-deployment__masthead > .lobby-rejoin-banner .lobby-btn {
-        min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
-        font-size: max(18px, calc(var(--st-deployment-choice-target, 44px) * 0.34));
-      }
-      #lobby .lobby-deployment-chooser {
-        grid-column: 1 / -1;
-        grid-row: 2 / -1;
-        align-self: center;
-        justify-self: center;
-        width: min(780px, 72%);
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        padding: 24px;
-        border-block: 1px solid rgba(255, 210, 63, 0.32);
-        background: linear-gradient(90deg, transparent, rgba(32, 22, 12, 0.72), transparent);
-      }
-      #lobby .lobby-deployment:has(.lobby-seed-challenge) {
-        height: calc(100% - 32px);
-        min-height: 0;
-      }
-      #lobby .lobby-deployment-chooser:has(.lobby-seed-challenge) {
-        align-self: stretch;
-        min-height: 0;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-      }
-      #lobby .lobby-deployment-chooser .lobby-btn {
-        min-height: var(--st-deployment-choice-target, 44px);
-        letter-spacing: 0.9px;
-        text-transform: uppercase;
-      }
-      #lobby .lobby-first-salvo,
-      #lobby .lobby-seed-challenge,
-      #lobby [data-ui="other-quick-duels"] {
-        grid-column: 1 / -1;
-        min-width: 0;
-      }
-      #lobby .lobby-seed-challenge {
-        display: grid;
-        gap: 6px;
-        padding: 12px 14px;
-        border: 1px solid rgba(255, 210, 63, 0.46);
-        border-radius: 8px;
-        background: rgba(255, 210, 63, 0.08);
-      }
-      #lobby .lobby-seed-challenge > span {
-        color: var(--text-gold);
-        font: 700 10px/1 var(--font-display);
-        letter-spacing: 1.8px;
-      }
-      #lobby .lobby-seed-challenge > h2,
-      #lobby .lobby-seed-challenge > p { margin: 0; }
-      #lobby .lobby-quick-operation {
-        grid-column: 1 / -1;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 7px;
-        padding: 12px;
-        border: 1px solid rgba(255, 210, 63, 0.28);
-        background: linear-gradient(135deg, rgba(44, 29, 19, 0.78), rgba(12, 16, 18, 0.92));
-      }
-      #lobby .lobby-quick-operation__kicker {
-        color: #e9ba55;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-      }
-      #lobby .lobby-quick-operation h2 {
-        margin: 0;
-        color: #fff0c6;
-        font-size: 18px;
-        line-height: 1.15;
-      }
-      #lobby .lobby-quick-operation__cards {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-      #lobby .lobby-quick-operation__card {
-        min-width: 0;
-        min-height: var(--st-deployment-choice-target, 44px);
-        padding: 10px 12px;
-        border: 1px solid rgba(170, 132, 72, 0.68);
-        background: rgba(13, 17, 18, 0.9);
-        color: #d8c6a2;
-        text-align: left;
-        transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
-      }
-      #lobby .lobby-quick-operation__card:hover,
-      #lobby .lobby-quick-operation__card:focus-visible {
-        border-color: rgba(255, 211, 92, 0.96);
-        outline: none;
-        background: rgba(63, 43, 24, 0.94);
-      }
-      #lobby .lobby-quick-operation__card[aria-pressed='true'] {
-        border-color: #ffd15d;
-        background: linear-gradient(135deg, rgba(110, 53, 27, 0.95), rgba(42, 27, 17, 0.96));
-        box-shadow: inset 3px 0 0 #f4b53c, 0 0 0 1px rgba(255, 217, 119, 0.2);
-        color: #fff0c6;
-      }
-      #lobby .lobby-quick-operation__card-title,
-      #lobby .lobby-quick-operation__card-briefing {
-        display: block;
-      }
-      #lobby .lobby-quick-operation__card-title {
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.35px;
-      }
-      #lobby .lobby-quick-operation__card-briefing,
-      #lobby .lobby-quick-operation__briefing {
-        color: #c6b795;
-        font-size: 12px;
-        line-height: 1.3;
-      }
-      #lobby .lobby-quick-operation__briefing {
-        min-height: 1.3em;
-        margin: 0;
-        color: #ffe0a0;
-      }
-      #lobby .lobby-deployment-chooser .lobby-btn.primary {
-        grid-column: 1 / -1;
-        min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
-        font-size: max(18px, calc(var(--st-deployment-choice-target, 44px) * 0.34));
-        letter-spacing: 1.4px;
-      }
-      #lobby .lobby-deployment-chooser .lobby-deployment-choice--secondary {
-        border: 1px solid rgba(170, 132, 72, 0.72);
-        background: #111416 linear-gradient(180deg, rgba(28, 30, 31, 0.96), rgba(8, 10, 12, 0.98));
-        color: #d8c6a2;
-        box-shadow: inset 0 1px 0 rgba(255, 236, 196, 0.08);
-      }
-      #lobby .lobby-deployment-chooser .lobby-deployment-choice--secondary:hover:not(:disabled) {
-        border-color: rgba(229, 161, 65, 0.9);
-        background: #171716 linear-gradient(180deg, rgba(42, 39, 33, 0.98), rgba(12, 12, 12, 0.98));
-        color: #ffe0a0;
-      }
-      #lobby .lobby-deployment__back {
-        grid-area: rail;
-        justify-self: start;
-        min-height: 34px;
-        padding: 5px 14px;
-        letter-spacing: 0.7px;
-        text-transform: uppercase;
-      }
-      #lobby .lobby-deployment__mission-brief {
-        grid-area: brief;
-        margin: 0;
-        padding: 12px 0 14px;
-        border-top: 1px solid rgba(255, 210, 63, 0.34);
-        border-bottom: 1px solid rgba(255, 210, 63, 0.16);
-      }
-      #lobby .lobby-deployment > .lobby-mode-panel {
-        grid-area: panel;
-        min-width: 0;
-        min-height: 0;
-        align-self: stretch;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-      }
-      #lobby .lobby-deployment:has(.lobby-operations-board--waiting) {
-        height: calc(100% - 32px);
-        min-height: 0;
-      }
-      #lobby .lobby-deployment:has(.lobby-operations-board--waiting) > .lobby-mode-panel {
-        grid-area: panel;
-        min-width: 0;
-        min-height: 0;
-        position: relative;
-        overflow: hidden;
-        align-self: stretch;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-operations-board--waiting) > .lobby-mode-panel {
-        position: static;
-        overflow-y: auto;
-      }
-      #app.is-compact #lobby .lobby-operations-board--waiting {
-        position: static;
-        inset: auto;
-      }
-      #lobby .lobby-deployment > .lobby-preview {
-        position: relative;
-        inset: auto;
-        grid-area: preview;
-        width: auto;
-        min-width: 0;
-        min-height: 362px;
-        height: 100%;
-        margin: 0;
-      }
-      #lobby .lobby-deployment > .lobby-controls {
-        position: absolute;
-        right: 20px;
-        bottom: 18px;
-        z-index: 4;
-        margin: 0;
-      }
-      #app.is-compact #lobby .lobby-deployment {
-        display: grid;
-        grid-template-columns: max-content minmax(0, 1fr);
-        grid-template-areas:
-          'rail masthead'
-          'brief brief'
-          'panel panel';
-        grid-template-rows: auto auto minmax(0, 1fr);
-        column-gap: 8px;
-        row-gap: 5px;
-      }
-      #app.is-compact #lobby .lobby-deployment__back,
-      #app.is-compact #lobby .lobby-deployment__mission-brief,
-      #app.is-compact #lobby .lobby-deployment > .lobby-mode-panel {
-        width: min(600px, 52%);
-      }
-      #app.is-compact #lobby .lobby-deployment-chooser {
-        /* Reserve the masthead's right-hand commander dossier. The chooser
-           owns the left deployment lane instead of flowing underneath it. */
-        width: min(600px, 52%);
-        justify-self: start;
-        margin-inline: 0 auto;
-        gap: 8px;
-        padding: 12px;
-      }
-      #app.is-compact #lobby .lobby-quick-operation {
-        gap: 5px;
-        padding: 9px;
-      }
-      #app.is-compact #lobby .lobby-quick-operation h2 { font-size: 16px; }
-      #app.is-compact #lobby .lobby-quick-operation__card { padding: 7px 9px; }
-      #app.is-compact #lobby .lobby-quick-operation__card-briefing { display: none; }
-      #app.is-compact #lobby .lobby-deployment__back {
-        width: max-content;
-        align-self: center;
-        min-height: var(--st-deployment-choice-target, 44px);
-      }
-      #app.is-compact #lobby .lobby-card:has(.lobby-deployment__back) {
-        padding-block: 12px;
-      }
-      #app.is-compact #lobby .lobby-deployment > .lobby-preview {
-        display: block;
-        position: absolute;
-        inset: 70px 0 30px auto;
-        grid-area: auto;
-        width: min(520px, 42%);
-        min-height: 0;
-        height: auto;
-      }
-      #app.is-compact #lobby .lobby-deployment > .lobby-controls { bottom: 56px; }
-      #app.is-compact #lobby .lobby-deployment__masthead { min-height: 0; }
-      #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel__record) {
-        min-height: 205px;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.account-panel__record)
-        > .lobby-preview {
-        inset-block-start: 165px;
-      }
-      #app.is-compact #lobby .lobby-deployment__masthead > .account-panel,
-      #app.is-compact #lobby .lobby-deployment__masthead > .account-panel--open {
-        position: absolute;
-        top: 0;
-        right: 0;
-        left: auto;
-        grid-column: auto;
-        grid-row: auto;
-        justify-self: auto;
-        margin: 0;
-      }
-      #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel--open)
-        ~ .lobby-preview,
-      #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel--open)
-        ~ .lobby-controls {
-        visibility: hidden;
-      }
-      #app.is-compact #lobby:has(.lobby-garage.editing) .lobby-preview {
-        visibility: hidden;
-      }
-      #app.is-compact #lobby .lobby-deployment__mission-brief {
-        display: block;
-        padding: 5px 0;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mission-brief {
-        display: none;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open]) {
-        row-gap: 0;
-      }
       /* The fixed game stage is intentionally zoomed as one unit. Logical
          compact sizes preserve physical legibility without overgrowing the
          Vehicle Bay; the shorter coarse-pointer viewport gets a stronger tier. */
-      #app.is-compact #lobby .lobby-mode-context h2,
-      #app.is-compact #lobby .lobby-deployment .lobby-tab,
-      #app.is-compact #lobby .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
-      #app.is-compact #lobby .lobby-hotseat-ready h3,
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-preparation-section__title,
-      #app.is-compact #lobby .account-panel > button,
-      #app.is-compact #lobby .account-panel__record .account-panel__account-trigger,
-      #app.is-compact #lobby .lobby-preview__spotlight-identity {
+      #lobby.is-compact .lobby-hotseat-ready h3,
+      #lobby.is-compact .lobby-route-brief--online .lobby-preparation-section__title,
+      #lobby.is-compact .account-panel > button,
+      #lobby.is-compact .account-panel__record .account-panel__account-trigger,
+      #lobby.is-compact .lobby-preview__spotlight-identity {
         font-size: 21px;
       }
-      #app.is-compact #lobby .lobby-command-header__kicker,
-      #app.is-compact #lobby .lobby-preview__label,
-      #app.is-compact #lobby .lobby-preview__part span,
-      #app.is-compact #lobby .lobby-preview__part strong {
+      #lobby.is-compact .lobby-preview__label,
+      #lobby.is-compact .lobby-preview__part span,
+      #lobby.is-compact .lobby-preview__part strong {
         font-size: 18px;
       }
-      #app.is-compact #lobby .lobby-preview__part strong {
+      #lobby.is-compact .lobby-preview__part strong {
         font-family: var(--font-sans);
         letter-spacing: -1.8px;
       }
-      #app.is-compact #lobby .lobby-preview__part span {
+      #lobby.is-compact .lobby-preview__part span {
         letter-spacing: -0.8px;
       }
-      #app.is-compact #lobby .lobby-preview__parts {
+      #lobby.is-compact .lobby-preview__parts {
         width: calc(100% - 8px);
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-preview__part {
+      #lobby.is-compact .lobby-preview__part {
         padding-inline: 3px;
       }
-      #app.is-compact #lobby .lobby-preview__convoy {
+      #lobby.is-compact .lobby-preview__convoy {
         bottom: 80px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+      #lobby.is-compact .lobby-route-brief--online .lobby-route-brief__setup {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         column-gap: 4px;
         align-items: start;
       }
-      #app.is-compact #lobby .lobby-route-brief--online
+      #lobby.is-compact .lobby-route-brief--online
         .lobby-preparation-section[data-preparation-section="command-vehicle"] {
         grid-column: 1 / -1;
       }
-      #app.is-compact #lobby .lobby-route-brief--online
+      #lobby.is-compact .lobby-route-brief--online
         .lobby-preparation-section[data-preparation-section="operation-profile"] {
         grid-column: 1;
       }
-      #app.is-compact #lobby .lobby-route-brief--online
+      #lobby.is-compact .lobby-route-brief--online
+        .lobby-preparation-section[data-preparation-section="operation-profile"]
+        .lobby-preparation-section__body {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      #lobby.is-compact .lobby-route-brief--online
         .lobby-preparation-section[data-preparation-section="battlefield-protocol"] {
         grid-column: 2;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-actions {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-actions {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);
         align-items: center;
         gap: 8px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-alternatives {
         flex-wrap: nowrap;
         gap: 6px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-label {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-alternatives-label {
         display: none;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-buttons {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-alternatives-buttons {
         flex-wrap: nowrap;
         gap: 8px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-btn.secondary {
+      #lobby.is-compact .lobby-route-brief--online .lobby-btn.secondary {
         padding-block: 4px;
       }
       @media (pointer: coarse) {
-        #app.is-compact #lobby .lobby-mode-context h2,
-        #app.is-compact #lobby .lobby-deployment .lobby-tab,
-        #app.is-compact #lobby .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
-        #app.is-compact #lobby .lobby-hotseat-ready h3,
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-preparation-section__title,
-        #app.is-compact #lobby .account-panel > button,
-        #app.is-compact #lobby .account-panel__record .account-panel__account-trigger,
-        #app.is-compact #lobby .lobby-preview__spotlight-identity {
+        #lobby.is-compact .lobby-hotseat-ready h3,
+        #lobby.is-compact .lobby-route-brief--online .lobby-preparation-section__title,
+        #lobby.is-compact .account-panel > button,
+        #lobby.is-compact .account-panel__record .account-panel__account-trigger,
+        #lobby.is-compact .lobby-preview__spotlight-identity {
           font-size: 25px;
         }
-        #app.is-compact #lobby .lobby-command-header__kicker,
-        #app.is-compact #lobby .lobby-preview__label,
-        #app.is-compact #lobby .lobby-preview__part span,
-        #app.is-compact #lobby .lobby-preview__part strong {
+        #lobby.is-compact .lobby-preview__label,
+        #lobby.is-compact .lobby-preview__part span,
+        #lobby.is-compact .lobby-preview__part strong {
           font-size: 21px;
         }
       }
 
-      /* Hot Seat follows the approved preparation mockup: stable chrome,
-         one selected mode, a scroll-owned body, and a sticky launch boundary. */
-      #lobby .lobby-deployment:has(.lobby-hotseat) {
-        height: calc(100% - 32px);
-        min-height: 0;
-        grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.7fr);
-        column-gap: 18px;
-        row-gap: 5px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-command-header {
-        display: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-deployment__masthead > h1 {
-        font-size: 32px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record {
-        width: auto;
-        min-width: 210px;
-        padding: 5px 8px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record > h2,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__commander-rank-row,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record-milestone,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record .account-panel__career-next,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record-xp {
-        display: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record .account-panel__account-trigger {
-        min-height: var(--st-deployment-choice-target, 44px);
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-deployment__back {
-        min-height: 28px;
-        padding: 2px 0;
-        border: 0;
-        background: transparent;
-        color: #ffd46e;
-        text-decoration: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-deployment__back::before {
-        content: '\2190';
-        margin-right: 8px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__mission-brief {
-        padding: 3px 0 6px;
-        border-top: 0;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview {
-        min-height: 0;
-        height: auto;
-        margin-bottom: 58px;
-      }
-      #lobby .lobby-deployment > .lobby-mode-panel:has(> .lobby-hotseat) {
-        overflow: hidden;
-      }
-      #lobby .lobby-hotseat {
+      /* Verified retains the legacy preparation body. CommandCenter.css owns
+         the recomposed Local workspace and its single scroll boundary. */
+      #lobby .multiplayer-command__verified-workspace > .lobby-hotseat:not(.preparation-frame) {
         height: 100%;
         min-height: 0;
         display: grid;
@@ -2470,225 +1685,19 @@
         border: 0;
         background: transparent;
       }
-      #lobby .lobby-hotseat-tabs {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-      #lobby .lobby-hotseat-tab {
-        min-width: 0;
-        min-height: var(--st-deployment-choice-target, 44px);
-        padding: 6px 10px;
-        border: 1px solid rgba(229, 161, 65, 0.58);
-        background: rgba(9, 11, 13, 0.82);
-        color: #ead8b0;
-        font: 700 var(--st-command-readability-size, 12px)/1.15 var(--font-sans);
-      }
-      #lobby .lobby-hotseat-tab[aria-selected='true'] {
-        background: linear-gradient(180deg, #ffe478, #e8a928);
-        color: #11131a;
-      }
-      #lobby .lobby-hotseat-tab:disabled {
-        color: rgba(225, 214, 191, 0.42);
-      }
-      #lobby .lobby-hotseat-body {
+      #lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
         min-height: 0;
         display: grid;
         grid-template-rows: minmax(0, 1fr) auto;
         overflow: hidden;
       }
-      #lobby .lobby-hotseat-scroll {
+      #lobby .multiplayer-command__verified-workspace .lobby-hotseat-scroll {
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
         touch-action: pan-y;
         padding: 7px 7px 0 0;
         scrollbar-gutter: stable;
-      }
-      #lobby .lobby-hotseat-body .lobby-preparation-section {
-        margin-top: 6px;
-        padding: 8px 10px;
-        border: 1px solid rgba(229, 161, 65, 0.48);
-        background: rgba(9, 11, 13, 0.66);
-      }
-      #lobby .lobby-hotseat-body .lobby-preparation-section__title {
-        font-size: var(--st-command-readability-size, 12px);
-      }
-      #lobby .lobby-hotseat-body
-        .lobby-preparation-section[data-preparation-section='crew-manifest'] {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-        column-gap: 10px;
-        padding-top: 7px;
-      }
-      #lobby .lobby-hotseat-body
-        .lobby-preparation-section[data-preparation-section='crew-manifest']
-        > .lobby-preparation-section__title {
-        grid-column: 1;
-        grid-row: 1;
-      }
-      #lobby .lobby-hotseat-body
-        .lobby-preparation-section[data-preparation-section='crew-manifest']
-        > .lobby-preparation-section__body {
-        display: contents;
-      }
-      #lobby .lobby-hotseat-body
-        .lobby-preparation-section[data-preparation-section='crew-manifest']
-        > .lobby-preparation-section__body
-        > .lobby-field:first-child {
-        grid-column: 2;
-        grid-row: 1;
-        gap: 6px;
-        margin: 0;
-      }
-      #lobby .lobby-hotseat-body
-        .lobby-preparation-section[data-preparation-section='crew-manifest']
-        > .lobby-preparation-section__body
-        > .lobby-rows {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        margin-top: 4px;
-      }
-      #lobby .lobby-hotseat-body
-        .lobby-preparation-section[data-preparation-section='crew-manifest']
-        > .lobby-preparation-section__body
-        > .lobby-field:first-child
-        > label {
-        width: auto;
-      }
-      #lobby .lobby-hotseat-body
-        .lobby-preparation-section[data-preparation-section='crew-manifest']
-        > .lobby-preparation-section__body
-        > .lobby-field:first-child
-        > select {
-        min-height: 30px;
-        padding-block: 3px;
-      }
-      #lobby .lobby-hotseat-body .lobby-field > label,
-      #lobby .lobby-hotseat-body .lobby-hint,
-      #lobby .lobby-hotseat-body .lobby-error {
-        color: #ead8b0;
-        font-size: var(--st-command-readability-size, 11px);
-      }
-      #lobby .lobby-hotseat-body .lobby-rows {
-        gap: 8px;
-      }
-      #lobby .lobby-hotseat-body .lobby-swatches {
-        gap: 3px;
-        flex-wrap: nowrap;
-      }
-      #lobby .lobby-hotseat-body .lobby-swatch {
-        width: 18px;
-        height: 18px;
-        flex: 0 0 18px;
-        border-width: 1px;
-      }
-      #lobby .lobby-hotseat-body .lobby-row {
-        display: grid;
-        grid-template-columns: auto minmax(150px, 1fr) minmax(120px, auto) minmax(132px, auto);
-        gap: 7px;
-        padding-block: 5px;
-        border-top: 1px solid rgba(229, 161, 65, 0.18);
-      }
-      #lobby .lobby-hotseat-body .lobby-row .lobby-swatches { grid-column: 1; grid-row: 1; }
-      #lobby .lobby-hotseat-body .lobby-row .lobby-name { grid-column: 2; grid-row: 1; }
-      #lobby .lobby-hotseat-body .lobby-row .lobby-control { grid-column: 3; grid-row: 1; }
-      #lobby .lobby-hotseat-body .lobby-row .lobby-garage:not(.editing) {
-        grid-column: 4;
-        grid-row: 1;
-        display: block;
-        padding: 0;
-        border: 0;
-        background: none;
-      }
-      #lobby .lobby-hotseat-body .lobby-row .lobby-garage:not(.editing) .lobby-garage__heading,
-      #lobby .lobby-hotseat-body .lobby-row .lobby-garage:not(.editing) .lobby-garage__presets,
-      #lobby .lobby-hotseat-body .lobby-row .lobby-garage:not(.editing) .lobby-garage__slots,
-      #lobby .lobby-hotseat-body .lobby-row .lobby-garage:not(.editing) .lobby-garage__close {
-        display: none;
-      }
-      #lobby .lobby-hotseat-body .lobby-row .lobby-garage:not(.editing) .lobby-garage__open {
-        display: flex;
-        width: 100%;
-        min-height: var(--st-deployment-choice-target, 44px);
-        align-items: center;
-        justify-content: center;
-        padding: 7px 10px;
-        color: #ffe0a0;
-        font-size: var(--st-command-readability-size, 11px);
-      }
-      #lobby .lobby-hotseat-body .lobby-garage.editing {
-        position: fixed;
-        inset: 28px;
-        z-index: 100;
-        display: grid;
-        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
-        grid-template-rows: auto auto minmax(0, 1fr) auto;
-        gap: 8px;
-        padding: 16px;
-        overflow: hidden;
-        border: 2px solid rgba(255, 210, 63, 0.66);
-        background: linear-gradient(145deg, #160d2e, #0c0716 72%);
-        box-shadow: 0 24px 90px rgba(0, 0, 0, 0.78);
-      }
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__editor-header,
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__build-summary,
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__close {
-        display: block;
-        grid-column: 1 / -1;
-      }
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__preset-group,
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__component-group,
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__presets,
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__slots {
-        display: grid;
-        min-width: 0;
-        gap: 8px;
-      }
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__presets,
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__slots {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      #lobby .lobby-hotseat-body .lobby-garage.editing button {
-        min-height: var(--st-deployment-choice-target, 44px);
-        font-size: var(--st-command-readability-size, 11px);
-      }
-      #lobby .lobby-hotseat-body .lobby-garage.editing .lobby-garage__close {
-        color: var(--ink);
-        background: linear-gradient(180deg, #ffe478, #d99b21);
-      }
-      #lobby .lobby-hotseat-body .lobby-hotseat-battlefield {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
-      }
-      #lobby .lobby-hotseat-body .lobby-hotseat-battlefield > .lobby-field {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 4px;
-      }
-      #lobby .lobby-hotseat-body .lobby-hotseat-battlefield > .lobby-field > label {
-        width: auto;
-      }
-      #lobby .lobby-hotseat-body .lobby-hotseat-battlefield .lobby-hint {
-        display: none;
-      }
-      #lobby .lobby-hotseat-body .lobby-hotseat-battlefield input[type='number'],
-      #lobby .lobby-hotseat-body .lobby-hotseat-battlefield select {
-        width: 100%;
-        min-width: 0;
-        min-height: var(--st-deployment-choice-target, 44px);
-        box-sizing: border-box;
-        padding: 7px 9px;
-        border: 1px solid rgba(229, 161, 65, 0.42);
-        border-radius: 5px;
-        background: rgba(8, 11, 15, 0.92);
-        color: #f0e5cb;
-        font-size: var(--st-command-readability-size, 12px);
-      }
-      #lobby .lobby-hotseat-body .lobby-hotseat-battlefield > .lobby-advanced-trigger {
-        grid-column: 1 / -1;
-        justify-self: start;
       }
       #lobby .lobby-hotseat-footer {
         position: relative;
@@ -2717,20 +1726,6 @@
         background: linear-gradient(180deg, #ffe478, #e8a928);
         color: #11131a;
         font-size: var(--st-command-readability-size, 12px);
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-controls {
-        display: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview .lobby-preview__parts {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        row-gap: 4px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview .lobby-preview__part span,
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview .lobby-preview__part strong {
-        overflow: visible;
-        color: #ead8b0;
-        font-size: var(--st-command-readability-size, 11px);
-        text-overflow: clip;
       }
       #lobby .lobby-hotseat-body .lobby-verified-deployment {
         grid-template-columns: minmax(0, 1fr);
@@ -2848,262 +1843,147 @@
         width: auto;
         min-width: 0;
       }
-      #lobby .lobby-seed-challenge > span,
-      #lobby .lobby-seed-challenge > h2,
-      #lobby .lobby-seed-challenge > p,
-      #lobby .lobby-deployment-chooser .lobby-seed-challenge > .lobby-btn {
+      #lobby.is-compact .lobby-commander-operations__career h3,
+      #lobby.is-compact .lobby-commander-operations__career p,
+      #lobby.is-compact .lobby-commander-operations__practice h3,
+      #lobby.is-compact .lobby-commander-operations__practice p,
+      #lobby.is-compact .lobby-commander-operations__card strong,
+      #lobby.is-compact .lobby-commander-operations__card span,
+      #lobby.is-compact .lobby-verified-deployment h3,
+      #lobby.is-compact .lobby-verified-deployment__matchup,
+      #lobby.is-compact .lobby-verified-deployment__rules,
+      #lobby.is-compact .lobby-verified-deployment__dossier h4,
+      #lobby.is-compact .lobby-verified-deployment__dossier p,
+      #lobby.is-compact .lobby-verified-deployment__message {
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-commander-operations__career h3,
-      #app.is-compact #lobby .lobby-commander-operations__career p,
-      #app.is-compact #lobby .lobby-commander-operations__practice h3,
-      #app.is-compact #lobby .lobby-commander-operations__practice p,
-      #app.is-compact #lobby .lobby-commander-operations__card strong,
-      #app.is-compact #lobby .lobby-commander-operations__card span,
-      #app.is-compact #lobby .lobby-verified-deployment h3,
-      #app.is-compact #lobby .lobby-verified-deployment__matchup,
-      #app.is-compact #lobby .lobby-verified-deployment__rules,
-      #app.is-compact #lobby .lobby-verified-deployment__dossier h4,
-      #app.is-compact #lobby .lobby-verified-deployment__dossier p,
-      #app.is-compact #lobby .lobby-verified-deployment__message,
-      #app.is-compact #lobby .lobby-seed-challenge > span,
-      #app.is-compact #lobby .lobby-seed-challenge > h2,
-      #app.is-compact #lobby .lobby-seed-challenge > p,
-      #app.is-compact #lobby .lobby-deployment-chooser .lobby-seed-challenge > .lobby-btn {
-        font-size: var(--st-command-readability-size, 11px);
-      }
-      #app.is-compact #lobby .lobby-practice-selection {
+      #lobby.is-compact .lobby-practice-selection {
         display: grid;
       }
-      #app.is-compact #lobby .lobby-verified-selector__choice {
+      #lobby.is-compact .lobby-verified-selector__choice {
         min-height: var(--st-deployment-choice-target, 44px);
         padding-inline: 6px;
         font-size: var(--st-command-readability-size, 10px);
       }
-      #app.is-compact #lobby .lobby-practice-selection > strong,
-      #app.is-compact #lobby .lobby-practice-selection > span {
+      #lobby.is-compact .lobby-practice-selection > strong,
+      #lobby.is-compact .lobby-practice-selection > span {
         color: #ead8b0;
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row {
-        grid-template-columns: minmax(140px, 1fr) minmax(110px, auto);
-      }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-name {
-        grid-column: 1;
-        grid-row: 1;
-        min-width: 140px;
-      }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-control {
-        grid-column: 2;
-        grid-row: 1;
-        min-width: 110px;
-      }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-swatches {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        min-width: 0;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overscroll-behavior-inline: contain;
-      }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-swatch,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-rows.crowded .lobby-swatch {
-        width: var(--st-deployment-choice-target, 44px);
-        height: var(--st-deployment-choice-target, 44px);
-        flex-basis: var(--st-deployment-choice-target, 44px);
-        box-sizing: border-box;
-        padding: calc(var(--st-deployment-choice-target, 44px) * 0.22);
-        background-clip: content-box !important;
-      }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-garage {
-        grid-column: 1 / -1;
-        grid-row: 3;
-      }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-hotseat-battlefield {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat) {
-        grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.7fr);
-        grid-template-areas:
-          'masthead masthead'
-          'rail rail'
-          'panel preview';
-        grid-template-rows: auto auto minmax(0, 1fr);
-        column-gap: 12px;
-        row-gap: 2px;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__masthead,
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__masthead:has(.account-panel__record) {
-        min-height: 0;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief,
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-mode-panel {
-        width: 100%;
-      }
-      #app.is-compact #lobby .lobby-card:has(.lobby-deployment:has(.lobby-hotseat)) {
-        padding-block: 7px;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief {
-        grid-area: rail;
-        width: auto;
-        box-sizing: border-box;
-        align-self: center;
-        padding: 0 0 2px max(300px, 28%);
-        border-top: 0;
-        pointer-events: none;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__back {
-        position: relative;
-        z-index: 2;
-        min-height: var(--st-deployment-choice-target, 44px);
-        font-size: var(--st-command-readability-size, 11px);
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief
-        > h2 {
-        font-size: max(
-          var(--st-command-readability-size, 12px),
-          calc(12px / var(--battle-ui-scale, 1))
-        );
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief
-        > p {
-        display: none;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        .lobby-hotseat-scroll {
+      #lobby.is-compact .multiplayer-command__verified-workspace .lobby-hotseat-scroll {
         padding-top: 3px;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        .lobby-hotseat-footer {
-        margin-top: 2px;
+      #lobby.is-compact .multiplayer-command__verified-workspace .lobby-hotseat-footer {
+        height: var(--st-deployment-choice-target, 44px);
+        margin-top: 0;
         padding-block: 0;
+        border-block: 0;
       }
-      #app.is-compact #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-btn.primary,
-      #app.is-compact #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-btn {
-        min-width: min(220px, 46%);
-        min-height: var(--st-deployment-choice-target, 44px);
-        padding-block: 4px;
+      #lobby.is-compact .lobby-hotseat-footer
+        > .lobby-verified-deployment__confirm {
+        position: fixed;
+        z-index: 110;
+        top: 50%;
+        left: 50%;
+        width: min(380px, calc(100vw - 32px));
+        min-width: 0;
+        transform: translate(-50%, -50%);
+        box-sizing: border-box;
+        gap: 10px;
+        padding: 16px;
+        border: 2px solid rgba(255, 210, 63, 0.72);
+        background:
+          linear-gradient(180deg, rgba(31, 24, 18, 0.99), rgba(8, 10, 12, 0.99)),
+          var(--st-command-iron, #111418);
+        box-shadow:
+          0 0 0 100vmax rgba(2, 4, 7, 0.76),
+          0 18px 54px rgba(0, 0, 0, 0.72),
+          inset 0 0 0 1px rgba(255, 232, 173, 0.12);
+      }
+      #lobby.is-compact .lobby-hotseat-footer
+        > .lobby-verified-deployment__confirm p {
         font-size: var(--st-command-readability-size, 12px);
+        line-height: 1.35;
       }
-      #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-verified-deployment__launch,
-      #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-verified-deployment__launch:hover:not(:disabled),
-      #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-verified-deployment__launch:focus-visible:not(:disabled) {
-        border-color: #ffe478;
-        background: linear-gradient(180deg, #ffe478, #e8a928);
-        color: #11131a;
+      #lobby.is-compact .lobby-hotseat-footer
+        > .lobby-verified-deployment__confirm > .lobby-btn {
+        min-width: 0;
+        min-height: var(--st-deployment-choice-target, 44px);
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section__title,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > label,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-name,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-control,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body .lobby-name,
+      #lobby.is-compact .lobby-hotseat-body .lobby-control,
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         > .lobby-field
         > label,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         input[type='number'],
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         select {
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-name,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-control,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body .lobby-name,
+      #lobby.is-compact .lobby-hotseat-body .lobby-control,
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         input[type='number'],
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         select,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-advanced-trigger {
-        min-height: max(36px, calc(24px / var(--battle-ui-scale, 1)));
+      #lobby.is-compact .lobby-hotseat-body .lobby-advanced-trigger {
+        min-height: max(44px, calc(24px / var(--battle-ui-scale, 1)));
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select {
         min-width: max(36px, calc(24px / var(--battle-ui-scale, 1)));
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select {
         min-height: var(--st-deployment-choice-target, 44px);
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview,
-      #app.is-compact #lobby .lobby-deployment:has(.account-panel__record):has(.lobby-hotseat)
-        > .lobby-preview {
-        position: relative;
-        inset: auto;
-        grid-area: preview;
-        width: 100%;
-        min-height: 0;
-        height: 100%;
-        margin: 0;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview
-        .lobby-preview__convoy {
-        bottom: 8px;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-controls {
-        display: none;
-      }
       @media (pointer: coarse) {
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-preparation-section[data-preparation-section='crew-manifest']
           > .lobby-preparation-section__body
           > .lobby-field:first-child
           > select,
-        #app.is-compact #lobby .lobby-hotseat-body .lobby-name,
-        #app.is-compact #lobby .lobby-hotseat-body .lobby-control,
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body .lobby-name,
+        #lobby.is-compact .lobby-hotseat-body .lobby-control,
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-hotseat-battlefield
           input[type='number'],
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-hotseat-battlefield
           select,
-        #app.is-compact #lobby .lobby-hotseat-body .lobby-advanced-trigger {
+        #lobby.is-compact .lobby-hotseat-body .lobby-advanced-trigger {
           min-height: var(--st-deployment-choice-target, 44px);
         }
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-preparation-section[data-preparation-section='crew-manifest']
           > .lobby-preparation-section__body
           > .lobby-field:first-child

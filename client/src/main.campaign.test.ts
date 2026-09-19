@@ -38,6 +38,7 @@ const seams = vi.hoisted(() => ({
   campaignCues: [] as string[],
   campaignMessages: [] as string[],
   recoveryMessages: [] as string[],
+  campaignLaunchRefreshes: 0,
   campaignSaves: [] as CampaignReplayPayload[],
   campaignStorageRaw: null as unknown | null,
   campaignStorageTransactions: Promise.resolve() as Promise<void>,
@@ -333,6 +334,10 @@ vi.mock('./ui/Lobby', () => ({
     recordVerifiedChallengeFire() { seams.rewardWrites += 1; return false }
     recordVerifiedDeploymentFire() { seams.rewardWrites += 1; return false }
     refreshAccount() { return Promise.resolve() }
+    refreshCampaignSaveAfterLaunchFailure() {
+      seams.campaignLaunchRefreshes += 1
+      return Promise.resolve()
+    }
     refreshVerifiedDeploymentDeadline() { return { status: 'idle' } }
     revalidateAccountIdentity() { return Promise.resolve(true) }
     retryVerifiedChallengeCompletion() { seams.verifiedCompletions += 1; return Promise.resolve(null) }
@@ -340,6 +345,7 @@ vi.mock('./ui/Lobby', () => ({
     returnVerifiedDeploymentToBattery() { return false }
     show() {}
     showAccountSignIn() {}
+    showLaunchFailure(message: string) { seams.recoveryMessages.push(message) }
     showNetworkRecovery(message: string) { seams.recoveryMessages.push(message) }
   },
 }))
@@ -519,6 +525,7 @@ describe('main campaign acquisition boundary', () => {
     seams.campaignCues.length = 0
     seams.campaignMessages.length = 0
     seams.recoveryMessages.length = 0
+    seams.campaignLaunchRefreshes = 0
     seams.campaignSaves.length = 0
     seams.campaignStorageRaw = null
     seams.campaignStorageTransactions = Promise.resolve()
@@ -561,17 +568,14 @@ describe('main campaign acquisition boundary', () => {
     seams.onQuit()
     await vi.waitFor(() => expect(retry.stop).toHaveBeenCalledOnce())
 
-    let invalidError: unknown = null
-    try {
-      await seams.onLobbyReady({ ...campaignConfig, campaign: undefined })
-    } catch (error) {
-      invalidError = error
-    }
+    await expect(seams.onLobbyReady({ ...campaignConfig, campaign: undefined }))
+      .resolves.toBeUndefined()
+    expect(seams.campaignLaunchRefreshes).toBe(1)
 
     expect({
       validSetup: seams.setups[0],
       acquiredClients: seams.setups.length,
-      invalidFailedClosed: invalidError instanceof Error && /campaign/i.test(invalidError.message),
+      invalidFailedClosed: seams.recoveryMessages.some((message) => /campaign/i.test(message)),
       progressionReporters: seams.progressionReporters,
       rewardWrites: seams.rewardWrites,
       verifiedCompletions: seams.verifiedCompletions,

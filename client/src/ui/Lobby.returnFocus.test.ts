@@ -49,10 +49,39 @@ interface LobbyInternals {
 }
 
 function button(root: HTMLElement, label: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === label)
+  if (!match && label === 'Local Battle' && root.querySelector(
+    '[data-multiplayer-command-view="local-battle"]',
+  )) {
+    match = root.querySelector<HTMLButtonElement>('[data-command-item="local-battle"]') ?? undefined
+  }
+  const category = label === 'Local Battle' || label === 'Play Online'
+    ? 'multiplayer'
+    : label.includes('Ash Road') ? 'campaigns' : null
+  if (!match && category) {
+    root.querySelector<HTMLButtonElement>(
+      `[data-command-surface="rail"][data-command-category="${category}"]`,
+    )?.click()
+    if (category === 'multiplayer') {
+      const item = root.querySelector<HTMLButtonElement>(
+        `[data-command-item="${label === 'Play Online' ? 'online' : 'local-battle'}"]`,
+      )
+      item?.click()
+      if (item) return item
+    }
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === label)
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${label}`)
   return match
+}
+
+interface LobbyLaunchFocusContract {
+  captureLaunchFocus(): unknown;
+  restoreLaunchFocus(snapshot: unknown): void;
+  showLaunchFailure(message: string): void;
+  showNetworkRecovery(message: string, retry: () => void): void;
 }
 
 function createLobby(root: HTMLElement): { lobby: Lobby; account: FakeAccountSession } {
@@ -89,6 +118,7 @@ describe('Lobby return focus', () => {
 
   beforeEach(() => {
     localStorage.clear()
+    sessionStorage.clear()
     history.replaceState(null, '', '/')
     root = document.createElement('div')
     root.id = 'lobby'
@@ -142,25 +172,23 @@ describe('Lobby return focus', () => {
     expect(document.activeElement).toBe(outside)
   })
 
-  it('returns to the selected practice and online surfaces without forcing Local Battle', () => {
+  it('returns to the selected Local and Online workspaces without changing their owners', () => {
     const { lobby } = createLobby(root)
     const background = document.createElement('button')
     document.body.append(background)
     lobby.show()
     button(root, 'Local Battle').click()
-    button(root, 'Practice vs CPU').click()
     lobby.hide()
     background.focus()
 
     lobby.show({ focusLobby: true })
-    expect(document.activeElement).toBe(button(root, 'Practice vs CPU'))
+    expect(document.activeElement).toBe(button(root, 'Local Battle'))
 
-    button(root, 'Back to deployment choices').click()
     button(root, 'Play Online').click()
     lobby.hide()
     background.focus()
     lobby.show({ focusLobby: true })
-    expect(document.activeElement).toBe(button(root, 'Create operation'))
+    expect(document.activeElement).toBe(root.querySelector('[data-command-item="online"]'))
   })
 
   it('preserves selection in the genuinely focused lobby control without reclaiming outside focus', () => {
@@ -226,6 +254,95 @@ describe('Lobby return focus', () => {
     await flush()
 
     expect(root.textContent).toContain('Rejoin your game')
-    expect(document.activeElement).toBe(button(root, 'Local Battle'))
+    expect(document.activeElement).toBe(
+      root.querySelector('[data-command-item="local-battle"]'),
+    )
+  })
+
+  it('restores the exact command-center control after a failed launch without changing selection', () => {
+    const { lobby } = createLobby(root)
+    lobby.show()
+    const launchOwner = lobby as unknown as Partial<LobbyLaunchFocusContract>
+    expect(launchOwner.captureLaunchFocus).toBeTypeOf('function')
+    expect(launchOwner.restoreLaunchFocus).toBeTypeOf('function')
+    expect(launchOwner.showLaunchFailure).toBeTypeOf('function')
+
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="campaigns"]',
+    )?.click()
+    const primary = root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!
+    primary.focus()
+    const snapshot = launchOwner.captureLaunchFocus!()
+    const outside = document.createElement('button')
+    document.body.append(outside)
+    outside.focus()
+
+    launchOwner.showLaunchFailure!('Campaign progress changed in another session.')
+    launchOwner.restoreLaunchFocus!(snapshot)
+
+    expect(document.activeElement).toBe(primary)
+    expect(root.querySelector('[role="alert"]')?.textContent)
+      .toBe('Campaign progress changed in another session.')
+    expect(root.querySelector('[data-command-item="ash-road"]')?.getAttribute('aria-current'))
+      .toBe('true')
+  })
+
+  it('keeps network recovery in its initiating workspace and restores the initiating control', () => {
+    const { lobby } = createLobby(root)
+    lobby.show()
+    button(root, 'Play Online').click()
+    const createRoom = button(root, 'Create operation')
+    createRoom.focus()
+    const launchOwner = lobby as unknown as LobbyLaunchFocusContract
+    const snapshot = launchOwner.captureLaunchFocus()
+
+    launchOwner.showNetworkRecovery('Room acquisition failed.', vi.fn())
+    launchOwner.restoreLaunchFocus(snapshot)
+
+    expect(document.activeElement).toBe(button(root, 'Retry game recovery'))
+    expect(button(root, 'Retry game recovery').isConnected).toBe(true)
+  })
+
+  it('renders failed rejoin recovery inside the selected Online command workspace', () => {
+    const { lobby } = createLobby(root)
+    lobby.show()
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )?.click()
+    root.querySelector<HTMLButtonElement>(
+      '.command-center__library-items button[data-command-item="online"]',
+    )?.click()
+    const launchOwner = lobby as unknown as LobbyLaunchFocusContract
+
+    launchOwner.showNetworkRecovery('Game recovery timed out.', vi.fn())
+    launchOwner.restoreLaunchFocus(null)
+
+    expect(root.querySelector('[data-command-item="online"]')?.getAttribute('aria-current'))
+      .toBe('true')
+    expect(root.querySelector('[role="alert"]')?.textContent)
+      .toContain('Game recovery timed out.')
+    const retry = button(root, 'Retry game recovery')
+    expect(retry.isConnected).toBe(true)
+    expect(document.activeElement).toBe(retry)
+  })
+
+  it('reconstructs the remembered owner when a battle-originated restart fails', () => {
+    const { lobby } = createLobby(root)
+    lobby.show()
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="skirmishes"]',
+    )?.click()
+    lobby.hide()
+    expect(root.childElementCount).toBe(0)
+
+    const launchOwner = lobby as unknown as LobbyLaunchFocusContract
+    launchOwner.showLaunchFailure('Rematch setup failed.')
+    launchOwner.restoreLaunchFocus(null)
+
+    expect(root.hidden).toBe(false)
+    expect(root.querySelector('[data-command-item="first-salvo"]')?.getAttribute('aria-current'))
+      .toBe('true')
+    expect(root.querySelector('[data-launch-failure]')?.textContent).toBe('Rematch setup failed.')
+    expect(root.contains(document.activeElement)).toBe(true)
   })
 })

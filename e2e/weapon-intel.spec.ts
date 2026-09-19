@@ -1,15 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { gotoRunningGame } from './support';
+import { gotoLobby, gotoRunningGame, selectCommandWorkspace } from './support';
 
 // The replacement Armory keeps descriptions with their inventory cards; the
 // retired hover dossier is no longer a second presentation of the same weapon.
 test.describe('weapon intel battlefield composition', () => {
   test('Lean Arsenal equips its stocked above-tier Heavy Missile without unlocking restocks', async ({ page }) => {
-    await page.goto('?e2e=quick-duel-seed');
-    await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await page.locator('[data-ui="other-quick-duels"] > summary').click();
-    await page.locator('[data-operation-id="lean-arsenal"]').click();
-    await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+    await gotoLobby(page);
+    await selectCommandWorkspace(page, 'Skirmishes', 'lean-arsenal');
+    await page.getByRole('button', { name: 'Start Lean Arsenal', exact: true }).click();
     const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true });
     if (await briefing.isVisible()) {
       await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();

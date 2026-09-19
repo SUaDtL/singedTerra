@@ -3,6 +3,7 @@ import {
   closeMissionLedger,
   gotoFuelStopFromPublicEntry,
   gotoLobby,
+  openAshRoadWorkspace,
   openMissionLedger,
 } from './support';
 
@@ -92,6 +93,7 @@ test('keyboard-only sound-off reduced-motion play survives campaign asset failur
     await page.setViewportSize({ width: 1280, height: 720 });
   }
   await gotoLobby(page);
+  await openAshRoadWorkspace(page);
   const start = page.getByRole('button', { name: 'Start Ash Road', exact: true });
   await start.focus();
   await page.keyboard.press('Enter');
@@ -185,6 +187,8 @@ test('a committed in-flight campaign shot survives a full reload and resumes fro
 
   await page.reload();
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await expect(page.locator('#lobby')).toBeVisible();
+  await openAshRoadWorkspace(page);
   const resume = page.getByRole('button', { name: 'Resume Ash Road', exact: true });
   await expect(resume).toBeVisible({ timeout: 10_000 });
   await resume.focus();
@@ -210,6 +214,7 @@ test('pixel-touch performs campaign actions through genuine touchscreen taps', a
     window.localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
   });
   await gotoLobby(page);
+  await openAshRoadWorkspace(page);
   await expect.poll(() => page.evaluate(() => ({
     coarse: matchMedia('(pointer: coarse)').matches,
     touchPoints: navigator.maxTouchPoints,

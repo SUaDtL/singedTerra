@@ -208,6 +208,10 @@ body:has(#modal-layer > .st-hud__overlay:not(.st-hud__overlay--hidden):not([hidd
   overflow: hidden;
 }
 
+#app[hidden] {
+  display: none;
+}
+
 /*
  * ===== Global CRT chrome (Sprint 5 Slice 0) =====
  * Two non-interactive overlays covering the WHOLE stage (canvas + HUD + lobby),
@@ -717,15 +721,19 @@ body:has(#modal-layer > .st-hud__overlay:not(.st-hud__overlay--hidden):not([hidd
 }
 
 /*
- * The lobby is a full-APP overlay (covers canvas + panel), centered + fully
- * interactive. Sits above the CRT chrome so the pre-game screen stays crisp.
+ * The lobby is the unscaled pre-game application surface, centered and fully
+ * interactive. It sits above the battle stage and its CRT chrome.
  */
 #lobby {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 40;
+  min-width: 0;
+  min-height: 0;
   display: grid;
   place-items: center;
+  overflow: hidden;
+  isolation: isolate;
   pointer-events: auto;
 }
 

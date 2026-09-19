@@ -67,6 +67,33 @@ describe('HUD Command Menu', () => {
     expect(menu.querySelector<HTMLButtonElement>('button')?.textContent).toBe('Resume');
   });
 
+  it('assembles one command deck with a linked header and explicit action hierarchy', () => {
+    const { root, modal } = mount();
+
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+
+    const menu = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
+    const panel = menu.querySelector<HTMLElement>('.st-hud__command-menu-panel')!;
+    const header = panel.querySelector<HTMLElement>('.st-hud__command-menu-header')!;
+    const actions = panel.querySelector<HTMLElement>('.st-hud__overlay-btns')!;
+    const buttons = [...actions.querySelectorAll<HTMLButtonElement>('[data-command-menu-action]')];
+
+    expect([...header.children].map(({ textContent }) => textContent)).toEqual([
+      'Battle Command',
+      'Command Menu',
+      'Input Held',
+    ]);
+    expect(header.querySelector('h2')).toBe(panel.querySelector('h2'));
+    expect(buttons.map(({ textContent }) => textContent)).toEqual(['Resume', 'Battle Settings']);
+    expect(buttons[0]?.classList.contains('st-hud__command-menu-action--primary')).toBe(true);
+    expect(buttons[1]?.classList.contains('st-hud__command-menu-action--utility')).toBe(true);
+    expect(buttons[0]?.querySelector('[data-icon="resume"][aria-hidden="true"]')).not.toBeNull();
+    expect(buttons[1]?.querySelector('[data-icon="settings"][aria-hidden="true"]')).not.toBeNull();
+    expect(panel.querySelector(
+      '[data-ui="command-menu-exit"] [data-icon="exit"][aria-hidden="true"]',
+    )).not.toBeNull();
+  });
+
   it('retires transient rail notices when Command Menu owns the interaction', () => {
     const { root, modal, hud } = mount();
     hud.flashMessage('This battle is not accepting local input.');
@@ -410,6 +437,20 @@ describe('HUD Command Menu', () => {
 
     expect(modal.querySelector('[data-ui="command-menu"]')?.textContent)
       .not.toContain('Replay First Salvo');
+  });
+
+  it('adds First Salvo replay as a subordinate utility when that owner is available', () => {
+    const { root, modal, hud } = mount();
+    hud.onFirstSalvoReplay(vi.fn());
+
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+
+    const replay = modal.querySelector<HTMLButtonElement>(
+      '[data-command-menu-action="replay-first-salvo"]',
+    )!;
+    expect(replay.textContent).toBe('Replay First Salvo');
+    expect(replay.classList.contains('st-hud__command-menu-action--utility')).toBe(true);
+    expect(replay.querySelector('[data-icon="replay"][aria-hidden="true"]')).not.toBeNull();
   });
 
   it('isolates the lobby exit from Command Menu actions', () => {

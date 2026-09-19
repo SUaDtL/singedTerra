@@ -1,40 +1,22 @@
 import { expect, test } from '@playwright/test';
-import { gotoLobby } from './support';
+import { gotoLobby, openLocalPreparation, openOnlinePreparation } from './support';
 
-test('preparation back action is framed, spaced and reachable', async ({ page }, testInfo) => {
+test('Local is directly owned by its selected command item', async ({ page }) => {
   await gotoLobby(page);
-  for (const route of ['Local Battle', 'Play Online']) {
-    await page.getByRole('button', { name: route, exact: true }).click();
-    const back = page.getByRole('button', { name: 'Back to deployment choices', exact: true });
-    await expect(back).toBeVisible();
-    const geometry = await back.evaluate((button) => {
-      const rect = button.getBoundingClientRect();
-      const icon = button.querySelector('svg')!.getBoundingClientRect();
-      const textRange = document.createRange();
-      textRange.selectNode(button.lastChild!);
-      const text = textRange.getBoundingClientRect();
-      return {
-        height: rect.height,
-        left: rect.left,
-        right: rect.right,
-        viewport: innerWidth,
-        iconInset: icon.left - rect.left,
-        iconGap: text.left - icon.right,
-        textInset: rect.right - text.right,
-        border: parseFloat(getComputedStyle(button).borderTopWidth),
-        legacyArrow: getComputedStyle(button, '::before').content,
-      };
-    });
-    expect(geometry.height).toBeGreaterThanOrEqual(44);
-    expect(geometry.left).toBeGreaterThanOrEqual(0);
-    expect(geometry.right).toBeLessThanOrEqual(geometry.viewport);
-    expect(geometry.iconInset).toBeGreaterThanOrEqual(6);
-    expect(geometry.iconGap).toBeGreaterThanOrEqual(6);
-    expect(geometry.textInset).toBeGreaterThanOrEqual(6);
-    expect(geometry.border).toBeGreaterThanOrEqual(1);
-    expect(['none', 'normal']).toContain(geometry.legacyArrow);
-    await page.screenshot({ path: testInfo.outputPath(`back-${route.replaceAll(' ', '-')}.png`) });
-    await back.click();
-    await expect(page.getByRole('button', { name: route, exact: true })).toBeFocused();
-  }
+  await openLocalPreparation(page);
+  await expect(page.locator('button[data-command-item="local-battle"]'))
+    .toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('[data-multiplayer-command-view="local-battle"]')).toBeVisible();
+});
+
+test('Online and Local replace one another through their command items', async ({ page }, testInfo) => {
+  await gotoLobby(page);
+  await openOnlinePreparation(page);
+  const local = page.locator(
+    '.command-center__library-items button[data-command-item="local-battle"]',
+  );
+  await local.click();
+  await expect(local).toBeFocused();
+  await expect(page.locator('[data-multiplayer-command-view="local-battle"]')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('direct-Online-to-Local.png') });
 });

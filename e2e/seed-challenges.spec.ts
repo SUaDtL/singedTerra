@@ -34,58 +34,88 @@ for (const [code, title, seed] of [
     await expect(challengeSeed).toHaveText(`Seed · ${seed}`);
     await expect(page.locator('[data-console-owner="preact"]')).toBeHidden();
     const start = callout.getByRole('button', { name: 'Start challenge vs CPU' });
-    await expect(start).toBeInViewport();
-    const geometry = await start.boundingBox();
-    if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
-      expect(geometry!.height).toBeGreaterThanOrEqual(44);
-    }
     const receiverGeometry = await page.locator('.lobby-deployment').evaluate((deployment) => {
       const masthead = deployment.querySelector<HTMLElement>('.lobby-deployment__masthead');
-      const chooser = deployment.querySelector<HTMLElement>('.lobby-deployment-chooser');
+      const workspace = deployment.querySelector<HTMLElement>('.command-center__workspace-host');
+      const frame = deployment.querySelector<HTMLElement>('[data-ui="seed-challenge"]');
+      const preparationBody = frame?.querySelector<HTMLElement>('.preparation-frame__body');
+      const dock = frame?.querySelector<HTMLElement>('.preparation-frame__dock');
       const challenge = deployment.querySelector<HTMLElement>('[data-ui="seed-challenge"]');
-      if (!masthead || !chooser || !challenge) throw new Error('Missing challenge receiver structure');
+      if (!masthead || !workspace || !frame || !preparationBody || !dock || !challenge) {
+        throw new Error('Missing challenge receiver structure');
+      }
       const bounds = (element: HTMLElement) => element.getBoundingClientRect().toJSON();
       return {
         deployment: bounds(deployment),
         masthead: bounds(masthead),
-        chooser: bounds(chooser),
+        workspace: bounds(workspace),
+        preparationBody: bounds(preparationBody),
+        dock: bounds(dock),
         challenge: bounds(challenge),
-        overflowY: getComputedStyle(chooser).overflowY,
-        clientHeight: chooser.clientHeight,
-        scrollHeight: chooser.scrollHeight,
+        workspaceOverflowY: getComputedStyle(workspace).overflowY,
+        preparationOverflowY: getComputedStyle(preparationBody).overflowY,
+        preparationClientHeight: preparationBody.clientHeight,
+        preparationScrollHeight: preparationBody.scrollHeight,
       };
     });
-    expect(receiverGeometry.chooser.top, 'challenge lane begins below the command masthead')
+    expect(receiverGeometry.workspace.top, 'challenge workspace begins below the command masthead')
       .toBeGreaterThanOrEqual(receiverGeometry.masthead.bottom - 1);
-    expect(receiverGeometry.chooser.bottom, 'challenge lane stays inside deployment preparation')
+    expect(receiverGeometry.workspace.bottom, 'workspace stays inside deployment preparation')
       .toBeLessThanOrEqual(receiverGeometry.deployment.bottom + 1);
-    expect(receiverGeometry.challenge.top, 'challenge callout begins inside its scroll lane')
-      .toBeGreaterThanOrEqual(receiverGeometry.chooser.top - 1);
-    expect(receiverGeometry.overflowY).toBe('auto');
-    expect(receiverGeometry.scrollHeight).toBeGreaterThanOrEqual(receiverGeometry.clientHeight);
-    for (const content of [challengeTitle, challengeObjective, challengeSeed, start]) {
+    expect(receiverGeometry.challenge.top, 'challenge frame begins inside its workspace')
+      .toBeGreaterThanOrEqual(receiverGeometry.workspace.top - 1);
+    expect(receiverGeometry.challenge.left, 'challenge callout begins inside its workspace')
+      .toBeGreaterThanOrEqual(receiverGeometry.workspace.left - 1);
+    expect(receiverGeometry.challenge.right, 'challenge callout width stays inside its workspace')
+      .toBeLessThanOrEqual(receiverGeometry.workspace.right + 1);
+    expect(receiverGeometry.workspaceOverflowY).toBe('hidden');
+    expect(receiverGeometry.preparationOverflowY).toBe('auto');
+    expect(receiverGeometry.preparationScrollHeight)
+      .toBeGreaterThanOrEqual(receiverGeometry.preparationClientHeight);
+    for (const content of [challengeObjective, challengeSeed]) {
+      await content.scrollIntoViewIfNeeded();
       await expect(content).toBeInViewport();
+      const metrics = await content.evaluate((target) => {
+        const workspace = target.closest<HTMLElement>('.preparation-frame__body');
+        if (!workspace) throw new Error('Missing challenge preparation-body scroll owner');
+        const box = target.getBoundingClientRect();
+        const owner = workspace.getBoundingClientRect();
+        return {
+          box: box.toJSON(),
+          owner: owner.toJSON(),
+          font: Number.parseFloat(getComputedStyle(target).fontSize),
+          clientWidth: (target as HTMLElement).clientWidth,
+          scrollWidth: (target as HTMLElement).scrollWidth,
+        };
+      });
+      expect(metrics.box.top).toBeGreaterThanOrEqual(metrics.owner.top - 1);
+      expect(metrics.box.bottom).toBeLessThanOrEqual(metrics.owner.bottom + 1);
+      expect(metrics.box.left).toBeGreaterThanOrEqual(metrics.owner.left - 1);
+      expect(metrics.box.right).toBeLessThanOrEqual(metrics.owner.right + 1);
+      expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+      expect(metrics.font, `${await content.textContent()} remains readable`)
+        .toBeGreaterThanOrEqual(10.5);
+    }
+    await challengeTitle.scrollIntoViewIfNeeded();
+    await expect(challengeTitle).toBeInViewport();
+    await start.scrollIntoViewIfNeeded();
+    await expect(start).toBeInViewport({ ratio: 1 });
+    const dockContainment = await start.evaluate((target) => {
+      const dock = target.closest<HTMLElement>('.preparation-frame__dock');
+      if (!dock) throw new Error('Challenge launch lost its reserved action dock');
+      const targetBox = target.getBoundingClientRect();
+      const dockBox = dock.getBoundingClientRect();
+      return { target: targetBox.toJSON(), dock: dockBox.toJSON() };
+    });
+    expect(dockContainment.target.left).toBeGreaterThanOrEqual(dockContainment.dock.left - 1);
+    expect(dockContainment.target.right).toBeLessThanOrEqual(dockContainment.dock.right + 1);
+    expect(dockContainment.target.top).toBeGreaterThanOrEqual(dockContainment.dock.top - 1);
+    expect(dockContainment.target.bottom).toBeLessThanOrEqual(dockContainment.dock.bottom + 1);
+    const geometry = await start.boundingBox();
+    if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
+      expect(geometry!.height).toBeGreaterThanOrEqual(44);
     }
     await page.screenshot({ path: testInfo.outputPath('seed-challenge-receiver.png') });
-    const receiverContent = await callout.evaluate((element) => {
-      const stage = element.closest('.lobby-card')!.getBoundingClientRect();
-      const header = document.querySelector('.lobby-deployment__masthead')!.getBoundingClientRect();
-      const scale = stage.height / 600;
-      return { stage: stage.toJSON(), header: header.toJSON(), children: [...element.children].map((child) => {
-        const target = child as HTMLElement;
-        return { text: target.textContent, box: target.getBoundingClientRect().toJSON(),
-          font: Number.parseFloat(getComputedStyle(target).fontSize) * scale,
-          clientWidth: target.clientWidth, scrollWidth: target.scrollWidth };
-      }) };
-    });
-    for (const item of receiverContent.children) {
-      expect(item.box.top, `${item.text} starts below the lobby header`).toBeGreaterThanOrEqual(receiverContent.header.bottom - 1);
-      expect(item.box.bottom, `${item.text} stays inside the stage`).toBeLessThanOrEqual(receiverContent.stage.bottom + 1);
-      expect(item.box.left).toBeGreaterThanOrEqual(receiverContent.stage.left - 1);
-      expect(item.box.right).toBeLessThanOrEqual(receiverContent.stage.right + 1);
-      expect(item.scrollWidth).toBeLessThanOrEqual(item.clientWidth + 1);
-      expect(item.font, `${item.text} remains readable`).toBeGreaterThanOrEqual(10.5);
-    }
     await enterChallenge(page);
     await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
     await expect(page.locator('#hud [data-ui="quick-operation"]')).toContainText(title);
@@ -108,9 +138,11 @@ for (const suffix of [
     await openChallenge(page, suffix);
     await expect(page.getByRole('button', { name: 'Start challenge vs CPU' })).toHaveCount(0);
     await expect(page.locator('[data-console-owner="preact"]')).toBeHidden();
-    // A room invite owns its route; otherwise the chooser explains rejection.
+    // A room invite owns its route; otherwise the selected Skirmish workspace explains rejection.
     if (suffix.startsWith('?join=')) {
-      await expect(page.getByRole('tabpanel', { name: 'Play Online preparation' })).toBeVisible();
+      await expect(page.locator('.command-center__item[data-command-item="online"]'))
+        .toHaveAttribute('aria-current', 'true');
+      await expect(page.locator('[data-multiplayer-command-view="online"]')).toBeVisible();
       await expect(page.locator('.lobby-code-input')).toHaveValue('ABCD');
       await expect(page.getByRole('button', { name: 'Join Room', exact: true })).toBeVisible();
       expect(joinRequests).toEqual([]);

@@ -4,6 +4,12 @@ import {
   requestLandscapeMode,
   type OrientationLaunchPorts,
 } from './OrientationGate';
+import {
+  ApplicationSurfaceController,
+  type ApplicationSurfaceState,
+} from './ApplicationSurface';
+
+const PHONE_PORTRAIT_QUERY = '(orientation: portrait) and (max-width: 480px)';
 
 function deferredPorts(
   fullscreen: () => Promise<void>,
@@ -12,9 +18,16 @@ function deferredPorts(
   return { requestFullscreen: fullscreen, lockLandscape: landscape };
 }
 
-function mountMarkup(): void {
+function mountMarkup(
+  surface: ApplicationSurfaceState = 'battle',
+): ApplicationSurfaceController {
   document.body.innerHTML = `
+    <style>#portrait-warn { display: flex; }</style>
     <main id="app"><button type="button">Hot Seat</button></main>
+    <section id="lobby">
+      <button id="prepare-battle" type="button">Prepare battle</button>
+      <button id="exact-prepare-target" type="button">Resume preparation</button>
+    </section>
     <div id="portrait-warn">
       <button id="portrait-launch" type="button">Enter fullscreen landscape</button>
       <p id="portrait-warn-status" role="status" aria-live="polite">
@@ -22,11 +35,31 @@ function mountMarkup(): void {
       </p>
     </div>
   `;
+  return new ApplicationSurfaceController({
+    battle: document.querySelector<HTMLElement>('#app')!,
+    pregame: document.querySelector<HTMLElement>('#lobby')!,
+  }, surface);
+}
+
+function mockPhonePortrait(): ReturnType<typeof vi.fn> {
+  const matchMedia = vi.fn((query: string) => ({
+    matches: query === PHONE_PORTRAIT_QUERY,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  }));
+  vi.stubGlobal('matchMedia', matchMedia);
+  return matchMedia;
 }
 
 afterEach(() => {
   document.body.innerHTML = '';
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('mobile landscape launch request', () => {
@@ -67,6 +100,71 @@ describe('mobile landscape launch request', () => {
 });
 
 describe('mobile landscape launch DOM', () => {
+  it('keeps portrait preparation usable while preserving the inclusive phone query', () => {
+    mountMarkup('pregame');
+    const matchMedia = mockPhonePortrait();
+    const prepare = document.querySelector<HTMLButtonElement>('#prepare-battle')!;
+    const prepared = vi.fn();
+    prepare.addEventListener('click', prepared);
+
+    mountOrientationGate(document, {});
+
+    const gate = document.querySelector<HTMLElement>('#portrait-warn')!;
+    const lobby = document.querySelector<HTMLElement>('#lobby')!;
+    expect(matchMedia).toHaveBeenCalledWith(PHONE_PORTRAIT_QUERY);
+    expect(gate.hidden).toBe(true);
+    expect(getComputedStyle(gate).display).toBe('none');
+    expect(gate.inert).toBe(true);
+    expect(gate.getAttribute('aria-hidden')).toBe('true');
+    expect(lobby.inert).toBe(false);
+    expect(lobby.hasAttribute('aria-hidden')).toBe(false);
+
+    prepare.click();
+    expect(prepared).toHaveBeenCalledOnce();
+  });
+
+  it('activates the portrait gate for launching and battle surface states', async () => {
+    const surfaces = mountMarkup('pregame');
+    mockPhonePortrait();
+    mountOrientationGate(document, {});
+
+    const app = document.querySelector<HTMLElement>('#app')!;
+    const gate = document.querySelector<HTMLElement>('#portrait-warn')!;
+
+    surfaces.setState('launching');
+    await vi.waitFor(() => expect(gate.hidden).toBe(false));
+    expect(gate.inert).toBe(false);
+    expect(gate.getAttribute('aria-hidden')).toBe('false');
+    expect(app.inert).toBe(true);
+    expect(app.getAttribute('aria-hidden')).toBe('true');
+
+    surfaces.setState('battle');
+    await vi.waitFor(() => expect(gate.hidden).toBe(false));
+    expect(gate.inert).toBe(false);
+    expect(gate.getAttribute('aria-hidden')).toBe('false');
+    expect(app.inert).toBe(true);
+    expect(app.getAttribute('aria-hidden')).toBe('true');
+
+    surfaces.setState('pregame');
+    await vi.waitFor(() => expect(gate.hidden).toBe(true));
+    expect(gate.inert).toBe(true);
+    expect(gate.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('does not replace exact pregame focus when a gated battle returns to preparation', async () => {
+    const surfaces = mountMarkup('battle');
+    mockPhonePortrait();
+    mountOrientationGate(document, {});
+
+    const exactTarget = document.querySelector<HTMLButtonElement>('#exact-prepare-target')!;
+    surfaces.setState('pregame');
+    exactTarget.focus();
+
+    await vi.waitFor(() => expect(document.querySelector<HTMLElement>('#portrait-warn')!.hidden)
+      .toBe(true));
+    expect(document.activeElement).toBe(exactTarget);
+  });
+
   it('binds once, exposes busy state, and announces a locked request', async () => {
     mountMarkup();
     let releaseFullscreen!: () => void;

@@ -1,6 +1,17 @@
 import { normalizeCreateRoomFallback, projectAuthoritativeNetworkMode, WIND_DEFAULT, GRAVITY_DEFAULT, type ModeSetup, type ModePlayer } from '../client/modeConfig';
 import lobbyCss from './Lobby.css?raw';
 import lobbyConsoleCss from './LobbyConsole.css?raw';
+import commandCenterCss from './commandCenter/CommandCenter.css?raw';
+import commandPanelFrameUrl from './commandCenter/assets/chrome/panel-frame.png';
+import commandIronTileUrl from './commandCenter/assets/chrome/iron-tile.png';
+import commandGoldTileUrl from './commandCenter/assets/chrome/gold-tile.png';
+import commandMapTileUrl from './commandCenter/assets/chrome/map-tile.png';
+import commandButtonFrameUrl from './commandCenter/assets/chrome/button-frame.png';
+import commandButtonSelectedFrameUrl from './commandCenter/assets/chrome/button-selected-frame.png';
+import commandButtonHoverFrameUrl from './commandCenter/assets/chrome/button-hover-frame.png';
+import commandButtonPressedFrameUrl from './commandCenter/assets/chrome/button-pressed-frame.png';
+import commandButtonGoldFrameUrl from './commandCenter/assets/chrome/button-gold-frame.png';
+import commandButtonDisabledFrameUrl from './commandCenter/assets/chrome/button-disabled-frame.png';
 import { VerifiedDeploymentSession, type VerifiedDeploymentState as LobbyVerifiedDeploymentState, type VerifiedDeploymentAccountPort } from '../client/VerifiedDeploymentSession';
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
@@ -13,13 +24,12 @@ import {
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import {
-  buildLobbyHotSeatView,
+  buildLobbyLocalBattleView,
+  buildLobbyVerifiedOperationsView,
   updateVerifiedChallengeCountdown,
-  type LobbyHotSeatSurface,
   type LobbyVerifiedSurface,
 } from './LobbyHotSeatView';
 import {
-  QUICK_OPERATIONS,
   quickOperationById,
   type PracticeObjectiveDescriptor,
   type QuickOperation,
@@ -35,8 +45,9 @@ import { isFirstSalvoPreferenceUnseen } from './firstSalvoCoach';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
-import { buildLobbyOnlineView, buildLobbyShellView } from './LobbyShellView';
+import { buildLobbyShellView } from './LobbyShellView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
+import { createPreparationFrame, createPreparationPrimaryAction } from './PreparationFrame';
 import { buildAccountPanelOverlayContent, buildAccountPanelView } from './AccountPanelView';
 import { buildLobbyOverlayView } from './LobbyOverlayView';
 import { buildLobbyGarageView } from './LobbyGarageView';
@@ -99,11 +110,47 @@ import { campaignDescriptorFromCheckpoint, createCampaignCheckpoint } from '../c
 import { createCampaignRunState, type CampaignRunState } from '../campaign/runReducer';
 import { createCampaignLoadout } from '../campaign/loadout';
 import {
-  parseCampaignReplayPayload,
+  createCampaignReplayPayload,
   type CampaignReplayPayload,
 } from '../campaign/replay';
-import { createIndexedDbCampaignStorage } from '../campaign/storage';
-import type { CampaignKitId } from './LobbyShellView';
+import { createIndexedDbCampaignStorage, type CampaignStorage } from '../campaign/storage';
+import {
+  CampaignSavePresentationOwner,
+} from './commandCenter/CampaignSavePresentation';
+import {
+  browserCampaignRunReplacementConfirmation,
+  CampaignRunReplacementCoordinator,
+  type CampaignRunReplacementConfirmationPort,
+} from './commandCenter/CampaignRunReplacement';
+import {
+  createAshRoadCommandCategoryContribution,
+  type CampaignCommandContext,
+  type CampaignKitId,
+} from './commandCenter/CampaignCommandView';
+import {
+  createSkirmishCommandCategoryContribution,
+  type ImportedSkirmishChallenge,
+  type SkirmishCommandContext,
+} from './commandCenter/SkirmishCommandView';
+import {
+  createMultiplayerCommandCategoryContribution,
+  type MultiplayerCommandContext,
+} from './commandCenter/MultiplayerCommandView';
+import {
+  createCommandCenterShell,
+  type CommandCenterShell,
+} from './commandCenter/CommandCenterShell';
+import {
+  createSessionCommandSelectionStore,
+  resolveCommandRegistry,
+  resolveInitialCommandSelection,
+  type SessionCommandSelectionStore,
+} from './commandCenter/registry';
+import {
+  commandCategoryId,
+  commandItemId,
+  type CommandCategoryContribution,
+} from './commandCenter/contracts';
 import type { VerifiedCareerState } from '../client/verifiedCareer';
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
@@ -147,6 +194,7 @@ import {
 } from './lobbyValidation';
 import { paintTankLoadoutPreview } from '../renderer/TankLoadoutPreview';
 import {
+  TANK_KIT_LABELS,
   TANK_PART_VARIANT_LABELS,
   TANK_SLOT_LABELS,
 } from './tankPartLabels';
@@ -218,6 +266,19 @@ const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const STYLE_ID = 'lobby-style';
 
+const COMMAND_CENTER_ASSET_CSS = `#lobby {
+  --command-panel-frame: url("${commandPanelFrameUrl}");
+  --command-iron-tile: url("${commandIronTileUrl}");
+  --command-gold-tile: url("${commandGoldTileUrl}");
+  --command-map-tile: url("${commandMapTileUrl}");
+  --command-button-frame: url("${commandButtonFrameUrl}");
+  --command-button-selected-frame: url("${commandButtonSelectedFrameUrl}");
+  --command-button-hover-frame: url("${commandButtonHoverFrameUrl}");
+  --command-button-pressed-frame: url("${commandButtonPressedFrameUrl}");
+  --command-button-gold-frame: url("${commandButtonGoldFrameUrl}");
+  --command-button-disabled-frame: url("${commandButtonDisabledFrameUrl}");
+}`;
+
 function browserQuickDuelSeed(): number {
   const word = new Uint32Array(1);
   globalThis.crypto.getRandomValues(word);
@@ -276,7 +337,7 @@ interface PreviewVehicle {
   loadout: TankLoadout;
 }
 
-interface LobbyFocusSnapshot {
+export interface LobbyLaunchFocusSnapshot {
   readonly key: string;
   readonly occurrence: number;
   readonly inOverlay: boolean;
@@ -286,7 +347,6 @@ interface LobbyFocusSnapshot {
 }
 
 const LOBBY_FOCUS_ATTRIBUTES = [
-  'data-hotseat-surface',
   'data-verified-surface',
   'data-operation-id',
   'data-online-route',
@@ -347,6 +407,18 @@ const defaultProductionDiagnosticsFactory: ProductionDiagnosticsFactory = async 
   return createProductionDiagnostics(supabase, { readiness: 'loading' });
 };
 
+const defaultCampaignStorage: CampaignStorage = Object.freeze({
+  load: (slotId: string) => createIndexedDbCampaignStorage().load(slotId),
+  compareAndSwap: (input: Parameters<CampaignStorage['compareAndSwap']>[0]) => (
+    createIndexedDbCampaignStorage().compareAndSwap(input)
+  ),
+});
+
+interface LobbyCommandCenterContext extends
+  CampaignCommandContext,
+  SkirmishCommandContext,
+  MultiplayerCommandContext {}
+
 const DIAGNOSTICS_LOCAL_FAILURE: DiagnosticCheckResult = Object.freeze({
   id: PRODUCTION_DIAGNOSTIC_CHECKS[0].id,
   label: PRODUCTION_DIAGNOSTIC_CHECKS[0].label,
@@ -404,22 +476,25 @@ export class Lobby {
   /** Whether the Operations Settings overlay is open (persist across renders). */
   private settingsOpen = false;
 
-  /** Selected Hot Seat surface; form state remains owned here across view replacement. */
-  private hotSeatSurface: LobbyHotSeatSurface = 'local';
   private verifiedHotSeatSurface: LobbyVerifiedSurface = 'deployment';
   private focusVerifiedDeploymentRequested = false;
   private focusVerifiedChallengeRequested = false;
 
   // ---- Tab / online sub-view state ----
-  private surface: 'chooser' | 'preparation' = 'chooser';
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
+  private inviteRouteRequested = false;
+  private contextualOnlineEntryPending = true;
+  private onlineWorkspaceSuspended = false;
+  private browseLifetimeSignal: AbortSignal | null = null;
   private networkRecoveryRetry: (() => void) | null = null;
-  private campaignResumePayload: Readonly<{
-    payload: CampaignReplayPayload;
-    revision: number;
-  }> | null = null;
-  private campaignResumeGeneration = 0;
+  private readonly campaignSavePresentation: CampaignSavePresentationOwner;
+  private readonly campaignRunReplacement: CampaignRunReplacementCoordinator;
+  private readonly commandSelectionStore: SessionCommandSelectionStore;
+  private commandCenterShell: CommandCenterShell<LobbyCommandCenterContext> | null = null;
+  private campaignInitialPromotionEligible = false;
+  private selectedCampaignKit: CampaignKitId = 'precision';
+  private pendingLaunchFocus: LobbyLaunchFocusSnapshot | null = null;
 
   // Create form state
   private onlineName = '';
@@ -428,6 +503,8 @@ export class Lobby {
   private onlineLoadout: TankLoadout = { ...DEFAULT_TANK_LOADOUT };
   /** Compact layouts expose one touch-sized Garage editor at a time. */
   private openGarageOwner: string | null = null;
+  /** Exact Garage control to restore after an asynchronous Online mutation settles. */
+  private pendingGarageFocus: { owner: string; selector: string } | null = null;
   /** Garage owner currently featured in the large vehicle-bay preview. */
   private spotlightOwner: string | null = null;
   private onlineMaxPlayers = 2;
@@ -473,9 +550,13 @@ export class Lobby {
     createDiagnostics: ProductionDiagnosticsFactory = defaultProductionDiagnosticsFactory,
     private readonly generateQuickDuelSeed: () => number = browserQuickDuelSeed,
     createVerifiedChallengeSession: VerifiedChallengeSessionFactory = defaultVerifiedChallengeSessionFactory,
+    campaignSaveStorage: CampaignStorage = defaultCampaignStorage,
+    campaignRunReplacementConfirmation: CampaignRunReplacementConfirmationPort =
+      browserCampaignRunReplacementConfirmation,
   ) {
     this.root = root;
     this.onReady = onReady;
+    this.commandSelectionStore = createSessionCommandSelectionStore(window.sessionStorage);
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.roomController = new LobbyRoomController(
@@ -493,6 +574,12 @@ export class Lobby {
       ? this.accountSession.state.profile.id
       : null;
     this.verifiedChallengeSession = createVerifiedChallengeSession(authenticatedAccountId);
+    this.campaignSavePresentation = new CampaignSavePresentationOwner(campaignSaveStorage);
+    this.campaignRunReplacement = new CampaignRunReplacementCoordinator(
+      campaignSaveStorage,
+      this.campaignSavePresentation,
+      campaignRunReplacementConfirmation,
+    );
     this.accountSession.subscribeVerifiedCareer?.(() => { this.render(); });
     this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
@@ -507,7 +594,7 @@ export class Lobby {
     }
     const inviteCode = readRoomInviteCode(window.location.href);
     if (inviteCode) {
-      this.surface = 'preparation';
+      this.inviteRouteRequested = true;
       this.activeTab = 'online';
       this.onlineSubView = 'join';
       this.joinCode = inviteCode;
@@ -773,32 +860,22 @@ export class Lobby {
   }
 
   private diagnosticsReturnFocus(): HTMLElement | null {
-    return [...this.root.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent === 'Local Battle')
+    return this.root.querySelector<HTMLElement>(
+      '.command-center__workspace-host .command-center__primary-action:not(:disabled), '
+      + '.command-center__workspace-host .primary:not(:disabled), '
+      + '[data-command-item][aria-current="true"]',
+    )
       ?? this.root.querySelector<HTMLButtonElement>('.account-panel button')
       ?? this.root.querySelector<HTMLButtonElement>('button');
   }
 
   private lobbyReturnFocusTarget(): HTMLElement | null {
     if (this.accountPanelOpen || this.settingsOpen || this.diagnosticsIntentActive) return null;
-    if (this.surface === 'preparation' && this.activeTab === 'hotseat') {
-      return this.root.querySelector<HTMLElement>(
-        `[role="tab"][data-hotseat-surface="${this.hotSeatSurface}"]:not(:disabled)`,
-      ) ?? this.root.querySelector<HTMLElement>(
-        '[role="tab"][data-hotseat-surface="local"]:not(:disabled)',
-      ) ?? this.root.querySelector<HTMLElement>('.lobby-mode-panel .primary:not(:disabled)');
-    }
-    if (this.surface === 'preparation') {
-      return this.root.querySelector<HTMLElement>('.lobby-mode-panel .primary:not(:disabled)')
-        ?? this.root.querySelector<HTMLElement>(
-          '.lobby-mode-panel input:not(:disabled), .lobby-mode-panel select:not(:disabled)',
-        )
-        ?? this.root.querySelector<HTMLElement>('.lobby-deployment__back');
-    }
-    return this.root.querySelector<HTMLElement>('.lobby-deployment-chooser .primary:not(:disabled)')
-      ?? [...this.root.querySelectorAll<HTMLButtonElement>('.lobby-deployment-chooser button')]
-        .find((button) => button.textContent === 'Local Battle')
-      ?? this.root.querySelector<HTMLElement>('.lobby-deployment-chooser button:not(:disabled)');
+    return this.root.querySelector<HTMLElement>(
+      '.command-center__workspace-host .command-center__primary-action:not(:disabled), '
+      + '.command-center__workspace-host .primary:not(:disabled), '
+      + '[data-command-item][aria-current="true"]',
+    );
   }
 
   private focusLobbyReturnTarget(): void {
@@ -829,7 +906,7 @@ export class Lobby {
     return null;
   }
 
-  private captureLobbyFocus(): LobbyFocusSnapshot | null {
+  private captureLobbyFocus(): LobbyLaunchFocusSnapshot | null {
     const active = document.activeElement;
     if (this.root.hidden || !(active instanceof HTMLElement) || !this.root.contains(active)) return null;
     if ((this.accountPanelOpen || this.settingsOpen) && !active.closest('.lobby-overlay')) return null;
@@ -840,7 +917,7 @@ export class Lobby {
     if (occurrence < 0) return null;
     let selectionStart: number | null = null;
     let selectionEnd: number | null = null;
-    let selectionDirection: LobbyFocusSnapshot['selectionDirection'] = null;
+    let selectionDirection: LobbyLaunchFocusSnapshot['selectionDirection'] = null;
     if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
       try {
         selectionStart = active.selectionStart;
@@ -860,13 +937,17 @@ export class Lobby {
     };
   }
 
-  private restoreLobbyFocus(snapshot: LobbyFocusSnapshot | null): void {
+  private restoreLobbyFocus(snapshot: LobbyLaunchFocusSnapshot | null): void {
     if (!snapshot) return;
     const matching = this.lobbyFocusableControls().filter((control) => (
       this.lobbyFocusKey(control) === snapshot.key
       && (control.closest('.lobby-overlay') !== null) === snapshot.inOverlay
     ));
-    const target = matching[snapshot.occurrence];
+    // A state transition may legitimately collapse two controls with the same
+    // semantic key into one (for example Replace Saved Run becomes New Run).
+    // Retain the key-level intent even when its former duplicate occurrence no
+    // longer exists.
+    const target = matching[Math.min(snapshot.occurrence, matching.length - 1)];
     if (!target) return;
     target.focus({ preventScroll: true });
     if ((target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
@@ -1001,9 +1082,18 @@ export class Lobby {
     readonly focusVerifiedDeployment?: boolean;
     readonly focusVerifiedChallenge?: boolean;
   } = {}): void {
+    if (this.commandCenterShell === null || this.root.hidden) {
+      this.contextualOnlineEntryPending = true;
+    }
     if (options.focusVerifiedDeployment || options.focusVerifiedChallenge) {
-      this.hotSeatSurface = 'verified';
+      // Verified sessions return through their public command item while the
+      // retained session owners continue to supply state and callbacks.
+      this.activeTab = 'hotseat';
       this.verifiedHotSeatSurface = options.focusVerifiedChallenge ? 'challenge' : 'deployment';
+      this.commandSelectionStore.remember({
+        categoryId: commandCategoryId('multiplayer'),
+        itemId: commandItemId('verified-operations'),
+      });
       this.focusVerifiedDeploymentRequested = true;
       this.focusVerifiedChallengeRequested = options.focusVerifiedChallenge === true;
     }
@@ -1020,36 +1110,87 @@ export class Lobby {
   }
 
   private async checkCampaignResume(): Promise<void> {
-    const generation = ++this.campaignResumeGeneration;
-    try {
-      const record = await createIndexedDbCampaignStorage().load('ash-road-local');
-      const payload = record ? parseCampaignReplayPayload(record.payload) : null;
-      const compatible = payload
-        && payload.runState.checkpoint.run.episodeId === ASH_ROAD_EPISODE.episodeId
-        && payload.runState.checkpoint.run.episodeContentDigest === ASH_ROAD_EPISODE.contentDigest
-        && payload.runState.checkpoint.profile.contentDigest === FUEL_STOP_FIXTURE.combatProfile.contentDigest
-        ? payload
-        : null;
-      if (generation !== this.campaignResumeGeneration) return;
-      this.campaignResumePayload = compatible && record
-        ? Object.freeze({ payload: compatible, revision: record.revision })
-        : null;
-      this.render();
-    } catch {
-      if (generation !== this.campaignResumeGeneration) return;
-      this.campaignResumePayload = null;
+    const refresh = this.campaignSavePresentation.refresh();
+    if (!this.root.hidden) {
+      this.commandCenterShell?.update(this.campaignCommandContext());
     }
+    await refresh;
+    if (!this.root.hidden) {
+      const context = this.campaignCommandContext();
+      this.commandCenterShell?.update(context);
+      if (
+        context.savePresentation.status === 'compatible'
+        && this.campaignInitialPromotionEligible
+      ) {
+        const promoted = this.commandCenterShell?.promoteInitialSelection({
+          categoryId: commandCategoryId('campaigns'),
+          itemId: commandItemId('ash-road'),
+        }) === true;
+        if (promoted) this.campaignInitialPromotionEligible = false;
+      }
+    }
+  }
+
+  /** Capture the meaningful control that initiated one application launch. */
+  captureLaunchFocus(): LobbyLaunchFocusSnapshot | null {
+    const pending = this.pendingLaunchFocus;
+    this.pendingLaunchFocus = null;
+    return pending ?? this.captureLobbyFocus();
+  }
+
+  /** Restore a still-valid initiating control after launch acquisition fails. */
+  restoreLaunchFocus(snapshot: LobbyLaunchFocusSnapshot | null): void {
+    this.restoreLobbyFocus(snapshot);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && this.root.contains(active)) return;
+    const networkRetry = this.root.querySelector<HTMLElement>('[data-network-recovery-retry]');
+    if (networkRetry) {
+      networkRetry.focus({ preventScroll: true });
+      return;
+    }
+    this.lobbyReturnFocusTarget()?.focus({ preventScroll: true });
+  }
+
+  /** Re-project the campaign save owner after a launch failed to commit. */
+  async refreshCampaignSaveAfterLaunchFailure(): Promise<void> {
+    await this.checkCampaignResume();
+  }
+
+  /**
+   * Surface a non-network launch failure in the still-mounted owner workspace.
+   * The existing primary action remains its retry path; network recovery keeps
+   * using showNetworkRecovery instead.
+   */
+  showLaunchFailure(message: string): void {
+    // Battle-originated restarts begin with the lobby intentionally unmounted.
+    // Reconstruct its remembered owner before presenting a recoverable failure;
+    // lobby-originated launches keep their existing DOM and local state intact.
+    if (!this.root.firstElementChild) this.show();
+    let alert = this.root.querySelector<HTMLElement>('[data-launch-failure]');
+    if (!alert) {
+      alert = document.createElement('p');
+      alert.dataset.launchFailure = '';
+      alert.className = 'lobby-launch-failure';
+      alert.setAttribute('role', 'alert');
+      const owner = this.root.querySelector<HTMLElement>('.command-center__workspace-host')
+        ?? this.root;
+      owner.prepend(alert);
+    }
+    alert.textContent = message;
   }
 
   /** Restore the online preparation surface after match acquisition times out. */
   showNetworkRecovery(message: string, retry: () => void): void {
-    this.surface = 'preparation';
-    this.activeTab = 'online';
-    this.onlineSubView = 'create';
     this.onlineBusy = false;
     this.onlineError = message;
     this.networkRecoveryRetry = retry;
-    this.show();
+    if (!this.root.firstElementChild) this.show();
+    else this.render();
+    const recovery = this.root.querySelector<HTMLElement>('[data-network-recovery-retry]')
+      ?.closest<HTMLElement>('[role="alert"]');
+    recovery?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    this.root.querySelector<HTMLElement>('[data-network-recovery-retry]')
+      ?.focus({ preventScroll: true });
   }
 
   /**
@@ -1067,6 +1208,10 @@ export class Lobby {
   /** Hide the lobby overlay (e.g. once the game starts). */
   hide(): void {
     this.networkRecoveryRetry = null;
+    this.pendingLaunchFocus = null;
+    this.campaignSavePresentation.invalidate();
+    this.commandCenterShell?.destroy();
+    this.commandCenterShell = null;
     this.roomController.retire();
     this.cleanupWaitingChannel();
     this.stopBrowsePoll();
@@ -1203,12 +1348,131 @@ export class Lobby {
     this.focusAccountOverlay();
   }
 
+  private importedSkirmishChallenge(): ImportedSkirmishChallenge | null {
+    if (this.seedChallenge.status !== 'valid') return null;
+    const operation = operationForSeedChallenge(this.seedChallenge.challenge);
+    const fieldOrder = operation?.practiceObjective
+      ? createPracticeFieldOrderById(operation.practiceObjective.fieldOrderId)
+      : null;
+    if (!operation || !fieldOrder) return null;
+    return {
+      operation,
+      objective: renderFieldOrder(fieldOrder).brief,
+      seed: this.seedChallenge.challenge.seed,
+    };
+  }
+
+  private campaignCommandContext(): LobbyCommandCenterContext {
+    return {
+      savePresentation: this.campaignSavePresentation.presentation,
+      resumeCandidate: this.campaignSavePresentation.resumeCandidate,
+      selectedKit: this.selectedCampaignKit,
+      onSelectKit: (kitId) => { this.selectedCampaignKit = kitId; },
+      onStart: (kitId) => this.startAshRoad(kitId),
+      onResume: () => { this.resumeAshRoad(); },
+      onNewRun: (kitId, lifetime) => this.startAshRoad(kitId, lifetime),
+      onRetrySave: () => this.checkCampaignResume(),
+      firstSalvoAvailable: firstSalvoPreferenceUnseen(),
+      importedChallenge: this.importedSkirmishChallenge(),
+      importedChallengeInvalid: this.seedChallenge.status === 'invalid',
+      onLaunchQuickOperation: (operationId) => { this.startQuickDuel(operationId); },
+      onLaunchImportedChallenge: () => { this.startSeedChallenge(); },
+      verifiedOperationsAvailable: this.isAccountAuthenticated(),
+      buildLocalBattleWorkspace: (listenerSignal) => (
+        this.renderLocalBattleCommandWorkspace(listenerSignal)
+      ),
+      buildVerifiedOperationsWorkspace: (listenerSignal) => (
+        this.renderVerifiedOperationsCommandWorkspace(listenerSignal)
+      ),
+      buildOnlineBattleWorkspace: (listenerSignal) => (
+        this.renderOnlineBattleCommandWorkspace(listenerSignal)
+      ),
+      releaseOnlineBattleWorkspace: () => { this.releaseOnlineBattleCommandWorkspace(); },
+    };
+  }
+
+  private commandCenterContributions(): readonly CommandCategoryContribution<
+    LobbyCommandCenterContext
+  >[] {
+    const multiplayer = createMultiplayerCommandCategoryContribution<LobbyCommandCenterContext>();
+    return [
+      createAshRoadCommandCategoryContribution<LobbyCommandCenterContext>(),
+      createSkirmishCommandCategoryContribution<LobbyCommandCenterContext>(),
+      multiplayer,
+    ];
+  }
+
+  private mountCommandCenter(): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'lobby-command-center';
+    const context = this.campaignCommandContext();
+    const contributions = this.commandCenterContributions();
+    const registry = resolveCommandRegistry(contributions, context);
+    const campaigns = {
+      categoryId: commandCategoryId('campaigns'),
+      itemId: commandItemId('ash-road'),
+    };
+    const firstSalvo = {
+      categoryId: commandCategoryId('skirmishes'),
+      itemId: commandItemId('first-salvo'),
+    };
+    const standardQuickDuel = {
+      categoryId: commandCategoryId('skirmishes'),
+      itemId: commandItemId('standard'),
+    };
+    const importedChallenge = {
+      categoryId: commandCategoryId('skirmishes'),
+      itemId: commandItemId('imported-challenge'),
+    };
+    const online = {
+      categoryId: commandCategoryId('multiplayer'),
+      itemId: commandItemId('online'),
+    };
+    const resolvedInitialSelection = resolveInitialCommandSelection(registry, {
+      ...(this.contextualOnlineEntryPending && (this.inviteRouteRequested || this.rejoinCandidate)
+        ? { explicitInviteOrRejoin: online }
+        : {}),
+      ...(this.seedChallenge.status === 'valid' ? {
+        importedChallenge: { explicit: true, validated: true, selection: importedChallenge },
+      } : {}),
+      campaign: {
+        compatible: this.campaignSavePresentation.presentation.status === 'compatible',
+        selection: campaigns,
+      },
+      firstSalvo,
+      standardQuickDuel,
+    }, this.commandSelectionStore);
+    if (resolvedInitialSelection?.source === 'explicit-invite-or-rejoin') {
+      this.contextualOnlineEntryPending = false;
+      this.inviteRouteRequested = false;
+      this.commandSelectionStore.remember(resolvedInitialSelection.selection);
+    }
+    this.campaignInitialPromotionEligible = resolvedInitialSelection?.source === 'first-salvo'
+      || resolvedInitialSelection?.source === 'standard-quick-duel';
+    const initialSelection = resolvedInitialSelection?.selection ?? campaigns;
+    this.commandCenterShell = createCommandCenterShell(host, {
+      contributions,
+      context,
+      initialSelection,
+      selectionStore: {
+        read: () => this.commandSelectionStore.read(),
+        remember: (selection) => {
+          this.contextualOnlineEntryPending = false;
+          return this.commandSelectionStore.remember(selection);
+        },
+        clear: () => { this.commandSelectionStore.clear(); },
+      },
+    });
+    return host;
+  }
+
   /** Inject the lobby's scoped <style> once (do NOT edit index.html). */
   private injectStyle(): void {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
-    style.textContent = `${lobbyCss}\n${lobbyConsoleCss}`;
+    style.textContent = `${lobbyCss}\n${lobbyConsoleCss}\n${commandCenterCss}`;
+    style.textContent += `\n${COMMAND_CENTER_ASSET_CSS}`;
     document.head.append(style);
   }
 
@@ -1216,38 +1480,11 @@ export class Lobby {
   private render(): void {
     const explicitVerifiedFocusRequested = this.focusVerifiedDeploymentRequested;
     const focusSnapshot = this.captureLobbyFocus();
+    this.commandCenterShell?.destroy();
+    this.commandCenterShell = null;
     this.renderListeners.abort();
     this.renderListeners = new AbortController();
     this.root.replaceChildren();
-
-    // The chooser does not own preparation UI. Constructing it eagerly creates an
-    // entire listener-bearing DOM tree that is never mounted and therefore appears
-    // as retained detached DOM in a real Chromium heap snapshot.
-    let vehiclePreview: HTMLElement | undefined;
-    let content: HTMLElement | undefined;
-    let controls: HTMLElement | undefined;
-    if (this.surface === 'preparation') {
-      vehiclePreview = this.renderVehiclePreview();
-      controls = this.renderControlsLegend();
-      if (this.activeTab === 'hotseat') {
-        content = this.renderHotSeatTab();
-      } else {
-        const onlineContent = this.onlineSubView === 'create'
-          ? this.renderCreateForm()
-          : this.onlineSubView === 'join'
-            ? this.renderJoinForm()
-            : this.onlineSubView === 'browse'
-              ? this.renderBrowse()
-              : this.renderWaitingRoom();
-        content = buildLobbyOnlineView(onlineContent);
-        if (this.networkRecoveryRetry) {
-          const recovery = document.createElement('div');
-          recovery.className = 'lobby-online-recovery';
-          recovery.append(this.renderOnlineStatus(true));
-          content.prepend(recovery);
-        }
-      }
-    }
 
     const accountOptions = (open: boolean, triggerOnly = false) => ({
       state: this.accountSession.state,
@@ -1282,62 +1519,9 @@ export class Lobby {
 
     const accountPanel = buildAccountPanelView(accountOptions(this.accountPanelOpen, true));
     if (this.diagnosticsIntentActive) accountPanel?.removeAttribute('aria-label');
-
     const card = buildLobbyShellView({
-      activeTab: this.activeTab,
-      surface: this.surface,
-      showBack: !(this.activeTab === 'online' && this.onlineSubView === 'waiting'),
-      rejoinAvailable: this.rejoinCandidate !== null && this.networkRecoveryRetry === null,
       account: accountPanel,
-      vehiclePreview,
-      content,
-      controls,
-      onTabChange: (tab) => {
-        this.activeTab = tab;
-        if (tab === 'hotseat') this.hotSeatSurface = 'local';
-        this.surface = 'preparation';
-        this.render();
-      },
-      firstSalvoPreferenceUnseen: firstSalvoPreferenceUnseen(),
-      quickOperations: QUICK_OPERATIONS,
-      ...(this.seedChallenge.status === 'absent' ? {} : {
-        seedChallenge: this.seedChallenge.status === 'invalid'
-          ? { status: 'invalid' as const }
-          : (() => {
-            const operation = operationForSeedChallenge(this.seedChallenge.challenge);
-            const fieldOrder = operation?.practiceObjective
-              ? createPracticeFieldOrderById(operation.practiceObjective.fieldOrderId)
-              : null;
-            return operation && fieldOrder
-              ? {
-                status: 'valid' as const,
-                title: operation.title,
-                objective: renderFieldOrder(fieldOrder).brief,
-                seed: this.seedChallenge.challenge.seed,
-              }
-              : { status: 'invalid' as const };
-          })(),
-        onSeedChallenge: () => { this.startSeedChallenge(); },
-      }),
-      onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
-      onCampaign: (kitId) => { this.startAshRoad(kitId); },
-      campaignResumeAvailable: this.campaignResumePayload !== null,
-      onCampaignResume: () => { this.resumeAshRoad(); },
-      onRejoin: () => { void this.handleRejoin(); },
-      onBack: () => {
-        const choice = this.activeTab === 'hotseat' ? 'Local Battle' : 'Play Online';
-        if (this.activeTab === 'online' && this.onlineSubView === 'browse') {
-          this.stopBrowsePoll();
-          this.onlineSubView = 'create';
-          this.onlineError = '';
-        }
-        this.surface = 'chooser';
-        this.render();
-        [...this.root.querySelectorAll<HTMLButtonElement>('.lobby-deployment-chooser button')]
-          .find((button) => button.textContent === choice)
-          ?.focus();
-      },
-      listenerSignal: this.renderListeners.signal,
+      commandCenter: this.mountCommandCenter(),
     });
 
     this.root.append(card);
@@ -1402,6 +1586,10 @@ export class Lobby {
       '.lobby-garage.editing',
       )
       : null;
+    if (activeGarage && this.root.classList.contains('is-compact')) {
+      this.root.querySelector<HTMLElement>('.lobby-preview')
+        ?.setAttribute('aria-hidden', 'true');
+    }
     if (activeGarage) {
       this.root.querySelectorAll<HTMLElement>(
         'button, input, select, textarea, summary, a[href]',
@@ -1410,24 +1598,6 @@ export class Lobby {
       });
     }
     if (!explicitVerifiedFocusRequested) this.restoreLobbyFocus(focusSnapshot);
-  }
-
-  /**
-   * Non-blocking controls legend shown in the lobby BEFORE the canvas is
-   * uncovered, so keyboard players know the aim/power/fire keys up front
-   * (P3-13b). Mirrors the in-game on-canvas legend; purely informational, so it
-   * never gates the start flow.
-   */
-  private renderControlsLegend(): HTMLElement {
-    const el = document.createElement('div');
-    el.className = 'lobby-controls';
-    el.innerHTML =
-      '<span class="lobby-controls__title">Controls</span>' +
-      '<span><kbd>&larr;</kbd>/<kbd>&rarr;</kbd> Aim</span>' +
-      '<span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> Power</span>' +
-      '<span><kbd>Q</kbd> Weapon</span>' +
-      '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
-    return el;
   }
 
   private previewRoster(): PreviewVehicle[] {
@@ -1494,24 +1664,36 @@ export class Lobby {
 
   /** Rebuild only the pointer-transparent bay, never the focused form. */
   private refreshVehiclePreview(): void {
-    this.root.querySelector('.lobby-preview')?.replaceWith(this.renderVehiclePreview());
+    const current = this.root.querySelector('.lobby-preview');
+    const presentation = current?.classList.contains('lobby-preview--inspection')
+      ? 'inspection'
+      : 'formation';
+    current?.replaceWith(this.renderVehiclePreview(presentation));
   }
 
   /** Select an editor without repainting an already-correct assembled tank. */
   private activatePreviewOwner(owner: string): void {
     const currentOwner = this.spotlightVehicle(this.previewRoster())?.owner;
     this.spotlightOwner = owner;
+    for (const seat of this.root.querySelectorAll<HTMLElement>('[data-crew-seat]')) {
+      const selected = seat.dataset.crewSeat === owner;
+      if (selected) seat.setAttribute('aria-current', 'true');
+      else seat.removeAttribute('aria-current');
+      seat.querySelector<HTMLButtonElement>('[data-crew-seat-select]')
+        ?.setAttribute('aria-pressed', String(selected));
+    }
     if (currentOwner !== owner) this.refreshVehiclePreview();
   }
 
   /** Live Garage bay: one selected build at inspection scale plus roster context. */
-  private renderVehiclePreview(): HTMLElement {
+  private renderVehiclePreview(presentation: 'formation' | 'inspection' = 'formation'): HTMLElement {
     const preview = document.createElement('div');
     preview.className = 'lobby-preview';
+    if (presentation === 'inspection') preview.classList.add('lobby-preview--inspection');
 
     const label = document.createElement('div');
     label.className = 'lobby-preview__label';
-    label.textContent = 'Vehicle Bay';
+    label.textContent = presentation === 'inspection' ? 'Selected vehicle' : 'Vehicle Bay';
 
     const roster = this.previewRoster();
     const featured = this.spotlightVehicle(roster);
@@ -1600,16 +1782,21 @@ export class Lobby {
   private renderGarage(
     owner: string,
     ownerLabel: string,
+    color: string,
     value: TankLoadout,
     onChange: (next: TankLoadout) => void,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+    disabled = false,
   ): HTMLElement {
     return buildLobbyGarageView({
       owner,
       ownerLabel,
+      color,
       value,
       editing: this.openGarageOwner === owner,
+      disabled,
       isEditing: () => this.openGarageOwner === owner,
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
       onChange,
       onOpen: (nextOwner) => this.openGarage(nextOwner),
       onClose: (nextOwner) => this.closeGarage(nextOwner),
@@ -1624,23 +1811,46 @@ export class Lobby {
   }
 
   private focusGarageControl(owner: string, selector: string): void {
-    this.garageFor(owner)
-      ?.querySelector<HTMLButtonElement>(selector)
-      ?.focus();
+    this.pendingGarageFocus = { owner, selector };
+    this.restorePendingGarageFocus();
+  }
+
+  private restorePendingGarageFocus(): void {
+    const pending = this.pendingGarageFocus;
+    if (!pending) return;
+    const garage = this.garageFor(pending.owner);
+    if (!garage) {
+      this.pendingGarageFocus = null;
+      return;
+    }
+    const target = garage.querySelector<HTMLButtonElement>(pending.selector);
+    if (target && !target.disabled) {
+      target.focus({ preventScroll: true });
+      this.pendingGarageFocus = null;
+      return;
+    }
+    const close = garage.querySelector<HTMLButtonElement>('.lobby-garage__close');
+    if (close) {
+      close.focus({ preventScroll: true });
+      return;
+    }
+    garage.tabIndex = -1;
+    garage.focus({ preventScroll: true });
   }
 
   private openGarage(owner: string): void {
+    this.pendingGarageFocus = null;
     this.openGarageOwner = owner;
+    this.spotlightOwner = owner;
     this.render();
     this.focusGarageControl(owner, '[data-preset]');
   }
 
   private closeGarage(owner: string): void {
+    this.pendingGarageFocus = { owner, selector: '.lobby-garage__open' };
     this.openGarageOwner = null;
     this.render();
-    this.garageFor(owner)
-      ?.querySelector<HTMLButtonElement>('.lobby-garage__open')
-      ?.focus();
+    this.restorePendingGarageFocus();
   }
 
   /**
@@ -1682,7 +1892,7 @@ export class Lobby {
     this.launchQuickDuel(operation, seed, 'local-selection');
   }
 
-  private startAshRoad(kitId: CampaignKitId): void {
+  private async startAshRoad(kitId: CampaignKitId, lifetime?: AbortSignal): Promise<void> {
     const route = ASH_ROAD_EPISODE.routes.find(({ id }) => id === ASH_ROAD_ROUTE_IDS.highRoad);
     if (!route) throw new Error('Ash Road is missing its public opening route');
     const run = parseCampaignRun({
@@ -1717,7 +1927,7 @@ export class Lobby {
             : ['missile', 'napalm'],
       }),
     );
-    this.onReady({
+    const config: LobbyConfig = {
       mode: 'hotseat',
       experience: 'campaign',
       campaign: {
@@ -1730,12 +1940,49 @@ export class Lobby {
         { name: 'Defender', color: PALETTE[1].value, ai: 'hard' },
       ],
       playerNames: ['Ranger', 'Defender'],
+    };
+    const saveStatus = this.campaignSavePresentation.presentation.status;
+    if (saveStatus === 'empty') {
+      this.onReady(config);
+      return;
+    }
+    if (saveStatus !== 'compatible' && saveStatus !== 'complete') return;
+
+    const payload = createCampaignReplayPayload({
+      runState: campaignRunState,
+      acceptedCommands: [],
+    });
+    const replacement = await this.campaignRunReplacement.replace(payload);
+    if (lifetime?.aborted) {
+      // A confirmed replacement may commit after its initiating view retires.
+      // Re-project that durable state without reviving the stale view or
+      // launching from its callback.
+      if (replacement.status === 'replaced') await this.checkCampaignResume();
+      return;
+    }
+    if (replacement.status !== 'replaced') {
+      if (replacement.status === 'conflict') {
+        this.render();
+        this.showLaunchFailure(
+          'Campaign progress changed in another session. Review the refreshed save before trying again.',
+        );
+        this.root.querySelector<HTMLElement>('[data-command-primary]')?.focus({ preventScroll: true });
+      }
+      return;
+    }
+    this.onReady({
+      ...config,
+      campaignReplayPayload: replacement.payload,
+      campaignReplayRevision: replacement.revision,
     });
   }
 
   private resumeAshRoad(): void {
-    const resume = this.campaignResumePayload;
+    const resume = this.campaignSavePresentation.resumeCandidate;
     if (!resume) return;
+    this.pendingLaunchFocus = this.captureLobbyFocus();
+    if (!this.campaignSavePresentation.beginRestoring()) return;
+    this.render();
     const { payload, revision } = resume;
     const runState = payload.runState;
     const descriptor = campaignDescriptorFromCheckpoint(
@@ -1967,8 +2214,9 @@ export class Lobby {
       onConfirmAbandon: () => {
         if (this.verifiedLaunchBusy) return;
         this.verifiedLaunchBusy = true;
+        const abandonment = this.abandonVerifiedDeployment();
         this.render();
-        void this.abandonVerifiedDeployment().then(() => {
+        void abandonment.then(() => {
           this.verifiedLaunchBusy = false;
           this.verifiedAbandonIntent = false;
           this.render();
@@ -1981,31 +2229,35 @@ export class Lobby {
     };
   }
 
-  private renderHotSeatTab(): HTMLElement {
-    const verifiedDeployment = this.verifiedHotSeatView();
-    const verifiedChallenge = this.verifiedChallengeHotSeatView();
-    return buildLobbyHotSeatView({
-      surface: this.hotSeatSurface,
-      minPlayers: MIN_PLAYERS,
-      maxPlayers: MAX_PLAYERS,
-      playerCount: this.players.length,
-      playerRows: this.players.map((_, index) => this.renderRow(index)),
-      advanced: this.renderHotSeatBattlefield(),
-      validationMessage: this.validationError(),
-      verifiedDeployment,
-      verifiedChallenge,
+  private renderLocalBattleCommandWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    this.activeTab = 'hotseat';
+    const workspace = document.createElement('div');
+    workspace.className = 'multiplayer-command__local-workspace';
+    workspace.append(
+      buildLobbyLocalBattleView({
+        minPlayers: MIN_PLAYERS,
+        maxPlayers: MAX_PLAYERS,
+        playerCount: this.players.length,
+        playerRows: this.players.map((_, index) => this.renderRow(index, listenerSignal)),
+        vehicleInspection: this.renderVehiclePreview('inspection'),
+        advanced: this.renderHotSeatBattlefield(listenerSignal),
+        validationMessage: this.validationError(),
+        onPlayerCountChange: (count) => { this.setPlayerCount(count); },
+        onStart: () => { this.startLocalBattle(); },
+        listenerSignal,
+      }),
+    );
+    return workspace;
+  }
+
+  private renderVerifiedOperationsCommandWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    this.activeTab = 'hotseat';
+    const workspace = document.createElement('div');
+    workspace.className = 'multiplayer-command__verified-workspace';
+    workspace.append(buildLobbyVerifiedOperationsView({
+      verifiedDeployment: this.verifiedHotSeatView(),
+      verifiedChallenge: this.verifiedChallengeHotSeatView(),
       verifiedSurface: this.verifiedHotSeatSurface,
-      quickOperations: QUICK_OPERATIONS,
-      onQuickOperation: (operationId: string) => { this.startQuickDuel(operationId); },
-      onSurfaceChange: (surface, restoreFocus) => {
-        this.hotSeatSurface = surface;
-        this.render();
-        if (restoreFocus) {
-          this.root.querySelector<HTMLButtonElement>(
-            `[role="tab"][data-hotseat-surface="${surface}"]`,
-          )?.focus({ preventScroll: true });
-        }
-      },
       onVerifiedSurfaceChange: (surface, restoreFocus) => {
         this.verifiedHotSeatSurface = surface;
         this.render();
@@ -2015,30 +2267,134 @@ export class Lobby {
           )?.focus({ preventScroll: true });
         }
       },
-      onPlayerCountChange: (count) => { this.setPlayerCount(count); },
-      onStart: () => {
-        if (this.validationError() !== null) return;
-        const players = this.players.map((player, index) => ({
-          name: player.name.trim() || (player.ai ? `CPU ${index + 1}` : `Player ${index + 1}`),
-          color: player.color,
-          loadout: normalizeTankLoadout(player.loadout),
-          ...(player.ai ? { ai: player.ai } : {}),
-        }));
-        const settings = this.parseSettings();
-        this.onReady({
-          mode: 'hotseat',
-          players,
-          playerNames: players.map((player) => player.name),
-          ...(settings ? { settings } : {}),
-        });
-      },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
+    }));
+    return workspace;
+  }
+
+  private renderOnlineBattleCommandWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    const resumed = this.onlineWorkspaceSuspended;
+    if (resumed) {
+      this.onlineWorkspaceSuspended = false;
+      this.roomController.activate();
+      if (this.onlineSubView === 'waiting') void this.subscribeWaitingRoom();
+    }
+    this.browseLifetimeSignal = this.onlineSubView === 'browse' ? listenerSignal : null;
+    if (resumed && this.onlineSubView === 'browse') {
+      void this.fetchRooms(listenerSignal);
+      this.startBrowsePoll();
+    }
+    this.activeTab = 'online';
+    const onlineContent = this.networkRecoveryRetry
+      ? this.renderOnlineRecoveryWorkspace(listenerSignal)
+      : this.rejoinCandidate && this.onlineSubView === 'create'
+        ? this.renderOnlineRejoinWorkspace(listenerSignal)
+        : this.onlineSubView === 'create'
+          ? this.renderCreateForm(listenerSignal)
+          : this.onlineSubView === 'join'
+            ? this.renderJoinForm(listenerSignal)
+            : this.onlineSubView === 'browse'
+              ? this.renderBrowse(listenerSignal)
+              : this.renderWaitingRoom(listenerSignal);
+    onlineContent.classList.add('multiplayer-command__online-route');
+    const bodyInner = onlineContent.querySelector<HTMLElement>('.preparation-frame__body-inner');
+    if (bodyInner) {
+      const layout = document.createElement('div');
+      layout.className = 'preparation-frame__body-layout preparation-frame__body-layout--online';
+      const routeContent = document.createElement('div');
+      routeContent.className = 'preparation-frame__mode-content';
+      routeContent.append(...Array.from(bodyInner.childNodes));
+      layout.append(this.renderVehiclePreview(), routeContent);
+      bodyInner.append(layout);
+    }
+    const workspace = document.createElement('div');
+    workspace.className = 'multiplayer-command__online-workspace';
+    workspace.append(onlineContent);
+    return workspace;
+  }
+
+  private renderOnlineRejoinWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    const section = document.createElement('section');
+    section.className = 'lobby-route-brief lobby-route-brief--online multiplayer-command__online-context';
+    const context = document.createElement('section');
+    context.className = 'multiplayer-command__online-recovery-brief';
+    context.textContent = 'Your compatible operation remains selected and can be recovered without changing its room owner.';
+    const action = createPreparationPrimaryAction(document, {
+      label: 'Rejoin your game',
+      onActivate: () => { void this.handleRejoin(); },
+      listenerSignal,
+    });
+    return createPreparationFrame(document, {
+      root: section,
+      eyebrow: 'Network recovery',
+      title: 'Active operation',
+      description: 'A compatible network battle is ready to resume.',
+      headingClassName: 'lobby-route-brief__header',
+      titleClassName: 'lobby-route-brief__title',
+      descriptionClassName: 'lobby-route-brief__purpose',
+      body: context,
+      dockLabel: 'Recovery order',
+      dockStatus: 'Compatible operation detected',
+      primaryAction: action,
+    });
+  }
+
+  private renderOnlineRecoveryWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    const section = document.createElement('section');
+    section.className = 'lobby-route-brief lobby-route-brief--online multiplayer-command__online-context';
+    const status = this.renderOnlineStatus(true, listenerSignal);
+    const retry = status.querySelector<HTMLButtonElement>('[data-network-recovery-retry]');
+    retry?.remove();
+    return createPreparationFrame(document, {
+      root: section,
+      eyebrow: 'Network recovery',
+      title: 'Recovery required',
+      description: 'The operation is still selected. Retry without losing its owner.',
+      headingClassName: 'lobby-route-brief__header',
+      titleClassName: 'lobby-route-brief__title',
+      descriptionClassName: 'lobby-route-brief__purpose',
+      body: status,
+      dockLabel: 'Recovery order',
+      dockStatus: 'Room ownership preserved',
+      primaryAction: retry,
+    });
+  }
+
+  private releaseOnlineBattleCommandWorkspace(): void {
+    // Shell-driven renders synchronously replace the same selected Online view.
+    // Defer resource suspension so only a genuine navigation away tears down
+    // browse/waiting resources rather than cancelling the route's own repaint.
+    queueMicrotask(() => {
+      if (this.root.querySelector('[data-multiplayer-command-view="online"]')) return;
+      if (this.onlineWorkspaceSuspended) return;
+      this.onlineWorkspaceSuspended = true;
+      this.browseLifetimeSignal = null;
+      this.roomController.suspendWorkspace();
+      this.stopBrowsePoll();
+      if (this.onlineSubView === 'waiting') this.cleanupWaitingChannel();
+    });
+  }
+
+  private startLocalBattle(): void {
+    if (this.validationError() !== null) return;
+    const players = this.players.map((player, index) => ({
+      name: player.name.trim() || (player.ai ? `CPU ${index + 1}` : `Player ${index + 1}`),
+      color: player.color,
+      loadout: normalizeTankLoadout(player.loadout),
+      ...(player.ai ? { ai: player.ai } : {}),
+    }));
+    const settings = this.parseSettings();
+    this.onReady({
+      mode: 'hotseat',
+      players,
+      playerNames: players.map((player) => player.name),
+      ...(settings ? { settings } : {}),
     });
   }
 
   // ---- Create Room sub-view ----
 
-  private renderCreateForm(): HTMLElement {
+  private renderCreateForm(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     return buildLobbyCreateView({
       minPlayers: MIN_PLAYERS,
       maxPlayers: MAX_PLAYERS,
@@ -2053,18 +2409,22 @@ export class Lobby {
         (value) => { this.setOnlineName(value); },
         (value) => { this.onlineColor = value; this.render(); },
         [],
+        listenerSignal,
       ),
       garage: this.renderGarage(
         'online-player',
         'Your',
+        this.onlineColor,
         this.onlineLoadout,
         (loadout) => {
           this.onlineLoadout = loadout;
           this.render();
         },
+        listenerSignal,
+        this.onlineBusy,
       ),
-      advanced: this.renderAdvanced(),
-      status: this.renderOnlineStatus(),
+      advanced: this.renderAdvanced(listenerSignal),
+      status: this.renderOnlineStatus(false, listenerSignal),
       onPlayerCountChange: (count) => {
         this.onlineMaxPlayers = count;
         if (this.onlineBots > count - 1) this.onlineBots = count - 1;
@@ -2080,54 +2440,56 @@ export class Lobby {
         this.render();
       },
       onBrowse: () => { this.enterBrowse(); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
-  private renderOnlineAdvancedFields(): HTMLElement {
+  private renderOnlineAdvancedFields(
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const fields = document.createElement('div');
     fields.className = 'lobby-advanced-fields';
     fields.append(
       this.onlineNumberField('Wind cap', this.onlineMaxWind, (value) => { this.onlineMaxWind = value; }, {
         min: WIND_MIN, max: WIND_MAX, step: 1, placeholder: String(WIND_DEFAULT),
         hint: `${WIND_MIN}–${WIND_MAX}`,
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Gravity', this.onlineGravity, (value) => { this.onlineGravity = value; }, {
         min: GRAVITY_MIN, max: GRAVITY_MAX, step: GRAVITY_STEP, placeholder: String(GRAVITY_DEFAULT),
         hint: `${GRAVITY_MIN}–${GRAVITY_MAX}`,
-      }),
+      }, listenerSignal),
       this.onlineChoiceField('Side walls', this.onlineWalls, (value) => { this.onlineWalls = value; }, [
         { value: '', label: 'Open — shots exit' },
         { value: 'reflective', label: 'Reflective — bank shots' },
         { value: 'wrap', label: 'Wrap — cross the arena' },
         { value: 'concrete', label: 'Concrete — impact at edge' },
-      ], 'shots exit, rebound, or cross through paired arena edges'),
+      ], 'shots exit, rebound, or cross through paired arena edges', listenerSignal),
       this.onlineChoiceField('Battlefield', this.onlineBattlefieldWorld, (value) => { this.onlineBattlefieldWorld = value; }, [
         { value: '', label: 'Automatic — terrain decides' },
         { value: 'ember-dusk', label: 'Ember Dusk — post-apocalypse' },
         { value: 'obsidian-caldera', label: 'Obsidian Caldera — volcanic night' },
         { value: 'glassstorm-expanse', label: 'Glassstorm Expanse — ice' },
-      ], 'visual world only; terrain and physics stay unchanged'),
+      ], 'visual world only; terrain and physics stay unchanged', listenerSignal),
       this.onlineChoiceField('Terrain hazards', this.onlineHazards, (value) => { this.onlineHazards = value; }, [
         { value: '', label: 'None — classic terrain' },
         { value: 'lava', label: 'Lava — lethal pools' },
-      ], 'deterministic lava pools are solid to shells but lethal to tanks'),
+      ], 'deterministic lava pools are solid to shells but lethal to tanks', listenerSignal),
       this.onlineChoiceField('Teams', this.onlineTeamMode ? '2v2' : '', (value) => { this.onlineTeamMode = value === '2v2'; }, [
         { value: '', label: 'Free-for-all' },
         { value: '2v2', label: '2v2 — alternating seats' },
-      ], 'four seats only; teammates cannot damage each other'),
+      ], 'four seats only; teammates cannot damage each other', listenerSignal),
       this.onlineNumberField('Rounds', this.onlineRounds, (value) => { this.onlineRounds = value; }, {
         min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT), hint: 'best-of-N, odd',
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Interest', this.onlineInterestRate, (value) => { this.onlineInterestRate = value; }, {
         min: INTEREST_MIN, max: INTEREST_MAX, step: INTEREST_STEP, placeholder: String(INTEREST_DEFAULT), hint: 'per-round credit interest (0–0.5)',
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Sudden death', this.onlineSuddenDeath, (value) => { this.onlineSuddenDeath = value; }, {
         min: SUDDEN_DEATH_MIN, max: SUDDEN_DEATH_MAX, step: 1, placeholder: String(SUDDEN_DEATH_DEFAULT), hint: 'gravity ramps past this turn (0 = off)',
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Arms level', this.onlineArmsLevel, (value) => { this.onlineArmsLevel = value; }, {
         min: ARMS_MIN, max: ARMS_MAX, step: 1, placeholder: String(ARMS_DEFAULT), hint: '0 = basic … 4 = full arsenal',
-      }),
+      }, listenerSignal),
     );
     return fields;
   }
@@ -2191,7 +2553,7 @@ export class Lobby {
   }
   // ---- Join Room sub-view ----
 
-  private renderJoinForm(): HTMLElement {
+  private renderJoinForm(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     return buildLobbyJoinView({
       code: this.joinCode,
       busy: this.onlineBusy,
@@ -2201,17 +2563,21 @@ export class Lobby {
         (value) => { this.setOnlineName(value); },
         (value) => { this.joinColor = value; this.render(); },
         [],
+        listenerSignal,
       ),
       garage: this.renderGarage(
         'online-player',
         'Your',
+        this.joinColor,
         this.onlineLoadout,
         (loadout) => {
           this.onlineLoadout = loadout;
           this.render();
         },
+        listenerSignal,
+        this.onlineBusy,
       ),
-      status: this.renderOnlineStatus(),
+      status: this.renderOnlineStatus(false, listenerSignal),
       onCodeInput: (value) => {
         this.joinCode = normalizeRoomCode(value);
         return this.joinCode;
@@ -2223,7 +2589,7 @@ export class Lobby {
         this.render();
       },
       onBrowse: () => { this.enterBrowse(); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
@@ -2276,13 +2642,13 @@ export class Lobby {
     this.onlineError = '';
     this.browseRooms = [];
     this.render();
-    void this.fetchRooms();
+    void this.fetchRooms(this.browseLifetimeSignal);
     this.startBrowsePoll();
   }
 
   /** Begin (or restart) the 3s list_rooms poll. */
   private startBrowsePoll(): void {
-    this.session.startBrowsePoll(() => { void this.fetchRooms(); });
+    this.session.startBrowsePoll(() => { void this.fetchRooms(this.browseLifetimeSignal); });
   }
 
   /** Stop the list_rooms poll if running. */
@@ -2298,13 +2664,14 @@ export class Lobby {
     this.render();
   }
 
-  private async fetchRooms(): Promise<void> {
+  private async fetchRooms(lifetimeSignal: AbortSignal | null = this.browseLifetimeSignal): Promise<void> {
+    if (lifetimeSignal?.aborted) return;
     try {
       const { ok, data } = await this.transport.listRooms();
 
       // Only repaint if still on the browse view (the user may have navigated
       // away between the request and its response).
-      if (this.onlineSubView !== 'browse') return;
+      if (lifetimeSignal?.aborted || this.onlineSubView !== 'browse') return;
 
       if (!ok || data?.error) {
         this.onlineError = data?.error ?? 'Failed to load rooms.';
@@ -2316,14 +2683,14 @@ export class Lobby {
       this.onlineError = '';
       this.render();
     } catch (err) {
+      if (lifetimeSignal?.aborted || this.onlineSubView !== 'browse') return;
       console.error('Lobby.fetchRooms: network error —', err);
-      if (this.onlineSubView !== 'browse') return;
       this.onlineError = 'Network error. Try again.';
       this.render();
     }
   }
 
-  private renderBrowse(): HTMLElement {
+  private renderBrowse(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     return buildLobbyBrowseView({
       nameColor: this.renderOnlineNameColor(
         this.onlineName,
@@ -2331,29 +2698,34 @@ export class Lobby {
         (value) => { this.setOnlineName(value); },
         (value) => { this.joinColor = value; this.render(); },
         [],
+        listenerSignal,
       ),
       garage: this.renderGarage(
         'online-player',
         'Your',
+        this.joinColor,
         this.onlineLoadout,
         (loadout) => {
           this.onlineLoadout = loadout;
           this.render();
         },
+        listenerSignal,
+        this.onlineBusy,
       ),
-      status: this.renderOnlineStatus(),
+      status: this.renderOnlineStatus(false, listenerSignal),
       rooms: this.browseRooms,
       busy: this.onlineBusy,
       onJoin: (code) => { void this.joinByCode(code); },
+      onRefresh: () => { void this.fetchRooms(listenerSignal); },
       onCreate: () => { this.leaveBrowse('create'); },
       onJoinByCode: () => { this.leaveBrowse('join'); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
   // ---- Waiting Room sub-view ----
 
-  private renderWaitingRoom(): HTMLElement {
+  private renderWaitingRoom(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     const colorClash = this.myColorClashes();
     const nameClash = this.myNameClashes();
     return buildLobbyWaitingView({
@@ -2366,14 +2738,14 @@ export class Lobby {
       clashNames: this.duplicateNames(),
       colorClash,
       nameClash,
-      selfEdit: this.renderWaitingSelfEdit(),
-      status: this.renderOnlineStatus(),
+      selfEdit: this.renderWaitingSelfEdit(listenerSignal),
+      status: this.renderOnlineStatus(false, listenerSignal),
       onCopyInvite: (button, status) => {
         void this.copyWaitingRoomInvite(button, status);
       },
       onReady: () => { void this.handleReadyUp(); },
       onLeave: () => { void this.handleLeaveRoom(); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
@@ -2519,7 +2891,9 @@ export class Lobby {
    * Render the self-edit controls in the waiting room: color swatches (others'
    * colors disabled) and an inline rename input. Each commits via update_player.
    */
-  private renderWaitingSelfEdit(): HTMLElement {
+  private renderWaitingSelfEdit(
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const wrapper = document.createElement('div');
     const me = this.waitingPlayers.find((p) => p.id === this.waitingPlayerId);
     if (!me) return wrapper;
@@ -2538,19 +2912,21 @@ export class Lobby {
     nameInput.maxLength = 20;
     nameInput.value = me.name;
     nameInput.placeholder = 'Name';
+    nameInput.disabled = this.onlineBusy;
     nameInput.addEventListener('input', () => {
       this.activatePreviewOwner('online-player');
       this.syncPreviewName('online-player', nameInput.value);
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
     const commitName = (): void => {
+      if (this.onlineBusy) return;
       const next = nameInput.value.trim();
       if (!next || next === me.name.trim()) return;
       void this.updateMe({ name: next });
     };
     nameInput.addEventListener('keydown', (e) => {
       if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); commitName(); }
-    }, { signal: this.renderListeners.signal });
-    nameInput.addEventListener('blur', () => { commitName(); }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
+    nameInput.addEventListener('blur', () => { commitName(); }, { signal: listenerSignal });
 
     const applyBtn = document.createElement('button');
     applyBtn.type = 'button';
@@ -2558,7 +2934,7 @@ export class Lobby {
     applyBtn.style.cssText = 'padding:6px 12px;font-size:13px;';
     applyBtn.textContent = 'Apply';
     applyBtn.disabled = this.onlineBusy;
-    applyBtn.addEventListener('click', () => { commitName(); }, { signal: this.renderListeners.signal });
+    applyBtn.addEventListener('click', () => { commitName(); }, { signal: listenerSignal });
 
     nameField.append(nameInput, applyBtn);
     wrapper.append(nameField);
@@ -2582,18 +2958,21 @@ export class Lobby {
         if (taken || this.onlineBusy || color.value === me.color) return;
         this.spotlightOwner = 'online-player';
         void this.updateMe({ color: color.value });
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       swatches.append(swatch);
     }
     wrapper.append(swatches);
     wrapper.append(this.renderGarage(
       'online-player',
       'Your',
+      me.color,
       normalizeTankLoadout(me.loadout),
       (loadout) => {
         if (this.onlineBusy) return;
         void this.updateMe({ loadout });
       },
+      listenerSignal,
+      this.onlineBusy,
     ));
 
     return wrapper;
@@ -2610,29 +2989,36 @@ export class Lobby {
     color?: string;
     loadout?: TankLoadout;
   }): Promise<void> {
+    if (this.onlineBusy) return;
     this.onlineBusy = true;
     this.onlineError = '';
     this.render();
 
     try {
       const result = await this.session.updatePlayer(fields);
-      if ('stale' in result) return;
+      if ('stale' in result) {
+        this.pendingGarageFocus = null;
+        return;
+      }
       const { ok, data } = result;
 
       if (!ok || data?.error) {
         this.onlineError = data?.error ?? 'Failed to update.';
         this.onlineBusy = false;
         this.render();
+        this.restorePendingGarageFocus();
         return;
       }
 
       this.onlineBusy = false;
       this.render();
+      this.restorePendingGarageFocus();
     } catch (err) {
       console.error('Lobby.updatePlayer: network error —', err);
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
       this.render();
+      this.restorePendingGarageFocus();
     }
   }
 
@@ -2650,7 +3036,10 @@ export class Lobby {
 
   // ---- Shared online helpers ----
 
-  private renderOnlineStatus(includeRecovery = false): HTMLElement {
+  private renderOnlineStatus(
+    includeRecovery = false,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const el = document.createElement('div');
     el.className = 'online-status' + (this.onlineError ? ' error' : '');
     if (this.networkRecoveryRetry && !includeRecovery) return el;
@@ -2664,12 +3053,13 @@ export class Lobby {
       const retry = document.createElement('button');
       retry.type = 'button';
       retry.className = 'lobby-btn primary';
+      retry.dataset.networkRecoveryRetry = '';
       retry.textContent = 'Retry game recovery';
       retry.addEventListener('click', () => {
         const action = this.networkRecoveryRetry;
         this.networkRecoveryRetry = null;
         action?.();
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       el.append(retry);
     }
     return el;
@@ -2686,6 +3076,7 @@ export class Lobby {
     onName: (v: string) => void,
     onColor: (v: string) => void,
     takenColors: string[],
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -2703,7 +3094,7 @@ export class Lobby {
       onName(nameInput.value);
       this.activatePreviewOwner('online-player');
       this.syncPreviewName('online-player', nameInput.value);
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
@@ -2720,7 +3111,7 @@ export class Lobby {
         if (taken) return;
         this.spotlightOwner = 'online-player';
         onColor(color.value);
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       swatches.append(swatch);
     }
 
@@ -2733,6 +3124,7 @@ export class Lobby {
     value: string,
     onChange: (v: string) => void,
     opts: { min?: number; max?: number; step?: number; placeholder: string; hint: string },
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -2747,7 +3139,7 @@ export class Lobby {
     if (opts.step !== undefined) input.step = String(opts.step);
     input.placeholder = opts.placeholder;
     input.value = value;
-    input.addEventListener('input', () => { onChange(input.value); }, { signal: this.renderListeners.signal });
+    input.addEventListener('input', () => { onChange(input.value); }, { signal: listenerSignal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';
@@ -2760,11 +3152,50 @@ export class Lobby {
   // ---- Hot seat helpers (unchanged) ----
 
   /** Render one player's row (name input + color swatches). */
-  private renderRow(index: number): HTMLElement {
+  private renderRow(
+    index: number,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const player = this.players[index];
     if (player === undefined) throw new RangeError(`Missing lobby player at index ${index}`);
+    const owner = `player-${index + 1}`;
+    const ownerLabel = `Player ${index + 1}`;
+    const selected = this.spotlightVehicle(this.previewRoster())?.owner === owner;
+    const uniformKit = TANK_KIT_IDS.find((kit) =>
+      TANK_PART_SLOTS.every((slot) => player.loadout[slot] === kit),
+    );
+    const appearance = uniformKit
+      ? `${TANK_KIT_LABELS[uniformKit]} loadout`
+      : `Mixed assembly: ${TANK_PART_SLOTS.map((slot) =>
+        TANK_PART_VARIANT_LABELS[slot][player.loadout[slot]],
+      ).join(', ')}`;
     const row = document.createElement('div');
     row.className = 'lobby-row';
+    row.dataset.crewSeat = owner;
+    row.setAttribute('role', 'listitem');
+    row.setAttribute('aria-label', `${ownerLabel} crew seat`);
+    if (selected) row.setAttribute('aria-current', 'true');
+
+    const seatSelector = document.createElement('button');
+    seatSelector.type = 'button';
+    seatSelector.className = 'lobby-row__selector';
+    seatSelector.dataset.crewSeatSelect = owner;
+    seatSelector.setAttribute('aria-pressed', String(selected));
+    seatSelector.setAttribute('aria-label', `Inspect ${ownerLabel} vehicle, ${appearance}`);
+    const seatLabel = document.createElement('span');
+    seatLabel.className = 'lobby-row__seat-label';
+    seatLabel.textContent = ownerLabel;
+    const appearanceLabel = document.createElement('strong');
+    appearanceLabel.className = 'lobby-row__appearance';
+    appearanceLabel.textContent = appearance;
+    seatSelector.append(seatLabel, appearanceLabel);
+    seatSelector.addEventListener('click', () => {
+      this.activatePreviewOwner(owner);
+    }, { signal: listenerSignal });
+
+    row.addEventListener('focusin', () => {
+      this.activatePreviewOwner(owner);
+    }, { signal: listenerSignal });
 
     const name = document.createElement('input');
     name.type = 'text';
@@ -2777,11 +3208,10 @@ export class Lobby {
     name.setAttribute('aria-label', `Player ${index + 1} name`);
     name.addEventListener('input', () => {
       player.name = name.value;
-      const owner = `player-${index + 1}`;
       this.activatePreviewOwner(owner);
       this.syncPreviewName(owner, name.value);
       this.refreshStartState();
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
@@ -2798,12 +3228,18 @@ export class Lobby {
       );
       if (player.color === color.value) swatch.classList.add('selected');
       if (takenByOther) swatch.classList.add('taken');
+      swatch.setAttribute('aria-pressed', String(player.color === color.value));
+      swatch.setAttribute(
+        'aria-label',
+        `${ownerLabel} paint: ${color.name}${takenByOther ? ', unavailable' : ''}`,
+      );
+      if (takenByOther) swatch.setAttribute('aria-disabled', 'true');
       swatch.addEventListener('click', () => {
         if (takenByOther) return;
-        this.spotlightOwner = `player-${index + 1}`;
+        this.spotlightOwner = owner;
         player.color = color.value;
         this.render();
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       swatches.append(swatch);
     }
 
@@ -2829,22 +3265,25 @@ export class Lobby {
     control.addEventListener('change', () => {
       const v = control.value;
       player.ai = v === 'human' ? undefined : (v as AiDifficulty);
+      this.spotlightOwner = owner;
       // Default a friendly CPU name if the seat is still on its placeholder.
       if (player.ai && !player.name.trim()) {
         player.name = `CPU ${index + 1}`;
       }
       this.render();
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
-    row.append(name, swatches, control);
+    row.append(seatSelector, name, swatches, control);
     row.append(this.renderGarage(
-      `player-${index + 1}`,
-      `Player ${index + 1}`,
+      owner,
+      ownerLabel,
+      player.color,
       player.loadout,
       (loadout) => {
         player.loadout = loadout;
         this.render();
       },
+      listenerSignal,
     ));
     return row;
   }
@@ -2855,7 +3294,7 @@ export class Lobby {
    * the user types a value; blank fields are omitted from the emitted config so
    * the engine default applies.
    */
-  private renderAdvanced(): HTMLElement {
+  private renderAdvanced(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     const trigger = document.createElement('button');
     trigger.type = 'button';
     trigger.className = 'lobby-advanced-trigger lobby-btn secondary';
@@ -2865,23 +3304,25 @@ export class Lobby {
       this.accountPanelOpen = false;
       this.settingsOpen = true;
       this.render();
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
     return trigger;
   }
 
   /** Direct Hot Seat battlefield controls share the exact SettingsState parsed at launch. */
-  private renderHotSeatBattlefield(): HTMLElement {
+  private renderHotSeatBattlefield(
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const fields = document.createElement('div');
     fields.className = 'lobby-hotseat-battlefield';
     fields.append(
       this.numberField('Rounds', 'rounds', {
         min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2,
         placeholder: String(ROUNDS_DEFAULT), hint: 'best-of-N, odd',
-      }),
+      }, listenerSignal),
       this.numberField('Wind', 'maxWind', {
         min: WIND_MIN, max: WIND_MAX, step: 1,
         placeholder: String(WIND_DEFAULT), hint: `${WIND_MIN}–${WIND_MAX}`,
-      }),
+      }, listenerSignal),
       this.choiceField('lobby-hotseat-direct-walls', 'Walls', this.settings.walls, (value) => {
         this.settings.walls = value;
       }, [
@@ -2889,31 +3330,34 @@ export class Lobby {
         { value: 'reflective', label: 'Reflective — bank shots' },
         { value: 'wrap', label: 'Wrap — paired edges' },
         { value: 'concrete', label: 'Concrete — impact at edge' },
-      ], 'arena edge behavior'),
-      this.renderAdvanced(),
+      ], 'arena edge behavior', listenerSignal),
+      this.renderAdvanced(listenerSignal),
     );
     return fields;
   }
 
   private focusRequestedVerifiedDeployment(): void {
     if (!this.focusVerifiedDeploymentRequested || this.root.hidden) return;
-    const verifiedTab = this.root.querySelector<HTMLButtonElement>(
-      '[role="tab"][data-hotseat-surface="verified"]:not(:disabled)',
+    const verifiedItem = this.root.querySelector<HTMLButtonElement>(
+      '[data-command-item="verified-operations"]',
     );
     if (this.focusVerifiedChallengeRequested) {
-      const target = this.root.querySelector<HTMLButtonElement>('[data-verified-challenge] button:not(:disabled)')
-        ?? verifiedTab
-        ?? this.root.querySelector<HTMLButtonElement>('[role="tab"][data-hotseat-surface="local"]:not(:disabled)');
+      const target = this.root.querySelector<HTMLButtonElement>(
+        '.lobby-verified-challenge__launch:not(:disabled)',
+      )
+        ?? this.root.querySelector<HTMLButtonElement>('[data-verified-challenge] button:not(:disabled)')
+        ?? this.root.querySelector<HTMLButtonElement>('[data-verified-surface="challenge"]')
+        ?? verifiedItem;
       if (!target) return;
       target.focus();
       this.focusVerifiedChallengeRequested = false;
       this.focusVerifiedDeploymentRequested = false;
       return;
     }
-    if (!verifiedTab) return;
+    if (!verifiedItem) return;
     (this.root.querySelector<HTMLButtonElement>(
       '.lobby-verified-deployment__launch:not(:disabled)',
-    ) ?? verifiedTab).focus({ preventScroll: true });
+    ) ?? verifiedItem).focus({ preventScroll: true });
     this.focusVerifiedDeploymentRequested = false;
   }
 
@@ -3024,6 +3468,7 @@ export class Lobby {
     label: string,
     key: keyof SettingsState,
     opts: { min?: number; max?: number; step?: number; placeholder: string; hint: string },
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -3041,7 +3486,7 @@ export class Lobby {
     input.value = this.settings[key];
     input.addEventListener('input', () => {
       this.settings[key] = input.value;
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';
@@ -3070,9 +3515,18 @@ export class Lobby {
     onChange: (value: string) => void,
     choices: ReadonlyArray<{ value: string; label: string }>,
     hintText: string,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return this.choiceField(`lobby-online-${slug}`, label, value, onChange, choices, hintText);
+    return this.choiceField(
+      `lobby-online-${slug}`,
+      label,
+      value,
+      onChange,
+      choices,
+      hintText,
+      listenerSignal,
+    );
   }
 
   private choiceField(
@@ -3082,6 +3536,7 @@ export class Lobby {
     onChange: (value: string) => void,
     choices: ReadonlyArray<{ value: string; label: string }>,
     hintText: string,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -3099,7 +3554,7 @@ export class Lobby {
       option.selected = choice.value === value;
       select.append(option);
     }
-    select.addEventListener('change', () => onChange(select.value), { signal: this.renderListeners.signal });
+    select.addEventListener('change', () => onChange(select.value), { signal: listenerSignal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';

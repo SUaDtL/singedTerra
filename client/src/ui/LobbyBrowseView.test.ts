@@ -40,6 +40,7 @@ describe('buildLobbyBrowseView', () => {
     const status = sharedSection('status');
     const onCreate = vi.fn();
     const onJoinByCode = vi.fn();
+    const onRefresh = vi.fn();
 
     const root = buildLobbyBrowseView({
       nameColor,
@@ -48,11 +49,14 @@ describe('buildLobbyBrowseView', () => {
       rooms: [],
       busy: false,
       onJoin: vi.fn(),
+      onRefresh,
       onCreate,
       onJoinByCode,
     });
 
-    expect(root.className).toBe('lobby-operations-board lobby-operations-board--browse');
+    expect(root.classList).toContain('lobby-operations-board');
+    expect(root.classList).toContain('lobby-operations-board--browse');
+    expect(root.classList).toContain('preparation-frame');
     expect(root.querySelector('.lobby-operations-board__title')?.textContent).toBe('Open operations');
     expect(root.querySelector('.lobby-operations-board__purpose')?.textContent)
       .toBe('Scan active rooms and join a crew preparing to fire.');
@@ -65,9 +69,13 @@ describe('buildLobbyBrowseView', () => {
     expect(root.querySelector('.online-player-row')?.textContent)
       .toBe('No public rooms right now.');
     expect(root.querySelector('nav')?.getAttribute('aria-label')).toBe('Other ways to play online');
+    expect(root.querySelectorAll('.lobby-btn.primary')).toHaveLength(1);
+    expect(button(root, 'Refresh rooms').classList.contains('primary')).toBe(true);
 
+    button(root, 'Refresh rooms').click();
     button(root, 'Create a room').click();
     button(root, 'Join with a code').click();
+    expect(onRefresh).toHaveBeenCalledOnce();
     expect(onCreate).toHaveBeenCalledOnce();
     expect(onJoinByCode).toHaveBeenCalledOnce();
   });
@@ -84,6 +92,7 @@ describe('buildLobbyBrowseView', () => {
       ],
       busy: false,
       onJoin,
+      onRefresh: vi.fn(),
       onCreate: vi.fn(),
       onJoinByCode: vi.fn(),
     });
@@ -100,8 +109,9 @@ describe('buildLobbyBrowseView', () => {
 
     const available = button(root, 'Join (1/4)');
     const full = button(root, 'Join (4/4)');
-    expect(available.classList.contains('primary')).toBe(true);
-    expect(full.classList.contains('primary')).toBe(true);
+    expect(available.classList.contains('secondary')).toBe(true);
+    expect(full.classList.contains('secondary')).toBe(true);
+    expect(root.querySelectorAll('.lobby-btn.primary')).toHaveLength(1);
     expect(available.disabled).toBe(false);
     expect(full.disabled).toBe(true);
     available.click();
@@ -119,6 +129,7 @@ describe('buildLobbyBrowseView', () => {
       rooms: [browseRoom()],
       busy: true,
       onJoin,
+      onRefresh: vi.fn(),
       onCreate: vi.fn(),
       onJoinByCode: vi.fn(),
     });

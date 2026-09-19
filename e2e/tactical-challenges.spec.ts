@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { gotoLobby, selectCommandWorkspace } from './support';
 
 const CASES = [
   { id: 'crosswind-range', moves: 0, result: 'First Strike achieved — CPU damaged on salvo 1' },
@@ -9,12 +10,11 @@ const CASES = [
 for (const scenario of CASES) {
   test(`P04 ${scenario.id} with ${scenario.moves} moves resolves its objective from a real human shot`, async ({ page }, testInfo) => {
     test.setTimeout(60_000);
-    await page.goto('?e2e=quick-duel-seed');
-    await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await page.locator('[data-ui="other-quick-duels"] > summary').click();
-    await page.locator(`[data-operation-id="${scenario.id}"]`).click();
+    await gotoLobby(page);
+    await selectCommandWorkspace(page, 'Skirmishes', scenario.id);
     await expect(page.locator('[data-ui="quick-operation-objective"]')).toHaveAttribute('data-content-version', '2');
-    await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+    const title = scenario.id === 'crosswind-range' ? 'Crosswind Range' : 'Caldera Run';
+    await page.getByRole('button', { name: `Start ${title}`, exact: true }).click();
     await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
 
     const angle = page.locator('[data-semantic-key="node:output:Angle:43"]');

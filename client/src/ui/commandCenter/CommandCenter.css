@@ -1,0 +1,4585 @@
+/*
+ * Command Center owns launcher navigation and the Ash Road decision plane.
+ * Asset provenance: chrome/panel-frame.png, chrome/iron-tile.png,
+ * chrome/gold-tile.png, chrome/map-tile.png, chrome/button-frame.png,
+ * chrome/button-selected-frame.png, chrome/button-hover-frame.png,
+ * chrome/button-pressed-frame.png, and chrome/button-disabled-frame.png.
+ * Lobby.ts resolves those admitted files through Vite and supplies the custom
+ * properties below. Every image layer has a painted fallback.
+ */
+
+#lobby .lobby-card:has(.command-center) {
+  padding: clamp(10px, 1.8vw, 24px);
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(5, 6, 10, 0.28), rgba(5, 6, 10, 0.82)),
+    url('art/battlefield-backdrop.webp') center / cover no-repeat,
+    #0d0912;
+}
+
+#lobby .lobby-card:has(.command-center)::before,
+#lobby .lobby-card:has(.command-center)::after {
+  display: none;
+}
+
+#lobby .lobby-card:has(.command-center) > .lobby-deployment {
+  position: relative;
+  z-index: 1;
+  width: min(3600px, 100%);
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+  margin: 0 auto;
+  display: grid;
+  grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  gap: clamp(9px, 1.3vw, 16px);
+}
+
+/* A fixed Vehicle Bay still participates in the command-center stacking
+ * context. Elevate that owner only while the modal exists so its workshop
+ * header clears the persistent command rail without changing normal chrome. */
+#lobby .lobby-card:has(.command-center)
+  > .lobby-deployment:has(.lobby-garage.editing) {
+  z-index: 4;
+}
+
+#lobby .lobby-card:has(.command-center)
+  > .lobby-deployment:has(.lobby-garage.editing)
+  > .command-center {
+  z-index: 4;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-deployment::before {
+  display: none;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-deployment__masthead {
+  position: relative;
+  z-index: 3;
+  grid-area: auto;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 70px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 8px solid #2c1b10;
+  border-image-source: var(--command-panel-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 8px;
+  border-image-repeat: stretch;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.58fr) minmax(320px, 1.6fr) minmax(280px, 0.82fr);
+  align-items: stretch;
+  gap: 0;
+  padding: 3px;
+  background:
+    linear-gradient(180deg, rgba(91, 49, 23, 0.48), rgba(9, 10, 11, 0.94)),
+    var(--command-iron-tile, none) center / 256px 256px repeat,
+    #11100f;
+  box-shadow:
+    0 0 0 2px rgba(166, 98, 44, 0.88),
+    0 8px 22px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 220, 153, 0.13);
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__brand {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 54px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(16px, 1.5vw, 28px);
+  border-right: 1px solid rgba(190, 116, 50, 0.58);
+  color: #f3d490;
+  background: linear-gradient(90deg, rgba(99, 54, 27, 0.3), rgba(19, 15, 13, 0.3));
+  font: 800 clamp(27px, 2.2vw, 38px)/1 var(--font-display);
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 0 #241108, 0 0 20px rgba(232, 121, 42, 0.3);
+  white-space: nowrap;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__context {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  border: 0;
+  border-right: 1px solid rgba(190, 116, 50, 0.58);
+  background: linear-gradient(180deg, rgba(111, 61, 29, 0.36), rgba(14, 12, 11, 0.7));
+  box-shadow: inset 0 1px 0 rgba(255, 218, 144, 0.1), inset 0 -1px 0 rgba(75, 38, 17, 0.7);
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-header__kicker {
+  overflow-wrap: anywhere;
+  color: #f2bf62;
+  font: 800 14px/1.2 var(--font-display);
+  letter-spacing: clamp(0.12em, 0.4vw, 0.32em);
+  text-align: center;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier {
+  position: relative;
+  inset: auto;
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  justify-self: stretch;
+  align-self: stretch;
+  display: block;
+  color: #ead4a8;
+  background: linear-gradient(90deg, rgba(16, 14, 13, 0.48), rgba(69, 37, 20, 0.22));
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record {
+  width: 100%;
+  height: 100%;
+  min-height: 54px;
+  box-sizing: border-box;
+  gap: 2px;
+  padding: 5px 12px 4px;
+  border: 0;
+  border-left: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record > h2 {
+  color: rgba(239, 182, 76, 0.82);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__account-trigger {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-left: 0;
+  border-radius: 0;
+  color: #f1dfba;
+  background: transparent;
+  box-shadow: none;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__career-next {
+  display: none;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record-xp {
+  height: 3px;
+  margin: 0;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier > .account-panel__summary,
+#lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier > .account-panel__account-trigger {
+  width: 100%;
+  height: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 0;
+  border-left: 0;
+  border-radius: 0;
+  color: #f1dfba;
+  background: transparent;
+  box-shadow: none;
+  font: 800 13px/1.2 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#lobby .lobby-card:has(.command-center) .lobby-deployment__masthead > .account-panel > button,
+#lobby .lobby-card:has(.command-center) .account-panel__account-trigger {
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+#lobby .lobby-command-center {
+  min-width: 0;
+  min-height: 0;
+}
+
+#lobby .command-center {
+  --command-ink: #080a0c;
+  --command-surface: #111315;
+  --command-surface-raised: #1b1814;
+  --command-line: #7b4823;
+  --command-line-bright: #c07b38;
+  --command-copy: #f1dfba;
+  --command-muted: #baaa8c;
+  --command-gold: #efb64c;
+  --command-gold-bright: #ffd77d;
+  --command-success: #9bd668;
+  --command-danger: #ed715a;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  grid-area: auto;
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template: minmax(0, 1fr) / clamp(210px, 11vw, 320px) minmax(0, 1fr);
+  overflow: hidden;
+  border: 12px solid #15100c;
+  border-image-source: var(--command-panel-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 12px;
+  border-image-repeat: stretch;
+  background:
+    linear-gradient(145deg, rgba(105, 56, 26, 0.3), transparent 18% 82%, rgba(105, 56, 26, 0.22)),
+    var(--command-iron-tile, none) center / 256px 256px repeat,
+    var(--command-ink);
+  box-shadow:
+    0 0 0 2px #a4622e,
+    0 0 0 6px #1a100a,
+    0 18px 44px rgba(0, 0, 0, 0.62),
+    inset 0 1px 0 rgba(255, 220, 153, 0.16);
+  color: var(--command-copy);
+  font: 15px/1.45 var(--font-sans);
+}
+
+@media (min-width: 1800px) {
+  #lobby .command-center {
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 3000px) {
+  #lobby .command-center {
+    font-size: 18px;
+  }
+}
+
+#lobby .command-center button,
+#lobby .command-center select,
+#lobby .command-center summary {
+  min-height: 44px;
+  box-sizing: border-box;
+  font: inherit;
+  touch-action: manipulation;
+}
+
+#lobby .command-center button,
+#lobby .command-center summary {
+  cursor: pointer;
+}
+
+#lobby .command-center button:focus-visible,
+#lobby .command-center select:focus-visible,
+#lobby .command-center summary:focus-visible,
+#lobby .command-center [tabindex]:focus-visible {
+  outline: 3px solid var(--command-gold-bright);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(18, 11, 6, 0.86);
+}
+
+#lobby .command-center__navigation {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: clamp(16px, 2vw, 26px) 14px;
+  overflow: hidden;
+  border: 12px solid #392315;
+  border-image-source: var(--command-panel-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 12px;
+  border-image-repeat: stretch;
+  background: #15110e linear-gradient(180deg, rgba(104, 57, 26, 0.5), rgba(9, 11, 12, 0.94) 22% 100%);
+  box-shadow: inset -8px 0 16px rgba(0, 0, 0, 0.32);
+}
+
+#lobby .command-center__title {
+  margin: 0;
+  padding: 0 10px 14px;
+  border-bottom: 1px solid rgba(194, 121, 53, 0.5);
+  color: var(--command-gold-bright);
+  font: 800 clamp(18px, 1.6vw, 24px)/1.12 var(--font-display);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+#lobby .command-center__modes-trigger {
+  display: none;
+}
+
+#lobby .command-center__category-rail,
+#lobby .command-center__sheet-categories {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+#lobby .command-center__category {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 10px solid #33271d;
+  border-image-source: var(--command-button-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 10px;
+  border-image-repeat: stretch;
+  border-radius: 0;
+  color: var(--command-muted);
+  background: #121314 linear-gradient(180deg, rgba(49, 40, 31, 0.92), rgba(11, 13, 14, 0.98));
+  box-shadow: inset 0 1px rgba(255, 232, 185, 0.06);
+  font-weight: 750;
+  line-height: 1.18;
+  text-align: left;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+#lobby .command-center__category:hover {
+  border-color: #9d622e;
+  border-image-source: var(--command-button-hover-frame, none);
+  color: var(--command-copy);
+  background: #171615 linear-gradient(180deg, rgba(70, 49, 31, 0.96), rgba(14, 14, 14, 0.98));
+}
+
+#lobby .command-center__category:active {
+  border-image-source: var(--command-button-pressed-frame, none);
+  background: #0e1011 linear-gradient(180deg, rgba(33, 26, 20, 0.98), rgba(9, 10, 11, 0.98));
+}
+
+#lobby .command-center__category[aria-pressed='true'] {
+  border-color: var(--command-gold);
+  border-image-source: var(--command-button-selected-frame, none);
+  border-image-slice: 22 fill;
+  color: var(--command-gold-bright);
+  background-color: #352316;
+  background-image:
+    linear-gradient(90deg, rgba(208, 129, 48, 0.27), transparent 65%),
+    linear-gradient(180deg, #4b301c, #16120e 68%);
+  box-shadow: inset 4px 0 0 var(--command-gold), 0 0 14px rgba(217, 139, 51, 0.13);
+}
+
+#lobby .command-center__icon {
+  width: 30px;
+  height: 30px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  overflow: visible;
+}
+
+#lobby .command-center__body {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: clamp(260px, 16vw, 440px) minmax(0, 1fr);
+  overflow: hidden;
+}
+
+#lobby .command-center__body[data-command-collection='singleton'] {
+  grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+#lobby .command-center__body[data-command-collection='singleton'] .command-center__library {
+  grid-template: minmax(44px, auto) / minmax(120px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-right: 0;
+  border-bottom: 1px solid rgba(186, 111, 47, 0.54);
+}
+
+#lobby .command-center__body[data-command-collection='singleton'] .command-center__library > h2 {
+  padding: 0 12px 0 0;
+  border: 0;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#lobby .command-center__body[data-command-collection='singleton'] .command-center__library-items {
+  grid-template-columns: minmax(0, 430px);
+  overflow: visible;
+  padding: 0;
+}
+
+#lobby .command-center__body[data-command-collection='singleton'] .command-center__item {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px;
+  padding-block: 1px;
+}
+
+#lobby .command-center__library {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: clamp(18px, 2.2vw, 30px) clamp(14px, 1.7vw, 22px);
+  overflow: hidden;
+  border-right: 1px solid rgba(186, 111, 47, 0.54);
+  background: linear-gradient(180deg, rgba(45, 30, 19, 0.58), rgba(8, 10, 11, 0.92));
+}
+
+#lobby .command-center__library > h2 {
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(187, 113, 51, 0.44);
+  color: var(--command-gold-bright);
+  font: 800 clamp(19px, 1.8vw, 26px)/1.1 var(--font-display);
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .command-center__library-items {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 2px 4px 8px 2px;
+}
+
+#lobby .command-center__item {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 10px solid #49321f;
+  border-image-source: var(--command-button-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 10px;
+  border-image-repeat: stretch;
+  border-radius: 0;
+  color: var(--command-copy);
+  background: #111315 linear-gradient(180deg, rgba(49, 41, 33, 0.9), rgba(10, 12, 13, 0.98));
+  text-align: left;
+}
+
+#lobby .command-center__item:hover,
+#lobby .command-center__item[aria-current='true'] {
+  border-color: var(--command-gold);
+  border-image-source: var(--command-button-selected-frame, none);
+  border-image-slice: 22 fill;
+  background-color: #332317;
+  background-image:
+    linear-gradient(90deg, rgba(220, 138, 49, 0.18), transparent 72%),
+    linear-gradient(180deg, #42301f, #131210 72%);
+}
+
+#lobby .command-center__item[aria-current='true'] {
+  box-shadow: inset 4px 0 0 var(--command-gold);
+}
+
+#lobby .command-center__item-label,
+#lobby .command-center__item-description {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#lobby .command-center__item-label {
+  color: var(--command-gold-bright);
+  font: 800 clamp(17px, calc(10px + 0.28vw), 20px)/1.15 var(--font-display);
+}
+
+#lobby .command-center__item-description {
+  color: var(--command-muted);
+  font-size: clamp(13px, calc(8px + 0.2vw), 15px);
+  line-height: 1.38;
+}
+
+#lobby .command-center__workspace-host {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background:
+    linear-gradient(180deg, rgba(15, 16, 17, 0.72), rgba(6, 8, 9, 0.92)),
+    var(--command-iron-tile, none) center / 256px 256px repeat;
+}
+
+/* Local owns one internal setup scroller so its deployment decision remains
+   docked. The shell host must not become a second, competing scroll region. */
+#lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace) {
+  overflow-y: hidden;
+}
+
+#lobby .command-center__workspace-mount {
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+}
+
+#lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace)
+  > .command-center__workspace-mount {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Local Battle reads as one battery assembly: crew ownership and rules lead to
+   one selected vehicle and one deployment decision. */
+#lobby .multiplayer-command {
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+  container: local-workspace-shell / inline-size;
+}
+
+#lobby .multiplayer-command__local-workspace {
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  container: local-battle-setup / inline-size;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 2px 7px 10px 2px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid rgba(190, 116, 50, 0.52);
+  background: linear-gradient(90deg, rgba(69, 42, 24, 0.58), rgba(9, 11, 12, 0.3) 76%);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-local-preparation__title {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 clamp(20px, 2vw, 28px)/1.1 var(--font-display);
+  letter-spacing: 0.035em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-local-preparation__context {
+  max-width: 76ch;
+  margin: 0;
+  color: var(--command-muted);
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__inspection {
+  min-width: 0;
+  grid-area: inspection;
+  align-self: stretch;
+  margin: 0;
+  padding: 9px;
+  border: 1px solid rgba(154, 92, 41, 0.7);
+  background: var(--console-workshop-surface, #101214);
+  box-shadow: inset 0 1px 0 rgba(255, 223, 165, 0.08);
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__inspection > .lobby-preview--inspection {
+  position: relative;
+  inset: auto;
+  z-index: 2;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: 280px;
+  height: 100%;
+  max-height: none;
+  align-self: stretch;
+  margin: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 72%, rgba(0, 0, 0, 0.52) 0 18%, transparent 48%),
+    linear-gradient(180deg, rgba(31, 27, 23, 0.98), rgba(9, 11, 12, 0.98));
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview--inspection::before,
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview--inspection::after {
+  content: none;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview--inspection .lobby-preview__convoy {
+  display: none;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview__part span {
+  letter-spacing: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview__part strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#lobby .multiplayer-command__verified-workspace,
+#lobby .multiplayer-command__verified-workspace > .lobby-hotseat,
+#lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+#lobby .multiplayer-command__verified-workspace {
+  box-sizing: border-box;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__verified-workspace > .lobby-hotseat:not(.preparation-frame) {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+#lobby .multiplayer-command__verified-workspace .lobby-btn.primary {
+  min-height: 56px;
+}
+
+#lobby .multiplayer-command__verified-workspace .lobby-verified-challenge__launch {
+  /* Keep fractional Linux layout pixels clear of the short-window viewport edge. */
+  scroll-margin-block: 2px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  grid-template-areas: 'briefing inspection';
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+  min-height: 100%;
+  margin-top: 10px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__briefing {
+  min-width: 0;
+  grid-area: briefing;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__briefing
+  > :is(.lobby-local-preparation__crew, .lobby-local-preparation__rules) {
+  grid-area: auto;
+  align-self: stretch;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__crew {
+  grid-area: crew;
+  align-self: start;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__rules {
+  grid-area: rules;
+  align-self: start;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preparation-section {
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid rgba(140, 82, 36, 0.64);
+  border-left: 3px solid var(--command-line-bright);
+  background: linear-gradient(100deg, rgba(55, 38, 25, 0.68), rgba(8, 10, 11, 0.9) 42%);
+  box-shadow: inset 0 1px 0 rgba(255, 219, 151, 0.07);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preparation-section__title {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 15px/1.15 var(--font-display);
+  letter-spacing: 0.055em;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preparation-section__body {
+  min-width: 0;
+  display: grid;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__title {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body {
+  display: contents;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body
+  > .lobby-field:first-child {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: auto 64px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body
+  > .lobby-field:first-child
+  > label {
+  width: auto;
+  color: var(--command-muted);
+  font: 700 11px/1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body
+  > .lobby-field:first-child
+  > select {
+  width: 64px;
+  min-height: 44px;
+  padding: 7px 8px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-rows {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 0;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row {
+  min-width: 0;
+  display: grid;
+  grid-template:
+    'selector name control' auto
+    'swatches swatches garage' auto
+    / minmax(138px, 0.8fr) minmax(150px, 1fr) minmax(132px, 0.74fr);
+  align-items: stretch;
+  gap: 5px 9px;
+  padding: 6px 8px;
+  border: 1px solid rgba(136, 84, 43, 0.68);
+  border-left: 3px solid rgba(168, 104, 49, 0.74);
+  background: var(--console-seat-surface, rgba(11, 13, 14, 0.94));
+  box-shadow: inset 0 1px 0 rgba(255, 222, 158, 0.06);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row[aria-current='true'] {
+  border-color: var(--command-gold);
+  border-left-width: 5px;
+  background: var(--console-seat-selected, rgba(71, 44, 25, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(255, 222, 141, 0.18), 0 0 12px rgba(229, 150, 58, 0.12);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row__selector {
+  grid-area: selector;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px solid rgba(151, 93, 44, 0.5);
+  color: var(--command-copy);
+  background: rgba(8, 10, 11, 0.72);
+  text-align: left;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row__selector[aria-pressed='true'] {
+  border-color: var(--command-gold-bright);
+  color: var(--command-gold-bright);
+  background: linear-gradient(90deg, rgba(112, 67, 30, 0.58), rgba(15, 15, 14, 0.9));
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row__seat-label {
+  font: 800 12px/1.15 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row__appearance {
+  min-width: 0;
+  color: var(--command-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row .lobby-name {
+  grid-area: name;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row .lobby-control {
+  grid-area: control;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row .lobby-swatches {
+  grid-area: swatches;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  overflow: visible;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background-clip: content-box !important;
+  box-shadow: inset 0 0 0 1px rgba(244, 223, 180, 0.16);
+  transform: none;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch:hover:not(.taken) {
+  border-color: var(--command-line-bright);
+  transform: none;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch:focus-visible {
+  outline: 3px solid var(--command-gold-bright);
+  outline-offset: 1px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.selected {
+  border-color: var(--command-gold-bright);
+  box-shadow: inset 0 0 0 2px #17100b, 0 0 0 1px var(--command-gold);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.selected::after,
+#lobby .multiplayer-command__local-workspace .lobby-swatch.taken::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.selected::after {
+  width: 11px;
+  height: 6px;
+  border-left: 2px solid #f7e4bd;
+  border-bottom: 2px solid #f7e4bd;
+  transform: translate(-50%, -62%) rotate(-45deg);
+  filter: drop-shadow(0 1px 1px #080a0c);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.taken {
+  cursor: not-allowed;
+  border-color: rgba(191, 180, 159, 0.54);
+  opacity: 0.5;
+  filter: saturate(0.45);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.taken::after {
+  width: 18px;
+  height: 2px;
+  background: #f7e4bd;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  box-shadow: 0 1px 2px #080a0c;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row .lobby-garage:not(.editing) {
+  grid-area: garage;
+  min-width: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row .lobby-garage:not(.editing)
+  :is(.lobby-garage__heading, .lobby-garage__build-summary, .lobby-garage__presets, .lobby-garage__slots, .lobby-garage__close) {
+  display: none;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row .lobby-garage:not(.editing) .lobby-garage__open {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+  border-image-source: var(--command-button-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 6px;
+  color: var(--command-copy);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+@container local-battle-setup (max-width: 760px) {
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'crew'
+      'inspection'
+      'rules';
+    grid-template-rows: auto auto auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__briefing {
+    display: contents;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__briefing
+    > .lobby-local-preparation__crew {
+    grid-area: crew;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__briefing
+    > .lobby-local-preparation__rules {
+    grid-area: rules;
+  }
+}
+
+@container local-battle-setup (min-width: 1700px) {
+  #lobby .multiplayer-command__local-workspace .lobby-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1101px) and (min-height: 621px) {
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    grid-template-rows: auto auto;
+    align-content: safe center;
+    gap: 10px;
+    box-sizing: border-box;
+    padding-block: clamp(8px, 2.4vh, 34px);
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    grid-template-rows: auto auto;
+    max-height: 100%;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__content {
+    min-height: clamp(380px, 44vh, 720px);
+    grid-template-rows: minmax(380px, 1fr);
+    align-content: safe center;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__inspection > .lobby-preview--inspection {
+    min-height: clamp(380px, 44vh, 720px);
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .lobby-preview--inspection .lobby-preview__spotlight {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .lobby-preview--inspection .lobby-preview__spotlight-canvas {
+    width: min(620px, 82%);
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .lobby-preview--inspection .lobby-preview__parts {
+    width: min(720px, calc(100% - 32px));
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1799px) and (min-height: 621px) {
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__inspection {
+    /* Its bordered 100%-height preview resolves two pixels taller than this bay. */
+    height: calc(420px - 1px);
+    align-self: center;
+  }
+}
+
+@media (min-width: 1800px) and (min-height: 800px) {
+  #lobby .multiplayer-command__local-workspace .lobby-preparation-section__title {
+    font-size: 16px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-row .lobby-name {
+    font-size: 15px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-row .lobby-control {
+    font-size: 14px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-row__seat-label {
+    font-size: 13px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-row__appearance,
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield .lobby-hint {
+    font-size: 12px;
+  }
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body input,
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body select,
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body button {
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield > .lobby-field {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 5px;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield > .lobby-field > label {
+  width: auto;
+  color: var(--command-muted);
+  font: 700 11px/1.2 var(--font-mono);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield .lobby-hint {
+  color: var(--command-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield :is(input[type='number'], select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-advanced-trigger {
+  min-height: 44px;
+  justify-self: stretch;
+  padding: 7px 10px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
+  align-items: center;
+  gap: 12px;
+  margin-top: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(177, 102, 43, 0.62);
+  background:
+    linear-gradient(180deg, rgba(55, 35, 22, 0.9), rgba(7, 9, 10, 0.98)),
+    var(--command-iron-tile, none) center / 256px 256px repeat;
+  box-shadow: inset 0 1px 0 rgba(255, 221, 152, 0.08);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__brief {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__heading {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 15px/1.1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__status {
+  color: var(--command-muted);
+  font: 700 11px/1.25 var(--font-mono);
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-error {
+  color: var(--command-danger);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
+  width: 100%;
+  min-width: 220px;
+  min-height: 60px;
+  justify-self: end;
+  padding: 6px 14px;
+  border: 10px solid var(--command-gold-bright);
+  border-image-source: var(--command-button-gold-frame, none);
+  border-image-slice: 22 fill;
+  border-image-width: 10px;
+  color: #251306;
+  background:
+    var(--command-gold-tile, none),
+    linear-gradient(180deg, #ffd879, #cf8425);
+  background-size: 192px 192px, auto;
+  box-shadow: 0 0 0 2px #4f2d14, 0 5px 18px rgba(0, 0, 0, 0.34);
+  font: 900 clamp(15px, 1.4vw, 19px)/1.1 var(--font-display);
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-footer > .lobby-start:disabled {
+  border-color: #4e4941;
+  border-image-source: var(--command-button-disabled-frame, none);
+  border-image-slice: 16 fill;
+  color: #8d877d;
+  background: linear-gradient(180deg, #242424, #101112);
+  box-shadow: none;
+}
+
+#lobby .multiplayer-command__online-workspace .lobby-preview__convoy {
+  display: none;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preview__convoy {
+  bottom: 8px;
+}
+
+#lobby .multiplayer-command__online-route input,
+#lobby .multiplayer-command__online-route select,
+#lobby .multiplayer-command__online-route button,
+#lobby .multiplayer-command__online-route summary {
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+#lobby .multiplayer-command__online-route .lobby-field {
+  min-width: 0;
+  gap: 6px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-field > label {
+  width: 80px;
+  flex: 0 0 80px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-preparation-section
+  .lobby-garage button {
+  min-width: 45px;
+  min-height: 44px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-garage button {
+  min-width: 45px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-route-brief--online
+  .lobby-garage button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-swatch {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-btn.primary {
+  min-height: 56px;
+  font-size: max(var(--st-command-readability-size, 12px), 14px);
+}
+
+#lobby .multiplayer-command__online-route .lobby-route-brief__title {
+  font-size: max(var(--st-command-readability-size, 12px), 14px);
+}
+
+#lobby .campaign-command__decision {
+  position: relative;
+  grid-area: decision;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(400px, 1.22fr);
+  grid-template-rows: auto minmax(110px, 1fr) auto;
+  gap: 10px clamp(12px, 1.6vw, 24px);
+  padding: 14px;
+  overflow: hidden;
+  border: 12px solid #6a3d20;
+  border-image-source: var(--command-panel-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 12px;
+  border-image-repeat: stretch;
+  background:
+    linear-gradient(145deg, rgba(67, 39, 23, 0.44), transparent 42%),
+    var(--command-iron-tile, none) center / 256px 256px repeat,
+    #0c0f11;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
+}
+
+#lobby .campaign-command__identity {
+  z-index: 3;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  align-self: start;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 4px 2px 0;
+}
+
+#lobby .campaign-command__chapter {
+  margin: 0;
+  color: var(--command-gold);
+  font: 800 12px/1.2 var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+#lobby .campaign-command__mission {
+  max-width: 20ch;
+  margin: 0 0 4px;
+  color: #f4e4c3;
+  font: 800 clamp(30px, 2.8vw, 46px)/0.98 var(--font-display);
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.86);
+}
+
+#lobby .campaign-command__fact-label {
+  margin: 0;
+  color: var(--command-gold);
+  font: 800 11px/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#lobby .campaign-command__scene {
+  position: relative;
+  isolation: isolate;
+  grid-column: 1 / -1;
+  grid-row: 1 / 3;
+  min-width: 0;
+  min-height: 210px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #8e5428;
+  background: #160f14;
+  box-shadow: inset 0 0 0 4px rgba(9, 7, 8, 0.8);
+}
+
+#lobby .campaign-command__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(8, 9, 12, 0.94) 0 24%, rgba(8, 9, 12, 0.72) 38%, transparent 68%),
+    linear-gradient(180deg, transparent 56%, rgba(7, 8, 10, 0.84));
+}
+
+#lobby .campaign-command__scene-backdrop {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: saturate(0.88) brightness(0.72) contrast(1.08);
+}
+
+#lobby .campaign-command__scene-object {
+  position: absolute;
+  right: clamp(7%, 4vw, 14%);
+  bottom: 10%;
+  z-index: 2;
+  width: auto;
+  max-width: 34%;
+  height: auto;
+  max-height: 76%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.72));
+}
+
+#lobby .campaign-command__scene figcaption {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  z-index: 3;
+  margin: 0;
+  padding: 4px 8px;
+  border-left: 2px solid var(--command-gold);
+  color: #dbc69f;
+  background: rgba(7, 8, 10, 0.72);
+  font: 700 10px/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#lobby .campaign-command__objective-panel {
+  z-index: 3;
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  align-self: start;
+  padding: 12px 14px;
+  border-left: 3px solid #a86a32;
+  background: rgba(7, 9, 10, 0.7);
+}
+
+#lobby .campaign-command__objective {
+  max-width: 58ch;
+  margin: 6px 0 0;
+  color: var(--command-copy);
+  font-size: clamp(15px, 1.2vw, 18px);
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+#lobby .campaign-command__save-status {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  margin: 5px 0 0;
+  padding: 6px 9px;
+  border-left: 2px solid var(--command-gold);
+  color: var(--command-muted);
+  background: rgba(5, 7, 8, 0.66);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+#lobby .campaign-command[data-campaign-save-state='compatible'] .campaign-command__save-status,
+#lobby .campaign-command[data-campaign-save-state='complete'] .campaign-command__save-status {
+  border-left-color: var(--command-success);
+  color: #cbe7ad;
+}
+
+#lobby .campaign-command[data-campaign-save-state='incompatible'] .campaign-command__save-status,
+#lobby .campaign-command[data-campaign-save-state='unavailable'] .campaign-command__save-status {
+  border-left-color: var(--command-danger);
+  color: #f5b5a8;
+}
+
+#lobby .campaign-command__route-board {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(12px, 2vw, 28px);
+  padding: 11px 14px;
+  border: 1px solid rgba(164, 97, 43, 0.72);
+  background:
+    linear-gradient(90deg, rgba(24, 19, 15, 0.95), rgba(9, 11, 12, 0.86)),
+    var(--command-map-tile, none) center / 256px 256px repeat;
+}
+
+#lobby .campaign-command__route-header {
+  min-width: 0;
+}
+
+#lobby .campaign-command__route-title,
+#lobby .campaign-command__loadout-title {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 17px/1.15 var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+#lobby .campaign-command__route-status,
+#lobby .campaign-command__loadout-profile {
+  margin: 4px 0 0;
+  color: var(--command-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+#lobby .campaign-command__route-track {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(18px, 1fr) auto minmax(18px, 1fr) auto;
+  align-items: center;
+}
+
+#lobby .campaign-command__route-branches {
+  display: grid;
+  gap: 7px;
+}
+
+#lobby .campaign-command__route-node {
+  min-width: 74px;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid #59422d;
+  color: #9d927f;
+  background: rgba(9, 11, 12, 0.88);
+  font: 700 11px/1.2 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+#lobby .campaign-command__route-marker {
+  width: 10px;
+  height: 10px;
+  display: block;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+#lobby .campaign-command__route-connector {
+  height: 2px;
+  display: block;
+  background: #725238;
+  box-shadow: 0 0 5px rgba(207, 139, 62, 0.18);
+}
+
+#lobby .campaign-command__route-node[data-route-state='available'] {
+  color: #d8bd8c;
+  border-color: #81613c;
+}
+
+#lobby .campaign-command__route-node[data-route-state='current'] {
+  color: var(--command-gold-bright);
+  border-color: var(--command-gold);
+  background: linear-gradient(90deg, rgba(167, 93, 34, 0.42), rgba(20, 16, 13, 0.94));
+  box-shadow: 0 0 12px rgba(229, 150, 58, 0.2);
+}
+
+#lobby .campaign-command__route-node[data-route-state='current'] .campaign-command__route-marker {
+  background: var(--command-gold);
+}
+
+#lobby .campaign-command__route-node[data-route-state='complete'] {
+  color: #bee29b;
+  border-color: #628d4b;
+}
+
+#lobby .campaign-command__route-node[data-route-state='complete'] .campaign-command__route-marker {
+  background: var(--command-success);
+}
+
+#lobby .campaign-command__route-node[data-route-state='alternate'] {
+  opacity: 0.55;
+}
+
+#lobby .campaign-command__loadout {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.55fr) minmax(210px, 0.8fr) minmax(260px, 1.35fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(153, 91, 40, 0.72);
+  background: rgba(9, 11, 12, 0.9);
+}
+
+#lobby .campaign-command__loadout:has(.campaign-command__kit[hidden]) {
+  grid-template-columns: minmax(150px, 0.55fr) minmax(0, 2.15fr);
+}
+
+#lobby .campaign-command__loadout[hidden],
+#lobby .campaign-command__kit[hidden],
+#lobby .campaign-command__actions > [hidden] {
+  display: none !important;
+}
+
+#lobby .campaign-command__loadout-header {
+  min-width: 0;
+}
+
+#lobby .campaign-command__kit {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+#lobby .campaign-command__kit > .campaign-command__fact-label {
+  grid-area: auto;
+}
+
+#lobby .campaign-command__kit-select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--command-line-bright);
+  border-radius: 0;
+  color: var(--command-copy);
+  background: #0c0f10 linear-gradient(180deg, rgba(43, 35, 27, 0.9), rgba(8, 10, 11, 0.98));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#lobby .campaign-command__equipment {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(74px, auto) minmax(0, 1fr);
+  align-content: start;
+  gap: 0;
+  margin: 0;
+  border-left: 1px solid rgba(181, 106, 46, 0.38);
+}
+
+#lobby .campaign-command__equipment dt,
+#lobby .campaign-command__equipment dd {
+  min-width: 0;
+  margin: 0;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(181, 106, 46, 0.24);
+  overflow-wrap: anywhere;
+}
+
+#lobby .campaign-command__equipment dt {
+  color: #c49355;
+  font: 800 10px/1.25 var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#lobby .campaign-command__equipment dd {
+  color: var(--command-copy);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#lobby .command-center__action {
+  min-width: 0;
+  padding: 3px 8px;
+  border: 10px solid #76502e;
+  border-image-source: var(--command-button-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 10px;
+  border-image-repeat: stretch;
+  border-radius: 0;
+  color: var(--command-copy);
+  background: #151617 linear-gradient(180deg, #3d3228, #111314 68%);
+  font-weight: 780;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+#lobby .command-center__action:hover:not(:disabled) {
+  border-color: var(--command-gold);
+  border-image-source: var(--command-button-hover-frame, none);
+  background: #1a1714 linear-gradient(180deg, #56412d, #171614 68%);
+}
+
+#lobby .command-center__action:active:not(:disabled) {
+  border-image-source: var(--command-button-pressed-frame, none);
+  background: #0d0e0f linear-gradient(180deg, #231d18, #0a0c0d 68%);
+}
+
+#lobby .command-center__action:disabled {
+  cursor: not-allowed;
+  border-color: #4e4941;
+  border-image-source: var(--command-button-disabled-frame, none);
+  color: #8d877d;
+  background: #101112 linear-gradient(180deg, #242424, #101112);
+  opacity: 0.76;
+}
+
+#lobby .command-center .command-center__primary-action {
+  min-height: 60px;
+  padding: 6px 14px;
+  border: 10px solid var(--command-gold-bright);
+  border-image-source: var(--command-button-gold-frame, none);
+  border-image-slice: 22 fill;
+  border-image-width: 10px;
+  color: #251306;
+  background:
+    var(--command-gold-tile, none),
+    linear-gradient(180deg, #ffd879, #cf8425);
+  background-size: 192px 192px, auto;
+  box-shadow: 0 0 0 2px #4f2d14, 0 5px 18px rgba(0, 0, 0, 0.34);
+  font: 900 clamp(17px, 1.65vw, 22px)/1.1 var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#lobby .command-center .command-center__primary-action:hover:not(:disabled) {
+  color: #190b03;
+  border-image-source: var(--command-button-gold-frame, none);
+  background:
+    var(--command-gold-tile, none),
+    linear-gradient(180deg, #ffe39b, #e99a31);
+}
+
+#lobby .command-center .command-center__primary-action:disabled {
+  border-color: #4e4941;
+  border-image-source: var(--command-button-disabled-frame, none);
+  border-image-slice: 16 fill;
+  color: #8d877d;
+  background-color: #151617;
+  background-image: linear-gradient(180deg, #242424, #101112);
+  box-shadow: none;
+}
+
+#lobby .campaign-command__secondary-action {
+  align-self: stretch;
+}
+
+#lobby .campaign-command__disclosure {
+  min-width: 0;
+  align-self: start;
+  border: 1px solid rgba(153, 91, 40, 0.58);
+  background: rgba(9, 11, 12, 0.88);
+}
+
+#lobby .campaign-command__disclosure-summary {
+  display: flex;
+  align-items: center;
+  list-style-position: inside;
+  padding: 9px 14px;
+  color: var(--command-muted);
+}
+
+#lobby .campaign-command__disclosure[open] > summary {
+  border-bottom: 1px solid rgba(176, 105, 46, 0.45);
+  color: var(--command-gold-bright);
+}
+
+#lobby .campaign-command__disclosure > p {
+  margin: 0;
+  padding: 12px 18px 16px;
+  color: var(--command-muted);
+  line-height: 1.5;
+}
+
+#lobby .command-center__modes-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  min-width: 0;
+  display: grid;
+  grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 18px;
+  overflow-y: auto;
+  color: var(--command-copy);
+  background: #0b0d0f linear-gradient(145deg, rgba(91, 50, 23, 0.42), rgba(6, 8, 9, 0.98) 40%);
+  box-shadow: inset 0 0 0 2px var(--command-line-bright), inset 0 0 0 7px #17100b;
+}
+
+#lobby .command-center__modes-sheet[hidden] {
+  display: none;
+}
+
+#lobby .command-center__modes-sheet > h2 {
+  margin: 0;
+  align-self: center;
+  color: var(--command-gold-bright);
+  font: 800 24px/1 var(--font-display);
+}
+
+#lobby .command-center__modes-close {
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--command-line-bright);
+  color: var(--command-copy);
+  background: #161719;
+}
+
+#lobby .command-center__sheet-categories {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 980px), (max-height: 620px) {
+  #lobby .lobby-card:has(.command-center) {
+    padding: 8px 10px 10px;
+  }
+
+  #lobby .lobby-card:has(.command-center) > .lobby-deployment {
+    gap: 8px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-deployment__masthead {
+    min-height: 62px;
+    grid-template-columns: minmax(160px, 0.58fr) minmax(180px, 1.45fr) minmax(220px, 0.92fr);
+    border-width: 7px;
+    border-image-width: 7px;
+    padding: 2px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__brand {
+    min-height: 48px;
+    padding-inline: 14px;
+    font-size: 25px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__context {
+    min-height: 48px;
+    padding-inline: 12px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record {
+    min-height: 48px;
+    padding-inline: 9px;
+  }
+
+  #lobby .command-center {
+    grid-template-columns: 176px minmax(0, 1fr);
+  }
+
+  #lobby .command-center__navigation {
+    gap: 8px;
+    padding: 14px 10px;
+  }
+
+  #lobby .command-center__title {
+    padding: 0 7px 10px;
+    font-size: 17px;
+  }
+
+  #lobby .command-center__category {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 7px;
+    padding: 7px 8px;
+    font-size: 13px;
+  }
+
+  #lobby .command-center__icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  #lobby .command-center__body {
+    grid-template-columns: minmax(190px, 29%) minmax(0, 1fr);
+  }
+
+  #lobby .multiplayer-command__local-workspace {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  #lobby .command-center__library {
+    padding: 14px 12px;
+  }
+
+  #lobby .campaign-command__decision {
+    grid-template-columns: minmax(240px, 0.76fr) minmax(330px, 1.24fr);
+    gap: 8px 14px;
+    padding: 10px;
+  }
+
+  #lobby .campaign-command__mission {
+    font-size: clamp(26px, 4vw, 36px);
+  }
+
+  #lobby .campaign-command__scene {
+    min-height: 170px;
+  }
+
+  #lobby .campaign-command__loadout {
+    grid-template-columns: minmax(130px, 0.5fr) minmax(180px, 0.75fr) minmax(220px, 1.25fr);
+  }
+}
+
+/* The category/library rail can leave the owned workspace narrow even on a
+   wide viewport. Reflow from the workspace's actual width, not the window. */
+@container (max-width: 700px) {
+  #lobby .multiplayer-command__online-route .lobby-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-field > label {
+    width: auto;
+    min-width: 0;
+    flex: none;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-name,
+  #lobby .multiplayer-command__online-route .lobby-swatches {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-swatches {
+    flex-wrap: wrap;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-operations-board__room-row {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-operations-board__room-meta {
+    min-width: 0;
+    flex: 1 1 100%;
+    margin-left: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 720px) {
+  #lobby .lobby-card:has(.command-center) {
+    padding: 8px;
+    overflow-y: auto;
+  }
+
+  #lobby .lobby-card:has(.command-center) > .lobby-deployment {
+    min-height: 100%;
+    height: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-deployment__masthead {
+    min-height: 92px;
+    grid-template-columns: minmax(128px, 0.9fr) minmax(150px, 1.1fr);
+    grid-template-rows: minmax(44px, auto) 30px;
+    align-items: stretch;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__brand {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 44px;
+    padding-inline: 12px;
+    font-size: clamp(23px, 6.5vw, 30px);
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__context {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-height: 30px;
+    border-top: 1px solid rgba(190, 116, 50, 0.58);
+    border-right: 0;
+    padding-inline: 10px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-header__kicker {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: none;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record {
+    min-height: 44px;
+    padding: 2px 8px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record > h2,
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record-milestone,
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record-xp {
+    display: none;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__account-trigger {
+    min-height: 44px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier > .account-panel__summary,
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier > .account-panel__account-trigger {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  #lobby .command-center {
+    min-height: min(720px, calc(100dvh - 72px));
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__navigation {
+    min-height: 52px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    align-items: center;
+    padding: 7px 9px;
+    border-right: 0;
+    border-bottom: 1px solid var(--command-line-bright);
+  }
+
+  #lobby .command-center__title {
+    align-self: center;
+    padding: 0 8px;
+    border: 0;
+    font-size: 17px;
+  }
+
+  #lobby .command-center__category-rail {
+    display: none;
+  }
+
+  #lobby .command-center__modes-trigger {
+    min-width: 106px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid var(--command-gold);
+    color: var(--command-gold-bright);
+    background: #171615;
+  }
+
+  #lobby .command-center__modes-trigger .command-center__icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  #lobby .command-center__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  #lobby .command-center__library {
+    grid-template: auto / auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: stretch;
+    padding: 9px 10px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(186, 111, 47, 0.54);
+  }
+
+  #lobby .command-center__library > h2 {
+    align-self: center;
+    padding: 0 10px 0 0;
+    border: 0;
+    font-size: 18px;
+  }
+
+  #lobby .command-center__library-items {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(180px, 1fr);
+    overflow-x: auto;
+    overflow-y: auto;
+    padding: 0 0 3px;
+  }
+
+  #lobby .command-center__item {
+    padding: 8px 10px;
+  }
+
+  #lobby .command-center__item-description {
+    display: none;
+  }
+
+  #lobby .command-center__workspace-mount {
+    height: auto;
+  }
+
+  #lobby .multiplayer-command,
+  #lobby .multiplayer-command__local-workspace {
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(240px, 36vh) auto;
+    overflow: visible;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    overflow: visible;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    overflow-y: visible;
+  }
+
+  #lobby .campaign-command__decision {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
+    padding: 9px;
+  }
+
+  #lobby .campaign-command__identity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  #lobby .campaign-command__scene {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #lobby .campaign-command__objective-panel {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  #lobby .campaign-command__route-board {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  #lobby .campaign-command__mission {
+    max-width: none;
+    margin-bottom: 5px;
+  }
+
+  #lobby .campaign-command__objective {
+    font-size: 16px;
+  }
+
+  #lobby .campaign-command__scene {
+    min-height: 170px;
+  }
+
+  #lobby .campaign-command__route-board {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  #lobby .campaign-command__route-track {
+    grid-template-columns: auto minmax(12px, 1fr) auto minmax(12px, 1fr) auto;
+  }
+
+  #lobby .campaign-command__route-node {
+    min-width: 0;
+    padding-inline: 5px;
+    font-size: 10px;
+  }
+
+  #lobby .campaign-command__loadout,
+  #lobby .campaign-command__loadout:has(.campaign-command__kit[hidden]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .campaign-command__equipment {
+    border-top: 1px solid rgba(181, 106, 46, 0.38);
+    border-left: 0;
+  }
+
+  #lobby .campaign-command__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}
+
+@media (orientation: portrait) {
+  #lobby .command-center__category-rail {
+    display: none;
+  }
+
+  #lobby .command-center__modes-trigger {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 720px) and (orientation: portrait) {
+  #lobby .lobby-card:has(.command-center) {
+    overflow: hidden;
+  }
+
+  #lobby .lobby-card:has(.command-center) > .lobby-deployment {
+    height: 100%;
+    min-height: 0;
+  }
+
+  #lobby .command-center {
+    height: 100%;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 400px) and (orientation: portrait) {
+  #lobby .lobby-card:has(.command-center) {
+    padding: 6px;
+  }
+
+  #lobby .lobby-card:has(.command-center) > .lobby-deployment {
+    gap: 6px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-deployment__masthead {
+    min-height: 84px;
+    grid-template-columns: minmax(112px, 0.9fr) minmax(126px, 1.1fr);
+    grid-template-rows: minmax(42px, auto) 28px;
+    padding: 2px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__brand {
+    overflow: hidden;
+    padding-inline: 8px;
+    font-size: clamp(20px, 7vw, 27px);
+    text-overflow: ellipsis;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier {
+    width: 100%;
+    max-width: none;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0;
+  }
+
+  #lobby .lobby-card:has(.command-center) .account-panel__record > h2,
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-rank-row,
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-level,
+  #lobby .lobby-card:has(.command-center) .account-panel__record-milestone,
+  #lobby .lobby-card:has(.command-center) .account-panel__career-next,
+  #lobby .lobby-card:has(.command-center) .account-panel__record-xp {
+    display: none;
+  }
+
+  #lobby .lobby-card:has(.command-center) .account-panel__account-trigger {
+    width: 100%;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    overflow: hidden;
+  }
+
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__context {
+    min-height: 28px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-header__kicker {
+    font-size: 10px;
+    letter-spacing: 0.13em;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  #lobby .lobby-card:has(.command-center) {
+    padding: 5px 8px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-deployment__masthead {
+    min-height: 52px;
+    grid-template-columns: minmax(140px, 0.62fr) minmax(180px, 1.25fr) minmax(190px, 0.88fr);
+    grid-template-rows: minmax(40px, auto);
+    border-width: 4px;
+    border-image-width: 4px;
+    padding: 2px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__brand {
+    min-height: 44px;
+    padding-inline: 10px;
+    font-size: 22px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__context {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 44px;
+    border-top: 0;
+    border-right: 1px solid rgba(190, 116, 50, 0.58);
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-header__kicker {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier {
+    grid-column: 3;
+    grid-row: 1;
+    width: 100%;
+    max-width: none;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record {
+    width: 100%;
+    min-height: 44px;
+    display: grid;
+    padding: 0 7px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record > h2,
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record-milestone,
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__career-next,
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__record-xp {
+    display: none;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier .account-panel__account-trigger {
+    width: 100%;
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: normal;
+    font-size: 12px;
+    line-height: 1.05;
+  }
+
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-name,
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-level {
+    min-width: 0;
+  }
+
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-name {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-rank-row {
+    display: none;
+  }
+
+  #lobby .command-center__navigation {
+    min-height: 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    align-items: center;
+    padding: 4px 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--command-line-bright);
+  }
+
+  #lobby .command-center {
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__title {
+    align-self: center;
+    padding: 0 8px;
+    border: 0;
+    font-size: 16px;
+  }
+
+  #lobby .command-center__category-rail {
+    display: none;
+  }
+
+  #lobby .command-center__modes-trigger {
+    min-width: 106px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 3px 10px;
+    border: 1px solid var(--command-gold);
+    color: var(--command-gold-bright);
+    background: #171615;
+  }
+
+  #lobby .command-center__workspace-mount {
+    height: auto;
+  }
+
+  #lobby .campaign-command__decision {
+    grid-template-columns: minmax(190px, 0.72fr) minmax(330px, 1.28fr);
+    grid-template-rows: auto minmax(72px, 1fr) auto;
+    align-content: start;
+    padding: 8px;
+  }
+
+  #lobby .campaign-command__mission {
+    margin-bottom: 2px;
+    font-size: 28px;
+  }
+
+  #lobby .campaign-command__objective {
+    font-size: 15px;
+  }
+
+  #lobby .campaign-command__scene {
+    min-height: 130px;
+  }
+
+  #lobby .campaign-command__route-board {
+    padding-block: 7px;
+  }
+
+  #lobby .campaign-command__equipment dt,
+  #lobby .campaign-command__equipment dd {
+    padding-block: 4px;
+  }
+
+  #lobby .campaign-command__disclosure {
+    align-self: start;
+  }
+}
+
+@container local-workspace-shell (max-width: 700px) {
+  #lobby .multiplayer-command__local-workspace {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    min-height: 0;
+    height: 100%;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    overflow-y: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    overflow-y: auto;
+  }
+}
+
+/* Short landscape screens need a decision plane, not a tall document. Collapse
+   the mode rail to reclaim horizontal space, then keep Local setup and its
+   docked launch action inside the visible workspace while the setup details
+   retain their own controlled scroll region. */
+@media (max-height: 620px) and (orientation: landscape) {
+  #lobby .command-center {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__navigation {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    z-index: 4;
+    width: max(160px, 20%);
+    min-height: 48px;
+    box-sizing: border-box;
+    display: block;
+    align-items: center;
+    padding: 4px 8px;
+    border: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--command-line-bright);
+    background: linear-gradient(180deg, rgba(57, 38, 25, 0.98), rgba(14, 15, 16, 0.98));
+  }
+
+  #lobby .command-center__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__category-rail {
+    display: none;
+  }
+
+  #lobby .command-center__modes-trigger {
+    width: 100%;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 3px 10px;
+    border: 1px solid var(--command-gold);
+    color: var(--command-gold-bright);
+    background: #171615;
+  }
+
+  #lobby .command-center__body {
+    grid-template-columns: minmax(160px, 20%) minmax(0, 1fr);
+  }
+
+  #lobby .command-center__library {
+    padding: 60px 8px 8px;
+  }
+
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library {
+    padding: 4px 8px 8px calc(max(160px, 20%) + 8px);
+  }
+
+  #lobby .command-center__item {
+    padding: 7px 8px;
+  }
+
+  #lobby .command-center__item-description {
+    display: none;
+  }
+
+  #lobby .command-center__workspace-mount,
+  #lobby .multiplayer-command {
+    min-height: 0;
+    height: 100%;
+  }
+
+  #lobby .multiplayer-command__local-workspace {
+    min-height: 0;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 160px;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+    gap: 3px;
+    padding: 7px 10px 8px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__content {
+    margin-top: 7px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-preview__spotlight {
+    top: 32px;
+  }
+
+}
+
+/* In portrait preparation, lead with the actionable setup bay and move the
+   illustrative tank preview below it. The footer remains docked while the
+   setup body scrolls, so Deploy stays available without hiding configuration. */
+@media (max-width: 720px) and (orientation: portrait) {
+  #lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace)
+    > .command-center__workspace-mount,
+  #lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace)
+    .multiplayer-command {
+    min-height: 0;
+    height: 100%;
+  }
+
+  #lobby .multiplayer-command__local-workspace {
+    min-height: 0;
+    height: 100%;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+@container local-workspace-shell (max-width: 460px) {
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__spotlight-identity {
+    font-size: 13px;
+  }
+
+  #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__spotlight-canvas {
+    width: min(210px, 72%);
+  }
+
+  #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__parts {
+    width: calc(100% - 12px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: -8px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-preview__spotlight {
+    top: 30px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-preview__spotlight-canvas {
+    width: min(128px, 50%);
+  }
+
+  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__part {
+    padding: 2px 3px;
+  }
+
+  #lobby.is-compact .multiplayer-command__local-workspace
+    :is(.lobby-preview__part span, .lobby-preview__part strong) {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__part {
+    padding: 3px 4px;
+  }
+
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__part span,
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__part strong {
+    overflow: hidden;
+    font-size: 11px;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+}
+
+/* Coarse-pointer emulation can retain the compact shell at a wide CSS
+   viewport. Keep the selected-kit labels fitted in that state as well as in
+   the narrow container branch above. */
+#lobby.is-compact .multiplayer-command__local-workspace
+  .lobby-preview__part span {
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+@container local-battle-setup (max-width: 460px) {
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+    gap: 4px;
+    padding: 8px 10px 9px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-row {
+    grid-template:
+      'selector selector' auto
+      'name control' auto
+      'swatches swatches' auto
+      'garage garage' auto
+      / minmax(0, 1fr) minmax(120px, 0.78fr);
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+    .lobby-row .lobby-swatches {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby.is-compact .command-center .multiplayer-command__local-workspace
+    .lobby-hotseat-footer {
+    height: auto;
+    padding-block: 3px;
+    border-block-width: 1px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__status {
+    white-space: normal;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
+    min-width: 0;
+    justify-self: stretch;
+  }
+}
+
+/* The 320px preparation shell leaves a deliberately small content window
+   below the global rail and mode chooser. Collapse explanatory copy—not crew
+   controls or the deployment decision—so the first selectable seat is part of
+   the initial fold and the remaining setup stays with the same scroll owner. */
+@media (max-width: 360px) {
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+    gap: 0;
+    padding: 5px 8px 6px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__title {
+    font-size: 14px;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__context {
+    display: none;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__content {
+    gap: 6px;
+    margin-top: 5px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-preparation-section {
+    padding: 6px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
+    gap: 2px;
+    padding: 3px 6px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__brief {
+    gap: 1px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__heading {
+    font-size: 12px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__status {
+    font-size: 9px;
+    line-height: 1.1;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
+    min-height: 48px;
+    font-size: 14px;
+  }
+}
+
+/* Skirmish and Verified share one authoritative battlefield-projection seam.
+   This turns the preparation field into an intentional tactical read rather
+   than leaving an apparently unfinished material void. */
+#lobby .command-center__battlefield-projection {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 220px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #8e5428;
+  background: #160f14;
+  box-shadow: inset 0 0 0 4px rgba(9, 7, 8, 0.8);
+}
+
+#lobby .command-center__battlefield-projection > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: saturate(0.86) brightness(0.66) contrast(1.08);
+}
+
+#lobby .command-center__battlefield-projection::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 46%, rgba(5, 7, 9, 0.88));
+}
+
+#lobby .command-center__battlefield-projection figcaption {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  bottom: 10px;
+  margin: 0;
+  padding: 5px 9px;
+  border-left: 2px solid var(--command-gold);
+  color: #dbc69f;
+  background: rgba(7, 8, 10, 0.76);
+  font: 700 10px/1.2 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__verified-workspace
+  .lobby-verified-operation-panel > .lobby-verified-deployment__dossier {
+  min-height: 0;
+  margin: 0;
+  padding: 12px 14px;
+}
+
+#lobby .multiplayer-command__verified-workspace
+  .lobby-verified-operation-panel > .lobby-verified-deployment {
+  min-height: 100%;
+  box-sizing: border-box;
+  align-content: center;
+  gap: clamp(10px, 1.6vh, 22px);
+  padding: clamp(16px, 2.1vw, 34px);
+  background:
+    linear-gradient(110deg, rgba(38, 29, 22, 0.58), rgba(6, 9, 10, 0.9) 46%),
+    repeating-linear-gradient(90deg, rgba(221, 153, 73, 0.025) 0 1px, transparent 1px 72px);
+}
+
+@media (min-width: 1101px) and (min-height: 621px) {
+  #lobby .multiplayer-command__verified-workspace
+    .lobby-verified-operation-panel > .lobby-verified-deployment {
+    grid-template-columns: minmax(220px, 0.82fr) minmax(0, 1.18fr);
+    grid-template-areas:
+      'verified-title verified-title'
+      'verified-matchup verified-rules'
+      'verified-message verified-message';
+    align-items: center;
+  }
+
+  #lobby .multiplayer-command__verified-workspace .lobby-verified-deployment > h3 {
+    grid-area: verified-title;
+    font-size: clamp(20px, 0.9vw, 26px);
+  }
+
+  #lobby .multiplayer-command__verified-workspace .lobby-verified-deployment__matchup {
+    grid-area: verified-matchup;
+    font-size: 16px;
+  }
+
+  #lobby .multiplayer-command__verified-workspace .lobby-verified-deployment__rules {
+    grid-area: verified-rules;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px 24px;
+    font-size: 15px;
+  }
+
+  #lobby .multiplayer-command__verified-workspace .lobby-verified-deployment__message {
+    grid-area: verified-message;
+  }
+
+  #lobby .multiplayer-command__verified-workspace
+    .lobby-hotseat-footer > .lobby-btn.primary {
+    min-width: min(420px, 60%);
+  }
+}
+
+/* Abandoning a recoverable deployment is the one destructive Verified
+   decision. Present its confirmation as a true modal command plate at every
+   geometry so the two choices never compete for the footer's inline width. */
+#lobby .command-center .multiplayer-command__verified-workspace
+  .lobby-hotseat-footer > .lobby-verified-deployment__confirm {
+  position: fixed;
+  z-index: 110;
+  top: 50%;
+  left: 50%;
+  width: min(420px, calc(100vw - 32px));
+  min-width: 0;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  gap: 10px;
+  padding: 16px;
+  border: 2px solid rgba(255, 210, 63, 0.72);
+  background:
+    linear-gradient(180deg, rgba(31, 24, 18, 0.99), rgba(8, 10, 12, 0.99)),
+    var(--st-command-iron, #111418);
+  box-shadow:
+    0 0 0 100vmax rgba(2, 4, 7, 0.76),
+    0 18px 54px rgba(0, 0, 0, 0.72),
+    inset 0 0 0 1px rgba(255, 232, 173, 0.12);
+}
+
+#lobby .command-center .multiplayer-command__verified-workspace
+  .lobby-hotseat-footer > .lobby-verified-deployment__confirm > .lobby-btn {
+  min-width: 0;
+  min-height: 44px;
+}
+
+/* Battlefield controls reflow from their decision content. Giving Walls the
+   full row preserves the selected rule instead of reducing it to a prefix. */
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield
+  > .lobby-field:nth-child(3),
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield
+  > .lobby-advanced-trigger {
+  grid-column: 1 / -1;
+}
+
+/* Wide command decks have enough horizontal measure to keep the short numeric
+   rules beside the descriptive wall rule. This reserves the next line for the
+   Advanced entry point instead of letting the docked deployment decision mask
+   it, while compact decks retain the full-width Walls row above. */
+@media (min-width: 1101px) and (min-height: 621px) {
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield {
+    grid-template-columns: minmax(64px, 0.62fr) minmax(64px, 0.62fr) minmax(170px, 1.76fr);
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield
+    > .lobby-field:nth-child(3) {
+    grid-column: 3;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  #lobby .multiplayer-command__online-workspace .lobby-preview__parts {
+    width: calc(100% - 4px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  #lobby.is-compact .multiplayer-command__online-workspace .lobby-preview__part span,
+  #lobby.is-compact .multiplayer-command__online-workspace .lobby-preview__part strong {
+    font-size: 12px;
+    letter-spacing: 0;
+    text-overflow: clip;
+  }
+
+  #lobby .skirmish-command .campaign-command__decision {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(160px, 1fr) max-content;
+    align-content: start;
+    padding: 8px;
+  }
+
+  #lobby .skirmish-command .campaign-command__scene {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 160px;
+    height: 100%;
+  }
+
+  #lobby .skirmish-command .campaign-command__identity {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 1px;
+    padding: 0 2px;
+  }
+
+  #lobby .skirmish-command .campaign-command__chapter {
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  #lobby .skirmish-command .campaign-command__mission {
+    margin-bottom: 1px;
+    font-size: clamp(18px, 2.8vw, 24px);
+  }
+
+  #lobby .skirmish-command .campaign-command__save-status {
+    margin-top: 1px;
+    padding: 2px 4px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  #lobby .skirmish-command .campaign-command__objective-panel {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    padding: 4px 6px;
+  }
+
+  #lobby .skirmish-command .campaign-command__objective-panel
+    .campaign-command__fact-label {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  #lobby .skirmish-command .campaign-command__objective {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  #lobby .skirmish-command .campaign-command__scene figcaption {
+    display: none;
+  }
+
+  #lobby .skirmish-command .skirmish-command__facts {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 0;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-items: start;
+    padding: 7px 8px;
+    overflow: visible;
+  }
+
+  #lobby .skirmish-command .campaign-command__loadout-title {
+    font-size: 14px;
+  }
+
+  #lobby .skirmish-command .skirmish-command__facts .campaign-command__equipment {
+    min-height: 0;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    overflow: visible;
+  }
+
+  #lobby .skirmish-command .campaign-command__equipment dt,
+  #lobby .skirmish-command .campaign-command__equipment dd {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+}
+
+@media (max-width: 720px) and (orientation: portrait) {
+}
+
+/* Shared Vehicle Bay workshop
+ *
+ * Local and Online mount this same dialog. The frame, owner inspection, and
+ * Done action remain stationary while the single controls region owns dense
+ * scrolling. This replaces the retired inline abbreviations and the separate
+ * compact/desktop editor layouts from Lobby.css.
+ */
+#lobby .lobby-garage.editing {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 100;
+  width: min(1400px, calc(100vw - 48px));
+  height: min(700px, calc(100dvh - 48px));
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template:
+    'workshop-header workshop-header' auto
+    'inspection controls' minmax(0, 1fr)
+    'actions actions' auto
+    / minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  padding: 16px;
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  border: 12px solid var(--command-gold);
+  border-image-source: var(--command-panel-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 12px;
+  color: var(--command-copy);
+  background:
+    linear-gradient(145deg, rgba(48, 31, 20, 0.78), rgba(6, 8, 9, 0.98) 30% 100%),
+    var(--command-iron-tile, none) center / 256px 256px repeat;
+  background-color: #080a0b;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(255, 224, 164, 0.1);
+}
+
+#lobby .lobby-garage__workshop-header {
+  grid-area: workshop-header;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px 16px;
+  padding: 9px 12px 11px;
+  border: 1px solid rgba(174, 105, 48, 0.7);
+  border-left: 4px solid var(--command-gold);
+  background: linear-gradient(90deg, rgba(90, 51, 24, 0.72), rgba(8, 10, 11, 0.76));
+}
+
+#lobby .lobby-garage__workshop-kicker,
+#lobby .lobby-garage__inspection-label,
+#lobby .lobby-garage__group-label {
+  color: var(--command-muted);
+  font: 800 11px/1.15 var(--font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+#lobby .lobby-garage.editing .lobby-garage__editor-header {
+  min-width: 0;
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 850 clamp(20px, 2.2vw, 30px)/1.05 var(--font-display);
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage__inspection {
+  position: sticky;
+  top: 0;
+  grid-area: inspection;
+  min-width: 0;
+  min-height: 0;
+  align-self: start;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(151, 91, 42, 0.76);
+  background:
+    radial-gradient(ellipse at 50% 57%, rgba(0, 0, 0, 0.58) 0 19%, transparent 49%),
+    var(--console-workshop-surface, linear-gradient(180deg, #1f1b17, #090b0c));
+  box-shadow: inset 0 1px 0 rgba(255, 223, 165, 0.08), inset 0 -20px 28px rgba(0, 0, 0, 0.28);
+}
+
+#lobby .lobby-garage__tank-preview {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  justify-self: center;
+}
+
+#lobby .lobby-garage__inspection-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-top: 1px solid rgba(166, 100, 45, 0.54);
+  background: rgba(5, 7, 8, 0.58);
+}
+
+#lobby .lobby-garage.editing .lobby-garage__build-summary {
+  margin: 0;
+  color: var(--command-copy);
+  font: 750 13px/1.4 var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage__cosmetic-note {
+  margin: 0;
+  color: var(--command-muted);
+  font: 600 12px/1.42 var(--font-sans);
+}
+
+#lobby .lobby-garage__editor-scroll {
+  grid-area: controls;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 1px 8px 10px 1px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
+}
+
+#lobby .lobby-garage__preset-group,
+#lobby .lobby-garage__component-group {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid rgba(142, 84, 38, 0.66);
+  background: rgba(7, 9, 10, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 222, 158, 0.06);
+}
+
+#lobby .lobby-garage__presets {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#lobby .lobby-garage__preset {
+  position: relative;
+  min-width: 0;
+  min-height: 108px;
+  display: grid;
+  grid-template-rows: minmax(62px, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 7px;
+  text-align: center;
+}
+
+#lobby .lobby-garage__preset-thumbnail {
+  display: block;
+  width: 100%;
+  max-width: 148px;
+  height: auto;
+  aspect-ratio: 7 / 4;
+  justify-self: center;
+}
+
+#lobby .lobby-garage__preset-label {
+  min-width: 0;
+  color: inherit;
+  font: 800 12px/1.2 var(--font-display);
+  letter-spacing: 0.035em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage__slots {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+#lobby .lobby-garage__slot {
+  min-width: 0;
+  margin: 0;
+  padding: 9px;
+  border: 1px solid rgba(135, 81, 38, 0.58);
+  background: rgba(13, 14, 14, 0.82);
+}
+
+#lobby .lobby-garage__slot-label {
+  padding: 0 6px;
+  color: var(--command-gold-bright);
+  font: 800 12px/1.15 var(--font-display);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+#lobby .lobby-garage__variants {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+#lobby .lobby-garage.editing :is(.lobby-garage__preset, .lobby-garage__variant) {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(158, 95, 42, 0.72);
+  color: var(--command-copy);
+  background:
+    linear-gradient(180deg, rgba(63, 43, 29, 0.86), rgba(7, 9, 10, 0.96)),
+    var(--command-iron-tile, none) center / 192px 192px repeat;
+}
+
+#lobby .lobby-garage.editing .lobby-garage__variant {
+  padding: 9px 10px;
+  font: 750 12px/1.25 var(--font-sans);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage.editing
+  :is(.lobby-garage__preset, .lobby-garage__variant).selected {
+  border-color: var(--command-gold-bright);
+  color: #fff0c9;
+  background:
+    linear-gradient(180deg, rgba(112, 68, 31, 0.95), rgba(27, 18, 11, 0.98)),
+    var(--command-gold-tile, none) center / 192px 192px repeat;
+  box-shadow: inset 4px 0 0 var(--command-gold-bright), inset 0 0 0 1px rgba(255, 233, 184, 0.16);
+}
+
+#lobby .lobby-garage.editing
+  :is(.lobby-garage__preset, .lobby-garage__variant):hover:not(:disabled) {
+  border-color: #f3c36f;
+  color: #fff0c9;
+  background-color: rgba(91, 57, 29, 0.84);
+}
+
+#lobby .lobby-garage.editing button:focus-visible {
+  outline: 3px solid var(--command-gold-bright);
+  outline-offset: 2px;
+}
+
+#lobby .lobby-garage.editing button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: saturate(0.35);
+}
+
+#lobby .lobby-garage__actions {
+  grid-area: actions;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(174, 105, 48, 0.62);
+}
+
+#lobby .lobby-garage.editing .lobby-garage__close {
+  min-width: min(100%, 260px);
+  min-height: 56px;
+  padding: 8px 20px;
+  border: 10px solid var(--command-gold-bright);
+  border-image-source: var(--command-button-gold-frame, none);
+  border-image-slice: 22 fill;
+  border-image-width: 10px;
+  color: #251306;
+  background:
+    var(--command-gold-tile, none),
+    linear-gradient(180deg, #ffd879, #cf8425);
+  background-size: 192px 192px, auto;
+  font: 900 16px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1100px) {
+  #lobby .lobby-garage.editing {
+    width: calc(100vw - 24px);
+    height: calc(100dvh - 24px);
+    grid-template-columns: minmax(240px, 0.68fr) minmax(0, 1.32fr);
+    gap: 9px;
+    padding: 12px;
+  }
+
+  #lobby .lobby-garage__presets,
+  #lobby .lobby-garage__slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #lobby .lobby-garage__preset {
+    min-height: 96px;
+  }
+}
+
+@media (max-width: 700px) {
+  #lobby .lobby-garage.editing {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    grid-template:
+      'workshop-header' auto
+      'inspection' auto
+      'controls' minmax(0, 1fr)
+      'actions' auto
+      / minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  #lobby .lobby-garage__workshop-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 7px 9px;
+  }
+
+  #lobby .lobby-garage.editing .lobby-garage__editor-header {
+    font-size: clamp(18px, 5.2vw, 24px);
+  }
+
+  #lobby .lobby-garage__inspection {
+    grid-template-columns: minmax(118px, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  #lobby .lobby-garage__inspection-copy {
+    padding: 7px;
+  }
+
+  #lobby .lobby-garage__cosmetic-note {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  #lobby .lobby-garage__editor-scroll {
+    gap: 10px;
+    padding-right: 5px;
+  }
+
+  #lobby .lobby-garage__preset-group,
+  #lobby .lobby-garage__component-group {
+    padding: 8px;
+  }
+
+  #lobby .lobby-garage__slots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .lobby-garage__actions {
+    padding-top: 7px;
+  }
+
+  #lobby .lobby-garage.editing .lobby-garage__close {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  #lobby .lobby-garage.editing {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 12px);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 9px;
+  }
+
+  #lobby .lobby-garage__workshop-header {
+    padding-block: 6px;
+  }
+
+  #lobby .lobby-garage__inspection {
+    box-sizing: border-box;
+    height: 100%;
+    max-height: 100%;
+    grid-template-columns: minmax(96px, 0.9fr) minmax(0, 1.1fr);
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    overflow: hidden;
+  }
+
+  #lobby .lobby-garage__tank-preview {
+    width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  #lobby .lobby-garage__inspection-copy {
+    gap: 3px;
+    padding: 6px;
+  }
+
+  #lobby .lobby-garage__actions {
+    padding-top: 6px;
+  }
+
+  #lobby .lobby-garage.editing .lobby-garage__close {
+    min-height: 48px;
+  }
+}
+
+/* Shared preparation composition
+ *
+ * Every mode now supplies content and truthful actions to the same three-part
+ * frame. These rules replace the former per-page header/scroll/footer
+ * positioning: one heading, one scrolling body, and one in-flow decision dock.
+ */
+#lobby .lobby-card:has(.command-center) > .lobby-deployment {
+  container: command-center-shell / inline-size;
+}
+
+#lobby .lobby-command-center {
+  /* The shell cannot query itself. Its deployment owner establishes the
+     available inline-size contract so the shell and its descendants cross
+     each responsive threshold as one composition. */
+  container-name: none;
+  container-type: normal;
+}
+
+#lobby .command-center__workspace-host:has(.preparation-frame) {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+#lobby .command-center__workspace-mount:has(.preparation-frame),
+#lobby .multiplayer-command:has(.preparation-frame),
+#lobby :is(
+    .multiplayer-command__local-workspace,
+    .multiplayer-command__verified-workspace,
+    .multiplayer-command__online-workspace
+  ):has(.preparation-frame) {
+  min-height: 0;
+  height: 100%;
+}
+
+#lobby :is(
+    .multiplayer-command__local-workspace,
+    .multiplayer-command__verified-workspace,
+    .multiplayer-command__online-workspace
+  ):has(.preparation-frame) {
+  display: block;
+  box-sizing: border-box;
+  padding: clamp(8px, 0.8vw, 14px);
+  overflow: hidden;
+}
+
+#lobby .preparation-frame {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr);
+  gap: 0;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(154, 91, 40, 0.72);
+  border-left: 3px solid rgba(190, 119, 52, 0.88);
+  background:
+    linear-gradient(145deg, rgba(68, 42, 25, 0.28), transparent 30%),
+    var(--command-iron-tile, none) center / 256px 256px repeat,
+    #090b0c;
+  box-shadow: inset 0 1px 0 rgba(255, 224, 166, 0.08);
+  container: preparation-workspace / inline-size;
+}
+
+/* Local's retained control layout also queries the mounted view width. Name
+   this one container for both contracts so the shared frame's responsive
+   heading/body/dock rules cannot be displaced by the older Local owner. */
+#lobby .multiplayer-command__local-workspace > .preparation-frame {
+  container-name: preparation-workspace local-battle-setup;
+  container-type: inline-size;
+}
+
+#lobby .preparation-frame__heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(12px, 1.4vw, 24px);
+  padding: clamp(12px, 1.1vw, 20px) clamp(14px, 1.35vw, 24px);
+  border: 0;
+  border-bottom: 1px solid rgba(183, 108, 45, 0.62);
+  background:
+    linear-gradient(90deg, rgba(91, 51, 25, 0.7), rgba(18, 17, 16, 0.82) 58%, rgba(8, 10, 11, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 221, 155, 0.1);
+}
+
+#lobby .preparation-frame__heading-copy {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 5px clamp(12px, 1vw, 20px);
+}
+
+#lobby .preparation-frame__eyebrow {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  color: var(--command-gold);
+  font: 800 10px/1.2 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#lobby .preparation-frame .preparation-frame__title {
+  grid-column: 1;
+  grid-row: 2;
+  max-width: none;
+  margin: 0;
+  color: #f7e5bd;
+  font: 850 clamp(22px, calc(17px + 0.55vw), 34px)/1.05 var(--font-display);
+  letter-spacing: 0.025em;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.72);
+}
+
+#lobby .preparation-frame .preparation-frame__description {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  max-width: 72ch;
+  margin: 0;
+  color: var(--command-muted);
+  font-size: clamp(12px, calc(10px + 0.18vw), 15px);
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+#lobby .preparation-frame__heading .campaign-command__identity {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px clamp(14px, 1.2vw, 24px);
+  padding: 0;
+}
+
+#lobby .preparation-frame__heading .campaign-command__chapter {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#lobby .preparation-frame__heading .campaign-command__fact-label {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+#lobby .preparation-frame__heading .campaign-command__mission {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 0;
+  font-size: clamp(24px, calc(18px + 0.8vw), 40px);
+}
+
+#lobby .skirmish-command .preparation-frame__heading .campaign-command__save-status {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
+  max-width: 72ch;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--command-muted);
+  background: transparent;
+  font-size: clamp(12px, calc(10px + 0.18vw), 15px);
+  line-height: 1.42;
+}
+
+#lobby .preparation-frame__body {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background:
+    linear-gradient(180deg, rgba(7, 9, 10, 0.78), rgba(4, 6, 7, 0.94)),
+    radial-gradient(ellipse at 50% 0%, rgba(116, 66, 30, 0.08), transparent 68%);
+}
+
+#lobby .preparation-frame__body-inner {
+  width: min(100%, 2200px);
+  min-width: 0;
+  min-height: 100%;
+  margin-inline: auto;
+  display: grid;
+  align-content: start;
+  gap: clamp(10px, 1vw, 18px);
+  box-sizing: border-box;
+  padding: clamp(12px, 1.2vw, 22px);
+}
+
+#lobby .preparation-frame__dock {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: clamp(12px, 1.3vw, 24px);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 9px clamp(12px, 1.2vw, 22px);
+  border: 0;
+  border-top: 1px solid rgba(190, 116, 50, 0.72);
+  background:
+    linear-gradient(180deg, rgba(78, 45, 23, 0.84), rgba(9, 11, 12, 0.98)),
+    var(--command-iron-tile, none) center / 256px 256px repeat;
+  box-shadow: 0 -8px 22px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 222, 159, 0.1);
+}
+
+#lobby .preparation-frame__dock-copy {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+}
+
+#lobby .preparation-frame__dock-label {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 13px/1.15 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#lobby .preparation-frame__dock-status {
+  min-width: 0;
+  color: var(--command-muted);
+  font: 700 11px/1.3 var(--font-mono);
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .preparation-frame__dock-status .campaign-command__save-status {
+  margin: 0;
+  padding: 3px 8px;
+}
+
+#lobby .preparation-frame__dock-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(8px, 0.8vw, 14px);
+}
+
+#lobby .preparation-frame__primary-action {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: clamp(220px, 16vw, 340px);
+  min-height: 60px;
+}
+
+#lobby .preparation-frame__dock .lobby-online-actions {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+#lobby .preparation-frame__dock .lobby-online-alternatives {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#lobby .preparation-frame__dock .lobby-online-alternatives-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#lobby .preparation-frame__dock .lobby-btn.secondary {
+  min-height: 44px;
+  padding: 7px 10px;
+}
+
+#lobby .preparation-frame__body-layout {
+  min-width: 0;
+  min-height: 100%;
+  display: grid;
+  align-items: stretch;
+  gap: clamp(12px, 1.2vw, 22px);
+}
+
+#lobby .preparation-frame__body-layout--online,
+#lobby .preparation-frame__body-layout--verified {
+  grid-template-columns: minmax(320px, 0.84fr) minmax(480px, 1.16fr);
+}
+
+#lobby .preparation-frame__mode-content {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+#lobby .preparation-frame__body-layout :is(.lobby-preview, .command-center__battlefield-projection) {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-width: 0;
+  height: clamp(300px, 34vh, 460px);
+  max-height: 460px;
+  align-self: start;
+  margin: 0;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+}
+
+#lobby .preparation-frame__body-layout--verified > .command-center__battlefield-projection {
+  min-height: 300px;
+}
+
+#lobby .preparation-frame .lobby-hotseat-body,
+#lobby .preparation-frame .lobby-hotseat-scroll {
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  display: block;
+  overflow: visible;
+  padding: 0;
+}
+
+#lobby .preparation-frame .lobby-route-brief__setup {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  overflow: visible;
+}
+
+#lobby .preparation-frame .lobby-local-preparation__content {
+  min-height: 0;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame__body-inner {
+  grid-template-rows: minmax(0, 1fr);
+  align-content: stretch;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame :is(.lobby-hotseat-body, .lobby-hotseat-scroll) {
+  height: 100%;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame .lobby-local-preparation__content {
+  height: min(100%, clamp(500px, 50vh, 560px));
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame .lobby-local-preparation__briefing {
+  align-content: start;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame .lobby-local-preparation__inspection {
+  max-height: 560px;
+}
+
+#lobby .preparation-frame .lobby-operations-board__crew,
+#lobby .preparation-frame .lobby-operations-board__section,
+#lobby .preparation-frame .lobby-operations-board__mission,
+#lobby .preparation-frame .lobby-operations-board__roster {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(145, 86, 38, 0.62);
+  background: rgba(8, 10, 11, 0.74);
+}
+
+#lobby .preparation-frame .lobby-verified-operation-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+#lobby .campaign-command.preparation-frame {
+  grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr);
+}
+
+#lobby .campaign-command.preparation-frame > .preparation-frame__body
+  > .preparation-frame__body-inner {
+  width: min(100%, 2100px);
+  grid-template-columns: minmax(740px, 1.42fr) minmax(320px, 0.58fr);
+  grid-template-rows: max-content;
+  align-items: start;
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__decision {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: clamp(300px, 42vh, 520px);
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__supporting {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: clamp(10px, 1vw, 18px);
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__supporting
+  > .campaign-command__loadout,
+#lobby .campaign-command.preparation-frame .campaign-command__supporting
+  > .campaign-command__disclosure {
+  grid-column: 1;
+  grid-row: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__supporting
+  > .campaign-command__loadout {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+}
+
+#lobby .skirmish-command.preparation-frame .campaign-command__decision {
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: clamp(240px, 34vh, 360px) max-content;
+  min-height: 0;
+}
+
+#lobby .skirmish-command.preparation-frame > .preparation-frame__body
+  > .preparation-frame__body-inner {
+  width: min(100%, 1840px);
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+}
+
+#lobby .skirmish-command.preparation-frame .campaign-command__scene {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+}
+
+#lobby .skirmish-command.preparation-frame .campaign-command__objective-panel {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+}
+
+#lobby .skirmish-command.preparation-frame .skirmish-command__facts {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  align-self: start;
+}
+
+#lobby .skirmish-command.preparation-frame .skirmish-command__facts
+  .campaign-command__equipment {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  border-left: 0;
+}
+
+#lobby .skirmish-command.preparation-frame .skirmish-command__facts
+  [data-skirmish-fact] {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(74px, auto) minmax(0, 1fr);
+  border-left: 1px solid rgba(181, 106, 46, 0.38);
+}
+
+#lobby .skirmish-command.preparation-frame [data-ui='seed-challenge-error'] {
+  grid-column: 1 / -1;
+}
+
+#lobby .campaign-command__actions.preparation-frame__dock {
+  grid-area: auto;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+}
+
+#lobby .campaign-command__actions .preparation-frame__dock-actions {
+  display: flex;
+}
+
+@container command-center-shell (max-width: 1500px) {
+  #lobby .command-center {
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__navigation {
+    min-height: 58px;
+    grid-template: auto / auto minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    padding: 7px 12px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(190, 116, 50, 0.62);
+  }
+
+  #lobby .command-center__title {
+    padding: 0 12px 0 0;
+    border: 0;
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__category-rail {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(150px, 1fr);
+    gap: 7px;
+  }
+
+  #lobby .command-center__category {
+    grid-template-columns: 26px minmax(0, 1fr);
+    padding: 6px 9px;
+  }
+
+  #lobby .command-center__icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  #lobby .command-center__body {
+    grid-template-columns: minmax(220px, 26%) minmax(0, 1fr);
+  }
+}
+
+@container command-center-shell (max-width: 1120px) {
+  #lobby .command-center__body,
+  #lobby .command-center__body[data-command-collection='singleton'] {
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__library,
+  #lobby .command-center__body[data-command-collection='singleton'] .command-center__library {
+    grid-template: auto / auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(186, 111, 47, 0.54);
+  }
+
+  #lobby .command-center__library > h2,
+  #lobby .command-center__body[data-command-collection='singleton'] .command-center__library > h2 {
+    padding: 0 10px 0 0;
+    border: 0;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__library-items,
+  #lobby .command-center__body[data-command-collection='singleton'] .command-center__library-items {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(175px, 1fr);
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 3px;
+  }
+
+  #lobby .command-center__item-description {
+    display: none;
+  }
+
+  #lobby .preparation-frame__body-layout--online,
+  #lobby .preparation-frame__body-layout--verified {
+    grid-template-columns: minmax(220px, 0.62fr) minmax(380px, 1.38fr);
+  }
+}
+
+/* The Campaign split is viable only while its mission board and support bay
+   can both keep their declared minimums. Stack before either nested grid is
+   forced into an implicit overflow track. */
+@container preparation-workspace (max-width: 1140px) {
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) > .preparation-frame__body
+    > .preparation-frame__body-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__decision,
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__supporting {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* The mission board's own two-column composition needs substantially more
+   room than the old 560px threshold allowed. Below this width its scene,
+   objective, and route become one explicit readable sequence. */
+@container preparation-workspace (max-width: 780px) {
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__decision {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__scene,
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__objective-panel,
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__route-board {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+@container preparation-workspace (max-width: 820px) {
+  #lobby .preparation-frame__heading-copy,
+  #lobby .preparation-frame__heading .campaign-command__identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .preparation-frame .preparation-frame__description,
+  #lobby .preparation-frame__heading .campaign-command__fact-label,
+  #lobby .preparation-frame__heading .campaign-command__mission {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  #lobby .preparation-frame__body-layout--online,
+  #lobby .preparation-frame__body-layout--verified {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Compact workspaces lead with the task. The vehicle or battlefield preview
+     remains available below the form/briefing instead of consuming the first
+     visible body viewport. */
+  #lobby .preparation-frame__body-layout--online > .preparation-frame__mode-content,
+  #lobby .preparation-frame__body-layout--verified > .preparation-frame__mode-content {
+    order: -1;
+  }
+
+  #lobby .preparation-frame__body-layout :is(.lobby-preview, .command-center__battlefield-projection) {
+    height: clamp(220px, 34vh, 360px);
+  }
+
+  #lobby .preparation-frame__dock {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  #lobby .preparation-frame__dock-copy {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  #lobby .preparation-frame__dock-actions {
+    justify-content: stretch;
+  }
+
+  #lobby .preparation-frame__primary-action {
+    flex: 1 1 220px;
+  }
+
+  #lobby .preparation-frame .lobby-local-preparation__content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'crew'
+      'rules'
+      'inspection';
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__briefing {
+    display: contents;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__crew {
+    grid-area: crew;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__rules {
+    grid-area: rules;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__inspection {
+    grid-area: inspection;
+  }
+
+}
+
+@container preparation-workspace (max-width: 560px) {
+  #lobby .preparation-frame__heading {
+    /* Narrow phones have no room to spend a full control row on title chrome.
+       Keep the title legible while reserving at least one 44px-reachable slice
+       of the task body above the real, in-flow decision dock across font stacks. */
+    padding: 4px 12px;
+  }
+
+  #lobby .preparation-frame__eyebrow {
+    display: none;
+  }
+
+  #lobby .preparation-frame .preparation-frame__title {
+    grid-row: auto;
+  }
+
+  #lobby .preparation-frame .preparation-frame__description {
+    display: none;
+  }
+
+  #lobby .preparation-frame__body-inner {
+    padding: 9px;
+  }
+
+  #lobby .preparation-frame__dock-copy {
+    display: none;
+  }
+
+  #lobby .preparation-frame__dock-copy:has(.lobby-error:not(:empty)) {
+    display: grid;
+  }
+
+  /* State-bearing campaign messages remain part of the decision. Keep them in
+     the in-flow dock beside the disabled/recovery action instead of discarding
+     the warning merely to preserve a shorter rail. */
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock-copy {
+    display: grid;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock-label {
+    display: none;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__primary-action {
+    min-width: min(220px, 38vw);
+  }
+
+  #lobby .preparation-frame__dock-actions,
+  #lobby .preparation-frame__dock .lobby-online-alternatives,
+  #lobby .preparation-frame__dock .lobby-online-alternatives-buttons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .preparation-frame__dock .lobby-online-alternatives-label {
+    display: none;
+  }
+
+  #lobby .preparation-frame__primary-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #lobby .campaign-command.preparation-frame .campaign-command__loadout,
+  #lobby .skirmish-command.preparation-frame .campaign-command__loadout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1800px) and (min-height: 800px) {
+  #lobby .preparation-frame :is(input, select, button, summary) {
+    font-size: max(14px, 0.78rem);
+  }
+
+  #lobby .preparation-frame :is(
+      .lobby-preparation-section__title,
+      .lobby-operations-board__section-label,
+      .lobby-operations-board__roster-label,
+      .lobby-operations-board__readiness
+    ) {
+    font-size: 13px;
+  }
+
+  #lobby .preparation-frame .lobby-field > label,
+  #lobby .preparation-frame .lobby-hint,
+  #lobby .preparation-frame .lobby-preview__part :is(span, strong) {
+    font-size: 12px;
+  }
+
+  #lobby .preparation-frame .lobby-row__seat-label,
+  #lobby .preparation-frame .lobby-row__appearance {
+    font-size: 13px;
+  }
+
+  #lobby .preparation-frame .campaign-command__equipment dt {
+    font-size: 12px;
+  }
+
+  #lobby .preparation-frame .campaign-command__equipment dd {
+    font-size: 15px;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  #lobby .command-center {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  /* At short landscape heights, category selection and the item catalog share
+     one compact command strip. Modes remains a real 44px target, but it no
+     longer overlays the first catalog item or steals task-space vertically. */
+  #lobby .command-center__navigation {
+    min-height: 52px;
+    height: 52px;
+    box-sizing: border-box;
+  }
+
+  #lobby .command-center__library,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library {
+    min-height: 52px;
+    box-sizing: border-box;
+    grid-template: 44px / minmax(0, 1fr);
+    align-items: center;
+    gap: 0;
+    padding: 4px 8px 4px calc(max(160px, 20%) + 8px);
+  }
+
+  #lobby .command-center__library > h2,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__library-items,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library-items {
+    min-height: 44px;
+    grid-auto-columns: minmax(150px, 1fr);
+    align-items: stretch;
+    padding: 0 0 2px;
+  }
+
+  #lobby .command-center__item {
+    min-height: 44px;
+    padding-block: 3px;
+  }
+
+  #lobby :is(
+      .multiplayer-command__local-workspace,
+      .multiplayer-command__verified-workspace,
+      .multiplayer-command__online-workspace
+    ):has(.preparation-frame) {
+    padding: 0;
+  }
+
+  #lobby .preparation-frame__heading {
+    min-height: 36px;
+    box-sizing: border-box;
+    padding: 2px 10px;
+  }
+
+  #lobby .preparation-frame__eyebrow,
+  #lobby .preparation-frame__heading .campaign-command__chapter,
+  #lobby .preparation-frame__heading .campaign-command__fact-label {
+    display: none;
+  }
+
+  #lobby .preparation-frame .preparation-frame__title,
+  #lobby .preparation-frame__heading .campaign-command__mission {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 19px;
+  }
+
+  #lobby .preparation-frame__description {
+    display: none;
+  }
+
+  #lobby .skirmish-command.preparation-frame .campaign-command__decision {
+    grid-template-rows: 160px max-content;
+  }
+
+  #lobby .skirmish-command.preparation-frame .campaign-command__scene {
+    min-height: 160px;
+    height: auto;
+  }
+
+  #lobby .preparation-frame__body-inner {
+    padding-block: 8px;
+  }
+
+  #lobby .command-center .preparation-frame__dock,
+  #lobby .multiplayer-command__local-workspace .preparation-frame__dock {
+    min-height: 68px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 5px 8px;
+  }
+
+  #lobby .preparation-frame__dock-copy {
+    display: none;
+  }
+
+  #lobby .preparation-frame__dock-copy:has(.lobby-error:not(:empty)) {
+    display: grid;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock-copy {
+    display: grid;
+  }
+
+  #lobby .preparation-frame__dock-actions {
+    width: 100%;
+    grid-column: 1;
+    justify-content: flex-end;
+  }
+
+  #lobby .command-center .preparation-frame__primary-action {
+    min-height: 56px;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__content {
+    min-height: 0;
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__inspection {
+    min-height: 280px;
+    max-height: 400px;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__inspection > .lobby-preview--inspection {
+    min-height: 280px;
+    height: 100%;
+    max-height: 400px;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-height: 320px) and (orientation: landscape) {
+  #lobby .lobby-card:has(.command-center) {
+    padding: 0 6px;
+  }
+
+  #lobby .lobby-card:has(.command-center) > .lobby-deployment {
+    gap: 0;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-deployment__masthead {
+    min-height: 52px;
+    border-width: 4px;
+    border-image-width: 4px;
+    padding: 0;
+  }
+
+  #lobby .lobby-card:has(.command-center) :is(
+      .lobby-command-rail__brand,
+      .lobby-command-rail__context,
+      .lobby-command-rail__dossier .account-panel__record,
+      .lobby-command-rail__dossier > .account-panel__summary,
+      .lobby-command-rail__dossier > .account-panel__account-trigger
+    ) {
+    min-height: 44px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__brand {
+    font-size: 22px;
+  }
+
+  #lobby .command-center {
+    border-width: 4px;
+    border-image-width: 4px;
+  }
+
+  #lobby .command-center__navigation {
+    min-height: 44px;
+    height: 44px;
+  }
+
+  #lobby .command-center__library,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library {
+    min-height: 44px;
+    padding-block: 0;
+  }
+
+  #lobby :is(
+      .multiplayer-command__local-workspace,
+      .multiplayer-command__verified-workspace,
+      .multiplayer-command__online-workspace
+    ):has(.preparation-frame) {
+    padding: 0;
+  }
+
+  #lobby .preparation-frame__heading {
+    min-height: 30px;
+    padding-block: 1px;
+  }
+
+  #lobby .preparation-frame .preparation-frame__title,
+  #lobby .preparation-frame__heading .campaign-command__mission {
+    font-size: 17px;
+  }
+
+  /* Keep the authored field order in the first short-landscape briefing fold.
+     The shared dock leaves a deliberately shallow body at this height, so the
+     scene row must yield instead of preserving the taller compact minimum and
+     pushing its attached objective below the viewport. */
+  #lobby .skirmish-command.preparation-frame .campaign-command__decision {
+    grid-template-rows: 54px max-content;
+  }
+
+  #lobby .skirmish-command.preparation-frame .campaign-command__scene {
+    min-height: 54px;
+    height: auto;
+  }
+
+  #lobby .command-center .preparation-frame__dock,
+  #lobby .multiplayer-command__local-workspace .preparation-frame__dock {
+    min-height: 68px;
+    padding-block: 5px;
+  }
+
+  #lobby .command-center
+    .command-center__primary-action.preparation-frame__primary-action {
+    height: 56px;
+    min-height: 56px;
+    box-sizing: border-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lobby .command-center *,
+  #lobby .command-center *::before,
+  #lobby .command-center *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail,
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail *,
+  #lobby .command-center,
+  #lobby .command-center * {
+    forced-color-adjust: auto;
+    background-image: none !important;
+    border-image-source: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  #lobby .command-center {
+    border: 2px solid CanvasText;
+  }
+
+  #lobby .lobby-garage.editing {
+    border: 2px solid CanvasText;
+    color: CanvasText;
+    background-color: Canvas !important;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail {
+    border: 2px solid CanvasText;
+  }
+
+  #lobby .command-center button,
+  #lobby .command-center select,
+  #lobby .command-center summary {
+    border: 1px solid ButtonText;
+  }
+
+  #lobby .command-center [aria-pressed='true'],
+  #lobby .command-center [aria-current='true'] {
+    outline: 2px solid Highlight;
+    outline-offset: -4px;
+  }
+}

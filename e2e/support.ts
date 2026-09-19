@@ -65,6 +65,96 @@ export async function gotoLobby(page: Page): Promise<void> {
   await expect(page.locator('#lobby .lobby-card')).toBeVisible();
 }
 
+export type CommandCategoryName = 'Campaigns' | 'Skirmishes' | 'Multiplayer';
+export type CommandItemName = 'ash-road' | 'local-battle'
+  | 'verified-operations' | 'online' | 'first-salvo' | 'standard' | 'crosswind-range'
+  | 'caldera-run' | 'last-light-siege' | 'lean-arsenal' | 'imported-challenge';
+
+/** Select one owned workspace through the public two-level command center. */
+export async function selectCommandWorkspace(
+  page: Page,
+  category: CommandCategoryName,
+  item: CommandItemName,
+): Promise<void> {
+  const categoryId: Record<CommandCategoryName, string> = {
+    Campaigns: 'campaigns',
+    Skirmishes: 'skirmishes',
+    Multiplayer: 'multiplayer',
+  };
+  const center = page.locator('#lobby .command-center');
+  await expect(center).toBeVisible();
+  const rail = center.locator('.command-center__category-rail');
+  // Role locators intentionally exclude the display:none desktop rail at
+  // compact widths. Keep this journey helper on the persistent registered
+  // control while the separate sheet tests cover its public interaction.
+  const railCategory = rail.locator(
+    `button[data-command-category="${categoryId[category]}"]`,
+  );
+  const commandItem = center.locator(
+    `.command-center__library-items button[data-command-item="${item}"]`,
+  );
+  await expect.poll(async () => {
+    if (await commandItem.isVisible()) return true;
+    await railCategory.waitFor({ state: 'attached' });
+    if (await railCategory.isVisible()) await railCategory.click();
+    else {
+      // The compact sheet is exercised by dedicated public-interaction tests.
+      // Route helpers activate the same registered callback through the retained
+      // rail button. Polling also survives the intentional shell replacement
+      // when an asynchronous account refresh changes item availability.
+      await railCategory.evaluate((button: HTMLButtonElement) => button.click());
+    }
+    return commandItem.isVisible();
+  }, { timeout: 8_000 }).toBe(true);
+  if (await commandItem.getAttribute('aria-current') !== 'true') await commandItem.click();
+  await expect(commandItem).toHaveAttribute('aria-current', 'true');
+}
+
+export async function openAshRoadWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
+  await expect(page.locator('[data-campaign-command-view]')).toBeVisible();
+  await expect(page.locator('[data-campaign-save-status]')).not.toContainText('Checking');
+}
+
+export async function openStandardSkirmishWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Skirmishes', 'standard');
+  await expect(page.locator('[data-skirmish-command-view]')).toBeVisible();
+}
+
+export async function openFirstSalvoWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Skirmishes', 'first-salvo');
+  await expect(page.locator('[data-skirmish-command-view]')).toBeVisible();
+}
+
+export async function openLocalPreparation(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Multiplayer', 'local-battle');
+  const workspace = page.locator('[data-multiplayer-command-view="local-battle"]');
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole('tablist', { name: 'Hot Seat modes', exact: true }))
+    .toHaveCount(0);
+  await expect(workspace.locator('[data-operation-lane="practice"]')).toHaveCount(0);
+  await expect(workspace.locator('.lobby-verified-deployment, .lobby-verified-challenge'))
+    .toHaveCount(0);
+}
+
+export async function openVerifiedOperations(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Multiplayer', 'verified-operations');
+  const workspace = page.locator('[data-multiplayer-command-view="verified-operations"]');
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole('tablist', { name: 'Hot Seat modes', exact: true }))
+    .toHaveCount(0);
+  await expect(workspace.getByRole('tablist', { name: 'Verified operation', exact: true }))
+    .toBeVisible();
+}
+
+export async function openOnlinePreparation(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Multiplayer', 'online');
+  const workspace = page.locator('[data-multiplayer-command-view="online"]');
+  await expect(workspace).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'Play Online preparation', exact: true }))
+    .toHaveCount(0);
+}
+
 /** Open the campaign's mode-aware Match/Mission ledger when it is drawer-owned. */
 export async function openMissionLedger(page: Page): Promise<boolean> {
   const mission = page.getByRole('region', { name: 'Campaign mission', exact: true });
@@ -88,6 +178,8 @@ export async function closeMissionLedger(page: Page): Promise<void> {
  */
 export async function gotoFuelStopFromPublicEntry(page: Page): Promise<void> {
   await gotoLobby(page);
+
+  await openAshRoadWorkspace(page);
 
   const start = page.getByRole('button', { name: 'Start Ash Road', exact: true });
   await expect(start).toBeVisible({ timeout: 5_000 });
@@ -115,23 +207,8 @@ export async function gotoFuelStopFromPublicEntry(page: Page): Promise<void> {
  * intentionally leaves it closed so first-contact tests observe production.
  */
 export async function openHotSeatCustomization(page: Page): Promise<void> {
-  const tabs = page.getByRole('tablist', { name: 'Hot Seat modes', exact: true });
-  if (!(await tabs.isVisible())) {
-    const localBattle = page.getByRole('button', { name: 'Local Battle', exact: true });
-    if (await localBattle.isVisible()) await localBattle.click();
-  }
-  await selectHotSeatTab(page, 'Local Battle');
+  await openLocalPreparation(page);
   await expect(page.locator('#lobby .lobby-name').first()).toBeVisible();
-}
-
-export async function selectHotSeatTab(
-  page: Page,
-  name: 'Local Battle' | 'Practice vs CPU' | 'Verified Deployment',
-): Promise<void> {
-  const tab = page.getByRole('tab', { name, exact: true });
-  await tab.click();
-  await expect(tab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel', { name, exact: true })).toBeVisible();
 }
 
 /**
@@ -164,6 +241,163 @@ export async function assertLobbyFrame(page: Page): Promise<void> {
 }
 
 /**
+ * Guard the shared preparation contract rather than any mode's former page
+ * geometry. The heading, scroll viewport, and decision dock must be direct
+ * peers; the dock therefore consumes layout space instead of covering the
+ * mode-owned controls beneath it.
+ */
+export async function assertPreparationFrameGeometry(
+  page: Page,
+  ownerSelector: string,
+): Promise<void> {
+  const owner = page.locator(ownerSelector);
+  const frame = page.locator(
+    `${ownerSelector}[data-preparation-frame], ${ownerSelector} [data-preparation-frame]`,
+  );
+  await expect(frame).toHaveCount(1);
+  await expect(frame).toBeVisible();
+
+  const geometry = await frame.evaluate((element) => {
+    const direct = (selector: string) => element.querySelector<HTMLElement>(`:scope > ${selector}`);
+    const heading = direct('.preparation-frame__heading');
+    const body = direct('.preparation-frame__body');
+    const dock = direct('.preparation-frame__dock');
+    if (!heading || !body || !dock) {
+      throw new Error('Expected direct heading, body viewport, and action dock peers');
+    }
+    const rect = (node: HTMLElement) => {
+      const box = node.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height,
+      };
+    };
+    const primaryActions = Array.from(
+      element.querySelectorAll<HTMLElement>('[data-preparation-primary]'),
+    ).filter((node) => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden'
+        && box.width > 0 && box.height > 0;
+    });
+    return {
+      frame: rect(element),
+      heading: rect(heading),
+      body: rect(body),
+      dock: rect(dock),
+      primaryCount: primaryActions.length,
+      primaryInDock: primaryActions.every((node) => dock.contains(node)),
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+    };
+  });
+
+  expect(geometry.heading.bottom, 'preparation heading must precede the body')
+    .toBeLessThanOrEqual(geometry.body.top + 1);
+  expect(geometry.body.bottom, 'preparation body must end before the in-flow dock')
+    .toBeLessThanOrEqual(geometry.dock.top + 1);
+  expect(geometry.dock.bottom, 'preparation dock must stay inside its frame')
+    .toBeLessThanOrEqual(geometry.frame.bottom + 1);
+  expect(geometry.primaryCount, 'the active preparation route must expose one primary action')
+    .toBe(1);
+  expect(geometry.primaryInDock, 'the primary action must be owned by the shared dock').toBe(true);
+  expect(geometry.scrollWidth, 'the preparation frame must not overflow horizontally')
+    .toBeLessThanOrEqual(geometry.clientWidth + 1);
+}
+
+/** Scroll a required mode field through the shared body and prove the dock does
+ * not mask it. This is the regression oracle for the former Online Visibility
+ * collision at windowed heights. */
+export async function assertPreparationFieldReachable(
+  page: Page,
+  ownerSelector: string,
+  fieldSelector: string,
+): Promise<void> {
+  const owner = page.locator(ownerSelector);
+  const field = owner.locator(fieldSelector);
+  await field.scrollIntoViewIfNeeded();
+  // Chromium may align the requested control a few pixels above a nested
+  // scroller's visible edge. Normalize that native scroll result inside the
+  // shared body before measuring it against the reserved dock.
+  await owner.evaluate((element, selector) => {
+    const field = element.querySelector<HTMLElement>(selector);
+    const body = element.querySelector<HTMLElement>('.preparation-frame__body');
+    if (!field || !body) throw new Error(`Missing required preparation field: ${selector}`);
+    const fieldBox = field.getBoundingClientRect();
+    const bodyBox = body.getBoundingClientRect();
+    if (fieldBox.top < bodyBox.top + 8) {
+      body.scrollTop += fieldBox.top - bodyBox.top - 8;
+    } else if (fieldBox.bottom > bodyBox.bottom - 8) {
+      body.scrollTop += fieldBox.bottom - bodyBox.bottom + 8;
+    }
+  }, fieldSelector);
+  await expect(field).toBeVisible();
+  const geometry = await owner.evaluate((element, selector) => {
+    const field = element.querySelector<HTMLElement>(selector);
+    const body = element.querySelector<HTMLElement>('.preparation-frame__body');
+    const dock = element.querySelector<HTMLElement>('.preparation-frame__dock');
+    if (!field || !body || !dock) throw new Error(`Missing required preparation field: ${selector}`);
+    const fieldBox = field.getBoundingClientRect();
+    const bodyBox = body.getBoundingClientRect();
+    const dockBox = dock.getBoundingClientRect();
+    return {
+      fieldTop: fieldBox.top,
+      fieldBottom: fieldBox.bottom,
+      bodyTop: bodyBox.top,
+      bodyBottom: bodyBox.bottom,
+      dockTop: dockBox.top,
+    };
+  }, fieldSelector);
+  expect(geometry.fieldTop, `${fieldSelector} must be reachable inside the body viewport`)
+    .toBeGreaterThanOrEqual(geometry.bodyTop - 1);
+  expect(geometry.fieldBottom, `${fieldSelector} must clear the action dock`)
+    .toBeLessThanOrEqual(Math.min(geometry.bodyBottom, geometry.dockTop) + 1);
+}
+
+/** Prove owned workspaces cannot collapse or hide the accepted three-bay command rail. */
+export async function assertCommandHeaderAssembly(page: Page): Promise<void> {
+  const header = page.locator('#lobby .lobby-command-rail');
+  const brand = header.locator('.lobby-command-rail__brand');
+  const context = header.locator('.lobby-command-rail__context');
+  const dossier = header.locator('.lobby-command-rail__dossier');
+  for (const region of [header, brand, context, dossier]) await expect(region).toBeVisible();
+
+  const geometry = await header.evaluate((element) => {
+    const bounds = (selector: string) => {
+      const target = element.querySelector<HTMLElement>(selector);
+      if (!target) throw new Error(`Missing command-header region: ${selector}`);
+      return target.getBoundingClientRect().toJSON();
+    };
+    return {
+      header: element.getBoundingClientRect().toJSON(),
+      brand: bounds('.lobby-command-rail__brand'),
+      context: bounds('.lobby-command-rail__context'),
+      dossier: bounds('.lobby-command-rail__dossier'),
+    };
+  });
+  for (const [name, region] of Object.entries({
+    brand: geometry.brand,
+    context: geometry.context,
+    dossier: geometry.dossier,
+  })) {
+    expect(region.width, `${name} header bay width`).toBeGreaterThan(0);
+    expect(region.height, `${name} header bay height`).toBeGreaterThan(0);
+    expect(region.left, `${name} header bay left containment`)
+      .toBeGreaterThanOrEqual(geometry.header.left - 1);
+    expect(region.right, `${name} header bay right containment`)
+      .toBeLessThanOrEqual(geometry.header.right + 1);
+    expect(region.top, `${name} header bay top containment`)
+      .toBeGreaterThanOrEqual(geometry.header.top - 1);
+    expect(region.bottom, `${name} header bay bottom containment`)
+      .toBeLessThanOrEqual(geometry.header.bottom + 1);
+  }
+}
+
+/**
  * Prove a primary control is reachable inside the Lobby's own scroll region.
  * Scrolling is intentional: long forms may use internal vertical overflow,
  * but their actions must remain renderable and accessible.
@@ -184,6 +418,97 @@ export async function assertLobbyControlReachable(page: Page, selector: string):
   expect(controlBox!.y).toBeGreaterThanOrEqual(cardBox!.y - 1);
   expect(controlBox!.x + controlBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
   expect(controlBox!.y + controlBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 1);
+}
+
+type ActionSemantic = 'safe' | 'danger';
+
+async function assertSemanticActionFill(
+  page: Page,
+  selector: string,
+  semantic: ActionSemantic,
+): Promise<{
+  border: number[];
+  background: string;
+  backgroundColor: number[];
+  fillStops: number[][];
+  intent: string;
+  expectedTop: string;
+  expectedBottom: string;
+}> {
+  const action = page.locator(selector).filter({ visible: true });
+  await expect(action).toHaveCount(1);
+  const palette = await action.evaluate((element, expectedSemantic) => {
+    const style = getComputedStyle(element);
+    const channels = (value: string): number[] => (
+      value.match(/[\d.]+/g)?.slice(0, 3).map(Number) ?? []
+    );
+    const fillStops = style.backgroundImage.match(/rgba?\([^)]*\)/g)
+      ?.map(channels) ?? [];
+    const lobby = element.closest<HTMLElement>('#lobby');
+    if (!lobby) throw new Error('Semantic action must remain inside #lobby');
+    const lobbyStyle = getComputedStyle(lobby);
+    const prefix = expectedSemantic === 'safe'
+      ? '--console-safe-action-fill-'
+      : '--console-danger-action-fill-';
+    const normalizeColor = (value: string): string => {
+      const probe = document.createElement('span');
+      probe.style.color = value.trim();
+      lobby.append(probe);
+      const normalized = getComputedStyle(probe).color;
+      probe.remove();
+      return normalized;
+    };
+    return {
+      border: channels(style.borderTopColor),
+      background: style.backgroundImage,
+      backgroundColor: channels(style.backgroundColor),
+      fillStops,
+      intent: style.getPropertyValue('--console-action-semantic').trim(),
+      expectedTop: normalizeColor(lobbyStyle.getPropertyValue(`${prefix}top`)),
+      expectedBottom: normalizeColor(lobbyStyle.getPropertyValue(`${prefix}bottom`)),
+    };
+  }, semantic);
+  expect(palette.intent, `${selector} must retain its authoritative semantic marker`)
+    .toBe(semantic);
+  expect(palette.expectedTop, `${selector} must resolve its ${semantic} top fill token`)
+    .toMatch(/^rgba?\(/);
+  expect(palette.expectedBottom, `${selector} must resolve its ${semantic} bottom fill token`)
+    .toMatch(/^rgba?\(/);
+  expect(palette.fillStops.length, `${selector} must render at least two gradient fill stops`)
+    .toBeGreaterThanOrEqual(2);
+  if (semantic === 'safe') {
+    const [top, bottom] = palette.fillStops;
+    expect(top![0], `${selector} gold top red channel`).toBeGreaterThanOrEqual(230);
+    expect(top![1], `${selector} gold top green channel`).toBeGreaterThanOrEqual(160);
+    expect(top![2], `${selector} gold top blue channel`).toBeGreaterThanOrEqual(70);
+    expect(bottom![0], `${selector} gold bottom red channel`).toBeGreaterThanOrEqual(190);
+    expect(bottom![1], `${selector} gold bottom green channel`).toBeGreaterThanOrEqual(110);
+    expect(bottom![2], `${selector} gold bottom blue channel`).toBeLessThanOrEqual(100);
+  } else {
+    expect(palette.background, `${selector} must render the danger top fill token`)
+      .toContain(palette.expectedTop);
+    expect(palette.background, `${selector} must render the danger bottom fill token`)
+      .toContain(palette.expectedBottom);
+  }
+  return palette;
+}
+
+/** Safe launch/deployment actions render the command deck's gold fill, never a bordered fallback. */
+export async function assertGoldSafeAction(page: Page, selector: string): Promise<void> {
+  const palette = await assertSemanticActionFill(page, selector, 'safe');
+  expect(palette.border.length, `${selector} must expose a computed border colour`).toBe(3);
+  expect(palette.border[0], `${selector} gold border red channel`).toBeGreaterThanOrEqual(180);
+  expect(palette.border[1], `${selector} gold border green channel`).toBeGreaterThanOrEqual(150);
+  expect(palette.border[2], `${selector} gold border blue channel`).toBeGreaterThanOrEqual(70);
+}
+
+/** Explicit destructive confirmation renders the red danger fill, never the safe gold semantic. */
+export async function assertDangerAction(page: Page, selector: string): Promise<void> {
+  const palette = await assertSemanticActionFill(page, selector, 'danger');
+  expect(palette.border.length, `${selector} must expose a computed border colour`).toBe(3);
+  expect(palette.border[0], `${selector} danger border red channel`).toBeGreaterThanOrEqual(180);
+  expect(palette.border[1], `${selector} danger border green channel`).toBeLessThan(150);
+  expect(palette.border[2], `${selector} danger border blue channel`).toBeLessThan(130);
 }
 
 /** Whether the fixed stage is rendered below its compact-scale threshold. */

@@ -4,7 +4,11 @@ import {
   TANK_PART_SETS,
   TANK_PART_SLOTS,
 } from '../client/src/renderer/tankPartCatalog';
-import { openHotSeatCustomization } from './support';
+import {
+  openHotSeatCustomization,
+  openLocalPreparation,
+  openOnlinePreparation,
+} from './support';
 
 async function openGarage(page: Page): Promise<void> {
   await page.goto('.');
@@ -40,27 +44,44 @@ async function assertVehicleBayGeometry(page: Page): Promise<void> {
       return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, height: rect.height };
     };
     const regions = [
-      dialog.querySelector('.lobby-garage__editor-header'),
-      dialog.querySelector('.lobby-garage__build-summary'),
-      dialog.querySelector('.lobby-garage__preset-group'),
-      dialog.querySelector('.lobby-garage__component-group'),
-      dialog.querySelector('.lobby-garage__close'),
+      dialog.querySelector('.lobby-garage__workshop-header'),
+      dialog.querySelector('.lobby-garage__inspection'),
+      dialog.querySelector('.lobby-garage__editor-scroll'),
+      dialog.querySelector('.lobby-garage__actions'),
     ];
     if (regions.some((region) => region === null)) throw new Error('Vehicle Bay regions are missing');
-    return { dialog: serialize(dialog), regions: regions.map((region) => serialize(region!)) };
+    const editorScroll = regions[2] as HTMLElement;
+    return {
+      dialog: serialize(dialog),
+      regions: regions.map((region) => serialize(region!)),
+      editor: {
+        clientHeight: editorScroll.clientHeight,
+        scrollHeight: editorScroll.scrollHeight,
+        overflowY: getComputedStyle(editorScroll).overflowY,
+      },
+    };
   });
   for (const region of geometry.regions) {
     expect(region.height, 'Vehicle Bay region must remain visible').toBeGreaterThan(4);
     expect(region.left, 'Vehicle Bay region must stay within the dialog').toBeGreaterThanOrEqual(geometry.dialog.left - 1);
     expect(region.right, 'Vehicle Bay region must stay within the dialog').toBeLessThanOrEqual(geometry.dialog.right + 1);
   }
-  const [header, summary, presets, components, done] = geometry.regions;
-  expect(header!.bottom, 'Vehicle Bay header must clear the build summary')
-    .toBeLessThanOrEqual(summary!.top + 1);
-  expect(summary!.bottom, 'Vehicle Bay summary must clear both control bays')
-    .toBeLessThanOrEqual(Math.min(presets!.top, components!.top) + 1);
-  expect(Math.max(presets!.bottom, components!.bottom), 'Vehicle Bay control bays must clear Done')
-    .toBeLessThanOrEqual(done!.top + 1);
+  const [header, inspection, controls, actions] = geometry.regions;
+  expect(header!.bottom, 'Vehicle Bay header must clear its two content regions')
+    .toBeLessThanOrEqual(Math.min(inspection!.top, controls!.top) + 1);
+  const contentOverlapWidth = Math.min(inspection!.right, controls!.right)
+    - Math.max(inspection!.left, controls!.left);
+  const contentOverlapHeight = Math.min(inspection!.bottom, controls!.bottom)
+    - Math.max(inspection!.top, controls!.top);
+  expect(
+    contentOverlapWidth <= 1 || contentOverlapHeight <= 1,
+    'Vehicle Bay inspection and controls must not overlap',
+  ).toBe(true);
+  expect(Math.max(inspection!.bottom, controls!.bottom), 'Vehicle Bay content must clear Done')
+    .toBeLessThanOrEqual(actions!.top + 1);
+  expect(geometry.editor.clientHeight).toBeGreaterThanOrEqual(44);
+  expect(geometry.editor.scrollHeight).toBeGreaterThanOrEqual(geometry.editor.clientHeight);
+  expect(geometry.editor.overflowY).toBe('auto');
 }
 
 async function openTankCustomization(page: Page, ownerLabel: string): Promise<void> {
@@ -247,14 +268,11 @@ test.describe('tank Garage', () => {
         await page.getByRole('button', {
           name: `Apply ${kits[turretIndex]} preset to Player 1`,
         }).click();
-        const barrelSteps = (
-          barrelIndex - turretIndex + kits.length
-        ) % kits.length;
-        for (let step = 0; step < barrelSteps; step++) {
-          await page.getByRole('button', {
-            name: 'Change Player 1 barrel',
-          }).click();
-        }
+        const barrel = page.locator(
+          `.lobby-garage[data-owner="player-1"] [data-slot="barrel"][data-variant="${TANK_KIT_IDS[barrelIndex]}"]`,
+        );
+        await barrel.click();
+        await expect(barrel).toHaveAttribute('aria-pressed', 'true');
         await expect.poll(async () => (
           (await previewComponentAreas(page))[0] ?? 0
         )).toBeGreaterThan(700);
@@ -305,7 +323,7 @@ test.describe('tank Garage', () => {
         name: `Apply ${preset} preset to Player 1`,
       }).click();
       const labels = await page.locator(
-        '.lobby-garage[data-owner="player-1"] .lobby-garage__slot strong',
+        '.lobby-garage[data-owner="player-1"] .lobby-garage__variant[aria-pressed="true"]',
       ).evaluateAll((nodes) => nodes.map((label) => {
         const range = document.createRange();
         range.selectNodeContents(label);
@@ -366,11 +384,12 @@ test.describe('tank Garage', () => {
       });
       await rangerPreset.click();
       await expect(rangerPreset).toBeFocused();
-      const turretSlot = page.getByRole('button', {
-        name: 'Change Player 1 turret',
-      });
-      await turretSlot.click();
-      await expect(turretSlot).toBeFocused();
+      const bunkerTurret = page.locator(
+        '.lobby-garage[data-owner="player-1"] [data-slot="turret"][data-variant="bulwark"]',
+      );
+      await bunkerTurret.click();
+      await expect(bunkerTurret).toBeFocused();
+      await expect(bunkerTurret).toHaveAttribute('aria-pressed', 'true');
       await expectTouchSized(page.locator(
         '.lobby-garage.editing button:visible',
       ));
@@ -404,8 +423,7 @@ test.describe('tank Garage', () => {
     }
 
     await page.getByLabel('Players', { exact: true }).selectOption('2');
-    await page.getByRole('button', { name: 'Back to deployment choices' }).click();
-    await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+    await openOnlinePreparation(page);
     await expect(page.locator('.lobby-garage')).toHaveCount(1);
     const onlineFit = await page.locator('.lobby-card').evaluate((card) => ({
       clientHeight: card.clientHeight,
@@ -414,8 +432,7 @@ test.describe('tank Garage', () => {
     expect(onlineFit.scrollHeight).toBeLessThanOrEqual(
       onlineFit.clientHeight + 1,
     );
-    await page.getByRole('button', { name: 'Back to deployment choices' }).click();
-    await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+    await openLocalPreparation(page);
 
     await openTankCustomization(page, 'Player 1');
     await page.getByRole('button', {
@@ -429,11 +446,13 @@ test.describe('tank Garage', () => {
     await closeTankCustomization(page);
 
     await expect(page.locator(
-      'button[aria-label="Apply Ranger preset to Player 1"]',
-    )).toHaveAttribute('aria-pressed', 'true');
+      '.lobby-garage[data-owner="player-1"] .lobby-garage__build-summary',
+    )).toHaveText('Ranger loadout');
     await expect(page.locator(
-      'button[aria-label="Apply Bulwark preset to Player 2"]',
-    )).toHaveAttribute('aria-pressed', 'true');
+      '.lobby-garage[data-owner="player-2"] .lobby-garage__build-summary',
+    )).toHaveText('Bulwark loadout');
+    await expect(page.locator('.lobby-preview__spotlight'))
+      .toHaveAttribute('data-owner', 'player-2');
 
     await expect.poll(async () => page.evaluate(() => {
       const signatures = Array.from(
@@ -485,13 +504,12 @@ test.describe('tank Garage', () => {
     await page.getByRole('button', {
       name: 'Apply Jackal preset to Player 1',
     }).click();
-    await page.getByRole('button', {
-      name: 'Change Player 1 turret',
-    }).click();
-
-    await expect(page.getByRole('button', {
-      name: 'Change Player 1 turret',
-    })).toContainText('Cupola');
+    const cupolaTurret = page.locator(
+      '.lobby-garage[data-owner="player-1"] [data-slot="turret"][data-variant="foundry"]',
+    );
+    await cupolaTurret.click();
+    await expect(cupolaTurret).toHaveAttribute('aria-pressed', 'true');
+    await expect(cupolaTurret).toHaveText('Cupola');
     const expectedPartHashes = await page.evaluate(() => {
       const records = (window as typeof window & {
         __tankPartDraws?: Array<{ target: string; hash: number }>;

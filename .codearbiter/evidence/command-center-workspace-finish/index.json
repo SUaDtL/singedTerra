@@ -1,0 +1,602 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-18T18:56:26.484Z",
+  "purpose": "PR #515 Local Battle and shared Garage owner visual acceptance",
+  "provenance": {
+    "headCommit": "aa4106a1cfd89bb32836de067ad1ac433b3afb2e",
+    "mergeBase": "e332f3c2d1ddb9c0b549b7e34c5906872308becb",
+    "branch": "codex/command-center-launcher",
+    "sourceDirty": true,
+    "sourceStatus": [
+      "M client/src/ui/commandCenter/CommandCenter.css",
+      " M e2e/garage-spotlight.spec.ts",
+      " M e2e/pregame-command-center.spec.ts"
+    ],
+    "sourceStatusSha256": "7282674a28f53f076067fd00214cf3ce08d100a314cde322b93e83991be7f858",
+    "sourceFiles": [
+      {
+        "path": "client/src/ui/commandCenter/CommandCenter.css",
+        "state": "present",
+        "sha256": "4502f2b8a1f46e763c03ee7765f1483c989d09ebcf66ad13a2c488ecbad9c27c",
+        "gitStatus": "M"
+      },
+      {
+        "path": "e2e/garage-spotlight.spec.ts",
+        "state": "present",
+        "sha256": "c601fb3ccbbb11953c28e3248441cffa528c4e03fb050143bf14d2655e353315",
+        "gitStatus": "M"
+      },
+      {
+        "path": "e2e/pregame-command-center.spec.ts",
+        "state": "present",
+        "sha256": "489e71d0aef0aae13d79025cced947c2cd1e0d292aed1361573dee58fcbce4ce",
+        "gitStatus": "M"
+      }
+    ],
+    "sourceContentSha256": "8f0109482594e2bf01f2e5e45007b526e435bc647433e56e6b123ac29a9c28f8",
+    "servedResourceCount": 16,
+    "servedRuntimeSha256": "b4871a2afad344d81c343f65954d3015cd3a00cfbb6c749d807893e4634207dc",
+    "baseUrl": "http://localhost:4174",
+    "testCommand": "E2E_LIVE_URL=http://localhost:4174 COMMAND_CENTER_WORKSPACE_EVIDENCE_DIR=.codearbiter/evidence/command-center-workspace-finish npx playwright test e2e/pregame-command-center.spec.ts --project=desktop-fine --grep \"retains native Local\""
+  },
+  "coverage": {
+    "states": [
+      "default-two-seat",
+      "modified-player-2",
+      "four-seat",
+      "open-garage"
+    ],
+    "viewports": [
+      {
+        "label": "wide",
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "label": "standard",
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "label": "ultrawide",
+        "width": 3440,
+        "height": 1440
+      },
+      {
+        "label": "compact-landscape",
+        "width": 844,
+        "height": 390
+      },
+      {
+        "label": "portrait",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "label": "narrow-phone",
+        "width": 320,
+        "height": 568
+      }
+    ],
+    "specialConditions": [
+      "200% equivalent reflow",
+      "reduced motion",
+      "forced colours",
+      "missing command chrome and tank atlas"
+    ]
+  },
+  "records": [
+    {
+      "file": "default-two-seat-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "5f38e66112b9eb0daf1e177821e29e1a681f08a2f65840500fc195a7e6734f63"
+    },
+    {
+      "file": "modified-player-2-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "14fed1eb3364000eb71c92d3daf162c6d266ac26322c3f87a273f04050cf1e11"
+    },
+    {
+      "file": "four-seat-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "5dec2e43733ecbce738fb0b6a9c02260ef8437ec4b44c777cc552fbb74617ef5"
+    },
+    {
+      "file": "open-garage-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "d7c621e07d6a912ad234ce44b7024ca532e38723e031604857ddd66a1447e52e"
+    },
+    {
+      "file": "default-two-seat-1440x900.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "49100dcff99ea6706fd827dfb76b6cd8168de3a3a1333e1249dfccb5e2352e59"
+    },
+    {
+      "file": "detail-default-crew-and-inspection.png",
+      "captureKind": "detail",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "ddc930ab5f88eb04721db2189eab198949ac3ba0fc4163be206cfb5b46dd6530"
+    },
+    {
+      "file": "modified-player-2-1440x900.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "13775a2c5cd0912c2c3686fd2fc80317622cc7ef8b9a6bed8939182936dc2d4c"
+    },
+    {
+      "file": "detail-modified-player-2.png",
+      "captureKind": "detail",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "4cec6be9542f997a330311b7b8ea5ae66d24aab3ddb22d5196ef7b14f09840b2"
+    },
+    {
+      "file": "four-seat-1440x900.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "632375fbd52795ea82c201b0d4c300b0e7fb99ec61aa549c97eab12ba549632e"
+    },
+    {
+      "file": "open-garage-1440x900.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "a5428173deb0ac9b046f81ca3fa3c1e17482daf0b893bb34fb45e01c1b1aea79"
+    },
+    {
+      "file": "detail-garage-owner-tank.png",
+      "captureKind": "detail",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "7ba0a2ed58ed8fce4c838d83c1f73af335b024aacf10907339669674d03f663b"
+    },
+    {
+      "file": "detail-garage-presets.png",
+      "captureKind": "detail",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "600e6dac5b7fbb64b79c0896dfc99bbd98c1c44520fb5083322fcedd3dbcfec5"
+    },
+    {
+      "file": "detail-garage-components.png",
+      "captureKind": "detail",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "89c8c47734291e5fe8feb8f7020200a2c49e244ac82866be7e1264d7b4605d97"
+    },
+    {
+      "file": "default-two-seat-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "8edc71c300ec7d599a5c35aac9fdf19dd160edbcee3f28873f87dcb18f2dae1a"
+    },
+    {
+      "file": "modified-player-2-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "516e7d370aa2a5ba7a288da5bee5e28cc52c9b5fdf3b0195defb757cfd7a09d7"
+    },
+    {
+      "file": "four-seat-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "ab9dd34f5071789d7827f65ef4b090acc8a047cce13b3364cd1b2ffcd4e0352b"
+    },
+    {
+      "file": "open-garage-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "e1a3c5effebbe4ef9835a855aa70b95e725c593adf8958735046e1933691d1ef"
+    },
+    {
+      "file": "default-two-seat-844x390.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "f98017a4b1b38e0576eae8a215fd57266e240cadf970c156b719fed1da849217"
+    },
+    {
+      "file": "modified-player-2-844x390.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "cb70c4bc3f2d789056fd30830ed8cbb6d9e03c97b4f2ed2b931c1509e396458e"
+    },
+    {
+      "file": "four-seat-844x390.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "f50f15c437b1fbf409a1249480f6da837f6594847ea6639d8e4c14c5f51c4dc3"
+    },
+    {
+      "file": "open-garage-844x390.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "d09b9acc038b2c7dcd18833124d05b8729fff387aa9eb0510677e95bead2e5b5"
+    },
+    {
+      "file": "default-two-seat-390x844.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "fce7f34b482f14e14488fc7a7ce06a038a4c9f45cd4e3f31cecbb45bfb906089"
+    },
+    {
+      "file": "modified-player-2-390x844.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "25517bd68007ad6ead0c91c5fc6bc3e9beee694a966ce11e541ed309f3ee2d74"
+    },
+    {
+      "file": "four-seat-390x844.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "8923b848b0b2f478fb323f6de22b28be6a436f965928111d28dfe3c47ab40f66"
+    },
+    {
+      "file": "open-garage-390x844.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "0cbf8928d45d318442b513e331b1173507c5ac56218d42a0b5e08f18d8acee5a"
+    },
+    {
+      "file": "default-two-seat-320x568.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "350e0baed64eb5cdd7ca3766a13d89cb13a790725ce087981ca3cf1b41d77013"
+    },
+    {
+      "file": "modified-player-2-320x568.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "413d41c1d3158d61f26cd429e532cc9397cbaded95d5385741376b9fc5baf47e"
+    },
+    {
+      "file": "four-seat-320x568.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "2eaf8d7610ebcbbd70be61b056ceb635571f0ef652b8d4a0e69154a7f45d8b17"
+    },
+    {
+      "file": "open-garage-320x568.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "d14a89c56865640038d9ce8ef033204cf5138ed7b95f33398e65ecd1116f1370"
+    },
+    {
+      "file": "special-200pct-equivalent-720x450.png",
+      "captureKind": "special",
+      "state": "open-garage",
+      "viewport": {
+        "width": 720,
+        "height": 450
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "200% equivalent of 1440x900",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "7f3753b86937248c789d06b03a59a4f988049c19fd94dcdfb4c32d7288ca6885"
+    },
+    {
+      "file": "special-reduced-motion-forced-colours-1024x768.png",
+      "captureKind": "special",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "1939acb3c3c491fac64e433983955f4434a3154ba47d0d256dd0bf1ed3c8b3a3"
+    },
+    {
+      "file": "special-missing-art-fallback-1024x768.png",
+      "captureKind": "special",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "45e76bde698e6955903c1572c80ce1b05d2a3577513f202c19030e3acbc660ba"
+    }
+  ]
+}

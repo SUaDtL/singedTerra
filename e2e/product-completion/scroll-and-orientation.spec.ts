@@ -35,7 +35,7 @@ test('AC-01 portrait phone presents the fitted landscape launch gate', { tag: '@
   const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   try {
     const page = await context.newPage();
-    await page.goto('./');
+    await page.goto('./?e2e=hotseat');
     await expect(page.getByRole('heading', { name: 'Turn the battlefield sideways' })).toBeVisible();
     const launch = page.getByRole('button', { name: 'Enter fullscreen landscape' });
     await expect(launch).toBeInViewport();

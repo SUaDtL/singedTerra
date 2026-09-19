@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openLocalPreparation } from './support';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -95,8 +96,10 @@ test.describe('P11 after-action same-scenario experiment', () => {
       await splash.click();
       await expect(splash).toBeHidden({ timeout: 5_000 });
 
-      await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
-      await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toHaveAttribute('aria-selected', 'true');
+      await openLocalPreparation(page);
+      await expect(page.locator('button[data-command-item="local-battle"]'))
+        .toHaveAttribute('aria-current', 'true');
+      await expect(page.locator('[data-multiplayer-command-view="local-battle"]')).toBeVisible();
       await expect(page.locator('.lobby-name').first()).toBeVisible();
       await chooseFoundryPreset(page, 1);
       await chooseFoundryPreset(page, 2);

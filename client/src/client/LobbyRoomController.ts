@@ -102,6 +102,18 @@ export class LobbyRoomController {
     this.leaving = false
   }
 
+  /**
+   * Retire only the currently mounted Online workspace. Unlike full Lobby
+   * retirement this preserves validated rejoin state and recoverable errors,
+   * while still invalidating late create/join/leave continuations.
+   */
+  suspendWorkspace(): void {
+    this.operationGeneration += 1
+    this.lifecycleOpen = false
+    this.busy = false
+    this.leaving = false
+  }
+
   accountIdentityChanged(): void {
     this.operationGeneration += 1
     this.busy = false

@@ -1,3 +1,5 @@
+import type { ApplicationSurfaceRoots, ApplicationSurfaceState } from './ApplicationSurface';
+
 export type OrientationLaunchResult = 'locked' | 'fullscreen' | 'manual';
 
 export interface OrientationLaunchPorts {
@@ -71,50 +73,79 @@ const RESULT_COPY: Readonly<Record<OrientationLaunchResult, string>> = {
   manual: 'Your browser keeps orientation manual — rotate your device to continue.',
 };
 
+function applicationSurfaceState(roots: ApplicationSurfaceRoots): ApplicationSurfaceState {
+  if (roots.pregame.hidden) return 'battle';
+  if (roots.pregame.inert || roots.pregame.getAttribute('aria-busy') === 'true') return 'launching';
+  return 'pregame';
+}
+
 export function mountOrientationGate(
   root: Document = document,
   ports: OrientationLaunchPorts = browserPorts(root),
+  surfaceRoots?: ApplicationSurfaceRoots,
 ): void {
-  const app = root.querySelector<HTMLElement>('#app');
+  const app = surfaceRoots?.battle ?? root.querySelector<HTMLElement>('#app');
+  const pregame = surfaceRoots?.pregame ?? root.querySelector<HTMLElement>('#lobby');
   const gate = root.querySelector<HTMLElement>('#portrait-warn');
   const button = root.querySelector<HTMLButtonElement>('#portrait-launch');
   const status = root.querySelector<HTMLElement>('#portrait-warn-status');
-  if (!app || !gate || !button || !status || button.dataset['orientationGateBound'] === 'true') return;
+  if (!app || !pregame || !gate || !button || !status
+    || button.dataset['orientationGateBound'] === 'true') return;
 
   button.dataset['orientationGateBound'] = 'true';
   const view = root.defaultView;
   const media = view?.matchMedia?.(PHONE_PORTRAIT_QUERY);
   let gateReady = false;
-  let previousAppFocus: HTMLElement | null = null;
+  let gatedSurface: ApplicationSurfaceState | null = null;
+  let previousSurfaceFocus: HTMLElement | null = null;
   let splashObserver: MutationObserver | null = null;
 
-  const restoreAppFocus = (): void => {
-    const target = previousAppFocus?.isConnected && app.contains(previousAppFocus)
-      ? previousAppFocus
-      : app.querySelector<HTMLElement>(APP_FOCUSABLE);
-    previousAppFocus = null;
+  const restoreSurfaceFocus = (
+    surface: ApplicationSurfaceState,
+    allowFallback: boolean,
+  ): void => {
+    const surfaceRoot = surface === 'battle' ? app : pregame;
+    if (surfaceRoot.inert) return;
+    const focused = root.activeElement;
+    if (focused instanceof HTMLElement && surfaceRoot.contains(focused)) {
+      previousSurfaceFocus = null;
+      return;
+    }
+    const captured = previousSurfaceFocus?.isConnected && surfaceRoot.contains(previousSurfaceFocus)
+      ? previousSurfaceFocus
+      : null;
+    const target = captured ?? (allowFallback
+      ? surfaceRoot.querySelector<HTMLElement>(APP_FOCUSABLE)
+      : null);
+    previousSurfaceFocus = null;
     target?.focus({ preventScroll: true });
   };
 
   const syncGate = (): void => {
-    const active = media?.matches ?? false;
+    const surface = applicationSurfaceState({ battle: app, pregame });
+    const active = surface !== 'pregame' && (media?.matches ?? false);
     const splashPresent = Boolean(root.getElementById('st-splash'));
     const ready = active && !splashPresent;
+    const activeSurface = surface === 'battle' ? app : pregame;
 
     if (active) {
       const focused = root.activeElement;
-      if (!previousAppFocus && focused instanceof HTMLElement && app.contains(focused)) {
-        previousAppFocus = focused;
+      if (!previousSurfaceFocus && focused instanceof HTMLElement && activeSurface.contains(focused)) {
+        previousSurfaceFocus = focused;
       }
       app.inert = true;
       app.setAttribute('aria-hidden', 'true');
     } else {
       splashObserver?.disconnect();
       splashObserver = null;
-      app.inert = false;
-      app.removeAttribute('aria-hidden');
+      const battleAvailable = surface === 'battle';
+      app.inert = !battleAvailable;
+      if (battleAvailable) app.removeAttribute('aria-hidden');
+      else app.setAttribute('aria-hidden', 'true');
     }
 
+    gate.hidden = surface === 'pregame';
+    gate.style.display = surface === 'pregame' ? 'none' : '';
     gate.inert = !ready;
     gate.setAttribute('aria-hidden', ready ? 'false' : 'true');
 
@@ -131,9 +162,10 @@ export function mountOrientationGate(
     if (ready && !gateReady) {
       button.focus({ preventScroll: true });
     } else if (!active && gateReady) {
-      restoreAppFocus();
+      restoreSurfaceFocus(surface, gatedSurface === surface);
     }
     gateReady = ready;
+    gatedSurface = ready ? surface : null;
   };
 
   gate.addEventListener('keydown', (event) => {
@@ -143,7 +175,8 @@ export function mountOrientationGate(
   });
 
   button.addEventListener('click', async () => {
-    if (button.disabled || (media && !media.matches)) return;
+    if (button.disabled || applicationSurfaceState({ battle: app, pregame }) === 'pregame'
+      || (media && !media.matches)) return;
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
     status.textContent = 'Preparing the landscape battlefield…';
@@ -155,5 +188,12 @@ export function mountOrientationGate(
   });
 
   media?.addEventListener('change', syncGate);
+  if (view?.MutationObserver) {
+    const surfaceObserver = new view.MutationObserver(syncGate);
+    surfaceObserver.observe(pregame, {
+      attributes: true,
+      attributeFilter: ['hidden', 'inert', 'aria-busy'],
+    });
+  }
   syncGate();
 }

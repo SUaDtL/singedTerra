@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { gotoLobby, selectCommandWorkspace } from './support';
 
 const OPERATIONS = [
   ['standard', 'Standard Duel', 'A balanced three-round duel.'],
+  ['first-salvo', 'First Salvo', 'A one-round duel that starts with the essentials.'],
   ['crosswind-range', 'Crosswind Range', 'Wraparound walls turn shifting wind into a ranging test.'],
   ['caldera-run', 'Caldera Run', 'Lava terrain turns every crater into a positional risk.'],
   ['last-light-siege', 'Last Light Siege', 'A best-of-three duel that tightens into sudden death.'],
@@ -10,15 +12,15 @@ const OPERATIONS = [
 
 for (const [id, title, briefing] of OPERATIONS) {
   test(`Quick Operation ${title} launches with its identity retained in the match ledger`, async ({ page }, testInfo) => {
-    await page.goto('?e2e=quick-duel-seed');
-    await page.evaluate(() => document.getElementById('st-splash')?.remove());
+    await gotoLobby(page);
+    await selectCommandWorkspace(page, 'Skirmishes', id);
 
-    await page.locator('[data-ui="other-quick-duels"] > summary').click();
-
-    const operation = page.locator(`[data-operation-id="${id}"]`);
-    await operation.click();
-    await expect(operation).toBeFocused();
-    await expect(operation).toHaveAttribute('aria-pressed', 'true');
+    const operation = page.locator(`[data-skirmish-command-view][data-operation-id="${id}"]`);
+    await expect(operation).toBeVisible();
+    await expect(operation.locator('[data-battlefield-projection]')).toBeVisible();
+    await expect(page.locator(
+      `.command-center__library-items [data-command-item="${id}"]`,
+    )).toHaveAttribute('aria-current', 'true');
     await expect(page.locator('[data-ui="quick-operation-briefing"]')).toHaveText(briefing);
     const objective = page.locator('[data-ui="quick-operation-objective"]');
     if (id === 'last-light-siege') {
@@ -28,7 +30,7 @@ for (const [id, title, briefing] of OPERATIONS) {
       await expect(objective).toHaveAttribute('data-field-order-id', 'hold-the-field');
       await page.screenshot({ path: testInfo.outputPath('last-light-lobby.png') });
       await expect(objective).toBeInViewport();
-    } else if (id !== 'standard') {
+    } else if (id !== 'standard' && id !== 'first-salvo') {
       const expected = {
         'crosswind-range': ['First Strike · Damage the CPU within your first three salvos.', 'first-strike'],
         'caldera-run': ['Set the Position · Change firing position, then damage the CPU with your first salvo.', 'set-the-position'],
@@ -41,7 +43,7 @@ for (const [id, title, briefing] of OPERATIONS) {
     } else {
       await expect(objective).toBeHidden();
     }
-    await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+    await page.getByRole('button', { name: `Start ${title}`, exact: true }).click();
 
     await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
     const entry = page.getByRole('button', { name: 'Enter battle', exact: true });
@@ -59,17 +61,14 @@ for (const [id, title, briefing] of OPERATIONS) {
     }
     const round = page.locator('.st-hud__round');
     await expect(round).toBeVisible();
-    await expect(round).toHaveText('Round 1 of 3');
+    await expect(round).toHaveText(id === 'first-salvo' ? 'Single round' : 'Round 1 of 3');
   });
 }
 
 test('a selected operation retains its ledger identity through one real salvo', async ({ page }) => {
-  await page.goto('?e2e=quick-duel-seed');
-  await page.evaluate(() => document.getElementById('st-splash')?.remove());
-
-  await page.locator('[data-ui="other-quick-duels"] > summary').click();
-  await page.locator('[data-operation-id="crosswind-range"]').click();
-  await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+  await gotoLobby(page);
+  await selectCommandWorkspace(page, 'Skirmishes', 'crosswind-range');
+  await page.getByRole('button', { name: 'Start Crosswind Range', exact: true }).click();
 
   const briefing = page.getByRole('dialog', { name: 'First salvo briefing' });
   await expect(briefing).toBeVisible();

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "ash-road-campaign-isolation-and-ordinary-parity-reviewed",
+  "disposition": "shared-preparation-frame-and-st1-parity-reviewed",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -76,11 +76,11 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "20bf087233a95d090eb30c6bfe874cf8d04ae9be2f01c4c0f1043320b594beb2"
+      "sha256": "e92bf55f93e5ba5f457fa069a09c4cc0802c27f7711bb27bb3ad99e2a7932ac8"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "36aa9555527a3c9409467d35f40006824c9691782f3199c612a43a0653a22612"
+      "sha256": "4198c22f819a0eb9d2b017ad5624cd722c42ad5e1f11740fab122a19ed80cc9d"
     },
     {
       "path": "package.json",

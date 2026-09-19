@@ -49,7 +49,7 @@ export function releaseTankLoadoutPreviewResources(): void {
   previewArt = null;
 }
 
-export type TankLoadoutPreviewMode = 'thumbnail' | 'spotlight' | 'tactical';
+export type TankLoadoutPreviewMode = 'thumbnail' | 'preset' | 'spotlight' | 'tactical';
 
 interface TankLoadoutPreviewProfile {
   readonly width: number;
@@ -69,6 +69,17 @@ const PREVIEW_PROFILES: Readonly<
     tankX: 22,
     tankY: 27,
     contextScale: 1.6,
+  },
+  // Garage tiles render at up to 148 CSS pixels and are often viewed on a
+  // high-density touch display. Keep the thumbnail framing but paint it at 4x
+  // backing resolution so the authored vehicle edges are not browser-scaled
+  // from the compact roster profile.
+  preset: {
+    width: 336,
+    height: 192,
+    tankX: 22,
+    tankY: 27,
+    contextScale: 6.4,
   },
   spotlight: {
     width: 320,
@@ -226,6 +237,10 @@ export function paintTankLoadoutPreview(
       } else {
         removePreviewSubscription(subscription);
       }
+      // Lobby generations are assembled off-DOM before replaceChildren() retires
+      // the previous generation. Prune again after that synchronous replacement
+      // so editor and preset canvases do not retain atlas readiness listeners.
+      pruneDetachedPreviewSubscriptions();
     });
   }
 }

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openLocalPreparation } from './support';
 
 test('Battery purchase drives keyboard, touch control, pointer gauge, and a shot above 100', async ({
   page,
@@ -10,7 +11,7 @@ test('Battery purchase drives keyboard, touch control, pointer gauge, and a shot
   await expect(splash).toBeVisible();
   await splash.click();
   await expect(splash).toBeHidden();
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click();
 
   const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true });

@@ -68,7 +68,7 @@ describe('Lobby seed challenge receiver', () => {
     expect(message?.textContent).not.toContain('%31%36')
     expect(root.textContent).not.toContain('Start challenge vs CPU')
     expect(onReady).not.toHaveBeenCalled()
-    expect(root.textContent).toContain('Quick Duel vs CPU')
+    expect(root.textContent).toContain('Standard Duel')
   })
 
   it('keeps a live room query in the existing Online join route', () => {

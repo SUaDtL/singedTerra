@@ -1,6 +1,7 @@
 import type { AiDifficulty } from '@shared/types/GameState';
 import { buildOnlineRouteActions } from './LobbyOnlineRouteActions';
 import { buildLobbyPreparationSection } from './LobbyPreparationSection';
+import { createPreparationFrame, createPreparationPrimaryAction } from './PreparationFrame';
 
 export interface LobbyCreateViewOptions {
   minPlayers: number;
@@ -27,16 +28,6 @@ export interface LobbyCreateViewOptions {
 export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLElement {
   const root = document.createElement('div');
   root.className = 'lobby-route-brief lobby-route-brief--online';
-
-  const brief = document.createElement('header');
-  brief.className = 'lobby-route-brief__header';
-  const title = document.createElement('h2');
-  title.className = 'lobby-route-brief__title';
-  title.textContent = 'Open operation';
-  const purpose = document.createElement('p');
-  purpose.className = 'lobby-route-brief__purpose';
-  purpose.textContent = 'Set the battlefield, then issue a room code to your crew.';
-  brief.append(title, purpose);
 
   const setup = document.createElement('section');
   setup.className = 'lobby-route-brief__setup';
@@ -93,6 +84,8 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
   const visibilityLabel = document.createElement('label');
   visibilityLabel.textContent = 'Visibility';
   const visibilitySelect = document.createElement('select');
+  visibilitySelect.id = 'lobby-create-visibility';
+  visibilityLabel.htmlFor = visibilitySelect.id;
   for (const visibility of ['public', 'private'] as const) {
     const option = document.createElement('option');
     option.value = visibility;
@@ -122,16 +115,30 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
     }),
   );
 
-  const createButton = document.createElement('button');
-  createButton.type = 'button';
-  createButton.className = 'lobby-btn primary';
-  createButton.textContent = options.busy ? 'Creating...' : 'Create operation';
-  createButton.disabled = options.busy;
-  createButton.addEventListener('click', options.onCreate, { signal: options.listenerSignal });
-
-  root.append(brief, setup, buildOnlineRouteActions(createButton, [
+  const createButton = createPreparationPrimaryAction(document, {
+    label: options.busy ? 'Creating...' : 'Create operation',
+    disabled: options.busy,
+    busy: options.busy,
+    onActivate: options.onCreate,
+    className: 'lobby-online-primary',
+    listenerSignal: options.listenerSignal,
+  });
+  const alternatives = buildOnlineRouteActions(null, [
     { id: 'join-code', label: 'Join with a code', onClick: options.onJoin },
     { id: 'browse', label: 'Browse public rooms', onClick: options.onBrowse },
-  ], options.listenerSignal));
-  return root;
+  ], options.listenerSignal);
+  return createPreparationFrame(document, {
+    root,
+    eyebrow: 'Network operation',
+    title: 'Open operation',
+    description: 'Set the battlefield, then issue a room code to your crew.',
+    headingClassName: 'lobby-route-brief__header',
+    titleClassName: 'lobby-route-brief__title',
+    descriptionClassName: 'lobby-route-brief__purpose',
+    body: setup,
+    dockLabel: 'Issue orders',
+    dockStatus: 'Create a new room for this configuration',
+    primaryAction: createButton,
+    secondaryActions: alternatives,
+  });
 }

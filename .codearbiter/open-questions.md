@@ -21,3 +21,8 @@ The decisions live in `CONTEXT.md` → "Strategic direction" (the staged-serious
 ladder): trust-client now / tens-of-rooms / stay-Supabase-with-DO-as-successor /
 gameplay-parity-first / ephemeral-identity-now. Re-open here only if a decision needs
 revisiting.
+
+## Deferred decisions
+
+- **(harvested)** Keep terminal harvest audit headings outside the low-confidence auto-decision grammar  (from sprint:command-center-launcher-overhaul#2)
+- **(harvested)** 2026-09-17 Command Center remembered-selection precedence  (from sprint:command-center-launcher-overhaul#1)

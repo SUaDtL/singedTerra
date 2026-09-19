@@ -1,4 +1,5 @@
 import { buildOnlineRouteActions } from './LobbyOnlineRouteActions';
+import { createPreparationFrame, createPreparationPrimaryAction } from './PreparationFrame';
 
 export interface LobbyJoinViewOptions {
   code: string;
@@ -16,16 +17,6 @@ export interface LobbyJoinViewOptions {
 export function buildLobbyJoinView(options: LobbyJoinViewOptions): HTMLElement {
   const root = document.createElement('div');
   root.className = 'lobby-route-brief lobby-route-brief--online';
-
-  const brief = document.createElement('header');
-  brief.className = 'lobby-route-brief__header';
-  const title = document.createElement('h2');
-  title.className = 'lobby-route-brief__title';
-  title.textContent = 'Rally to a signal';
-  const purpose = document.createElement('p');
-  purpose.className = 'lobby-route-brief__purpose';
-  purpose.textContent = 'Enter a room code and join the operation already in motion.';
-  brief.append(title, purpose);
 
   const setup = document.createElement('section');
   setup.className = 'lobby-route-brief__setup';
@@ -47,16 +38,30 @@ export function buildLobbyJoinView(options: LobbyJoinViewOptions): HTMLElement {
   codeField.append(codeLabel, codeInput);
   setup.append(codeField, options.nameColor, options.garage, options.status);
 
-  const joinButton = document.createElement('button');
-  joinButton.type = 'button';
-  joinButton.className = 'lobby-btn primary';
-  joinButton.textContent = options.busy ? 'Joining...' : 'Join Room';
-  joinButton.disabled = options.busy;
-  joinButton.addEventListener('click', options.onJoin, { signal: options.listenerSignal });
-
-  root.append(brief, setup, buildOnlineRouteActions(joinButton, [
+  const joinButton = createPreparationPrimaryAction(document, {
+    label: options.busy ? 'Joining...' : 'Join Room',
+    disabled: options.busy,
+    busy: options.busy,
+    onActivate: options.onJoin,
+    className: 'lobby-online-primary',
+    listenerSignal: options.listenerSignal,
+  });
+  const alternatives = buildOnlineRouteActions(null, [
     { id: 'create', label: 'Create a room', onClick: options.onCreate },
     { id: 'browse', label: 'Browse public rooms', onClick: options.onBrowse },
-  ], options.listenerSignal));
-  return root;
+  ], options.listenerSignal);
+  return createPreparationFrame(document, {
+    root,
+    eyebrow: 'Network operation',
+    title: 'Rally to a signal',
+    description: 'Enter a room code and join the operation already in motion.',
+    headingClassName: 'lobby-route-brief__header',
+    titleClassName: 'lobby-route-brief__title',
+    descriptionClassName: 'lobby-route-brief__purpose',
+    body: setup,
+    dockLabel: 'Rally order',
+    dockStatus: 'Join the room identified by this signal',
+    primaryAction: joinButton,
+    secondaryActions: alternatives,
+  });
 }

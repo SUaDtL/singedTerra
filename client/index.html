@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Baseline CSP. GitHub Pages can't set response headers, so the policy that lived
          in netlify.toml/nginx.conf is carried here as a meta tag. connect-src allows the
          Supabase backend the client talks to directly (Edge Functions over https + the
@@ -25,12 +25,12 @@
       </div>
       <!-- HUD status widgets live in a side panel beside the canvas, not over it. -->
       <div id="hud" class="hud-panel"></div>
-      <!-- Lobby is a full-app overlay shown before/between games. -->
-      <div id="lobby" class="lobby-overlay"></div>
       <!-- In-game modal layer (store + game-over). Full-app, ABOVE the CRT chrome
            so panels render crisp and span the canvas+panel, not just the canvas. -->
       <div id="modal-layer"></div>
     </div>
+    <!-- Pre-game application surface. It remains outside the scaled battle stage. -->
+    <div id="lobby" class="lobby-overlay"></div>
     <!-- Portrait-phone launch bay: CSS blocks portrait through inclusive 480px; 481px remains playable. -->
     <div id="portrait-warn" role="dialog" aria-modal="true" aria-labelledby="portrait-warn-title">
       <img

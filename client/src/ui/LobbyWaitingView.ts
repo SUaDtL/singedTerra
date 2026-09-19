@@ -1,4 +1,5 @@
 import type { NetworkPlayer } from '../client/LobbyTransport';
+import { createPreparationFrame, createPreparationPrimaryAction } from './PreparationFrame';
 
 export interface LobbyWaitingViewOptions {
   roomCode: string;
@@ -21,16 +22,6 @@ export interface LobbyWaitingViewOptions {
 export function buildLobbyWaitingView(options: LobbyWaitingViewOptions): HTMLElement {
   const root = document.createElement('div');
   root.className = 'lobby-operations-board lobby-operations-board--waiting';
-
-  const header = document.createElement('header');
-  header.className = 'lobby-operations-board__header';
-  const title = document.createElement('h2');
-  title.className = 'lobby-operations-board__title';
-  title.textContent = 'Staging operation';
-  const purpose = document.createElement('p');
-  purpose.className = 'lobby-operations-board__purpose';
-  purpose.textContent = 'Confirm the crew, share the signal, and ready the battery.';
-  header.append(title, purpose);
 
   const humans = options.players.filter((player) => !player.ai);
   const humansReady = humans.filter((player) => player.ready).length;
@@ -136,12 +127,11 @@ export function buildLobbyWaitingView(options: LobbyWaitingViewOptions): HTMLEle
 
   roster.append(options.status);
 
-  const actions = document.createElement('div');
-  actions.className = 'lobby-operations-board__actions lobby-btn-row';
-
-  const ready = document.createElement('button');
-  ready.type = 'button';
-  ready.className = 'lobby-btn primary';
+  const ready = createPreparationPrimaryAction(document, {
+    label: 'Ready Up',
+    onActivate: options.onReady,
+    listenerSignal: options.listenerSignal,
+  });
   if (options.thisPlayerReady) {
     ready.textContent = 'Waiting for others...';
     ready.disabled = true;
@@ -152,16 +142,25 @@ export function buildLobbyWaitingView(options: LobbyWaitingViewOptions): HTMLEle
     ready.textContent = 'Ready Up';
     ready.disabled = options.busy;
   }
-  ready.addEventListener('click', options.onReady, { signal: options.listenerSignal });
-
   const leave = document.createElement('button');
   leave.type = 'button';
   leave.className = 'lobby-btn secondary';
   leave.textContent = 'Leave';
   leave.addEventListener('click', options.onLeave, { signal: options.listenerSignal });
 
-  actions.append(ready, leave);
-  root.append(header, mission, roster, actions);
-
-  return root;
+  return createPreparationFrame(document, {
+    root,
+    eyebrow: 'Network operation',
+    title: 'Staging operation',
+    description: 'Confirm the crew, share the signal, and ready the battery.',
+    headingClassName: 'lobby-operations-board__header',
+    titleClassName: 'lobby-operations-board__title',
+    descriptionClassName: 'lobby-operations-board__purpose',
+    body: [mission, roster],
+    dockLabel: 'Crew readiness',
+    dockStatus: readiness.textContent,
+    primaryAction: ready,
+    secondaryActions: leave,
+    dockClassName: 'lobby-operations-board__actions',
+  });
 }

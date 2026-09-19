@@ -88,6 +88,8 @@ let initialUrl = ''
 
 beforeEach(() => {
   initialUrl = window.location.href
+  localStorage.clear()
+  sessionStorage.clear()
 })
 
 afterEach(() => {
@@ -97,8 +99,20 @@ afterEach(() => {
 })
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text)
+  if (!match && (text === 'Local Battle' || text === 'Play Online')) {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )?.click()
+    const item = root.querySelector<HTMLButtonElement>(
+      `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
+    )
+    item?.click()
+    if (item) return item
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === text)
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`)
   return match
 }
@@ -137,7 +151,8 @@ describe('Lobby anonymous account handoff', () => {
 
     lobby.showAccountSignIn()
 
-    expect(root.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Player account')
+    expect(root.querySelector('[role="dialog"]:not([hidden])')?.getAttribute('aria-label'))
+      .toBe('Player account')
     expect(root.querySelector('.account-panel__header strong')?.textContent).toBe('Sign in')
     expect(button(root, 'Sign in').getAttribute('aria-pressed')).toBe('true')
     expect(root.querySelector('input[name="displayName"]')).toBeNull()
@@ -169,7 +184,7 @@ describe('Lobby anonymous account handoff', () => {
 
     expect(root.querySelector('[aria-label="Player account"]')).not.toBeNull()
     expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
-    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+    expect(root.querySelectorAll('[role="dialog"]:not([hidden])')).toHaveLength(1)
     expect(window.location.search).toContain('diagnostics=1')
     expect(diagnostics.dispose).not.toHaveBeenCalled()
 
@@ -178,7 +193,7 @@ describe('Lobby anonymous account handoff', () => {
     accountClose.click()
     expect(root.querySelector('[aria-label="Production diagnostics"]')).not.toBeNull()
     expect(root.querySelector('[aria-label="Player account"]')).toBeNull()
-    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+    expect(root.querySelectorAll('[role="dialog"]:not([hidden])')).toHaveLength(1)
     await Promise.resolve()
     const lobbyBackground = [...root.children].find((child): child is HTMLElement => (
       child instanceof HTMLElement && !child.classList.contains('lobby-overlay')
@@ -219,7 +234,7 @@ describe('Lobby anonymous account handoff', () => {
 
     expect(root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] .production-diagnostics')?.dataset.diagnosticsState).toBe('IDLE')
     expect(diagnostics.dispose).not.toHaveBeenCalled()
-    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+    expect(root.querySelectorAll('[role="dialog"]:not([hidden])')).toHaveLength(1)
   })
 
   it('preserves ordinary account and lobby behavior when diagnostics is inactive', () => {

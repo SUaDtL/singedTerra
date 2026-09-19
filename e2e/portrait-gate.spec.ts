@@ -6,7 +6,13 @@ async function initialLayerState(
   browser: Browser,
   viewport: { width: number; height: number },
   hasTouch: boolean,
-): Promise<{ warningDisplay: string; splashCount: number }> {
+): Promise<{
+  warningDisplay: string;
+  splashCount: number;
+  lobbyVisible: boolean;
+  battleHidden: boolean;
+  battleInert: boolean;
+}> {
   const context = await browser.newContext({ viewport, hasTouch });
   try {
     const page = await context.newPage();
@@ -16,35 +22,60 @@ async function initialLayerState(
         getComputedStyle(element).display,
       ),
       splashCount: await page.locator('#st-splash').count(),
+      lobbyVisible: await page.locator('#lobby').isVisible(),
+      battleHidden: await page.locator('#app').evaluate((element) => (element as HTMLElement).hidden),
+      battleInert: await page.locator('#app').evaluate((element) => (element as HTMLElement).inert),
     };
   } finally {
     await context.close();
   }
 }
 
+function battleEntry(): string {
+  return TEST_ENTRY === '/' ? '?e2e=hotseat' : new URL('?e2e=hotseat', TEST_ENTRY).toString();
+}
+
 test.describe('portrait phone gate', () => {
-  test('warns at phone width independently of pointer type', async ({ browser }) => {
+  test('keeps phone-width preparation usable independently of pointer type', async ({ browser }) => {
     await expect(initialLayerState(browser, { width: 393, height: 851 }, true))
-      .resolves.toEqual({ warningDisplay: 'flex', splashCount: 0 });
+      .resolves.toEqual({
+        warningDisplay: 'none', splashCount: 0, lobbyVisible: true,
+        battleHidden: true, battleInert: true,
+      });
     await expect(initialLayerState(browser, { width: 393, height: 851 }, false))
-      .resolves.toEqual({ warningDisplay: 'flex', splashCount: 0 });
+      .resolves.toEqual({
+        warningDisplay: 'none', splashCount: 0, lobbyVisible: true,
+        battleHidden: true, battleInert: true,
+      });
   });
 
   test('does not block a coarse-pointer laptop-sized portrait viewport', async ({ browser }) => {
     await expect(initialLayerState(browser, { width: 700, height: 900 }, true))
-      .resolves.toEqual({ warningDisplay: 'none', splashCount: 1 });
+      .resolves.toEqual({
+        warningDisplay: 'none', splashCount: 1, lobbyVisible: true,
+        battleHidden: true, battleInert: true,
+      });
   });
 
-  test('uses an inclusive 480px boundary', async ({ browser }) => {
+  test('reserves the inclusive 480px boundary for battle instead of preparation', async ({ browser }) => {
     await expect(initialLayerState(browser, { width: 480, height: 900 }, true))
-      .resolves.toEqual({ warningDisplay: 'flex', splashCount: 0 });
+      .resolves.toEqual({
+        warningDisplay: 'none', splashCount: 0, lobbyVisible: true,
+        battleHidden: true, battleInert: true,
+      });
     await expect(initialLayerState(browser, { width: 481, height: 900 }, true))
-      .resolves.toEqual({ warningDisplay: 'none', splashCount: 1 });
+      .resolves.toEqual({
+        warningDisplay: 'none', splashCount: 1, lobbyVisible: true,
+        battleHidden: true, battleInert: true,
+      });
   });
 
   test('never warns in landscape', async ({ browser }) => {
     await expect(initialLayerState(browser, { width: 851, height: 393 }, true))
-      .resolves.toEqual({ warningDisplay: 'none', splashCount: 1 });
+      .resolves.toEqual({
+        warningDisplay: 'none', splashCount: 1, lobbyVisible: true,
+        battleHidden: true, battleInert: true,
+      });
   });
 
   test('presents one fitted authored launch bay and requests the supported browser path', async ({ browser }) => {
@@ -73,7 +104,7 @@ test.describe('portrait phone gate', () => {
 
     try {
       const page = await context.newPage();
-      await page.goto(TEST_ENTRY);
+      await page.goto(battleEntry());
       await expect(page.locator('#st-splash')).toHaveCount(0);
 
       const gate = page.locator('#portrait-warn');
@@ -121,24 +152,24 @@ test.describe('portrait phone gate', () => {
       await page.setViewportSize({ width: 851, height: 393 });
       await expect(gate).toBeHidden();
       await expect(page.locator('#st-splash')).toHaveCount(0);
-      await expect(page.locator('#lobby')).toBeVisible();
+      await expect(page.locator('#lobby')).toBeHidden();
       await expect(app).not.toHaveAttribute('inert', '');
       await expect(app).not.toHaveAttribute('aria-hidden', 'true');
-      await expect.poll(() => page.evaluate(() => document.querySelector('#app')?.contains(document.activeElement)))
-        .toBe(true);
+      await expect.poll(() => page.evaluate(() => document.activeElement?.id))
+        .not.toBe('portrait-launch');
     } finally {
       await context.close();
     }
   });
 
-  test('manual rotation reaches the lobby without pressing the launch action', async ({ browser }) => {
+  test('manual rotation reveals an already-acquired battle without pressing the launch action', async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: 393, height: 851 },
       hasTouch: true,
     });
     try {
       const page = await context.newPage();
-      await page.goto(TEST_ENTRY);
+      await page.goto(battleEntry());
 
       const gate = page.locator('#portrait-warn');
       const app = page.locator('#app');
@@ -153,11 +184,11 @@ test.describe('portrait phone gate', () => {
 
       await expect(gate).toBeHidden();
       await expect(page.locator('#st-splash')).toHaveCount(0);
-      await expect(page.locator('#lobby')).toBeVisible();
+      await expect(page.locator('#lobby')).toBeHidden();
       await expect(app).not.toHaveAttribute('inert', '');
       await expect(app).not.toHaveAttribute('aria-hidden', 'true');
-      await expect.poll(() => page.evaluate(() => document.querySelector('#app')?.contains(document.activeElement)))
-        .toBe(true);
+      await expect.poll(() => page.evaluate(() => document.activeElement?.id))
+        .not.toBe('portrait-launch');
     } finally {
       await context.close();
     }
@@ -177,18 +208,18 @@ test.describe('portrait phone gate', () => {
       });
       const gate = page.locator('#portrait-warn');
       const app = page.locator('#app');
-      const action = gate.getByRole('button', { name: 'Enter fullscreen landscape' });
       await expect(splash).toBeVisible();
       await expect(splash).toBeFocused();
       await expect(gate).toBeHidden();
       await expect(page.locator('#lobby')).toBeVisible();
-      await expect(app).not.toHaveAttribute('inert', '');
+      await expect(app).toHaveAttribute('inert', '');
+      await expect(app).toHaveAttribute('aria-hidden', 'true');
 
       await page.setViewportSize({ width: 393, height: 851 });
 
       await expect(splash).toBeVisible();
       await expect(splash).toBeFocused();
-      await expect(gate).toBeVisible();
+      await expect(gate).toBeHidden();
       await expect(gate).toHaveAttribute('inert', '');
       await expect(gate).toHaveAttribute('aria-hidden', 'true');
       await expect(app).toHaveAttribute('inert', '');
@@ -197,9 +228,11 @@ test.describe('portrait phone gate', () => {
 
       await splash.click();
       await expect(splash).toBeHidden();
-      await expect(gate).not.toHaveAttribute('inert', '');
-      await expect(gate).toHaveAttribute('aria-hidden', 'false');
-      await expect(action).toBeFocused();
+      await expect(gate).toBeHidden();
+      await expect(gate).toHaveAttribute('inert', '');
+      await expect(gate).toHaveAttribute('aria-hidden', 'true');
+      await expect(page.locator('#lobby')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Modes', exact: true })).toBeVisible();
     } finally {
       await context.close();
     }
@@ -213,7 +246,7 @@ test.describe('portrait phone gate', () => {
     });
     try {
       const page = await context.newPage();
-      await page.goto(TEST_ENTRY);
+      await page.goto(battleEntry());
       const motif = page.locator('.portrait-warn__device');
       await expect(motif).toBeVisible();
       await expect(motif).toHaveCSS('animation-name', 'none');

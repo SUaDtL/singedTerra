@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { gotoRunningGame } from './support'
+import { gotoRunningGame, openLocalPreparation } from './support'
 
 async function installAuthenticatedFixture(page: Page): Promise<void> {
   const configuredStorageKey = process.env['E2E_AUTH_STORAGE_KEY'] ?? null
@@ -58,10 +58,12 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
   // AccountSession for this account-gated control.
   await page.goto('?diagnostics=1')
   await page.evaluate(() => document.getElementById('st-splash')?.remove())
-  await expect(page.locator('#lobby .account-panel--authenticated')).toBeVisible()
+  await expect(page.locator(
+    '#lobby .lobby-command-rail__dossier .account-panel__account-trigger',
+  )).toBeAttached()
   await page.getByRole('dialog', { name: 'Production diagnostics', exact: true })
     .getByRole('button', { name: 'Close', exact: true }).click()
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click()
+  await openLocalPreparation(page)
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click()
   await expect(page.locator('[data-console-owner="preact"]')).toBeVisible()
   const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true })
