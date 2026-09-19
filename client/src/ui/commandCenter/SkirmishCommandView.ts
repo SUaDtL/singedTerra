@@ -11,6 +11,7 @@ import {
   type CommandCategoryContribution,
   type MountedCommandView,
 } from './contracts';
+import { createPreparationFrame, createPreparationPrimaryAction } from '../PreparationFrame';
 
 export interface ImportedSkirmishChallenge {
   readonly operation: QuickOperation;
@@ -102,7 +103,7 @@ export function createSkirmishCommandView(
   decision.className = 'campaign-command__decision';
   decision.setAttribute('aria-label', `${operation.title} preparation`);
 
-  const identity = document.createElement('header');
+  const identity = document.createElement('div');
   identity.className = 'campaign-command__identity';
   const kicker = document.createElement('p');
   kicker.className = 'campaign-command__chapter';
@@ -156,9 +157,9 @@ export function createSkirmishCommandView(
       objectiveCopy.dataset.ui = 'seed-challenge-objective';
     }
     objectivePanel.append(objectiveLabel, objectiveCopy);
-    decision.append(projection, identity, objectivePanel);
+    decision.append(projection, objectivePanel);
   } else {
-    decision.append(projection, identity);
+    decision.append(projection);
   }
 
   const factsPanel = document.createElement('section');
@@ -195,23 +196,29 @@ export function createSkirmishCommandView(
   invalidChallenge.textContent = 'This seed challenge is invalid or no longer supported.';
   invalidChallenge.hidden = !context.importedChallengeInvalid;
 
-  const actions = document.createElement('div');
-  actions.className = 'campaign-command__actions';
-  const launch = document.createElement('button');
-  launch.type = 'button';
-  launch.className = 'command-center__action command-center__primary-action';
+  const launch = createPreparationPrimaryAction(document, {
+    label: selection.kind === 'imported-challenge'
+      ? 'Start challenge vs CPU'
+      : `Start ${operation.title}`,
+    className: 'skirmish-command__primary-action',
+  });
   launch.dataset.commandPrimary = '';
-  launch.textContent = selection.kind === 'imported-challenge'
-    ? 'Start challenge vs CPU'
-    : `Start ${operation.title}`;
   launch.addEventListener('click', () => {
     if (disposed) return;
     if (selection.kind === 'imported-challenge') context.onLaunchImportedChallenge();
     else context.onLaunchQuickOperation(operation.id);
   }, { signal: listeners.signal });
-  actions.append(launch);
-
-  root.append(decision, invalidChallenge, factsPanel, actions);
+  createPreparationFrame(document, {
+    root,
+    headingContent: identity,
+    body: [decision, invalidChallenge, factsPanel],
+    dockLabel: 'Launch order',
+    dockStatus: selection.kind === 'imported-challenge'
+      ? `Validated seed ${selection.challenge.seed}`
+      : `${battlefieldLabel(operation.settings.battlefieldWorld)} · ${operationFacts(operation).find(([label]) => label === 'Rounds')?.[1] ?? 'Standard rounds'}`,
+    primaryAction: launch,
+    dockClassName: 'campaign-command__actions',
+  });
   host.replaceChildren(root);
 
   return {

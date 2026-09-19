@@ -146,7 +146,10 @@ describe('CampaignCommandView decision plane', () => {
     const { host } = setup(savedContext('compatible', 'assault', 1));
     const decisionPlane = host.querySelector<HTMLElement>('[data-campaign-decision-plane]')!;
 
-    expect(getByRole(decisionPlane, 'heading', { name: 'High Road' })).toBeTruthy();
+    expect(getByRole(host, 'heading', { name: 'High Road' })).toBeTruthy();
+    expect(host.querySelector('.preparation-frame__heading')?.contains(
+      getByRole(host, 'heading', { name: 'High Road' }),
+    )).toBe(true);
     expect(decisionPlane.textContent).toContain('Hold the pump for 3 commitments or destroy the defender.');
     expect(host.querySelector('[data-campaign-route-map]')).not.toBeNull();
     expect(host.querySelector('[data-campaign-route="high-road"]')?.getAttribute('aria-current'))

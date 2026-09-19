@@ -1676,7 +1676,7 @@
 
       /* Verified retains the legacy preparation body. CommandCenter.css owns
          the recomposed Local workspace and its single scroll boundary. */
-      #lobby .multiplayer-command__verified-workspace > .lobby-hotseat {
+      #lobby .multiplayer-command__verified-workspace > .lobby-hotseat:not(.preparation-frame) {
         height: 100%;
         min-height: 0;
         display: grid;

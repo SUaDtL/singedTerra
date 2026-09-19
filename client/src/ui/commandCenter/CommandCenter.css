@@ -683,7 +683,7 @@
   overflow: hidden;
 }
 
-#lobby .multiplayer-command__verified-workspace > .lobby-hotseat {
+#lobby .multiplayer-command__verified-workspace > .lobby-hotseat:not(.preparation-frame) {
   grid-template-rows: minmax(0, 1fr);
 }
 
@@ -1249,101 +1249,12 @@
   box-shadow: none;
 }
 
-#lobby .multiplayer-command__online-workspace {
-  min-width: 0;
-  min-height: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: minmax(260px, 0.72fr) minmax(360px, 1.28fr);
-  gap: 12px;
-  box-sizing: border-box;
-  padding: 12px;
-  overflow: hidden;
-}
-
-#lobby .multiplayer-command__online-workspace > .lobby-preview {
-  position: relative;
-  inset: auto;
-  z-index: 2;
-  width: 100%;
-  min-width: 0;
-  max-width: none;
-  min-height: 0;
-  height: 100%;
-  max-height: none;
-  align-self: stretch;
-  margin: 0;
-}
-
 #lobby .multiplayer-command__online-workspace .lobby-preview__convoy {
   display: none;
 }
 
 #lobby .multiplayer-command__local-workspace .lobby-preview__convoy {
   bottom: 8px;
-}
-
-#lobby .multiplayer-command__online-route {
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-  height: 100%;
-  overflow: auto;
-  scrollbar-gutter: stable;
-  padding-right: 4px;
-}
-
-@media (min-width: 1101px) and (min-height: 621px) {
-  #lobby .multiplayer-command__online-workspace > .lobby-preview
-    .lobby-preview__spotlight {
-    top: 18%;
-  }
-
-  #lobby .multiplayer-command__online-workspace > .lobby-preview
-    .lobby-preview__spotlight-canvas {
-    width: min(520px, 84%);
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-route-brief__header {
-    gap: 8px;
-    padding: 10px 12px;
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-route-brief__title {
-    font-size: clamp(17px, 0.65vw, 22px);
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-route-brief__purpose {
-    font-size: 14px;
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-route-brief__setup {
-    gap: 10px;
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-preparation-section {
-    margin-top: 0;
-    padding: 12px 14px;
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-preparation-section__title {
-    font-size: 13px;
-    letter-spacing: 0.08em;
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-preparation-section__body {
-    gap: 9px;
-    margin-top: 8px;
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-online-actions {
-    gap: 14px;
-    padding: 12px;
-  }
-
-  #lobby .multiplayer-command__online-route .lobby-online-primary {
-    min-width: 220px;
-  }
 }
 
 #lobby .multiplayer-command__online-route input,
@@ -1394,35 +1305,6 @@
 
 #lobby .multiplayer-command__online-route .lobby-route-brief__title {
   font-size: max(var(--st-command-readability-size, 12px), 14px);
-}
-
-#lobby .multiplayer-command__online-context {
-  display: grid;
-  align-content: start;
-  gap: 18px;
-  min-height: 100%;
-  box-sizing: border-box;
-  padding: clamp(16px, 3vw, 34px);
-}
-
-#lobby .multiplayer-command__online-context > .lobby-btn.primary,
-#lobby .multiplayer-command__online-context .online-status {
-  width: min(100%, 420px);
-}
-
-#lobby .campaign-command {
-  min-width: 0;
-  min-height: 100%;
-  height: 100%;
-  display: grid;
-  grid-template:
-    'decision decision' minmax(0, 1fr)
-    'loadout actions' auto
-    'briefing briefing' auto
-    / minmax(0, 1fr) minmax(300px, 0.42fr);
-  gap: 10px;
-  box-sizing: border-box;
-  padding: clamp(10px, 1.4vw, 20px);
 }
 
 #lobby .campaign-command__decision {
@@ -1781,15 +1663,6 @@
   line-height: 1.35;
 }
 
-#lobby .campaign-command__actions {
-  grid-area: actions;
-  min-width: 0;
-  align-self: stretch;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.46fr);
-  gap: 8px;
-}
-
 #lobby .command-center__action {
   min-width: 0;
   padding: 3px 8px;
@@ -2004,26 +1877,8 @@
     padding: 8px;
   }
 
-  #lobby .multiplayer-command__online-workspace {
-    gap: 8px;
-    padding: 8px;
-  }
-
-  #lobby .multiplayer-command__online-workspace > .lobby-preview {
-    min-height: 180px;
-  }
-
-  #lobby .multiplayer-command__local-workspace > .lobby-preview {
-    min-height: 180px;
-  }
-
   #lobby .command-center__library {
     padding: 14px 12px;
-  }
-
-  #lobby .campaign-command {
-    gap: 8px;
-    padding: 9px;
   }
 
   #lobby .campaign-command__decision {
@@ -2048,24 +1903,6 @@
 /* The category/library rail can leave the owned workspace narrow even on a
    wide viewport. Reflow from the workspace's actual width, not the window. */
 @container (max-width: 700px) {
-  #lobby .multiplayer-command__online-workspace {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(180px, 34%) minmax(0, 1fr);
-  }
-
-  #lobby .multiplayer-command__online-workspace > .lobby-preview {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 180px;
-    height: 100%;
-    max-height: none;
-  }
-
-  #lobby .multiplayer-command__online-route {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
   #lobby .multiplayer-command__online-route .lobby-field {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -2252,57 +2089,19 @@
     display: none;
   }
 
-  #lobby .campaign-command {
-    height: auto;
-    grid-template:
-      'decision' auto
-      'loadout' auto
-      'actions' auto
-      'briefing' auto
-      / minmax(0, 1fr);
-    padding: 10px;
-  }
-
   #lobby .command-center__workspace-mount {
     height: auto;
   }
 
   #lobby .multiplayer-command,
-  #lobby .multiplayer-command__local-workspace,
-  #lobby .multiplayer-command__online-workspace {
+  #lobby .multiplayer-command__local-workspace {
     height: auto;
-  }
-
-  #lobby .multiplayer-command__online-workspace {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(240px, 36vh) auto;
-    overflow: visible;
-  }
-
-  #lobby .multiplayer-command__online-workspace > .lobby-preview {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 240px;
-  }
-
-  #lobby .multiplayer-command__online-route {
-    grid-column: 1;
-    grid-row: 2;
-    height: auto;
-    overflow: visible;
-    padding-right: 0;
   }
 
   #lobby .multiplayer-command__local-workspace {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(240px, 36vh) auto;
     overflow: visible;
-  }
-
-  #lobby .multiplayer-command__local-workspace > .lobby-preview {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 240px;
   }
 
   #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
@@ -2611,17 +2410,8 @@
     background: #171615;
   }
 
-  #lobby .command-center__workspace-mount,
-  #lobby .campaign-command {
+  #lobby .command-center__workspace-mount {
     height: auto;
-  }
-
-  #lobby .campaign-command {
-    grid-template:
-      'decision decision' auto
-      'loadout actions' auto
-      'briefing briefing' auto
-      / minmax(0, 1fr) minmax(270px, 0.42fr);
   }
 
   #lobby .campaign-command__decision {
@@ -2651,11 +2441,6 @@
   #lobby .campaign-command__equipment dt,
   #lobby .campaign-command__equipment dd {
     padding-block: 4px;
-  }
-
-  #lobby .campaign-command__actions {
-    grid-template-columns: minmax(0, 1fr);
-    align-self: start;
   }
 
   #lobby .campaign-command__disclosure {
@@ -2804,29 +2589,6 @@
     top: 32px;
   }
 
-  #lobby .multiplayer-command__online-workspace {
-    min-height: 0;
-    height: 100%;
-    grid-template-columns: minmax(180px, 0.66fr) minmax(340px, 1.34fr);
-    grid-template-rows: minmax(0, 1fr);
-    overflow: hidden;
-  }
-
-  #lobby .multiplayer-command__online-workspace > .lobby-preview {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 160px;
-    height: 100%;
-    max-height: none;
-  }
-
-  #lobby .multiplayer-command__online-route {
-    grid-column: 2;
-    grid-row: 1;
-    min-height: 0;
-    height: 100%;
-    overflow-y: auto;
-  }
 }
 
 /* In portrait preparation, lead with the actionable setup bay and move the
@@ -3031,18 +2793,6 @@
   }
 }
 
-#lobby .multiplayer-command.multiplayer-command--verified {
-  position: relative;
-  min-height: 0;
-  height: 100%;
-  display: grid;
-  grid-template-columns: minmax(420px, 1.1fr) minmax(500px, 0.9fr);
-  gap: 12px;
-  box-sizing: border-box;
-  padding: 12px;
-  overflow: hidden;
-}
-
 /* Skirmish and Verified share one authoritative battlefield-projection seam.
    This turns the preparation field into an intentional tactical read rather
    than leaving an apparently unfinished material void. */
@@ -3056,12 +2806,6 @@
   border: 1px solid #8e5428;
   background: #160f14;
   box-shadow: inset 0 0 0 4px rgba(9, 7, 8, 0.8);
-}
-
-#lobby .multiplayer-command--verified > .command-center__battlefield-projection {
-  grid-column: 1;
-  grid-row: 1;
-  height: 100%;
 }
 
 #lobby .command-center__battlefield-projection > img {
@@ -3093,33 +2837,6 @@
   font: 700 10px/1.2 var(--font-mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-
-#lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace {
-  z-index: 2;
-  grid-column: 2;
-  grid-row: 1;
-  height: 100%;
-  padding: 10px;
-  border: 1px solid rgba(190, 116, 50, 0.64);
-  background:
-    linear-gradient(180deg, rgba(34, 25, 19, 0.86), rgba(8, 10, 12, 0.96)),
-    var(--command-iron-tile, none) center / 256px 256px repeat;
-  box-shadow: inset 0 1px 0 rgba(255, 222, 158, 0.07);
-}
-
-#lobby .multiplayer-command__verified-workspace .lobby-hotseat-scroll {
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow-y: auto;
-}
-
-#lobby .multiplayer-command__verified-workspace .lobby-verified-operation-panel {
-  min-height: 100%;
-  grid-template-rows: auto minmax(0, 1fr);
-  align-content: stretch;
-  gap: 12px;
 }
 
 #lobby .multiplayer-command__verified-workspace
@@ -3210,100 +2927,6 @@
   min-height: 44px;
 }
 
-@media (min-width: 1101px) and (min-height: 621px) {
-  #lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace,
-  #lobby .multiplayer-command__verified-workspace > .lobby-hotseat,
-  #lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
-    height: 100%;
-  }
-
-  #lobby .multiplayer-command__verified-workspace {
-    align-self: stretch;
-    max-height: 100%;
-  }
-
-  #lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
-    grid-template-rows: minmax(0, 1fr) auto;
-    align-content: stretch;
-  }
-}
-
-/* Every Online route owns a visible decision row. Configuration and roster
-   details scroll independently, so the sole primary never begins below the
-   supported viewport. */
-#lobby .multiplayer-command__online-route.lobby-route-brief--online:has(
-    > .lobby-route-brief__setup
-  ) {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-#lobby .multiplayer-command__online-route.lobby-route-brief--online:has(
-    > .lobby-route-brief__setup
-  )
-  > .lobby-route-brief__setup {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-}
-
-@media (min-width: 1101px) and (min-height: 621px) {
-  #lobby .multiplayer-command__online-route.lobby-route-brief--online:has(
-      > .lobby-route-brief__setup
-    ) {
-    grid-template-rows: auto auto auto;
-    align-content: center;
-    gap: clamp(10px, 1.2vh, 18px);
-    padding: clamp(16px, 2vw, 32px);
-    overflow-y: auto;
-  }
-
-  #lobby .multiplayer-command__online-route.lobby-route-brief--online:has(
-      > .lobby-route-brief__setup
-    )
-    > .lobby-route-brief__setup {
-    align-content: start;
-    grid-auto-rows: max-content;
-    overflow: visible;
-  }
-}
-
-#lobby .multiplayer-command__online-route > .lobby-online-actions,
-#lobby .multiplayer-command__online-route > .lobby-operations-board__actions {
-  position: relative;
-  z-index: 4;
-  margin-top: 0;
-  padding: 7px 0 0;
-}
-
-#lobby .multiplayer-command__online-route.lobby-operations-board--waiting {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-#lobby .multiplayer-command__online-route.lobby-operations-board--waiting
-  > .lobby-operations-board__roster {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-#lobby .multiplayer-command__online-route.lobby-operations-board--browse {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-#lobby .multiplayer-command__online-route.lobby-operations-board--browse
-  > .lobby-operations-board__section {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
 /* Battlefield controls reflow from their decision content. Giving Walls the
    full row preserves the selected rule instead of reducing it to a prefix. */
 #lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield {
@@ -3332,24 +2955,6 @@
   }
 }
 
-@media (max-width: 1100px) {
-  #lobby .multiplayer-command.multiplayer-command--verified {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(150px, 0.42fr) minmax(0, 1fr);
-  }
-
-  #lobby .multiplayer-command--verified > .command-center__battlefield-projection {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 150px;
-  }
-
-  #lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace {
-    grid-column: 1;
-    grid-row: 2;
-  }
-}
-
 @media (max-height: 620px) and (orientation: landscape) {
   #lobby .multiplayer-command__online-workspace .lobby-preview__parts {
     width: calc(100% - 4px);
@@ -3362,74 +2967,6 @@
     font-size: 12px;
     letter-spacing: 0;
     text-overflow: clip;
-  }
-
-  #lobby .multiplayer-command__online-route {
-    overflow: hidden;
-  }
-
-  /* Short landscape keeps the decision row fixed while the room-access and
-     roster/discovery regions take responsibility for their own overflow. The
-     explicit flexible tracks prevent an intrinsic form or player list from
-     pushing the sole Online action below the command deck. */
-  #lobby
-    .multiplayer-command__online-workspace
-    > .multiplayer-command__online-route.lobby-operations-board--waiting {
-    grid-template-rows: auto minmax(0, 0.8fr) minmax(0, 1.2fr) auto;
-    overflow: hidden;
-  }
-
-  #lobby
-    .multiplayer-command__online-route.lobby-operations-board--waiting
-    > :is(.lobby-operations-board__mission, .lobby-operations-board__roster) {
-    box-sizing: border-box;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  #lobby .multiplayer-command__online-route.lobby-operations-board--browse {
-    grid-template-rows: auto minmax(0, 1.35fr) minmax(0, 0.65fr) auto;
-  }
-
-  #lobby
-    .multiplayer-command__online-route.lobby-operations-board--browse
-    > :is(.lobby-operations-board__crew, .lobby-operations-board__section) {
-    box-sizing: border-box;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  #lobby .campaign-command {
-    height: 100%;
-    min-height: 0;
-    grid-template:
-      'decision actions' minmax(0, 1fr)
-      'loadout actions' auto
-      'briefing briefing' auto
-      / minmax(0, 1fr) minmax(250px, 0.42fr);
-    overflow: hidden;
-  }
-
-  #lobby .campaign-command__decision {
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  #lobby .campaign-command__actions {
-    align-self: stretch;
-    align-content: start;
-  }
-
-  /* A skirmish is one compact decision, not a campaign document. On short
-     battle-shaped screens keep its identity, field order, facts, and launch
-     control on one command plane; the battlefield projection remains the
-     decision bay's material backdrop rather than consuming a separate row. */
-  #lobby .campaign-command.skirmish-command {
-    grid-template:
-      'decision loadout actions' minmax(0, 1fr)
-      / minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(190px, 0.65fr);
   }
 
   #lobby .skirmish-command .campaign-command__decision {
@@ -3518,54 +3055,9 @@
     word-break: normal;
   }
 
-  #lobby .multiplayer-command.multiplayer-command--verified {
-    grid-template-columns: minmax(180px, 0.52fr) minmax(360px, 1.48fr);
-    grid-template-rows: minmax(0, 1fr);
-    padding: 8px;
-  }
-
-  #lobby .multiplayer-command--verified > .command-center__battlefield-projection {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  #lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace {
-    grid-column: 2;
-    grid-row: 1;
-  }
 }
 
 @media (max-width: 720px) and (orientation: portrait) {
-  #lobby .multiplayer-command__online-workspace {
-    grid-template-rows: auto 260px;
-  }
-
-  #lobby .multiplayer-command__online-workspace > .lobby-preview {
-    grid-row: 2;
-    min-height: 260px;
-    height: 260px;
-  }
-
-  #lobby .multiplayer-command__online-route {
-    grid-row: 1;
-    height: clamp(280px, calc(100dvh - 260px), 460px);
-    overflow: hidden;
-  }
-
-  #lobby .campaign-command {
-    grid-template:
-      'actions' auto
-      'decision' auto
-      'loadout' auto
-      'briefing' auto
-      / minmax(0, 1fr);
-  }
-
-  #lobby .campaign-command__actions {
-    position: relative;
-    z-index: 4;
-    padding-bottom: 2px;
-  }
 }
 
 /* Shared Vehicle Bay workshop
@@ -3973,6 +3465,979 @@
 
   #lobby .lobby-garage.editing .lobby-garage__close {
     min-height: 48px;
+  }
+}
+
+/* Shared preparation composition
+ *
+ * Every mode now supplies content and truthful actions to the same three-part
+ * frame. These rules replace the former per-page header/scroll/footer
+ * positioning: one heading, one scrolling body, and one in-flow decision dock.
+ */
+#lobby .lobby-card:has(.command-center) > .lobby-deployment {
+  container: command-center-shell / inline-size;
+}
+
+#lobby .lobby-command-center {
+  /* The shell cannot query itself. Its deployment owner establishes the
+     available inline-size contract so the shell and its descendants cross
+     each responsive threshold as one composition. */
+  container-name: none;
+  container-type: normal;
+}
+
+#lobby .command-center__workspace-host:has(.preparation-frame) {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+#lobby .command-center__workspace-mount:has(.preparation-frame),
+#lobby .multiplayer-command:has(.preparation-frame),
+#lobby :is(
+    .multiplayer-command__local-workspace,
+    .multiplayer-command__verified-workspace,
+    .multiplayer-command__online-workspace
+  ):has(.preparation-frame) {
+  min-height: 0;
+  height: 100%;
+}
+
+#lobby :is(
+    .multiplayer-command__local-workspace,
+    .multiplayer-command__verified-workspace,
+    .multiplayer-command__online-workspace
+  ):has(.preparation-frame) {
+  display: block;
+  box-sizing: border-box;
+  padding: clamp(8px, 0.8vw, 14px);
+  overflow: hidden;
+}
+
+#lobby .preparation-frame {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr);
+  gap: 0;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(154, 91, 40, 0.72);
+  border-left: 3px solid rgba(190, 119, 52, 0.88);
+  background:
+    linear-gradient(145deg, rgba(68, 42, 25, 0.28), transparent 30%),
+    var(--command-iron-tile, none) center / 256px 256px repeat,
+    #090b0c;
+  box-shadow: inset 0 1px 0 rgba(255, 224, 166, 0.08);
+  container: preparation-workspace / inline-size;
+}
+
+/* Local's retained control layout also queries the mounted view width. Name
+   this one container for both contracts so the shared frame's responsive
+   heading/body/dock rules cannot be displaced by the older Local owner. */
+#lobby .multiplayer-command__local-workspace > .preparation-frame {
+  container-name: preparation-workspace local-battle-setup;
+  container-type: inline-size;
+}
+
+#lobby .preparation-frame__heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(12px, 1.4vw, 24px);
+  padding: clamp(12px, 1.1vw, 20px) clamp(14px, 1.35vw, 24px);
+  border: 0;
+  border-bottom: 1px solid rgba(183, 108, 45, 0.62);
+  background:
+    linear-gradient(90deg, rgba(91, 51, 25, 0.7), rgba(18, 17, 16, 0.82) 58%, rgba(8, 10, 11, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 221, 155, 0.1);
+}
+
+#lobby .preparation-frame__heading-copy {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 5px clamp(12px, 1vw, 20px);
+}
+
+#lobby .preparation-frame__eyebrow {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  color: var(--command-gold);
+  font: 800 10px/1.2 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#lobby .preparation-frame .preparation-frame__title {
+  grid-column: 1;
+  grid-row: 2;
+  max-width: none;
+  margin: 0;
+  color: #f7e5bd;
+  font: 850 clamp(22px, calc(17px + 0.55vw), 34px)/1.05 var(--font-display);
+  letter-spacing: 0.025em;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.72);
+}
+
+#lobby .preparation-frame .preparation-frame__description {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  max-width: 72ch;
+  margin: 0;
+  color: var(--command-muted);
+  font-size: clamp(12px, calc(10px + 0.18vw), 15px);
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+#lobby .preparation-frame__heading .campaign-command__identity {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px clamp(14px, 1.2vw, 24px);
+  padding: 0;
+}
+
+#lobby .preparation-frame__heading .campaign-command__chapter {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#lobby .preparation-frame__heading .campaign-command__fact-label {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+#lobby .preparation-frame__heading .campaign-command__mission {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 0;
+  font-size: clamp(24px, calc(18px + 0.8vw), 40px);
+}
+
+#lobby .skirmish-command .preparation-frame__heading .campaign-command__save-status {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
+  max-width: 72ch;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--command-muted);
+  background: transparent;
+  font-size: clamp(12px, calc(10px + 0.18vw), 15px);
+  line-height: 1.42;
+}
+
+#lobby .preparation-frame__body {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background:
+    linear-gradient(180deg, rgba(7, 9, 10, 0.78), rgba(4, 6, 7, 0.94)),
+    radial-gradient(ellipse at 50% 0%, rgba(116, 66, 30, 0.08), transparent 68%);
+}
+
+#lobby .preparation-frame__body-inner {
+  width: min(100%, 2200px);
+  min-width: 0;
+  min-height: 100%;
+  margin-inline: auto;
+  display: grid;
+  align-content: start;
+  gap: clamp(10px, 1vw, 18px);
+  box-sizing: border-box;
+  padding: clamp(12px, 1.2vw, 22px);
+}
+
+#lobby .preparation-frame__dock {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: clamp(12px, 1.3vw, 24px);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 9px clamp(12px, 1.2vw, 22px);
+  border: 0;
+  border-top: 1px solid rgba(190, 116, 50, 0.72);
+  background:
+    linear-gradient(180deg, rgba(78, 45, 23, 0.84), rgba(9, 11, 12, 0.98)),
+    var(--command-iron-tile, none) center / 256px 256px repeat;
+  box-shadow: 0 -8px 22px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 222, 159, 0.1);
+}
+
+#lobby .preparation-frame__dock-copy {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+}
+
+#lobby .preparation-frame__dock-label {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 13px/1.15 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#lobby .preparation-frame__dock-status {
+  min-width: 0;
+  color: var(--command-muted);
+  font: 700 11px/1.3 var(--font-mono);
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .preparation-frame__dock-status .campaign-command__save-status {
+  margin: 0;
+  padding: 3px 8px;
+}
+
+#lobby .preparation-frame__dock-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(8px, 0.8vw, 14px);
+}
+
+#lobby .preparation-frame__primary-action {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: clamp(220px, 16vw, 340px);
+  min-height: 60px;
+}
+
+#lobby .preparation-frame__dock .lobby-online-actions {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+#lobby .preparation-frame__dock .lobby-online-alternatives {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#lobby .preparation-frame__dock .lobby-online-alternatives-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#lobby .preparation-frame__dock .lobby-btn.secondary {
+  min-height: 44px;
+  padding: 7px 10px;
+}
+
+#lobby .preparation-frame__body-layout {
+  min-width: 0;
+  min-height: 100%;
+  display: grid;
+  align-items: stretch;
+  gap: clamp(12px, 1.2vw, 22px);
+}
+
+#lobby .preparation-frame__body-layout--online,
+#lobby .preparation-frame__body-layout--verified {
+  grid-template-columns: minmax(320px, 0.84fr) minmax(480px, 1.16fr);
+}
+
+#lobby .preparation-frame__mode-content {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+#lobby .preparation-frame__body-layout :is(.lobby-preview, .command-center__battlefield-projection) {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-width: 0;
+  height: clamp(300px, 34vh, 460px);
+  max-height: 460px;
+  align-self: start;
+  margin: 0;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+}
+
+#lobby .preparation-frame__body-layout--verified > .command-center__battlefield-projection {
+  min-height: 300px;
+}
+
+#lobby .preparation-frame .lobby-hotseat-body,
+#lobby .preparation-frame .lobby-hotseat-scroll {
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  display: block;
+  overflow: visible;
+  padding: 0;
+}
+
+#lobby .preparation-frame .lobby-route-brief__setup {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  overflow: visible;
+}
+
+#lobby .preparation-frame .lobby-local-preparation__content {
+  min-height: 0;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame__body-inner {
+  grid-template-rows: minmax(0, 1fr);
+  align-content: stretch;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame :is(.lobby-hotseat-body, .lobby-hotseat-scroll) {
+  height: 100%;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame .lobby-local-preparation__content {
+  height: min(100%, clamp(500px, 50vh, 560px));
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame .lobby-local-preparation__briefing {
+  align-content: start;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .preparation-frame .lobby-local-preparation__inspection {
+  max-height: 560px;
+}
+
+#lobby .preparation-frame .lobby-operations-board__crew,
+#lobby .preparation-frame .lobby-operations-board__section,
+#lobby .preparation-frame .lobby-operations-board__mission,
+#lobby .preparation-frame .lobby-operations-board__roster {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(145, 86, 38, 0.62);
+  background: rgba(8, 10, 11, 0.74);
+}
+
+#lobby .preparation-frame .lobby-verified-operation-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+#lobby .campaign-command.preparation-frame {
+  grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr);
+}
+
+#lobby .campaign-command.preparation-frame > .preparation-frame__body
+  > .preparation-frame__body-inner {
+  width: min(100%, 2100px);
+  grid-template-columns: minmax(560px, 1.42fr) minmax(300px, 0.58fr);
+  grid-template-rows: max-content;
+  align-items: start;
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__decision {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: clamp(300px, 42vh, 520px);
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__supporting {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: clamp(10px, 1vw, 18px);
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__loadout {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+}
+
+#lobby .campaign-command.preparation-frame .campaign-command__disclosure {
+  grid-column: 1;
+  grid-row: auto;
+}
+
+#lobby .skirmish-command.preparation-frame .campaign-command__decision {
+  grid-column: 1;
+  min-height: clamp(280px, 34vh, 430px);
+}
+
+#lobby .skirmish-command.preparation-frame > .preparation-frame__body
+  > .preparation-frame__body-inner {
+  width: min(100%, 1840px);
+  grid-template-columns: minmax(520px, 1.28fr) minmax(300px, 0.72fr);
+  grid-template-rows: max-content;
+  align-content: start;
+}
+
+#lobby .skirmish-command.preparation-frame .campaign-command__scene {
+  min-height: 280px;
+  max-height: 430px;
+}
+
+#lobby .skirmish-command.preparation-frame .campaign-command__loadout {
+  grid-column: 2;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-self: start;
+}
+
+#lobby .skirmish-command.preparation-frame [data-ui='seed-challenge-error'] {
+  grid-column: 1 / -1;
+}
+
+#lobby .campaign-command__actions.preparation-frame__dock {
+  grid-area: auto;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+}
+
+#lobby .campaign-command__actions .preparation-frame__dock-actions {
+  display: flex;
+}
+
+@container command-center-shell (max-width: 1500px) {
+  #lobby .command-center {
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__navigation {
+    min-height: 58px;
+    grid-template: auto / auto minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    padding: 7px 12px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(190, 116, 50, 0.62);
+  }
+
+  #lobby .command-center__title {
+    padding: 0 12px 0 0;
+    border: 0;
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__category-rail {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(150px, 1fr);
+    gap: 7px;
+  }
+
+  #lobby .command-center__category {
+    grid-template-columns: 26px minmax(0, 1fr);
+    padding: 6px 9px;
+  }
+
+  #lobby .command-center__icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  #lobby .command-center__body {
+    grid-template-columns: minmax(220px, 26%) minmax(0, 1fr);
+  }
+}
+
+@container command-center-shell (max-width: 1120px) {
+  #lobby .command-center__body,
+  #lobby .command-center__body[data-command-collection='singleton'] {
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__library,
+  #lobby .command-center__body[data-command-collection='singleton'] .command-center__library {
+    grid-template: auto / auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(186, 111, 47, 0.54);
+  }
+
+  #lobby .command-center__library > h2,
+  #lobby .command-center__body[data-command-collection='singleton'] .command-center__library > h2 {
+    padding: 0 10px 0 0;
+    border: 0;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__library-items,
+  #lobby .command-center__body[data-command-collection='singleton'] .command-center__library-items {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(175px, 1fr);
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 3px;
+  }
+
+  #lobby .command-center__item-description {
+    display: none;
+  }
+
+  #lobby .preparation-frame__body-layout--online,
+  #lobby .preparation-frame__body-layout--verified {
+    grid-template-columns: minmax(220px, 0.62fr) minmax(380px, 1.38fr);
+  }
+}
+
+@container preparation-workspace (max-width: 820px) {
+  #lobby .preparation-frame__heading-copy,
+  #lobby .preparation-frame__heading .campaign-command__identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .preparation-frame .preparation-frame__description,
+  #lobby .preparation-frame__heading .campaign-command__fact-label,
+  #lobby .preparation-frame__heading .campaign-command__mission {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  #lobby .preparation-frame__body-layout--online,
+  #lobby .preparation-frame__body-layout--verified {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .preparation-frame__body-layout :is(.lobby-preview, .command-center__battlefield-projection) {
+    height: clamp(220px, 34vh, 360px);
+  }
+
+  #lobby .preparation-frame__dock {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  #lobby .preparation-frame__dock-copy {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  #lobby .preparation-frame__dock-actions {
+    justify-content: stretch;
+  }
+
+  #lobby .preparation-frame__primary-action {
+    flex: 1 1 220px;
+  }
+
+  #lobby .preparation-frame .lobby-local-preparation__content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'crew'
+      'rules'
+      'inspection';
+    grid-template-rows: auto auto auto;
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__briefing {
+    display: contents;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__crew {
+    grid-area: crew;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__rules {
+    grid-area: rules;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__inspection {
+    grid-area: inspection;
+  }
+
+  #lobby .campaign-command.preparation-frame > .preparation-frame__body
+    > .preparation-frame__body-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .campaign-command.preparation-frame .campaign-command__decision,
+  #lobby .campaign-command.preparation-frame .campaign-command__supporting {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  #lobby .skirmish-command.preparation-frame > .preparation-frame__body
+    > .preparation-frame__body-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .skirmish-command.preparation-frame .campaign-command__decision,
+  #lobby .skirmish-command.preparation-frame .campaign-command__loadout {
+    grid-column: 1;
+    min-height: 0;
+  }
+}
+
+@container preparation-workspace (max-width: 560px) {
+  #lobby .preparation-frame__heading {
+    padding: 10px 12px;
+  }
+
+  #lobby .preparation-frame__eyebrow {
+    display: none;
+  }
+
+  #lobby .preparation-frame .preparation-frame__title {
+    grid-row: 1;
+  }
+
+  #lobby .preparation-frame .preparation-frame__description {
+    display: none;
+  }
+
+  #lobby .preparation-frame__body-inner {
+    padding: 9px;
+  }
+
+  #lobby .preparation-frame__dock-copy {
+    display: none;
+  }
+
+  /* State-bearing campaign messages remain part of the decision. Keep them in
+     the in-flow dock beside the disabled/recovery action instead of discarding
+     the warning merely to preserve a shorter rail. */
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock-copy {
+    display: grid;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock-label {
+    display: none;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__primary-action {
+    min-width: min(220px, 38vw);
+  }
+
+  #lobby .preparation-frame__dock-actions,
+  #lobby .preparation-frame__dock .lobby-online-alternatives,
+  #lobby .preparation-frame__dock .lobby-online-alternatives-buttons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .preparation-frame__dock .lobby-online-alternatives-label {
+    display: none;
+  }
+
+  #lobby .preparation-frame__primary-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #lobby .campaign-command.preparation-frame .campaign-command__decision {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+
+  #lobby .campaign-command.preparation-frame .campaign-command__scene,
+  #lobby .campaign-command.preparation-frame .campaign-command__objective-panel,
+  #lobby .campaign-command.preparation-frame .campaign-command__route-board {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  #lobby .campaign-command.preparation-frame .campaign-command__loadout,
+  #lobby .skirmish-command.preparation-frame .campaign-command__loadout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1800px) and (min-height: 800px) {
+  #lobby .preparation-frame :is(input, select, button, summary) {
+    font-size: max(14px, 0.78rem);
+  }
+
+  #lobby .preparation-frame :is(
+      .lobby-preparation-section__title,
+      .lobby-operations-board__section-label,
+      .lobby-operations-board__roster-label,
+      .lobby-operations-board__readiness
+    ) {
+    font-size: 13px;
+  }
+
+  #lobby .preparation-frame .lobby-field > label,
+  #lobby .preparation-frame .lobby-hint,
+  #lobby .preparation-frame .lobby-preview__part :is(span, strong) {
+    font-size: 12px;
+  }
+
+  #lobby .preparation-frame .lobby-row__seat-label,
+  #lobby .preparation-frame .lobby-row__appearance {
+    font-size: 13px;
+  }
+
+  #lobby .preparation-frame .campaign-command__equipment dt {
+    font-size: 12px;
+  }
+
+  #lobby .preparation-frame .campaign-command__equipment dd {
+    font-size: 15px;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  #lobby .command-center {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  /* At short landscape heights, category selection and the item catalog share
+     one compact command strip. Modes remains a real 44px target, but it no
+     longer overlays the first catalog item or steals task-space vertically. */
+  #lobby .command-center__navigation {
+    min-height: 52px;
+    height: 52px;
+    box-sizing: border-box;
+  }
+
+  #lobby .command-center__library,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library {
+    min-height: 52px;
+    box-sizing: border-box;
+    grid-template: 44px / minmax(0, 1fr);
+    align-items: center;
+    gap: 0;
+    padding: 4px 8px 4px calc(max(160px, 20%) + 8px);
+  }
+
+  #lobby .command-center__library > h2,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__library-items,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library-items {
+    min-height: 44px;
+    grid-auto-columns: minmax(150px, 1fr);
+    align-items: stretch;
+    padding: 0 0 2px;
+  }
+
+  #lobby .command-center__item {
+    min-height: 44px;
+    padding-block: 3px;
+  }
+
+  #lobby :is(
+      .multiplayer-command__local-workspace,
+      .multiplayer-command__verified-workspace,
+      .multiplayer-command__online-workspace
+    ):has(.preparation-frame) {
+    padding: 4px;
+  }
+
+  #lobby .preparation-frame__heading {
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 4px 10px;
+  }
+
+  #lobby .preparation-frame__eyebrow,
+  #lobby .preparation-frame__heading .campaign-command__chapter,
+  #lobby .preparation-frame__heading .campaign-command__fact-label {
+    display: none;
+  }
+
+  #lobby .preparation-frame .preparation-frame__title,
+  #lobby .preparation-frame__heading .campaign-command__mission {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 19px;
+  }
+
+  #lobby .preparation-frame__description {
+    display: none;
+  }
+
+  #lobby .preparation-frame__body-inner {
+    padding-block: 8px;
+  }
+
+  #lobby .command-center .preparation-frame__dock,
+  #lobby .multiplayer-command__local-workspace .preparation-frame__dock {
+    min-height: 54px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 4px 8px;
+  }
+
+  #lobby .preparation-frame__dock-copy {
+    display: none;
+  }
+
+  #lobby .campaign-command:is(
+      [data-campaign-save-state='checking'],
+      [data-campaign-save-state='incompatible'],
+      [data-campaign-save-state='unavailable']
+    ) .preparation-frame__dock-copy {
+    display: grid;
+  }
+
+  #lobby .preparation-frame__dock-actions {
+    width: 100%;
+    grid-column: 1;
+    justify-content: flex-end;
+  }
+
+  #lobby .command-center .preparation-frame__primary-action {
+    min-height: 56px;
+  }
+}
+
+@media (max-height: 320px) and (orientation: landscape) {
+  #lobby .lobby-card:has(.command-center) {
+    padding: 2px 6px;
+  }
+
+  #lobby .lobby-card:has(.command-center) > .lobby-deployment {
+    gap: 0;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-deployment__masthead {
+    min-height: 52px;
+    border-width: 4px;
+    border-image-width: 4px;
+    padding: 0;
+  }
+
+  #lobby .lobby-card:has(.command-center) :is(
+      .lobby-command-rail__brand,
+      .lobby-command-rail__context,
+      .lobby-command-rail__dossier .account-panel__record,
+      .lobby-command-rail__dossier > .account-panel__summary,
+      .lobby-command-rail__dossier > .account-panel__account-trigger
+    ) {
+    min-height: 44px;
+  }
+
+  #lobby .lobby-card:has(.command-center) .lobby-command-rail__brand {
+    font-size: 22px;
+  }
+
+  #lobby .command-center {
+    border-width: 4px;
+    border-image-width: 4px;
+  }
+
+  #lobby .command-center__navigation {
+    min-height: 48px;
+    height: 48px;
+  }
+
+  #lobby .command-center__library,
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library {
+    min-height: 48px;
+    padding-block: 2px;
+  }
+
+  #lobby :is(
+      .multiplayer-command__local-workspace,
+      .multiplayer-command__verified-workspace,
+      .multiplayer-command__online-workspace
+    ):has(.preparation-frame) {
+    padding: 0;
+  }
+
+  #lobby .preparation-frame__heading {
+    min-height: 36px;
+    padding-block: 2px;
+  }
+
+  #lobby .preparation-frame .preparation-frame__title,
+  #lobby .preparation-frame__heading .campaign-command__mission {
+    font-size: 17px;
+  }
+
+  #lobby .command-center .preparation-frame__dock,
+  #lobby .multiplayer-command__local-workspace .preparation-frame__dock {
+    min-height: 53px;
+    padding-block: 3px;
+  }
+
+  #lobby .command-center
+    .command-center__primary-action.preparation-frame__primary-action {
+    height: 46px;
+    min-height: 46px;
+    box-sizing: border-box;
   }
 }
 

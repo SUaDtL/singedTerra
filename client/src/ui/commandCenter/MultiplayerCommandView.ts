@@ -65,10 +65,18 @@ export function createVerifiedOperationsCommandView<Context extends MultiplayerC
   const root = host.ownerDocument.createElement('article');
   root.className = 'multiplayer-command multiplayer-command--verified';
   root.dataset.multiplayerCommandView = 'verified-operations';
-  root.append(
-    createBattlefieldProjection(host.ownerDocument),
-    context.buildVerifiedOperationsWorkspace(lifetime.signal),
-  );
+  const workspace = context.buildVerifiedOperationsWorkspace(lifetime.signal);
+  const bodyInner = workspace.querySelector<HTMLElement>('.preparation-frame__body-inner');
+  if (bodyInner) {
+    const layout = host.ownerDocument.createElement('div');
+    layout.className = 'preparation-frame__body-layout preparation-frame__body-layout--verified';
+    const modeContent = host.ownerDocument.createElement('div');
+    modeContent.className = 'preparation-frame__mode-content';
+    modeContent.append(...Array.from(bodyInner.childNodes));
+    layout.append(createBattlefieldProjection(host.ownerDocument), modeContent);
+    bodyInner.append(layout);
+  }
+  root.append(workspace);
   host.replaceChildren(root);
 
   let disposed = false;

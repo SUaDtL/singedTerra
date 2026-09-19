@@ -63,7 +63,9 @@ describe('buildLobbyWaitingView', () => {
       onCopyInvite,
     }));
 
-    expect(root.className).toBe('lobby-operations-board lobby-operations-board--waiting');
+    expect(root.classList).toContain('lobby-operations-board');
+    expect(root.classList).toContain('lobby-operations-board--waiting');
+    expect(root.classList).toContain('preparation-frame');
     expect(root.querySelector('.lobby-operations-board__title')?.textContent).toBe('Staging operation');
     expect(root.querySelector('.lobby-operations-board__purpose')?.textContent)
       .toBe('Confirm the crew, share the signal, and ready the battery.');

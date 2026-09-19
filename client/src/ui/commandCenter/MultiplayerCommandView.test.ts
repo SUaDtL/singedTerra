@@ -95,7 +95,7 @@ describe('Multiplayer Local Battle command contribution', () => {
     expect(wind?.value || wind?.placeholder).toBe('10');
     expect(walls?.selectedOptions[0]?.textContent).toContain('Open');
 
-    const deployActions = [...preparation!.querySelectorAll<HTMLButtonElement>('button')]
+    const deployActions = [...root.querySelectorAll<HTMLButtonElement>('button')]
       .filter((button) => button.textContent?.startsWith('Deploy'));
     expect(deployActions).toHaveLength(1);
     expect(deployActions[0]?.textContent).toBe('Deploy local battle');

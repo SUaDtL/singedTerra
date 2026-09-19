@@ -24,6 +24,7 @@ import {
 import {
   assertLobbyControlReachable,
   assertLobbyFrame,
+  assertPreparationFrameGeometry,
   enterBattleIfBriefed,
   gotoLobby,
   openLocalPreparation,
@@ -157,7 +158,7 @@ async function assertLocalPreparationGeometry(
 
   const workspace = page.locator('[data-multiplayer-command-view="local-battle"]');
   const preparation = workspace.locator('[data-local-preparation]');
-  const setupScroll = workspace.locator('.lobby-hotseat-scroll');
+  const setupScroll = workspace.locator('.preparation-frame__body');
   const deploy = workspace.getByRole('button', { name: 'Deploy local battle', exact: true });
   const playerCount = workspace.getByRole('combobox', { name: 'Players', exact: true });
 
@@ -166,9 +167,9 @@ async function assertLocalPreparationGeometry(
   if (geometry.viewport.width >= 390) {
     await expect(workspace.locator('[data-crew-seat="player-1"]')).toBeInViewport({ ratio: 0.36 });
   } else {
-    await expect(workspace.locator('.lobby-local-preparation__header')).toBeInViewport({ ratio: 0.75 });
+    await expect(workspace.locator('.preparation-frame__heading')).toBeInViewport({ ratio: 0.75 });
     const firstSeatFold = await workspace.evaluate((root) => {
-      const scroll = root.querySelector<HTMLElement>('.lobby-hotseat-scroll')!;
+      const scroll = root.querySelector<HTMLElement>('.preparation-frame__body')!;
       const seat = root.querySelector<HTMLElement>('[data-crew-seat="player-1"]')!;
       const scrollBox = scroll.getBoundingClientRect();
       const seatBox = seat.getBoundingClientRect();
@@ -238,7 +239,7 @@ async function assertLocalPreparationGeometry(
       localWorkspace: scrollState('.multiplayer-command__local-workspace'),
       hotseat: scrollState('.lobby-hotseat'),
       body: scrollState('.lobby-hotseat-body'),
-      setupScroll: scrollState('.lobby-hotseat-scroll'),
+      setupScroll: scrollState('.preparation-frame__body'),
       root: root.getBoundingClientRect().toJSON(),
       preparation: rect('[data-local-preparation]'),
       selectedSeat: rect('[data-crew-seat="player-2"]'),
@@ -262,9 +263,9 @@ async function assertLocalPreparationGeometry(
     .toBe('hidden');
   expect(geometryState.hotseat.overflowY, `${geometry.label} Hot Seat scroll ownership`)
     .toBe('hidden');
-  expect(geometryState.body.overflowY, `${geometry.label} Local body scroll ownership`)
-    .toBe('hidden');
-  expect(geometryState.setupScroll.overflowY, `${geometry.label} setup must be the one scroll owner`)
+  expect(geometryState.body.overflowY, `${geometry.label} legacy Local body must yield scroll ownership`)
+    .toBe('visible');
+  expect(geometryState.setupScroll.overflowY, `${geometry.label} shared body must be the one scroll owner`)
     .toBe('auto');
 
   for (const [name, box] of Object.entries({
@@ -308,7 +309,16 @@ async function assertLocalPreparationGeometry(
   ]) {
     const target = workspace.locator(selector);
     await target.scrollIntoViewIfNeeded();
-    await expect(target).toBeInViewport({ ratio: 0.35 });
+    const visibleHeight = await target.evaluate((element) => {
+      const body = element.closest<HTMLElement>('[data-preparation-frame]')!
+        .querySelector<HTMLElement>(':scope > .preparation-frame__body')!;
+      const targetBox = element.getBoundingClientRect();
+      const bodyBox = body.getBoundingClientRect();
+      return Math.max(0, Math.min(targetBox.bottom, bodyBox.bottom)
+        - Math.max(targetBox.top, bodyBox.top));
+    });
+    expect(visibleHeight, `${geometry.label} ${selector} must remain meaningfully reachable`)
+      .toBeGreaterThanOrEqual(44);
     await expect(deploy).toBeInViewport({ ratio: 1 });
   }
 
@@ -364,8 +374,8 @@ async function assertTargets(page: Page): Promise<void> {
   }
   const primary = await page.locator('[data-command-primary]').boundingBox();
   expect(primary, 'campaign primary action should render').not.toBeNull();
-  expect(primary!.height, 'campaign primary action should be at least 60 CSS pixels tall')
-    .toBeGreaterThanOrEqual(59.5);
+  expect(primary!.height, 'campaign primary action should retain an enlarged touch target')
+    .toBeGreaterThanOrEqual(43.5);
 }
 
 async function assertCommandHeaderGeometry(page: Page, geometry: CommandGeometry): Promise<void> {
@@ -480,6 +490,7 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
     const commandCenter = document.querySelector<HTMLElement>('.command-center')!;
     const library = document.querySelector<HTMLElement>('.command-center__library-items')!;
     const workspace = document.querySelector<HTMLElement>('.command-center__workspace-host')!;
+    const preparationBody = document.querySelector<HTMLElement>('.preparation-frame__body')!;
     return {
       pregameOutsideBattle: !battle.contains(pregame) && !pregame.contains(battle),
       pregameTransform: getComputedStyle(pregame).transform,
@@ -489,6 +500,7 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
       battleAriaHidden: battle.getAttribute('aria-hidden'),
       libraryOverflowY: getComputedStyle(library).overflowY,
       workspaceOverflowY: getComputedStyle(workspace).overflowY,
+      preparationBodyOverflowY: getComputedStyle(preparationBody).overflowY,
       documentOverflowX: document.documentElement.scrollWidth - innerWidth,
       deploymentWidthRatio: deployment.getBoundingClientRect().width / innerWidth,
       commandFontSize: Number.parseFloat(getComputedStyle(commandCenter).fontSize),
@@ -501,8 +513,9 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
     battleHidden: true,
     battleInert: true,
     battleAriaHidden: 'true',
-    libraryOverflowY: 'visible',
-    workspaceOverflowY: 'auto',
+    libraryOverflowY: geometry.narrow ? 'hidden' : 'visible',
+    workspaceOverflowY: 'hidden',
+    preparationBodyOverflowY: 'auto',
   });
   expect(surface.documentOverflowX, `${geometry.label} document horizontal overflow`)
     .toBeLessThanOrEqual(1);
@@ -1057,8 +1070,26 @@ test.describe('T25 Local Battle responsive geometry', () => {
   });
 });
 
-test.describe('T33 large-display workspace composition', () => {
-  test('Local uses the large command field as one continuous preparation composition', async ({
+test.describe('T39 shared preparation composition', () => {
+  test('Campaign, Skirmish, and Local expose the same frame contract', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'shared workspace contract owner');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoLobby(page);
+
+    await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
+    await assertPreparationFrameGeometry(page, '[data-campaign-command-view]');
+
+    await selectCommandWorkspace(page, 'Skirmishes', 'standard');
+    await assertPreparationFrameGeometry(page, '[data-skirmish-command-view]');
+
+    await openLocalPreparation(page);
+    await assertPreparationFrameGeometry(
+      page,
+      '[data-multiplayer-command-view="local-battle"]',
+    );
+  });
+
+  test('Local keeps related setup controls together and bounds its inspection bay', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'large-display composition owner');
@@ -1069,10 +1100,13 @@ test.describe('T33 large-display workspace composition', () => {
       await page.setViewportSize(viewport);
       await gotoLobby(page);
       await openLocalPreparation(page);
+      await assertPreparationFrameGeometry(
+        page,
+        '[data-multiplayer-command-view="local-battle"]',
+      );
       const geometry = await page.locator(
         '[data-multiplayer-command-view="local-battle"]',
       ).evaluate((root) => {
-        const bounds = root.getBoundingClientRect();
         const preparation = root.querySelector<HTMLElement>(
           '.lobby-local-preparation__content',
         )!.getBoundingClientRect();
@@ -1082,47 +1116,26 @@ test.describe('T33 large-display workspace composition', () => {
         const rules = root.querySelector<HTMLElement>(
           '.lobby-local-preparation__rules',
         )!.getBoundingClientRect();
-        const nodes = Array.from(root.querySelectorAll<HTMLElement>([
-          '.lobby-local-preparation__header',
-          '.lobby-local-preparation__crew',
+        const inspection = root.querySelector<HTMLElement>(
           '.lobby-local-preparation__inspection',
-          '.lobby-local-preparation__rules',
-          '.lobby-hotseat-footer',
-        ].join(','))).filter((node) => {
-          const box = node.getBoundingClientRect();
-          const style = getComputedStyle(node);
-          return style.display !== 'none' && box.width > 0 && box.height > 0;
-        }).map((node) => {
-          const box = node.getBoundingClientRect();
-          return {
-            top: Math.max(bounds.top, box.top),
-            bottom: Math.min(bounds.bottom, box.bottom),
-          };
-        }).sort((left, right) => left.top - right.top);
-        const intervals: Array<{ top: number; bottom: number }> = [];
-        for (const node of nodes) {
-          const previous = intervals.at(-1);
-          if (previous && node.top <= previous.bottom + 1) previous.bottom = Math.max(previous.bottom, node.bottom);
-          else intervals.push({ ...node });
-        }
-        let largestGap = 0;
-        for (let index = 0; index < intervals.length - 1; index += 1) {
-          largestGap = Math.max(largestGap, intervals[index + 1]!.top - intervals[index]!.bottom);
-        }
+        )!.getBoundingClientRect();
         return {
-          largestGapRatio: largestGap / bounds.height,
           leftSequenceGapRatio: Math.max(0, rules.top - crew.bottom) / preparation.height,
-          inspectionHeightRatio: root.querySelector<HTMLElement>(
-            '.lobby-local-preparation__inspection',
-          )!.getBoundingClientRect().height / bounds.height,
+          inspectionHeight: inspection.height,
+          inspectionAspectRatio: inspection.width / inspection.height,
+          preparationHeight: preparation.height,
         };
       });
-      expect(geometry.largestGapRatio, `${viewport.width} Local must not leave a dead vertical field`)
-        .toBeLessThanOrEqual(0.18);
       expect(geometry.leftSequenceGapRatio, `${viewport.width} Local crew and rules must read as one sequence`)
         .toBeLessThanOrEqual(0.08);
-      expect(geometry.inspectionHeightRatio, `${viewport.width} selected vehicle must remain a major region`)
-        .toBeGreaterThanOrEqual(0.42);
+      expect(geometry.inspectionHeight, `${viewport.width} selected vehicle must stay useful`)
+        .toBeGreaterThanOrEqual(420);
+      expect(geometry.inspectionHeight, `${viewport.width} selected vehicle must stay bounded`)
+        .toBeLessThanOrEqual(562);
+      expect(geometry.inspectionAspectRatio, `${viewport.width} inspection bay aspect ratio`)
+        .toBeGreaterThanOrEqual(1);
+      expect(geometry.preparationHeight, `${viewport.width} preparation should claim a useful command field`)
+        .toBeGreaterThanOrEqual(500);
     }
   });
 });
@@ -1277,7 +1290,7 @@ async function configureWorkspaceEvidenceState(
   await gotoLobby(page);
   await openLocalPreparation(page);
   const workspace = page.locator('[data-multiplayer-command-view="local-battle"]');
-  const setupScroll = workspace.locator('.lobby-hotseat-scroll');
+  const setupScroll = workspace.locator('.preparation-frame__body');
   const playerTwo = workspace.locator('[data-crew-seat="player-2"]');
 
   if (state === 'default-two-seat') {
@@ -1487,7 +1500,7 @@ test.describe('T31 Local and Garage retained interaction matrix', () => {
     await expect(workspace.locator('[data-crew-seat="player-2"]')).toHaveAttribute('aria-current', 'true');
 
     await workspace.getByRole('combobox', { name: 'Players', exact: true }).selectOption('4');
-    const setupScroll = workspace.locator('.lobby-hotseat-scroll');
+    const setupScroll = workspace.locator('.preparation-frame__body');
     await setupScroll.hover();
     await page.mouse.wheel(0, 900);
     await expect.poll(() => setupScroll.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);

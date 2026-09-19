@@ -4842,3 +4842,19 @@ The fresh R07 review found no remaining CPU defect but identified a supported sa
 - Kept the assertions unchanged. Standard-width Local now uses a bounded centered inspection bay while 2272/3440 composition remains fluid; Verified receives a two-pixel scroll margin so its full primary target clears the viewport edge.
 - Fresh local proof passes the exact Local failures across desktop, Pixel touch and small-window projects, all seven Verified challenge journeys in the small-window project, all three T33 large-display composition owners, and production typecheck/build. Runtime audit confirms one SingedTerra listener only at 127.0.0.1:4173.
 - T38 remains in progress until this correction is committed, pushed and green on the exact PR head. G02 remains pending maintainer visual acceptance. No merge or deployment was performed.
+
+## 2026-09-18 Shared preparation frame selected · confidence: high · intent: approved PR #515 layout-contract revision
+
+- Options weighed: keep refining each mode's existing footer; add a common dock CSS class only; or introduce one small semantic heading/body/dock frame with one primary-action renderer while retaining every mode owner.
+- SMARTS strongly selects the semantic frame: it removes five duplicated composition seams, fixes Online's collision through real layout allocation, and gives responsive behavior one owner without moving product state or callbacks.
+- Local and every Online route establish the contract together. Campaign, Skirmishes, and Verified Operations adopt it only after those behavior-heavy paths pass focused tests.
+- Responsive policy compacts category/catalog chrome before shrinking the active task. Preview art stays bounded and informative; empty space is not filled by stretched artwork or invented facts.
+- Evidence must be a matched native-resolution all-mode set plus a live resize/interaction recording on the sole 4173 listener. G02 remains the hard owner visual gate; no merge or deployment is authorized.
+
+## 2026-09-18 Command Center T39-T43 shared preparation frame accepted · confidence: high · intent: resolve the systemic G02 cross-screen composition rejection
+
+- One typed `PreparationFrame` now owns the heading, sole body viewport, in-flow action dock and primary-action presentation. Local, every Online route and recovery state, Campaign, Skirmishes, Verified Deployment and Crosswind Qualification retain their existing state and callbacks while mounting through that shared composition.
+- Responsive ownership now follows the available workspace rather than individual pages. Category and catalog chrome compact first, previews remain bounded, the body scrolls beneath a real dock, and the Online Visibility field is reachable without layering or masking. The conflicting legacy Verified hot-seat root selector no longer applies to the shared frame.
+- Resize continuity preserves edited Online name/visibility, Local crew name, focused controls and the mounted frame identity across 3440x1440, 1440x900 and 844x390. Campaign save transitions retain semantic focus when duplicate actions collapse after replacement.
+- Fresh proof passes 2,508 client tests, 101 applicable focused browser cases with 55 intentional project skips, the complete deterministic root gate including ST1's 32 bound sources and retained verified artifacts, typecheck, production build, zero-vulnerability audit, empty secrets scan and diff hygiene.
+- Production evidence on the sole 127.0.0.1:4173 listener records 36 DPR1 screenshots: Campaign empty/resume, two Skirmishes, Local two/four-player, both Verified surfaces and Online create/join/browse/waiting at all three matched viewports. The 7.48-second recording exercises live resize, edits, focus and cross-mode traversal. T44 remains in progress for the sanctioned commit, draft PR update and hosted exact-head CI; G02 remains pending owner visual acceptance. No Astra review, merge or deployment was used.

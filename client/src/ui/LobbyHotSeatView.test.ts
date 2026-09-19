@@ -101,9 +101,17 @@ describe('owned multiplayer preparation views', () => {
     );
     expect(rules?.querySelector('#battlefield-protocol-heading')?.textContent)
       .toBe('Effective rules');
-    expect(preparation?.querySelectorAll<HTMLButtonElement>('.lobby-start')).toHaveLength(1);
-    expect(preparation?.querySelector<HTMLButtonElement>('.lobby-start')?.textContent)
+    expect(root.querySelectorAll<HTMLButtonElement>('.lobby-start')).toHaveLength(1);
+    expect(root.querySelector<HTMLButtonElement>('.lobby-start')?.textContent)
       .toBe('Deploy local battle');
+    expect(root.querySelector(':scope > .preparation-frame__heading')).not.toBeNull();
+    expect(root.querySelector(':scope > .preparation-frame__body')?.contains(preparation ?? null))
+      .toBe(true);
+    expect(preparation?.querySelector('.lobby-start')).toBeNull();
+    expect(root.querySelector(':scope > .preparation-frame__dock .lobby-start'))
+      .toBe(root.querySelector('.lobby-start'));
+    expect(root.querySelector('.lobby-start')?.classList.contains('preparation-frame__primary-action'))
+      .toBe(true);
   });
 
   it('renders the player range, selected count, shared-node order, and crowded layout', () => {
@@ -115,7 +123,10 @@ describe('owned multiplayer preparation views', () => {
       advanced,
     }));
 
-    expect(root.className).toBe('lobby-route-brief lobby-hotseat lobby-hotseat--local crowded');
+    expect(root.classList).toContain('lobby-route-brief');
+    expect(root.classList).toContain('lobby-hotseat--local');
+    expect(root.classList).toContain('crowded');
+    expect(root.classList).toContain('preparation-frame');
     const select = root.querySelector('select')!;
     expect([...select.options].map((option) => option.value)).toEqual(['2', '3', '4']);
     expect(select.value).toBe('3');
@@ -195,6 +206,11 @@ describe('owned multiplayer preparation views', () => {
     expect(root.textContent).toContain('Commander Ranger versus deterministic CPU');
     expect(root.textContent).toContain('Commander dossier');
     expect(root.textContent).toContain('First Strike · Damage the CPU within your first three salvos.');
+    expect(root.querySelector(':scope > .preparation-frame__heading')).not.toBeNull();
+    expect(root.querySelector(':scope > .preparation-frame__body .lobby-verified-deployment'))
+      .not.toBeNull();
+    expect(root.querySelector(':scope > .preparation-frame__dock .lobby-verified-deployment__launch'))
+      .not.toBeNull();
     root.querySelector<HTMLButtonElement>('.lobby-verified-deployment__launch')!.click();
     expect(deployment.onLaunch).toHaveBeenCalledOnce();
   });
@@ -232,7 +248,9 @@ describe('owned multiplayer preparation views', () => {
       .toBe('true');
     expect(challengeRoot.querySelector('.lobby-verified-challenge')).not.toBeNull();
     expect(challengeRoot.querySelector('.lobby-verified-deployment')).toBeNull();
-    expect(challengeRoot.querySelector('.lobby-hotseat-footer')).toBeNull();
+    expect(challengeRoot.querySelector(
+      '.lobby-hotseat-footer .lobby-verified-challenge__launch[data-preparation-primary]',
+    )).not.toBeNull();
   });
 
   it('keeps verified resume and abandon confirmation inside the owned footer', () => {
@@ -246,10 +264,10 @@ describe('owned multiplayer preparation views', () => {
     const buttons = [...root.querySelectorAll<HTMLButtonElement>('.lobby-hotseat-footer button')];
 
     expect(buttons.map((button) => button.textContent)).toEqual([
-      'Resume verified deployment',
       'Abandon verified deployment',
       'Confirm abandon',
       'Keep deployment',
+      'Resume verified deployment',
     ]);
     for (const button of buttons) button.click();
     expect(deployment.onLaunch).toHaveBeenCalledOnce();

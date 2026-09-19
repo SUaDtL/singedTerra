@@ -54,7 +54,9 @@ describe('buildLobbyBrowseView', () => {
       onJoinByCode,
     });
 
-    expect(root.className).toBe('lobby-operations-board lobby-operations-board--browse');
+    expect(root.classList).toContain('lobby-operations-board');
+    expect(root.classList).toContain('lobby-operations-board--browse');
+    expect(root.classList).toContain('preparation-frame');
     expect(root.querySelector('.lobby-operations-board__title')?.textContent).toBe('Open operations');
     expect(root.querySelector('.lobby-operations-board__purpose')?.textContent)
       .toBe('Scan active rooms and join a crew preparing to fire.');

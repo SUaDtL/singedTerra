@@ -370,3 +370,32 @@ network, save, input, and compact-screen ownership.
 - **Conform — ADR-0018:** the battle console and its Preact semantic ownership are out of scope.
 - **No collision — deferred remembered-selection precedence:** this revision does not alter command
   category/item memory or initial context priority.
+
+## Approved shared preparation-layout revision — 2026-09-18
+
+The maintainer rejected treating Local, Online, Verified Operations, Skirmishes, and Campaign as
+independently composed pages. Their product owners, state, validation, save and recovery guarantees,
+and genuine callbacks remain authoritative, but their visual preparation contract is now shared.
+
+39. **AC-39** Each preparation workspace mounts the same small structural frame: one heading region,
+    one body viewport, and one reserved in-flow action dock. The body is the deliberate scroll owner;
+    the dock consumes layout space and never overlays required content.
+40. **AC-40** The frame supplies one primary-action component and placement policy. Modes supply the
+    truthful label, enabled/busy state, and existing callback. Contextual room-row Join controls and
+    confirmed destructive actions remain semantically distinct; Create room is never relabelled or
+    presented as Deploy battle.
+41. **AC-41** Local and every Online route establish the shared frame together. At all supported
+    geometries, Online's Visibility and other required fields remain fully visible, reachable, and
+    operable above the dock without masking or z-index workarounds.
+42. **AC-42** Campaign, Skirmishes, and Verified Operations then adopt the same frame without moving
+    their save, mission, validation, authentication, or launch ownership. Related controls remain
+    grouped and previews are bounded by useful scale and aspect ratio rather than stretched as filler.
+43. **AC-43** Responsive composition yields shell chrome before starving the active task: category and
+    catalog regions compact first, while headings, facts, editing controls, and the action dock keep
+    usable proportions. Resizing preserves current edits, focus, mounted-view identity, and async
+    lifetime protections.
+44. **AC-44** Matched native-resolution evidence covers all five workspaces at the same wide,
+    intermediate, and compact viewport sizes, plus a live resize/interaction recording. Direct visual
+    review, not isolated containment assertions, is the acceptance authority.
+45. **AC-45** The revised unified set returns to `G02` for maintainer visual acceptance. The draft PR
+    remains open and unmerged, and no deployment is authorized.

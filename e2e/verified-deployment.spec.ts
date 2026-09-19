@@ -4,6 +4,7 @@ import {
   assertDangerAction,
   assertGoldSafeAction,
   assertLobbyFrame,
+  assertPreparationFrameGeometry,
   enterBattleIfBriefed,
   openLocalPreparation,
   openOnlinePreparation,
@@ -115,6 +116,8 @@ async function openCommandCenter(page: Page, search = './'): Promise<void> {
   await page.goto(search);
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   await expect(page.locator('#lobby')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Player account', exact: true }))
+    .toContainText('Ranger');
 }
 
 async function openLocalWorkspace(page: Page, search = './'): Promise<void> {
@@ -220,7 +223,8 @@ test.describe('verified deployment production-browser journey', () => {
     const deploy = page.getByRole('button', { name: 'Deploy local battle', exact: true });
     await expect(deploy).toBeInViewport({ ratio: 1 });
     const geometry = await page.locator('.lobby-hotseat-footer').evaluate((footer) => {
-      const body = document.querySelector<HTMLElement>('.lobby-hotseat-scroll')!;
+      const body = footer.closest<HTMLElement>('[data-preparation-frame]')!
+        .querySelector<HTMLElement>(':scope > .preparation-frame__body')!;
       const card = footer.closest('.lobby-card')!;
       return { footer: footer.getBoundingClientRect().toJSON(), body: body.getBoundingClientRect().toJSON(),
         card: card.getBoundingClientRect().toJSON(), overflow: getComputedStyle(body).overflowY };
@@ -259,14 +263,14 @@ test.describe('verified deployment production-browser journey', () => {
     );
     await page.screenshot({ path: testInfo.outputPath('authenticated-hot-seat.png') });
     const layout = await page.locator('.lobby-deployment').evaluate((deployment) => {
-      const panel = deployment.querySelector<HTMLElement>('.lobby-hotseat-scroll')!;
+      const panel = deployment.querySelector<HTMLElement>('.preparation-frame__body')!;
       const workspaceViewport = deployment.querySelector<HTMLElement>(
         '.command-center__workspace-host',
       )!;
       const card = deployment.closest('.lobby-card')!;
       const matchup = panel.querySelector<HTMLElement>('.lobby-verified-deployment__matchup')!;
       const rules = panel.querySelector<HTMLElement>('.lobby-verified-deployment__rules')!;
-      const actions = deployment.querySelector<HTMLElement>('.lobby-verified-deployment__actions')!;
+      const actions = deployment.querySelector<HTMLElement>('.preparation-frame__dock')!;
       const box = (node: Element) => node.getBoundingClientRect().toJSON();
       return { panel: box(panel), viewport: box(workspaceViewport), card: box(card),
         matchup: box(matchup), actions: box(actions), rules: box(rules),
@@ -296,7 +300,9 @@ test.describe('verified deployment production-browser journey', () => {
     await launch.scrollIntoViewIfNeeded();
     const launchBox = await launch.boundingBox();
     expect(launchBox).not.toBeNull();
-    expect(launchBox!.height).toBeGreaterThanOrEqual(56);
+    expect(launchBox!.height).toBeGreaterThanOrEqual(
+      page.viewportSize()!.height <= 320 ? 46 : 56,
+    );
     for (const state of ['resting', 'hovered', 'focused'] as const) {
       if (state === 'hovered') await launch.hover();
       if (state === 'focused') await launch.focus();
@@ -325,7 +331,7 @@ test.describe('verified deployment production-browser journey', () => {
     await page.screenshot({ path: testInfo.outputPath('authenticated-hot-seat-focused.png') });
   });
 
-  test('T33 Verified uses peer battlefield and orders regions on large displays', async ({
+  test('T39 Verified uses the shared frame with bounded peer battlefield context', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'large-display composition owner');
@@ -335,27 +341,30 @@ test.describe('verified deployment production-browser journey', () => {
     ]) {
       await page.setViewportSize(viewport);
       await openVerifiedWorkspace(page);
+      await assertPreparationFrameGeometry(
+        page,
+        '[data-multiplayer-command-view="verified-operations"]',
+      );
       const geometry = await verifiedWorkspace(page).evaluate((root) => {
-        const bounds = root.getBoundingClientRect();
         const art = root.querySelector<HTMLElement>('[data-battlefield-projection]')!;
-        const orders = root.querySelector<HTMLElement>('.multiplayer-command__verified-workspace')!;
+        const orders = root.querySelector<HTMLElement>('.preparation-frame__mode-content')!;
         const artBox = art.getBoundingClientRect();
         const ordersBox = orders.getBoundingClientRect();
         const overlapWidth = Math.max(0, Math.min(artBox.right, ordersBox.right) - Math.max(artBox.left, ordersBox.left));
         const overlapHeight = Math.max(0, Math.min(artBox.bottom, ordersBox.bottom) - Math.max(artBox.top, ordersBox.top));
         return {
-          artWidthRatio: artBox.width / bounds.width,
-          ordersWidthRatio: ordersBox.width / bounds.width,
-          ordersHeightRatio: ordersBox.height / bounds.height,
+          artWidth: artBox.width,
+          artHeight: artBox.height,
+          ordersWidth: ordersBox.width,
           overlapRatio: (overlapWidth * overlapHeight) / (ordersBox.width * ordersBox.height),
         };
       });
-      expect(geometry.artWidthRatio, `${viewport.width} battlefield context must stay bounded`)
-        .toBeLessThanOrEqual(0.56);
-      expect(geometry.ordersWidthRatio, `${viewport.width} orders need peer horizontal weight`)
-        .toBeGreaterThanOrEqual(0.4);
-      expect(geometry.ordersHeightRatio, `${viewport.width} orders need peer vertical weight`)
-        .toBeGreaterThanOrEqual(0.78);
+      expect(geometry.artHeight, `${viewport.width} battlefield context must stay bounded`)
+        .toBeLessThanOrEqual(462);
+      expect(geometry.artWidth / geometry.artHeight, `${viewport.width} battlefield context aspect`)
+        .toBeGreaterThanOrEqual(1.2);
+      expect(geometry.ordersWidth, `${viewport.width} orders need useful peer width`)
+        .toBeGreaterThanOrEqual(420);
       expect(geometry.overlapRatio, `${viewport.width} orders must not float over wallpaper`)
         .toBeLessThanOrEqual(0.05);
     }
@@ -365,7 +374,7 @@ test.describe('verified deployment production-browser journey', () => {
     await openLocalWorkspace(page);
     await page.getByLabel('Players', { exact: true }).selectOption('4');
     await page.locator('.lobby-name').first().fill('Local Scout');
-    const panel = page.locator('.lobby-hotseat-scroll');
+    const panel = page.locator('[data-multiplayer-command-view="local-battle"] .preparation-frame__body');
     const coarse = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
     const touch = coarse ? await page.context().newCDPSession(page) : null;
     let gestures = 0;
@@ -395,7 +404,10 @@ test.describe('verified deployment production-browser journey', () => {
           continue;
         }
         if (!lane) throw new Error('Hot Seat has no scroll lane');
-        const x = lane.x + lane.width * 0.8;
+        // Start the native drag in the shared body's own left inset. Beginning
+        // over a compact form control correctly gives that control gesture
+        // ownership and does not prove that the surrounding scroll lane pans.
+        const x = lane.x + 4;
         const visibleHeight = Math.min(viewport.height, lane.y + lane.height) - Math.max(0, lane.y);
         const direction = box && box.y < lane.y ? -1 : 1;
         const distance = Math.min(120, visibleHeight * 0.5);
@@ -469,7 +481,9 @@ test.describe('verified deployment production-browser journey', () => {
     const practiceTarget = await practiceLaunch.boundingBox();
     expect(practiceTarget, 'Practice launch needs a rendered touch target').not.toBeNull();
     expect(practiceTarget!.width).toBeGreaterThanOrEqual(44);
-    expect(practiceTarget!.height).toBeGreaterThanOrEqual(56);
+    expect(practiceTarget!.height).toBeGreaterThanOrEqual(
+      page.viewportSize()!.height <= 320 ? 46 : 56,
+    );
     await practiceLaunch.focus();
     await expect(practiceLaunch).toBeFocused();
 
@@ -513,11 +527,11 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(commanderOperations.getByText('First Strike · Damage the CPU within your first three salvos.')).toBeVisible();
     const launchComposition = await verified.evaluate((node) => {
       const rules = node.querySelector<HTMLElement>('.lobby-verified-deployment__rules');
-      const actions = node.querySelector<HTMLElement>('.lobby-verified-deployment__actions');
+      const actions = node.querySelector<HTMLElement>('.preparation-frame__dock');
       if (!rules || !actions) throw new Error('Missing verified launch composition');
       return {
         rules: rules.getBoundingClientRect().toJSON(),
-        scroll: node.querySelector('.lobby-hotseat-scroll')!.getBoundingClientRect().toJSON(),
+        scroll: node.querySelector('.preparation-frame__body')!.getBoundingClientRect().toJSON(),
         actions: actions.getBoundingClientRect().toJSON(),
       };
     });

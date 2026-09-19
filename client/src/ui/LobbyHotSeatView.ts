@@ -1,5 +1,6 @@
 import { renderFieldOrder, type FieldOrder } from '../client/fieldOrder';
 import { buildLobbyPreparationSection } from './LobbyPreparationSection';
+import { createPreparationFrame, createPreparationPrimaryAction } from './PreparationFrame';
 import type { VerifiedChallengeSessionState } from '../client/VerifiedChallengeSession';
 import type { VerifiedCareerState } from '../client/verifiedCareer';
 
@@ -146,11 +147,12 @@ function buildVerifiedChallenge(
   message.textContent = verifiedChallengeCopy(options.state, options.retryDelaySeconds);
   const actions = document.createElement('div');
   actions.className = 'lobby-verified-challenge__actions';
-  const primary = document.createElement('button');
-  primary.type = 'button';
-  primary.className = 'lobby-btn primary lobby-verified-challenge__launch';
-  primary.disabled = options.busy || options.state.status === 'starting'
-    || options.state.status === 'completion-pending' || (options.retryDelaySeconds ?? 0) > 0;
+  const primary = createPreparationPrimaryAction(document, {
+    label: '',
+    disabled: options.busy || options.state.status === 'starting'
+      || options.state.status === 'completion-pending' || (options.retryDelaySeconds ?? 0) > 0,
+    className: 'lobby-verified-challenge__launch',
+  });
   if (options.state.status === 'active') {
     primary.textContent = 'Enter qualification';
     primary.addEventListener('click', options.onLaunch, { signal: listenerSignal });
@@ -284,16 +286,18 @@ function buildVerifiedDeployment(
 
   const actions = document.createElement('div');
   actions.className = 'lobby-verified-deployment__actions';
-  const launch = document.createElement('button');
-  launch.type = 'button';
-  launch.className = 'lobby-btn primary lobby-verified-deployment__launch';
-  launch.textContent = options.busy
-    ? 'Verified deployment busy'
-    : options.action === 'resume'
-      ? 'Resume verified deployment'
-      : 'Start verified deployment';
-  launch.disabled = options.busy;
-  launch.addEventListener('click', options.onLaunch, { signal: listenerSignal });
+  const launch = createPreparationPrimaryAction(document, {
+    label: options.busy
+      ? 'Verified deployment busy'
+      : options.action === 'resume'
+        ? 'Resume verified deployment'
+        : 'Start verified deployment',
+    disabled: options.busy,
+    busy: options.busy,
+    onActivate: options.onLaunch,
+    className: 'lobby-verified-deployment__launch',
+    listenerSignal,
+  });
   actions.append(launch);
 
   if (options.action === 'resume') {
@@ -343,18 +347,6 @@ export function buildLobbyLocalBattleView(options: LobbyLocalBattleViewOptions):
   body.dataset.localPreparation = '';
   body.setAttribute('aria-labelledby', 'local-crew-preparation-heading');
   body.setAttribute('aria-describedby', 'local-crew-preparation-context');
-
-  const preparationHeader = document.createElement('header');
-  preparationHeader.className = 'lobby-local-preparation__header';
-  const preparationHeading = document.createElement('h2');
-  preparationHeading.id = 'local-crew-preparation-heading';
-  preparationHeading.className = 'lobby-local-preparation__title';
-  preparationHeading.textContent = 'Local Battle crew preparation';
-  const preparationContext = document.createElement('p');
-  preparationContext.id = 'local-crew-preparation-context';
-  preparationContext.className = 'lobby-local-preparation__context';
-  preparationContext.textContent = 'Configure the crew, inspect each vehicle, and confirm the effective rules before deployment.';
-  preparationHeader.append(preparationHeading, preparationContext);
 
   const scroll = document.createElement('div');
   scroll.className = 'lobby-hotseat-scroll';
@@ -414,32 +406,30 @@ export function buildLobbyLocalBattleView(options: LobbyLocalBattleViewOptions):
   error.setAttribute('aria-live', 'polite');
   error.textContent = options.validationMessage ?? '';
 
-  const start = document.createElement('button');
-  start.type = 'button';
-  start.className = 'lobby-start lobby-btn primary';
-  start.textContent = 'Deploy local battle';
-  start.disabled = options.validationMessage !== null;
-  start.addEventListener('click', options.onStart, { signal: options.listenerSignal });
+  const start = createPreparationPrimaryAction(document, {
+    label: 'Deploy local battle',
+    disabled: options.validationMessage !== null,
+    onActivate: options.onStart,
+    className: 'lobby-start',
+    listenerSignal: options.listenerSignal,
+  });
 
-  scroll.append(preparationHeader, setup);
-  const footer = document.createElement('footer');
-  footer.className = 'lobby-hotseat-footer';
-  footer.dataset.localDecision = '';
-  footer.setAttribute('aria-labelledby', 'local-deployment-decision-heading');
-  const decisionCopy = document.createElement('div');
-  decisionCopy.className = 'lobby-hotseat-footer__brief';
-  const decisionHeading = document.createElement('h3');
-  decisionHeading.id = 'local-deployment-decision-heading';
-  decisionHeading.className = 'lobby-hotseat-footer__heading';
-  decisionHeading.textContent = 'Deployment';
-  const status = document.createElement('span');
-  status.className = 'lobby-hotseat-footer__status';
-  status.textContent = `${options.playerCount} players · Shared screen`;
-  decisionCopy.append(decisionHeading, status, error);
-  footer.append(decisionCopy, start);
-  body.append(scroll, footer);
-  wrapper.append(body);
-  return wrapper;
+  scroll.append(setup);
+  body.append(scroll);
+  return createPreparationFrame(document, {
+    root: wrapper,
+    eyebrow: 'Local operation',
+    title: 'Local Battle crew preparation',
+    titleId: 'local-crew-preparation-heading',
+    description: 'Configure the crew, inspect each vehicle, and confirm the effective rules before deployment.',
+    descriptionId: 'local-crew-preparation-context',
+    body,
+    dockLabel: 'Deployment',
+    dockStatus: `${options.playerCount} players · Shared screen`,
+    dockMessage: error,
+    primaryAction: start,
+    dockClassName: 'lobby-hotseat-footer',
+  });
 }
 
 export function buildLobbyVerifiedOperationsView(
@@ -472,23 +462,48 @@ export function buildLobbyVerifiedOperationsView(
     verifiedPanel.setAttribute('aria-labelledby', `lobby-verified-choice-${verifiedSurface}`);
   }
 
+  let primaryAction: HTMLButtonElement | null = null;
+  let secondaryActions: HTMLElement | null = null;
+  let dockStatus = 'Authenticated battlefield orders';
+
   if (verifiedSurface === 'deployment' && options.verifiedDeployment) {
     if (verifiedSelector) scroll.append(verifiedSelector);
     const dossier = buildCommanderDossier(options.verifiedDeployment.fieldOrder);
     if (dossier) verifiedPanel.append(dossier);
     const verified = buildVerifiedDeployment(options.verifiedDeployment, false, options.listenerSignal);
     const footer = verified.querySelector<HTMLElement>('.lobby-verified-deployment__actions');
-    footer?.classList.add('lobby-hotseat-footer');
+    primaryAction = footer?.querySelector<HTMLButtonElement>('.lobby-verified-deployment__launch') ?? null;
+    primaryAction?.remove();
+    if (footer?.childElementCount) secondaryActions = footer;
+    else footer?.remove();
+    dockStatus = options.verifiedDeployment.action === 'resume'
+      ? 'Recoverable verified deployment'
+      : 'Deterministic CPU deployment';
     verifiedPanel.append(verified);
     scroll.append(verifiedPanel);
-    body.append(scroll);
-    if (footer) body.append(footer);
   } else if (options.verifiedChallenge) {
     if (verifiedSelector) scroll.append(verifiedSelector);
-    verifiedPanel.append(buildVerifiedChallenge(options.verifiedChallenge, options.listenerSignal));
+    const challenge = buildVerifiedChallenge(options.verifiedChallenge, options.listenerSignal);
+    const footer = challenge.querySelector<HTMLElement>('.lobby-verified-challenge__actions');
+    primaryAction = footer?.querySelector<HTMLButtonElement>('.lobby-verified-challenge__launch') ?? null;
+    primaryAction?.remove();
+    if (footer?.childElementCount) secondaryActions = footer;
+    else footer?.remove();
+    dockStatus = 'Crosswind Qualification trial';
+    verifiedPanel.append(challenge);
     scroll.append(verifiedPanel);
-    body.append(scroll);
   }
-  wrapper.append(body);
-  return wrapper;
+  body.append(scroll);
+  return createPreparationFrame(document, {
+    root: wrapper,
+    eyebrow: 'Authenticated operations',
+    title: 'Verified Operations',
+    description: 'Review the active order, its constraints, and the verification stakes before deployment.',
+    body,
+    dockLabel: verifiedSurface === 'challenge' ? 'Qualification order' : 'Deployment order',
+    dockStatus,
+    primaryAction,
+    secondaryActions,
+    dockClassName: 'lobby-hotseat-footer',
+  });
 }

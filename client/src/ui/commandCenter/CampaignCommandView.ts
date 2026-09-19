@@ -5,6 +5,10 @@ import { ASH_ROAD_EPISODE } from '../../campaign/content/episode';
 import { ASH_ROAD_STORY } from '../../campaign/content/story';
 import type { CampaignResumeCandidate } from './CampaignSavePresentation';
 import {
+  createPreparationFrame,
+  createPreparationPrimaryAction,
+} from '../PreparationFrame';
+import {
   commandCategoryId,
   commandItemId,
   type CampaignSavePresentation,
@@ -179,7 +183,7 @@ export function createCampaignCommandView(
   decisionPlane.dataset.campaignDecisionPlane = '';
   decisionPlane.setAttribute('aria-label', 'Ash Road preparation');
 
-  const identity = element(document, 'header', 'campaign-command__identity');
+  const identity = element(document, 'div', 'campaign-command__identity');
   const chapter = element(document, 'p', 'campaign-command__chapter');
   chapter.textContent = 'Ash Road campaign';
   const missionKicker = element(document, 'p', 'campaign-command__fact-label');
@@ -255,7 +259,7 @@ export function createCampaignCommandView(
   routeTrack.append(entryNode, firstConnector, branch, secondConnector, finishNode);
   routeBoard.append(routeHeader, routeTrack);
 
-  decisionPlane.append(identity, missionScene, objectivePanel, routeBoard);
+  decisionPlane.append(missionScene, objectivePanel, routeBoard);
 
   const loadoutPanel = element(document, 'section', 'campaign-command__loadout');
   loadoutPanel.setAttribute('aria-labelledby', `campaign-command-loadout-${id}`);
@@ -289,9 +293,10 @@ export function createCampaignCommandView(
   equipment.append(weaponsTerm, weaponsValue, conditionTerm, conditionValue);
   loadoutPanel.append(loadoutHeader, kitField, equipment);
 
-  const actions = element(document, 'div', 'campaign-command__actions');
-  const primary = element(document, 'button', 'command-center__action command-center__primary-action');
-  primary.type = 'button';
+  const primary = createPreparationPrimaryAction(document, {
+    label: '',
+    className: 'campaign-command__primary-action',
+  });
   primary.dataset.commandPrimary = '';
   const secondary = element(document, 'button', 'command-center__action campaign-command__secondary-action');
   secondary.type = 'button';
@@ -302,8 +307,6 @@ export function createCampaignCommandView(
   retry.name = 'campaign-save-retry';
   retry.dataset.commandAction = 'retry-save';
   retry.textContent = 'Retry save check';
-  actions.append(primary, secondary, retry);
-
   const briefing = element(document, 'details', 'campaign-command__disclosure');
   const briefingSummary = document.createElement('summary');
   briefingSummary.className = 'command-center__action campaign-command__disclosure-summary';
@@ -312,7 +315,19 @@ export function createCampaignCommandView(
   briefingCopy.textContent = ASH_ROAD_STORY.setting;
   briefing.append(briefingSummary, briefingCopy);
 
-  root.append(decisionPlane, loadoutPanel, actions, briefing);
+  const supporting = element(document, 'div', 'campaign-command__supporting');
+  supporting.append(loadoutPanel, briefing);
+
+  createPreparationFrame(document, {
+    root,
+    headingContent: identity,
+    body: [decisionPlane, supporting],
+    dockLabel: 'Campaign order',
+    dockStatus: saveStatus,
+    primaryAction: primary,
+    secondaryActions: [secondary, retry],
+    dockClassName: 'campaign-command__actions',
+  });
   host.replaceChildren(root);
 
   const renderRoute = (encounterId: string): void => {

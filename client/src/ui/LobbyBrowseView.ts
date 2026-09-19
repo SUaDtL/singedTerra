@@ -7,6 +7,7 @@ import {
   suddenDeathLabel,
 } from './browseLabels';
 import { buildOnlineRouteActions } from './LobbyOnlineRouteActions';
+import { createPreparationFrame, createPreparationPrimaryAction } from './PreparationFrame';
 
 export interface LobbyBrowseViewOptions {
   nameColor: HTMLElement;
@@ -24,16 +25,6 @@ export interface LobbyBrowseViewOptions {
 export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLElement {
   const root = document.createElement('div');
   root.className = 'lobby-operations-board lobby-operations-board--browse';
-
-  const header = document.createElement('header');
-  header.className = 'lobby-operations-board__header';
-  const title = document.createElement('h2');
-  title.className = 'lobby-operations-board__title';
-  title.textContent = 'Open operations';
-  const purpose = document.createElement('p');
-  purpose.className = 'lobby-operations-board__purpose';
-  purpose.textContent = 'Scan active rooms and join a crew preparing to fire.';
-  header.append(title, purpose);
 
   const crew = document.createElement('section');
   crew.className = 'lobby-operations-board__crew';
@@ -86,17 +77,31 @@ export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLEleme
   }
   operations.append(list);
 
-  const refresh = document.createElement('button');
-  refresh.type = 'button';
-  refresh.className = 'lobby-btn primary';
-  refresh.textContent = 'Refresh rooms';
-  refresh.disabled = options.busy;
-  refresh.addEventListener('click', options.onRefresh, { signal: options.listenerSignal });
-
-  root.append(header, crew, operations, buildOnlineRouteActions(refresh, [
+  const refresh = createPreparationPrimaryAction(document, {
+    label: options.busy ? 'Refreshing rooms…' : 'Refresh rooms',
+    disabled: options.busy,
+    busy: options.busy,
+    onActivate: options.onRefresh,
+    className: 'lobby-online-primary',
+    listenerSignal: options.listenerSignal,
+  });
+  const alternatives = buildOnlineRouteActions(null, [
     { id: 'create', label: 'Create a room', onClick: options.onCreate },
     { id: 'join-code', label: 'Join with a code', onClick: options.onJoinByCode },
-  ], options.listenerSignal));
+  ], options.listenerSignal);
 
-  return root;
+  return createPreparationFrame(document, {
+    root,
+    eyebrow: 'Network operation',
+    title: 'Open operations',
+    description: 'Scan active rooms and join a crew preparing to fire.',
+    headingClassName: 'lobby-operations-board__header',
+    titleClassName: 'lobby-operations-board__title',
+    descriptionClassName: 'lobby-operations-board__purpose',
+    body: [crew, operations],
+    dockLabel: 'Operations board',
+    dockStatus: `${options.rooms.length} public ${options.rooms.length === 1 ? 'room' : 'rooms'} reported`,
+    primaryAction: refresh,
+    secondaryActions: alternatives,
+  });
 }

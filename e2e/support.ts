@@ -76,27 +76,36 @@ export async function selectCommandWorkspace(
   category: CommandCategoryName,
   item: CommandItemName,
 ): Promise<void> {
+  const categoryId: Record<CommandCategoryName, string> = {
+    Campaigns: 'campaigns',
+    Skirmishes: 'skirmishes',
+    Multiplayer: 'multiplayer',
+  };
   const center = page.locator('#lobby .command-center');
   await expect(center).toBeVisible();
   const rail = center.locator('.command-center__category-rail');
-  const railCategory = rail.getByRole('button', { name: category, exact: true });
-  if (await railCategory.isVisible()) {
-    await railCategory.click();
-  } else {
-    const modes = center.getByRole('button', { name: 'Modes', exact: true });
-    await modes.click();
-    const sheet = page.getByRole('navigation', { name: 'Modes', exact: true });
-    const categoryButton = sheet.getByRole('button', { name: category, exact: true });
-    if (await categoryButton.getAttribute('aria-pressed') !== 'true') {
-      await categoryButton.click();
-    }
-    const currentSheet = page.getByRole('dialog', { name: 'Modes', exact: true });
-    if (await currentSheet.isVisible()) await page.keyboard.press('Escape');
-  }
+  // Role locators intentionally exclude the display:none desktop rail at
+  // compact widths. Keep this journey helper on the persistent registered
+  // control while the separate sheet tests cover its public interaction.
+  const railCategory = rail.locator(
+    `button[data-command-category="${categoryId[category]}"]`,
+  );
   const commandItem = center.locator(
     `.command-center__library-items button[data-command-item="${item}"]`,
   );
-  await expect(commandItem).toBeVisible();
+  await expect.poll(async () => {
+    if (await commandItem.isVisible()) return true;
+    await railCategory.waitFor({ state: 'attached' });
+    if (await railCategory.isVisible()) await railCategory.click();
+    else {
+      // The compact sheet is exercised by dedicated public-interaction tests.
+      // Route helpers activate the same registered callback through the retained
+      // rail button. Polling also survives the intentional shell replacement
+      // when an asynchronous account refresh changes item availability.
+      await railCategory.evaluate((button: HTMLButtonElement) => button.click());
+    }
+    return commandItem.isVisible();
+  }, { timeout: 8_000 }).toBe(true);
   if (await commandItem.getAttribute('aria-current') !== 'true') await commandItem.click();
   await expect(commandItem).toHaveAttribute('aria-current', 'true');
 }
@@ -229,6 +238,124 @@ export async function assertLobbyFrame(page: Page): Promise<void> {
   expect(overflow.documentX, 'Lobby must not create horizontal page scroll').toBeLessThanOrEqual(1);
   expect(overflow.documentY, 'Lobby must not create vertical page scroll').toBeLessThanOrEqual(1);
   expect(overflow.cardX, 'Lobby card must not overflow horizontally').toBeLessThanOrEqual(1);
+}
+
+/**
+ * Guard the shared preparation contract rather than any mode's former page
+ * geometry. The heading, scroll viewport, and decision dock must be direct
+ * peers; the dock therefore consumes layout space instead of covering the
+ * mode-owned controls beneath it.
+ */
+export async function assertPreparationFrameGeometry(
+  page: Page,
+  ownerSelector: string,
+): Promise<void> {
+  const owner = page.locator(ownerSelector);
+  const frame = page.locator(
+    `${ownerSelector}[data-preparation-frame], ${ownerSelector} [data-preparation-frame]`,
+  );
+  await expect(frame).toHaveCount(1);
+  await expect(frame).toBeVisible();
+
+  const geometry = await frame.evaluate((element) => {
+    const direct = (selector: string) => element.querySelector<HTMLElement>(`:scope > ${selector}`);
+    const heading = direct('.preparation-frame__heading');
+    const body = direct('.preparation-frame__body');
+    const dock = direct('.preparation-frame__dock');
+    if (!heading || !body || !dock) {
+      throw new Error('Expected direct heading, body viewport, and action dock peers');
+    }
+    const rect = (node: HTMLElement) => {
+      const box = node.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height,
+      };
+    };
+    const primaryActions = Array.from(
+      element.querySelectorAll<HTMLElement>('[data-preparation-primary]'),
+    ).filter((node) => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden'
+        && box.width > 0 && box.height > 0;
+    });
+    return {
+      frame: rect(element),
+      heading: rect(heading),
+      body: rect(body),
+      dock: rect(dock),
+      primaryCount: primaryActions.length,
+      primaryInDock: primaryActions.every((node) => dock.contains(node)),
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+    };
+  });
+
+  expect(geometry.heading.bottom, 'preparation heading must precede the body')
+    .toBeLessThanOrEqual(geometry.body.top + 1);
+  expect(geometry.body.bottom, 'preparation body must end before the in-flow dock')
+    .toBeLessThanOrEqual(geometry.dock.top + 1);
+  expect(geometry.dock.bottom, 'preparation dock must stay inside its frame')
+    .toBeLessThanOrEqual(geometry.frame.bottom + 1);
+  expect(geometry.primaryCount, 'the active preparation route must expose one primary action')
+    .toBe(1);
+  expect(geometry.primaryInDock, 'the primary action must be owned by the shared dock').toBe(true);
+  expect(geometry.scrollWidth, 'the preparation frame must not overflow horizontally')
+    .toBeLessThanOrEqual(geometry.clientWidth + 1);
+}
+
+/** Scroll a required mode field through the shared body and prove the dock does
+ * not mask it. This is the regression oracle for the former Online Visibility
+ * collision at windowed heights. */
+export async function assertPreparationFieldReachable(
+  page: Page,
+  ownerSelector: string,
+  fieldSelector: string,
+): Promise<void> {
+  const owner = page.locator(ownerSelector);
+  const field = owner.locator(fieldSelector);
+  await field.scrollIntoViewIfNeeded();
+  // Chromium may align the requested control a few pixels above a nested
+  // scroller's visible edge. Normalize that native scroll result inside the
+  // shared body before measuring it against the reserved dock.
+  await owner.evaluate((element, selector) => {
+    const field = element.querySelector<HTMLElement>(selector);
+    const body = element.querySelector<HTMLElement>('.preparation-frame__body');
+    if (!field || !body) throw new Error(`Missing required preparation field: ${selector}`);
+    const fieldBox = field.getBoundingClientRect();
+    const bodyBox = body.getBoundingClientRect();
+    if (fieldBox.top < bodyBox.top + 8) {
+      body.scrollTop += fieldBox.top - bodyBox.top - 8;
+    } else if (fieldBox.bottom > bodyBox.bottom - 8) {
+      body.scrollTop += fieldBox.bottom - bodyBox.bottom + 8;
+    }
+  }, fieldSelector);
+  await expect(field).toBeVisible();
+  const geometry = await owner.evaluate((element, selector) => {
+    const field = element.querySelector<HTMLElement>(selector);
+    const body = element.querySelector<HTMLElement>('.preparation-frame__body');
+    const dock = element.querySelector<HTMLElement>('.preparation-frame__dock');
+    if (!field || !body || !dock) throw new Error(`Missing required preparation field: ${selector}`);
+    const fieldBox = field.getBoundingClientRect();
+    const bodyBox = body.getBoundingClientRect();
+    const dockBox = dock.getBoundingClientRect();
+    return {
+      fieldTop: fieldBox.top,
+      fieldBottom: fieldBox.bottom,
+      bodyTop: bodyBox.top,
+      bodyBottom: bodyBox.bottom,
+      dockTop: dockBox.top,
+    };
+  }, fieldSelector);
+  expect(geometry.fieldTop, `${fieldSelector} must be reachable inside the body viewport`)
+    .toBeGreaterThanOrEqual(geometry.bodyTop - 1);
+  expect(geometry.fieldBottom, `${fieldSelector} must clear the action dock`)
+    .toBeLessThanOrEqual(Math.min(geometry.bodyBottom, geometry.dockTop) + 1);
 }
 
 /** Prove owned workspaces cannot collapse or hide the accepted three-bay command rail. */

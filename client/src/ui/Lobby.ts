@@ -47,6 +47,7 @@ import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
 import { buildLobbyShellView } from './LobbyShellView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
+import { createPreparationFrame, createPreparationPrimaryAction } from './PreparationFrame';
 import { buildAccountPanelOverlayContent, buildAccountPanelView } from './AccountPanelView';
 import { buildLobbyOverlayView } from './LobbyOverlayView';
 import { buildLobbyGarageView } from './LobbyGarageView';
@@ -942,7 +943,11 @@ export class Lobby {
       this.lobbyFocusKey(control) === snapshot.key
       && (control.closest('.lobby-overlay') !== null) === snapshot.inOverlay
     ));
-    const target = matching[snapshot.occurrence];
+    // A state transition may legitimately collapse two controls with the same
+    // semantic key into one (for example Replace Saved Run becomes New Run).
+    // Retain the key-level intent even when its former duplicate occurrence no
+    // longer exists.
+    const target = matching[Math.min(snapshot.occurrence, matching.length - 1)];
     if (!target) return;
     target.focus({ preventScroll: true });
     if ((target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
@@ -2292,47 +2297,67 @@ export class Lobby {
               ? this.renderBrowse(listenerSignal)
               : this.renderWaitingRoom(listenerSignal);
     onlineContent.classList.add('multiplayer-command__online-route');
+    const bodyInner = onlineContent.querySelector<HTMLElement>('.preparation-frame__body-inner');
+    if (bodyInner) {
+      const layout = document.createElement('div');
+      layout.className = 'preparation-frame__body-layout preparation-frame__body-layout--online';
+      const routeContent = document.createElement('div');
+      routeContent.className = 'preparation-frame__mode-content';
+      routeContent.append(...Array.from(bodyInner.childNodes));
+      layout.append(this.renderVehiclePreview(), routeContent);
+      bodyInner.append(layout);
+    }
     const workspace = document.createElement('div');
     workspace.className = 'multiplayer-command__online-workspace';
-    workspace.append(this.renderVehiclePreview(), onlineContent);
+    workspace.append(onlineContent);
     return workspace;
   }
 
   private renderOnlineRejoinWorkspace(listenerSignal: AbortSignal): HTMLElement {
     const section = document.createElement('section');
     section.className = 'lobby-route-brief lobby-route-brief--online multiplayer-command__online-context';
-    const header = document.createElement('header');
-    header.className = 'lobby-route-brief__header';
-    const title = document.createElement('h2');
-    title.className = 'lobby-route-brief__title';
-    title.textContent = 'Active operation';
-    const description = document.createElement('p');
-    description.className = 'lobby-route-brief__purpose';
-    description.textContent = 'A compatible network battle is ready to resume.';
-    header.append(title, description);
-    const action = document.createElement('button');
-    action.type = 'button';
-    action.className = 'lobby-btn primary';
-    action.textContent = 'Rejoin your game';
-    action.addEventListener('click', () => { void this.handleRejoin(); }, { signal: listenerSignal });
-    section.append(header, action);
-    return section;
+    const context = document.createElement('section');
+    context.className = 'multiplayer-command__online-recovery-brief';
+    context.textContent = 'Your compatible operation remains selected and can be recovered without changing its room owner.';
+    const action = createPreparationPrimaryAction(document, {
+      label: 'Rejoin your game',
+      onActivate: () => { void this.handleRejoin(); },
+      listenerSignal,
+    });
+    return createPreparationFrame(document, {
+      root: section,
+      eyebrow: 'Network recovery',
+      title: 'Active operation',
+      description: 'A compatible network battle is ready to resume.',
+      headingClassName: 'lobby-route-brief__header',
+      titleClassName: 'lobby-route-brief__title',
+      descriptionClassName: 'lobby-route-brief__purpose',
+      body: context,
+      dockLabel: 'Recovery order',
+      dockStatus: 'Compatible operation detected',
+      primaryAction: action,
+    });
   }
 
   private renderOnlineRecoveryWorkspace(listenerSignal: AbortSignal): HTMLElement {
     const section = document.createElement('section');
     section.className = 'lobby-route-brief lobby-route-brief--online multiplayer-command__online-context';
-    const header = document.createElement('header');
-    header.className = 'lobby-route-brief__header';
-    const title = document.createElement('h2');
-    title.className = 'lobby-route-brief__title';
-    title.textContent = 'Recovery required';
-    const description = document.createElement('p');
-    description.className = 'lobby-route-brief__purpose';
-    description.textContent = 'The operation is still selected. Retry without losing its owner.';
-    header.append(title, description);
-    section.append(header, this.renderOnlineStatus(true, listenerSignal));
-    return section;
+    const status = this.renderOnlineStatus(true, listenerSignal);
+    const retry = status.querySelector<HTMLButtonElement>('[data-network-recovery-retry]');
+    retry?.remove();
+    return createPreparationFrame(document, {
+      root: section,
+      eyebrow: 'Network recovery',
+      title: 'Recovery required',
+      description: 'The operation is still selected. Retry without losing its owner.',
+      headingClassName: 'lobby-route-brief__header',
+      titleClassName: 'lobby-route-brief__title',
+      descriptionClassName: 'lobby-route-brief__purpose',
+      body: status,
+      dockLabel: 'Recovery order',
+      dockStatus: 'Room ownership preserved',
+      primaryAction: retry,
+    });
   }
 
   private releaseOnlineBattleCommandWorkspace(): void {
@@ -3317,7 +3342,10 @@ export class Lobby {
       '[data-command-item="verified-operations"]',
     );
     if (this.focusVerifiedChallengeRequested) {
-      const target = this.root.querySelector<HTMLButtonElement>('[data-verified-challenge] button:not(:disabled)')
+      const target = this.root.querySelector<HTMLButtonElement>(
+        '.lobby-verified-challenge__launch:not(:disabled)',
+      )
+        ?? this.root.querySelector<HTMLButtonElement>('[data-verified-challenge] button:not(:disabled)')
         ?? this.root.querySelector<HTMLButtonElement>('[data-verified-surface="challenge"]')
         ?? verifiedItem;
       if (!target) return;
