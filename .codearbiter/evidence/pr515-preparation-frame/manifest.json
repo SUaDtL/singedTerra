@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T02:27:27.445Z",
+  "generatedAt": "2026-09-19T03:09:41.648Z",
   "baseUrl": "http://localhost:4173/",
   "records": [
     {
@@ -475,7 +475,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "2f23869b962885bff8cfe53a14e6c3bd8cce2eee2cb596e12a21eca3431376cf"
+      "sha256": "411e27d9a71221e542db4b0ce6fb87359149591d4c5a76bbd0c6b2818ee64fa7"
     },
     {
       "file": "compact--campaign-resume--844x390.png",
@@ -494,7 +494,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "e626eb0db4cf0c80b4371255bbe5c8ae429aeabe5558e4e41983c75b19ae2979"
+      "sha256": "91b32757ef8b13bd07021c10da040d9753cffa82ddf1e96e9eca736aaef857e3"
     },
     {
       "file": "compact--skirmish-standard--844x390.png",
@@ -513,7 +513,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "d56918609624a3fdcf3c61c3400fff091bcb1fd97cc2a85b61e3162742d3044e"
+      "sha256": "34f62291153a0ed6313d00ccd1febfdbb62ac8ab442dbbac3fe07f3443e1371d"
     },
     {
       "file": "compact--skirmish-crosswind--844x390.png",
@@ -532,7 +532,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "9eb85856348d8fb6bc49eb23b1eecfcf8ecd064b9ebf1ea981495199fe427318"
+      "sha256": "2fd659f79b87942c11af2e6ff80007c8cc2411efff3f21f1540f6c9b8b3b86a1"
     },
     {
       "file": "compact--local-battle--844x390.png",
@@ -551,7 +551,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "056a78a857c14a09bce420a1b95d2d6d1930e921de4228982f32e5a187f74f4a"
+      "sha256": "659873e22ce6412a02d0a7b8f9f615d00be29f8780163cf2b9cc0b502c5c9e3e"
     },
     {
       "file": "compact--local-four-player--844x390.png",
@@ -570,7 +570,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "e464fed5337576bfd5d00442e1fe6c8a49882061c0677e2d00f7ef2460b171f2"
+      "sha256": "bb7221c1a259d0ea123976dd3cf06337f7073eae8bc31c84f20467d80b441ce8"
     },
     {
       "file": "compact--verified-operations--844x390.png",
@@ -589,7 +589,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "f38140a6e9a9af4c75c9cab1e80bfc80757d49f6d4b4b317a48a7a83c4d50f9c"
+      "sha256": "3410484ea4b5073e97a3c3d68a80ff2f10d4bef9d03d1b1fb99a99c3c2c49ad0"
     },
     {
       "file": "compact--verified-qualification--844x390.png",
@@ -608,7 +608,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "f2be86c3d7e82a6bfa39d4e4d222c4e22d601a3e6fac6255186f4aecb94f7270"
+      "sha256": "1b29ea8eb0cb8beb3997d9c613bab131b67da3621e1a0e8188ae7a17cdd88d5d"
     },
     {
       "file": "compact--online-create--844x390.png",
@@ -627,7 +627,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "a93f3f73a1c1cb8532b527b56cdb98cc31a1f26dfe4ce9c3570e974b3c0ec890"
+      "sha256": "bd13c46de830b8bcb4745dc7254f4a0d30ea1de125f33d3d5ed9f1716e7a5d02"
     },
     {
       "file": "compact--online-join--844x390.png",
@@ -646,7 +646,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "4b2ca7562151b6987471780b9c64a631ef887cb8a042b76952a42b2fec8819e0"
+      "sha256": "43159fc4ae125d18de6498b03479f73461bd9a7c204648034bc02019a5cb87be"
     },
     {
       "file": "compact--online-browse--844x390.png",
@@ -665,7 +665,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "bd0eae8a27ddef146d64517beed5960d7c02a553ff1e807d7db3f77f89a599dd"
+      "sha256": "0b6fcf64bd24b7480c5e065dbc45c0235f14862f17a52d6ca5bea4efbe2d9637"
     },
     {
       "file": "compact--online-waiting--844x390.png",
@@ -684,7 +684,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "ac97952715928d09d4620652ba5ddc0c4c19d2fb084b902a5907c7d71121e615"
+      "sha256": "1a9aa530e99c983bd02eae74cbfc7f2dac377f1d1e77062972712222ba3a02ae"
     }
   ]
 }

@@ -4124,7 +4124,7 @@
 
 @container preparation-workspace (max-width: 560px) {
   #lobby .preparation-frame__heading {
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   #lobby .preparation-frame__eyebrow {
@@ -4313,13 +4313,13 @@
       .multiplayer-command__verified-workspace,
       .multiplayer-command__online-workspace
     ):has(.preparation-frame) {
-    padding: 4px;
+    padding: 0;
   }
 
   #lobby .preparation-frame__heading {
-    min-height: 44px;
+    min-height: 36px;
     box-sizing: border-box;
-    padding: 4px 10px;
+    padding: 2px 10px;
   }
 
   #lobby .preparation-frame__eyebrow,
@@ -4400,7 +4400,7 @@
 
 @media (max-height: 320px) and (orientation: landscape) {
   #lobby .lobby-card:has(.command-center) {
-    padding: 2px 6px;
+    padding: 0 6px;
   }
 
   #lobby .lobby-card:has(.command-center) > .lobby-deployment {
@@ -4434,15 +4434,15 @@
   }
 
   #lobby .command-center__navigation {
-    min-height: 48px;
-    height: 48px;
+    min-height: 44px;
+    height: 44px;
   }
 
   #lobby .command-center__library,
   #lobby .command-center__body[data-command-collection='singleton']
     .command-center__library {
-    min-height: 48px;
-    padding-block: 2px;
+    min-height: 44px;
+    padding-block: 0;
   }
 
   #lobby :is(
@@ -4454,8 +4454,8 @@
   }
 
   #lobby .preparation-frame__heading {
-    min-height: 36px;
-    padding-block: 2px;
+    min-height: 30px;
+    padding-block: 1px;
   }
 
   #lobby .preparation-frame .preparation-frame__title,
