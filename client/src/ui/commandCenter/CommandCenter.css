@@ -4124,7 +4124,10 @@
 
 @container preparation-workspace (max-width: 560px) {
   #lobby .preparation-frame__heading {
-    padding: 8px 12px;
+    /* Narrow phones have no room to spend a full control row on title chrome.
+       Keep the title legible while reserving at least one 44px-reachable slice
+       of the task body above the real, in-flow decision dock across font stacks. */
+    padding: 4px 12px;
   }
 
   #lobby .preparation-frame__eyebrow {
