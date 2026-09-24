@@ -126,10 +126,18 @@ function field(
 export function buildAccountPanelOverlayContent(
   options: AccountPanelViewOptions,
 ): HTMLElement | null {
-  const content = buildAccountPanelView({ ...options, open: true })
+  const content = buildAccountPanelView({ ...options, open: true, triggerOnly: false })
   if (!content) return null
 
   content.querySelector('.account-panel__account-trigger')?.remove()
+  // The masthead trigger is not the detail view's identity owner. Keep the
+  // authenticated name even when progression is loading or unavailable.
+  if (options.state.status === 'authenticated') {
+    const identity = document.createElement('h3')
+    identity.className = 'account-panel__identity'
+    identity.textContent = `Commander ${options.state.profile.displayName}`
+    content.prepend(identity)
+  }
   for (const button of content.querySelectorAll('button')) {
     if (button.textContent === 'Close') button.remove()
   }

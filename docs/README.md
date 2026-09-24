@@ -14,6 +14,7 @@ archived plans preserve the state that existed when they were written.
 - [Architecture](ARCHITECTURE.md): deterministic engine, browser composition, online command log, and verified replay boundary.
 - [Development and operations](DEVELOPMENT.md): requirements, local setup, test layers, Supabase configuration, and release boundaries.
 - [CI coverage and execution cost](CI.md): change selection, parallel suites, caches, release integrity, and measured timings.
+- [Classic weapon balance laboratory](WEAPON_BALANCE.md): bounded actual-engine measurements, fixture limits, and baseline evidence; no live catalog tuning.
 - [UI system](UI_SYSTEM.md): bronze console direction, responsive modes, semantic controls, assets, accessibility, and browser review.
 - [Contributing](../CONTRIBUTING.md): branch, review, determinism, and security expectations.
 - [V3 desktop diagnostic](performance/v3-desktop-diagnostic.md): measured first play and repeated-match ownership, with explicit device and measurement limits.

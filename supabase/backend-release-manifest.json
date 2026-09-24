@@ -11,7 +11,7 @@
   },
   "verifiedReplayShared": {
     "path": "shared/src",
-    "sha256": "96116f758eb485b730a7556e576955c24b55a69d72cf5361a5897b362b1d06d6"
+    "sha256": "3ee91925e378580a7807246eedacc03247a83e30a74acc198f52f629b52b5993"
   },
   "migrations": [
     {
