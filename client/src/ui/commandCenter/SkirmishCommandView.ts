@@ -5,6 +5,7 @@ import {
   type QuickOperationId,
 } from '../../client/quickOperations';
 import { QUICK_DUEL_DEFAULT_ROUNDS } from '../../client/quickDuelLaunch';
+import { skirmishBriefingNotes } from './SkirmishBriefing';
 import {
   commandCategoryId,
   commandItemId,
@@ -100,7 +101,7 @@ export function createSkirmishCommandView(
   root.dataset.operationId = operation.id;
 
   const decision = document.createElement('section');
-  decision.className = 'campaign-command__decision';
+  decision.className = 'campaign-command__decision skirmish-command__board';
   decision.setAttribute('aria-label', `${operation.title} preparation`);
 
   const identity = document.createElement('div');
@@ -114,10 +115,10 @@ export function createSkirmishCommandView(
   title.className = 'campaign-command__mission';
   title.textContent = operation.title;
   const briefing = document.createElement('p');
-  briefing.className = 'campaign-command__save-status';
+  briefing.className = 'skirmish-command__summary';
   briefing.dataset.ui = 'quick-operation-briefing';
   briefing.textContent = operation.briefing;
-  identity.append(kicker, title, briefing);
+  identity.append(kicker, title);
 
   const projection = document.createElement('figure');
   projection.className = 'campaign-command__scene command-center__battlefield-projection';
@@ -129,8 +130,16 @@ export function createSkirmishCommandView(
   ]}`;
   projectionArt.alt = '';
   const projectionCaption = document.createElement('figcaption');
-  projectionCaption.textContent = `${battlefieldLabel(operation.settings.battlefieldWorld)} field projection`;
+  projectionCaption.textContent = `${battlefieldLabel(operation.settings.battlefieldWorld)} · illustrative backdrop`;
+  projection.dataset.illustrativeBackdrop = '';
   projection.append(projectionArt, projectionCaption);
+
+  const briefingPanel = document.createElement('section');
+  briefingPanel.className = 'skirmish-command__briefing';
+  briefingPanel.setAttribute('aria-label', 'Scenario briefing');
+  const briefTitle = document.createElement('h3');
+  briefTitle.textContent = 'Mission brief';
+  briefingPanel.append(briefTitle, briefing);
 
   if (selection.kind === 'imported-challenge') {
     root.dataset.ui = 'seed-challenge';
@@ -141,7 +150,7 @@ export function createSkirmishCommandView(
 
   if (objective) {
     const objectivePanel = document.createElement('section');
-    objectivePanel.className = 'campaign-command__objective-panel';
+    objectivePanel.className = 'campaign-command__objective-panel skirmish-command__field-order';
     const objectiveLabel = document.createElement('p');
     objectiveLabel.className = 'campaign-command__fact-label';
     objectiveLabel.textContent = 'Field order';
@@ -157,10 +166,20 @@ export function createSkirmishCommandView(
       objectiveCopy.dataset.ui = 'seed-challenge-objective';
     }
     objectivePanel.append(objectiveLabel, objectiveCopy);
-    decision.append(projection, objectivePanel);
-  } else {
-    decision.append(projection);
+    briefingPanel.append(objectivePanel);
   }
+
+  for (const note of skirmishBriefingNotes(operation)) {
+    const section = document.createElement('section');
+    section.className = 'skirmish-command__note';
+    const heading = document.createElement('h4');
+    heading.textContent = note.title;
+    const copy = document.createElement('p');
+    copy.textContent = note.body;
+    section.append(heading, copy);
+    briefingPanel.append(section);
+  }
+  decision.append(projection, briefingPanel);
 
   const factsPanel = document.createElement('section');
   factsPanel.className = 'campaign-command__loadout skirmish-command__facts';
@@ -180,7 +199,10 @@ export function createSkirmishCommandView(
     group.append(label, reading);
     facts.append(group);
   }
-  factsPanel.append(factsTitle, facts);
+  const backdropNote = document.createElement('p');
+  backdropNote.className = 'skirmish-command__backdrop-note';
+  backdropNote.textContent = 'Backdrop is visual only. The battlefield terrain is generated when the duel starts.';
+  factsPanel.append(factsTitle, facts, backdropNote);
 
   if (selection.kind === 'imported-challenge') {
     const seed = facts.querySelector<HTMLElement>('[data-skirmish-fact="Seed"] dd');

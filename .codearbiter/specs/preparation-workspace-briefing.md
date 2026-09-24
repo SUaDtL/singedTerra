@@ -1,6 +1,6 @@
 # Preparation workspace: useful information and responsive density
 
-Document revision: 1. Inspected base: `793571911c0b38db6e5b20bc05fd96a4e5e413a5`.
+Document revision: 2. Inspected base: `793571911c0b38db6e5b20bc05fd96a4e5e413a5`.
 Delivery branch: `codex/preparation-workspace-briefing`.
 
 ## Owner request and outcome
@@ -67,6 +67,9 @@ create a second launch-settings resolver just for this view.
 8. Existing mode-specific action semantics, shared-frame tests, relevant client
    tests and browser journeys remain. Add tests for truthful briefing data,
    useful readable scale, reflow and cross-mode dock/body geometry.
+9. Category text and icons stay inside the button's inner bevel on both the
+   desktop rail and Modes sheet. Retain full accessible names, keyboard and
+   touch selection. Longer future labels may wrap; do not clip or truncate them.
 
 ## Non-goals and safety
 
@@ -80,3 +83,39 @@ The PR is the delivery record, not a new execution ledger. Read current head
 before writing and preserve concurrent branches. Complete-file closeout records
 actual validation and its limits; green checks do not establish visual approval.
 Revert this presentation slice without changing saved data or gameplay settings.
+
+## Implementation checkpoint — September 24, 2026
+
+Parent: `b656ac8b05ed6fcd64aad4514442b940200456f1`. That commit recorded scope
+only. Earlier interrupted authoring produced a local seven-file package, not a
+published implementation. B subsequently identified category text escaping its
+frame and explicitly requested completing and committing this work to PR #522.
+
+The implementation adds settings-derived Skirmish briefings and attached facts,
+recomposes Local/Online setup and inspection using the existing frame, and gives
+tank identity, illustration and part names separate rows. It retains authored
+field orders, imported-challenge validation, actual callbacks and disposal.
+`CommandCenterShell.ts::setIconLabel` now creates a real text span. The existing
+navigation CSS budgets icon, gap, padding and bevels, and keeps sheet rows sized
+to their content. No selector text is masked with ellipsis or hidden overflow.
+
+New browser regression measures glyph rectangles against the inner content box:
+outer button containment alone missed the reported defect. Ordinary category
+names remain on one line across the tested rail/sheet sizes; a longer label and
+missing icon are covered in the local growth fixture without changing routing.
+
+Local original-source Chromium fixtures passed 44 workspace/viewport states,
+22 vehicle-bay states, 81 content/input assertions and five controlled Verified
+layouts. The navigation test first reproduced spill at five tested geometries,
+then passed 16 widths/heights after correction. Forty-eight category taps and
+16 keyboard navigation sequences passed, with edited state and focus retained.
+Targeted strict TypeScript and staged whitespace checks passed. All uploaded
+source blobs were compared to the tested local bytes.
+
+Environment: Node 22.16.0, TypeScript 5.8.3 via an outside-repository source
+adapter, system Chromium, repository assets and font fallbacks. The local
+fixture assembles actual UI modules but supplies controlled account/storage
+inputs and captures launch callbacks. It is not the normal Vite/main bootstrap,
+real network service, physical-device or owner visual-acceptance evidence.
+Canonical Node 24 client/build/Playwright checks must run independently in CI.
+No dependency, package, engine, save, reward, backend or live settings changed.
