@@ -54,7 +54,12 @@ let shellId = 0;
 
 function setIconLabel(control: HTMLButtonElement, iconName: CommandIconName, label: string): void {
   const icon = createCommandIcon(iconName);
-  control.replaceChildren(...(icon ? [icon] : []), document.createTextNode(label));
+  // A real label grid item can shrink/wrap inside the painted frame. An
+  // anonymous text item kept its intrinsic width and could escape the button.
+  const text = document.createElement('span');
+  text.className = 'command-center__control-label';
+  text.textContent = label;
+  control.replaceChildren(...(icon ? [icon] : []), text);
 }
 
 export function createCommandCenterShell<Context>(

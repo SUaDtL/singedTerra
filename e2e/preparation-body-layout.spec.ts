@@ -81,6 +81,7 @@ test.describe('preparation body layout ownership', () => {
 
       const boardRect = board.getBoundingClientRect();
       const bodyRect = bodyViewport.getBoundingClientRect();
+      const summaryRect = root.querySelector<HTMLElement>('.skirmish-command__briefing')!.getBoundingClientRect();
       const sceneRect = scene.getBoundingClientRect();
       const factsRect = facts.getBoundingClientRect();
       const factsStyle = getComputedStyle(facts);
@@ -91,8 +92,9 @@ test.describe('preparation body layout ownership', () => {
         factsColumn: factsStyle.gridColumnStart,
         factsWithinBoard: factsRect.left >= boardRect.left - 1
           && factsRect.right <= boardRect.right + 1,
-        factsFollowScene: factsRect.top >= sceneRect.bottom,
-        factsVisibleWithBoard: factsRect.bottom <= bodyRect.bottom + 1,
+        factsFollowBriefing: factsRect.top >= summaryRect.bottom - 1,
+        sceneAttached: sceneRect.bottom <= factsRect.top + 1 || sceneRect.top >= factsRect.bottom - 1,
+        bodyAboveDock: bodyRect.bottom <= root.querySelector<HTMLElement>('.preparation-frame__dock')!.getBoundingClientRect().top + 1,
         horizontalOverflow: body.scrollWidth - body.clientWidth,
       };
     });
@@ -102,9 +104,12 @@ test.describe('preparation body layout ownership', () => {
     expect(layout.factsRow, 'facts must not retain the old named loadout row').toBe('2');
     expect(layout.factsColumn, 'facts must share the briefing board column').toBe('1');
     expect(layout.factsWithinBoard).toBe(true);
-    expect(layout.factsFollowScene).toBe(true);
-    expect(layout.factsVisibleWithBoard, 'scene and facts should read together at standard height')
-      .toBe(true);
+    expect(layout.factsFollowBriefing).toBe(true);
+    expect(layout.sceneAttached).toBe(true);
+    expect(layout.bodyAboveDock).toBe(true);
+    const facts = page.locator('.skirmish-command__facts');
+    await facts.scrollIntoViewIfNeeded();
+    await expect(facts).toBeInViewport();
     expect(layout.horizontalOverflow, 'skirmish body must not clip at the transition width')
       .toBeLessThanOrEqual(1);
   });
@@ -218,7 +223,8 @@ test.describe('preparation body layout ownership', () => {
         return {
           horizontalOverflow: body.scrollWidth - body.clientWidth,
           boardOwnsFacts: board.contains(facts),
-          factsFollowScene: factsRect.top >= sceneRect.bottom - 1,
+          factsFollowBriefing: factsRect.top >= root.querySelector<HTMLElement>('.skirmish-command__briefing')!.getBoundingClientRect().bottom - 1,
+          sceneAttached: sceneRect.bottom <= factsRect.top + 1 || sceneRect.top >= factsRect.bottom - 1,
           factsWithinBoard: factsRect.left >= board.getBoundingClientRect().left - 1
             && factsRect.right <= board.getBoundingClientRect().right + 1,
         };
@@ -226,7 +232,8 @@ test.describe('preparation body layout ownership', () => {
       expect(layout.horizontalOverflow, `Skirmish clips at ${geometry.width}px`)
         .toBeLessThanOrEqual(1);
       expect(layout.boardOwnsFacts).toBe(true);
-      expect(layout.factsFollowScene).toBe(true);
+      expect(layout.factsFollowBriefing).toBe(true);
+      expect(layout.sceneAttached).toBe(true);
       expect(layout.factsWithinBoard).toBe(true);
     }
   });
