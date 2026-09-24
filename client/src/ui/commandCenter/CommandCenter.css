@@ -3547,6 +3547,9 @@
   --preparation-copy-size: clamp(16px, calc(14px + 0.3cqi), 22px);
   --preparation-label-size: clamp(12px, calc(11px + 0.16cqi), 15px);
   --preparation-gap: clamp(14px, 1.2cqi, 28px);
+  /* main.ts still sets is-compact from stage scale. Retained Local controls
+     consume this older token, but this unzoomed frame owns their type scale. */
+  --st-command-readability-size: var(--preparation-copy-size);
 }
 
 /* Local's retained control layout also queries the mounted view width. Name
@@ -3788,8 +3791,10 @@
   inset: auto;
   width: 100%;
   min-width: 0;
-  height: clamp(300px, 27cqi, 540px);
+  /* Size artwork from its own column, not the much wider workspace. */
+  height: auto;
   max-height: 540px;
+  box-sizing: border-box;
   align-self: start;
   margin: 0;
   overflow: hidden;
@@ -3798,6 +3803,7 @@
 
 #lobby .preparation-frame__body-layout--verified > .command-center__battlefield-projection {
   min-height: 300px;
+  max-height: 460px;
 }
 
 #lobby .preparation-frame .lobby-hotseat-body,
@@ -3810,12 +3816,22 @@
   padding: 0;
 }
 
-#lobby .preparation-frame .lobby-route-brief__setup {
+#lobby .lobby-route-brief--online.preparation-frame .lobby-route-brief__setup {
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 12px;
   overflow: visible;
+}
+
+/* The retained compact rules assigned profile/protocol to separate columns.
+   Stack entire sections in the frame instead of squeezing words into slivers. */
+#lobby .lobby-route-brief--online.preparation-frame .lobby-route-brief__setup
+  > .lobby-preparation-section {
+  min-width: 0;
+  grid-column: 1;
+  grid-row: auto;
 }
 
 #lobby .preparation-frame .lobby-local-preparation__content {
@@ -4097,6 +4113,8 @@
 
 #lobby .multiplayer-command .preparation-frame .lobby-preview {
   background: var(--console-workshop-surface, #101214);
+  /* Reserve bevel clearance even when a compact bay has intrinsic height. */
+  padding-bottom: 4px;
   container: vehicle-inspection / inline-size;
 }
 

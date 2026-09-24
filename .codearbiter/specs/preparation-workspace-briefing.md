@@ -1,6 +1,6 @@
 # Preparation workspace: useful information and responsive density
 
-Document revision: 2. Inspected base: `793571911c0b38db6e5b20bc05fd96a4e5e413a5`.
+Document revision: 3. Inspected base: `793571911c0b38db6e5b20bc05fd96a4e5e413a5`.
 Delivery branch: `codex/preparation-workspace-briefing`.
 
 ## Owner request and outcome
@@ -119,3 +119,65 @@ inputs and captures launch callbacks. It is not the normal Vite/main bootstrap,
 real network service, physical-device or owner visual-acceptance evidence.
 Canonical Node 24 client/build/Playwright checks must run independently in CI.
 No dependency, package, engine, save, reward, backend or live settings changed.
+
+
+## CI repair checkpoint — September 24, 2026
+
+Failed source: `5cefa0181bacb5dd37ec26bb5562b731834bef30`.
+CI run `35990155931` failed both general browser shards; the third red check,
+`e2e · rendering guardrails`, was their required aggregate, not a third root
+failure. The downloaded retry traces established five layout regressions:
+
+- Compact Local values fell back to 11px despite the frame's 16px minimum.
+  `main.ts::updateScale` adds `is-compact`; retained control selectors consumed
+  a legacy readability token missing from the earlier isolated fixture.
+- Compact Online retained an obsolete two-column section placement, producing
+  14–21px of horizontal overflow at 320×568 instead of stacking whole sections.
+- Online artwork took its height from the whole workspace, not its own column:
+  aspect ratio 1.318 at 2272×1170 violated the existing 1.35 lower bound.
+- Verified artwork reached 542px at 3440×1440, beyond the 462px test ceiling.
+- The spotlight box left only 1px beneath it, below the existing 4px clearance.
+
+`CommandCenter.css` now binds the retained readability token to the frame's
+copy scale, explicitly stacks Online sections, sizes wide artwork from its
+own aspect ratio, retains the Verified-specific 460px maximum, and reserves
+4px of lower-bevel padding on the inspection bay itself. Container padding
+also works when compact layout gives the bay intrinsic height; a percentage
+height subtraction on the spotlight did not, and was discarded before commit.
+The existing eight implementation files and navigation correction remain.
+No test assertion, retry policy, viewport, workflow or application state changed.
+
+### Verification and evidence boundaries
+
+The earlier isolated 44-state result did not model main's compact class. That
+receipt above remains historical, not complete bootstrap coverage. A corrected
+original-source fixture reproduced the Local/Online failures before repair and
+passed all 44 states and 22 inspection/hit-testing states afterward.
+
+The authorized connected Windows workstation provided Node 24.18.0 and the
+lockfile's Playwright 1.63.0. Work used a new temporary clone at the exact failed
+head, not any existing checkout. `npm ci`, `npm run build` (including shared and
+client typechecks and retained-artifact verification), and 94 targeted unit
+tests in seven existing files passed on the final CSS bytes. Actual production-
+bundle Playwright execution of `garage-spotlight`, `lobby-layout`,
+`preparation-body-layout`, `preparation-briefing-density` and
+`verified-deployment` passed 121 tests with 14 existing project-specific skips,
+zero failures and zero retries, across all three configured input projects.
+The complete five spec files were selected; no failure was filtered out.
+
+The candidate was served on a separate loopback port with a loopback compiled
+backend and the supported external-network deny proxy. Backend responses were
+existing test fixtures, not live service calls. An initial runner setup mixed
+localhost and 127.0.0.1, invalidating origin/auth-storage assumptions; it was
+stopped and corrected without source changes. A separate PowerShell pipeline
+mistook a non-fatal Vite size warning for an exception; its native exit handling
+was corrected. Those runner failures are not CI defects or passing receipts.
+The first correctly configured browser pass still caught two compact clearance
+failures; final container padding resolved them and the full selection reran.
+
+This is actual main/bootstrap and production CSS evidence on Windows Chromium,
+not physical-phone validation, owner visual acceptance or completed hosted CI.
+Fresh Linux CI must validate the published successor independently. No changes
+to combat, account/seat trust, saves, dependencies, main, other branches, merge
+or deployment are authorized. Rollback reverts this CSS repair without data
+migration; the original PR implementation remains separately revertible.
