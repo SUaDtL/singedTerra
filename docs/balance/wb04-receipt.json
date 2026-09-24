@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "slice": "WB-04-classic-cpu-shield-efficiency",
+  "sourceBaselineCommit": "ff72929b00cdfeab2f29f97070b5303cf8f7d29c",
+  "runtimeChange": "ordinary hard CPU avoids normal shield when current pool >= catalog normal capacity; legacy campaign planning retained",
+  "files": {
+    "shared/src/engine/AI.ts": "bc546e0d2bc2d401d0d9992191694099f82522f8dcdc451b6fa89257d2c05288",
+    "scripts/checks/ai_shield_efficiency.mjs": "b05ecbe5bfae74a37bfc85302654b9466dca4a5f1e9a66335c7a032f3c102ac1",
+    "scripts/checks/weapon_balance.mjs": "c6341c5d4a47a7d210a2b23c13471cfc34b53a1d41ef175fef4777850aeee3b8",
+    "docs/compatibility/st1-source-manifest.json": "adfe9a6efdbe9b8aa175c33100c350ec2af7bb2bdd0643338f6cdcaaa4219546",
+    "supabase/backend-release-manifest.json": "c52251091ba7f557ea17b4f144188ff155dc59bed6ca3785e12b4d407013532e"
+  },
+  "legalWitness": {
+    "schemaVersion": 1,
+    "baseline": "ff72929b00cdfeab2f29f97070b5303cf8f7d29c",
+    "options": {
+      "maxPlayers": 2,
+      "players": [
+        {
+          "name": "Human",
+          "color": "#e84d4d"
+        },
+        {
+          "name": "CPU",
+          "color": "#4d8ce8",
+          "ai": "hard"
+        }
+      ],
+      "seed": 17,
+      "rounds": 1,
+      "maxWind": 10,
+      "gravity": 0.15,
+      "walls": "open",
+      "armsLevel": 4,
+      "rulesetVersion": 4,
+      "starterWeaponFalloff": "decisive"
+    },
+    "prefix": [
+      {
+        "type": "use_shield",
+        "weapon": "shield"
+      },
+      {
+        "type": "use_shield",
+        "weapon": "heavy_shield"
+      },
+      {
+        "type": "fire",
+        "weapon": "sandhog",
+        "angle": 31,
+        "power": 100
+      }
+    ],
+    "checkpoint": {
+      "phase": "PLAYER_TURN",
+      "turn": 3,
+      "activePlayerId": "p2",
+      "tanks": [
+        {
+          "id": "p1",
+          "hull": 100,
+          "shield": 120,
+          "normalShield": 0,
+          "heavyShield": 1,
+          "credits": 8500,
+          "damage": 0
+        },
+        {
+          "id": "p2",
+          "hull": 34,
+          "shield": 235.46804583402488,
+          "normalShield": 1,
+          "heavyShield": 0,
+          "credits": 8000,
+          "damage": 0
+        }
+      ]
+    },
+    "plans": {
+      "parent": {
+        "weapon": "shield",
+        "angle": 135,
+        "power": 50
+      },
+      "corrected": {
+        "weapon": "napalm",
+        "angle": 139.15530539420433,
+        "power": 99.95989456437528
+      }
+    },
+    "outcomes": {
+      "parent": {
+        "actions": [
+          {
+            "type": "use_shield",
+            "weapon": "shield"
+          }
+        ],
+        "ticks": 0,
+        "finish": {
+          "phase": "PLAYER_TURN",
+          "turn": 4,
+          "activePlayerId": "p1",
+          "tanks": [
+            {
+              "id": "p1",
+              "hull": 100,
+              "shield": 120,
+              "normalShield": 0,
+              "heavyShield": 1,
+              "credits": 8500,
+              "damage": 0
+            },
+            {
+              "id": "p2",
+              "hull": 34,
+              "shield": 120,
+              "normalShield": 0,
+              "heavyShield": 0,
+              "credits": 8000,
+              "damage": 0
+            }
+          ]
+        }
+      },
+      "corrected": {
+        "actions": [
+          {
+            "type": "fire",
+            "weapon": "napalm",
+            "angle": 139.15530539420433,
+            "power": 99.95989456437528
+          }
+        ],
+        "ticks": 206,
+        "finish": {
+          "phase": "PLAYER_TURN",
+          "turn": 4,
+          "activePlayerId": "p1",
+          "tanks": [
+            {
+              "id": "p1",
+              "hull": 100,
+              "shield": 60.49999999999976,
+              "normalShield": 0,
+              "heavyShield": 1,
+              "credits": 8500,
+              "damage": 0
+            },
+            {
+              "id": "p2",
+              "hull": 34,
+              "shield": 235.46804583402488,
+              "normalShield": 1,
+              "heavyShield": 0,
+              "credits": 8500,
+              "damage": 0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "regression": {
+    "parentFailsAt": "hard CPU must not replace 235 protection with 120",
+    "correctedPasses": true,
+    "boundaryCases": 120
+  },
+  "differential": {
+    "matrix": {
+      "total": 1080,
+      "changed": 54,
+      "unchanged": 1026,
+      "scope": "hard, hull<=35, held normal shield, existing pool>=120; ordinary classic only"
+    },
+    "campaignComparisons": 60,
+    "st1Turns": 13,
+    "st1": [
+      {
+        "operationId": "last-light-siege",
+        "version": "ST1",
+        "cpuDifficulty": "medium",
+        "commitments": 8,
+        "phase": "PLAYER_TURN"
+      },
+      {
+        "operationId": "crosswind-range",
+        "version": "ST1",
+        "cpuDifficulty": "medium",
+        "commitments": 8,
+        "phase": "PLAYER_TURN"
+      },
+      {
+        "operationId": "caldera-run",
+        "version": "ST1",
+        "cpuDifficulty": "medium",
+        "commitments": 8,
+        "phase": "PLAYER_TURN"
+      },
+      {
+        "operationId": "lean-arsenal",
+        "version": "ST1",
+        "cpuDifficulty": "medium",
+        "commitments": 8,
+        "phase": "PLAYER_TURN"
+      }
+    ]
+  },
+  "localChecks": {
+    "sourceCommandsPassed": 23,
+    "sourceCommandPrerequisiteFailures": 1,
+    "blocked": "verified_challenge_retention.mjs: missing Vite before execution",
+    "otherPassed": [
+      "AI.ts strict targeted TypeScript 5.8.3 check",
+      "new and modified script syntax",
+      "existing balance import gate rerun"
+    ],
+    "initialAttempts": [
+      "red test against parent failed as expected",
+      "two differential setup failures (wrong export/accessor) corrected and rerun"
+    ]
+  },
+  "environment": {
+    "node": "v22.16.0",
+    "typescript": "5.8.3",
+    "execution": "outside-repository ESM transpilation loader; not pinned Node24/tsx",
+    "sourceAssembly": "uploaded main archive plus exact current task files; not a canonical complete checkout/install"
+  },
+  "hostedParent": {
+    "commit": "ff72929b00cdfeab2f29f97070b5303cf8f7d29c",
+    "ciRun": 35952010936,
+    "codeqlRun": 35952010937,
+    "conclusion": "success"
+  },
+  "newHeadCI": "separate PR checks; not asserted in this source receipt",
+  "unexecutedLocally": [
+    "full supported-runtime install/root/client/build/browser suites",
+    "Deno",
+    "disposable PostgreSQL",
+    "physical-device playtest"
+  ],
+  "numericBalanceChanged": false,
+  "ordinaryHardCpuPolicyChanged": true,
+  "campaignPolicyChanged": false,
+  "historicalArtifactsRegenerated": false,
+  "mergeOrDeployment": false
+}

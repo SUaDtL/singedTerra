@@ -234,7 +234,8 @@ const PARACHUTE_SLOPE_RISK = 40;
  * Pick a weapon (or the shield), and optionally a weapon to BUY first, for this
  * turn. Difficulty-scaled and DAMAGE-scaled:
  *  - easy always lobs the free Baby Missile (beatable, predictable).
- *  - a HARD bot that is hurt and holds a shield raises it (defensive).
+ *  - a hurt HARD bot raises a held normal shield only when it adds protection
+ *    in classic play; the legacy campaign planning path is retained.
  *  - otherwise: among the damaging weapons the bot actually OWNS (medium excludes
  *    the heavy/premium tier), pick the WEAKEST that can still finish the target in
  *    one solid hit (effective dmg >= target health) — so it won't waste a nuke on a
@@ -257,8 +258,12 @@ function chooseLoadout(
     return a.unlimited || a.count > 0;
   };
 
-  // Defensive shield (hard only): hurt + holding a shield => raise it.
-  if (difficulty === 'hard' && me.health <= SHIELD_HP_THRESHOLD && has('shield')) {
+  // Normal shields replace the pool; they do not add to it. A classic bot
+  // must not spend its turn for zero protection or downgrade a stronger pool.
+  // Campaign profiles/replayed plans retain their established selection path.
+  if (difficulty === 'hard' && me.health <= SHIELD_HP_THRESHOLD && has('shield')
+    && (state.campaign !== undefined
+      || me.shieldHp < (getWeapon('shield').behavior?.shield?.capacity ?? 0))) {
     return { weapon: 'shield' };
   }
 

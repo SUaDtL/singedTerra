@@ -3,6 +3,7 @@
  * Inline witness values are regression evidence, never regenerated expectations.
  */
 import assert from 'node:assert/strict';
+import './ai_shield_efficiency.mjs'; // WB-04: included in the existing balance gate.
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { WEAPONS } from '../../shared/src/engine/WeaponSystem.ts';
 import { makeScenario, sampleShot, searchWeapon, startingState, runBalance } from '../balance/weaponBalance.mjs';

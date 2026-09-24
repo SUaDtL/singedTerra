@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "shared-preparation-frame-and-st1-parity-retained; wb01-wb03 development-only package commands reviewed; runtime and historical bindings unchanged",
+  "disposition": "WB-04 changes ordinary hard-CPU ineffective normal-shield selection only; ST1 medium-CPU paths and campaign planning preserved; numeric rules and retained artifacts unchanged; package binding retained from WB-03",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -92,7 +92,7 @@
     },
     {
       "path": "shared/src/engine/AI.ts",
-      "sha256": "50198def7341c7ce59992d380791f8fe942c75f225811ec5a394101dbfb85090"
+      "sha256": "bc546e0d2bc2d401d0d9992191694099f82522f8dcdc451b6fa89257d2c05288"
     },
     {
       "path": "shared/src/engine/AiShotSearch.ts",

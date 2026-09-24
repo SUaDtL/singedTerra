@@ -1,4 +1,9 @@
-# Classic weapon balance laboratory — WB-01 / WB-02
+# Classic weapon balance — WB-01 through WB-04
+
+**Current continuation:** [WB-04](balance/WB04-CPU-SHIELD.md) corrects ordinary
+hard-CPU shield waste. WB-01–WB-03 below retain their experimental scopes.
+Numeric catalog values and verified policies are unchanged; ordinary hard-CPU
+selection is no longer unchanged in the complete PR.
 
 WB-01, the **per-weapon measurement slice**, extends the existing balance tooling; it
 is not a live balance patch. The weapon
@@ -212,3 +217,24 @@ its historical data is preserved. The shared CLI's new study is opt-in and the
 small new regression check joins `check:weapon-balance`. WB-02's hosted CI later
 passed on one explicitly recorded unchanged rerun following a strict replay
 timing failure; neither gate nor runtime was weakened. New-head CI is separate.
+
+
+## WB-04 — stop ineffective CPU shield activations
+
+The [WB-04 correction](balance/WB04-CPU-SHIELD.md) prevents an ordinary hurt
+hard CPU from consuming a normal shield that would maintain or reduce its
+existing protection. The normal shield replaces its pool; it does not stack.
+A legal stock-equipment witness reaches 34 hull and approximately 235.47 shield,
+then the parent planner downgrades to 120. The corrected planner keeps that pool
+and charge, using its existing offensive choice instead.
+
+The small regression is imported by `scripts/checks/weapon_balance.mjs` and thus
+runs through the existing `check:weapon-balance`/root gates. No new command,
+dependency, numerical balance value, action-legality change or campaign retuning
+is introduced. Historical tables and receipts retain their original inputs;
+they are not fresh measurements of the newly changed ordinary hard policy.
+
+ST1 launches medium CPU and the campaign selector branch is preserved. Separate
+verified policy/retained code remains unchanged. The backend manifest's shared
+source digest is honestly recomputed; that update does not authorize deployment.
+The WB-04 receipt distinguishes adapter-based local checks from new-head CI.

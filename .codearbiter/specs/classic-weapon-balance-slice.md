@@ -149,3 +149,45 @@ offensive restocking and the engine's terminal state remain authoritative.
 See `docs/balance/WB03-OPENING-SHIELD.md` for the resulting recommendation,
 measurements, limitations and rollback. PR #520 remains the delivery record;
 this is not a competing execution ledger or a dispatch of future tuning.
+
+
+## WB-04 — ordinary CPU shield efficiency
+
+B requested the next slice on PR #520. Baseline:
+`ff72929b00cdfeab2f29f97070b5303cf8f7d29c`. This continuation makes one
+player-facing correction rather than another numeric experiment: a hurt hard
+classic CPU may choose its held normal shield only when that shield increases
+its current protection. Preserve the existing hull threshold and all ordinary
+offensive, purchase, difficulty and aiming rules. Do not introduce a new minimum
+refresh percentage or teach the bot to select Heavy Shield in this slice.
+
+The old normal-shield decision is retained when `state.campaign` is present.
+Ash Road profiles and stored plans are not retuned. Verified V2/V3 and retained
+cq1 policy owners stay unchanged. Humans and older logged actions remain allowed
+to activate a weaker shield: this change belongs to planning, not action legality.
+
+### Additional acceptance
+
+1. A real seeded checkpoint reached through stock equipment and accepted
+   actions shows the harmful downgrade; the new regression fails on parent AI.
+2. Hard CPU at/beyond the normal capacity keeps its charge and follows the
+   already existing offensive path. Below capacity it retains the established
+   defensive decision. Easy/medium and hull-threshold behavior stay unchanged.
+3. Cover exact capacity, fractional depleted capacity, higher pools, unavailable
+   stock and both sides of the hull threshold. Planning is pure and deterministic.
+4. Fresh-engine canonical action replay reaches the witness, accepts historical
+   shield commands and reproduces the corrected offensive result exactly.
+5. Verify campaign selector parity and ST1's actual medium-CPU launch boundary;
+   do not assert that changing ordinary hard AI preserves regenerated hard plans.
+6. Run unchanged versioned CPU and challenge checks. Recompute the actual shared
+   source-tree digest in the backend manifest and only the AI source binding in
+   ST1. A matching digest is provenance, not behavioral proof or deployment.
+7. Use the existing weapon-balance check entry. No new runtime framework,
+   package/dependency/workflow change, benchmark relaxation or corpus regeneration.
+8. Keep the commander identity fix and every earlier slice. No save deletion,
+   campaign redesign, other-branch write, merge or deployment.
+
+See `docs/balance/WB04-CPU-SHIELD.md`. The runtime effect is intentionally narrow;
+no improved win rate, universal tactical optimality or device benchmark is claimed.
+Revert this guard, regression wiring and its two source-manifest updates together
+to restore the prior planner. No stored-state or economy migration is involved.
