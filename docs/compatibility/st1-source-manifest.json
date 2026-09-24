@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "shared-preparation-frame-and-st1-parity-reviewed",
+  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -84,7 +84,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "2cbe4a929394778284fe99fedc0564d3d606bf7ba592566f1f6ed96a175996b3"
+      "sha256": "943807ea95e03d5e3b8ed8931dae625fd050dc145a8ed2864666f979a671da75"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",
@@ -92,7 +92,7 @@
     },
     {
       "path": "shared/src/engine/AI.ts",
-      "sha256": "50198def7341c7ce59992d380791f8fe942c75f225811ec5a394101dbfb85090"
+      "sha256": "00fa3ef29e470fda6386f55f357d27d079b989bc6fbb691c33efab717c1cf172"
     },
     {
       "path": "shared/src/engine/AiShotSearch.ts",

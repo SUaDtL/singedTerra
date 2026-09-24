@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "slice": "WB-05-target-shield",
+  "sourceBaselineCommit": "44653faf5f881d2fd5e5aae466a35eb37b6f9039",
+  "scope": "ordinary hard-classic held weapon and restock estimate; no numerical tuning",
+  "sourceHashes": {
+    "shared/src/engine/AI.ts": "00fa3ef29e470fda6386f55f357d27d079b989bc6fbb691c33efab717c1cf172",
+    "scripts/checks/ai_target_shield.mjs": "ef1c5be7a56c6723fb14d221ca52993c67a8ab78d15dc018e97d84c56bb09d0e",
+    "scripts/checks/weapon_balance.mjs": "586efdde62a3b6cd9171d40813dd43f4ca14c919d37a7ab266fdfc094a7e94cd"
+  },
+  "legalWitness": {
+    "baseline": "44653faf5f881d2fd5e5aae466a35eb37b6f9039",
+    "options": {
+      "maxPlayers": 2,
+      "players": [
+        {
+          "name": "CPU",
+          "color": "#e84d4d",
+          "ai": "hard"
+        },
+        {
+          "name": "Opponent",
+          "color": "#4d8ce8"
+        }
+      ],
+      "seed": 17,
+      "rounds": 1,
+      "maxWind": 10,
+      "gravity": 0.15,
+      "walls": "open",
+      "armsLevel": 4,
+      "rulesetVersion": 4,
+      "starterWeaponFalloff": "decisive"
+    },
+    "prefix": [
+      {
+        "type": "use_shield",
+        "weapon": "shield"
+      },
+      {
+        "type": "use_shield",
+        "weapon": "heavy_shield"
+      },
+      {
+        "type": "fire",
+        "weapon": "sandhog",
+        "angle": 31,
+        "power": 100
+      },
+      {
+        "type": "fire",
+        "weapon": "tracer",
+        "angle": 180,
+        "power": 100
+      }
+    ],
+    "checkpoint": [
+      {
+        "id": "p1",
+        "hull": 100,
+        "shield": 120,
+        "credits": 8500
+      },
+      {
+        "id": "p2",
+        "hull": 34,
+        "shield": 235.46804583402488,
+        "credits": 8500
+      }
+    ],
+    "before": {
+      "plan": {
+        "weapon": "baby_missile",
+        "angle": 31.901260184124112,
+        "power": 99.60460744686425
+      },
+      "defaultPersonality": "conservative",
+      "ticks": 113,
+      "phase": "PLAYER_TURN",
+      "nextActiveId": "p2",
+      "actor": {
+        "hull": 100,
+        "shield": 120,
+        "credits": 9000,
+        "creditedDamage": 0,
+        "kills": 0,
+        "heavyAmmo": 1
+      },
+      "target": {
+        "hull": 34,
+        "shield": 235.46804583402488,
+        "hullLost": 0,
+        "shieldLost": 0,
+        "deltaY": 0
+      }
+    },
+    "after": {
+      "plan": {
+        "weapon": "heavy_missile",
+        "angle": 31.901260184124112,
+        "power": 99.60460744686425
+      },
+      "defaultPersonality": "conservative",
+      "ticks": 121,
+      "phase": "PLAYER_TURN",
+      "nextActiveId": "p2",
+      "actor": {
+        "hull": 100,
+        "shield": 120,
+        "credits": 9000,
+        "creditedDamage": 0,
+        "kills": 0,
+        "heavyAmmo": 0
+      },
+      "target": {
+        "hull": 34,
+        "shield": 207.020437694683,
+        "hullLost": 0,
+        "shieldLost": 28.447608139341867,
+        "deltaY": 0
+      }
+    },
+    "limitations": "Stock legal scripted prefix, not naturally CPU-chosen history, player accuracy, win-rate or balance optimum. Selected aim is unchanged. No live numerical rebalance."
+  },
+  "differential": {
+    "baseline": "44653faf5f881d2fd5e5aae466a35eb37b6f9039",
+    "total": 1296,
+    "changed": 138,
+    "unchanged": 1158,
+    "unchangedProtected": 936,
+    "campaignCases": 108,
+    "st1Profiles": [
+      {
+        "id": "crosswind-range",
+        "version": "ST1",
+        "commits": 7,
+        "cpuComparisons": 3
+      },
+      {
+        "id": "caldera-run",
+        "version": "ST1",
+        "commits": 7,
+        "cpuComparisons": 3
+      },
+      {
+        "id": "last-light-siege",
+        "version": "ST1",
+        "commits": 7,
+        "cpuComparisons": 3
+      },
+      {
+        "id": "lean-arsenal",
+        "version": "ST1",
+        "commits": 7,
+        "cpuComparisons": 3
+      }
+    ],
+    "st1CpuComparisons": 12,
+    "st1Commitments": 28
+  },
+  "checks": {
+    "focusedRed": "failed on exact parent at expected hull-only weapon choice",
+    "focusedGreen": "passed",
+    "thresholdCases": 126,
+    "shopCases": 20,
+    "sourceHarnessInvocations": 23,
+    "sourceHarnessPassed": 23,
+    "targetedStrictTypecheck": "passed; local TS5.8",
+    "st1Bindings": 32,
+    "backendManifest": "validated before/after shared-source change"
+  },
+  "manifests": {
+    "parentSharedSourceVerified": true,
+    "parentBackendValidated": true,
+    "newBackendValidated": true,
+    "newSharedSource": "3ee91925e378580a7807246eedacc03247a83e30a74acc198f52f629b52b5993",
+    "oldAI": "bc546e0d2bc2d401d0d9992191694099f82522f8dcdc451b6fa89257d2c05288",
+    "newAI": "00fa3ef29e470fda6386f55f357d27d079b989bc6fbb691c33efab717c1cf172"
+  },
+  "runtime": "Node22.16.0/TypeScript5.8.3 external loader; not pinned Node24/tsx",
+  "parentHosted": {
+    "ci": 35959849074,
+    "codeql": 35959848906,
+    "outcome": "success; no rerun requested"
+  },
+  "newHeadHosted": "separate required check; not claimed in this source receipt",
+  "notRunLocally": [
+    "full canonical root check",
+    "full client Vitest",
+    "normal build",
+    "normal-entry browser",
+    "Deno",
+    "PostgreSQL",
+    "physical-device acceptance"
+  ],
+  "preserved": [
+    "WB01-WB04/P13 historical artifacts",
+    "commander-name correction",
+    "numbers",
+    "difficulty/aim tuning",
+    "campaign and verified policies",
+    "benchmark/workflows"
+  ],
+  "initialAttempts": [
+    "parent red test failed as intended",
+    "50-damage shop fixture selected Betty; corrected fixture to 56 from actual catalog estimate",
+    "invalid temporary ST1 origin corrected to local-selection and differential repeated",
+    "session-mode execution unavailable; retried via normal non-session command"
+  ],
+  "rollback": "revert this slice code/wiring/manifests; no saved-data change"
+}
