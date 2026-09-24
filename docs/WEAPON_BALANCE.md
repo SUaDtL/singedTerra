@@ -1,6 +1,6 @@
-# Classic weapon balance laboratory — WB-01
+# Classic weapon balance laboratory — WB-01 / WB-02
 
-This **per-weapon measurement slice** extends the existing balance tooling; it
+WB-01, the **per-weapon measurement slice**, extends the existing balance tooling; it
 is not a live balance patch. The weapon
 catalog, artillery physics, CPU policies, network/replay versions, retained
 challenge artifacts and match economy are unchanged. Ash Road is out of scope.
@@ -178,3 +178,17 @@ types in existing campaign tests; the backend-policy/manifest command could not
 start without its installed TypeScript dependency. The ST1 source manifest updates only the reviewed `package.json` hash for the
 new development commands; dependency, runtime and ruleset semantics are unchanged.
 No dependency changes or retained-artifact regeneration were used to make those gaps disappear. No merge or deployment is authorized here.
+
+## WB-02 continuation: shield opportunity costs
+
+The next owner-requested slice adds [shield-first versus fire-first exchanges](balance/WB02-SHIELD-EXCHANGE.md)
+with actual bundle purchases, two commitments per seat, both subject-seat
+positions, and adaptive experimental replies. `npm run balance:shield-exchange`
+generates the separate study. The existing single-salvo default and its historical
+TSV/receipt are retained unchanged. No live balance value or CPU policy changes.
+
+The preceding local-environment limits remain historical. Parent commit
+`e195f81bd344c0ae75d1fc4a8b224401f2d5007f` subsequently passed hosted canonical
+CI run `35942712184`, including root checks, database, client, build, Edge and
+browser lanes. This does not turn the opt-in P13 artifact comparison into a PASS,
+or establish new-head validation. PR #520 owns the current check results.

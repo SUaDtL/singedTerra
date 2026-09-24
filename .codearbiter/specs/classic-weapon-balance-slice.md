@@ -72,3 +72,44 @@ See `docs/WEAPON_BALANCE.md` for commands and the actual evidence/limits. Revert
 the additive lab, documentation and account-view change restores prior behavior;
 there is no persisted schema/economy change to reverse. Do not delete saves or
 change verified receipts as part of rollback.
+
+## WB-02 — approved continuation on PR #520
+
+B subsequently requested “continue the next slice and add it to the PR.” This
+continuation chooses the bounded shield-versus-fire opportunity-cost question,
+not a blanket live catalog rebalance. Its baseline is
+`e195f81bd344c0ae75d1fc4a8b224401f2d5007f`. PR #520 remains the delivery record.
+
+The experiment compares fire/fire with normal-shield/fire and heavy-shield/fire
+over at most two real commitments per seat. It evaluates Missile, Heavy Missile
+and Sandhog in three existing WB-01 scenarios, with both subject seats and both
+stock and explicitly synthetic depleted-stock/30,000-credit checkpoints. Real
+buys enforce whole-bundle affordability and store tiers. A refused offensive
+restock falls back to basic ammunition; an unexecuted shield is never credited
+as a successful shield strategy. The opponent is the declared greedy WB-01
+experimental policy, not the shipped CPU or a human model.
+
+### Additional acceptance
+
+1. Source engine/catalog stay unchanged; actual exchange stock must never be
+   replaced with WB-01's probe ammunition. Keep fixed-aim tests distinct from
+   adaptive search experiments. Preserve WB-01 and P13 historical bytes.
+2. Purchases record exact accepted/rejected outcomes, debits and granted stock.
+   Starting stock, unused bundles and nominal replacement value stay distinct.
+3. Both seats use the real turn order. Shielding consumes a commitment and
+   grants no shot stipend. Real terminal state stops all subsequent actions.
+4. Turn-horizon survivors are censored, not wins/draws. Blocked or unresolved
+   results have no settled summary. No partial damage or unexecuted shield
+   can establish comparative advantage.
+5. Fast inline checks join `check:weapon-balance`; expensive study generation
+   remains opt-in. Invalid CLI/fixture selections fail, existing reports are
+   not overwritten, and the complete study is repeatable with pinned source.
+6. Retain commander identity, account/reward authority, all live balance/CPU
+   behavior, replay/ST1 semantics and campaign code. Update only the inspected
+   package-script source binding; no dependency, backend, migration or runtime
+   source change. No merge/deployment or auto-enablement.
+
+See `docs/balance/WB02-SHIELD-EXCHANGE.md` for method, findings and evidence
+limits. Revert WB-02-only scripts, development command wiring and documentation
+to undo this continuation; the preceding commander fix can remain. No stored
+player state or live balance migration exists to roll back.

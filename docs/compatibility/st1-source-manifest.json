@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "shared-preparation-frame-and-st1-parity-retained; wb01-development-scripts-only package update reviewed",
+  "disposition": "shared-preparation-frame-and-st1-parity-retained; WB-01/WB-02 development-only balance scripts reviewed; no runtime or dependency change",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -84,7 +84,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "4f5b64366124686247836f8cee4cb101a82045145dc774ed8b2e16303a3c3245"
+      "sha256": "0f2f51f12c256984d6c53d9ade82cc702981f76ff0ab528bc2161e57e41b4801"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",
