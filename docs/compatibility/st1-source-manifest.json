@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "WB-04 changes ordinary hard-CPU ineffective normal-shield selection only; ST1 medium-CPU paths and campaign planning preserved; numeric rules and retained artifacts unchanged; package binding retained from WB-03",
+  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -92,7 +92,7 @@
     },
     {
       "path": "shared/src/engine/AI.ts",
-      "sha256": "bc546e0d2bc2d401d0d9992191694099f82522f8dcdc451b6fa89257d2c05288"
+      "sha256": "00fa3ef29e470fda6386f55f357d27d079b989bc6fbb691c33efab717c1cf172"
     },
     {
       "path": "shared/src/engine/AiShotSearch.ts",

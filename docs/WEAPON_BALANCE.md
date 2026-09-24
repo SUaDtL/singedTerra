@@ -1,7 +1,9 @@
-# Classic weapon balance — WB-01 through WB-04
+# Classic weapon balance — WB-01 through WB-05
 
-**Current continuation:** [WB-04](balance/WB04-CPU-SHIELD.md) corrects ordinary
-hard-CPU shield waste. WB-01–WB-03 below retain their experimental scopes.
+**Current continuation:** [WB-05](balance/WB05-TARGET-SHIELD.md) accounts for
+target protection in ordinary hard-CPU weapon/restock selection. The preceding
+[WB-04](balance/WB04-CPU-SHIELD.md) own-shield correction remains. WB-01–WB-03
+below retain their experimental scopes.
 Numeric catalog values and verified policies are unchanged; ordinary hard-CPU
 selection is no longer unchanged in the complete PR.
 
@@ -238,3 +240,19 @@ ST1 launches medium CPU and the campaign selector branch is preserved. Separate
 verified policy/retained code remains unchanged. The backend manifest's shared
 source digest is honestly recomputed; that update does not authorize deployment.
 The WB-04 receipt distinguishes adapter-based local checks from new-head CI.
+
+## WB-05 — shield-aware hard-CPU offense
+
+The [WB-05 correction](balance/WB05-TARGET-SHIELD.md) makes the existing ordinary
+hard-CPU weapon/restock estimate consider remaining target protection, rather
+than treating low hull behind a shield as an easy finishing shot. Held selection
+and restocking use the same requirement. No weapon values or aiming change;
+easy/medium, campaign and independent verified selectors remain unchanged.
+
+The root-gated check is `scripts/checks/ai_target_shield.mjs`, imported by the
+existing `weapon_balance.mjs`. Its stock-equipment witness, fractional thresholds,
+real bundle buys, no-target/purity checks and explicit-action replay are pinned
+inline. The study runner and historical baseline tables are not regenerated.
+The ordinary hard policy intentionally changes; old P13 outputs are not fresh
+evidence for it. Parent WB-04 CI35959849074 and CodeQL35959848906 passed; final
+WB-05 hosted checks remain separate from local adapter-based validation.

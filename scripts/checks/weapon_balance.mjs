@@ -4,6 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import './ai_shield_efficiency.mjs'; // WB-04: included in the existing balance gate.
+import './ai_target_shield.mjs'; // WB-05: target-shield selection uses the same gate.
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { WEAPONS } from '../../shared/src/engine/WeaponSystem.ts';
 import { makeScenario, sampleShot, searchWeapon, startingState, runBalance } from '../balance/weaponBalance.mjs';

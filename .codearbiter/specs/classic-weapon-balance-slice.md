@@ -191,3 +191,42 @@ See `docs/balance/WB04-CPU-SHIELD.md`. The runtime effect is intentionally narro
 no improved win rate, universal tactical optimality or device benchmark is claimed.
 Revert this guard, regression wiring and its two source-manifest updates together
 to restore the prior planner. No stored-state or economy migration is involved.
+
+## WB-05 — shield-aware offensive selection
+
+B requested CI corrections and the next balance slice on the same PR. Baseline:
+`44653faf5f881d2fd5e5aae466a35eb37b6f9039`. Parent CI35959849074 and
+CodeQL35959848906 completed successfully; no parent CI repair or rerun was needed.
+
+Classic hard CPUs must include a target's remaining shield pool when applying
+the existing blast/burn effective-damage estimate to held weapons and finisher
+restocks. The same estimate must feed both choices so a successful buy cannot
+cause the next plan to revert to a hull-only cheap finisher. Preserve personality
+ordering, affordability, arms tiers, aiming, useful own-defense priority and the
+strongest-held/basic fallback. This is not a full tactical evaluator or a promise
+that the heuristic predicts a lethal trajectory. Terrain bypass remains distinct.
+
+### Additional acceptance
+
+1. Reach a stock legal checkpoint with low hull behind intact protection. The
+   new test fails against parent AI and passes with shield-aware selection.
+2. Keep affordable weaker ammunition when the total estimate allows it, use
+   stronger held stock when required, and never invent an affordable finisher
+   when the estimate exceeds every known tool. No new damage/price constants.
+3. Real whole-bundle purchase and replan agree on the intended weapon. Preserve
+   price/tier refusal, count/debit, single-bundle behavior and ordinary fallback.
+4. Exact/fractional shield boundaries, absent shield, three difficulties, purity,
+   deterministic aim and no-target behavior receive inline regression checks.
+5. Easy/medium, all legacy campaign selection and independent verified V2/V3/cq1
+   remain unchanged. Retain canonical replay of old and new explicit commands.
+6. Preserve WB-04's own-shield correction and commander identity. No new engine,
+   workflow, dependency, UI, benchmark policy or historical-artifact regeneration.
+7. Run the ordinary balance entry plus affected AI/combat/replay checks. Update
+   only the inspected ST1 AI source binding and actual backend shared-tree digest;
+   these are provenance changes, not new version/reward/deployment authority.
+8. New-head CI must be assessed independently of passing parent checks. No merge,
+   deployment, other-branch write, campaign expansion or player-data reset.
+
+See `docs/balance/WB05-TARGET-SHIELD.md`. This slice replaces hull-only offensive
+requirements only within ordinary hard-classic planning. Revert it and its test
+wiring/manifests together to restore the parent while keeping WB-04 and identity.

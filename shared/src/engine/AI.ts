@@ -238,8 +238,9 @@ const PARACHUTE_SLOPE_RISK = 40;
  *    in classic play; the legacy campaign planning path is retained.
  *  - otherwise: among the damaging weapons the bot actually OWNS (medium excludes
  *    the heavy/premium tier), pick the WEAKEST that can still finish the target in
- *    one solid hit (effective dmg >= target health) — so it won't waste a nuke on a
- *    near-dead tank.
+ *    one solid hit according to the existing damage estimate. Classic hard bots
+ *    include the target's remaining shield; medium/campaign retain hull-only
+ *    selection. This is a loadout heuristic, not proof of a lethal trajectory.
  *  - BUY-TO-RESTOCK (hard only, P1-7b): if NOTHING in stock one-shots the target
  *    but the bot can afford a finisher, buy it (see chooseBuy) and fire it. Else
  *    fall back to the strongest weapon in stock.
@@ -271,7 +272,14 @@ function chooseLoadout(
   const leftSurface = surfaceAt(state.terrain, me.x - 24);
   const rightSurface = surfaceAt(state.terrain, me.x + 24);
   const riskyLedge = Math.abs(leftSurface - rightSurface) >= PARACHUTE_SLOPE_RISK;
-  const weaponBuy = difficulty === 'hard' ? chooseBuy(me, target, armsLevel, personality) : null;
+  // These offensive estimates describe blast/burn damage, which must remove
+  // the target's shield before its hull. Do not call a cheap shell a finisher
+  // merely because the shielded tank has little hull left. Keep this same
+  // requirement for held stock and restocking so a buy/replan cannot disagree.
+  // Terrain bypass, aiming and actual kill prediction are separate concerns.
+  const damageRequired = target.health + (difficulty === 'hard' && state.campaign === undefined
+    ? Math.max(0, target.shieldHp) : 0);
+  const weaponBuy = difficulty === 'hard' ? chooseBuy(me, damageRequired, armsLevel, personality) : null;
   const weaponBuyCost = weaponBuy ? getWeapon(weaponBuy).price : 0;
   const buyAccessory = difficulty === 'hard'
     && parachuteCount === 0
@@ -294,9 +302,9 @@ function chooseLoadout(
     if (areaWeapon) return { weapon: areaWeapon, ...(buyAccessory ? { buyAccessory } : {}) };
   }
 
-  // Weakest in-stock one-shot finisher (don't overkill).
+  // Weakest in-stock estimated finisher (aggressive keeps its reverse order).
   const finisher = (personality === 'aggressive' ? [...ranked].reverse() : ranked)
-    .find((w) => AI_EFFECTIVE_DAMAGE[w]! >= target.health);
+    .find((w) => AI_EFFECTIVE_DAMAGE[w]! >= damageRequired);
   if (finisher) return { weapon: finisher, ...(buyAccessory ? { buyAccessory } : {}) };
 
   // Nothing in stock one-shots. A hard bot restocks if it can afford a finisher.
@@ -314,11 +322,12 @@ const AREA_DENIAL_ORDER: readonly WeaponType[] = [
 ];
 
 /**
- * Buy-to-restock pick (P1-7b): the cheapest affordable weapon the bot LACKS that
- * would one-shot the target. Returns null when no such weapon is affordable (the
+ * Buy-to-restock pick (P1-7b): an affordable weapon the bot LACKS that meets
+ * the same estimated requirement as held-weapon selection, ordered by the
+ * existing personality rule. Returns null when none qualifies (the
  * caller then falls back to its strongest in-stock weapon — the prior behaviour).
  *
- * Restricting the buy to a FINISHER (effective dmg >= target health) is what keeps
+ * Restricting the buy to an estimated FINISHER (effective dmg >= damageRequired) keeps
  * the buy+fire sequencing simple and loop-free: the bot buys exactly ONE bundle and
  * then owns a finisher, so the very next plan picks it as `finisher` above (no
  * `buy`) and fires it. Networked, every client recomputes this same transition, so
@@ -327,7 +336,7 @@ const AREA_DENIAL_ORDER: readonly WeaponType[] = [
  */
 function chooseBuy(
   me: TankState,
-  target: TankState,
+  damageRequired: number,
   armsLevel: number,
   personality: AiPersonality,
 ): WeaponType | null {
@@ -339,7 +348,7 @@ function chooseBuy(
       return def.implemented
         && def.armsLevel <= armsLevel                // legal in this room's store
         && def.price <= me.credits                  // affordable now
-        && AI_EFFECTIVE_DAMAGE[w]! >= target.health; // and finishes the target
+        && AI_EFFECTIVE_DAMAGE[w]! >= damageRequired; // meets the shared estimate
     })
     .sort((a, b) => {
       if (personality === 'aggressive') return AI_EFFECTIVE_DAMAGE[b]! - AI_EFFECTIVE_DAMAGE[a]!;
