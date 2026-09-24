@@ -192,3 +192,23 @@ The preceding local-environment limits remain historical. Parent commit
 CI run `35942712184`, including root checks, database, client, build, Edge and
 browser lanes. This does not turn the opt-in P13 artifact comparison into a PASS,
 or establish new-head validation. PR #520 owns the current check results.
+
+
+## WB-03 — evaluated opening-access candidate
+
+The [WB-03 study](balance/WB03-OPENING-SHIELD.md) isolates removal of the free
+starting Heavy Shield without changing normal shields, capacity, price or any
+live default. Thirty-six pairs (72 exchanges) use the same actual-action runner
+and a four-commitment-per-seat window. Eighteen fire-first negative controls
+remain identical except unused inventory. The result recommends retaining the
+current default rather than applying a blanket shield-access nerf.
+
+```bash
+npm run balance:opening-shield -- --out=/tmp/wb03.json
+```
+
+The WB-02 defaults remain two commitments and the original three strategies;
+its historical data is preserved. The shared CLI's new study is opt-in and the
+small new regression check joins `check:weapon-balance`. WB-02's hosted CI later
+passed on one explicitly recorded unchanged rerun following a strict replay
+timing failure; neither gate nor runtime was weakened. New-head CI is separate.

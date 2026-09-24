@@ -11,6 +11,8 @@ export const EXCHANGE_WEAPONS = Object.freeze(['missile', 'heavy_missile', 'sand
 export const EXCHANGE_STRATEGIES = Object.freeze(['fire-first', 'shield-first', 'heavy-shield-first']);
 export const EXCHANGE_KITS = Object.freeze(['stock', 'depleted-30k']);
 const COMMITMENTS_PER_SEAT = 2;
+// WB-03's opt-in policy is deliberately not part of the retained WB-02 matrix.
+const HELD_SHIELD_STRATEGY = 'held-shield-first';
 const REPLENISHMENT_CREDITS = 30_000;
 
 function member(value, choices, name) {
@@ -96,9 +98,10 @@ function effectRecords(before, after) {
  */
 export function sampleShieldExchange(source, {
   strategy = 'fire-first', weapon = 'missile', subjectId = 'p1',
-  tickLimit = DEFAULT_TICK_LIMIT, fixedAim = null,
+  tickLimit = DEFAULT_TICK_LIMIT, fixedAim = null, commitmentsPerSeat = COMMITMENTS_PER_SEAT,
 } = {}) {
-  member(strategy, EXCHANGE_STRATEGIES, 'exchange strategy');
+  member(strategy, [...EXCHANGE_STRATEGIES, HELD_SHIELD_STRATEGY], 'exchange strategy');
+  integer(commitmentsPerSeat, 1, 6, 'commitmentsPerSeat');
   member(weapon, EXCHANGE_WEAPONS, 'exchange weapon');
   member(subjectId, ['p1', 'p2'], 'subject seat');
   integer(tickLimit, 1, 20_000, 'tickLimit');
@@ -128,12 +131,12 @@ export function sampleShieldExchange(source, {
   let incompleteReason = null;
   const searchWork = { actualEngineProbes: 0, unresolvedCandidates: 0, proxyProbes: 0 };
 
-  for (let step = 0; step < 2 * COMMITMENTS_PER_SEAT; step += 1) {
+  for (let step = 0; step < 2 * commitmentsPerSeat; step += 1) {
     if (state.phase === 'GAME_OVER') { termination = 'game_over'; break; }
     const actor = state.tanks.find(({ id }) => id === state.activePlayerId);
     const expectedId = step % 2 === 0 ? 'p1' : 'p2';
     if (!actor?.alive || actor.buried || state.phase !== 'PLAYER_TURN'
-      || actor.id !== expectedId || commitments[actor.id] >= COMMITMENTS_PER_SEAT) {
+      || actor.id !== expectedId || commitments[actor.id] >= commitmentsPerSeat) {
       termination = 'blocked'; incompleteReason = 'unexpected-turn-or-unactionable-seat'; break;
     }
     const before = state.tanks.map((tank) => ({ ...tank }));
@@ -141,9 +144,17 @@ export function sampleShieldExchange(source, {
     const wind = state.wind;
     let actionWeapon = weapon;
     let kind = 'fire';
-    const shield = strategy === 'shield-first' ? 'shield' : 'heavy_shield';
     const wantsShield = actor.id === subjectId && commitments[subjectId] === 0 && strategy !== 'fire-first';
-    if (wantsShield) {
+    if (wantsShield && strategy === HELD_SHIELD_STRATEGY) {
+      // Availability experiment: do not immediately purchase the deliberately
+      // removed item. Choose the stronger held, beneficial defense, else fire.
+      const shield = ['heavy_shield', 'shield'].find((id) => hasAmmo(actor, id)
+        && WEAPONS[id].behavior.shield.capacity > actor.shieldHp);
+      if (shield) { kind = 'use_shield'; actionWeapon = shield; }
+      else fallbacks.push({ step, actorId: actor.id, requested: 'held-shield',
+        reason: 'no-beneficial-held-shield', fallback: 'offense' });
+    } else if (wantsShield) {
+      const shield = strategy === 'shield-first' ? 'shield' : 'heavy_shield';
       if (acquire(engine, shield, purchases)) { kind = 'use_shield'; actionWeapon = shield; }
       else fallbacks.push({ step, actorId: actor.id, requested: shield, reason: 'shield-unavailable', fallback: 'offense' });
     }
@@ -216,7 +227,7 @@ export function sampleShieldExchange(source, {
         consumedReplacementValue: used.reduce((sum, { weapon: id }) => sum + (id === 'baby_missile' ? 0 : WEAPONS[id].price / WEAPONS[id].bundleSize), 0) };
     }),
   } : null;
-  return { strategy, weapon, subjectId, limits: { commitmentsPerSeat: COMMITMENTS_PER_SEAT, tickLimit }, aimPolicy: fixedAim ? { kind: 'fixed-fixture', ...fixedAim }
+  return { strategy, weapon, subjectId, limits: { commitmentsPerSeat, tickLimit }, aimPolicy: fixedAim ? { kind: 'fixed-fixture', ...fixedAim }
     : { kind: 'wb01-greedy-actual-weapon', angleStep: 10, powerStep: 20 },
     termination, incompleteReason, shieldActivated,
     commitments, simulationTicks, searchWork, purchases, fallbacks, start, finish, trace, summary };

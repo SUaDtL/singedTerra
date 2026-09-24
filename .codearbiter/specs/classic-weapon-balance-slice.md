@@ -113,3 +113,39 @@ See `docs/balance/WB02-SHIELD-EXCHANGE.md` for method, findings and evidence
 limits. Revert WB-02-only scripts, development command wiring and documentation
 to undo this continuation; the preceding commander fix can remain. No stored
 player state or live balance migration exists to roll back.
+
+## WB-03 — one opening-access candidate and CI diagnosis
+
+B requested CI corrections and the next slice on PR #520. Baseline:
+`dc94110c25bb2098a5b91999d80acbd1583ea66d`. The selected candidate removes only
+one free starting Heavy Shield on each disposable experimental tank, preserving
+normal shields, capacities, shop prices and all other state. This does not
+authorize enabling the candidate in the game.
+
+Reuse the WB-02 action runner with an explicitly bounded horizon (four
+commitments per seat here; original default two preserved). Compare a
+strongest-beneficial-held-shield-first policy and fire-first controls on
+matched stock/candidate states. Defensive purchases/refresh are excluded; real
+offensive restocking and the engine's terminal state remain authoritative.
+
+### Additional acceptance
+
+1. Exactly two declared starting-inventory count changes, with no refund or
+   runtime default change. Fail closed when the assumed starting kit changes.
+2. Eighteen fire-first controls match except unused heavy inventory; reject
+   mismatched state, aim policy and horizons before comparative reporting.
+3. Keep unexecuted defense and incomplete results separate from measured
+   benefit. Horizons are not wins/draws; preserve actual initiative and ledger.
+4. Normal-shield fallback is based on held stock and marginal protection. Do not
+   buy a missing heavy shield merely to undo the experimental intervention.
+5. Preserve WB-02's default outputs and historical artifacts. The new study is
+   opt-in; its small regression check uses the existing balance check entry.
+6. Preserve every live runtime, verification/replay, reward, account and campaign
+   rule. The commander-name fix remains. No merge, deployment or new dependencies.
+7. Diagnose actual hosted CI failures. Preserve the strict replay threshold and
+   complete failing samples; one explicitly recorded rerun is not a new retry
+   policy or proof of permanent performance remediation.
+
+See `docs/balance/WB03-OPENING-SHIELD.md` for the resulting recommendation,
+measurements, limitations and rollback. PR #520 remains the delivery record;
+this is not a competing execution ledger or a dispatch of future tuning.
