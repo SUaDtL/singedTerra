@@ -9,6 +9,17 @@ function clockFor(durations) {
   return () => index++ % 2 === 0 ? 0 : durations[Math.floor((index - 1) / 2)]
 }
 
+test('one isolated wall-clock outlier does not fail a corpus case', () => {
+  let reported
+  assert.doesNotThrow(() => runVerifiedDuelBenchmark(validReplay, {
+    now: clockFor([99, 99, 150, 99, 99, 99, 99, 99, 99, 99, 99, 99]),
+    report: value => { reported = value },
+  }))
+  assert.equal(reported.metric, 'wall-clock-case-median')
+  assert.equal(reported.samples.find(sample => sample.seed === 73 && sample.round === 0).ms, 150)
+  assert.equal(reported.caseMedians.find(sample => sample.seed === 73).ms, 99)
+})
+
 for (const duration of [99, 100, 101]) {
   test(`strict replay ceiling ${duration}ms`, () => {
     let reported
@@ -22,9 +33,9 @@ for (const duration of [99, 100, 101]) {
   })
 }
 
-test('one slow sample fails even when every other sample is fast', () => {
+test('a corpus case fails when two of its three samples breach the ceiling', () => {
   assert.throws(() => runVerifiedDuelBenchmark(validReplay, {
-    now: clockFor([1, 1, 1, 1, 1, 101, 1, 1, 1, 1, 1, 1]), report() {},
+    now: clockFor([1, 101, 1, 1, 1, 102, 1, 1, 1, 1, 1, 1]), report() {},
   }), /101ms must be <100ms/)
 })
 

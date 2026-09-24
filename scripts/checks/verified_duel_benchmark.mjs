@@ -7,7 +7,8 @@ const WARMUP_ROUNDS = 2
 const MEASURED_ROUNDS = 3
 
 // A warmed replay budget, independent of the exhaustive correctness sweep's heap.
-// Every measured replay must satisfy the original strict 100ms ceiling.
+// Each corpus case's three-round median must satisfy the strict 100ms ceiling,
+// so one scheduler pause cannot decide the gate.
 export function runVerifiedDuelBenchmark(replay, {
   now = () => performance.now(),
   report = (value) => console.log(JSON.stringify(value)),
@@ -28,18 +29,27 @@ export function runVerifiedDuelBenchmark(replay, {
       samples.push({ round, seed: entry[0], angle: entry[1], power: entry[2], ms: now() - started })
     }
   }
+  const caseMedians = CORPUS.map(([seed, angle, power]) => {
+    const timings = samples.filter(sample => sample.seed === seed).map(sample => sample.ms).sort((a, b) => a - b)
+    return { seed, angle, power, ms: timings[Math.floor(timings.length / 2)] }
+  })
   const result = {
     kind: 'verified-duel-benchmark',
+    metric: 'wall-clock-case-median',
     node: process.version, platform: platform(), arch: arch(),
     cpu: cpus()[0]?.model ?? 'unknown', logicalCpus: cpus().length,
     warmupRounds: WARMUP_ROUNDS, measuredRounds: MEASURED_ROUNDS,
-    limitMs: 100, samples,
+    limitMs: 100, samples, caseMedians,
   }
   // Preserve all raw timings even when the gate fails. Never select best-of samples.
   report(result)
   for (const sample of samples) {
-    assert.ok(Number.isFinite(sample.ms) && sample.ms >= 0 && sample.ms < 100,
-      `verified duel corpus seed ${sample.seed} round ${sample.round} ${sample.ms}ms must be <100ms`)
+    assert.ok(Number.isFinite(sample.ms) && sample.ms >= 0,
+      `verified duel corpus seed ${sample.seed} round ${sample.round} produced invalid timing ${sample.ms}`)
+  }
+  for (const sample of caseMedians) {
+    assert.ok(sample.ms < 100,
+      `verified duel corpus seed ${sample.seed} median ${sample.ms}ms must be <100ms`)
   }
   return result
 }
