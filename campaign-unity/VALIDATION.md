@@ -109,3 +109,60 @@ A rollback is a scoped revert of this follow-on, preserving the initial art and
 recoil fix. No Android work, classic change, production service or deployment.
 The original a9c893a checks were previously observed green; a new commit must have
 its own repository CI observation, which is separate from local Unity evidence.
+
+## Inspection acceptance and preview shutdown - 2026-09-25T07:33Z
+
+B requested the next same-PR continuation and shutdown of all three old servers.
+The actual Python listeners on 127.0.0.1:8787/8788/8789 were identified by their
+ports, process IDs and exact task-owned build directories before termination.
+PIDs 70124, 53860 and 23760 stopped; all three ports were confirmed without listeners.
+Only those servers were stopped. The open original Unity editor was not touched.
+No replacement persistent preview was started.
+
+The previously partial verifier is now complete. Against the unchanged
+Web-20260925T064755Z-6d9dd3 payload, inspection-20260925T073234Z-782b7e passed
+247 assertions across 29 recorded states and 28 pointer actions in Chrome
+153.0.8010.50. This is one bounded suite, not 247 independent gameplay scenarios.
+It covers left/right orbit, reset, eight-step full-circle wrap, fitting retargets,
+label hide/show, hidden-control refusal, both view-return preferences and resizing
+to 1280x720 and 1024x768 from 1600x900. Tank and paused turret rotations stayed fixed.
+Independent perspective projection differed from measured screen endpoints by at
+most 0.035401 pixels. The test also checks actual rendered anchor pixels and panel
+appearance/disappearance, rather than accepting state markers alone. Four new
+angle/hidden/resize captures were inspected; eighteen captures remain in raw evidence.
+
+Eight host test methods passed, including corrupt/NaN geometry, wrong binding,
+visibility, out-of-bounds panels, duplicate parts and stationary-camera negatives.
+An intentional old-build invocation was refused with exit 1 before launching a
+browser. Both failed interaction attempts and this expected refusal are retained.
+Every invocation closed its temporary HTTP server; the interaction browsers closed.
+Exact identities and individual results: docs/inspection-acceptance-20260925/receipt.json
+and browser-result.json. Original regression/recoil results remain earlier evidence;
+there was no new Unity build and no runtime, scene, artwork or dependency change.
+
+The first new invocation timed out waiting for motion and also recorded an
+attachment event of undetermined input origin. The diagnostic retry captured
+its requested pointer down/up during the Unity splash, before ST_ART_STATE ready.
+The verifier had waited for download/loader completion, not scene readiness.
+Waiting for the existing ready event and initial inspection receipt corrected this
+test race; no game method, input behavior or acceptance tolerance was changed.
+This directly explains the diagnostic retry, not every historical timeout.
+The new pointer capture only observes DOM events; it cannot invoke Unity methods.
+
+No JavaScript exceptions or failed HTTP requests occurred in the passing run.
+However, six WebGL INVALID_ENUM warnings and three unsupported-shader diagnostics
+were emitted (CoreCopy, StencilDitherMaskSeed and HDRDebugView). They are recorded,
+not resolved or declared harmless by these tests. The Python pixel reader also
+emitted a Pillow getdata deprecation warning; no dependency was upgraded.
+Receipt assembly initially encountered a PowerShell UTF-16 decoding mismatch;
+the decoder was corrected after verifying the partial output, without changing
+raw evidence. These tooling failures remain separate from game behavior.
+
+This closes the enumerated desktop inspection-control/geometry checks only.
+Viewport containment is not occlusion-aware layout: leaders may cross the tank,
+and the narrow landscape fitting panel can overlap the cannon. Terrain/props and
+track impressions remain first-pass art. No final owner visual approval, full
+accessibility, cross-browser, sustained-performance or mobile acceptance follows.
+All 85 saved original-authoring files still match their prior snapshot. Unsaved
+editor memory remains outside this PR. Keep the same draft unmerged; no classic,
+account, save, gameplay/economy, Android, public-hosting or deployment work occurred.

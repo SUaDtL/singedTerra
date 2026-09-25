@@ -1,5 +1,10 @@
 # singedTerra Unity Web starter art (ST-ART-01)
 
+**Latest checkpoint:** the inspection-specific pointer/geometry suite is now
+complete and passing for the pinned b10 Web artifact. The initial incomplete-test
+notice near the end is historical; see the current acceptance instructions below.
+All three old preview servers were explicitly stopped. No preview is left running.
+
 Draft, production-intent asset checkpoint. This project is deliberately separate
 from the existing TypeScript artillery application. It is not wired into its
 launcher, npm workspaces, account services, rewards, or Pages deployment.
@@ -85,7 +90,7 @@ The saved scene and old exports remain recoverable. There is no live data migrat
 or production rollback: retain the branch unmerged and reconcile specific files.
 No command enables auto-merge, Pages, an external listener or a public tunnel.
 
-## Inspection controls - September 25 follow-on
+## Inspection controls - initial September 25 follow-on checkpoint
 
 Inspection now opens from the cannon-facing three-quarter side. The upper control
 row offers Orbit Left, Orbit Right, Front View (reset to that initial framing),
@@ -102,3 +107,32 @@ a tool blocked the new verifier's completion. Do not run an untracked partial
 Tools/verify_inspection.py from the workstation. Use the complete existing
 Tools/verify_web.py for its original coverage only. See VALIDATION.md and
 [the dated receipt](docs/inspection-20260925/receipt.json) for exact limits.
+
+## Current inspection acceptance - September 25, 07:33 UTC
+
+The tracked verifier is complete; the preceding partial-file warning describes
+the 06:49 checkpoint and no longer applies to this version. Python Playwright,
+Pillow and installed Chrome are prerequisites; these scripts do not install them.
+From campaign-unity, with no manual preview server required:
+
+```powershell
+python -m unittest discover -s Tools -p test_inspection_checks.py -v
+python Tools/verify_inspection.py "C:\Users\brenn\st-art-pr\campaign-unity\Builds\Web-20260925T064755Z-6d9dd3"
+```
+
+The inspection test checks the exact artifact hashes in the original dated b10
+receipt. A different export is refused, not silently granted the same evidence.
+Keep the automated browser untouched while it uses real pointer input. Readiness
+waits for the actual scene, not merely download completion. The owned browser and
+loopback server close on success or failure. Results and failure captures are
+retained in a fresh Evidence directory. The original recoil verifier is unchanged.
+
+The manual http.server command above is OPTIONAL, not a build/test continuation.
+Do not automatically leave a preview running, or accumulate old previews on new
+ports. Start a requested manual preview in one foreground terminal and stop it
+with Ctrl+C when finished. Never stop unrelated listeners or the authoring editor.
+
+[Acceptance receipt](docs/inspection-acceptance-20260925/receipt.json) records the
+247-assertion desktop suite, two failed starts, the stale-build refusal and server
+shutdown. [VALIDATION.md](VALIDATION.md) separates successful checks from remaining
+shader diagnostics, first-pass art, layout, accessibility and device limitations.
