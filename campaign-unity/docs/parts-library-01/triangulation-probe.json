@@ -1,0 +1,142 @@
+[
+  {
+    "id": "STK-H01",
+    "blender_export_nominal": 8996,
+    "fbx_reimport_triangles": 8996,
+    "zero_area_triangles": 32,
+    "unity_triangles": 8996
+  },
+  {
+    "id": "STK-T01",
+    "blender_export_nominal": 50432,
+    "fbx_reimport_triangles": 50432,
+    "zero_area_triangles": 0,
+    "unity_triangles": 50432
+  },
+  {
+    "id": "STK-U01",
+    "blender_export_nominal": 5368,
+    "fbx_reimport_triangles": 5368,
+    "zero_area_triangles": 248,
+    "unity_triangles": 5336
+  },
+  {
+    "id": "STK-G01",
+    "blender_export_nominal": 3132,
+    "fbx_reimport_triangles": 3132,
+    "zero_area_triangles": 64,
+    "unity_triangles": 3068
+  },
+  {
+    "id": "STK-M01",
+    "blender_export_nominal": 836,
+    "fbx_reimport_triangles": 836,
+    "zero_area_triangles": 0,
+    "unity_triangles": 836
+  },
+  {
+    "id": "STK-M02",
+    "blender_export_nominal": 2472,
+    "fbx_reimport_triangles": 2472,
+    "zero_area_triangles": 128,
+    "unity_triangles": 2344
+  },
+  {
+    "id": "STK-G02",
+    "blender_export_nominal": 2348,
+    "fbx_reimport_triangles": 2348,
+    "zero_area_triangles": 192,
+    "unity_triangles": 2228
+  },
+  {
+    "id": "STK-G03",
+    "blender_export_nominal": 3228,
+    "fbx_reimport_triangles": 3228,
+    "zero_area_triangles": 64,
+    "unity_triangles": 3164
+  },
+  {
+    "id": "STK-M03",
+    "blender_export_nominal": 1172,
+    "fbx_reimport_triangles": 1172,
+    "zero_area_triangles": 20,
+    "unity_triangles": 1172
+  },
+  {
+    "id": "STK-M04",
+    "blender_export_nominal": 1348,
+    "fbx_reimport_triangles": 1348,
+    "zero_area_triangles": 0,
+    "unity_triangles": 1348
+  },
+  {
+    "id": "STK-A01",
+    "blender_export_nominal": 1752,
+    "fbx_reimport_triangles": 1752,
+    "zero_area_triangles": 0,
+    "unity_triangles": 1752
+  },
+  {
+    "id": "STK-A02",
+    "blender_export_nominal": 6112,
+    "fbx_reimport_triangles": 6112,
+    "zero_area_triangles": 0,
+    "unity_triangles": 6112
+  },
+  {
+    "id": "STK-A03",
+    "blender_export_nominal": 2616,
+    "fbx_reimport_triangles": 2616,
+    "zero_area_triangles": 0,
+    "unity_triangles": 2616
+  },
+  {
+    "id": "STK-C01",
+    "blender_export_nominal": 1320,
+    "fbx_reimport_triangles": 1320,
+    "zero_area_triangles": 48,
+    "unity_triangles": 1272
+  },
+  {
+    "id": "STK-C02",
+    "blender_export_nominal": 584,
+    "fbx_reimport_triangles": 584,
+    "zero_area_triangles": 36,
+    "unity_triangles": 552
+  },
+  {
+    "id": "STK-C03",
+    "blender_export_nominal": 1420,
+    "fbx_reimport_triangles": 1420,
+    "zero_area_triangles": 144,
+    "unity_triangles": 1372
+  },
+  {
+    "id": "STK-B01",
+    "blender_export_nominal": 2592,
+    "fbx_reimport_triangles": 2592,
+    "zero_area_triangles": 0,
+    "unity_triangles": 2592
+  },
+  {
+    "id": "STK-B02",
+    "blender_export_nominal": 1272,
+    "fbx_reimport_triangles": 1272,
+    "zero_area_triangles": 0,
+    "unity_triangles": 1272
+  },
+  {
+    "id": "STK-B03",
+    "blender_export_nominal": 1836,
+    "fbx_reimport_triangles": 1836,
+    "zero_area_triangles": 0,
+    "unity_triangles": 1836
+  },
+  {
+    "id": "STK-B04",
+    "blender_export_nominal": 2444,
+    "fbx_reimport_triangles": 2444,
+    "zero_area_triangles": 48,
+    "unity_triangles": 2420
+  }
+]

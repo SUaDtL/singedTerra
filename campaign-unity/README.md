@@ -226,3 +226,31 @@ Four browser-cleanup host methods and eight existing geometry host methods pass.
 Warnings, visual refinement, old unexplained input sources and full device/performance
 acceptance remain open. No Android or persistent preview starts automatically.
 [Current receipt and captures](docs/encounter-acceptance-20260925/receipt.json).
+
+## Field Kit 01 - ST-KIT-01, September 25
+
+Start at [the illustrated parts index](PARTS-LIBRARY.md). The new art library
+contains twenty mesh entries: six extracted from the retained starter tank and
+fourteen new gun, module, armor, cosmetic and field-base designs. Each has a
+stable art ID, separate FBX and Unity prefab. Three paint finishes and three
+assembled examples demonstrate reuse, not selected game classes or unlocks.
+
+Editable source: `ArtSource/PartsLibrary_01.blend`.
+Unity prefabs: `Unity/Assets/PartsLibrary/Prefabs/`.
+Static authoring layout: `Unity/Assets/PartsLibrary/PartsLibrary_Layout.unity`.
+Machine-readable inventory: `Unity/Assets/Art/PartsLibrary/catalog.json`.
+
+The index includes Blender renders of the actual meshes, mounting conventions,
+source provenance and actual Unity geometry measurements. These are not concept
+images or Unity/browser screenshots. New field-base props are scenery only;
+they do not implement construction, R&D, resources or collision/cover rules.
+
+Blender generation and Unity compilation/import completed. The optional
+interactive gallery control append was blocked and remains unfinished outside
+Unity source. No new Web export or gallery-input test is claimed. Existing
+FieldAssembly, original art and encounter behavior remain unchanged.
+
+Nominal Blender and imported Unity triangle counts differ for nine entries;
+both counts and an independent FBX reimport probe are retained. No topology
+identity, final art, LOD, sustained performance or mobile acceptance is claimed.
+Read [the library receipt](docs/parts-library-01/receipt.json) and VALIDATION.md.
