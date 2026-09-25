@@ -82,6 +82,15 @@ describe('Skirmishes command contribution', () => {
       expect(getByRole(workspace, 'heading', { name: operation.title })).toBeTruthy();
       expect(workspace.textContent).toContain(operation.briefing);
       expect(workspace.textContent).toContain('vs CPU');
+      expect(getByRole(workspace, 'heading', { name: 'Mission brief' })).toBeTruthy();
+      expect(workspace.querySelectorAll('.skirmish-command__note').length).toBeGreaterThanOrEqual(3);
+      expect(workspace.querySelector('.skirmish-command__backdrop-note')?.textContent).toContain('visual only');
+      expect(workspace.querySelector('figcaption')?.textContent).toContain('illustrative backdrop');
+      const objective = workspace.querySelector('[data-ui="quick-operation-objective"]');
+      if (objective) {
+        expect(workspace.querySelector('.skirmish-command__briefing')?.contains(objective)).toBe(true);
+        expect(workspace.querySelector('figure')?.contains(objective)).toBe(false);
+      }
       const rounds = operation.settings.rounds ?? 3;
       expect(workspace.textContent).toContain(`${rounds} ${rounds === 1 ? 'round' : 'rounds'}`);
       expect(workspace.querySelectorAll('[data-command-primary]')).toHaveLength(1);

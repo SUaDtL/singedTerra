@@ -9,11 +9,23 @@ function clockFor(durations) {
   return () => index++ % 2 === 0 ? 0 : durations[Math.floor((index - 1) / 2)]
 }
 
+test('one isolated wall-clock outlier does not fail a corpus case', () => {
+  let reported
+  assert.doesNotThrow(() => runVerifiedDuelBenchmark(validReplay, {
+    mode: 'local',
+    now: clockFor([99, 99, 150, 99, 99, 99, 99, 99, 99, 99, 99, 99]),
+    report: value => { reported = value },
+  }))
+  assert.equal(reported.metric, 'wall-clock-case-median')
+  assert.equal(reported.samples.find(sample => sample.seed === 73 && sample.round === 0).ms, 150)
+  assert.equal(reported.caseMedians.find(sample => sample.seed === 73).ms, 99)
+})
+
 for (const duration of [99, 100, 101]) {
   test(`strict replay ceiling ${duration}ms`, () => {
     let reported
     const run = () => runVerifiedDuelBenchmark(validReplay, {
-      now: clockFor(Array(12).fill(duration)), report: value => { reported = value },
+      mode: 'local', now: clockFor(Array(12).fill(duration)), report: value => { reported = value },
     })
     if (duration < 100) assert.doesNotThrow(run)
     else assert.throws(run, /must be <100ms/)
@@ -22,18 +34,47 @@ for (const duration of [99, 100, 101]) {
   })
 }
 
-test('one slow sample fails even when every other sample is fast', () => {
+test('a corpus case fails when two of its three samples breach the ceiling', () => {
   assert.throws(() => runVerifiedDuelBenchmark(validReplay, {
-    now: clockFor([1, 1, 1, 1, 1, 101, 1, 1, 1, 1, 1, 1]), report() {},
+    mode: 'local', now: clockFor([1, 101, 1, 1, 1, 102, 1, 1, 1, 1, 1, 1]), report() {},
   }), /101ms must be <100ms/)
 })
+
+test('hosted CI compares cases within the same run instead of enforcing the local target', () => {
+  let reported
+  assert.doesNotThrow(() => runVerifiedDuelBenchmark(validReplay, {
+    mode: 'hosted-ci', now: clockFor(Array(12).fill(120)),
+    report: value => { reported = value },
+  }))
+  assert.equal(reported.mode, 'hosted-ci')
+  assert.equal(reported.localLimitMs, 100)
+  assert.equal(reported.relativeLimit, 1.5)
+  assert.equal(reported.cohortMedianMs, 120)
+  assert.ok(reported.caseMedians.every(sample => sample.relativeToCohort === 1))
+})
+
+test('hosted CI rejects a case-specific regression against the same-run cohort', () => {
+  assert.throws(() => runVerifiedDuelBenchmark(validReplay, {
+    mode: 'hosted-ci',
+    now: clockFor([100, 100, 160, 100, 100, 100, 160, 100, 100, 100, 160, 100]),
+    report() {},
+  }), /seed 73 relative median 1\.6x must be <=1\.5x the 100ms cohort median/)
+})
+
+for (const duration of [-1, Number.POSITIVE_INFINITY, Number.NaN]) {
+  test(`invalid timing ${duration} is rejected directly`, () => {
+    assert.throws(() => runVerifiedDuelBenchmark(validReplay, {
+      mode: 'local', now: clockFor(Array(12).fill(duration)), report() {},
+    }), /produced invalid timing/)
+  })
+}
 
 test('fixed warmup and samples replay all four complete six-shot cases', () => {
   const calls = []
   const result = runVerifiedDuelBenchmark((seed, transcript) => {
     calls.push([seed, transcript])
     return validReplay()
-  }, { now: clockFor(Array(12).fill(1)), report() {} })
+  }, { mode: 'local', now: clockFor(Array(12).fill(1)), report() {} })
   const expected = [[17, 0, 5], [42, 45, 20], [73, 90, 20], [109, 180, 20]]
   assert.equal(calls.length, 20)
   calls.forEach(([seed, transcript], index) => {
@@ -47,7 +88,7 @@ test('fixed warmup and samples replay all four complete six-shot cases', () => {
 
 test('fast replay cannot bypass deterministic assertions', () => {
   for (const invalid of [{ cpuSalvos: 5, maximumProbeCount: 59 }, { cpuSalvos: 6, maximumProbeCount: 58 }]) {
-    assert.throws(() => runVerifiedDuelBenchmark(() => invalid, { now: () => 0, report() {} }))
+    assert.throws(() => runVerifiedDuelBenchmark(() => invalid, { mode: 'local', now: () => 0, report() {} }))
   }
 })
 
@@ -57,6 +98,7 @@ test('benchmark assertion exits its process unsuccessfully and preserves timing 
     import { runVerifiedDuelBenchmark } from ${JSON.stringify(moduleUrl)};
     let tick = 0;
     runVerifiedDuelBenchmark(() => ({ cpuSalvos: 6, maximumProbeCount: 59 }), {
+      mode: 'local',
       now: () => tick++ % 2 === 0 ? 0 : 100,
     });
   `], { encoding: 'utf8' })
