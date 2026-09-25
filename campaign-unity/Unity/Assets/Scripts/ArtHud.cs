@@ -7,6 +7,7 @@ namespace SingedTerra.Art
     {
         public TankPresentation presentation;
         Font font; Canvas canvas; Text viewLabel,partLabel,motionLabel,partDetail;
+        RectTransform inspectionControls; Text calloutLabel;
         readonly Color ink=new Color(.055f,.068f,.064f,.93f);
         readonly Color gold=new Color(.76f,.61f,.34f,1);
         readonly Color paper=new Color(.88f,.85f,.74f,1);
@@ -61,11 +62,26 @@ namespace SingedTerra.Art
             var footer=Rect("Footer",canvas.transform,new Vector2(.5f,0),new Vector2(.5f,0),new Vector2(0,8),new Vector2(900,20));
             var f=footer.gameObject.AddComponent<Text>();f.font=font;f.fontSize=11;f.color=gold;f.alignment=TextAnchor.MiddleCenter;
             f.text="ONE TANK. ROOM TO GROW.   /   UNITY WEB ART SLICE";f.raycastTarget=false;
+            inspectionControls=Rect("InspectionControls",canvas.transform,new Vector2(.5f,0),new Vector2(.5f,0),Vector2.zero,Vector2.zero);
+            InspectionButton("OrbitLeft","ORBIT LEFT",-342,presentation.OrbitLeft);
+            InspectionButton("OrbitRight","ORBIT RIGHT",-114,presentation.OrbitRight);
+            InspectionButton("OrbitReset","FRONT VIEW",114,presentation.ResetInspection);
+            calloutLabel=InspectionButton("Callouts","",342,presentation.ToggleCallouts);
+            gameObject.AddComponent<TankPartCallouts>().Initialize(canvas,presentation,font,inspectionControls);
             presentation.Changed+=Refresh;Refresh();
+        }
+        Text InspectionButton(string name,string value,float x,UnityEngine.Events.UnityAction action)
+        {
+            var text=Button(name,value,x,action);
+            var r=(RectTransform)text.transform.parent;
+            r.SetParent(inspectionControls,false);r.anchoredPosition=new Vector2(x,96);
+            return text;
         }
         void Refresh()
         {
             if(!viewLabel)return;
+            inspectionControls.gameObject.SetActive(!presentation.battlefield);
+            calloutLabel.text=presentation.ShowPartCallouts?"HIDE PART LABELS":"SHOW PART LABELS";
             viewLabel.text=presentation.battlefield?"INSPECTION VIEW":"BATTLEFIELD VIEW";
             partLabel.text=presentation.showingLauncher?"FIT REPAIR UNIT":"FIT LAUNCHER";
             motionLabel.text=presentation.animate?"PAUSE IDLE MOTION":"RESUME IDLE MOTION";

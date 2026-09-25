@@ -84,3 +84,21 @@ gets a fresh evidence/output directory. No failed result is relabeled or deleted
 The saved scene and old exports remain recoverable. There is no live data migration
 or production rollback: retain the branch unmerged and reconcile specific files.
 No command enables auto-merge, Pages, an external listener or a public tunnel.
+
+## Inspection controls - September 25 follow-on
+
+Inspection now opens from the cannon-facing three-quarter side. The upper control
+row offers Orbit Left, Orbit Right, Front View (reset to that initial framing),
+and Hide/Show Part Labels. Orbit moves the camera, not the tank or turret aim.
+Three non-interactive labels identify the main cannon, hull and current fitting.
+They are appearance inspection aids, not selected equipment slots or item stats.
+The upper row and labels hide in Battlefield View; the ordinary bottom controls
+remain. No additional assets, package versions, combat or Android setup are added.
+
+This is a draft implementation checkpoint, not completed inspection acceptance.
+The Web export and unchanged 15-check browser regression passed. New orbit/reset,
+label toggle, full-circle and independent endpoint tests remain outstanding after
+a tool blocked the new verifier's completion. Do not run an untracked partial
+Tools/verify_inspection.py from the workstation. Use the complete existing
+Tools/verify_web.py for its original coverage only. See VALIDATION.md and
+[the dated receipt](docs/inspection-20260925/receipt.json) for exact limits.

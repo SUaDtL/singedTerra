@@ -15,6 +15,10 @@ namespace SingedTerra.Art
         Vector3 turretUp;
         float phase, recoilTime, flashTime;
         float peakRecoilWorld;
+        const float InspectionRadius=13.5f, InspectionHeight=6.7f, OrbitStep=45f;
+        Vector3 inspectionForward;
+        public float InspectionYaw { get; private set; }
+        public bool ShowPartCallouts { get; private set; }=true;
         bool focused=true;
         public event Action Changed;
         void Start()
@@ -25,6 +29,8 @@ namespace SingedTerra.Art
             // The displacement is in world units; include parent scale in its local conversion.
             recoilAxis=barrel.parent.InverseTransformVector((muzzle.position-barrel.position).normalized);
             turretUp=turret.InverseTransformDirection(Vector3.up);
+            inspectionForward=Vector3.ProjectOnPlane(muzzle.position-barrel.position,Vector3.up).normalized;
+            if(inspectionForward.sqrMagnitude<.5f)throw new InvalidOperationException("No horizontal inspection axis");
             Application.targetFrameRate=60;Application.runInBackground=false;
             repairModule.SetActive(true);launcherModule.SetActive(false);
             flash.SetActive(false);SetView(false,true);Report("ready");
@@ -33,10 +39,34 @@ namespace SingedTerra.Art
         public void SetView(bool wide,bool immediate=false)
         {
             battlefield=wide;
-            cameraGoal=wide?new Vector3(17,23,19):new Vector3(8.8f,6.7f,10.8f);
-            lookGoal=wide?new Vector3(0,.5f,0):new Vector3(0,1.35f,0);
+            UpdateCameraGoal();
             if(immediate){view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);}
             Report(wide?"battlefield":"inspection");
+        }
+        void UpdateCameraGoal()
+        {
+            lookGoal=tank.position+Vector3.up*(battlefield?.5f:1.35f);
+            cameraGoal=tank.position+(battlefield?new Vector3(17,23,19):
+                Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius
+                +Vector3.up*InspectionHeight);
+        }
+        public void OrbitLeft(){Orbit(-OrbitStep);}
+        public void OrbitRight(){Orbit(OrbitStep);}
+        void Orbit(float degrees)
+        {
+            if(battlefield)return;
+            InspectionYaw=Mathf.Repeat(InspectionYaw+degrees,360f);
+            UpdateCameraGoal();Report("orbit");
+        }
+        public void ResetInspection()
+        {
+            if(battlefield)return;
+            InspectionYaw=0;UpdateCameraGoal();Report("orbit_reset");
+        }
+        public void ToggleCallouts()
+        {
+            if(battlefield)return;
+            ShowPartCallouts=!ShowPartCallouts;Report("callouts");
         }
         public void ToggleView(){SetView(!battlefield);}
         public void ToggleAttachment()
@@ -68,7 +98,8 @@ namespace SingedTerra.Art
             }
             flashTime=Mathf.Max(0,flashTime-dt);flash.SetActive(flashTime>0);
             float t=1-Mathf.Exp(-dt*7);
-            view.transform.position=Vector3.Lerp(view.transform.position,cameraGoal,t);
+            // Arc interpolation avoids moving through the model between opposite views.
+            view.transform.position=lookGoal+Vector3.Slerp(view.transform.position-lookGoal,cameraGoal-lookGoal,t);
             Quaternion q=Quaternion.LookRotation(lookGoal-view.transform.position);
             view.transform.rotation=Quaternion.Slerp(view.transform.rotation,q,t);
         }
@@ -84,13 +115,16 @@ namespace SingedTerra.Art
             public string action,view,attachment;
             public bool motion,repairVisible,launcherVisible;
             public int previews,width,height;
+            public float inspectionYaw;
+            public bool callouts;
         }
         void Report(string action)
         {
             var state=new State{action=action,view=battlefield?"battlefield":"inspection",
                 attachment=showingLauncher?"launcher":"repair",motion=animate,
                 repairVisible=repairModule.activeSelf,launcherVisible=launcherModule.activeSelf,
-                previews=previewCount,width=Screen.width,height=Screen.height};
+                previews=previewCount,width=Screen.width,height=Screen.height,
+                inspectionYaw=InspectionYaw,callouts=ShowPartCallouts};
             Debug.Log("ST_ART_STATE "+JsonUtility.ToJson(state));Changed?.Invoke();
         }
     }

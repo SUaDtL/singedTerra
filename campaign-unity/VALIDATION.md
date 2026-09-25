@@ -66,3 +66,46 @@ unchanged to preserve the saved assets; no whitespace rule or CI gate was disabl
 Git applies the declared LF normalization to designated text files. Validation
 source hashes identify the tested working-file bytes; the Git tree additionally
 records the normalized source. This is not a claim that CRLF and LF hashes match.
+
+## Inspection follow-on checkpoint - 2026-09-25T06:49Z
+
+B explicitly retried the previously blocked inspection write. The completed helper
+applied the change on parent a9c893a35cd2b6ba9e4cfc99be5011cae6cec9e0 only.
+TankPresentation remains the camera/fitting owner; ArtHud adds inspection controls;
+TankPartCallouts decorates that same Canvas with three mesh-bound labels.
+The camera starts on the cannon-facing side. Orbit uses 45-degree camera steps,
+front reset restores the initial three-quarter framing, and inspection controls
+and callouts hide in battlefield view. These are reversible presentation choices.
+No mesh, texture, material, saved scene, package pin or gameplay rule changed.
+
+Build Web-20260925T064755Z-6d9dd3 passed with the pinned Unity/URP toolchain.
+The existing UNCHANGED Tools/verify_web.py passed all 15 checks in headed Chrome
+153.0.8010.50: evidence browser-verify-20260925T064918Z-38ba52. Its five recoil
+peaks were 0.319883883..0.319996685 world units, all with zero return error.
+No browser errors or failed requests were observed by that bounded regression.
+Source, build and capture hashes are in docs/inspection-20260925/receipt.json.
+The saved scene retained 5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65.
+
+Four actual Web captures were inspected: front repair/launcher views, battlefield
+without callouts, and resized inspection. This supports rendered appearance and
+fitting-label changes; it is not final owner visual approval or an orbit test.
+The new inspection-specific verifier's SECOND write was blocked before completion.
+Tools/verify_inspection.py remains an unexecuted, untracked partial file on the PC;
+it is deliberately excluded from this commit. No alternate route ran those tests.
+Orbit/reset, full-circle wrap, the label-visibility toggle, preference retention,
+and independent endpoint geometry acceptance remain NOT TESTED in the browser.
+
+The full inspection acceptance is therefore OPEN despite the successful build and
+existing regression suite. Diagnostics emit only after a change/resize settles,
+not every frame. Cached renderers and retained UI geometry are used; this is a
+source-level observation, not a sustained-performance measurement.
+
+All 85 originally snapshotted saved authoring files still match their recorded
+hashes. The original stterra editor remains open with unsaved work; it was not
+saved, closed, regenerated or modified. Those in-memory edits are still not backed
+up by this PR. Original saved assets, both old build trees and prior failures remain.
+Only the review checkout receives this follow-on. Keep PR #524 draft and unmerged.
+A rollback is a scoped revert of this follow-on, preserving the initial art and
+recoil fix. No Android work, classic change, production service or deployment.
+The original a9c893a checks were previously observed green; a new commit must have
+its own repository CI observation, which is separate from local Unity evidence.

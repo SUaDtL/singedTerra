@@ -56,3 +56,33 @@ Subsequent commits to this PR may complete the same approved slice after re-read
 its live head. Another gameplay layer needs its own bounded specification/approval.
 Evidence belongs in the PR and campaign-unity validation receipt, not a competing
 recovery ledger. Required existing repository CI remains separate from Unity checks.
+
+## Inspection follow-on - 2026-09-25
+
+B requested the next slice on the same PR. This bounded continuation improves
+inspection of the existing art; it does not dispatch a combat or economy layer.
+Implementation choices below are reversible art-interface choices, not permanent
+loadout rules or acceptance of the complete equipment-screen concept.
+
+- Start inspection from the cannon-facing three-quarter side, not behind the tank.
+- Provide left/right camera orbit steps and a front-view reset. Rotate the camera,
+  never the tank, turret aim, or a gameplay target. Keep one camera owner.
+- Add three compact, non-interactive callouts for the actual cannon, hull, and
+  currently visible fitting. Project their endpoints from the real mesh bounds;
+  retarget the fitting label/endpoint after a swap. No item statistics or prices.
+- Allow callouts to be hidden. Hide inspection controls and callouts in battlefield
+  view; returning preserves the inspection orientation and callout preference.
+- Retain existing fitting, camera, motion and scale-aware recoil behavior.
+- Do not change meshes, textures, materials, the saved scene, build pins, classic
+  code, Android setup, external services or original open authoring work.
+
+Acceptance: export the saved scene without changing its bytes; retain the existing
+15-check browser suite; add pointer tests for orbit/reset, full-circle wrap, hidden
+callouts, fitting retargeting, view return and resize. Inspect actual browser frames.
+Measure live callout endpoints against projected world anchors and require panels
+inside the tested landscape canvas. Record failures, source/build identity and
+remaining art/accessibility/device gaps. No whole-game acceptance is inferred.
+
+Keep this work on draft PR #524, with normal non-force commits and no merge.
+Rollback is a scoped revert of this follow-on's runtime/UI/test files; preserve the
+prior art snapshot, corrected recoil and all dated evidence. No data migration.
