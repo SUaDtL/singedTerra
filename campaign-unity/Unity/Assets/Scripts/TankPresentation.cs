@@ -19,13 +19,16 @@ namespace SingedTerra.Art
         Vector3 inspectionForward;
         public float InspectionYaw { get; private set; }
         public bool ShowPartCallouts { get; private set; }=true;
-        bool focused=true;
+        bool focused=true, recoilDiagnostic=true, encounterWasWide, encounterWasAnimating;
+        Quaternion turretHomeWorld;
+        public bool EncounterActive { get; private set; }
+        public bool EncounterPaused { get; private set; }
         public event Action Changed;
         void Start()
         {
             if(!view||!tank||!turret||!barrel||!muzzle||!repairModule||!launcherModule)
                 throw new InvalidOperationException("Incomplete tank presentation references");
-            barrelHome=barrel.localPosition;turretHome=turret.localRotation;
+            barrelHome=barrel.localPosition;turretHome=turret.localRotation;turretHomeWorld=turret.rotation;
             // The displacement is in world units; include parent scale in its local conversion.
             recoilAxis=barrel.parent.InverseTransformVector((muzzle.position-barrel.position).normalized);
             turretUp=turret.InverseTransformDirection(Vector3.up);
@@ -38,6 +41,7 @@ namespace SingedTerra.Art
         Vector3 cameraGoal,lookGoal;
         public void SetView(bool wide,bool immediate=false)
         {
+            if(EncounterActive)return;
             battlefield=wide;
             UpdateCameraGoal();
             if(immediate){view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);}
@@ -71,20 +75,53 @@ namespace SingedTerra.Art
         public void ToggleView(){SetView(!battlefield);}
         public void ToggleAttachment()
         {
+            if(EncounterActive)return;
             showingLauncher=!showingLauncher;repairModule.SetActive(!showingLauncher);
             launcherModule.SetActive(showingLauncher);Report("attachment");
         }
         public void PreviewMotion()
         {
-            if(recoilTime>0)return;
+            if(EncounterActive||recoilTime>0)return;
+            recoilDiagnostic=true;
             peakRecoilWorld=0;previewCount++;recoilTime=.7f;flashTime=.09f;Report("preview");
         }
-        public void ToggleMotion(){animate=!animate;Report("motion");}
+        public void ToggleMotion(){if(EncounterActive)return;animate=!animate;Report("motion");}
+        public bool BeginEncounter()
+        {
+            if(EncounterActive)return false;
+            encounterWasWide=battlefield;encounterWasAnimating=animate;
+            SetView(true,true);EncounterActive=true;EncounterPaused=false;animate=false;
+            recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
+            return true;
+        }
+        public void EndEncounter()
+        {
+            if(!EncounterActive)return;
+            EncounterActive=false;EncounterPaused=false;animate=encounterWasAnimating;
+            recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
+            SetView(encounterWasWide,true);
+        }
+        public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
+        public void PlayEncounterShot(Vector3 target)
+        {
+            if(!EncounterActive)return;
+            Vector3 direction=Vector3.ProjectOnPlane(target-tank.position,Vector3.up).normalized;
+            if(direction.sqrMagnitude<.5f)return;
+            Quaternion world=EncounterWorldYaw(turretHomeWorld,inspectionForward,direction);
+            turret.localRotation=Quaternion.Inverse(turret.parent.rotation)*world;
+            recoilDiagnostic=false;peakRecoilWorld=0;recoilTime=.7f;flashTime=.09f;
+        }
+        public static Quaternion EncounterWorldYaw(Quaternion worldHome,Vector3 restForward,Vector3 direction)
+        {
+            // FromToRotation has no unique axis for opposite directions. Constrain yaw to world up.
+            float yaw=Vector3.SignedAngle(restForward,direction,Vector3.up);
+            return Quaternion.AngleAxis(yaw,Vector3.up)*worldHome;
+        }
         void Update()
         {
-            float dt=focused?Mathf.Min(Time.unscaledDeltaTime,.05f):0;
-            if(animate)phase+=dt;
-            turret.localRotation=turretHome*Quaternion.AngleAxis(Mathf.Sin(phase*.28f)*12, turretUp);
+            float dt=focused&&!EncounterPaused?Mathf.Min(Time.unscaledDeltaTime,.05f):0;
+            if(animate&&!EncounterActive)phase+=dt;
+            if(!EncounterActive)turret.localRotation=turretHome*Quaternion.AngleAxis(Mathf.Sin(phase*.28f)*12, turretUp);
             bool wasRecoiling=recoilTime>0;
             if(recoilTime>0)recoilTime=Mathf.Max(0,recoilTime-dt);
             float kick=recoilTime>0?Mathf.Sin((1-recoilTime/.7f)*Mathf.PI)*.32f:0;
@@ -93,7 +130,7 @@ namespace SingedTerra.Art
             {
                 float distance=Vector3.Distance(barrel.position,barrel.parent.TransformPoint(barrelHome));
                 peakRecoilWorld=Mathf.Max(peakRecoilWorld,distance);
-                if(recoilTime==0)Debug.Log("ST_ART_RECOIL "+JsonUtility.ToJson(new RecoilReceipt
+                if(recoilTime==0&&recoilDiagnostic)Debug.Log("ST_ART_RECOIL "+JsonUtility.ToJson(new RecoilReceipt
                     {preview=previewCount,peakWorld=peakRecoilWorld,returnWorld=distance}));
             }
             flashTime=Mathf.Max(0,flashTime-dt);flash.SetActive(flashTime>0);

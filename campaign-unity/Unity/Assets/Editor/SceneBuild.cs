@@ -152,7 +152,7 @@ public static class SceneBuild
         if(!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.WebGL,BuildTarget.WebGL))throw new Exception("Pinned Web Build Support missing");
         if(Application.unityVersion!="6000.3.24f1")throw new Exception("Unexpected editor version");
         EditorSceneManager.OpenScene(ScenePath,OpenSceneMode.Single);
-        Validate();
+        Validate();EncounterChecks.Run();
         string output=Environment.GetEnvironmentVariable("ST_ART_WEB_OUTPUT");
         if(string.IsNullOrWhiteSpace(output))throw new Exception("Set ST_ART_WEB_OUTPUT to a fresh absolute output directory");
         output=Path.GetFullPath(output);

@@ -48,6 +48,7 @@ try:
     require(json.loads((vendor/'package.json').read_text(encoding='utf-8'))['version']=='17.3.0','Unexpected embedded URP')
     run('unity-web',[str(editor),'-batchmode','-quit','-projectPath',str(PROJECT),'-buildTarget','WebGL','-executeMethod','SceneBuild.BuildWeb','-logFile','-'])
     require('ST_ART_WEB_BUILD_PASS' in (evidence/'unity-web.log').read_text(encoding='utf-8',errors='replace'),'Missing Unity success marker')
+    require('ST_ENC_MODEL_PASS' in (evidence/'unity-web.log').read_text(encoding='utf-8',errors='replace'),'Missing encounter model checks')
     require(digest(scene)==record['scene_before'],'Build unexpectedly changed saved scene')
     run('web-entry',[sys.executable,str(ROOT/'Tools/make_web_entry.py'),str(build)],30)
     index=build/'index.html';s=index.read_text(encoding='utf-8');index.write_text(s.replace('</head>','<link rel="icon" href="TemplateData/favicon.ico">\n</head>'),encoding='utf-8')

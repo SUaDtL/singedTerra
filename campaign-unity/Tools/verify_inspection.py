@@ -5,7 +5,13 @@ from functools import partial
 import datetime, hashlib, json, math, sys, threading, time, uuid
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1]
-BUILD=Path(sys.argv[1]).resolve()
+import argparse
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('build',type=Path)
+parser.add_argument('--receipt',type=Path,default=ROOT/'docs/inspection-20260925/receipt.json')
+args=parser.parse_args();BUILD=args.build.resolve();EXPECTED=args.receipt.resolve()
+if not EXPECTED.is_relative_to(ROOT) or not EXPECTED.is_file():
+    raise SystemExit('Expected an explicit receipt inside this project')
 if not BUILD.is_relative_to(ROOT/'Builds') or not (BUILD/'index.html').is_file():
     raise SystemExit('Expected a completed task-owned Web build')
 OUT=ROOT/'Evidence'/('inspection-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:6])
@@ -38,7 +44,9 @@ clicks=[]; observations=[]; browser=None; max_projection_error=0.0
 report.update(clicks=clicks, observations=observations, temporary_port=server.server_port)
 print('INSPECTION_EVIDENCE='+str(OUT), flush=True)
 try:
-    expected=json.loads((ROOT/'docs/inspection-20260925/receipt.json').read_text())
+    expected=json.loads(EXPECTED.read_text(encoding='utf-8'))
+    if expected.get('status','pass')!='pass':raise RuntimeError('Receipt did not pass')
+    report.update(expected_receipt=EXPECTED.relative_to(ROOT).as_posix(),expected_receipt_sha256=digest(EXPECTED))
     check(inputs==expected['artifacts'], 'exact previously built artifact identity')
     scene=(ROOT/'Unity/Assets/Scenes/FieldAssembly.unity').read_text()
     fovs=re.findall(r'^  field of view: ([0-9.]+)$', scene, re.MULTILINE)

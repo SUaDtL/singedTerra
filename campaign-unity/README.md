@@ -1,5 +1,13 @@
 # singedTerra Unity Web starter art (ST-ART-01)
 
+> Current continuation: ST-ENC-01 adds one non-awarding automatic encounter beside
+> the preserved ST-ART-01 inspection. Its source/build and C# fixture checks are
+> complete; browser encounter acceptance is PARTIAL. The new encounter test stops
+> at focus-event verification. Earlier art-only descriptions below retain their
+> initial scope; they do not describe the complete current feature set. See
+> `.codearbiter/specs/unity-first-encounter.md` at the repository root and VALIDATION.md.
+
+
 **Latest checkpoint:** the inspection-specific pointer/geometry suite is now
 complete and passing for the pinned b10 Web artifact. The initial incomplete-test
 notice near the end is historical; see the current acceptance instructions below.
@@ -136,3 +144,57 @@ with Ctrl+C when finished. Never stop unrelated listeners or the authoring edito
 247-assertion desktop suite, two failed starts, the stale-build refusal and server
 shutdown. [VALIDATION.md](VALIDATION.md) separates successful checks from remaining
 shader diagnostics, first-pass art, layout, accessibility and device limitations.
+
+## First automatic encounter - ST-ENC-01
+
+Choose the visible repair/launcher sample in inspection, then use Deploy Test
+Encounter. The existing tank holds position while diagnostic opponents approach
+from surrounding lanes. Main cannon fire is automatic. The launcher supplies an
+independent attack; the repair fitting instead restores hull. Neither is a Skill.
+Fittings and manual art previews are locked until Return to Inspection. Pause and
+tracer reduction are the only live test controls besides returning. Defeat grants
+nothing; returning/reloading retains no test-run progress and touches no old save.
+These brief fixture rules are not campaign balance, an enemy cap, a numeric-library
+selection, a starting loadout allowance or the complete run/progression system.
+
+EncounterModel owns integer fixture rules; EncounterSession advances its clock.
+TankPresentation still owns tank pose/recoil/camera; EncounterView owns bounded
+opponent meshes/tracers; EncounterHud uses ArtHud's existing Canvas/EventSystem.
+The saved tank/clearing assets and scene are not regenerated or overwritten.
+
+The existing build command now runs EncounterChecks.Run before Web export.
+The following are actual verification entry points, not a completed-pass claim:
+```powershell
+python Tools/verify_encounter.py "C:\absolute\project\Evidence\build-...\result.json"
+python Tools/verify_inspection.py "C:\absolute\project\Builds\Web-..." --receipt "C:\absolute\project\Evidence\build-...\result.json"
+```
+Inspection defaults still bind to their historical artifact unless an explicit
+new receipt is supplied. Old receipts and thresholds are never rewritten.
+The encounter suite currently requires diagnosis after its focus-event timeout;
+do not rerun until green or treat C# results as browser terminal/lifecycle proof.
+No manual preview server starts automatically. Test servers close on exit.
+
+## Current recovered encounter checkpoint - September 25, 10:31 UTC
+
+ST-ENC-01 is implemented beside inspection: choose a fitting, deploy automatic
+cannon defense against close and ranged diagnostic opponents, and use the repair
+unit or an independently firing launcher. These are temporary test rules, not
+selected campaign balance, equipment capacity or enemy artwork. Nothing is earned
+or saved. Android and classic-game integration remain excluded.
+
+The final Web export is Web-20260925T102215Z-797845. An imported-hierarchy test
+caught and fixed an upside-down turret when firing directly behind the tank.
+Fourteen C# model contracts and all eight pose headings pass. A browser repair
+run reached defeat with the matching model result and passed actual foreground
+focus-pause/resume checks, but the full encounter browser suite remains FAILED
+at post-defeat input. New launcher/return/repeat/parity coverage is incomplete.
+The final-build art and inspection suites also failed with unexpected extra
+commands; their origin remains unresolved. Earlier green tests are not reassigned
+to this newer artifact. Read VALIDATION.md and docs/encounter-recovery-20260925/.
+
+All previews should remain off unless explicitly requested. Existing test commands
+own and close their temporary servers. A manual preview uses one foreground shell
+and must be stopped with Ctrl+C; do not leave another port running after each build.
+The original stterra files remain protected. Its previously open editor is now
+closed, but this observation does not recover or explain its former unsaved work.
+Keep #524 draft and unmerged while completing the outstanding acceptance.

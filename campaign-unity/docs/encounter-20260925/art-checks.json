@@ -1,0 +1,97 @@
+{
+  "run": "browser-verify-20260925T082724Z-aeb9f0",
+  "raw_receipt_sha256": "d36a3095a10ea12e4c3478eff447c3e42969f054675a4fa78620503126e0582c",
+  "checks": [
+    {
+      "check": "initial repair",
+      "pass": true
+    },
+    {
+      "check": "pause idle with held pointer",
+      "pass": true
+    },
+    {
+      "check": "launcher replaces repair",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 1",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 2",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 3",
+      "pass": true
+    },
+    {
+      "check": "battlefield view",
+      "pass": true
+    },
+    {
+      "check": "repair in battlefield",
+      "pass": true
+    },
+    {
+      "check": "battlefield recoil",
+      "pass": true
+    },
+    {
+      "check": "inspection restored",
+      "pass": true
+    },
+    {
+      "check": "attachment after resize",
+      "pass": true
+    },
+    {
+      "check": "resume idle",
+      "pass": true
+    },
+    {
+      "check": "recoil with rotating turret",
+      "pass": true
+    },
+    {
+      "check": "no observed browser errors",
+      "pass": true
+    },
+    {
+      "check": "no failed requests",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "server_closed": null,
+  "browser": "153.0.8010.50",
+  "recoils": [
+    {
+      "preview": 1,
+      "peakWorld": 0.3199998438358307,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 2,
+      "peakWorld": 0.3199998438358307,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 3,
+      "peakWorld": 0.31999677419662476,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 4,
+      "peakWorld": 0.31999677419662476,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 5,
+      "peakWorld": 0.32000017166137695,
+      "returnWorld": 0.0
+    }
+  ],
+  "max_projection_error_px": null
+}

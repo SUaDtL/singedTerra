@@ -8,6 +8,7 @@ namespace SingedTerra.Art
         public TankPresentation presentation;
         Font font; Canvas canvas; Text viewLabel,partLabel,motionLabel,partDetail;
         RectTransform inspectionControls; Text calloutLabel;
+        Transform[] artNodes;
         readonly Color ink=new Color(.055f,.068f,.064f,.93f);
         readonly Color gold=new Color(.76f,.61f,.34f,1);
         readonly Color paper=new Color(.88f,.85f,.74f,1);
@@ -69,6 +70,9 @@ namespace SingedTerra.Art
             calloutLabel=InspectionButton("Callouts","",342,presentation.ToggleCallouts);
             gameObject.AddComponent<TankPartCallouts>().Initialize(canvas,presentation,font,inspectionControls);
             presentation.Changed+=Refresh;Refresh();
+            artNodes=new Transform[canvas.transform.childCount];
+            for(int i=0;i<artNodes.Length;i++)artNodes[i]=canvas.transform.GetChild(i);
+            gameObject.AddComponent<SingedTerra.Encounter.EncounterSession>().Initialize(presentation,this,canvas,font);
         }
         Text InspectionButton(string name,string value,float x,UnityEngine.Events.UnityAction action)
         {
@@ -86,6 +90,11 @@ namespace SingedTerra.Art
             partLabel.text=presentation.showingLauncher?"FIT REPAIR UNIT":"FIT LAUNCHER";
             motionLabel.text=presentation.animate?"PAUSE IDLE MOTION":"RESUME IDLE MOTION";
             partDetail.text=presentation.showingLauncher?"AUXILIARY LAUNCHER":"FIELD REPAIR UNIT";
+        }
+        public void SetEncounterVisible(bool active)
+        {
+            foreach(var node in artNodes)node.gameObject.SetActive(!active);
+            if(!active)Refresh();
         }
         void OnDestroy(){if(presentation)presentation.Changed-=Refresh;}
     }

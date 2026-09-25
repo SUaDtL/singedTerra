@@ -86,3 +86,14 @@ remaining art/accessibility/device gaps. No whole-game acceptance is inferred.
 Keep this work on draft PR #524, with normal non-force commits and no merge.
 Rollback is a scoped revert of this follow-on's runtime/UI/test files; preserve the
 prior art snapshot, corrected recoil and all dated evidence. No data migration.
+
+## Separately bounded encounter follow-on
+
+After the inspection acceptance checkpoint, B requested the next slice on the
+same draft PR. `unity-first-encounter.md` defines ST-ENC-01 before implementation:
+one non-awarding automatic encounter using the retained tank and clearing.
+That separate scope permits its encounter model, bounded opponent presentation,
+run controls, tests and narrow art adapters. It does not retroactively turn the
+art-only receipts into combat tests or waive any classic/security/save boundary.
+All other exclusions above remain. Prior inspection fixtures and failures remain
+intact; new builds must receive their own receipt bindings and actual tests.

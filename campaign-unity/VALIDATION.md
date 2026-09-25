@@ -166,3 +166,132 @@ accessibility, cross-browser, sustained-performance or mobile acceptance follows
 All 85 saved original-authoring files still match their prior snapshot. Unsaved
 editor memory remains outside this PR. Keep the same draft unmerged; no classic,
 account, save, gameplay/economy, Android, public-hosting or deployment work occurred.
+
+## First automatic encounter checkpoint - 2026-09-25 UTC
+
+B requested "next slice same pr" after the proposed small automatic encounter.
+ST-ENC-01 was written before implementation at parent
+`d87e261b11878ce7e6678fff4925535e1ffb86f0`. The result is one transient,
+non-awarding encounter with explicit fixture rules, not a whole campaign or a
+promotion of the earlier spike kernel into production. No gameplay DIR constants
+are selected by its temporary numbers, lane pattern, limits or opponent geometry.
+
+EncounterModel owns combat; EncounterSession owns admitted ticks and the committed
+fitting; TankPresentation retains camera/pose/recoil ownership. EncounterView uses
+bounded diagnostic opponents and tracers. EncounterHud uses the existing Canvas
+and EventSystem. No source, model, material or scene is copied back to stterra.
+
+Actual C# checks passed 14 named contracts across both fittings, including the
+first range crossing, independent launcher, hit/kill ordering, bounds, cadence,
+nearest/ID target order, repeatability and terminal no-op. Fixture outcomes:
+repair `False|Defeated|334|0|21|8|16|0|31|31`;
+launcher `True|Defeated|388|0|25|13|19|13|0|19`.
+These are C# fixture results, not independently completed browser runs or tuning
+recommendations. BuildWeb executes those same checks before every new export.
+
+First export Web-20260925T081925Z-86a32f passed, but its browser regression failed
+at the error gate after the control checks. CreatePrimitive tried to instantiate
+a stripped BoxCollider, followed by NullReferenceException in the new view setup.
+The original source and failed build/test remain. The correction constructs one
+shared render mesh directly; it does not add physics or relax stripping settings.
+Unity's documented primitive-type reference requirement supports this diagnosis:
+https://docs.unity.com/en-us/engine/6000.3/script-reference/unityengine/gameobject/createprimitive
+
+Corrected export: Web-20260925T082431Z-e19d77, Unity 6000.3.24f1 / URP 17.3.0.
+The build and embedded C# checks passed. The saved FieldAssembly scene retained
+its exact bytes. The unchanged original art regression then passed all 15 checks
+in browser-verify-20260925T082724Z-aeb9f0. The full 247-assertion inspection suite
+also passed in inspection-20260925T082742Z-19277b against an explicit NEW build
+receipt; old receipt contents, default binding and acceptance tolerances remain.
+
+The NEW encounter browser suite remains FAILED: encounter-browser-20260925T082525Z-3df105,
+exit 1, eight completed assertions, then `Missing expected encounter event`.
+Its executed sequence places that wait at the real-tab focus-suspension check.
+Completed coverage is initial inspection, fresh deployment/committed fitting,
+world-click non-dispatch, pause, frozen tick/hull during effect changes and resume.
+Browser defeat/return, repeated deployment and full/reduced terminal parity are
+NOT completed checks. C# defeat outcomes do not fill those browser gaps.
+A subsequent read of that failed result and its last states was blocked before
+execution by the tool safety-status check. It was not rerouted; no cause was
+invented and no retry/threshold change was made to manufacture success.
+The complete verifier is retained, along with its failed raw evidence on the PC.
+
+Earlier shader/WebGL diagnostics remain open; no graphics warning was suppressed.
+Passing art controls are not full encounter, cross-browser, accessibility, final
+art or sustained-performance acceptance. No Android, backend, old save, classic
+engine, release workflow, asset-source or package-pin change occurred. The original
+Unity editor was no longer running at preflight, and all 85 saved source files
+matched their earlier receipt. That does not establish what happened to the prior
+unsaved in-memory scene. No original workspace was modified in this continuation.
+
+Keep #524 draft and unmerged. Next: permitted diagnosis of the failed focus-event
+wait, then finish the SAME encounter acceptance, not another gameplay layer.
+
+The closeout rechecked successful build bytes and the saved-scene hash, and reran
+all eight existing host inspection-check methods successfully. All 85 original
+saved files still matched. The successful current inspection run independently
+retained six WebGL warnings and the same three unsupported-shader diagnostics.
+Two inspected current captures show the new deployment entry in repair/launcher
+inspection views; no combat capture was reviewed after the diagnostic block.
+`docs/encounter-20260925/receipt.json` binds these supported observations. Its new
+encounter-failure section is explicitly a tool-output transcription, not a claim
+that the blocked raw result or last-state records were read or diagnosed.
+
+## Interrupted encounter recovery - September 25, 2026, 10:12-10:31 UTC
+
+The owner requested continuation after a failed-thinking response. The PC already
+contained the complete uncommitted ST-ENC-01 implementation and earlier receipts
+above. These actual files were read, not reconstructed from the missing response.
+All 25 starting changed/untracked files were backed up under
+Evidence/recovery-20260925T101350Z before further changes. HEAD remained d87e261.
+All three old preview ports were still closed; no original Unity editor was running.
+Its earlier unsaved-memory state remains unknown, not certified as saved.
+
+Reading the previously blocked encounter failure showed a frame-gap suspension,
+not a focus event. Installed Playwright 1.60.0 source enables focus emulation for
+its pages. A diagnostic probe also saw the old page report focused after a new
+window was foregrounded. Turning that test-side emulation off produced actual
+Unity focus/application suspension; the later browser run verified paused tick
+and hull retention and explicit resume. No game focus code was changed.
+A subsequent assertion incorrectly required the still-visible old window to be
+hidden; focus loss and hidden visibility are different. Its failure was retained
+and the test records both properties separately. An added minimization check still
+fails to observe document.hidden under this test browser. A helper write to remove
+the test browser's background overrides was blocked and not rerouted or executed.
+
+Actual combat captures exposed an independent runtime defect: FromToRotation can
+flip the turret at the antiparallel heading. An eight-direction test against the
+actual imported tank failed at lane 0 with the old calculation. Constraining the
+rotation to signed yaw around world up fixes the failure. The exact same pose
+check then passed for all eight directions. Model rules and recoil tuning did not
+change; no mesh, material, scene, dependency or installed editor was rewritten.
+
+Final export: Web-20260925T102215Z-797845, Unity 6000.3.24f1 / URP 17.3.0.
+Its embedded 14 model contracts and eight imported-tank pose directions passed;
+FieldAssembly retained its existing hash. The red predecessor was
+build-20260925T102040Z-c2031d, rejected before export at the turret-flip assertion.
+Two current Web captures confirm the upright turret during combat and at defeat.
+
+The final encounter browser run encounter-browser-20260925T102757Z-7baf5d
+completed 16 assertions, including deployment, automatic close/ranged pressure,
+repair, pause, real foreground focus loss, explicit resume and actual repair-run
+defeat. Its terminal summary matches False|Defeated|334|0|21|8|16|0|31|31.
+The suite then FAILED waiting for the post-defeat effects action. Return, launcher
+browser completion, repeated runs and full/reduced terminal parity remain untested.
+The minimization case was moved after these gameplay checks without deleting any
+assertion or changing browser flags; it was not reached in this final run.
+
+Final-build art regression browser-verify-20260925T102334Z-aa65b1 FAILED after
+nine checks/four restored recoil cycles, waiting for inspection. The console also
+recorded an unrequested deployment. Final inspection run
+inspection-20260925T102959Z-2cec48 FAILED at assertion 84, circle-5 yaw: the states
+contain the intended 225-degree orbit followed by an extra 270-degree orbit and
+an attachment change not in the scripted sequence. The origin of these extra
+commands is not established; neither a product defect nor user input is proven.
+A write adding read-only pointer diagnostics to the art verifier was blocked;
+the original verifier is unchanged. No retry was run merely to obtain green.
+Earlier 15/247 passes belong to the earlier pre-yaw-correction build, not this one.
+
+The 16-assertion encounter session reports no JavaScript or failed HTTP events,
+but retained all six WebGL warnings and three unsupported-shader diagnostics.
+This is a build/partial-acceptance draft, not a complete passing encounter suite.
