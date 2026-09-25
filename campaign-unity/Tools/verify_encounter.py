@@ -42,12 +42,16 @@ def collect(message):
 print('ENCOUNTER_BROWSER_EVIDENCE=' + str(OUT), flush=True)
 try:
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(channel='chrome', headless=False)
+        from native_chrome import NativeChrome
+        native = NativeChrome(pw, OUT)
+        browser = native.browser
+        report['browser_mode'] = 'owned-default-context-no-overrides'
+        report['debug_port'] = native.port
         report['browser_version'] = browser.version
-        context = browser.new_context(viewport={'width': 1600, 'height': 900}, device_scale_factor=1)
-        page = context.new_page(); page.on('console', collect)
-        # Playwright otherwise emulates every page as focused, even behind another tab.
-        context.new_cdp_session(page).send('Emulation.setFocusEmulationEnabled', {'enabled': False})
+        context = native.context
+        page = context.pages[0]; page.set_viewport_size({'width':1600,'height':900}); page.on('console', collect)
+        from input_observer import install
+        report['input_trace'] = install(page)
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.on('requestfailed', lambda request: requests.append(request.url))
         page.on('response', lambda response: requests.append(str(response.status)+' '+response.url) if response.status >= 400 else None)
@@ -104,7 +108,6 @@ try:
             check(restored['fullEffects'] and restored['tick'] == paused['tick'], 'restore decoration without combat advance')
             resumed = click(-300, 'pause'); check(not resumed['paused'], 'explicit resume accepted')
             start = len(states); other = context.new_page()
-            context.new_cdp_session(other).send('Emulation.setFocusEmulationEnabled', {'enabled': False})
             other.goto('about:blank'); other.bring_to_front()
             report['background_dom'] = page.evaluate('({hidden:document.hidden, focused:document.hasFocus()})')
             check(not report['background_dom']['focused'], 'actual foreground focus loss without focus emulation')
@@ -162,7 +165,7 @@ try:
         except (Exception, KeyboardInterrupt):
             page.screenshot(path=str(OUT/'failure-frame.png')); raise
         finally:
-            context.close(); browser.close(); report['browser_closed'] = True
+            native.close(); report['browser_closed'] = native.closed; report['browser_forced'] = native.forced
 except (Exception, KeyboardInterrupt) as exception:
     report.update(status='failed', error=type(exception).__name__+': '+str(exception))
 finally:

@@ -295,3 +295,73 @@ Earlier 15/247 passes belong to the earlier pre-yaw-correction build, not this o
 The 16-assertion encounter session reports no JavaScript or failed HTTP events,
 but retained all six WebGL warnings and three unsupported-shader diagnostics.
 This is a build/partial-acceptance draft, not a complete passing encounter suite.
+
+## Encounter diagnostics and completed desktop suites - September 25, 11:26-11:30 UTC
+
+B explicitly retried encounter diagnostics and authorized the needed workstation
+controls. The actual local/GitHub parent was
+158143688a477e0468a4f3c5ade338d79351ce42 with a clean worktree. No Unity runtime,
+model, editor test, asset, scene, package pin or compiled Web byte changed here.
+The tested artifact remains Web-20260925T102215Z-797845. No Unity rebuild or C#
+model/pose rerun occurred; those earlier results retain their own date and scope.
+
+Both previously blocked diagnostic writes succeeded and executed: the three
+verifiers now retain passive test-page input traces, and the encounter test first
+removed only Playwright's three background launch overrides. That initial run
+completed 49 passing assertions, including both fittings through defeat, all
+returns/redeployments and identical full/reduced launcher results, then failed
+assertion 50 at minimized hidden visibility. Its failed receipt is retained.
+
+A short browser-only probe confirmed native windowState=minimized while the
+Playwright-created context still reported document.hidden=false, even after 3.6
+seconds. Its later hidden event occurs during cleanup after restoration, not
+proof of a delayed minimize event. A preliminary command-line-introspection
+attempt was refused by Chrome because enable-automation was absent; no launch
+flag was added to enable that disclosure. Its failed diagnostic stays recorded.
+
+The corrected lifecycle test launches a separate Chrome process/profile and
+connects to its loopback-only DevTools endpoint with the documented
+connect_over_cdp(no_defaults=True), using its existing DEFAULT context. It does
+not attach to B's browser, patch installed Playwright, emulate a hide/focus event,
+or call Unity methods from JavaScript. The native-context probe reports true
+hidden visibility and false focus while minimized and restores both normally.
+
+Final encounter run encounter-browser-20260925T112628Z-ee093d passes all 56
+assertions with ordinary pointer input, actual background/minimize transitions,
+paused tick/hull preservation, explicit resume, post-defeat controls, both
+fittings, four additional deploy/return cycles and full/reduced terminal parity.
+Repair: False|Defeated|334|0|21|8|16|0|31|31.
+Launcher, both tracer settings: True|Defeated|388|0|25|13|19|13|0|19.
+These are bounded fixture outcomes, not selected campaign pacing or balance.
+The owned browser exited gracefully without forced termination; its temporary
+HTTP server closed. The prior unexpected-input origins remain unresolved, not
+retrospectively attributed to the owner or to Unity by this successful run.
+
+The SAME unchanged build also passes the original 15-check art regression in
+browser-verify-20260925T112807Z-8a6c54 and all 247 inspection assertions in
+inspection-20260925T112825Z-f99198. Passive tracing is the only new instrumentation
+in those scripts. Geometry tolerances and previous assertions are unchanged;
+maximum independent projection discrepancy is 0.035396283 pixels. Five recoil
+cycles returned with zero reported offset. Four final browser frames were inspected.
+Eight original host inspection methods and four owned-browser cleanup methods
+pass. The cleanup host tests use mocks; they are not extra browser journeys.
+
+An OPTIONAL additional pointer-attribution-gate helper write was blocked and
+was not applied or rerouted. The passive observer ran, but its added validate
+function is not wired into these suites; no extra audit-gate pass is claimed.
+All original acceptance assertions remain executed. See docs/encounter-acceptance-20260925/
+for exact results, source/build hashes, probes, earlier failed minimize run and captures.
+
+This closes the enumerated desktop encounter/art/inspection suite gaps, not final
+art, full accessibility/cross-browser/lifecycle or sustained-performance acceptance.
+Six WebGL INVALID_ENUM warnings and three unsupported-shader messages remain
+unresolved. Narrow-landscape callout overlap and coarse terrain/opponents remain.
+All 85 original saved authoring files still match. The original editor is absent;
+its former unsaved-memory fate is still unknown. No original files were written.
+No old previews were restarted, no persistent new server remains, and no Android,
+classic, backend, player-save, release or production change occurred.
+The draft stays unmerged. Repository CI is separately checked at publication;
+its success cannot substitute for the specific Unity/browser results above.
+
+API basis for the test-context correction (not a game implementation change):
+https://playwright.dev/python/docs/api/class-browsertype#browser-type-connect-over-cdp-option-no-defaults

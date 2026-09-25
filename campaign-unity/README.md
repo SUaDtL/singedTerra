@@ -198,3 +198,31 @@ and must be stopped with Ctrl+C; do not leave another port running after each bu
 The original stterra files remain protected. Its previously open editor is now
 closed, but this observation does not recover or explain its former unsaved work.
 Keep #524 draft and unmerged while completing the outstanding acceptance.
+
+## Current desktop encounter acceptance - September 25, 11:30 UTC
+
+The preceding incomplete-acceptance paragraphs retain their earlier dates.
+The unchanged Web-20260925T102215Z-797845 now passes the complete 56-check encounter
+suite, original 15-check art regression and 247-assertion inspection suite.
+Actual repair and launcher runs reached defeat; full/reduced launcher outcomes
+matched. Return/redeployment, post-defeat controls, real background/minimization,
+no catch-up and explicit resume passed. Runtime, artwork and build bytes did not
+change in this diagnostic continuation. See the new dated acceptance receipt.
+
+The same verification commands above remain valid. Encounter verification now
+needs installed Chrome and Python Playwright 1.60+ for no_defaults support.
+Tools/native_chrome.py opens its OWN fresh profile under the ignored Evidence
+folder, binds a temporary DevTools endpoint to loopback, and uses the existing
+default context without Playwright's focus/media overrides. It never connects to
+B's personal browser. It closes its own Chrome process and the test server afterward.
+The ordinary art/inspection scripts retain their existing launch setup. All three
+scripts record passive test-page pointer/focus evidence, not credentials or typed text.
+
+```powershell
+python -m unittest discover -s Tools -p test_native_chrome.py -v
+```
+
+Four browser-cleanup host methods and eight existing geometry host methods pass.
+Warnings, visual refinement, old unexplained input sources and full device/performance
+acceptance remain open. No Android or persistent preview starts automatically.
+[Current receipt and captures](docs/encounter-acceptance-20260925/receipt.json).

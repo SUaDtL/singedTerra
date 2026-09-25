@@ -36,6 +36,8 @@ try:
         report['browser_version']=browser.version
         context=browser.new_context(viewport={'width':1600,'height':900},device_scale_factor=1)
         page=context.new_page(); page.on('console',console)
+        from input_observer import install
+        report['input_trace'] = install(page)
         page.on('pageerror',lambda error: errors.append(str(error)))
         page.on('requestfailed',lambda request: network.append(request.url))
         def event(items,start,action=None):
