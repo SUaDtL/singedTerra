@@ -4874,3 +4874,10 @@ The fresh R07 review found no remaining CPU defect but identified a supported sa
 - The corrected cascade excludes Skirmish from Campaign breakpoints and gives the compact briefing a bounded scene row followed by its max-content facts row above the unchanged shared dock.
 - Fresh proof: both exact failures pass, the combined browser matrix passes 39 of 39, and the 84-image packet plus resize recording were regenerated on the sole 4173 listener.
 - T47 remains in progress until the corrective PR head is green. G02 remains pending owner acceptance. No Astra review, merge, or deployment was performed.
+
+## 2026-09-19 Command Center PR #515 post-merge closeout - confidence: high - intent: record the accepted G02/T47 delivery boundary
+- PR #515 merged to `main` as `fa38cf589e2de7f2f9fba3fc0ccbd394bd630b32` after exact-head CI, CodeQL, and the required review status passed.
+- Pages deployment run `35430349774` passed exact-source verification, transported-candidate checks, deployment, and post-deploy live smoke. Public `deploy-meta.json` matches the merge SHA and run; the public site returned HTTP 200.
+- The command-center plan now closes `T47` and `G02`. The delivered scope remains Campaign, Skirmishes, Local, Online, Verified Operations, and the shared preparation frame; Match settings and the commander dossier remain outside this plan.
+- Standup cleanup deleted 103 local branches proven merged with gone upstreams. Three gone-upstream branches without merge proof were preserved, and the dirty `evidence-recovery-v2` worktree was preserved.
+- No backend deployment was required. Further command-center changes require a new approved slice rather than extending this completed plan.
