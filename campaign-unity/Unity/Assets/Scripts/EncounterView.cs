@@ -8,6 +8,8 @@ namespace SingedTerra.Encounter
     public sealed class EncounterView : MonoBehaviour
     {
         TankPresentation owner;
+        SingedTerra.VisualReview.ReviewCombatVisuals reviewVisuals;
+        SingedTerra.VisualReview.BattlefieldReview review;
         Mesh cube;
         Renderer[] repairMeshes, launcherMeshes;
         readonly Transform[] units = new Transform[EncounterModel.Capacity];
@@ -50,7 +52,9 @@ namespace SingedTerra.Encounter
             rocket = Paint(basis, new Color(1f,.38f,.12f));
             incoming = Paint(basis, new Color(.86f,.24f,.18f));
             repair = Paint(basis, new Color(.25f,.9f,.65f));
-            for (int i = 0; i < units.Length; i++)
+            review=owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
+            if(review){reviewVisuals=new SingedTerra.VisualReview.ReviewCombatVisuals(review,owner,transform);review.Changed+=reviewVisuals.FaceCamera;}
+            for (int i = 0; i < (review ? 0 : units.Length); i++)
             {
                 var root = new GameObject("EncounterFoe_" + i).transform;
                 root.SetParent(transform, false); units[i] = root;
@@ -71,12 +75,14 @@ namespace SingedTerra.Encounter
         }
         public Vector3 Position(EncounterFoe foe)
         {
+            if(reviewVisuals!=null)return reviewVisuals.Position(foe)+Vector3.up*.85f;
             float angle = foe.Lane * Mathf.PI / 4;
             return owner.tank.position + new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * (foe.Distance * .001f)
                 + Vector3.up * .85f;
         }
         public void Render(EncounterModel model)
         {
+            if(reviewVisuals!=null){reviewVisuals.Render(model);VisibleUnits=reviewVisuals.Active;return;}
             VisibleUnits = 0;
             for (int i = 0; i < units.Length; i++)
             {
@@ -107,6 +113,7 @@ namespace SingedTerra.Encounter
                     Trace(Center(repairMeshes), center, repair);
                 else Trace(target, center, incoming);
             }
+            reviewVisuals?.Present(model);
         }
         static Mesh CreateCube()
         {
@@ -138,6 +145,7 @@ namespace SingedTerra.Encounter
         }
         public void Advance(float elapsed)
         {
+            reviewVisuals?.Advance(elapsed);
             for (int i = 0; i < life.Length; i++)
             {
                 life[i] = Mathf.Max(0, life[i] - elapsed);
@@ -147,16 +155,20 @@ namespace SingedTerra.Encounter
         public void ToggleEffects()
         {
             FullEffects = !FullEffects;
+            reviewVisuals?.SetEffects(FullEffects);
             for (int i = 0; i < life.Length; i++) { life[i] = 0; trails[i].enabled = false; }
         }
         public void Clear()
         {
             VisibleUnits = 0; nextTrail = 0;
+            reviewVisuals?.Clear();
             foreach (var unit in units) if (unit) unit.gameObject.SetActive(false);
             for (int i = 0; i < life.Length; i++) { life[i] = 0; if (trails[i]) trails[i].enabled = false; }
         }
         void OnDestroy()
         {
+            if(review&&reviewVisuals!=null)review.Changed-=reviewVisuals.FaceCamera;
+            reviewVisuals?.Dispose();
             foreach (var material in materials) if (material) Destroy(material);
             if(cube)Destroy(cube);
         }

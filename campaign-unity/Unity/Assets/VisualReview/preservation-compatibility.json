@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "purpose": "Exact checkout representations for two retained JSON files; historical raw evidence remains unchanged.",
+  "sourceCommit": "b09e2d0b73bfca41b639b3d60914a967ed7a91e7",
+  "preservationReceiptPath": "Assets/VisualReview/prepare-receipt.json",
+  "preservationReceiptSha256": "f99c1c0ce9c18ac5392ad95faf17db3b6c3cf746657e6f8a19d57025f0f20950",
+  "rule": "Accept only the recorded original raw SHA256 or the independently verified committed LF SHA256 for each listed path. No runtime normalization or generic JSON equivalence.",
+  "representations": [
+    {
+      "path": "Assets/Art/PartsLibrary/catalog.json",
+      "originalRawSha256": "a68c63e92e14e43401398d5f64e96f3060376e9b2df5da58c97c97c5a6464b84",
+      "lfSha256": "a2d9998ff8afeb8d6a9f3e821fa232b71185135e5010a1d69fae4ddbc0c87643",
+      "gitBlobOid": "1c508449b96f4a3f549d24e3f87418e1f1c8e24b",
+      "verifiedCrlfPairs": 755
+    },
+    {
+      "path": "Assets/Art/art-manifest.json",
+      "originalRawSha256": "61313f8b4c095916587bcd8fdda344ed54b4a4cc7c850802f983908ebec7b4fd",
+      "lfSha256": "b64ec0459ca0eb74f8f522e89f1cb8a5b616b4ccb3235f95866980d9b26c2227",
+      "gitBlobOid": "cd8c1aabb4b86d0aa916e10352b6b9b2c9f9266f",
+      "verifiedCrlfPairs": 123
+    }
+  ]
+}

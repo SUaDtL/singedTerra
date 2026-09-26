@@ -13,6 +13,8 @@ namespace SingedTerra.Encounter
         Text title, stats, pauseLabel, effectsLabel;
         Button pauseButton;
         bool wasActive;
+        SingedTerra.VisualReview.BattlefieldReview visualReview;
+        SingedTerra.VisualReview.ReviewBattleHud reviewHud;
         readonly Color ink = new Color(.045f,.055f,.052f,.94f);
         readonly Color paper = new Color(.89f,.86f,.75f);
         readonly Color brass = new Color(.76f,.61f,.34f);
@@ -46,6 +48,13 @@ namespace SingedTerra.Encounter
         public void Initialize(EncounterSession owner, ArtHud hud, Canvas canvas, Font sharedFont)
         {
             session = owner; artHud = hud; font = sharedFont;
+            visualReview = owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
+            if (visualReview)
+            {
+                reviewHud = new SingedTerra.VisualReview.ReviewBattleHud(owner, visualReview, canvas, sharedFont);
+                session.Changed += Refresh; visualReview.Changed += Refresh; Refresh();
+                return;
+            }
             root = Node("EncounterHud", canvas.transform, Vector2.zero, new Vector2(.5f,.5f), Vector2.zero, Vector2.zero);
             root.anchorMax = Vector2.one;
             deploy = (RectTransform)MakeButton(root, "DeployEncounter", "DEPLOY TEST ENCOUNTER", 0, true, session.Deploy).transform.parent;
@@ -68,6 +77,7 @@ namespace SingedTerra.Encounter
         {
             bool active = session.Model != null;
             if (active != wasActive) { wasActive = active; artHud.SetEncounterVisible(active); }
+            if (reviewHud != null) { reviewHud.Refresh(); return; }
             deploy.gameObject.SetActive(!active); battle.gameObject.SetActive(active);
             if (!active) return;
             var model = session.Model;
@@ -84,9 +94,12 @@ namespace SingedTerra.Encounter
             pauseLabel.text = session.Paused ? "RESUME ENCOUNTER" : "PAUSE ENCOUNTER";
             effectsLabel.text = session.View.FullEffects ? "REDUCE TRACERS" : "RESTORE TRACERS";
         }
+        void LateUpdate() { reviewHud?.Layout(); }
         void OnDestroy()
         {
             if (session) session.Changed -= Refresh;
+            if (visualReview) visualReview.Changed -= Refresh;
+            reviewHud?.Dispose();
             if (root) Destroy(root.gameObject);
         }
     }

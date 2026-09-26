@@ -6,7 +6,7 @@ repository: SUaDtL/singedTerra
 baseline_sha: 7d3d21cda22c8ea5b2fe1a38f722211a3a44c97b
 branch: codex/unity-web-starter-art
 pull_request: 524
-status: In progress; raw art exported; Unity integration blocked and untested
+status: In progress; two-treatment implementation; owner visual acceptance pending
 intended_repository_path: .codearbiter/specs/unity-battlefield-visual-review.md
 ---
 
@@ -102,4 +102,6 @@ Implementation uses a separately saved BattlefieldReview scene, opt-in review se
 
 Environment art and enemy prefabs are new assets. Decorations have no colliders or gameplay effects. Camera composition is fitted to a declared world-space approach ring and viewport, never the reverse. Treatment selection changes only environment/light/camera presentation. Inspection, manual-refit prohibition, explicit suspension/resume and non-awarding sessions remain. Readiness requires real captures and motion; selection remains B's.
 
-Current integration receipt: `campaign-unity/docs/visual-review-01/AUTHORING-CHECKPOINT.md`. The raw-art checkpoint is not a Unity visual acceptance. Five pending C# files remain local and uncommitted after the vehicle-presentation append was blocked; the published art/scope checkpoint does not include them.
+Presentation uses four clockwise columns with a fixed 0.42-radian angular step around each model lane. This spreads the imported vehicle silhouettes while keeping straight radial travel, exact model distances and identical A/B positions. Actual mesh-footprint checks cover every tick of both natural runs; future crowded or close-contact profiles require their own visual qualification.
+
+Historical authoring receipt: `campaign-unity/docs/visual-review-01/AUTHORING-CHECKPOINT.md`. That dated raw-art checkpoint records the earlier blocked append; it is not a Unity visual acceptance. The September 26 continuation completes the separately saved scene and existing runtime adapters, preserving the original art and the independently committed Seed Pack 02. Fresh browser evidence and the owner selection checkpoint are recorded under `campaign-unity/docs/visual-review-01/`; owner acceptance remains separate from implementation and technical checks.

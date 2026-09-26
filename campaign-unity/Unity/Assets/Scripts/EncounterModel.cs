@@ -39,6 +39,7 @@ namespace SingedTerra.Encounter
         readonly List<EncounterEvent> events = new List<EncounterEvent>(64);
         int nextSpawn = 1, nextCannon = 1, nextLauncher = 1, nextRepair = RepairPeriod;
         public bool HasLauncher { get; }
+        public EncounterProfile Profile { get; }
         public int Tick { get; private set; }
         public int Hull { get; private set; } = MaximumHull;
         public int Spawned { get; private set; }
@@ -51,8 +52,10 @@ namespace SingedTerra.Encounter
         public EncounterStatus Status { get; private set; }
         public IReadOnlyList<EncounterFoe> Foes => foes;
         public IReadOnlyList<EncounterEvent> Events => events;
-        public EncounterModel(bool launcher)
+        public EncounterModel(bool launcher) : this(launcher, EncounterProfile.Legacy) { }
+        public EncounterModel(bool launcher, EncounterProfile profile)
         {
+            Profile = profile ?? throw new ArgumentNullException(nameof(profile));
             HasLauncher = launcher;
             for (int i = 0; i < Capacity; i++) foes[i] = new EncounterFoe();
         }
@@ -65,12 +68,12 @@ namespace SingedTerra.Encounter
             foreach (var foe in foes)
                 if (foe.Alive)
                     foe.Distance = Math.Max(StopDistance(foe), foe.Distance -
-                        (foe.Kind == FoeKind.Close ? 110 : 70));
-            if (Tick >= nextCannon && Shoot(CannonRange, CannonDamage, EncounterEventKind.Cannon))
+                        Profile.Speed(foe.Kind));
+            if (Tick >= nextCannon && Shoot(Profile.MainRange, CannonDamage, EncounterEventKind.Cannon))
             { CannonShots++; nextCannon = Tick + CannonPeriod; }
             if (HasLauncher)
             {
-                if (Tick >= nextLauncher && Shoot(LauncherRange, LauncherDamage, EncounterEventKind.Launcher))
+                if (Tick >= nextLauncher && Shoot(Profile.AuxiliaryRange, LauncherDamage, EncounterEventKind.Launcher))
                 { LauncherShots++; nextLauncher = Tick + LauncherPeriod; }
             }
             else if (Tick >= nextRepair)
@@ -81,20 +84,20 @@ namespace SingedTerra.Encounter
             }
             AttackTank();
             if (Hull == 0) Status = EncounterStatus.Defeated;
-            else if (Tick >= TickLimit) Status = EncounterStatus.Limit;
+            else if (Tick >= Profile.Horizon) Status = EncounterStatus.Limit;
         }
-        static int StopDistance(EncounterFoe foe) => foe.Kind == FoeKind.Close ? 3400 : 10000;
+        int StopDistance(EncounterFoe foe) => Profile.Stop(foe.Kind);
         void Spawn()
         {
             foreach (var foe in foes)
             {
                 if (foe.Alive) continue;
                 int group = Spawned / 8;
-                foe.Id = Spawned + 1; foe.Lane = Spawned * 3 % 8;
+                foe.Id = Spawned + 1; foe.Lane = Profile.Lane(Spawned);
                 foe.Kind = Spawned % 3 == 2 ? FoeKind.Ranged : FoeKind.Close;
                 foe.Hull = foe.MaximumHull = 30 + group * 10;
-                foe.Distance = SpawnDistance; foe.Damage = 4 + group * 2;
-                foe.NextAttack = 0; Spawned++; nextSpawn = Tick + SpawnPeriod;
+                foe.Distance = Profile.SpawnRadius; foe.Damage = 4 + group * 2;
+                foe.NextAttack = 0; nextSpawn = Tick + Profile.Interval(Spawned); Spawned++;
                 return;
             }
         }

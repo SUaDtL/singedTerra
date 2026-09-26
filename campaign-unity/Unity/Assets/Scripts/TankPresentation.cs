@@ -39,6 +39,13 @@ namespace SingedTerra.Art
             flash.SetActive(false);SetView(false,true);Report("ready");
         }
         Vector3 cameraGoal,lookGoal;
+        int reviewWidth,reviewHeight;
+        public void RefreshReviewCamera()
+        {
+            if(!GetComponent<SingedTerra.VisualReview.BattlefieldReview>())return;
+            UpdateCameraGoal();
+            if(battlefield){view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);}
+        }
         public void SetView(bool wide,bool immediate=false)
         {
             if(EncounterActive)return;
@@ -50,6 +57,16 @@ namespace SingedTerra.Art
         void UpdateCameraGoal()
         {
             lookGoal=tank.position+Vector3.up*(battlefield?.5f:1.35f);
+            var review=GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
+            view.orthographic=review&&battlefield;
+            if(review&&battlefield)
+            {
+                float radius=SingedTerra.VisualReview.BattlefieldReview.FramingRadius;
+                view.orthographicSize=Mathf.Max(radius*Mathf.Sin(review.CameraPitch*Mathf.Deg2Rad)/.70f,
+                    radius/(Mathf.Max(.2f,view.aspect)*.90f));
+                cameraGoal=lookGoal+Quaternion.Euler(review.CameraPitch,-30f,0)*Vector3.back*75f;
+                reviewWidth=Screen.width;reviewHeight=Screen.height;return;
+            }
             cameraGoal=tank.position+(battlefield?new Vector3(17,23,19):
                 Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius
                 +Vector3.up*InspectionHeight);
@@ -119,6 +136,7 @@ namespace SingedTerra.Art
         }
         void Update()
         {
+            if(battlefield&&(reviewWidth!=Screen.width||reviewHeight!=Screen.height))RefreshReviewCamera();
             float dt=focused&&!EncounterPaused?Mathf.Min(Time.unscaledDeltaTime,.05f):0;
             if(animate&&!EncounterActive)phase+=dt;
             if(!EncounterActive)turret.localRotation=turretHome*Quaternion.AngleAxis(Mathf.Sin(phase*.28f)*12, turretUp);

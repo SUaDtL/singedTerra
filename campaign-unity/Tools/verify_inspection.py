@@ -4,11 +4,13 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from functools import partial
 import datetime, hashlib, json, math, sys, threading, time, uuid
 from playwright.sync_api import sync_playwright
+from native_chrome import NativeChrome
 ROOT=Path(__file__).resolve().parents[1]
 import argparse
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('build',type=Path)
 parser.add_argument('--receipt',type=Path,default=ROOT/'docs/inspection-20260925/receipt.json')
+parser.add_argument('--headless',action='store_true',help='owned Chrome headless new; no Windows-window acceptance')
 args=parser.parse_args();BUILD=args.build.resolve();EXPECTED=args.receipt.resolve()
 if not EXPECTED.is_relative_to(ROOT) or not EXPECTED.is_file():
     raise SystemExit('Expected an explicit receipt inside this project')
@@ -26,6 +28,9 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(Handler,directory=str(BUILD))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 checks=[]; states=[]; inspections=[]; console=[]; errors=[]; requests=[]
 report={'status':'running','build':str(BUILD),'kind':'real-pointer-inspection-check','checks':checks,'inputs':inputs,'phone_tested':False,'performance_measured':False}
+report.update(headless=args.headless,browser_mode='owned-headless-new-no-overrides' if args.headless else 'playwright-headed',
+              focus_scope='not-exercised-by-this-verifier',windows_window_acceptance=False)
+native=None
 def check(condition,name):
     checks.append({'check':name,'pass':bool(condition)})
     if not condition: raise RuntimeError(name)
@@ -53,10 +58,17 @@ try:
     check(len(fovs)==1 and float(fovs[0])==43, 'saved single camera FOV is 43 degrees')
     fov=float(fovs[0])
     with sync_playwright() as pw:
-        browser=pw.chromium.launch(channel='chrome', headless=False)
+        if args.headless:
+            native=NativeChrome(pw,OUT,headless=True)
+            browser=native.browser; context=native.context; page=context.pages[0]
+            page.set_viewport_size({'width':1600,'height':900})
+            report['debug_port']=native.port
+        else:
+            browser=pw.chromium.launch(channel='chrome', headless=False)
+            context=browser.new_context(viewport={'width':1600,'height':900}, device_scale_factor=1)
+            page=context.new_page()
         report['browser_version']=browser.version
-        context=browser.new_context(viewport={'width':1600,'height':900}, device_scale_factor=1)
-        page=context.new_page(); page.on('console', collect)
+        page.on('console', collect)
         from input_observer import install
         report['input_trace'] = install(page)
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -180,10 +192,15 @@ try:
             capture('failure-frame')
             raise
         finally:
-            context.close(); browser.close(); report['browser_closed']=True
+            if native:
+                native.close(); report.update(browser_closed=native.closed,browser_forced=native.forced)
+            else:
+                context.close(); browser.close(); report['browser_closed']=True
 except (Exception, KeyboardInterrupt) as exc:
     report.update(status='failed',error=type(exc).__name__+': '+str(exc))
 finally:
+    if native:
+        native.close(); report.update(browser_closed=native.closed,browser_forced=native.forced)
     server.shutdown(); server.server_close()
     try:
         connection=socket.create_connection(('127.0.0.1',server.server_port),timeout=.5)

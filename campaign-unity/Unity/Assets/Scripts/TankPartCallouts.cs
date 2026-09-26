@@ -73,10 +73,11 @@ namespace SingedTerra.Art
             if(!hull) throw new InvalidOperationException("Authored hull missing");
             repairMeshes=owner.repairModule.GetComponentsInChildren<Renderer>(true);
             launcherMeshes=owner.launcherModule.GetComponentsInChildren<Renderer>(true);
+            bool review=owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             rows=new[] {
                 MakeRow("cannon",owner.barrel,"MAIN CANNON","Articulated barrel assembly",font),
                 MakeRow("hull",hull,"ARMORED HULL","Persistent vehicle silhouette",font),
-                MakeRow("fitting",owner.repairModule.transform,"FIELD REPAIR UNIT","Optional fitting / appearance sample",font)
+                MakeRow("fitting",owner.repairModule.transform,"FIELD REPAIR UNIT",review?"Active fitting for this encounter":"Optional fitting / appearance sample",font)
             };
             owner.Changed+=QueueReport;
         }

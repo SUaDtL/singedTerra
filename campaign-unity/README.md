@@ -1,17 +1,34 @@
-# singedTerra Unity Web starter art (ST-ART-01)
+# singedTerra Unity browser encounter
 
-> Current continuation: ST-ENC-01 adds one non-awarding automatic encounter beside
-> the preserved ST-ART-01 inspection. Its source/build and C# fixture checks are
-> complete; browser encounter acceptance is PARTIAL. The new encounter test stops
-> at focus-event verification. Earlier art-only descriptions below retain their
-> initial scope; they do not describe the complete current feature set. See
-> `.codearbiter/specs/unity-first-encounter.md` at the repository root and VALIDATION.md.
+The current continuation is **ST-VIS-01**: a separately saved `BattlefieldReview`
+scene with two battlefield treatments, the retained player tank, imported close
+and ranged opponents, a compact bronze HUD, and automatic last-stand combat.
+The original `FieldAssembly` scene and encounter fixture remain available.
 
+This is a visual review candidate. The owner still chooses what to keep, change,
+or mix, and reviews normal-speed motion before this work advances to upgrades.
+Open the [A/B gallery](docs/visual-review-01/browser-20260926T093232Z/index.html)
+for six matched still pairs and four normal-speed recordings. The
+[review notes](docs/visual-review-01/browser-20260926T093232Z/REVIEW.md) and
+[technical validation](docs/visual-review-01/TECHNICAL-VALIDATION.md) describe
+the exact builds, checks and remaining limits. The original
+[authoring checkpoint](docs/visual-review-01/AUTHORING-CHECKPOINT.md) retains its
+historical blocked status. Older sections below describe dated earlier slices.
 
-**Latest checkpoint:** the inspection-specific pointer/geometry suite is now
-complete and passing for the pinned b10 Web artifact. The initial incomplete-test
-notice near the end is historical; see the current acceptance instructions below.
-All three old preview servers were explicitly stopped. No preview is left running.
+Build the saved comparison scene explicitly:
+
+```powershell
+python Tools/build_web.py --editor "C:\path\to\6000.3.24f1\Editor\Unity.exe" --scene review
+python Tools/verify_visual_review.py "C:\absolute\path\to\Evidence\build-...\result.json" --headless
+```
+
+The verifier owns an isolated Chrome process and loopback server, records actual
+pointer input and normal-speed motion, and closes both. `--headless` allows the
+rendered check to run independently of other desktop windows; its receipt records
+the actual renderer and browser-tab focus checks. Omit that flag for a visible
+window and leave it foreground and untouched until the check finishes. Omit
+`--scene review` to build the retained FieldAssembly scene. Neither build route
+regenerates saved art.
 
 Draft, production-intent asset checkpoint. This project is deliberately separate
 from the existing TypeScript artillery application. It is not wired into its
@@ -19,7 +36,7 @@ launcher, npm workspaces, account services, rewards, or Pages deployment.
 
 The owner selected Unity for the browser PoC and continued mobile development
 using the same project/assets. Android builds and phone/emulator setup are deferred
-until after the full browser PoC. The current slice contains no combat or economy.
+until after the full browser PoC. The initial art slice predates the automatic encounter; no economy is implemented.
 
 ## Contents and ownership
 

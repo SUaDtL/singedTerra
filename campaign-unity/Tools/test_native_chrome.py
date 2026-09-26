@@ -1,8 +1,48 @@
 """Host-only tests for owned-process cleanup; these do not test Chrome rendering."""
 import subprocess
+from pathlib import Path
+import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from native_chrome import NativeChrome
+
+class NativeChromeLaunch(unittest.TestCase):
+    def test_optional_headless_preserves_owned_command_and_focus_settings(self):
+        for headless in (False, True):
+            with self.subTest(headless=headless), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                executable = root / 'Google/Chrome/Application/chrome.exe'
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b'controlled installed-browser fixture')
+                evidence = root / 'evidence'
+                evidence.mkdir()
+                profile = evidence / 'isolated-chrome-profile'
+                child = Mock()
+                child.poll.return_value = 0
+                playwright = Mock()
+                browser = playwright.chromium.connect_over_cdp.return_value
+                browser.contexts = [Mock()]
+                commands = []
+
+                def launch(command, **kwargs):
+                    commands.append(command)
+                    (profile / 'DevToolsActivePort').write_text('9321\n/controlled\n', encoding='utf-8')
+                    return child
+
+                with patch.dict('os.environ', {'ProgramFiles': str(root)}), \
+                        patch('native_chrome.subprocess.Popen', side_effect=launch):
+                    if headless:
+                        native = NativeChrome(playwright, evidence, headless=True)
+                    else:
+                        native = NativeChrome(playwright, evidence)
+                    native.close()
+                expected = [str(executable), '--user-data-dir=' + str(profile),
+                            '--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0',
+                            '--no-first-run', '--no-default-browser-check', '--window-size=1616,988']
+                self.assertEqual(commands, [expected + (['--headless=new'] if headless else []) + ['about:blank']])
+                playwright.chromium.connect_over_cdp.assert_called_once_with(
+                    'http://127.0.0.1:9321', no_defaults=True, timeout=20000)
+                browser.new_context.assert_not_called()
 
 class NativeChromeCleanup(unittest.TestCase):
     def subject(self):

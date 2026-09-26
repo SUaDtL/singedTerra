@@ -2,11 +2,16 @@
 from pathlib import Path
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from functools import partial
-import datetime, hashlib, json, math, threading, time, uuid, sys
+import argparse, datetime, hashlib, json, math, threading, time, uuid, sys
 from playwright.sync_api import sync_playwright
+from native_chrome import NativeChrome
 ROOT=Path(__file__).resolve().parents[1]
 PRIOR=None
-BUILD=Path(sys.argv[1]).resolve()
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('build',type=Path)
+parser.add_argument('--headless',action='store_true',help='owned Chrome headless new; no Windows-window acceptance')
+args=parser.parse_args()
+BUILD=args.build.resolve()
 assert BUILD.is_relative_to(ROOT/'Builds') and (BUILD/'index.html').is_file()
 OUT=ROOT/'Evidence'/('browser-verify-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:6])
 OUT.mkdir(parents=True,exist_ok=False)
@@ -20,6 +25,9 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(Handler,directory=str(BUILD))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 checks=[]; states=[]; recoils=[]; messages=[]; errors=[]; network=[]; clicks=[]
 report={'kind':'browser-only-verification-no-rebuild','build':str(BUILD),'prior_receipt':str(PRIOR),'status':'running','checks':checks,'clicks':clicks,'recoils':recoils,'inputs':inputs,'phone_tested':False,'performance_measured':False}
+report.update(headless=args.headless,browser_mode='owned-headless-new-no-overrides' if args.headless else 'playwright-headed',
+              focus_scope='not-exercised-by-this-verifier',windows_window_acceptance=False)
+native=None
 def check(ok,name):
     checks.append({'check':name,'pass':bool(ok)})
     if not ok: raise RuntimeError(name)
@@ -32,10 +40,17 @@ def console(msg):
 print('BROWSER_EVIDENCE='+str(OUT),flush=True)
 try:
     with sync_playwright() as pw:
-        browser=pw.chromium.launch(channel='chrome',headless=False)
+        if args.headless:
+            native=NativeChrome(pw,OUT,headless=True)
+            browser=native.browser; context=native.context; page=context.pages[0]
+            page.set_viewport_size({'width':1600,'height':900})
+            report['debug_port']=native.port
+        else:
+            browser=pw.chromium.launch(channel='chrome',headless=False)
+            context=browser.new_context(viewport={'width':1600,'height':900},device_scale_factor=1)
+            page=context.new_page()
         report['browser_version']=browser.version
-        context=browser.new_context(viewport={'width':1600,'height':900},device_scale_factor=1)
-        page=context.new_page(); page.on('console',console)
+        page.on('console',console)
         from input_observer import install
         report['input_trace'] = install(page)
         page.on('pageerror',lambda error: errors.append(str(error)))
@@ -79,10 +94,13 @@ try:
         check(click(342,'motion')['motion'],'resume idle');recoil('recoil with rotating turret')
         capture('06-resized-inspection');check(not errors,'no observed browser errors')
         check(not network,'no failed requests');report['status']='pass'
-        context.close();browser.close()
+        if native:native.close()
+        else:context.close();browser.close()
 except Exception as exc:
     report.update(status='failed',error=type(exc).__name__+': '+str(exc))
 finally:
+    if native:
+        native.close();report.update(browser_closed=native.closed,browser_forced=native.forced)
     server.shutdown();server.server_close();report.update(errors=errors,network=network)
     for name,data in [('result',report),('console',messages),('states',states)]:
         (OUT/(name+'.json')).write_text(json.dumps(data,indent=2),encoding='utf-8')

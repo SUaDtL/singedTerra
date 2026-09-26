@@ -2,10 +2,14 @@
 from pathlib import Path
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from functools import partial
-import datetime, hashlib, json, math, re, socket, sys, threading, time, uuid
+import argparse, datetime, hashlib, json, math, re, socket, sys, threading, time, uuid
 from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
-RECEIPT = Path(sys.argv[1]).resolve()
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('receipt', type=Path)
+parser.add_argument('--headless', action='store_true', help='owned Chrome headless new; browser-tab focus scope only')
+args = parser.parse_args()
+RECEIPT = args.receipt.resolve()
 if not RECEIPT.is_relative_to(ROOT / 'Evidence'):
     raise SystemExit('Expected this project\'s successful build receipt')
 source = json.loads(RECEIPT.read_text(encoding='utf-8'))
@@ -29,6 +33,9 @@ server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(BU
 threading.Thread(target=server.serve_forever, daemon=True).start()
 states, art, messages, errors, requests, checks, clicks, terminals = [], [], [], [], [], [], [], []
 report = {'status': 'running', 'build': BUILD.name, 'artifacts': inputs, 'build_receipt_sha256': digest(RECEIPT),
+          'headless': args.headless, 'focus_scope': 'browser-tab' if args.headless else 'desktop-window-and-browser-tab',
+          'windows_window_acceptance': False,
+          'unexecuted': ['Windows window minimize and window-manager acceptance'] if args.headless else [],
           'checks': checks, 'clicks': clicks, 'terminals': terminals, 'expected_csharp': expected,
           'temporary_port': server.server_port, 'android': False, 'performance_test': False}
 def check(ok, name):
@@ -40,12 +47,13 @@ def collect(message):
     for tag, target in [('ST_ENC_STATE ', states), ('ST_ART_STATE ', art)]:
         if tag in text: target.append(json.loads(text.split(tag, 1)[1].splitlines()[0]))
 print('ENCOUNTER_BROWSER_EVIDENCE=' + str(OUT), flush=True)
+native = None
 try:
     with sync_playwright() as pw:
         from native_chrome import NativeChrome
-        native = NativeChrome(pw, OUT)
+        native = NativeChrome(pw, OUT, headless=args.headless)
         browser = native.browser
-        report['browser_mode'] = 'owned-default-context-no-overrides'
+        report['browser_mode'] = 'owned-headless-new-no-overrides' if args.headless else 'owned-default-context-no-overrides'
         report['debug_port'] = native.port
         report['browser_version'] = browser.version
         context = native.context
@@ -143,21 +151,23 @@ try:
                 deployed('launcher'); returned('repeat '+str(i+1))
             capture('08-returned-inspection')
             # Separate the optional OS-minimize acceptance from completed encounter flows.
-            deployed('launcher')
-            start = len(states)
-            cdp = context.new_cdp_session(page)
-            window_id = cdp.send('Browser.getWindowForTarget')['windowId']
-            cdp.send('Browser.setWindowBounds', {'windowId': window_id, 'bounds': {'windowState': 'minimized'}})
-            page.wait_for_timeout(1200)
-            report['minimized_dom'] = page.evaluate('({hidden:document.hidden, focused:document.hasFocus()})')
-            check(report['minimized_dom']['hidden'] and not report['minimized_dom']['focused'], 'actual minimized page is hidden and unfocused')
-            cdp.send('Browser.setWindowBounds', {'windowId': window_id, 'bounds': {'windowState': 'normal'}})
-            page.bring_to_front(); page.locator('#unity-canvas').focus()
-            hidden = event(states, start, lambda s: s['action'] == 'suspend' and s['reason'] in ('focus', 'application'))
-            still = click(0, 'effects')
-            check(still['paused'] and still['tick'] == hidden['tick'] and still['hp'] == hidden['hp'], 'minimized interval neither advances combat nor auto-resumes')
-            click(0, 'effects'); check(not click(-300, 'pause')['paused'], 'explicit resume after minimize')
-            returned('minimize check')
+            if not args.headless:
+                deployed('launcher')
+                start = len(states)
+                cdp = context.new_cdp_session(page)
+                window_id = cdp.send('Browser.getWindowForTarget')['windowId']
+                cdp.send('Browser.setWindowBounds', {'windowId': window_id, 'bounds': {'windowState': 'minimized'}})
+                page.wait_for_timeout(1200)
+                report['minimized_dom'] = page.evaluate('({hidden:document.hidden, focused:document.hasFocus()})')
+                check(report['minimized_dom']['hidden'] and not report['minimized_dom']['focused'], 'actual minimized page is hidden and unfocused')
+                cdp.send('Browser.setWindowBounds', {'windowId': window_id, 'bounds': {'windowState': 'normal'}})
+                page.bring_to_front(); page.locator('#unity-canvas').focus()
+                hidden = event(states, start, lambda s: s['action'] == 'suspend' and s['reason'] in ('focus', 'application'))
+                still = click(0, 'effects')
+                check(still['paused'] and still['tick'] == hidden['tick'] and still['hp'] == hidden['hp'], 'minimized interval neither advances combat nor auto-resumes')
+                click(0, 'effects'); check(not click(-300, 'pause')['paused'], 'explicit resume after minimize')
+                returned('minimize check')
+                report['windows_window_acceptance'] = True
             check(not errors, 'no JavaScript or error-level console events')
             check(not requests, 'no failed HTTP requests')
             check(inputs == {p.relative_to(BUILD).as_posix(): digest(p) for p in BUILD.rglob('*') if p.is_file()}, 'tested artifact unchanged')
@@ -169,6 +179,8 @@ try:
 except (Exception, KeyboardInterrupt) as exception:
     report.update(status='failed', error=type(exception).__name__+': '+str(exception))
 finally:
+    if native:
+        native.close(); report.update(browser_closed=native.closed, browser_forced=native.forced)
     server.shutdown(); server.server_close()
     try:
         connection = socket.create_connection(('127.0.0.1', server.server_port), timeout=.5)

@@ -1,0 +1,127 @@
+{
+  "kind": "diagnostic only; isolated actual browser; no game commands via JS",
+  "build": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Builds\\Web-20260926T085817Z-0091d7",
+  "build_receipt": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\build-20260926T085817Z-0091d7\\result.json",
+  "build_source_inventory_sha256": "c56c48a4ef8373494b665cd686690a557a1391c5c0b1e44b8786a9800e464ce9",
+  "profile_start_performance_ms": 3495.300000011921,
+  "elapsed": 78.28192989999661,
+  "terminal": {
+    "action": "terminal",
+    "rules": "review-pacing-v1",
+    "status": "Defeated",
+    "fitting": "repair",
+    "reason": "",
+    "summary": "False|Defeated|1557|0|49|28|68|0|33|17",
+    "run": 1,
+    "tick": 1557,
+    "hp": 0,
+    "maxHp": 120,
+    "spawned": 49,
+    "kills": 28,
+    "cannon": 68,
+    "launcher": 0,
+    "healed": 33,
+    "closeHits": 0,
+    "rangedHits": 17,
+    "alive": 21,
+    "visibleUnits": 21,
+    "pool": 32,
+    "paused": false,
+    "focused": true,
+    "applicationPaused": false,
+    "locked": true,
+    "fullEffects": true,
+    "failed": false
+  },
+  "diagnostic": {
+    "gaps": [
+      {
+        "start": 469.2,
+        "end": 718.5,
+        "duration": 249.3
+      },
+      {
+        "start": 2759.1,
+        "end": 3062.8,
+        "duration": 303.7000000000003
+      },
+      {
+        "start": 3771,
+        "end": 3875.3,
+        "duration": 104.30000000000018
+      }
+    ],
+    "longTasks": [
+      {
+        "start": 81.5,
+        "duration": 62,
+        "name": "self"
+      },
+      {
+        "start": 465,
+        "duration": 262,
+        "name": "self"
+      },
+      {
+        "start": 2759.2000000476837,
+        "duration": 315,
+        "name": "self"
+      },
+      {
+        "start": 3771.100000023842,
+        "duration": 106,
+        "name": "self"
+      }
+    ]
+  },
+  "profile_end_performance_ms": 82014.30000001192,
+  "dom": {
+    "hidden": false,
+    "focused": true
+  },
+  "pointer_validation": {
+    "actions": 1,
+    "observed_edges": 2,
+    "matched": true
+  },
+  "input_trace": [
+    {
+      "kind": "focus",
+      "time": 1790413178129,
+      "target": "",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "focus",
+      "time": 1790413178130,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790413178141,
+      "x": 800,
+      "y": 46,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790413178299,
+      "x": 800,
+      "y": 46,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    }
+  ],
+  "pass": true,
+  "browser_closed": true
+}

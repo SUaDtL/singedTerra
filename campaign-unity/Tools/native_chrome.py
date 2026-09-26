@@ -1,9 +1,9 @@
-"""Owned, isolated desktop Chrome for native focus/visibility tests; no user profile."""
+"""Owned, isolated Chrome with unmodified focus/visibility; no user profile."""
 from pathlib import Path
 import os, subprocess, time
 
 class NativeChrome:
-    def __init__(self, playwright, evidence):
+    def __init__(self, playwright, evidence, headless=False):
         self.browser = None
         self.process = None
         self.log = None
@@ -15,10 +15,12 @@ class NativeChrome:
         profile.mkdir(exist_ok=False)
         self.log = (Path(evidence) / 'native-chrome.log').open('wb')
         try:
-            self.process = subprocess.Popen([str(chrome), '--user-data-dir=' + str(profile),
+            command = [str(chrome), '--user-data-dir=' + str(profile),
                 '--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0',
-                '--no-first-run', '--no-default-browser-check', '--window-size=1616,988',
-                'about:blank'], stdout=self.log, stderr=subprocess.STDOUT)
+                '--no-first-run', '--no-default-browser-check', '--window-size=1616,988']
+            if headless:
+                command.append('--headless=new')
+            self.process = subprocess.Popen(command + ['about:blank'], stdout=self.log, stderr=subprocess.STDOUT)
             active = profile / 'DevToolsActivePort'
             end = time.monotonic() + 20
             while not active.is_file():
