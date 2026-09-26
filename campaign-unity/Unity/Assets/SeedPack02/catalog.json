@@ -1,0 +1,2276 @@
+{
+  "schema": 1,
+  "pack": "ST-KIT-02",
+  "title": "Ashfall Outpost",
+  "units": "meters",
+  "blender_forward": "+Y",
+  "blender_up": "+Z",
+  "unity_wrapper_forward": "-Z",
+  "items": [
+    {
+      "id": "ST2-E01",
+      "title": "Tick scout",
+      "category": "enemy",
+      "description": "Four-wheel scout silhouette; separate wheel pivots and sensor yaw.",
+      "export_id": "ST2-E01",
+      "lod": 0,
+      "triangles": 1468,
+      "meshes": 6,
+      "bounds_min": [
+        -1.0825001001358032,
+        -1.1964470148086548,
+        -1.0418711227089261e-08
+      ],
+      "bounds_max": [
+        1.0825001001358032,
+        1.1964470148086548,
+        1.850000023841858
+      ],
+      "fbx": "Exports/FBX/ST2-E01.fbx",
+      "glb": "Exports/GLB/ST2-E01.glb",
+      "sha256": {
+        "fbx": "ea285bb8f9db8c5ba577e6ccddddac0af8b3ecdf671ef09fa770fa094bf3379e",
+        "glb": "b41116cbfe21208d459a7a1a0a218d8b35b760bce2936b043a38072ff224dbc6"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E01",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_L_Rear",
+          "position_blender_m": [
+            -0.9100000262260437,
+            -0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_L_Front",
+          "position_blender_m": [
+            -0.9100000262260437,
+            0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_R_Rear",
+          "position_blender_m": [
+            0.9100000262260437,
+            -0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_R_Front",
+          "position_blender_m": [
+            0.9100000262260437,
+            0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/SensorYaw",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.2000000476837158
+          ]
+        },
+        {
+          "path": "ST2-E01/SensorYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.350000023841858
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Amber",
+        "ST2_Edge",
+        "ST2_Optic",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E01",
+      "title": "Tick scout",
+      "category": "enemy",
+      "description": "Four-wheel scout silhouette; separate wheel pivots and sensor yaw.",
+      "export_id": "ST2-E01_LOD1",
+      "lod": 1,
+      "triangles": 670,
+      "meshes": 6,
+      "bounds_min": [
+        -1.0825001001358032,
+        -1.1964470148086548,
+        0.002560813445597887
+      ],
+      "bounds_max": [
+        1.0825001001358032,
+        1.1964470148086548,
+        1.8500001430511475
+      ],
+      "fbx": "Exports/FBX/ST2-E01_LOD1.fbx",
+      "glb": "Exports/GLB/ST2-E01_LOD1.glb",
+      "sha256": {
+        "fbx": "6e4002c01ff2901ef418b72ba5e80ec3ec35bc607432bee5e33e47de8a12ced5",
+        "glb": "48e1dcb5c84f0f093b1519e00d0b5f6a8304def32b703c73c6de12e4d7ce11d1"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E01",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_L_Rear",
+          "position_blender_m": [
+            -0.9100000262260437,
+            -0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_L_Front",
+          "position_blender_m": [
+            -0.9100000262260437,
+            0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_R_Rear",
+          "position_blender_m": [
+            0.9100000262260437,
+            -0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/Wheel_R_Front",
+          "position_blender_m": [
+            0.9100000262260437,
+            0.7799999713897705,
+            0.38999998569488525
+          ]
+        },
+        {
+          "path": "ST2-E01/SensorYaw",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.2000000476837158
+          ]
+        },
+        {
+          "path": "ST2-E01/SensorYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.350000023841858
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Amber",
+        "ST2_Edge",
+        "ST2_Optic",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E02",
+      "title": "Ram crawler",
+      "category": "enemy",
+      "description": "Low tracked wedge with visible plow and independent turret/muzzle pivots.",
+      "export_id": "ST2-E02",
+      "lod": 0,
+      "triangles": 5272,
+      "meshes": 5,
+      "bounds_min": [
+        -1.6299999952316284,
+        -2.0250000953674316,
+        0.017499983310699463
+      ],
+      "bounds_max": [
+        1.6299999952316284,
+        2.2861721515655518,
+        2.009999990463257
+      ],
+      "fbx": "Exports/FBX/ST2-E02.fbx",
+      "glb": "Exports/GLB/ST2-E02.glb",
+      "sha256": {
+        "fbx": "f800c3c6f2c80dcb51ee913ee976f8064305d771d923887de1846132993d868f",
+        "glb": "faa9000dc09462063f7ebea1bde6658d131c0aca12700ecb9e412bcfe45921c7"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E02",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E02/Track_L",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E02/Track_R",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            0.05000000074505806,
+            1.5
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            0.550000011920929,
+            1.75
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            0.550000011920929,
+            1.75
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            1.7000000476837158,
+            1.75
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.05000000074505806,
+            1.7999999523162842
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E02",
+      "title": "Ram crawler",
+      "category": "enemy",
+      "description": "Low tracked wedge with visible plow and independent turret/muzzle pivots.",
+      "export_id": "ST2-E02_LOD1",
+      "lod": 1,
+      "triangles": 2408,
+      "meshes": 5,
+      "bounds_min": [
+        -1.6299999952316284,
+        -2.0250000953674316,
+        0.019999980926513672
+      ],
+      "bounds_max": [
+        1.6299999952316284,
+        2.283379077911377,
+        2.009999990463257
+      ],
+      "fbx": "Exports/FBX/ST2-E02_LOD1.fbx",
+      "glb": "Exports/GLB/ST2-E02_LOD1.glb",
+      "sha256": {
+        "fbx": "6000eb8bf05c88794d97fee3795b5a95b3889d4f71839a535642dc50c2c738b7",
+        "glb": "9d23804f41eee4bf3bf6b68d5c0600ef82808ea34f14c8c99390502f9e02df08"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E02",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E02/Track_L",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E02/Track_R",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            0.05000000074505806,
+            1.5
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            0.550000011920929,
+            1.75
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            0.550000011920929,
+            1.75
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            1.7000000476837158,
+            1.75
+          ]
+        },
+        {
+          "path": "ST2-E02/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.05000000074505806,
+            1.7999999523162842
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E03",
+      "title": "Kiln mortar carrier",
+      "category": "enemy",
+      "description": "Long artillery chassis with a raised short tube; art only, no firing rules.",
+      "export_id": "ST2-E03",
+      "lod": 0,
+      "triangles": 5166,
+      "meshes": 5,
+      "bounds_min": [
+        -1.8299999237060547,
+        -2.375,
+        0.017499983310699463
+      ],
+      "bounds_max": [
+        1.8299999237060547,
+        2.375,
+        3.3508377075195312
+      ],
+      "fbx": "Exports/FBX/ST2-E03.fbx",
+      "glb": "Exports/GLB/ST2-E03.glb",
+      "sha256": {
+        "fbx": "d23d7a6b524abc8e893c81242144fbf93350011f17a3db3102d261e1521d00a6",
+        "glb": "12483185b3518d7857d6761ce72b61f7df9cc0f119a985bda918fc7a62ed9e33"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E03",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E03/Track_L",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E03/Track_R",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            1.2000000476837158
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            2.0299999713897705
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            2.0299999713897705
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            0.2819262146949768,
+            3.1332149505615234
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            1.850000023841858
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E03",
+      "title": "Kiln mortar carrier",
+      "category": "enemy",
+      "description": "Long artillery chassis with a raised short tube; art only, no firing rules.",
+      "export_id": "ST2-E03_LOD1",
+      "lod": 1,
+      "triangles": 2350,
+      "meshes": 5,
+      "bounds_min": [
+        -1.8299999237060547,
+        -2.3645834922790527,
+        0.019999980926513672
+      ],
+      "bounds_max": [
+        1.8299999237060547,
+        2.3683018684387207,
+        3.3499205112457275
+      ],
+      "fbx": "Exports/FBX/ST2-E03_LOD1.fbx",
+      "glb": "Exports/GLB/ST2-E03_LOD1.glb",
+      "sha256": {
+        "fbx": "d4c9c46e24f10cf5838d5b001449df0e1acf1017623793e01e0643b58452fdc7",
+        "glb": "04c414df3bec9092103ca19ef04daa8217e12a765805da04623d9d1705474876"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E03",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E03/Track_L",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E03/Track_R",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            1.2000000476837158
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            2.0299999713897705
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            2.0299999713897705
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            0.2819262146949768,
+            3.1332149505615234
+          ]
+        },
+        {
+          "path": "ST2-E03/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            -0.5799999833106995,
+            1.850000023841858
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E04",
+      "title": "Stilt walker",
+      "category": "enemy",
+      "description": "Six-legged machine with individually named hip/knee pivots; static seed pose.",
+      "export_id": "ST2-E04",
+      "lod": 0,
+      "triangles": 2388,
+      "meshes": 15,
+      "bounds_min": [
+        -2.1399998664855957,
+        -1.5839999914169312,
+        -3.186012875744382e-08
+      ],
+      "bounds_max": [
+        2.1399998664855957,
+        1.5839999914169312,
+        2.580000162124634
+      ],
+      "fbx": "Exports/FBX/ST2-E04.fbx",
+      "glb": "Exports/GLB/ST2-E04.glb",
+      "sha256": {
+        "fbx": "31d50daa610d9d4bea6faaa8eef727697cdc282235617eff99617ab0b67e5fdd",
+        "glb": "e89cc09e6acaaf67ce707a5c552446b405e31f40185527e7fc2e6ef0305ed6e2"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E04",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L0",
+          "position_blender_m": [
+            -0.699999988079071,
+            -0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L0/Knee",
+          "position_blender_m": [
+            -1.5,
+            -1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L1",
+          "position_blender_m": [
+            -0.699999988079071,
+            0.0,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L1/Knee.001",
+          "position_blender_m": [
+            -1.5,
+            0.0,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L2",
+          "position_blender_m": [
+            -0.699999988079071,
+            0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L2/Knee.002",
+          "position_blender_m": [
+            -1.5,
+            1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R0",
+          "position_blender_m": [
+            0.699999988079071,
+            -0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R0/Knee.003",
+          "position_blender_m": [
+            1.5,
+            -1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R1",
+          "position_blender_m": [
+            0.699999988079071,
+            0.0,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R1/Knee.004",
+          "position_blender_m": [
+            1.5,
+            0.0,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R2",
+          "position_blender_m": [
+            0.699999988079071,
+            0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R2/Knee.005",
+          "position_blender_m": [
+            1.5,
+            1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            0.15000000596046448,
+            2.25
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            0.49000000953674316,
+            2.299999952316284
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            0.49000000953674316,
+            2.299999952316284
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            1.309999942779541,
+            2.299999952316284
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.15000000596046448,
+            2.4200000762939453
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Amber",
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E04",
+      "title": "Stilt walker",
+      "category": "enemy",
+      "description": "Six-legged machine with individually named hip/knee pivots; static seed pose.",
+      "export_id": "ST2-E04_LOD1",
+      "lod": 1,
+      "triangles": 1088,
+      "meshes": 15,
+      "bounds_min": [
+        -2.1399998664855957,
+        -1.5839999914169312,
+        3.6238885225969852e-09
+      ],
+      "bounds_max": [
+        2.1399998664855957,
+        1.5839999914169312,
+        2.580000162124634
+      ],
+      "fbx": "Exports/FBX/ST2-E04_LOD1.fbx",
+      "glb": "Exports/GLB/ST2-E04_LOD1.glb",
+      "sha256": {
+        "fbx": "7cddb8208b587856020c33ab1651fb83eeb0fab446c2a5f7eefc07780535e621",
+        "glb": "0e224d85aa880430194512111a920de0b8e84a904cba3711aa7a6ebaaf7f6373"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E04",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L0",
+          "position_blender_m": [
+            -0.699999988079071,
+            -0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L0/Knee",
+          "position_blender_m": [
+            -1.5,
+            -1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L1",
+          "position_blender_m": [
+            -0.699999988079071,
+            0.0,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L1/Knee.001",
+          "position_blender_m": [
+            -1.5,
+            0.0,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L2",
+          "position_blender_m": [
+            -0.699999988079071,
+            0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_L2/Knee.002",
+          "position_blender_m": [
+            -1.5,
+            1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R0",
+          "position_blender_m": [
+            0.699999988079071,
+            -0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R0/Knee.003",
+          "position_blender_m": [
+            1.5,
+            -1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R1",
+          "position_blender_m": [
+            0.699999988079071,
+            0.0,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R1/Knee.004",
+          "position_blender_m": [
+            1.5,
+            0.0,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R2",
+          "position_blender_m": [
+            0.699999988079071,
+            0.8500000238418579,
+            1.7300000190734863
+          ]
+        },
+        {
+          "path": "ST2-E04/Hip_R2/Knee.005",
+          "position_blender_m": [
+            1.5,
+            1.121999979019165,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            0.15000000596046448,
+            2.25
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            0.49000000953674316,
+            2.299999952316284
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            0.49000000953674316,
+            2.299999952316284
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            1.309999942779541,
+            2.299999952316284
+          ]
+        },
+        {
+          "path": "ST2-E04/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.15000000596046448,
+            2.4200000762939453
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Amber",
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E05",
+      "title": "Tripod sentry",
+      "category": "enemy",
+      "description": "Stationary three-foot gun platform; yaw, pitch and recoil hooks.",
+      "export_id": "ST2-E05",
+      "lod": 0,
+      "triangles": 932,
+      "meshes": 3,
+      "bounds_min": [
+        -0.8900001645088196,
+        -1.3652113676071167,
+        -1.3490790706782718e-07
+      ],
+      "bounds_max": [
+        1.505000114440918,
+        1.621999979019165,
+        2.200000047683716
+      ],
+      "fbx": "Exports/FBX/ST2-E05.fbx",
+      "glb": "Exports/GLB/ST2-E05.glb",
+      "sha256": {
+        "fbx": "903b9bbc2a52f64101f51fb72906fa10bb5ae15a4b1020f7de3b094092201f87",
+        "glb": "b99da2fb7410922b976509f4d8d121ec570d0ffeb5d850454d470c7465b77717"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E05",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            0.3499999940395355,
+            1.8900001049041748
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            0.3499999940395355,
+            1.8900001049041748
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            1.6299999952316284,
+            1.8900001049041748
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.8300000429153442
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-E05",
+      "title": "Tripod sentry",
+      "category": "enemy",
+      "description": "Stationary three-foot gun platform; yaw, pitch and recoil hooks.",
+      "export_id": "ST2-E05_LOD1",
+      "lod": 1,
+      "triangles": 414,
+      "meshes": 3,
+      "bounds_min": [
+        -0.8900001645088196,
+        -1.3652113676071167,
+        -1.3490790706782718e-07
+      ],
+      "bounds_max": [
+        1.505000114440918,
+        1.6229525804519653,
+        2.200000047683716
+      ],
+      "fbx": "Exports/FBX/ST2-E05_LOD1.fbx",
+      "glb": "Exports/GLB/ST2-E05_LOD1.glb",
+      "sha256": {
+        "fbx": "3bb313c775df8d7f6aae1717b0be748e06e65ccc451eb31298147aa16b548001",
+        "glb": "159c311888fa78a7d6c752c0c30737651decf63752ee21cc3130a4abba9a7605"
+      },
+      "nodes": [
+        {
+          "path": "ST2-E05",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.4500000476837158
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/GunPitch",
+          "position_blender_m": [
+            0.0,
+            0.3499999940395355,
+            1.8900001049041748
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/GunPitch/BarrelRecoil",
+          "position_blender_m": [
+            0.0,
+            0.3499999940395355,
+            1.8900001049041748
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/GunPitch/BarrelRecoil/Muzzle",
+          "position_blender_m": [
+            0.0,
+            1.6299999952316284,
+            1.8900001049041748
+          ]
+        },
+        {
+          "path": "ST2-E05/TurretYaw/AimPoint",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            1.8300000429153442
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-T01",
+      "title": "Ash ground tile",
+      "category": "terrain",
+      "description": "8 m modular surface. Blender +Z up; north is +Y. Height borders documented in catalog.",
+      "export_id": "ST2-T01",
+      "lod": 0,
+      "triangles": 800,
+      "meshes": 1,
+      "bounds_min": [
+        -4.0,
+        -4.0,
+        -0.08922553807497025
+      ],
+      "bounds_max": [
+        4.0,
+        4.0,
+        0.08922553807497025
+      ],
+      "fbx": "Exports/FBX/ST2-T01.fbx",
+      "glb": "Exports/GLB/ST2-T01.glb",
+      "sha256": {
+        "fbx": "33e25ffe334aacdb9489c8857f1e64c2c951f0951ea449bc6fed3f3544e5357e",
+        "glb": "9f079c50729d38004346777086dfbc5bff738a252cc0fb275e2aca4925c7c663"
+      },
+      "nodes": [
+        {
+          "path": "ST2-T01",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T01/Snap_N",
+          "position_blender_m": [
+            0.0,
+            4.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T01/Snap_S",
+          "position_blender_m": [
+            0.0,
+            -4.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T01/Snap_E",
+          "position_blender_m": [
+            4.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T01/Snap_W",
+          "position_blender_m": [
+            -4.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Earth"
+      ],
+      "grid_m": 8
+    },
+    {
+      "id": "ST2-T02",
+      "title": "Earth berm tile",
+      "category": "terrain",
+      "description": "8 m modular surface. Blender +Z up; north is +Y. Height borders documented in catalog.",
+      "export_id": "ST2-T02",
+      "lod": 0,
+      "triangles": 800,
+      "meshes": 1,
+      "bounds_min": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "bounds_max": [
+        4.0,
+        4.0,
+        1.350000023841858
+      ],
+      "fbx": "Exports/FBX/ST2-T02.fbx",
+      "glb": "Exports/GLB/ST2-T02.glb",
+      "sha256": {
+        "fbx": "b8778ae91f14eae98f440910fb8d84d6729212af5f29b978d14c0b6bb0690a79",
+        "glb": "ccdde94e833be5778063176e3f88a27bc05e41f235d40145bcfe0f34c19dfaeb"
+      },
+      "nodes": [
+        {
+          "path": "ST2-T02",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T02/Snap_N",
+          "position_blender_m": [
+            0.0,
+            4.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T02/Snap_S",
+          "position_blender_m": [
+            0.0,
+            -4.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T02/Snap_E",
+          "position_blender_m": [
+            4.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T02/Snap_W",
+          "position_blender_m": [
+            -4.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Earth"
+      ],
+      "grid_m": 8
+    },
+    {
+      "id": "ST2-T03",
+      "title": "Impact crater tile",
+      "category": "terrain",
+      "description": "8 m modular surface. Blender +Z up; north is +Y. Height borders documented in catalog.",
+      "export_id": "ST2-T03",
+      "lod": 0,
+      "triangles": 800,
+      "meshes": 1,
+      "bounds_min": [
+        -4.0,
+        -4.0,
+        -0.6499999761581421
+      ],
+      "bounds_max": [
+        4.0,
+        4.0,
+        0.39271315932273865
+      ],
+      "fbx": "Exports/FBX/ST2-T03.fbx",
+      "glb": "Exports/GLB/ST2-T03.glb",
+      "sha256": {
+        "fbx": "48e6c653f870c2549327a57d0402a21a2f08e95f4b4897daace85b52fd4b921d",
+        "glb": "d39efb1cccbeb2780b80529a12dd89de1eccc480546a1df9d70b1bd0aa2f795e"
+      },
+      "nodes": [
+        {
+          "path": "ST2-T03",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T03/Snap_N",
+          "position_blender_m": [
+            0.0,
+            4.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T03/Snap_S",
+          "position_blender_m": [
+            0.0,
+            -4.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T03/Snap_E",
+          "position_blender_m": [
+            4.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T03/Snap_W",
+          "position_blender_m": [
+            -4.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Earth"
+      ],
+      "grid_m": 8
+    },
+    {
+      "id": "ST2-T04",
+      "title": "Basalt cluster",
+      "category": "terrain",
+      "description": "Small faceted cluster, base at ground level; separate rocks in source.",
+      "export_id": "ST2-T04",
+      "lod": 0,
+      "triangles": 80,
+      "meshes": 1,
+      "bounds_min": [
+        -1.3414491415023804,
+        -1.4854673147201538,
+        0.0
+      ],
+      "bounds_max": [
+        1.7839361429214478,
+        1.0661267042160034,
+        1.5225093364715576
+      ],
+      "fbx": "Exports/FBX/ST2-T04.fbx",
+      "glb": "Exports/GLB/ST2-T04.glb",
+      "sha256": {
+        "fbx": "cc46b4e422e33c91ac615350630e67daac841061737ceed955ba2eba8ce0d80c",
+        "glb": "c797ca90bdf4abbe8b445c823eb74cbe126e2ce2d86c54d021d227c51981a9a1"
+      },
+      "nodes": [
+        {
+          "path": "ST2-T04",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-T05",
+      "title": "Broken escarpment",
+      "category": "terrain",
+      "description": "Eight-meter rocky visual boundary; not a traversability or cover rule.",
+      "export_id": "ST2-T05",
+      "lod": 0,
+      "triangles": 120,
+      "meshes": 1,
+      "bounds_min": [
+        -3.9067344665527344,
+        -1.0507590770721436,
+        0.0
+      ],
+      "bounds_max": [
+        4.048978328704834,
+        0.8150801658630371,
+        4.3989386558532715
+      ],
+      "fbx": "Exports/FBX/ST2-T05.fbx",
+      "glb": "Exports/GLB/ST2-T05.glb",
+      "sha256": {
+        "fbx": "515c00a2dbdb63150a118226a551a95bea43bdda1938d106ec6d74f12850a5ad",
+        "glb": "feafb4ab3a961d6a654aecd3bed786211b701d9d457cdd38507323bfcb71948b"
+      },
+      "nodes": [
+        {
+          "path": "ST2-T05",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-T06",
+      "title": "Two-meter rise ramp",
+      "category": "terrain",
+      "description": "8 m ramp rising from south 0 m to north 2 m. Only compatible height edges connect; sides slope.",
+      "export_id": "ST2-T06",
+      "lod": 0,
+      "triangles": 800,
+      "meshes": 1,
+      "bounds_min": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "bounds_max": [
+        4.0,
+        4.0,
+        2.0
+      ],
+      "fbx": "Exports/FBX/ST2-T06.fbx",
+      "glb": "Exports/GLB/ST2-T06.glb",
+      "sha256": {
+        "fbx": "ca32d0df0630411eb2619369646fbceda0e762d1a0104fe59d0339b0cc87dcda",
+        "glb": "cc8a36cc0faab543bdb1730e5825ca51ef6ca2a874f287d2fa8d8c92cb60b2dd"
+      },
+      "nodes": [
+        {
+          "path": "ST2-T06",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T06/Snap_N",
+          "position_blender_m": [
+            0.0,
+            4.0,
+            2.0
+          ]
+        },
+        {
+          "path": "ST2-T06/Snap_S",
+          "position_blender_m": [
+            0.0,
+            -4.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-T06/Snap_E",
+          "position_blender_m": [
+            4.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "path": "ST2-T06/Snap_W",
+          "position_blender_m": [
+            -4.0,
+            0.0,
+            1.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Earth"
+      ],
+      "grid_m": 8
+    },
+    {
+      "id": "ST2-T07",
+      "title": "Charred tree stand",
+      "category": "terrain",
+      "description": "Three stylized burned trunks; decoration without collision or resource rules.",
+      "export_id": "ST2-T07",
+      "lod": 0,
+      "triangles": 696,
+      "meshes": 1,
+      "bounds_min": [
+        -1.3671751022338867,
+        -1.3712894916534424,
+        -0.06059308350086212
+      ],
+      "bounds_max": [
+        1.5031752586364746,
+        0.9670332074165344,
+        3.8071701526641846
+      ],
+      "fbx": "Exports/FBX/ST2-T07.fbx",
+      "glb": "Exports/GLB/ST2-T07.glb",
+      "sha256": {
+        "fbx": "37e335df506d3027c0c3ea5c80a2776e7e926265c73d504cf796c03e431e6b95",
+        "glb": "247f71e6be252aaa49bb7d9cdef00cc23f84a9da53b8b8df56f7245cfc1a85c0"
+      },
+      "nodes": [
+        {
+          "path": "ST2-T07",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Char"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-B01",
+      "title": "Observation bunker",
+      "category": "building",
+      "description": "Low concrete bunker with embrasure, roof vents, door and attachment anchors.",
+      "export_id": "ST2-B01",
+      "lod": 0,
+      "triangles": 652,
+      "meshes": 1,
+      "bounds_min": [
+        -3.0999999046325684,
+        -2.5,
+        0.0
+      ],
+      "bounds_max": [
+        3.0999999046325684,
+        2.5,
+        3.0999999046325684
+      ],
+      "fbx": "Exports/FBX/ST2-B01.fbx",
+      "glb": "Exports/GLB/ST2-B01.glb",
+      "sha256": {
+        "fbx": "f981abeb543824a9c4707630c3a8d071a2c12da206c392f26d10e38f97e5ea33",
+        "glb": "b239f04f0c2fa01e32f50823e0d33132313d35853f6bcc061f1e1757764bef0f"
+      },
+      "nodes": [
+        {
+          "path": "ST2-B01",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-B01/RoofMount",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            2.619999885559082
+          ]
+        },
+        {
+          "path": "ST2-B01/DoorAnchor",
+          "position_blender_m": [
+            0.0,
+            -2.4000000953674316,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Edge",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-B02",
+      "title": "Corrugated field depot",
+      "category": "building",
+      "description": "Arched depot with roller door; surface-only seed, not an interior kit.",
+      "export_id": "ST2-B02",
+      "lod": 0,
+      "triangles": 5090,
+      "meshes": 1,
+      "bounds_min": [
+        -3.5,
+        -4.300000190734863,
+        0.0
+      ],
+      "bounds_max": [
+        3.5,
+        4.300000190734863,
+        4.13596248626709
+      ],
+      "fbx": "Exports/FBX/ST2-B02.fbx",
+      "glb": "Exports/GLB/ST2-B02.glb",
+      "sha256": {
+        "fbx": "aa475732c9c7817fdcee18ed6b4b0fd487b06b21f8abed782944a79d05dbd92a",
+        "glb": "7b4c59913ead43eff73bdcc618c771ab65635e6b781f7e555830ae1e2959b12d"
+      },
+      "nodes": [
+        {
+          "path": "ST2-B02",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-B02/DoorAnchor",
+          "position_blender_m": [
+            0.0,
+            4.349999904632568,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Edge",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-B03",
+      "title": "Relay mast",
+      "category": "building",
+      "description": "Cross-braced tower with directional dish and a named antenna yaw pivot.",
+      "export_id": "ST2-B03",
+      "lod": 0,
+      "triangles": 1272,
+      "meshes": 2,
+      "bounds_min": [
+        -1.069427728652954,
+        -1.5374424457550049,
+        0.0
+      ],
+      "bounds_max": [
+        1.7249999046325684,
+        1.5374321937561035,
+        7.5494279861450195
+      ],
+      "fbx": "Exports/FBX/ST2-B03.fbx",
+      "glb": "Exports/GLB/ST2-B03.glb",
+      "sha256": {
+        "fbx": "6cf195957318ceb4bf9f9931e2082d9bbd8d378ee84f7dd3a088c4eb565bd737",
+        "glb": "f3b549a7f7022fa0ecdae47f3184d5573a40a64c5cb49fe92c4f24842cbdfc8e"
+      },
+      "nodes": [
+        {
+          "path": "ST2-B03",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-B03/AntennaYaw",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            6.0
+          ]
+        },
+        {
+          "path": "ST2-B03/AntennaAnchor",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            7.5
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-B04",
+      "title": "Workshop ruin",
+      "category": "building",
+      "description": "L-shaped ruined workshop with broken roof beams and rubble, no destruction simulation.",
+      "export_id": "ST2-B04",
+      "lod": 0,
+      "triangles": 816,
+      "meshes": 1,
+      "bounds_min": [
+        -3.700000047683716,
+        -2.5,
+        0.0
+      ],
+      "bounds_max": [
+        3.5,
+        2.5,
+        3.3399996757507324
+      ],
+      "fbx": "Exports/FBX/ST2-B04.fbx",
+      "glb": "Exports/GLB/ST2-B04.glb",
+      "sha256": {
+        "fbx": "28f1bc62550a1d792915063718c97799143603ea4fd4b1734a7cb5512c7f85bf",
+        "glb": "5df84334207bc6cbfb288d9c1f905a4a39bc95373b12ec9250e6f730a397d790"
+      },
+      "nodes": [
+        {
+          "path": "ST2-B04",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-B05",
+      "title": "Elevated reserve tank",
+      "category": "building",
+      "description": "Industrial tank on a four-leg cradle with plumbing, ladder and valve.",
+      "export_id": "ST2-B05",
+      "lod": 0,
+      "triangles": 1812,
+      "meshes": 1,
+      "bounds_min": [
+        -1.4649999141693115,
+        -1.8000000715255737,
+        0.0
+      ],
+      "bounds_max": [
+        1.340000033378601,
+        1.8000003099441528,
+        4.099999904632568
+      ],
+      "fbx": "Exports/FBX/ST2-B05.fbx",
+      "glb": "Exports/GLB/ST2-B05.glb",
+      "sha256": {
+        "fbx": "bf72d6c52ca33804a94526c4bdf3ec4da73a28d684e8c178d043ae4bf15d13d9",
+        "glb": "e6c8bbdb94bc9c61e3a6df0c420ad3e803b4d7aeb442b46d090799243084043d"
+      },
+      "nodes": [
+        {
+          "path": "ST2-B05",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Edge",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-P01",
+      "title": "Drum cluster",
+      "category": "prop",
+      "description": "Three separate industrial drums with banding; scenery only.",
+      "export_id": "ST2-P01",
+      "lod": 0,
+      "triangles": 1944,
+      "meshes": 1,
+      "bounds_min": [
+        -0.847000002861023,
+        -1.0469999313354492,
+        0.0
+      ],
+      "bounds_max": [
+        0.796999990940094,
+        0.6970000267028809,
+        1.1299999952316284
+      ],
+      "fbx": "Exports/FBX/ST2-P01.fbx",
+      "glb": "Exports/GLB/ST2-P01.glb",
+      "sha256": {
+        "fbx": "36795ae35c697f6d064ccdbbcc86d70b52c136dc5ca3a002c43d0f3e47994cde",
+        "glb": "79a0b5e171af1b2003ee52e2aad9af3b1ba4adf45d6412e08710cf579d541c7d"
+      },
+      "nodes": [
+        {
+          "path": "ST2-P01",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Olive",
+        "ST2_Oxide",
+        "ST2_Sand",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-P02",
+      "title": "Four-meter fence",
+      "category": "prop",
+      "description": "4 m repeating rigid fence panel; end snap anchors, no collision assigned.",
+      "export_id": "ST2-P02",
+      "lod": 0,
+      "triangles": 764,
+      "meshes": 1,
+      "bounds_min": [
+        -2.075000047683716,
+        -0.07500000298023224,
+        0.0
+      ],
+      "bounds_max": [
+        2.0749998092651367,
+        0.07500000298023224,
+        2.359999895095825
+      ],
+      "fbx": "Exports/FBX/ST2-P02.fbx",
+      "glb": "Exports/GLB/ST2-P02.glb",
+      "sha256": {
+        "fbx": "6b0f513859ec5b87495d2adff5f9ce79abee3b8f2ef970cc0f71f00c3565a74c",
+        "glb": "c562ceab3ec8664c5c2f1e1c93be4fb6ce3ed0c3672c0e89e854c8658bcd5f7e"
+      },
+      "nodes": [
+        {
+          "path": "ST2-P02",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-P02/Snap_W",
+          "position_blender_m": [
+            -2.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-P02/Snap_E",
+          "position_blender_m": [
+            2.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-P03",
+      "title": "Pipe elbow",
+      "category": "prop",
+      "description": "Industrial bent pipe with flanged ends; reusable service-yard dressing.",
+      "export_id": "ST2-P03",
+      "lod": 0,
+      "triangles": 520,
+      "meshes": 1,
+      "bounds_min": [
+        -1.1500000953674316,
+        -0.3500000238418579,
+        8.523719507991245e-09
+      ],
+      "bounds_max": [
+        0.3400000333786011,
+        1.1500000953674316,
+        0.7599999904632568
+      ],
+      "fbx": "Exports/FBX/ST2-P03.fbx",
+      "glb": "Exports/GLB/ST2-P03.glb",
+      "sha256": {
+        "fbx": "f92959578194dc155324a8884f3d5fb6d47c75dcf2d6ea81157fce1452d7a71b",
+        "glb": "cbe71c457a2d4493e166d950a87b7d5c65eb285f5eda6dc5904bfa70dda1ab5c"
+      },
+      "nodes": [
+        {
+          "path": "ST2-P03",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Olive",
+        "ST2_Oxide"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-P04",
+      "title": "Tripod work light",
+      "category": "prop",
+      "description": "Portable two-lamp floodlight with a mast pivot; no realtime lights attached.",
+      "export_id": "ST2-P04",
+      "lod": 0,
+      "triangles": 300,
+      "meshes": 2,
+      "bounds_min": [
+        -0.7599999904632568,
+        -0.6336089372634888,
+        0.0163528174161911
+      ],
+      "bounds_max": [
+        0.7599999904632568,
+        0.6336041688919067,
+        3.119999885559082
+      ],
+      "fbx": "Exports/FBX/ST2-P04.fbx",
+      "glb": "Exports/GLB/ST2-P04.glb",
+      "sha256": {
+        "fbx": "0434cfcaab75208c4ddc486c569404ba9d21733b4d0f63c025b7919870086f30",
+        "glb": "6d85f46429ce278bb6b866cb70d27809404d6b6043fce0e24b7ff8f370aa9a38"
+      },
+      "nodes": [
+        {
+          "path": "ST2-P04",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "path": "ST2-P04/LampYaw",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            2.8499999046325684
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Ivory",
+        "ST2_Oxide",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-P05",
+      "title": "Cable reel",
+      "category": "prop",
+      "description": "Large industrial reel on small feet, baked cable rings rather than simulation.",
+      "export_id": "ST2-P05",
+      "lod": 0,
+      "triangles": 2300,
+      "meshes": 1,
+      "bounds_min": [
+        -0.6057999730110168,
+        -0.7599999904632568,
+        -0.010000016540288925
+      ],
+      "bounds_max": [
+        0.6057999730110168,
+        0.7599999904632568,
+        1.5099999904632568
+      ],
+      "fbx": "Exports/FBX/ST2-P05.fbx",
+      "glb": "Exports/GLB/ST2-P05.glb",
+      "sha256": {
+        "fbx": "b3b629a4cd47e2a8dfd3e5ca8f7f0fa5ae5bfff199775d802f94cca48372c389",
+        "glb": "73695d40abd27e2c8fe01b8b1cf0ea8c048531bdec3dadde66c79ef82c009db2"
+      },
+      "nodes": [
+        {
+          "path": "ST2-P05",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Rubber",
+        "ST2_Sand",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-P06",
+      "title": "Wayfinding post",
+      "category": "prop",
+      "description": "Two-direction field sign with geometric hazard badge; no text localization dependency.",
+      "export_id": "ST2-P06",
+      "lod": 0,
+      "triangles": 120,
+      "meshes": 1,
+      "bounds_min": [
+        -0.7200000286102295,
+        -0.30000001192092896,
+        0.0
+      ],
+      "bounds_max": [
+        0.7200000286102295,
+        0.30000001192092896,
+        2.5999999046325684
+      ],
+      "fbx": "Exports/FBX/ST2-P06.fbx",
+      "glb": "Exports/GLB/ST2-P06.glb",
+      "sha256": {
+        "fbx": "72836b461f17a06335d723dc3b80b70b795a058a1fac1882e0d140d2f86330c6",
+        "glb": "df947e555ec0cf7cafb4e54c94a2a4c5c3722064b42e91e73c440c112b547162"
+      },
+      "nodes": [
+        {
+          "path": "ST2-P06",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Concrete",
+        "ST2_Ivory",
+        "ST2_Oxide",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    },
+    {
+      "id": "ST2-P07",
+      "title": "Abandoned crawler hull",
+      "category": "prop",
+      "description": "Rusting empty wreck with tilted hatch and broken running gear; noninteractive seed.",
+      "export_id": "ST2-P07",
+      "lod": 0,
+      "triangles": 1144,
+      "meshes": 1,
+      "bounds_min": [
+        -1.340000033378601,
+        -2.273590564727783,
+        0.009999999776482582
+      ],
+      "bounds_max": [
+        1.437308430671692,
+        2.302769422531128,
+        1.4405056238174438
+      ],
+      "fbx": "Exports/FBX/ST2-P07.fbx",
+      "glb": "Exports/GLB/ST2-P07.glb",
+      "sha256": {
+        "fbx": "16a279cfaa175523c7503ebcb7c6e9db98ccaf7631c929b7d252e466322dba33",
+        "glb": "b4d2a3005056a891e64bee530b1c3ab2591492bee494d3418bf73c5ffb0df244"
+      },
+      "nodes": [
+        {
+          "path": "ST2-P07",
+          "position_blender_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "materials": [
+        "ST2_Edge",
+        "ST2_Oxide",
+        "ST2_Rubber",
+        "ST2_Steel"
+      ],
+      "grid_m": 0
+    }
+  ],
+  "materials": [
+    {
+      "name": "ST2_Oxide",
+      "color": [
+        0.30000001192092896,
+        0.09000000357627869,
+        0.04500000178813934,
+        1.0
+      ],
+      "metallic": 0.3499999940395355,
+      "roughness": 0.7200000286102295,
+      "texture": "Textures/ST2_Oxide_BaseColor.png"
+    },
+    {
+      "name": "ST2_Olive",
+      "color": [
+        0.25,
+        0.27000001072883606,
+        0.15000000596046448,
+        1.0
+      ],
+      "metallic": 0.25,
+      "roughness": 0.75,
+      "texture": "Textures/ST2_Olive_BaseColor.png"
+    },
+    {
+      "name": "ST2_Sand",
+      "color": [
+        0.46000000834465027,
+        0.36000001430511475,
+        0.20999999344348907,
+        1.0
+      ],
+      "metallic": 0.15000000596046448,
+      "roughness": 0.800000011920929,
+      "texture": "Textures/ST2_Sand_BaseColor.png"
+    },
+    {
+      "name": "ST2_Concrete",
+      "color": [
+        0.30000001192092896,
+        0.28999999165534973,
+        0.25,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.949999988079071,
+      "texture": "Textures/ST2_Concrete_BaseColor.png"
+    },
+    {
+      "name": "ST2_Earth",
+      "color": [
+        0.17000000178813934,
+        0.12999999523162842,
+        0.08500000089406967,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "texture": "Textures/ST2_Earth_BaseColor.png"
+    },
+    {
+      "name": "ST2_Steel",
+      "color": [
+        0.07500000298023224,
+        0.09000000357627869,
+        0.0949999988079071,
+        1.0
+      ],
+      "metallic": 0.6499999761581421,
+      "roughness": 0.5,
+      "texture": ""
+    },
+    {
+      "name": "ST2_Edge",
+      "color": [
+        0.17000000178813934,
+        0.1899999976158142,
+        0.18000000715255737,
+        1.0
+      ],
+      "metallic": 0.550000011920929,
+      "roughness": 0.47999998927116394,
+      "texture": ""
+    },
+    {
+      "name": "ST2_Rubber",
+      "color": [
+        0.023000000044703484,
+        0.027000000700354576,
+        0.02500000037252903,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.9100000262260437,
+      "texture": ""
+    },
+    {
+      "name": "ST2_Ivory",
+      "color": [
+        0.699999988079071,
+        0.6499999761581421,
+        0.4399999976158142,
+        1.0
+      ],
+      "metallic": 0.05000000074505806,
+      "roughness": 0.6499999761581421,
+      "texture": ""
+    },
+    {
+      "name": "ST2_Amber",
+      "color": [
+        0.8999999761581421,
+        0.2800000011920929,
+        0.02500000037252903,
+        1.0
+      ],
+      "metallic": 0.25,
+      "roughness": 0.3499999940395355,
+      "texture": ""
+    },
+    {
+      "name": "ST2_Optic",
+      "color": [
+        0.03500000014901161,
+        0.3199999928474426,
+        0.3499999940395355,
+        1.0
+      ],
+      "metallic": 0.30000001192092896,
+      "roughness": 0.23999999463558197,
+      "texture": ""
+    },
+    {
+      "name": "ST2_Char",
+      "color": [
+        0.054999999701976776,
+        0.041999999433755875,
+        0.032999999821186066,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "texture": ""
+    }
+  ],
+  "unity_position_mapping": [
+    "-x",
+    "z",
+    "-y"
+  ],
+  "gltf_position_mapping": [
+    "x",
+    "z",
+    "-y"
+  ]
+}

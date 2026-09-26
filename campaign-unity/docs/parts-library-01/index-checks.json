@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "utc": "2026-09-25T12:14:18.101613+00:00",
+  "mesh_entries": 20,
+  "retained_entries": 6,
+  "new_geometry_entries": 14,
+  "assemblies": 3,
+  "paint_finishes": 3,
+  "previews": 23,
+  "triangle_total": 101280,
+  "source_and_fbx_hashes_match": true,
+  "unity_triangle_counts_match": false,
+  "unity_triangle_total": 100720,
+  "interactive_gallery_complete": false,
+  "new_web_build": false
+}

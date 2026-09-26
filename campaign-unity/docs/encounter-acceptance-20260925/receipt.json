@@ -1,0 +1,316 @@
+{
+  "utc": "2026-09-25T11:32:17.365359+00:00",
+  "runtime_commit": "158143688a477e0468a4f3c5ade338d79351ce42",
+  "build": "Web-20260925T102215Z-797845",
+  "unity_rebuilt": false,
+  "csharp_tests_rerun": false,
+  "suites": {
+    "encounter": {
+      "run": "encounter-browser-20260925T112628Z-ee093d",
+      "checks": 56,
+      "raw_sha256": "7ca35d83b3595dfd66c3e81a691c35889d7d967e42c59308cb0005d6fa76372d",
+      "status": "pass"
+    },
+    "art": {
+      "run": "browser-verify-20260925T112807Z-8a6c54",
+      "checks": 15,
+      "raw_sha256": "aae4ec82177da5155a752efad08644ae6f6fb39c9205851eaa26060017c27e5f",
+      "status": "pass"
+    },
+    "inspection": {
+      "run": "inspection-20260925T112825Z-f99198",
+      "checks": 247,
+      "raw_sha256": "aab4e08e09633484b64496cc3697265f4935e4badac02a22a7556baf2be6f88c",
+      "status": "pass"
+    }
+  },
+  "new_gameplay": false,
+  "android": false,
+  "deployment": false,
+  "final_art_approval": false,
+  "original_files_checked": 85,
+  "original_saved_changes": [],
+  "original_written": false,
+  "artifacts": {
+    "index.html": "d8f3463dc9f45b568b60a5c5cf3fb2c620193ed66a3dbb43f2a33ed2a7c1cd04",
+    "Build/Web-20260925T102215Z-797845.data": "482890879bcc5ffc8838d34f1dee00d92decb5fb35c7049a5ddfcc13909ece87",
+    "Build/Web-20260925T102215Z-797845.framework.js": "1b68826d1f4141afaa72d6f6646408e04e0bda3f01376bbca1f38c4671a04b14",
+    "Build/Web-20260925T102215Z-797845.loader.js": "21bbefddd287b367790a381a151ea0faf84b9a6bb6f123c6924c44a5cccf3d3b",
+    "Build/Web-20260925T102215Z-797845.wasm": "d11b455a03cb9c6dd18e8252af2109157cbb9a8dc4894ffe5a8135ba8de5d5c4",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "scene_sha256": "5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65",
+  "terminals": [
+    "False|Defeated|334|0|21|8|16|0|31|31",
+    "True|Defeated|388|0|25|13|19|13|0|19",
+    "True|Defeated|388|0|25|13|19|13|0|19"
+  ],
+  "background_dom": {
+    "hidden": true,
+    "focused": false
+  },
+  "minimized_dom": {
+    "hidden": true,
+    "focused": false
+  },
+  "native_browser_closed": true,
+  "native_browser_forced": false,
+  "test_servers_closed": true,
+  "warnings": [
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat"
+  ],
+  "shader_diagnostics": [
+    "Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n"
+  ],
+  "max_projection_error_px": 0.03539628281269717,
+  "recoils": [
+    {
+      "preview": 1,
+      "peakWorld": 0.3200000822544098,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 2,
+      "peakWorld": 0.3200000822544098,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 3,
+      "peakWorld": 0.3200000822544098,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 4,
+      "peakWorld": 0.3200000822544098,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 5,
+      "peakWorld": 0.3199998438358307,
+      "returnWorld": 0.0
+    }
+  ],
+  "input_trace_counts": {
+    "encounter": 76,
+    "art": 26,
+    "inspection": 58
+  },
+  "new_pointer_audit_gate": "NOT APPLIED: Evidence/bind_input_trace_checks.py write blocked; original suite assertions retained; passive logs recorded",
+  "historical_extra_input_origin": "unresolved; new passing sessions do not identify old input sources",
+  "new_test_source_sha256": {
+    "Tools/verify_web.py": "1dafe6dfd624ffc9568881ffdf4e146722bb76e1ad51207193666517fbf1d038",
+    "Tools/verify_inspection.py": "924201ee6e58afd0262ff117c5112026eec42a627c5864b56a83b7b3d8d64c77",
+    "Tools/verify_encounter.py": "7539890193183486e93cac32e59c8708a1e62f79155d07c00b9551256451966f",
+    "Tools/input_observer.py": "30695d515e64f75495f353a1f150e639cf0f4a7dc115aa2ed1349a60dcfdedb5",
+    "Tools/native_chrome.py": "97719f08943f413f73eeea3fe13b0da412329d6b1687ec1196aabb42f606f8ca",
+    "Tools/test_native_chrome.py": "e570fe48361427f7d5459c48433ddee234afb0899b3390fb1a649daa1ad319c0",
+    "Tools/test_inspection_checks.py": "9233e3095fa9ccfca08124f26c5165b4a44c96feec3658b2cce493ad1a40fb83"
+  },
+  "host_tests": [
+    {
+      "pattern": "test_inspection_checks.py",
+      "methods": 8,
+      "exit": 0,
+      "log_sha256": "986ad96f81bf1f52d442109d901ab4e0c3ff8e37cba2a515db028bc1515a0d2f"
+    },
+    {
+      "pattern": "test_native_chrome.py",
+      "methods": 4,
+      "exit": 0,
+      "log_sha256": "2abce928aee16ae0d2bfd2f6cfb138109473691ab352ee5e7434c1dc8bd92df9"
+    }
+  ],
+  "captures": {
+    "03-launcher-automatic.png": "0add9d7ba1f251030728f0d03c86b98d46794592e156dfeed0b97b898d28bef4",
+    "05-launcher-full-defeat.png": "2f30705007497084b2d1f64eda5f8345311832321b571eb597ce3ffc617fbc47",
+    "08-returned-inspection.png": "b375fe7ff4939649dde5eab9b6f1b525a981940b8f9844099f548e8b623c7002",
+    "08-resize-1024.png": "49eef7a4ba341d2c66c531d38baf1a387f50648f7f7ee62b91f01f81ac2e4ab1"
+  },
+  "retained_failure": {
+    "run": "encounter-browser-20260925T111845Z-d20638",
+    "status": "failed",
+    "checks": 50,
+    "error": "RuntimeError: actual minimized page is hidden and unfocused",
+    "raw_sha256": "007a478bf15eeb327b0899e13d9441e7dc7c45480cc9339ec8c78bc7bff0609a"
+  },
+  "visibility_probes": {
+    "launch_flags_only": {
+      "source": "Evidence/minimize-probe-20260925T112206Z.json",
+      "sha256": "ebd8f321ea094a1d123fd68b5ca1dc2b77a254cfe276fcdb16c05b2111b3f216",
+      "result": {
+        "samples": [
+          {
+            "delay_ms": 100,
+            "bounds": {
+              "bounds": {
+                "left": 10,
+                "top": 10,
+                "width": 1296,
+                "height": 808,
+                "windowState": "minimized"
+              }
+            },
+            "dom": {
+              "hidden": false,
+              "focused": false,
+              "t": 1790335327788
+            }
+          },
+          {
+            "delay_ms": 500,
+            "bounds": {
+              "bounds": {
+                "left": 10,
+                "top": 10,
+                "width": 1296,
+                "height": 808,
+                "windowState": "minimized"
+              }
+            },
+            "dom": {
+              "hidden": false,
+              "focused": false,
+              "t": 1790335328303
+            }
+          },
+          {
+            "delay_ms": 1000,
+            "bounds": {
+              "bounds": {
+                "left": 10,
+                "top": 10,
+                "width": 1296,
+                "height": 808,
+                "windowState": "minimized"
+              }
+            },
+            "dom": {
+              "hidden": false,
+              "focused": false,
+              "t": 1790335329312
+            }
+          },
+          {
+            "delay_ms": 2000,
+            "bounds": {
+              "bounds": {
+                "left": 10,
+                "top": 10,
+                "width": 1296,
+                "height": 808,
+                "windowState": "minimized"
+              }
+            },
+            "dom": {
+              "hidden": false,
+              "focused": false,
+              "t": 1790335331328
+            }
+          }
+        ],
+        "events": [
+          "{\"kind\":\"blur\",\"hidden\":false,\"focused\":false,\"t\":1790335327667}",
+          "{\"kind\":\"focus\",\"hidden\":false,\"focused\":true,\"t\":1790335331340}",
+          "{\"kind\":\"visibilitychange\",\"hidden\":true,\"focused\":true,\"t\":1790335331656}"
+        ],
+        "before": {
+          "bounds": {
+            "left": 10,
+            "top": 10,
+            "width": 1296,
+            "height": 808,
+            "windowState": "normal"
+          }
+        },
+        "restored": {
+          "hidden": false,
+          "focused": true
+        }
+      }
+    },
+    "native_default_context": {
+      "source": "Evidence/native-context-probe-20260925T112443Z/result.json",
+      "sha256": "4cd8a2ac39a05717a98b720cdadae178db9373c48b9b1e92ea1318731f154756",
+      "result": {
+        "samples": [
+          {
+            "delay": 100,
+            "native": {
+              "bounds": {
+                "left": 10,
+                "top": 10,
+                "width": 1616,
+                "height": 988,
+                "windowState": "minimized"
+              }
+            },
+            "dom": {
+              "hidden": true,
+              "focused": false
+            }
+          },
+          {
+            "delay": 500,
+            "native": {
+              "bounds": {
+                "left": 10,
+                "top": 10,
+                "width": 1616,
+                "height": 988,
+                "windowState": "minimized"
+              }
+            },
+            "dom": {
+              "hidden": true,
+              "focused": false
+            }
+          },
+          {
+            "delay": 1000,
+            "native": {
+              "bounds": {
+                "left": 10,
+                "top": 10,
+                "width": 1616,
+                "height": 988,
+                "windowState": "minimized"
+              }
+            },
+            "dom": {
+              "hidden": true,
+              "focused": false
+            }
+          }
+        ],
+        "restored": {
+          "hidden": false,
+          "focused": true
+        },
+        "closed": true,
+        "forced": false
+      }
+    }
+  },
+  "diagnostic_note": "The later hidden event in the first launch-flags probe occurs during cleanup after restored focus, not proven delayed minimization. The isolated native/default-context probe reports true hidden state while minimized.",
+  "public_api_reference": "https://playwright.dev/python/docs/api/class-browsertype#browser-type-connect-over-cdp-option-no-defaults",
+  "interpretation": "Completed 56/15/247 bounded desktop assertions on unchanged runtime; not full campaign, graphics-warning resolution or final owner acceptance."
+}

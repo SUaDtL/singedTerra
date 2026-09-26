@@ -1,0 +1,2385 @@
+{
+  "status": "packaged",
+  "created_utc": "2026-09-26T09:32:32.024148+00:00",
+  "scope": "ST-VIS-01 actual Unity Web review candidate",
+  "browser_result_source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\result.json",
+  "browser_result_sha256": "d21310aaaf607ae3ca80d10d3c294da798cab80b83c8e47e5b1b7e6ada850f94",
+  "build_result_sha256": "1717f2d740d42b1582e876287cfc12e91b01272ea1ce1b3f7c54076076f5ec35",
+  "build_source_head": "b09e2d0b73bfca41b639b3d60914a967ed7a91e7",
+  "build_source_inventory_sha256": "ed67dc19b37220e3745655ab47e1ef901a215e9cf464ca9f0b342d89e52bb1e9",
+  "build_source_dirty": [
+    " M .codearbiter/specs/unity-battlefield-visual-review.md",
+    " M campaign-unity/README.md",
+    " M campaign-unity/Tools/build_web.py",
+    " M campaign-unity/Tools/native_chrome.py",
+    " M campaign-unity/Tools/test_native_chrome.py",
+    " M campaign-unity/Tools/verify_encounter.py",
+    " M campaign-unity/Tools/verify_inspection.py",
+    " M campaign-unity/Tools/verify_web.py",
+    " M campaign-unity/Unity/Assets/Scripts/ArtHud.cs",
+    " M campaign-unity/Unity/Assets/Scripts/EncounterHud.cs",
+    " M campaign-unity/Unity/Assets/Scripts/EncounterModel.cs",
+    " M campaign-unity/Unity/Assets/Scripts/EncounterSession.cs",
+    " M campaign-unity/Unity/Assets/Scripts/EncounterView.cs",
+    " M campaign-unity/Unity/Assets/Scripts/TankPartCallouts.cs",
+    " M campaign-unity/Unity/Assets/Scripts/TankPresentation.cs",
+    "?? campaign-unity/Tools/test_build_web.py",
+    "?? campaign-unity/Tools/test_visual_review_checks.py",
+    "?? campaign-unity/Tools/verify_visual_review.py",
+    "?? campaign-unity/Tools/visual_review_checks.py",
+    "?? campaign-unity/Tools/visual_review_motion.py",
+    "?? campaign-unity/Unity/Assets/Art/VisualReview.meta",
+    "?? campaign-unity/Unity/Assets/Art/VisualReview/GroundAsh.png.meta",
+    "?? campaign-unity/Unity/Assets/Art/VisualReview/GroundIron.png.meta",
+    "?? campaign-unity/Unity/Assets/Art/VisualReview/STV-E01.fbx.meta",
+    "?? campaign-unity/Unity/Assets/Art/VisualReview/STV-E02.fbx.meta",
+    "?? campaign-unity/Unity/Assets/Art/VisualReview/VehicleWear.png.meta",
+    "?? campaign-unity/Unity/Assets/Art/VisualReview/art-receipt.json.meta",
+    "?? campaign-unity/Unity/Assets/Editor/ReviewHudChecks.cs",
+    "?? campaign-unity/Unity/Assets/Editor/ReviewHudChecks.cs.meta",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewBuild.cs",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewBuild.cs.meta",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewChecks.cs",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewChecks.cs.meta",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewModelChecks.cs",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewModelChecks.cs.meta",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewPolish.cs",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewPolish.cs.meta",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewPreservationChecks.cs",
+    "?? campaign-unity/Unity/Assets/Editor/VisualReviewPreservationChecks.cs.meta",
+    "?? campaign-unity/Unity/Assets/Scenes/BattlefieldReview.unity",
+    "?? campaign-unity/Unity/Assets/Scenes/BattlefieldReview.unity.meta",
+    "?? campaign-unity/Unity/Assets/Scripts/BattlefieldReview.cs",
+    "?? campaign-unity/Unity/Assets/Scripts/BattlefieldReview.cs.meta",
+    "?? campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs",
+    "?? campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs.meta",
+    "?? campaign-unity/Unity/Assets/Scripts/ReviewBattleHud.cs",
+    "?? campaign-unity/Unity/Assets/Scripts/ReviewBattleHud.cs.meta",
+    "?? campaign-unity/Unity/Assets/Scripts/ReviewCombatVisuals.cs",
+    "?? campaign-unity/Unity/Assets/Scripts/ReviewCombatVisuals.cs.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/AshBerm.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/AshBerm.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/AshStone.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/AshStone.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/Dust.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/Dust.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyArmor.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyArmor.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyGunmetal.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyGunmetal.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyMark.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyMark.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyOptic.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyOptic.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyRanged.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyRanged.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyTrack.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/EnemyTrack.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/FadedWarning.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/FadedWarning.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/Flash.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/Flash.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/GroundAsh.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/GroundAsh.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/GroundIron.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/GroundIron.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/IronApron.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/IronApron.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/PolishEastConcrete.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/PolishEastConcrete.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/PolishWestConcrete.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/PolishWestConcrete.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/ReviewPipeline.asset",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/ReviewPipeline.asset.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/RoadSoot.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/RoadSoot.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/Scorch.mat",
+    "?? campaign-unity/Unity/Assets/VisualReview/Materials/Scorch.mat.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/AshStone.asset",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/AshStone.asset.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/FeedbackQuad.asset",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/FeedbackQuad.asset.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/Ground.asset",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/Ground.asset.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/PolishFoundation.asset",
+    "?? campaign-unity/Unity/Assets/VisualReview/Meshes/PolishFoundation.asset.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Prefabs.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Prefabs/STV-E01.prefab",
+    "?? campaign-unity/Unity/Assets/VisualReview/Prefabs/STV-E01.prefab.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Prefabs/STV-E02.prefab",
+    "?? campaign-unity/Unity/Assets/VisualReview/Prefabs/STV-E02.prefab.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Textures.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/Textures/SoftRadial.asset",
+    "?? campaign-unity/Unity/Assets/VisualReview/Textures/SoftRadial.asset.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/authoring-repair-receipt.json",
+    "?? campaign-unity/Unity/Assets/VisualReview/authoring-repair-receipt.json.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/polish-receipt.json",
+    "?? campaign-unity/Unity/Assets/VisualReview/polish-receipt.json.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/prepare-receipt.json",
+    "?? campaign-unity/Unity/Assets/VisualReview/prepare-receipt.json.meta",
+    "?? campaign-unity/Unity/Assets/VisualReview/preservation-compatibility.json",
+    "?? campaign-unity/Unity/Assets/VisualReview/preservation-compatibility.json.meta",
+    "?? campaign-unity/docs/visual-review-01/.gitattributes"
+  ],
+  "renderer": {
+    "available": true,
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "vendor": "WebKit",
+    "renderer": "WebKit WebGL",
+    "unmaskedVendor": "Google Inc. (NVIDIA)",
+    "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5070 Ti (0x00002C05) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "devicePixelRatio": 1
+  },
+  "browser_version": "153.0.8010.50",
+  "browser_mode": "owned-headless-new-no-overrides",
+  "headless": true,
+  "focus_scope": "browser-tab",
+  "windows_window_manager_acceptance": false,
+  "browser_check_count": 126,
+  "owner_visual_acceptance": false,
+  "owner_normal_speed_motion_acceptance": false,
+  "motion_scope": {
+    "fitting": "repair",
+    "clip_count": 4,
+    "separate_same_profile_runs": true,
+    "frame_synchronized_comparison": false,
+    "launcher_motion_included": false
+  },
+  "frame_metadata_hash_scope": "All frame JSON files and encoding timelines are checked against hashes in the browser receipt, then pinned again by the package manifest.",
+  "raw_images_edited": false,
+  "raw_jpg_frames_copied": false,
+  "compiled_web_payload_copied": false,
+  "packager_source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\package_visual_review.py",
+  "packager_sha256": "256aca744721e1724b357f56c7990eb6f428762c44812d9ead4f3e7429e0ab38",
+  "pairs": [
+    {
+      "tick": 166,
+      "profile": "review-pacing-v1",
+      "fitting": "repair",
+      "width": 1600,
+      "height": 900,
+      "fullEffects": true,
+      "snapshot_sha256": "c2b47d0c44c87694ff3a7e6efb8e9a18ad9f57cc4be34652829eeda7bf73e7f1",
+      "name": "01-repair-early-wide",
+      "left": "01-repair-early-wide-A-sunlit-ash.png",
+      "right": "01-repair-early-wide-B-iron-perimeter.png",
+      "phase": "early",
+      "viewport": "1600x900",
+      "seconds": 8.3,
+      "left_asset": "stills/01-repair-early-wide-A-sunlit-ash.png",
+      "right_asset": "stills/01-repair-early-wide-B-iron-perimeter.png"
+    },
+    {
+      "tick": 166,
+      "profile": "review-pacing-v1",
+      "fitting": "repair",
+      "width": 1280,
+      "height": 720,
+      "fullEffects": true,
+      "snapshot_sha256": "c2b47d0c44c87694ff3a7e6efb8e9a18ad9f57cc4be34652829eeda7bf73e7f1",
+      "name": "02-repair-early-standard",
+      "left": "02-repair-early-standard-A-sunlit-ash.png",
+      "right": "02-repair-early-standard-B-iron-perimeter.png",
+      "phase": "early",
+      "viewport": "1280x720",
+      "seconds": 8.3,
+      "left_asset": "stills/02-repair-early-standard-A-sunlit-ash.png",
+      "right_asset": "stills/02-repair-early-standard-B-iron-perimeter.png"
+    },
+    {
+      "tick": 166,
+      "profile": "review-pacing-v1",
+      "fitting": "repair",
+      "width": 800,
+      "height": 600,
+      "fullEffects": true,
+      "snapshot_sha256": "c2b47d0c44c87694ff3a7e6efb8e9a18ad9f57cc4be34652829eeda7bf73e7f1",
+      "name": "02-repair-early-compact",
+      "left": "02-repair-early-compact-A-sunlit-ash.png",
+      "right": "02-repair-early-compact-B-iron-perimeter.png",
+      "phase": "early",
+      "viewport": "800x600",
+      "seconds": 8.3,
+      "left_asset": "stills/02-repair-early-compact-A-sunlit-ash.png",
+      "right_asset": "stills/02-repair-early-compact-B-iron-perimeter.png"
+    },
+    {
+      "tick": 1406,
+      "profile": "review-pacing-v1",
+      "fitting": "repair",
+      "width": 1600,
+      "height": 900,
+      "fullEffects": true,
+      "snapshot_sha256": "ba91da05b2cd7f99bcf73cb58eb9904aa5f5e75c890cffe21e1d99ff5a2564a1",
+      "name": "03-repair-busy-wide",
+      "left": "03-repair-busy-wide-A-sunlit-ash.png",
+      "right": "03-repair-busy-wide-B-iron-perimeter.png",
+      "phase": "busy",
+      "viewport": "1600x900",
+      "seconds": 70.3,
+      "left_asset": "stills/03-repair-busy-wide-A-sunlit-ash.png",
+      "right_asset": "stills/03-repair-busy-wide-B-iron-perimeter.png"
+    },
+    {
+      "tick": 165,
+      "profile": "review-pacing-v1",
+      "fitting": "launcher",
+      "width": 1600,
+      "height": 900,
+      "fullEffects": true,
+      "snapshot_sha256": "1ba0b15e2e351f7e0247259a7dd42e0b81951ec432bc05214e16c95b5b7006ae",
+      "name": "07-launcher-early-wide",
+      "left": "07-launcher-early-wide-A-sunlit-ash.png",
+      "right": "07-launcher-early-wide-B-iron-perimeter.png",
+      "phase": "early",
+      "viewport": "1600x900",
+      "seconds": 8.25,
+      "left_asset": "stills/07-launcher-early-wide-A-sunlit-ash.png",
+      "right_asset": "stills/07-launcher-early-wide-B-iron-perimeter.png"
+    },
+    {
+      "tick": 1405,
+      "profile": "review-pacing-v1",
+      "fitting": "launcher",
+      "width": 1600,
+      "height": 900,
+      "fullEffects": true,
+      "snapshot_sha256": "d99e7520bda007fd773d0107bfebf4cf46cb3f7d94af497d4857f6f1436770f2",
+      "name": "08-launcher-busy-wide",
+      "left": "08-launcher-busy-wide-A-sunlit-ash.png",
+      "right": "08-launcher-busy-wide-B-iron-perimeter.png",
+      "phase": "busy",
+      "viewport": "1600x900",
+      "seconds": 70.25,
+      "left_asset": "stills/08-launcher-busy-wide-A-sunlit-ash.png",
+      "right_asset": "stills/08-launcher-busy-wide-B-iron-perimeter.png"
+    }
+  ],
+  "motion": [
+    {
+      "name": "motion-repair-full-A-early",
+      "start": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 1,
+          "tick": 0,
+          "hp": 120,
+          "maxHp": 120,
+          "spawned": 0,
+          "kills": 0,
+          "cannon": 0,
+          "launcher": 0,
+          "healed": 0,
+          "closeHits": 0,
+          "rangedHits": 0,
+          "alive": 0,
+          "visibleUnits": 0,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "tick",
+          "name": "SUNLIT ASH",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|0|120|0|0|0|0|0|0|1|1|1|20;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 0,
+          "tick": 0,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 19.871973037719727,
+            "y": 64.10360717773438,
+            "z": -34.41926956176758
+          },
+          "forward": {
+            "x": -0.2649596631526947,
+            "y": -0.8480480909347534,
+            "z": 0.4589235782623291
+          },
+          "ring": [
+            {
+              "x": 0.616075336933136,
+              "y": 0.807085394859314,
+              "z": 87.19636535644531
+            },
+            {
+              "x": 0.6530676484107971,
+              "y": 0.7671204209327698,
+              "z": 85.53236389160156
+            },
+            {
+              "x": 0.684177577495575,
+              "y": 0.7170430421829224,
+              "z": 83.44731903076172
+            },
+            {
+              "x": 0.7082096338272095,
+              "y": 0.6587775349617004,
+              "z": 81.02134704589844
+            },
+            {
+              "x": 0.7242404222488403,
+              "y": 0.5945631861686707,
+              "z": 78.34768676757812
+            },
+            {
+              "x": 0.7316536903381348,
+              "y": 0.5268675684928894,
+              "z": 75.5290756225586
+            },
+            {
+              "x": 0.730164647102356,
+              "y": 0.4582923650741577,
+              "z": 72.67384338378906
+            },
+            {
+              "x": 0.7198304533958435,
+              "y": 0.3914726972579956,
+              "z": 69.89170837402344
+            },
+            {
+              "x": 0.7010484337806702,
+              "y": 0.32897651195526123,
+              "z": 67.28958129882812
+            },
+            {
+              "x": 0.6745401620864868,
+              "y": 0.2732054889202118,
+              "z": 64.96746826171875
+            },
+            {
+              "x": 0.6413244009017944,
+              "y": 0.22630280256271362,
+              "z": 63.014610290527344
+            },
+            {
+              "x": 0.6026776432991028,
+              "y": 0.19007103145122528,
+              "z": 61.50604248046875
+            },
+            {
+              "x": 0.5600850582122803,
+              "y": 0.16590246558189392,
+              "z": 60.49974822998047
+            },
+            {
+              "x": 0.5151833891868591,
+              "y": 0.1547258496284485,
+              "z": 60.03439712524414
+            },
+            {
+              "x": 0.4696982204914093,
+              "y": 0.1569707840681076,
+              "z": 60.12786865234375
+            },
+            {
+              "x": 0.42537760734558105,
+              "y": 0.17255091667175293,
+              "z": 60.77656936645508
+            },
+            {
+              "x": 0.3839246332645416,
+              "y": 0.20086759328842163,
+              "z": 61.9555778503418
+            },
+            {
+              "x": 0.3469323217868805,
+              "y": 0.24083256721496582,
+              "z": 63.61957931518555
+            },
+            {
+              "x": 0.31582245230674744,
+              "y": 0.29090994596481323,
+              "z": 65.70462799072266
+            },
+            {
+              "x": 0.29179033637046814,
+              "y": 0.34917545318603516,
+              "z": 68.13059997558594
+            },
+            {
+              "x": 0.27575960755348206,
+              "y": 0.4133898615837097,
+              "z": 70.80426025390625
+            },
+            {
+              "x": 0.26834630966186523,
+              "y": 0.4810854494571686,
+              "z": 73.62287139892578
+            },
+            {
+              "x": 0.26983535289764404,
+              "y": 0.5496607422828674,
+              "z": 76.47810363769531
+            },
+            {
+              "x": 0.2801694869995117,
+              "y": 0.6164802312850952,
+              "z": 79.26023864746094
+            },
+            {
+              "x": 0.29895156621932983,
+              "y": 0.6789764165878296,
+              "z": 81.86236572265625
+            },
+            {
+              "x": 0.3254598379135132,
+              "y": 0.7347475290298462,
+              "z": 84.1844711303711
+            },
+            {
+              "x": 0.35867559909820557,
+              "y": 0.781650185585022,
+              "z": 86.13733673095703
+            },
+            {
+              "x": 0.397322416305542,
+              "y": 0.8178819417953491,
+              "z": 87.6458969116211
+            },
+            {
+              "x": 0.4399150609970093,
+              "y": 0.8420505523681641,
+              "z": 88.6521987915039
+            },
+            {
+              "x": 0.4848165810108185,
+              "y": 0.8532271385192871,
+              "z": 89.1175537109375
+            },
+            {
+              "x": 0.5303017497062683,
+              "y": 0.8509821891784668,
+              "z": 89.02407836914062
+            },
+            {
+              "x": 0.574622392654419,
+              "y": 0.8354020118713379,
+              "z": 88.37538146972656
+            }
+          ]
+        }
+      },
+      "end": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 1,
+          "tick": 160,
+          "hp": 120,
+          "maxHp": 120,
+          "spawned": 3,
+          "kills": 2,
+          "cannon": 4,
+          "launcher": 0,
+          "healed": 0,
+          "closeHits": 0,
+          "rangedHits": 0,
+          "alive": 1,
+          "visibleUnits": 1,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "tick",
+          "name": "SUNLIT ASH",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|160|120|3|2|4|0|0|0|169|156|1|180;3,30,23080,0;2,0,21000,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 0,
+          "tick": 160,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 19.871973037719727,
+            "y": 64.10360717773438,
+            "z": -34.41926956176758
+          },
+          "forward": {
+            "x": -0.2649596631526947,
+            "y": -0.8480480909347534,
+            "z": 0.4589235782623291
+          },
+          "ring": [
+            {
+              "x": 0.616075336933136,
+              "y": 0.807085394859314,
+              "z": 87.19636535644531
+            },
+            {
+              "x": 0.6530676484107971,
+              "y": 0.7671204209327698,
+              "z": 85.53236389160156
+            },
+            {
+              "x": 0.684177577495575,
+              "y": 0.7170430421829224,
+              "z": 83.44731903076172
+            },
+            {
+              "x": 0.7082096338272095,
+              "y": 0.6587775349617004,
+              "z": 81.02134704589844
+            },
+            {
+              "x": 0.7242404222488403,
+              "y": 0.5945631861686707,
+              "z": 78.34768676757812
+            },
+            {
+              "x": 0.7316536903381348,
+              "y": 0.5268675684928894,
+              "z": 75.5290756225586
+            },
+            {
+              "x": 0.730164647102356,
+              "y": 0.4582923650741577,
+              "z": 72.67384338378906
+            },
+            {
+              "x": 0.7198304533958435,
+              "y": 0.3914726972579956,
+              "z": 69.89170837402344
+            },
+            {
+              "x": 0.7010484337806702,
+              "y": 0.32897651195526123,
+              "z": 67.28958129882812
+            },
+            {
+              "x": 0.6745401620864868,
+              "y": 0.2732054889202118,
+              "z": 64.96746826171875
+            },
+            {
+              "x": 0.6413244009017944,
+              "y": 0.22630280256271362,
+              "z": 63.014610290527344
+            },
+            {
+              "x": 0.6026776432991028,
+              "y": 0.19007103145122528,
+              "z": 61.50604248046875
+            },
+            {
+              "x": 0.5600850582122803,
+              "y": 0.16590246558189392,
+              "z": 60.49974822998047
+            },
+            {
+              "x": 0.5151833891868591,
+              "y": 0.1547258496284485,
+              "z": 60.03439712524414
+            },
+            {
+              "x": 0.4696982204914093,
+              "y": 0.1569707840681076,
+              "z": 60.12786865234375
+            },
+            {
+              "x": 0.42537760734558105,
+              "y": 0.17255091667175293,
+              "z": 60.77656936645508
+            },
+            {
+              "x": 0.3839246332645416,
+              "y": 0.20086759328842163,
+              "z": 61.9555778503418
+            },
+            {
+              "x": 0.3469323217868805,
+              "y": 0.24083256721496582,
+              "z": 63.61957931518555
+            },
+            {
+              "x": 0.31582245230674744,
+              "y": 0.29090994596481323,
+              "z": 65.70462799072266
+            },
+            {
+              "x": 0.29179033637046814,
+              "y": 0.34917545318603516,
+              "z": 68.13059997558594
+            },
+            {
+              "x": 0.27575960755348206,
+              "y": 0.4133898615837097,
+              "z": 70.80426025390625
+            },
+            {
+              "x": 0.26834630966186523,
+              "y": 0.4810854494571686,
+              "z": 73.62287139892578
+            },
+            {
+              "x": 0.26983535289764404,
+              "y": 0.5496607422828674,
+              "z": 76.47810363769531
+            },
+            {
+              "x": 0.2801694869995117,
+              "y": 0.6164802312850952,
+              "z": 79.26023864746094
+            },
+            {
+              "x": 0.29895156621932983,
+              "y": 0.6789764165878296,
+              "z": 81.86236572265625
+            },
+            {
+              "x": 0.3254598379135132,
+              "y": 0.7347475290298462,
+              "z": 84.1844711303711
+            },
+            {
+              "x": 0.35867559909820557,
+              "y": 0.781650185585022,
+              "z": 86.13733673095703
+            },
+            {
+              "x": 0.397322416305542,
+              "y": 0.8178819417953491,
+              "z": 87.6458969116211
+            },
+            {
+              "x": 0.4399150609970093,
+              "y": 0.8420505523681641,
+              "z": 88.6521987915039
+            },
+            {
+              "x": 0.4848165810108185,
+              "y": 0.8532271385192871,
+              "z": 89.1175537109375
+            },
+            {
+              "x": 0.5303017497062683,
+              "y": 0.8509821891784668,
+              "z": 89.02407836914062
+            },
+            {
+              "x": 0.574622392654419,
+              "y": 0.8354020118713379,
+              "z": 88.37538146972656
+            }
+          ]
+        }
+      },
+      "raw": "motion-repair-full-A-early/frames.json",
+      "path": "motion-repair-full-A-early.mp4",
+      "sha256": "a6192cd11e255b33834a3eaf91a567f1b7d1a7cdc734694bb347ec789a425aea",
+      "frames": 222,
+      "duration_seconds": 7.86625599861145,
+      "minimum_frame_seconds": 0.029056072235107422,
+      "maximum_frame_seconds": 0.05948686599731445,
+      "raw_sha256": "3e7e8a2f1965f5c491e1898d5b8be327a4cb511d909fc071a1d2fa7f1cf4708e",
+      "timeline_sha256": "bcf20b5decfc8c0c119187fab5c3d34c21e1610c2fc00b30a4dfec65b8a74478",
+      "mode": "normal speed from recorded frame timestamps",
+      "encoded_frames": 199,
+      "encoded_duration_seconds": 7.96,
+      "encoded_frame_rate": "25/1",
+      "encoded_fps": 25.0,
+      "encoded_width": 1600,
+      "encoded_height": 900,
+      "asset": "motion/motion-repair-full-A-early.mp4",
+      "metadata_asset": "metadata/motion-repair-full-A-early-frames.json",
+      "frame_metadata_bound_by_browser_receipt": true,
+      "timeline_bound_by_browser_receipt": true,
+      "first_frame_timestamp": 1790414639.623445,
+      "last_frame_timestamp": 1790414647.489701,
+      "raw_jpg_directory": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-early",
+      "raw_jpgs_copied": false
+    },
+    {
+      "name": "motion-repair-full-A-busy",
+      "start": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 1,
+          "tick": 1200,
+          "hp": 120,
+          "maxHp": 120,
+          "spawned": 31,
+          "kills": 22,
+          "cannon": 50,
+          "launcher": 0,
+          "healed": 0,
+          "closeHits": 0,
+          "rangedHits": 0,
+          "alive": 9,
+          "visibleUnits": 9,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "tick",
+          "name": "SUNLIT ASH",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|1200|120|31|22|50|0|0|0|1209|1215|1|1220;23,50,13800,0;25,60,17000,0;21,0,13680,0;27,60,20520,0;29,60,21800,0;24,50,17320,0;26,60,18200,0;28,60,20600,0;30,60,23400,0;31,60,24200,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 0,
+          "tick": 1200,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 19.871973037719727,
+            "y": 64.10360717773438,
+            "z": -34.41926956176758
+          },
+          "forward": {
+            "x": -0.2649596631526947,
+            "y": -0.8480480909347534,
+            "z": 0.4589235782623291
+          },
+          "ring": [
+            {
+              "x": 0.616075336933136,
+              "y": 0.807085394859314,
+              "z": 87.19636535644531
+            },
+            {
+              "x": 0.6530676484107971,
+              "y": 0.7671204209327698,
+              "z": 85.53236389160156
+            },
+            {
+              "x": 0.684177577495575,
+              "y": 0.7170430421829224,
+              "z": 83.44731903076172
+            },
+            {
+              "x": 0.7082096338272095,
+              "y": 0.6587775349617004,
+              "z": 81.02134704589844
+            },
+            {
+              "x": 0.7242404222488403,
+              "y": 0.5945631861686707,
+              "z": 78.34768676757812
+            },
+            {
+              "x": 0.7316536903381348,
+              "y": 0.5268675684928894,
+              "z": 75.5290756225586
+            },
+            {
+              "x": 0.730164647102356,
+              "y": 0.4582923650741577,
+              "z": 72.67384338378906
+            },
+            {
+              "x": 0.7198304533958435,
+              "y": 0.3914726972579956,
+              "z": 69.89170837402344
+            },
+            {
+              "x": 0.7010484337806702,
+              "y": 0.32897651195526123,
+              "z": 67.28958129882812
+            },
+            {
+              "x": 0.6745401620864868,
+              "y": 0.2732054889202118,
+              "z": 64.96746826171875
+            },
+            {
+              "x": 0.6413244009017944,
+              "y": 0.22630280256271362,
+              "z": 63.014610290527344
+            },
+            {
+              "x": 0.6026776432991028,
+              "y": 0.19007103145122528,
+              "z": 61.50604248046875
+            },
+            {
+              "x": 0.5600850582122803,
+              "y": 0.16590246558189392,
+              "z": 60.49974822998047
+            },
+            {
+              "x": 0.5151833891868591,
+              "y": 0.1547258496284485,
+              "z": 60.03439712524414
+            },
+            {
+              "x": 0.4696982204914093,
+              "y": 0.1569707840681076,
+              "z": 60.12786865234375
+            },
+            {
+              "x": 0.42537760734558105,
+              "y": 0.17255091667175293,
+              "z": 60.77656936645508
+            },
+            {
+              "x": 0.3839246332645416,
+              "y": 0.20086759328842163,
+              "z": 61.9555778503418
+            },
+            {
+              "x": 0.3469323217868805,
+              "y": 0.24083256721496582,
+              "z": 63.61957931518555
+            },
+            {
+              "x": 0.31582245230674744,
+              "y": 0.29090994596481323,
+              "z": 65.70462799072266
+            },
+            {
+              "x": 0.29179033637046814,
+              "y": 0.34917545318603516,
+              "z": 68.13059997558594
+            },
+            {
+              "x": 0.27575960755348206,
+              "y": 0.4133898615837097,
+              "z": 70.80426025390625
+            },
+            {
+              "x": 0.26834630966186523,
+              "y": 0.4810854494571686,
+              "z": 73.62287139892578
+            },
+            {
+              "x": 0.26983535289764404,
+              "y": 0.5496607422828674,
+              "z": 76.47810363769531
+            },
+            {
+              "x": 0.2801694869995117,
+              "y": 0.6164802312850952,
+              "z": 79.26023864746094
+            },
+            {
+              "x": 0.29895156621932983,
+              "y": 0.6789764165878296,
+              "z": 81.86236572265625
+            },
+            {
+              "x": 0.3254598379135132,
+              "y": 0.7347475290298462,
+              "z": 84.1844711303711
+            },
+            {
+              "x": 0.35867559909820557,
+              "y": 0.781650185585022,
+              "z": 86.13733673095703
+            },
+            {
+              "x": 0.397322416305542,
+              "y": 0.8178819417953491,
+              "z": 87.6458969116211
+            },
+            {
+              "x": 0.4399150609970093,
+              "y": 0.8420505523681641,
+              "z": 88.6521987915039
+            },
+            {
+              "x": 0.4848165810108185,
+              "y": 0.8532271385192871,
+              "z": 89.1175537109375
+            },
+            {
+              "x": 0.5303017497062683,
+              "y": 0.8509821891784668,
+              "z": 89.02407836914062
+            },
+            {
+              "x": 0.574622392654419,
+              "y": 0.8354020118713379,
+              "z": 88.37538146972656
+            }
+          ]
+        }
+      },
+      "end": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 1,
+          "tick": 1400,
+          "hp": 108,
+          "maxHp": 120,
+          "spawned": 41,
+          "kills": 25,
+          "cannon": 60,
+          "launcher": 0,
+          "healed": 12,
+          "closeHits": 0,
+          "rangedHits": 3,
+          "alive": 16,
+          "visibleUnits": 16,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "tick",
+          "name": "SUNLIT ASH",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|1400|108|41|25|60|0|12|3|1413|1415|1|1420;35,70,18600,0;38,70,21600,0;32,60,15400,0;27,60,12520,0;29,60,11800,0;24,50,12000,1423;41,80,24600,0;28,40,10600,0;30,60,15400,0;31,60,14200,0;33,70,18280,0;34,70,17600,0;36,70,20680,0;37,70,20600,0;39,70,23080,0;40,70,23600,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 0,
+          "tick": 1400,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 19.871973037719727,
+            "y": 64.10360717773438,
+            "z": -34.41926956176758
+          },
+          "forward": {
+            "x": -0.2649596631526947,
+            "y": -0.8480480909347534,
+            "z": 0.4589235782623291
+          },
+          "ring": [
+            {
+              "x": 0.616075336933136,
+              "y": 0.807085394859314,
+              "z": 87.19636535644531
+            },
+            {
+              "x": 0.6530676484107971,
+              "y": 0.7671204209327698,
+              "z": 85.53236389160156
+            },
+            {
+              "x": 0.684177577495575,
+              "y": 0.7170430421829224,
+              "z": 83.44731903076172
+            },
+            {
+              "x": 0.7082096338272095,
+              "y": 0.6587775349617004,
+              "z": 81.02134704589844
+            },
+            {
+              "x": 0.7242404222488403,
+              "y": 0.5945631861686707,
+              "z": 78.34768676757812
+            },
+            {
+              "x": 0.7316536903381348,
+              "y": 0.5268675684928894,
+              "z": 75.5290756225586
+            },
+            {
+              "x": 0.730164647102356,
+              "y": 0.4582923650741577,
+              "z": 72.67384338378906
+            },
+            {
+              "x": 0.7198304533958435,
+              "y": 0.3914726972579956,
+              "z": 69.89170837402344
+            },
+            {
+              "x": 0.7010484337806702,
+              "y": 0.32897651195526123,
+              "z": 67.28958129882812
+            },
+            {
+              "x": 0.6745401620864868,
+              "y": 0.2732054889202118,
+              "z": 64.96746826171875
+            },
+            {
+              "x": 0.6413244009017944,
+              "y": 0.22630280256271362,
+              "z": 63.014610290527344
+            },
+            {
+              "x": 0.6026776432991028,
+              "y": 0.19007103145122528,
+              "z": 61.50604248046875
+            },
+            {
+              "x": 0.5600850582122803,
+              "y": 0.16590246558189392,
+              "z": 60.49974822998047
+            },
+            {
+              "x": 0.5151833891868591,
+              "y": 0.1547258496284485,
+              "z": 60.03439712524414
+            },
+            {
+              "x": 0.4696982204914093,
+              "y": 0.1569707840681076,
+              "z": 60.12786865234375
+            },
+            {
+              "x": 0.42537760734558105,
+              "y": 0.17255091667175293,
+              "z": 60.77656936645508
+            },
+            {
+              "x": 0.3839246332645416,
+              "y": 0.20086759328842163,
+              "z": 61.9555778503418
+            },
+            {
+              "x": 0.3469323217868805,
+              "y": 0.24083256721496582,
+              "z": 63.61957931518555
+            },
+            {
+              "x": 0.31582245230674744,
+              "y": 0.29090994596481323,
+              "z": 65.70462799072266
+            },
+            {
+              "x": 0.29179033637046814,
+              "y": 0.34917545318603516,
+              "z": 68.13059997558594
+            },
+            {
+              "x": 0.27575960755348206,
+              "y": 0.4133898615837097,
+              "z": 70.80426025390625
+            },
+            {
+              "x": 0.26834630966186523,
+              "y": 0.4810854494571686,
+              "z": 73.62287139892578
+            },
+            {
+              "x": 0.26983535289764404,
+              "y": 0.5496607422828674,
+              "z": 76.47810363769531
+            },
+            {
+              "x": 0.2801694869995117,
+              "y": 0.6164802312850952,
+              "z": 79.26023864746094
+            },
+            {
+              "x": 0.29895156621932983,
+              "y": 0.6789764165878296,
+              "z": 81.86236572265625
+            },
+            {
+              "x": 0.3254598379135132,
+              "y": 0.7347475290298462,
+              "z": 84.1844711303711
+            },
+            {
+              "x": 0.35867559909820557,
+              "y": 0.781650185585022,
+              "z": 86.13733673095703
+            },
+            {
+              "x": 0.397322416305542,
+              "y": 0.8178819417953491,
+              "z": 87.6458969116211
+            },
+            {
+              "x": 0.4399150609970093,
+              "y": 0.8420505523681641,
+              "z": 88.6521987915039
+            },
+            {
+              "x": 0.4848165810108185,
+              "y": 0.8532271385192871,
+              "z": 89.1175537109375
+            },
+            {
+              "x": 0.5303017497062683,
+              "y": 0.8509821891784668,
+              "z": 89.02407836914062
+            },
+            {
+              "x": 0.574622392654419,
+              "y": 0.8354020118713379,
+              "z": 88.37538146972656
+            }
+          ]
+        }
+      },
+      "raw": "motion-repair-full-A-busy/frames.json",
+      "path": "motion-repair-full-A-busy.mp4",
+      "sha256": "681610d528d14e0b84b2e1ef75b487a7ea527ce496d9d9901ef2ae9f2dd3ff36",
+      "frames": 282,
+      "duration_seconds": 9.959831953048706,
+      "minimum_frame_seconds": 0.02915501594543457,
+      "maximum_frame_seconds": 0.04441499710083008,
+      "raw_sha256": "236eefec264e2e5b074bdd3c4cb58078429839e0201c40bc06023a79e020b4b7",
+      "timeline_sha256": "e2b7616c2db8354880a49216544c534b50518c1e15b337549362ac628ee19c8b",
+      "mode": "normal speed from recorded frame timestamps",
+      "encoded_frames": 251,
+      "encoded_duration_seconds": 10.04,
+      "encoded_frame_rate": "25/1",
+      "encoded_fps": 25.0,
+      "encoded_width": 1600,
+      "encoded_height": 900,
+      "asset": "motion/motion-repair-full-A-busy.mp4",
+      "metadata_asset": "metadata/motion-repair-full-A-busy-frames.json",
+      "frame_metadata_bound_by_browser_receipt": true,
+      "timeline_bound_by_browser_receipt": true,
+      "first_frame_timestamp": 1790414709.885663,
+      "last_frame_timestamp": 1790414719.845495,
+      "raw_jpg_directory": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-busy",
+      "raw_jpgs_copied": false
+    },
+    {
+      "name": "motion-repair-full-B-early",
+      "start": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 2,
+          "tick": 0,
+          "hp": 120,
+          "maxHp": 120,
+          "spawned": 0,
+          "kills": 0,
+          "cannon": 0,
+          "launcher": 0,
+          "healed": 0,
+          "closeHits": 0,
+          "rangedHits": 0,
+          "alive": 0,
+          "visibleUnits": 0,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "treatment",
+          "name": "IRON PERIMETER",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|8|120|1|0|0|0|0|0|57|1|1|20;1,30,24600,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 1,
+          "tick": 8,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 12.82575511932373,
+            "y": 70.97694396972656,
+            "z": -22.214855194091797
+          },
+          "forward": {
+            "x": -0.1710100919008255,
+            "y": -0.9396926164627075,
+            "z": 0.29619812965393066
+          },
+          "ring": [
+            {
+              "x": 0.6047549843788147,
+              "y": 0.8054249882698059,
+              "z": 82.67560577392578
+            },
+            {
+              "x": 0.638139545917511,
+              "y": 0.7654600143432617,
+              "z": 81.60162353515625
+            },
+            {
+              "x": 0.6662155389785767,
+              "y": 0.7153825759887695,
+              "z": 80.25589752197266
+            },
+            {
+              "x": 0.6879038214683533,
+              "y": 0.6571170091629028,
+              "z": 78.69012451171875
+            },
+            {
+              "x": 0.7023711204528809,
+              "y": 0.5929027199745178,
+              "z": 76.96449279785156
+            },
+            {
+              "x": 0.7090614438056946,
+              "y": 0.5252071619033813,
+              "z": 75.14530944824219
+            },
+            {
+              "x": 0.7077175974845886,
+              "y": 0.45663195848464966,
+              "z": 73.30248260498047
+            },
+            {
+              "x": 0.698391318321228,
+              "y": 0.3898122012615204,
+              "z": 71.5068359375
+            },
+            {
+              "x": 0.6814409494400024,
+              "y": 0.3273160755634308,
+              "z": 69.82737731933594
+            },
+            {
+              "x": 0.6575179100036621,
+              "y": 0.27154505252838135,
+              "z": 68.3286361694336
+            },
+            {
+              "x": 0.6275415420532227,
+              "y": 0.22464242577552795,
+              "z": 67.06822204589844
+            },
+            {
+              "x": 0.5926638841629028,
+              "y": 0.18841063976287842,
+              "z": 66.09456634521484
+            },
+            {
+              "x": 0.5542251467704773,
+              "y": 0.16424208879470825,
+              "z": 65.44508361816406
+            },
+            {
+              "x": 0.5137025713920593,
+              "y": 0.1530655026435852,
+              "z": 65.14473724365234
+            },
+            {
+              "x": 0.4726533889770508,
+              "y": 0.15531045198440552,
+              "z": 65.20507049560547
+            },
+            {
+              "x": 0.4326551854610443,
+              "y": 0.17089056968688965,
+              "z": 65.62374877929688
+            },
+            {
+              "x": 0.3952449560165405,
+              "y": 0.19920723140239716,
+              "z": 66.38470458984375
+            },
+            {
+              "x": 0.3618604242801666,
+              "y": 0.23917225003242493,
+              "z": 67.45868682861328
+            },
+            {
+              "x": 0.3337845206260681,
+              "y": 0.2892496883869171,
+              "z": 68.8044204711914
+            },
+            {
+              "x": 0.31209617853164673,
+              "y": 0.34751513600349426,
+              "z": 70.37018585205078
+            },
+            {
+              "x": 0.29762887954711914,
+              "y": 0.4117295444011688,
+              "z": 72.09581756591797
+            },
+            {
+              "x": 0.2909385561943054,
+              "y": 0.4794251620769501,
+              "z": 73.91500854492188
+            },
+            {
+              "x": 0.2922824025154114,
+              "y": 0.5480004549026489,
+              "z": 75.75782775878906
+            },
+            {
+              "x": 0.301608681678772,
+              "y": 0.6148199439048767,
+              "z": 77.553466796875
+            },
+            {
+              "x": 0.31855902075767517,
+              "y": 0.6773161292076111,
+              "z": 79.2329330444336
+            },
+            {
+              "x": 0.3424820601940155,
+              "y": 0.7330871820449829,
+              "z": 80.7316665649414
+            },
+            {
+              "x": 0.37245845794677734,
+              "y": 0.7799898386001587,
+              "z": 81.99208068847656
+            },
+            {
+              "x": 0.40733614563941956,
+              "y": 0.8162215948104858,
+              "z": 82.96573638916016
+            },
+            {
+              "x": 0.4457749128341675,
+              "y": 0.840390145778656,
+              "z": 83.61522674560547
+            },
+            {
+              "x": 0.4862973690032959,
+              "y": 0.851566731929779,
+              "z": 83.91557312011719
+            },
+            {
+              "x": 0.5273465514183044,
+              "y": 0.8493218421936035,
+              "z": 83.8552474975586
+            },
+            {
+              "x": 0.5673447847366333,
+              "y": 0.8337416648864746,
+              "z": 83.43656158447266
+            }
+          ]
+        }
+      },
+      "end": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 2,
+          "tick": 160,
+          "hp": 120,
+          "maxHp": 120,
+          "spawned": 3,
+          "kills": 2,
+          "cannon": 4,
+          "launcher": 0,
+          "healed": 0,
+          "closeHits": 0,
+          "rangedHits": 0,
+          "alive": 1,
+          "visibleUnits": 1,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "tick",
+          "name": "IRON PERIMETER",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|160|120|3|2|4|0|0|0|169|156|1|180;3,30,23080,0;2,0,21000,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 1,
+          "tick": 160,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 12.825754165649414,
+            "y": 70.97694396972656,
+            "z": -22.214855194091797
+          },
+          "forward": {
+            "x": -0.1710100919008255,
+            "y": -0.9396926164627075,
+            "z": 0.29619812965393066
+          },
+          "ring": [
+            {
+              "x": 0.6047550439834595,
+              "y": 0.8054249882698059,
+              "z": 82.67560577392578
+            },
+            {
+              "x": 0.638139545917511,
+              "y": 0.7654600143432617,
+              "z": 81.60162353515625
+            },
+            {
+              "x": 0.6662155389785767,
+              "y": 0.7153825759887695,
+              "z": 80.25589752197266
+            },
+            {
+              "x": 0.6879038214683533,
+              "y": 0.6571170091629028,
+              "z": 78.69012451171875
+            },
+            {
+              "x": 0.7023711204528809,
+              "y": 0.5929027199745178,
+              "z": 76.96449279785156
+            },
+            {
+              "x": 0.7090614438056946,
+              "y": 0.5252071619033813,
+              "z": 75.14530944824219
+            },
+            {
+              "x": 0.7077175974845886,
+              "y": 0.4566318988800049,
+              "z": 73.30248260498047
+            },
+            {
+              "x": 0.698391318321228,
+              "y": 0.3898122012615204,
+              "z": 71.5068359375
+            },
+            {
+              "x": 0.6814409494400024,
+              "y": 0.3273160755634308,
+              "z": 69.82737731933594
+            },
+            {
+              "x": 0.6575179100036621,
+              "y": 0.27154505252838135,
+              "z": 68.3286361694336
+            },
+            {
+              "x": 0.6275415420532227,
+              "y": 0.22464242577552795,
+              "z": 67.06822204589844
+            },
+            {
+              "x": 0.5926638841629028,
+              "y": 0.18841063976287842,
+              "z": 66.09456634521484
+            },
+            {
+              "x": 0.5542251467704773,
+              "y": 0.16424208879470825,
+              "z": 65.44508361816406
+            },
+            {
+              "x": 0.5137025713920593,
+              "y": 0.1530655026435852,
+              "z": 65.14473724365234
+            },
+            {
+              "x": 0.4726533889770508,
+              "y": 0.15531045198440552,
+              "z": 65.20507049560547
+            },
+            {
+              "x": 0.4326552152633667,
+              "y": 0.17089056968688965,
+              "z": 65.62374877929688
+            },
+            {
+              "x": 0.3952449560165405,
+              "y": 0.19920723140239716,
+              "z": 66.38470458984375
+            },
+            {
+              "x": 0.3618604242801666,
+              "y": 0.23917225003242493,
+              "z": 67.45868682861328
+            },
+            {
+              "x": 0.3337845206260681,
+              "y": 0.2892496883869171,
+              "z": 68.8044204711914
+            },
+            {
+              "x": 0.31209617853164673,
+              "y": 0.34751513600349426,
+              "z": 70.37018585205078
+            },
+            {
+              "x": 0.29762887954711914,
+              "y": 0.41172948479652405,
+              "z": 72.09581756591797
+            },
+            {
+              "x": 0.2909385561943054,
+              "y": 0.4794251024723053,
+              "z": 73.91500854492188
+            },
+            {
+              "x": 0.2922824025154114,
+              "y": 0.5480003952980042,
+              "z": 75.75782775878906
+            },
+            {
+              "x": 0.301608681678772,
+              "y": 0.6148198843002319,
+              "z": 77.553466796875
+            },
+            {
+              "x": 0.31855902075767517,
+              "y": 0.6773161292076111,
+              "z": 79.2329330444336
+            },
+            {
+              "x": 0.3424820601940155,
+              "y": 0.7330871820449829,
+              "z": 80.7316665649414
+            },
+            {
+              "x": 0.37245845794677734,
+              "y": 0.7799898386001587,
+              "z": 81.99208068847656
+            },
+            {
+              "x": 0.40733614563941956,
+              "y": 0.8162215948104858,
+              "z": 82.96573638916016
+            },
+            {
+              "x": 0.4457749128341675,
+              "y": 0.840390145778656,
+              "z": 83.61522674560547
+            },
+            {
+              "x": 0.4862974286079407,
+              "y": 0.851566731929779,
+              "z": 83.91557312011719
+            },
+            {
+              "x": 0.5273465514183044,
+              "y": 0.8493218421936035,
+              "z": 83.8552474975586
+            },
+            {
+              "x": 0.5673447847366333,
+              "y": 0.8337416648864746,
+              "z": 83.43656158447266
+            }
+          ]
+        }
+      },
+      "raw": "motion-repair-full-B-early/frames.json",
+      "path": "motion-repair-full-B-early.mp4",
+      "sha256": "49b556d11dff75ba9139b107208d731f31c393af770386ee15b0baa001f76e85",
+      "frames": 212,
+      "duration_seconds": 7.4853270053863525,
+      "minimum_frame_seconds": 0.029863834381103516,
+      "maximum_frame_seconds": 0.04126715660095215,
+      "raw_sha256": "0d31d99c721b97943dbc82a7c273c687243c55b06eb0bdbcab245ab618f2843b",
+      "timeline_sha256": "d545f0e76229881d7c4db2ff911487a4d85f07d0547a4336e2c072c66002c8e0",
+      "mode": "normal speed from recorded frame timestamps",
+      "encoded_frames": 189,
+      "encoded_duration_seconds": 7.56,
+      "encoded_frame_rate": "25/1",
+      "encoded_fps": 25.0,
+      "encoded_width": 1600,
+      "encoded_height": 900,
+      "asset": "motion/motion-repair-full-B-early.mp4",
+      "metadata_asset": "metadata/motion-repair-full-B-early-frames.json",
+      "frame_metadata_bound_by_browser_receipt": true,
+      "timeline_bound_by_browser_receipt": true,
+      "first_frame_timestamp": 1790414732.526312,
+      "last_frame_timestamp": 1790414740.011639,
+      "raw_jpg_directory": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-early",
+      "raw_jpgs_copied": false
+    },
+    {
+      "name": "motion-repair-full-B-busy",
+      "start": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 2,
+          "tick": 1200,
+          "hp": 120,
+          "maxHp": 120,
+          "spawned": 31,
+          "kills": 22,
+          "cannon": 50,
+          "launcher": 0,
+          "healed": 0,
+          "closeHits": 0,
+          "rangedHits": 0,
+          "alive": 9,
+          "visibleUnits": 9,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "tick",
+          "name": "IRON PERIMETER",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|1200|120|31|22|50|0|0|0|1209|1215|1|1220;23,50,13800,0;25,60,17000,0;21,0,13680,0;27,60,20520,0;29,60,21800,0;24,50,17320,0;26,60,18200,0;28,60,20600,0;30,60,23400,0;31,60,24200,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 1,
+          "tick": 1200,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 12.825754165649414,
+            "y": 70.97694396972656,
+            "z": -22.214855194091797
+          },
+          "forward": {
+            "x": -0.1710100919008255,
+            "y": -0.9396926164627075,
+            "z": 0.29619812965393066
+          },
+          "ring": [
+            {
+              "x": 0.6047550439834595,
+              "y": 0.8054249882698059,
+              "z": 82.67560577392578
+            },
+            {
+              "x": 0.638139545917511,
+              "y": 0.7654600143432617,
+              "z": 81.60162353515625
+            },
+            {
+              "x": 0.6662155389785767,
+              "y": 0.7153825759887695,
+              "z": 80.25589752197266
+            },
+            {
+              "x": 0.6879038214683533,
+              "y": 0.6571170091629028,
+              "z": 78.69012451171875
+            },
+            {
+              "x": 0.7023711204528809,
+              "y": 0.5929027199745178,
+              "z": 76.96449279785156
+            },
+            {
+              "x": 0.7090614438056946,
+              "y": 0.5252071619033813,
+              "z": 75.14530944824219
+            },
+            {
+              "x": 0.7077175974845886,
+              "y": 0.4566318988800049,
+              "z": 73.30248260498047
+            },
+            {
+              "x": 0.698391318321228,
+              "y": 0.3898122012615204,
+              "z": 71.5068359375
+            },
+            {
+              "x": 0.6814409494400024,
+              "y": 0.3273160755634308,
+              "z": 69.82737731933594
+            },
+            {
+              "x": 0.6575179100036621,
+              "y": 0.27154505252838135,
+              "z": 68.3286361694336
+            },
+            {
+              "x": 0.6275415420532227,
+              "y": 0.22464242577552795,
+              "z": 67.06822204589844
+            },
+            {
+              "x": 0.5926638841629028,
+              "y": 0.18841063976287842,
+              "z": 66.09456634521484
+            },
+            {
+              "x": 0.5542251467704773,
+              "y": 0.16424208879470825,
+              "z": 65.44508361816406
+            },
+            {
+              "x": 0.5137025713920593,
+              "y": 0.1530655026435852,
+              "z": 65.14473724365234
+            },
+            {
+              "x": 0.4726533889770508,
+              "y": 0.15531045198440552,
+              "z": 65.20507049560547
+            },
+            {
+              "x": 0.4326552152633667,
+              "y": 0.17089056968688965,
+              "z": 65.62374877929688
+            },
+            {
+              "x": 0.3952449560165405,
+              "y": 0.19920723140239716,
+              "z": 66.38470458984375
+            },
+            {
+              "x": 0.3618604242801666,
+              "y": 0.23917225003242493,
+              "z": 67.45868682861328
+            },
+            {
+              "x": 0.3337845206260681,
+              "y": 0.2892496883869171,
+              "z": 68.8044204711914
+            },
+            {
+              "x": 0.31209617853164673,
+              "y": 0.34751513600349426,
+              "z": 70.37018585205078
+            },
+            {
+              "x": 0.29762887954711914,
+              "y": 0.41172948479652405,
+              "z": 72.09581756591797
+            },
+            {
+              "x": 0.2909385561943054,
+              "y": 0.4794251024723053,
+              "z": 73.91500854492188
+            },
+            {
+              "x": 0.2922824025154114,
+              "y": 0.5480003952980042,
+              "z": 75.75782775878906
+            },
+            {
+              "x": 0.301608681678772,
+              "y": 0.6148198843002319,
+              "z": 77.553466796875
+            },
+            {
+              "x": 0.31855902075767517,
+              "y": 0.6773161292076111,
+              "z": 79.2329330444336
+            },
+            {
+              "x": 0.3424820601940155,
+              "y": 0.7330871820449829,
+              "z": 80.7316665649414
+            },
+            {
+              "x": 0.37245845794677734,
+              "y": 0.7799898386001587,
+              "z": 81.99208068847656
+            },
+            {
+              "x": 0.40733614563941956,
+              "y": 0.8162215948104858,
+              "z": 82.96573638916016
+            },
+            {
+              "x": 0.4457749128341675,
+              "y": 0.840390145778656,
+              "z": 83.61522674560547
+            },
+            {
+              "x": 0.4862974286079407,
+              "y": 0.851566731929779,
+              "z": 83.91557312011719
+            },
+            {
+              "x": 0.5273465514183044,
+              "y": 0.8493218421936035,
+              "z": 83.8552474975586
+            },
+            {
+              "x": 0.5673447847366333,
+              "y": 0.8337416648864746,
+              "z": 83.43656158447266
+            }
+          ]
+        }
+      },
+      "end": {
+        "encounter": {
+          "action": "tick",
+          "rules": "review-pacing-v1",
+          "status": "Running",
+          "fitting": "repair",
+          "reason": "",
+          "summary": "",
+          "run": 2,
+          "tick": 1400,
+          "hp": 108,
+          "maxHp": 120,
+          "spawned": 41,
+          "kills": 25,
+          "cannon": 60,
+          "launcher": 0,
+          "healed": 12,
+          "closeHits": 0,
+          "rangedHits": 3,
+          "alive": 16,
+          "visibleUnits": 16,
+          "pool": 32,
+          "paused": false,
+          "focused": true,
+          "applicationPaused": false,
+          "locked": true,
+          "fullEffects": true,
+          "failed": false
+        },
+        "visual": {
+          "action": "tick",
+          "name": "IRON PERIMETER",
+          "profile": "review-pacing-v1",
+          "snapshot": "False|Running|1400|108|41|25|60|0|12|3|1413|1415|1|1420;35,70,18600,0;38,70,21600,0;32,60,15400,0;27,60,12520,0;29,60,11800,0;24,50,12000,1423;41,80,24600,0;28,40,10600,0;30,60,15400,0;31,60,14200,0;33,70,18280,0;34,70,17600,0;36,70,20680,0;37,70,20600,0;39,70,23080,0;40,70,23600,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0;0,0,0,0",
+          "scene": "BattlefieldReview",
+          "treatment": 1,
+          "tick": 1400,
+          "width": 1600,
+          "height": 900,
+          "sessions": 1,
+          "views": 1,
+          "canvases": 1,
+          "eventSystems": 1,
+          "paused": false,
+          "fullEffects": true,
+          "camera": {
+            "x": 12.825754165649414,
+            "y": 70.97694396972656,
+            "z": -22.214855194091797
+          },
+          "forward": {
+            "x": -0.1710100919008255,
+            "y": -0.9396926164627075,
+            "z": 0.29619812965393066
+          },
+          "ring": [
+            {
+              "x": 0.6047550439834595,
+              "y": 0.8054249882698059,
+              "z": 82.67560577392578
+            },
+            {
+              "x": 0.638139545917511,
+              "y": 0.7654600143432617,
+              "z": 81.60162353515625
+            },
+            {
+              "x": 0.6662155389785767,
+              "y": 0.7153825759887695,
+              "z": 80.25589752197266
+            },
+            {
+              "x": 0.6879038214683533,
+              "y": 0.6571170091629028,
+              "z": 78.69012451171875
+            },
+            {
+              "x": 0.7023711204528809,
+              "y": 0.5929027199745178,
+              "z": 76.96449279785156
+            },
+            {
+              "x": 0.7090614438056946,
+              "y": 0.5252071619033813,
+              "z": 75.14530944824219
+            },
+            {
+              "x": 0.7077175974845886,
+              "y": 0.4566318988800049,
+              "z": 73.30248260498047
+            },
+            {
+              "x": 0.698391318321228,
+              "y": 0.3898122012615204,
+              "z": 71.5068359375
+            },
+            {
+              "x": 0.6814409494400024,
+              "y": 0.3273160755634308,
+              "z": 69.82737731933594
+            },
+            {
+              "x": 0.6575179100036621,
+              "y": 0.27154505252838135,
+              "z": 68.3286361694336
+            },
+            {
+              "x": 0.6275415420532227,
+              "y": 0.22464242577552795,
+              "z": 67.06822204589844
+            },
+            {
+              "x": 0.5926638841629028,
+              "y": 0.18841063976287842,
+              "z": 66.09456634521484
+            },
+            {
+              "x": 0.5542251467704773,
+              "y": 0.16424208879470825,
+              "z": 65.44508361816406
+            },
+            {
+              "x": 0.5137025713920593,
+              "y": 0.1530655026435852,
+              "z": 65.14473724365234
+            },
+            {
+              "x": 0.4726533889770508,
+              "y": 0.15531045198440552,
+              "z": 65.20507049560547
+            },
+            {
+              "x": 0.4326552152633667,
+              "y": 0.17089056968688965,
+              "z": 65.62374877929688
+            },
+            {
+              "x": 0.3952449560165405,
+              "y": 0.19920723140239716,
+              "z": 66.38470458984375
+            },
+            {
+              "x": 0.3618604242801666,
+              "y": 0.23917225003242493,
+              "z": 67.45868682861328
+            },
+            {
+              "x": 0.3337845206260681,
+              "y": 0.2892496883869171,
+              "z": 68.8044204711914
+            },
+            {
+              "x": 0.31209617853164673,
+              "y": 0.34751513600349426,
+              "z": 70.37018585205078
+            },
+            {
+              "x": 0.29762887954711914,
+              "y": 0.41172948479652405,
+              "z": 72.09581756591797
+            },
+            {
+              "x": 0.2909385561943054,
+              "y": 0.4794251024723053,
+              "z": 73.91500854492188
+            },
+            {
+              "x": 0.2922824025154114,
+              "y": 0.5480003952980042,
+              "z": 75.75782775878906
+            },
+            {
+              "x": 0.301608681678772,
+              "y": 0.6148198843002319,
+              "z": 77.553466796875
+            },
+            {
+              "x": 0.31855902075767517,
+              "y": 0.6773161292076111,
+              "z": 79.2329330444336
+            },
+            {
+              "x": 0.3424820601940155,
+              "y": 0.7330871820449829,
+              "z": 80.7316665649414
+            },
+            {
+              "x": 0.37245845794677734,
+              "y": 0.7799898386001587,
+              "z": 81.99208068847656
+            },
+            {
+              "x": 0.40733614563941956,
+              "y": 0.8162215948104858,
+              "z": 82.96573638916016
+            },
+            {
+              "x": 0.4457749128341675,
+              "y": 0.840390145778656,
+              "z": 83.61522674560547
+            },
+            {
+              "x": 0.4862974286079407,
+              "y": 0.851566731929779,
+              "z": 83.91557312011719
+            },
+            {
+              "x": 0.5273465514183044,
+              "y": 0.8493218421936035,
+              "z": 83.8552474975586
+            },
+            {
+              "x": 0.5673447847366333,
+              "y": 0.8337416648864746,
+              "z": 83.43656158447266
+            }
+          ]
+        }
+      },
+      "raw": "motion-repair-full-B-busy/frames.json",
+      "path": "motion-repair-full-B-busy.mp4",
+      "sha256": "396834c37fa324281d0b1571a1e10b7a1bebff19ae343b74810d920e12389294",
+      "frames": 282,
+      "duration_seconds": 9.955518960952759,
+      "minimum_frame_seconds": 0.0246889591217041,
+      "maximum_frame_seconds": 0.04588794708251953,
+      "raw_sha256": "8d2845237965af8f5e8ae600aceb6d69d34d9ac9822ff693ec690e2d1ec83c31",
+      "timeline_sha256": "a5928edd211ebe798e33d8ff398d76e52c37c7f61c64e871aac82965196a93dc",
+      "mode": "normal speed from recorded frame timestamps",
+      "encoded_frames": 251,
+      "encoded_duration_seconds": 10.04,
+      "encoded_frame_rate": "25/1",
+      "encoded_fps": 25.0,
+      "encoded_width": 1600,
+      "encoded_height": 900,
+      "asset": "motion/motion-repair-full-B-busy.mp4",
+      "metadata_asset": "metadata/motion-repair-full-B-busy-frames.json",
+      "frame_metadata_bound_by_browser_receipt": true,
+      "timeline_bound_by_browser_receipt": true,
+      "first_frame_timestamp": 1790414792.025286,
+      "last_frame_timestamp": 1790414801.980805,
+      "raw_jpg_directory": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-busy",
+      "raw_jpgs_copied": false
+    }
+  ],
+  "warnings": [
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat"
+  ],
+  "shader_diagnostics": [
+    "Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n"
+  ],
+  "files": [
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\result.json",
+      "path": "receipts/browser-result.json",
+      "kind": "unchanged full browser receipt",
+      "sha256": "d21310aaaf607ae3ca80d10d3c294da798cab80b83c8e47e5b1b7e6ada850f94",
+      "bytes": 263480
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\build-20260926T092206Z-090ef5\\result.json",
+      "path": "receipts/build-result.json",
+      "kind": "unchanged successful build receipt",
+      "sha256": "1717f2d740d42b1582e876287cfc12e91b01272ea1ce1b3f7c54076076f5ec35",
+      "bytes": 148509
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\00-inspection.png",
+      "path": "stills/00-inspection.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "26b65a0701668071647b6984ac5786df02f53cf62dcf50e656878af26b01d426",
+      "bytes": 787337
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\01-repair-early-wide-A-sunlit-ash.png",
+      "path": "stills/01-repair-early-wide-A-sunlit-ash.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "ef071ec8211a824a404cf1348e8125f5d531b64e17b2562119acc70c80b58d41",
+      "bytes": 1003438
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\01-repair-early-wide-B-iron-perimeter.png",
+      "path": "stills/01-repair-early-wide-B-iron-perimeter.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "7ccb94b1ff2305639f32cd58efe56f2469414804630e2dd112ef0ca061a6635c",
+      "bytes": 1197525
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\02-repair-early-standard-A-sunlit-ash.png",
+      "path": "stills/02-repair-early-standard-A-sunlit-ash.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "3449cf22c88ec685aa1d19d571e189279ae600aee43990a7dead6f9d22953513",
+      "bytes": 714269
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\02-repair-early-standard-B-iron-perimeter.png",
+      "path": "stills/02-repair-early-standard-B-iron-perimeter.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "c6270dc273490ae9c3d2af613147253b81ace3bfa5afb5f1a264c8da399caa8b",
+      "bytes": 843902
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\02-repair-early-compact-A-sunlit-ash.png",
+      "path": "stills/02-repair-early-compact-A-sunlit-ash.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "4d3e501577893e811cafe6f7cf1e5ac3a21171f26892477710e71b2d8b71e8af",
+      "bytes": 415739
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\02-repair-early-compact-B-iron-perimeter.png",
+      "path": "stills/02-repair-early-compact-B-iron-perimeter.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "082057760c2baae8bfbdedf8056b0c761327cead26ba4797a5849abb79c1d93a",
+      "bytes": 484040
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\03-repair-busy-wide-A-sunlit-ash.png",
+      "path": "stills/03-repair-busy-wide-A-sunlit-ash.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "323ef03f3f6ea52bf346b44e493fc904bc7905d91d6bb7703f2479a364da718e",
+      "bytes": 1038485
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\03-repair-busy-wide-B-iron-perimeter.png",
+      "path": "stills/03-repair-busy-wide-B-iron-perimeter.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "9fe721bb92db5d9c172f80e526b2c24a6e89bfb7510b9797cedb2e9ba912c61b",
+      "bytes": 1219051
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\04-repair-full-A-defeat.png",
+      "path": "stills/04-repair-full-A-defeat.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "28b6f1ac6d687269eb1ef189f4a932581c7517c274784fc6e4adb91c3804e28e",
+      "bytes": 1048870
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\05-repair-full-B-defeat.png",
+      "path": "stills/05-repair-full-B-defeat.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "ae6d1f0136f73704ec34d39a767665eb853394942062d92771aa755da5281e16",
+      "bytes": 1224434
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\06-repair-reduced-defeat.png",
+      "path": "stills/06-repair-reduced-defeat.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "cdb0c18abb0e69dd0848832d387f57f079c2e8b568099f778f91525883854b12",
+      "bytes": 1224107
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\07-launcher-early-wide-A-sunlit-ash.png",
+      "path": "stills/07-launcher-early-wide-A-sunlit-ash.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "145268e0066e0350c3aed2c9e860d2ef4ef6ddd9b3596a1e90b4c6d00c8487e2",
+      "bytes": 1003891
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\07-launcher-early-wide-B-iron-perimeter.png",
+      "path": "stills/07-launcher-early-wide-B-iron-perimeter.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "994b8a2ebc4c79fb63395db27493df801f16fd9c7afe0575b1a7568a2b54b5b1",
+      "bytes": 1198153
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\08-launcher-busy-wide-A-sunlit-ash.png",
+      "path": "stills/08-launcher-busy-wide-A-sunlit-ash.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "8b268ee5cc2347db40797da07c5cf777d533dda1d3fd0207ea4037c4c577b92d",
+      "bytes": 1028648
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\08-launcher-busy-wide-B-iron-perimeter.png",
+      "path": "stills/08-launcher-busy-wide-B-iron-perimeter.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "efbe174faaa3fdd79372d96a5bfac89a55723077a7281e5f9c9b4e24d6b15873",
+      "bytes": 1212568
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\09-launcher-full-defeat.png",
+      "path": "stills/09-launcher-full-defeat.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "5115736586b0d17ccb61b7d5f1653fb8d601f9ee1edd530294a777166c30fb04",
+      "bytes": 1225275
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\10-launcher-reduced-defeat.png",
+      "path": "stills/10-launcher-reduced-defeat.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "418430d4c71f0daae91484f408e81fb2cfc81405bc0dc88c51e5479a44f3675f",
+      "bytes": 1047518
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\11-returned-inspection.png",
+      "path": "stills/11-returned-inspection.png",
+      "kind": "unmodified browser PNG",
+      "sha256": "4e6d68607ff4228405977dc802fd1b7478d755dad7f3a8c18ce174f556e3e9e5",
+      "bytes": 795173
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-early.mp4",
+      "path": "motion/motion-repair-full-A-early.mp4",
+      "kind": "unchanged encoded browser motion",
+      "sha256": "a6192cd11e255b33834a3eaf91a567f1b7d1a7cdc734694bb347ec789a425aea",
+      "bytes": 261106
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-early\\frames.json",
+      "path": "metadata/motion-repair-full-A-early-frames.json",
+      "kind": "unchanged recorded frame timestamps; JPG files remain ignored",
+      "sha256": "3e7e8a2f1965f5c491e1898d5b8be327a4cb511d909fc071a1d2fa7f1cf4708e",
+      "bytes": 74113
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-early\\timeline.txt",
+      "path": "metadata/motion-repair-full-A-early-timeline.txt",
+      "kind": "unchanged variable-frame-duration encoding timeline",
+      "sha256": "bcf20b5decfc8c0c119187fab5c3d34c21e1610c2fc00b30a4dfec65b8a74478",
+      "bytes": 10412
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-busy.mp4",
+      "path": "motion/motion-repair-full-A-busy.mp4",
+      "kind": "unchanged encoded browser motion",
+      "sha256": "681610d528d14e0b84b2e1ef75b487a7ea527ce496d9d9901ef2ae9f2dd3ff36",
+      "bytes": 1247633
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-busy\\frames.json",
+      "path": "metadata/motion-repair-full-A-busy-frames.json",
+      "kind": "unchanged recorded frame timestamps; JPG files remain ignored",
+      "sha256": "236eefec264e2e5b074bdd3c4cb58078429839e0201c40bc06023a79e020b4b7",
+      "bytes": 94048
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-A-busy\\timeline.txt",
+      "path": "metadata/motion-repair-full-A-busy-timeline.txt",
+      "kind": "unchanged variable-frame-duration encoding timeline",
+      "sha256": "e2b7616c2db8354880a49216544c534b50518c1e15b337549362ac628ee19c8b",
+      "bytes": 13232
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-early.mp4",
+      "path": "motion/motion-repair-full-B-early.mp4",
+      "kind": "unchanged encoded browser motion",
+      "sha256": "49b556d11dff75ba9139b107208d731f31c393af770386ee15b0baa001f76e85",
+      "bytes": 252439
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-early\\frames.json",
+      "path": "metadata/motion-repair-full-B-early-frames.json",
+      "kind": "unchanged recorded frame timestamps; JPG files remain ignored",
+      "sha256": "0d31d99c721b97943dbc82a7c273c687243c55b06eb0bdbcab245ab618f2843b",
+      "bytes": 70790
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-early\\timeline.txt",
+      "path": "metadata/motion-repair-full-B-early-timeline.txt",
+      "kind": "unchanged variable-frame-duration encoding timeline",
+      "sha256": "d545f0e76229881d7c4db2ff911487a4d85f07d0547a4336e2c072c66002c8e0",
+      "bytes": 9942
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-busy.mp4",
+      "path": "motion/motion-repair-full-B-busy.mp4",
+      "kind": "unchanged encoded browser motion",
+      "sha256": "396834c37fa324281d0b1571a1e10b7a1bebff19ae343b74810d920e12389294",
+      "bytes": 1077158
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-busy\\frames.json",
+      "path": "metadata/motion-repair-full-B-busy-frames.json",
+      "kind": "unchanged recorded frame timestamps; JPG files remain ignored",
+      "sha256": "8d2845237965af8f5e8ae600aceb6d69d34d9ac9822ff693ec690e2d1ec83c31",
+      "bytes": 94074
+    },
+    {
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\motion-repair-full-B-busy\\timeline.txt",
+      "path": "metadata/motion-repair-full-B-busy-timeline.txt",
+      "kind": "unchanged variable-frame-duration encoding timeline",
+      "sha256": "a5928edd211ebe798e33d8ff398d76e52c37c7f61c64e871aac82965196a93dc",
+      "bytes": 13232
+    },
+    {
+      "source": "generated by ignored local packaging helper",
+      "path": "index.html",
+      "kind": "generated gallery/navigation; source imagery unchanged",
+      "sha256": "b99e2826d30c25d78246fef796303535690eaba59121b5757b56337772e1f45e",
+      "bytes": 128806
+    },
+    {
+      "source": "generated by ignored local packaging helper",
+      "path": "REVIEW.md",
+      "kind": "generated gallery/navigation; source imagery unchanged",
+      "sha256": "caf8a77b1c2ebb0ea20d437040b6eeab170d3e5b8d8329046f8d5560785c29a3",
+      "bytes": 4908
+    }
+  ],
+  "encoded_motion_timing": "Source frame timestamps drive encoding; MP4 output is quantized to 25 fps. Encoded frame counts and durations therefore differ from the captured frame sequences. No simulation acceleration was used; the encoded files do not preserve every source frame or exact timestamp interval.",
+  "generated_text_refreshed_utc": "2026-09-26T09:46:56.885735+00:00"
+}

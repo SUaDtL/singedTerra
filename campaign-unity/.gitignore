@@ -1,0 +1,11 @@
+Unity/Library/
+Unity/Temp/
+Unity/Logs/
+Unity/obj/
+Unity/UserSettings/
+Unity/Packages/com.unity.render-pipelines.universal/
+Builds/
+Evidence/
+DeliveryArt/
+*.blend1
+__pycache__/

@@ -1,0 +1,156 @@
+{
+  "utc": "2026-09-25T06:51:09.474466+00:00",
+  "parent_sha": "a9c893a35cd2b6ba9e4cfc99be5011cae6cec9e0",
+  "source_sha256": {
+    "Unity/Assets/Scripts/TankPresentation.cs": "cb9134352fa2fbc6b8556a2e12b30fa018b7706d46650de86e4104c3132ae702",
+    "Unity/Assets/Scripts/ArtHud.cs": "59e0f893078019546dd104bbdd6671741b400b1015efd4a18a9c4f3d0e67ef69",
+    "Unity/Assets/Scripts/TankPartCallouts.cs": "91d0b89e119d77a7afe8beaebe0e065069651372a0a0f0bd085dc4ea13fafc15",
+    "Unity/Assets/Scripts/TankPartCallouts.cs.meta": "1ec8fd798c08afffb9330350502ecc81743a8fb81ef091d12376eda2d1af5793",
+    "Unity/Assets/Scenes/FieldAssembly.unity": "5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65",
+    "Tools/verify_web.py": "d8e1b296418a4ac51d1f90ddc5e795dfb6b28d46e8dcb7663c7b23ad4464cbea"
+  },
+  "build": "Web-20260925T064755Z-6d9dd3",
+  "build_stages": [
+    {
+      "stage": "editor-version",
+      "exit": 0
+    },
+    {
+      "stage": "editor-not-open",
+      "exit": 0
+    },
+    {
+      "stage": "unity-web",
+      "exit": 0
+    },
+    {
+      "stage": "web-entry",
+      "exit": 0
+    }
+  ],
+  "scene_sha256": "5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65",
+  "artifacts": {
+    "index.html": "9c5b552e7cede1610411fb47d13ea5be92fc6bc0afcae82538e54d238259e293",
+    "Build/Web-20260925T064755Z-6d9dd3.data": "b5522aaa97e06d90d3bc3ce3e3f87bdd8bb30b82c0d7995c7db0bd4f8d551d9d",
+    "Build/Web-20260925T064755Z-6d9dd3.framework.js": "3e8f14e686b03493635dd48f315dbe02f12904b926f3988dd095b5e953473228",
+    "Build/Web-20260925T064755Z-6d9dd3.loader.js": "7c6dd2d410bd710fd17b395d5fa382efa9788f2ec125054fc1a0b4dde400b0ec",
+    "Build/Web-20260925T064755Z-6d9dd3.wasm": "dacb8a50038ecc697ba904f41dc938c9c1c0d5167e5e59dee1614ecb2a092623",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "browser_version": "153.0.8010.50",
+  "checks": [
+    {
+      "check": "initial repair",
+      "pass": true
+    },
+    {
+      "check": "pause idle with held pointer",
+      "pass": true
+    },
+    {
+      "check": "launcher replaces repair",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 1",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 2",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 3",
+      "pass": true
+    },
+    {
+      "check": "battlefield view",
+      "pass": true
+    },
+    {
+      "check": "repair in battlefield",
+      "pass": true
+    },
+    {
+      "check": "battlefield recoil",
+      "pass": true
+    },
+    {
+      "check": "inspection restored",
+      "pass": true
+    },
+    {
+      "check": "attachment after resize",
+      "pass": true
+    },
+    {
+      "check": "resume idle",
+      "pass": true
+    },
+    {
+      "check": "recoil with rotating turret",
+      "pass": true
+    },
+    {
+      "check": "no observed browser errors",
+      "pass": true
+    },
+    {
+      "check": "no failed requests",
+      "pass": true
+    }
+  ],
+  "recoils": [
+    {
+      "preview": 1,
+      "peakWorld": 0.31988388299942017,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 2,
+      "peakWorld": 0.31999650597572327,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 3,
+      "peakWorld": 0.3199869692325592,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 4,
+      "peakWorld": 0.3199869692325592,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 5,
+      "peakWorld": 0.3199966847896576,
+      "returnWorld": 0.0
+    }
+  ],
+  "errors": [],
+  "network_failures": [],
+  "captures": {
+    "01-inspection-repair.png": "025533693a5f57089c6626fb7b640f0a2a4d77500c2792ae11a750ee1e2b6db7",
+    "02-inspection-launcher.png": "c6c6c620c36eb6683b191eef3be30d4a52cf215ca415bfd18d8e4eaa5f705c2c",
+    "04-battlefield-launcher.png": "a4e9cb459d48f1edf4fd389ed273268dbe7082d80b0cfb07f54d86425f08b23b",
+    "06-resized-inspection.png": "c71136cd76a52b720b88ffc2572e75cea3c36304eb1871d528f13248eb4ee534"
+  },
+  "inspection_specific_suite": "NOT RUN: second write to Tools/verify_inspection.py blocked; partial file excluded from commit",
+  "full_slice_acceptance": false,
+  "original_saved_changed": [],
+  "original_written": false,
+  "unsaved_editor_captured": false,
+  "android_work": false
+}

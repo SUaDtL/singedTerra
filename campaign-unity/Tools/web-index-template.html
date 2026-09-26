@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>singedTerra - Starter Tank</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#191d19;color:#ddd1b7;font-family:Arial,sans-serif}
+canvas{display:block;width:100vw;height:100vh;outline:none}
+#loading{position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:#191d19;gap:16px}
+h1{font-weight:500;letter-spacing:.05em;margin:0;color:#c5a25e}progress{width:310px;height:10px;accent-color:#c5a25e}
+#error{display:none;white-space:pre-wrap;max-width:75vw;color:#e6bb9a}
+</style>
+</head>
+<body>
+<canvas id="unity-canvas" width="1600" height="900" tabindex="0" aria-label="Interactive starter tank scene"></canvas>
+<div id="loading"><h1>singedTerra</h1><span id="status">Loading field assembly</span><progress id="progress" value="0" max="1"></progress><p id="error"></p></div>
+<script src="__LOADER__"></script>
+<script>
+const canvas=document.querySelector('#unity-canvas');
+const config={dataUrl:'__DATA__',frameworkUrl:'__FRAMEWORK__',codeUrl:'__WASM__',streamingAssetsUrl:'StreamingAssets',companyName:'singedTerra',productName:'Starter Tank Art Slice',productVersion:'0.1-art01',matchWebGLToCanvasSize:true};
+config.showBanner=(message,type)=>{console[type==='error'?'error':'warn'](message);if(type==='error')showError(message)};
+function showError(message){document.querySelector('#loading').style.display='grid';document.querySelector('#status').textContent='Scene could not load';const e=document.querySelector('#error');e.style.display='block';e.textContent=String(message)}
+createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p).then(()=>{document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);
+</script>
+</body></html>

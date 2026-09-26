@@ -1,0 +1,5306 @@
+{
+  "status": "pass",
+  "build": "Builds/Web-20260925T102215Z-797845",
+  "kind": "real-pointer-inspection-check",
+  "checks": [
+    {
+      "check": "exact previously built artifact identity",
+      "pass": true
+    },
+    {
+      "check": "saved single camera FOV is 43 degrees",
+      "pass": true
+    },
+    {
+      "check": "scene controls initialized before any pointer input",
+      "pass": true
+    },
+    {
+      "check": "pause before geometry comparison",
+      "pass": true
+    },
+    {
+      "check": "initial front view/controls",
+      "pass": true
+    },
+    {
+      "check": "initial front yaw",
+      "pass": true
+    },
+    {
+      "check": "initial front independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "initial front actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "initial front tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "initial front paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "front screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "front rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "front rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "front rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "right orbit view/controls",
+      "pass": true
+    },
+    {
+      "check": "right orbit yaw",
+      "pass": true
+    },
+    {
+      "check": "right orbit independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "right orbit actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "right orbit tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "right orbit paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "right orbit screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "right orbit rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "right orbit rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "right orbit rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "left returns front view/controls",
+      "pass": true
+    },
+    {
+      "check": "left returns front yaw",
+      "pass": true
+    },
+    {
+      "check": "left returns front independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "left returns front actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "left returns front tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "left returns front paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "left wraps view/controls",
+      "pass": true
+    },
+    {
+      "check": "left wraps yaw",
+      "pass": true
+    },
+    {
+      "check": "left wraps independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "left wraps actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "left wraps tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "left wraps paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "front reset view/controls",
+      "pass": true
+    },
+    {
+      "check": "front reset yaw",
+      "pass": true
+    },
+    {
+      "check": "front reset independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "front reset actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "front reset tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "front reset paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 1 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 1 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 1 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 1 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 1 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 1 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 1 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 1 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 1 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 1 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "circle 2 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 2 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 2 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 2 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 2 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 2 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 2 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 2 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 2 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 2 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "circle 3 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 3 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 3 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 3 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 3 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 3 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 3 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 3 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 3 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 3 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "circle 4 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 4 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 4 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 4 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 4 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 4 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 4 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 4 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 4 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 4 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "circle 5 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 5 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 5 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 5 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 5 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 5 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 5 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 5 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 5 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 5 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "circle 6 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 6 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 6 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 6 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 6 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 6 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 6 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 6 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 6 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 6 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "circle 7 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 7 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 7 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 7 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 7 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 7 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 7 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 7 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 7 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 7 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "circle 8 view/controls",
+      "pass": true
+    },
+    {
+      "check": "circle 8 yaw",
+      "pass": true
+    },
+    {
+      "check": "circle 8 independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "circle 8 actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "circle 8 tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "circle 8 paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "circle 8 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "circle 8 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "circle 8 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "circle 8 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "launcher retarget view/controls",
+      "pass": true
+    },
+    {
+      "check": "launcher retarget yaw",
+      "pass": true
+    },
+    {
+      "check": "launcher retarget independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "launcher retarget actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "launcher retarget tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "launcher retarget paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "fitting anchor changes with real mesh",
+      "pass": true
+    },
+    {
+      "check": "launcher screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "launcher rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "launcher rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "launcher rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "hide preference recorded",
+      "pass": true
+    },
+    {
+      "check": "hidden labels view/controls",
+      "pass": true
+    },
+    {
+      "check": "hidden labels yaw",
+      "pass": true
+    },
+    {
+      "check": "hidden labels independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "hidden labels actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "hidden labels tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "hidden labels paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "actual panel disappears cannon",
+      "pass": true
+    },
+    {
+      "check": "actual panel disappears hull",
+      "pass": true
+    },
+    {
+      "check": "actual panel disappears fitting",
+      "pass": true
+    },
+    {
+      "check": "orbit with labels hidden view/controls",
+      "pass": true
+    },
+    {
+      "check": "orbit with labels hidden yaw",
+      "pass": true
+    },
+    {
+      "check": "orbit with labels hidden independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "orbit with labels hidden actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "orbit with labels hidden tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "orbit with labels hidden paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "battlefield hidden view/controls",
+      "pass": true
+    },
+    {
+      "check": "battlefield hidden yaw",
+      "pass": true
+    },
+    {
+      "check": "battlefield hidden independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "battlefield hidden tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "battlefield hidden paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "hidden orbit row does not accept pointer input",
+      "pass": true
+    },
+    {
+      "check": "return retains hidden preference view/controls",
+      "pass": true
+    },
+    {
+      "check": "return retains hidden preference yaw",
+      "pass": true
+    },
+    {
+      "check": "return retains hidden preference independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "return retains hidden preference actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "return retains hidden preference tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "return retains hidden preference paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "hidden preference survives view change",
+      "pass": true
+    },
+    {
+      "check": "show labels view/controls",
+      "pass": true
+    },
+    {
+      "check": "show labels yaw",
+      "pass": true
+    },
+    {
+      "check": "show labels independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "show labels actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "show labels tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "show labels paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "restored screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "restored rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "restored rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "restored rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "battlefield with preference on view/controls",
+      "pass": true
+    },
+    {
+      "check": "battlefield with preference on yaw",
+      "pass": true
+    },
+    {
+      "check": "battlefield with preference on independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "battlefield with preference on tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "battlefield with preference on paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "battlefield does not erase label preference",
+      "pass": true
+    },
+    {
+      "check": "return shows labels view/controls",
+      "pass": true
+    },
+    {
+      "check": "return shows labels yaw",
+      "pass": true
+    },
+    {
+      "check": "return shows labels independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "return shows labels actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "return shows labels tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "return shows labels paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "1280 resize view/controls",
+      "pass": true
+    },
+    {
+      "check": "1280 resize yaw",
+      "pass": true
+    },
+    {
+      "check": "1280 resize independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "1280 resize actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "1280 resize tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "1280 resize paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "1280 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "1280 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "1280 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "1280 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "1280 orbit view/controls",
+      "pass": true
+    },
+    {
+      "check": "1280 orbit yaw",
+      "pass": true
+    },
+    {
+      "check": "1280 orbit independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "1280 orbit actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "1280 orbit tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "1280 orbit paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "1280 reverse view/controls",
+      "pass": true
+    },
+    {
+      "check": "1280 reverse yaw",
+      "pass": true
+    },
+    {
+      "check": "1280 reverse independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "1280 reverse actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "1280 reverse tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "1280 reverse paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "1024 resize view/controls",
+      "pass": true
+    },
+    {
+      "check": "1024 resize yaw",
+      "pass": true
+    },
+    {
+      "check": "1024 resize independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "1024 resize actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "1024 resize tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "1024 resize paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "1024 screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "1024 rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "1024 rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "1024 rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "1024 orbit view/controls",
+      "pass": true
+    },
+    {
+      "check": "1024 orbit yaw",
+      "pass": true
+    },
+    {
+      "check": "1024 orbit independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "1024 orbit actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "1024 orbit tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "1024 orbit paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "1024 reverse view/controls",
+      "pass": true
+    },
+    {
+      "check": "1024 reverse yaw",
+      "pass": true
+    },
+    {
+      "check": "1024 reverse independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "1024 reverse actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "1024 reverse tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "1024 reverse paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "resized reset view/controls",
+      "pass": true
+    },
+    {
+      "check": "resized reset yaw",
+      "pass": true
+    },
+    {
+      "check": "resized reset independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "resized reset actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "resized reset tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "resized reset paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "repair retarget view/controls",
+      "pass": true
+    },
+    {
+      "check": "repair retarget yaw",
+      "pass": true
+    },
+    {
+      "check": "repair retarget independent endpoint projection and panel bounds",
+      "pass": true
+    },
+    {
+      "check": "repair retarget actual orbit position",
+      "pass": true
+    },
+    {
+      "check": "repair retarget tank not rotated",
+      "pass": true
+    },
+    {
+      "check": "repair retarget paused turret not aimed",
+      "pass": true
+    },
+    {
+      "check": "final screenshot geometry",
+      "pass": true
+    },
+    {
+      "check": "final rendered anchor cannon",
+      "pass": true
+    },
+    {
+      "check": "final rendered anchor hull",
+      "pass": true
+    },
+    {
+      "check": "final rendered anchor fitting",
+      "pass": true
+    },
+    {
+      "check": "no browser errors",
+      "pass": true
+    },
+    {
+      "check": "no failed HTTP requests",
+      "pass": true
+    },
+    {
+      "check": "tested Web bytes unchanged",
+      "pass": true
+    }
+  ],
+  "inputs": {
+    "index.html": "d8f3463dc9f45b568b60a5c5cf3fb2c620193ed66a3dbb43f2a33ed2a7c1cd04",
+    "Build/Web-20260925T102215Z-797845.data": "482890879bcc5ffc8838d34f1dee00d92decb5fb35c7049a5ddfcc13909ece87",
+    "Build/Web-20260925T102215Z-797845.framework.js": "1b68826d1f4141afaa72d6f6646408e04e0bda3f01376bbca1f38c4671a04b14",
+    "Build/Web-20260925T102215Z-797845.loader.js": "21bbefddd287b367790a381a151ea0faf84b9a6bb6f123c6924c44a5cccf3d3b",
+    "Build/Web-20260925T102215Z-797845.wasm": "d11b455a03cb9c6dd18e8252af2109157cbb9a8dc4894ffe5a8135ba8de5d5c4",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "phone_tested": false,
+  "performance_measured": false,
+  "clicks": [
+    {
+      "action": "motion",
+      "x": 1142.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 458.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 458.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit_reset",
+      "x": 914.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "attachment",
+      "x": 686.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "callouts",
+      "x": 1142.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 686.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "battlefield",
+      "x": 458.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "inspection",
+      "x": 458.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "callouts",
+      "x": 1142.0,
+      "y": 778.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "battlefield",
+      "x": 458.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "inspection",
+      "x": 458.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 548.8,
+      "y": 622.4,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 366.4,
+      "y": 622.4,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 427.7530487198498,
+      "y": 677.840981963348,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit",
+      "x": 259.2591461595494,
+      "y": 677.840981963348,
+      "hold_ms": 150
+    },
+    {
+      "action": "orbit_reset",
+      "x": 596.2469512801501,
+      "y": 677.840981963348,
+      "hold_ms": 150
+    },
+    {
+      "action": "attachment",
+      "x": 427.7530487198498,
+      "y": 725.1375160153622,
+      "hold_ms": 150
+    }
+  ],
+  "observations": [
+    {
+      "case": "initial front",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.311429023742676,
+          "y": 6.699999809265137,
+          "z": -10.638145446777344
+        },
+        "cameraForward": {
+          "x": 0.5723552703857422,
+          "y": -0.36842048168182373,
+          "z": 0.7325815558433533
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 965.7919921875,
+              "y": 443.91143798828125,
+              "z": 11.971870422363281
+            },
+            "endpointScreen": {
+              "x": 965.7919921875,
+              "y": 443.91143798828125
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.0001220703125,
+              "y": 442.0683288574219,
+              "z": 14.561515808105469
+            },
+            "endpointScreen": {
+              "x": 800.0001220703125,
+              "y": 442.0683288574219
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 685.6600341796875,
+              "y": 512.7565307617188,
+              "z": 13.809662818908691
+            },
+            "endpointScreen": {
+              "x": 685.6600341796875,
+              "y": 512.7565307617188
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 3.3578678825563715e-05
+    },
+    {
+      "case": "right orbit",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.399188995361328,
+          "y": 6.7001447677612305,
+          "z": -1.646253228187561
+        },
+        "cameraForward": {
+          "x": 0.9226139187812805,
+          "y": -0.36849963665008545,
+          "z": 0.11398160457611084
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 1043.1812744140625,
+              "y": 503.7283935546875,
+              "z": 13.763716697692871
+            },
+            "endpointScreen": {
+              "x": 1043.1812744140625,
+              "y": 503.7283935546875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.709228515625,
+              "y": 442.1532897949219,
+              "z": 14.561516761779785
+            },
+            "endpointScreen": {
+              "x": 800.709228515625,
+              "y": 442.1532897949219
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 738.6038818359375,
+              "y": 488.7314147949219,
+              "z": 13.005579948425293
+            },
+            "endpointScreen": {
+              "x": 738.6038818359375,
+              "y": 488.7314147949219
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0005179492285115036
+    },
+    {
+      "case": "left returns front",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.312301635742188,
+          "y": 6.7001633644104,
+          "z": -10.637375831604004
+        },
+        "cameraForward": {
+          "x": 0.5729395151138306,
+          "y": -0.3685080409049988,
+          "z": 0.7320806980133057
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 965.008056640625,
+              "y": 444.0535583496094,
+              "z": 11.973203659057617
+            },
+            "endpointScreen": {
+              "x": 965.008056640625,
+              "y": 444.0535583496094
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 799.2153930664062,
+              "y": 442.1618957519531,
+              "z": 14.561515808105469
+            },
+            "endpointScreen": {
+              "x": 799.2153930664062,
+              "y": 442.1618957519531
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 684.8491821289062,
+              "y": 512.8193969726562,
+              "z": 13.808517456054688
+            },
+            "endpointScreen": {
+              "x": 684.8491821289062,
+              "y": 512.8193969726562
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00041819757010501857
+    },
+    {
+      "case": "left wraps",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 315.0,
+        "cameraPosition": {
+          "x": 1.6440798044204712,
+          "y": 6.700162887573242,
+          "z": -13.399447441101074
+        },
+        "cameraForward": {
+          "x": -0.11253020912408829,
+          "y": -0.36850792169570923,
+          "z": 0.9227886199951172
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 753.069091796875,
+              "y": 424.39166259765625,
+              "z": 11.481189727783203
+            },
+            "endpointScreen": {
+              "x": 753.069091796875,
+              "y": 424.39166259765625
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 799.215576171875,
+              "y": 442.161865234375,
+              "z": 14.561518669128418
+            },
+            "endpointScreen": {
+              "x": 799.215576171875,
+              "y": 442.161865234375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 703.01953125,
+              "y": 539.4703979492188,
+              "z": 14.821269035339355
+            },
+            "endpointScreen": {
+              "x": 703.01953125,
+              "y": 539.4703979492188
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00031279868935980886
+    },
+    {
+      "case": "front reset",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.31047534942627,
+          "y": 6.700162887573242,
+          "z": -10.63880443572998
+        },
+        "cameraForward": {
+          "x": 0.5717284083366394,
+          "y": -0.3685080111026764,
+          "z": 0.7330269813537598
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 966.5758056640625,
+              "y": 443.9504699707031,
+              "z": 11.97053337097168
+            },
+            "endpointScreen": {
+              "x": 966.5758056640625,
+              "y": 443.9504699707031
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7844848632812,
+              "y": 442.16192626953125,
+              "z": 14.561513900756836
+            },
+            "endpointScreen": {
+              "x": 800.7844848632812,
+              "y": 442.16192626953125
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 686.4692993164062,
+              "y": 512.8799438476562,
+              "z": 13.81064224243164
+            },
+            "endpointScreen": {
+              "x": 686.4692993164062,
+              "y": 512.8799438476562
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00037174710799763966
+    },
+    {
+      "case": "circle 1",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.399188995361328,
+          "y": 6.7001447677612305,
+          "z": -1.6462527513504028
+        },
+        "cameraForward": {
+          "x": 0.9226138591766357,
+          "y": -0.36849963665008545,
+          "z": 0.11398160457611084
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 1043.1812744140625,
+              "y": 503.7283935546875,
+              "z": 13.763720512390137
+            },
+            "endpointScreen": {
+              "x": 1043.1812744140625,
+              "y": 503.7283935546875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7093505859375,
+              "y": 442.1532897949219,
+              "z": 14.56152057647705
+            },
+            "endpointScreen": {
+              "x": 800.7093505859375,
+              "y": 442.1532897949219
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 738.6039428710938,
+              "y": 488.7314147949219,
+              "z": 13.005583763122559
+            },
+            "endpointScreen": {
+              "x": 738.6039428710938,
+              "y": 488.7314147949219
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0005277341017066725
+    },
+    {
+      "case": "circle 2",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 90.0,
+        "cameraPosition": {
+          "x": -10.63873291015625,
+          "y": 6.7001447677612305,
+          "z": 8.310582160949707
+        },
+        "cameraForward": {
+          "x": 0.7329837679862976,
+          "y": -0.3684996962547302,
+          "z": -0.5717893838882446
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 973.7060546875,
+              "y": 555.4000244140625,
+              "z": 15.810676574707031
+            },
+            "endpointScreen": {
+              "x": 973.7060546875,
+              "y": 555.4000244140625
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7094116210938,
+              "y": 442.1533508300781,
+              "z": 14.561517715454102
+            },
+            "endpointScreen": {
+              "x": 800.7094116210938,
+              "y": 442.1533508300781
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 834.613037109375,
+              "y": 484.6852111816406,
+              "z": 12.879735946655273
+            },
+            "endpointScreen": {
+              "x": 834.613037109375,
+              "y": 484.6852111816406
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.000364141504524949
+    },
+    {
+      "case": "circle 3",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 135.0,
+        "cameraPosition": {
+          "x": -1.6463780403137207,
+          "y": 6.700162410736084,
+          "z": 13.399164199829102
+        },
+        "cameraForward": {
+          "x": 0.11405567824840546,
+          "y": -0.3685080111026764,
+          "z": -0.9226013422012329
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 832.1865234375,
+              "y": 578.04296875,
+              "z": 16.91240882873535
+            },
+            "endpointScreen": {
+              "x": 832.1865234375,
+              "y": 578.04296875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7848510742188,
+              "y": 442.1619567871094,
+              "z": 14.561517715454102
+            },
+            "endpointScreen": {
+              "x": 800.7848510742188,
+              "y": 442.1619567871094
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 906.3212280273438,
+              "y": 504.10198974609375,
+              "z": 13.506635665893555
+            },
+            "endpointScreen": {
+              "x": 906.3212280273438,
+              "y": 504.10198974609375
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.000318378521762842
+    },
+    {
+      "case": "circle 4",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 180.0,
+        "cameraPosition": {
+          "x": 8.310576438903809,
+          "y": 6.700145244598389,
+          "z": 10.638736724853516
+        },
+        "cameraForward": {
+          "x": -0.571788489818573,
+          "y": -0.3684997260570526,
+          "z": -0.7329843044281006
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 679.9020385742188,
+              "y": 568.3682250976562,
+              "z": 16.42366600036621
+            },
+            "endpointScreen": {
+              "x": 679.9020385742188,
+              "y": 568.3682250976562
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.710205078125,
+              "y": 442.1533203125,
+              "z": 14.561519622802734
+            },
+            "endpointScreen": {
+              "x": 800.710205078125,
+              "y": 442.1533203125
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 909.486572265625,
+              "y": 531.90380859375,
+              "z": 14.519290924072266
+            },
+            "endpointScreen": {
+              "x": 909.486572265625,
+              "y": 531.90380859375
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0004387391786667875
+    },
+    {
+      "case": "circle 5",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 225.0,
+        "cameraPosition": {
+          "x": 13.39916706085205,
+          "y": 6.700162887573242,
+          "z": 1.6463735103607178
+        },
+        "cameraForward": {
+          "x": -0.9226014614105225,
+          "y": -0.36850786209106445,
+          "z": -0.11405456066131592
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 572.7203369140625,
+              "y": 527.3916625976562,
+              "z": 14.630819320678711
+            },
+            "endpointScreen": {
+              "x": 572.7203369140625,
+              "y": 527.3916625976562
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.783935546875,
+              "y": 442.1618347167969,
+              "z": 14.561521530151367
+            },
+            "endpointScreen": {
+              "x": 800.783935546875,
+              "y": 442.1618347167969
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 853.5332641601562,
+              "y": 551.396240234375,
+              "z": 15.324198722839355
+            },
+            "endpointScreen": {
+              "x": 853.5332641601562,
+              "y": 551.396240234375
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0006153402623906025
+    },
+    {
+      "case": "circle 6",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 270.0,
+        "cameraPosition": {
+          "x": 10.638802528381348,
+          "y": 6.700162887573242,
+          "z": -8.31047534942627
+        },
+        "cameraForward": {
+          "x": -0.7330270409584045,
+          "y": -0.3685080409049988,
+          "z": 0.5717282295227051
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 583.4674072265625,
+              "y": 466.3165283203125,
+              "z": 12.583826065063477
+            },
+            "endpointScreen": {
+              "x": 583.4674072265625,
+              "y": 466.3165283203125
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7847900390625,
+              "y": 442.16192626953125,
+              "z": 14.561515808105469
+            },
+            "endpointScreen": {
+              "x": 800.7847900390625,
+              "y": 442.16192626953125
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 772.5621948242188,
+              "y": 554.260986328125,
+              "z": 15.450117111206055
+            },
+            "endpointScreen": {
+              "x": 772.5621948242188,
+              "y": 554.260986328125
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0005488950873227746
+    },
+    {
+      "case": "circle 7",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 315.0,
+        "cameraPosition": {
+          "x": 1.6463775634765625,
+          "y": 6.700162887573242,
+          "z": -13.399166107177734
+        },
+        "cameraForward": {
+          "x": -0.11405512690544128,
+          "y": -0.36850789189338684,
+          "z": 0.9226014018058777
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 754.5809936523438,
+              "y": 424.421630859375,
+              "z": 11.481901168823242
+            },
+            "endpointScreen": {
+              "x": 754.5809936523438,
+              "y": 424.421630859375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7843017578125,
+              "y": 442.161865234375,
+              "z": 14.561517715454102
+            },
+            "endpointScreen": {
+              "x": 800.7843017578125,
+              "y": 442.161865234375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 704.6636352539062,
+              "y": 539.5178833007812,
+              "z": 14.8231840133667
+            },
+            "endpointScreen": {
+              "x": 704.6636352539062,
+              "y": 539.5178833007812
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0003703387067201398
+    },
+    {
+      "case": "circle 8",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.31047534942627,
+          "y": 6.700162887573242,
+          "z": -10.63880443572998
+        },
+        "cameraForward": {
+          "x": 0.5717283487319946,
+          "y": -0.3685080409049988,
+          "z": 0.7330270409584045
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 966.5758056640625,
+              "y": 443.95050048828125,
+              "z": 11.970537185668945
+            },
+            "endpointScreen": {
+              "x": 966.5758056640625,
+              "y": 443.95050048828125
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7846069335938,
+              "y": 442.1619567871094,
+              "z": 14.561519622802734
+            },
+            "endpointScreen": {
+              "x": 800.7846069335938,
+              "y": 442.1619567871094
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 686.469482421875,
+              "y": 512.8800048828125,
+              "z": 13.810647010803223
+            },
+            "endpointScreen": {
+              "x": 686.469482421875,
+              "y": 512.8800048828125
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00040109391145344434
+    },
+    {
+      "case": "launcher retarget",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.311426162719727,
+          "y": 6.7000017166137695,
+          "z": -10.63814640045166
+        },
+        "cameraForward": {
+          "x": 0.5723550319671631,
+          "y": -0.3684207797050476,
+          "z": 0.7325816750526428
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 965.7919921875,
+              "y": 443.91156005859375,
+              "z": 11.971869468688965
+            },
+            "endpointScreen": {
+              "x": 965.7921142578125,
+              "y": 443.91156005859375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.0001831054688,
+              "y": 442.06854248046875,
+              "z": 14.561514854431152
+            },
+            "endpointScreen": {
+              "x": 800.0001831054688,
+              "y": 442.06854248046875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 696.7902221679688,
+              "y": 522.0250244140625,
+              "z": 13.54871940612793
+            },
+            "endpointScreen": {
+              "x": 696.790283203125,
+              "y": 522.0249633789062
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00010019384809426378
+    },
+    {
+      "case": "hidden labels",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": false,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.311426162719727,
+          "y": 6.7000017166137695,
+          "z": -10.63814640045166
+        },
+        "cameraForward": {
+          "x": 0.5723550319671631,
+          "y": -0.3684207797050476,
+          "z": 0.7325816750526428
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": false,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 965.7919921875,
+              "y": 443.91156005859375,
+              "z": 11.971869468688965
+            },
+            "endpointScreen": {
+              "x": 965.7921142578125,
+              "y": 443.91156005859375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": false,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.0001831054688,
+              "y": 442.06854248046875,
+              "z": 14.561514854431152
+            },
+            "endpointScreen": {
+              "x": 800.0001831054688,
+              "y": 442.06854248046875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": false,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 696.7902221679688,
+              "y": 522.0250244140625,
+              "z": 13.54871940612793
+            },
+            "endpointScreen": {
+              "x": 696.790283203125,
+              "y": 522.0249633789062
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0
+    },
+    {
+      "case": "orbit with labels hidden",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": false,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.399188995361328,
+          "y": 6.7001447677612305,
+          "z": -1.6462535858154297
+        },
+        "cameraForward": {
+          "x": 0.9226138591766357,
+          "y": -0.36849963665008545,
+          "z": 0.11398172378540039
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": false,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 1043.1812744140625,
+              "y": 503.7283935546875,
+              "z": 13.76371955871582
+            },
+            "endpointScreen": {
+              "x": 965.7921142578125,
+              "y": 443.91156005859375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": false,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 800.7094116210938,
+              "y": 442.1532897949219,
+              "z": 14.561519622802734
+            },
+            "endpointScreen": {
+              "x": 800.0001831054688,
+              "y": 442.06854248046875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": false,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 761.0007934570312,
+              "y": 503.11578369140625,
+              "z": 12.904855728149414
+            },
+            "endpointScreen": {
+              "x": 696.790283203125,
+              "y": 522.0249633789062
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0
+    },
+    {
+      "case": "battlefield hidden",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "battlefield",
+        "requested": false,
+        "controlsVisible": false,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": 16.993446350097656,
+          "y": 23.002599716186523,
+          "z": 18.998960494995117
+        },
+        "cameraForward": {
+          "x": -0.49835503101348877,
+          "y": -0.6626098155975342,
+          "z": -0.5590980052947998
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": false,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 739.0170288085938,
+              "y": 543.8859252929688,
+              "z": 34.55998992919922
+            },
+            "endpointScreen": {
+              "x": 965.7921142578125,
+              "y": 443.91156005859375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": false,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 801.4928588867188,
+              "y": 470.1605529785156,
+              "z": 33.51033020019531
+            },
+            "endpointScreen": {
+              "x": 800.0001831054688,
+              "y": 442.06854248046875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": false,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 842.259033203125,
+              "y": 518.124755859375,
+              "z": 33.17463684082031
+            },
+            "endpointScreen": {
+              "x": 696.790283203125,
+              "y": 522.0249633789062
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0
+    },
+    {
+      "case": "return retains hidden preference",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": false,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.400559425354004,
+          "y": 6.703156471252441,
+          "z": -1.643784523010254
+        },
+        "cameraForward": {
+          "x": 0.922339141368866,
+          "y": -0.3697980046272278,
+          "z": 0.11198288202285767
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": false,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 1040.9981689453125,
+              "y": 505.32403564453125,
+              "z": 13.770588874816895
+            },
+            "endpointScreen": {
+              "x": 965.7921142578125,
+              "y": 443.91156005859375
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": false,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 798.6929931640625,
+              "y": 443.56103515625,
+              "z": 14.563735961914062
+            },
+            "endpointScreen": {
+              "x": 800.0001831054688,
+              "y": 442.06854248046875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": false,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 758.9547119140625,
+              "y": 504.45947265625,
+              "z": 12.905220031738281
+            },
+            "endpointScreen": {
+              "x": 696.790283203125,
+              "y": 522.0249633789062
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0
+    },
+    {
+      "case": "show labels",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.399377822875977,
+          "y": 6.7000017166137695,
+          "z": -1.6452348232269287
+        },
+        "cameraForward": {
+          "x": 0.9227297306060791,
+          "y": -0.36842063069343567,
+          "z": 0.1132962703704834
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 1042.4219970703125,
+              "y": 503.7034606933594,
+              "z": 13.765811920166016
+            },
+            "endpointScreen": {
+              "x": 1042.4219970703125,
+              "y": 503.7034606933594
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 799.9993896484375,
+              "y": 442.06854248046875,
+              "z": 14.561519622802734
+            },
+            "endpointScreen": {
+              "x": 799.9993896484375,
+              "y": 442.06854248046875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 760.283447265625,
+              "y": 503.02264404296875,
+              "z": 12.904603958129883
+            },
+            "endpointScreen": {
+              "x": 760.283447265625,
+              "y": 503.02264404296875
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 2.6514373624669683e-05
+    },
+    {
+      "case": "battlefield with preference on",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "battlefield",
+        "requested": true,
+        "controlsVisible": false,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": 16.994140625,
+          "y": 23.00232696533203,
+          "z": 18.99907112121582
+        },
+        "cameraForward": {
+          "x": -0.49850842356681824,
+          "y": -0.6625239253044128,
+          "z": -0.559063196182251
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": false,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 738.8629760742188,
+              "y": 543.7650146484375,
+              "z": 34.56028747558594
+            },
+            "endpointScreen": {
+              "x": 1042.4219970703125,
+              "y": 503.7034606933594
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": false,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 801.3482055664062,
+              "y": 470.04876708984375,
+              "z": 33.5106315612793
+            },
+            "endpointScreen": {
+              "x": 799.9993896484375,
+              "y": 442.06854248046875
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": false,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 842.1076049804688,
+              "y": 518.0172729492188,
+              "z": 33.17525863647461
+            },
+            "endpointScreen": {
+              "x": 760.283447265625,
+              "y": 503.02264404296875
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0
+    },
+    {
+      "case": "return shows labels",
+      "receipt": {
+        "width": 1600,
+        "height": 900,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.400434494018555,
+          "y": 6.702822685241699,
+          "z": -1.6439379453659058
+        },
+        "cameraForward": {
+          "x": 0.9223757386207581,
+          "y": -0.369667649269104,
+          "z": 0.11211103200912476
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 1041.1365966796875,
+              "y": 505.1723327636719,
+              "z": 13.770105361938477
+            },
+            "endpointScreen": {
+              "x": 1041.1365966796875,
+              "y": 505.1723327636719
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 535.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 599.0
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 798.8197021484375,
+              "y": 443.4219970703125,
+              "z": 14.563505172729492
+            },
+            "endpointScreen": {
+              "x": 798.8197021484375,
+              "y": 443.4219970703125
+            },
+            "panelMin": {
+              "x": 36.0,
+              "y": 292.0
+            },
+            "panelMax": {
+              "x": 288.0,
+              "y": 356.0
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 759.08349609375,
+              "y": 504.3262023925781,
+              "z": 12.905141830444336
+            },
+            "endpointScreen": {
+              "x": 759.08349609375,
+              "y": 504.3262023925781
+            },
+            "panelMin": {
+              "x": 1312.0,
+              "y": 454.0
+            },
+            "panelMax": {
+              "x": 1564.0,
+              "y": 518.0
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.03539628281269717
+    },
+    {
+      "case": "1280 resize",
+      "receipt": {
+        "width": 1280,
+        "height": 720,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.399377822875977,
+          "y": 6.7000017166137695,
+          "z": -1.6452348232269287
+        },
+        "cameraForward": {
+          "x": 0.9227297306060791,
+          "y": -0.36842072010040283,
+          "z": 0.1132962703704834
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 833.9375,
+              "y": 402.9628601074219,
+              "z": 13.765811920166016
+            },
+            "endpointScreen": {
+              "x": 833.9376220703125,
+              "y": 402.962890625
+            },
+            "panelMin": {
+              "x": 28.800003051757812,
+              "y": 428.0
+            },
+            "panelMax": {
+              "x": 230.40000915527344,
+              "y": 479.20001220703125
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 639.99951171875,
+              "y": 353.6549072265625,
+              "z": 14.561518669128418
+            },
+            "endpointScreen": {
+              "x": 639.99951171875,
+              "y": 353.6549072265625
+            },
+            "panelMin": {
+              "x": 28.800003051757812,
+              "y": 233.60000610351562
+            },
+            "panelMax": {
+              "x": 230.40000915527344,
+              "y": 284.8000183105469
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 608.226806640625,
+              "y": 402.418212890625,
+              "z": 12.904603004455566
+            },
+            "endpointScreen": {
+              "x": 608.226806640625,
+              "y": 402.418212890625
+            },
+            "panelMin": {
+              "x": 1049.5999755859375,
+              "y": 363.1999816894531
+            },
+            "panelMax": {
+              "x": 1251.2000732421875,
+              "y": 414.3999938964844
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00011349141626411792
+    },
+    {
+      "case": "1280 orbit",
+      "receipt": {
+        "width": 1280,
+        "height": 720,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 90.0,
+        "cameraPosition": {
+          "x": -10.63873291015625,
+          "y": 6.7001447677612305,
+          "z": 8.31058120727539
+        },
+        "cameraForward": {
+          "x": 0.7329837679862976,
+          "y": -0.3684996962547302,
+          "z": -0.5717891454696655
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 778.9649047851562,
+              "y": 444.3199768066406,
+              "z": 15.810678482055664
+            },
+            "endpointScreen": {
+              "x": 778.9649047851562,
+              "y": 444.3199768066406
+            },
+            "panelMin": {
+              "x": 28.800003051757812,
+              "y": 428.0
+            },
+            "panelMax": {
+              "x": 230.40000915527344,
+              "y": 479.20001220703125
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 640.567626953125,
+              "y": 353.7226257324219,
+              "z": 14.561518669128418
+            },
+            "endpointScreen": {
+              "x": 640.567626953125,
+              "y": 353.7226257324219
+            },
+            "panelMin": {
+              "x": 28.800003051757812,
+              "y": 233.60000610351562
+            },
+            "panelMax": {
+              "x": 230.40000915527344,
+              "y": 284.8000183105469
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 682.1558837890625,
+              "y": 403.814208984375,
+              "z": 12.958414077758789
+            },
+            "endpointScreen": {
+              "x": 682.1558837890625,
+              "y": 403.814208984375
+            },
+            "panelMin": {
+              "x": 1049.5999755859375,
+              "y": 363.1999816894531
+            },
+            "panelMax": {
+              "x": 1251.2000732421875,
+              "y": 414.3999938964844
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00033763341473797985
+    },
+    {
+      "case": "1280 reverse",
+      "receipt": {
+        "width": 1280,
+        "height": 720,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.39944076538086,
+          "y": 6.700145244598389,
+          "z": -1.6442022323608398
+        },
+        "cameraForward": {
+          "x": 0.9227829575538635,
+          "y": -0.36849963665008545,
+          "z": 0.11260426044464111
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 833.3328857421875,
+              "y": 403.07757568359375,
+              "z": 13.767775535583496
+            },
+            "endpointScreen": {
+              "x": 833.3328857421875,
+              "y": 403.07757568359375
+            },
+            "panelMin": {
+              "x": 28.800003051757812,
+              "y": 428.0
+            },
+            "panelMax": {
+              "x": 230.40000915527344,
+              "y": 479.20001220703125
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 639.432373046875,
+              "y": 353.7225646972656,
+              "z": 14.561521530151367
+            },
+            "endpointScreen": {
+              "x": 639.432373046875,
+              "y": 353.7225646972656
+            },
+            "panelMin": {
+              "x": 28.800003051757812,
+              "y": 233.60000610351562
+            },
+            "panelMax": {
+              "x": 230.40000915527344,
+              "y": 284.8000183105469
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 607.6535034179688,
+              "y": 402.47705078125,
+              "z": 12.904234886169434
+            },
+            "endpointScreen": {
+              "x": 607.6535034179688,
+              "y": 402.47705078125
+            },
+            "panelMin": {
+              "x": 1049.5999755859375,
+              "y": 363.1999816894531
+            },
+            "panelMax": {
+              "x": 1251.2000732421875,
+              "y": 414.3999938964844
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.00050359679267604
+    },
+    {
+      "case": "1024 resize",
+      "receipt": {
+        "width": 1024,
+        "height": 768,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.39937686920166,
+          "y": 6.700001239776611,
+          "z": -1.6452348232269287
+        },
+        "cameraForward": {
+          "x": 0.9227297902107239,
+          "y": -0.3684205114841461,
+          "z": 0.11329632997512817
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 718.8668212890625,
+              "y": 429.8268127441406,
+              "z": 13.765810012817383
+            },
+            "endpointScreen": {
+              "x": 718.8666381835938,
+              "y": 429.8268127441406
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 460.1917419433594
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 507.4882507324219
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 511.99951171875,
+              "y": 377.2316589355469,
+              "z": 14.561517715454102
+            },
+            "endpointScreen": {
+              "x": 511.99951171875,
+              "y": 377.2316589355469
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 252.8317413330078
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 300.1282653808594
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 478.10858154296875,
+              "y": 429.245849609375,
+              "z": 12.904601097106934
+            },
+            "endpointScreen": {
+              "x": 478.10858154296875,
+              "y": 429.245849609375
+            },
+            "panelMin": {
+              "x": 811.1655883789062,
+              "y": 391.0717468261719
+            },
+            "panelMax": {
+              "x": 997.3956909179688,
+              "y": 438.3682556152344
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0002110862667625998
+    },
+    {
+      "case": "1024 orbit",
+      "receipt": {
+        "width": 1024,
+        "height": 768,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 90.0,
+        "cameraPosition": {
+          "x": -10.638802528381348,
+          "y": 6.700162887573242,
+          "z": 8.310481071472168
+        },
+        "cameraForward": {
+          "x": 0.7330265641212463,
+          "y": -0.3685078024864197,
+          "z": -0.5717290639877319
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 660.298095703125,
+              "y": 473.9453430175781,
+              "z": 15.810487747192383
+            },
+            "endpointScreen": {
+              "x": 660.298095703125,
+              "y": 473.9453430175781
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 460.1917419433594
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 507.4882507324219
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 512.6690673828125,
+              "y": 377.31134033203125,
+              "z": 14.561518669128418
+            },
+            "endpointScreen": {
+              "x": 512.6690673828125,
+              "y": 377.31134033203125
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 252.8317413330078
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 300.1282653808594
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 557.0306396484375,
+              "y": 430.74102783203125,
+              "z": 12.958364486694336
+            },
+            "endpointScreen": {
+              "x": 557.0306396484375,
+              "y": 430.74102783203125
+            },
+            "panelMin": {
+              "x": 811.1655883789062,
+              "y": 391.0717468261719
+            },
+            "panelMax": {
+              "x": 997.3956909179688,
+              "y": 438.3682556152344
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0004174442952693266
+    },
+    {
+      "case": "1024 reverse",
+      "receipt": {
+        "width": 1024,
+        "height": 768,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 45.0,
+        "cameraPosition": {
+          "x": -13.399450302124023,
+          "y": 6.700162887573242,
+          "z": -1.6440798044204712
+        },
+        "cameraForward": {
+          "x": 0.9227886199951172,
+          "y": -0.3685078024864197,
+          "z": 0.11253052949905396
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 718.1539916992188,
+              "y": 429.96197509765625,
+              "z": 13.767986297607422
+            },
+            "endpointScreen": {
+              "x": 718.1539916992188,
+              "y": 429.96197509765625
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 460.1917419433594
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 507.4882507324219
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 511.3309631347656,
+              "y": 377.3114013671875,
+              "z": 14.561522483825684
+            },
+            "endpointScreen": {
+              "x": 511.3309631347656,
+              "y": 377.3114013671875
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 252.8317413330078
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 300.1282653808594
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 477.4329528808594,
+              "y": 429.3150634765625,
+              "z": 12.904194831848145
+            },
+            "endpointScreen": {
+              "x": 477.4329528808594,
+              "y": 429.3150634765625
+            },
+            "panelMin": {
+              "x": 811.1655883789062,
+              "y": 391.0717468261719
+            },
+            "panelMax": {
+              "x": 997.3956909179688,
+              "y": 438.3682556152344
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0004529431679352837
+    },
+    {
+      "case": "resized reset",
+      "receipt": {
+        "width": 1024,
+        "height": 768,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.312209129333496,
+          "y": 6.700145721435547,
+          "z": -10.637457847595215
+        },
+        "cameraForward": {
+          "x": 0.5728834867477417,
+          "y": -0.36849987506866455,
+          "z": 0.7321287393569946
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 652.8699340820312,
+              "y": 378.9145202636719,
+              "z": 11.973075866699219
+            },
+            "endpointScreen": {
+              "x": 652.8699340820312,
+              "y": 378.9145202636719
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 460.1917419433594
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 507.4882507324219
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 511.39385986328125,
+              "y": 377.30426025390625,
+              "z": 14.561515808105469
+            },
+            "endpointScreen": {
+              "x": 511.39385986328125,
+              "y": 377.30426025390625
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 252.8317413330078
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 300.1282653808594
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Launcher",
+            "label": "AUXILIARY LAUNCHER",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3275705575942993,
+              "y": 2.502499580383301,
+              "z": 0.2890000641345978
+            },
+            "anchorScreen": {
+              "x": 423.3015441894531,
+              "y": 445.5127258300781,
+              "z": 13.547788619995117
+            },
+            "endpointScreen": {
+              "x": 423.3015441894531,
+              "y": 445.5127258300781
+            },
+            "panelMin": {
+              "x": 811.1655883789062,
+              "y": 391.0717468261719
+            },
+            "panelMax": {
+              "x": 997.3956909179688,
+              "y": 438.3682556152344
+            }
+          }
+        ]
+      },
+      "projection_error_px": 0.0003635548006367614
+    },
+    {
+      "case": "repair retarget",
+      "receipt": {
+        "width": 1024,
+        "height": 768,
+        "view": "inspection",
+        "requested": true,
+        "controlsVisible": true,
+        "yaw": 0.0,
+        "cameraPosition": {
+          "x": -8.311433792114258,
+          "y": 6.700001239776611,
+          "z": -10.638143539428711
+        },
+        "cameraForward": {
+          "x": 0.5723558068275452,
+          "y": -0.36842069029808044,
+          "z": 0.7325810790061951
+        },
+        "tankRotation": {
+          "x": -0.7071068286895752,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 0.7071067094802856
+        },
+        "turretRotation": {
+          "x": 0.0,
+          "y": -2.1768116198472853e-09,
+          "z": 0.018260417506098747,
+          "w": 0.9998332858085632
+        },
+        "parts": [
+          {
+            "id": "cannon",
+            "target": "BarrelRecoil",
+            "label": "MAIN CANNON",
+            "visible": true,
+            "anchorWorld": {
+              "x": -0.1046147346496582,
+              "y": 2.229999542236328,
+              "z": -2.955974578857422
+            },
+            "anchorScreen": {
+              "x": 653.4755249023438,
+              "y": 378.8045959472656,
+              "z": 11.971872329711914
+            },
+            "endpointScreen": {
+              "x": 653.4755249023438,
+              "y": 378.8045959472656
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 460.1917419433594
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 507.4882507324219
+            }
+          },
+          {
+            "id": "hull",
+            "target": "Hull",
+            "label": "ARMORED HULL",
+            "visible": true,
+            "anchorWorld": {
+              "x": 0.0,
+              "y": 1.2412497997283936,
+              "z": -2.384185791015625e-07
+            },
+            "anchorScreen": {
+              "x": 511.999755859375,
+              "y": 377.2317810058594,
+              "z": 14.561515808105469
+            },
+            "endpointScreen": {
+              "x": 511.999755859375,
+              "y": 377.2317810058594
+            },
+            "panelMin": {
+              "x": 26.60430908203125,
+              "y": 252.8317413330078
+            },
+            "panelMax": {
+              "x": 212.83441162109375,
+              "y": 300.1282653808594
+            }
+          },
+          {
+            "id": "fitting",
+            "target": "Attachment_Repair",
+            "label": "FIELD REPAIR UNIT",
+            "visible": true,
+            "anchorWorld": {
+              "x": -1.3245004415512085,
+              "y": 2.317499876022339,
+              "z": 0.5497586727142334
+            },
+            "anchorScreen": {
+              "x": 414.4295959472656,
+              "y": 437.55230712890625,
+              "z": 13.809659957885742
+            },
+            "endpointScreen": {
+              "x": 414.4295959472656,
+              "y": 437.55230712890625
+            },
+            "panelMin": {
+              "x": 811.1655883789062,
+              "y": 391.0717468261719
+            },
+            "panelMax": {
+              "x": 997.3956909179688,
+              "y": 438.3682556152344
+            }
+          }
+        ]
+      },
+      "projection_error_px": 7.170434431883882e-05
+    }
+  ],
+  "temporary_port": 60049,
+  "expected_receipt": "Evidence/build-20260925T102215Z-797845/result.json",
+  "expected_receipt_sha256": "f24874f7dd66ea0668ac29103c7bcd276cebf54a945614dfafd082a71b16066f",
+  "browser_version": "153.0.8010.50",
+  "input_trace": [
+    {
+      "kind": "focus",
+      "time": 1790335706752,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335709375,
+      "x": 1142,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335709533,
+      "x": 1142,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335711212,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335711368,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335713054,
+      "x": 458,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335713210,
+      "x": 458,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335714659,
+      "x": 458,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335714832,
+      "x": 458,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335716251,
+      "x": 914,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335716408,
+      "x": 914,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335717832,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335717990,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335719660,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335719817,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335721538,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335721694,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335723360,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335723518,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335725215,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335725373,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335727063,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335727219,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335728916,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335729071,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335730764,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335730922,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335732597,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335732752,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335734426,
+      "x": 1142,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335734582,
+      "x": 1142,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335736264,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335736420,
+      "x": 686,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335737843,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335737998,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335739608,
+      "x": 458,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335739759,
+      "x": 458,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335740291,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335740447,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335741881,
+      "x": 1142,
+      "y": 778,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335742036,
+      "x": 1142,
+      "y": 778,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335743700,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335743856,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335745288,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335745445,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335748366,
+      "x": 548.7999877929688,
+      "y": 622.4000244140625,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335748521,
+      "x": 548.7999877929688,
+      "y": 622.4000244140625,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335750017,
+      "x": 366.3999938964844,
+      "y": 622.4000244140625,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335750174,
+      "x": 366.3999938964844,
+      "y": 622.4000244140625,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335753164,
+      "x": 427.7530517578125,
+      "y": 677.8410034179688,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335753318,
+      "x": 427.7530517578125,
+      "y": 677.8410034179688,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335754755,
+      "x": 259.2591552734375,
+      "y": 677.8410034179688,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335754910,
+      "x": 259.2591552734375,
+      "y": 677.8410034179688,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335756345,
+      "x": 596.2469482421875,
+      "y": 677.8410034179688,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335756500,
+      "x": 596.2469482421875,
+      "y": 677.8410034179688,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790335757994,
+      "x": 427.7530517578125,
+      "y": 725.1375122070312,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790335758150,
+      "x": 427.7530517578125,
+      "y": 725.1375122070312,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "visibilitychange",
+      "time": 1790335759730,
+      "target": "",
+      "focused": true,
+      "hidden": true
+    }
+  ],
+  "browser_closed": true,
+  "server_closed": true,
+  "errors": [],
+  "requests": [],
+  "max_projection_error_px": 0.03539628281269717,
+  "verifier_sha256": "924201ee6e58afd0262ff117c5112026eec42a627c5864b56a83b7b3d8d64c77",
+  "geometry_checks_sha256": "2ef89c2e94b58f1e7e2e8b5db3ad630d4e0ef25c43f0dffdc764e833b2d5f3d9"
+}
