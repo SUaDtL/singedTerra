@@ -19,13 +19,58 @@ const data=JSON.parse(document.getElementById('evidence-data').textContent);
 const phase=document.getElementById('phase'),fitting=document.getElementById('fitting'),viewport=document.getElementById('viewport');
 const names={early:'Early encounter',busy:'Busy encounter',repair:'Field repair',launcher:'Auxiliary launcher'};
 function element(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;}
+function assetFilename(value,prefix,extension){
+  if(typeof value!=='string'||!value.startsWith(prefix)||!value.endsWith(extension))return null;
+  const filename=value.slice(prefix.length),stem=filename.slice(0,-extension.length);
+  return /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(stem)?filename:null;
+}
+function stillUrl(value){const name=assetFilename(value,'stills/','.png');return name===null?null:'stills/'+encodeURIComponent(name);}
+function motionUrl(value){const name=assetFilename(value,'motion/','.mp4');return name===null?null:'motion/'+encodeURIComponent(name);}
+function metadataUrl(value){const name=assetFilename(value,'metadata/','.json');return name===null?null:'metadata/'+encodeURIComponent(name);}
 function options(select,values,format){const old=select.value;select.replaceChildren();for(const value of values){const option=document.createElement('option');option.value=value;option.textContent=format(value);select.append(option);}if(values.includes(old))select.value=old;}
 options(phase,['early','busy'],v=>names[v]);options(fitting,['repair','launcher'],v=>names[v]);
-function render(updateViews){const choices=data.pairs.filter(p=>p.phase===phase.value&&p.fitting===fitting.value);if(updateViews)options(viewport,[...new Set(choices.map(p=>p.viewport))],v=>v.replace('x',' × '));const item=choices.find(p=>p.viewport===viewport.value);const grid=document.getElementById('pair');grid.replaceChildren();const summary=document.getElementById('pair-meta');summary.replaceChildren();if(!item){summary.append(element('span','', 'This combination was not recorded.'));return;}summary.append(element('strong','',names[item.phase]+' / '+names[item.fitting]),element('span','',item.viewport.replace('x',' × ')+' · Tick '+item.tick+' / '+item.seconds.toFixed(2)+' s · '+(item.fullEffects?'Full effects':'Reduced effects')+' · Matched paused state'));for(const treatment of [{letter:'A',title:'Sunlit ash clearing',asset:item.left_asset},{letter:'B',title:'Cool industrial perimeter',asset:item.right_asset}]){const card=element('figure','card'),head=element('figcaption','card-head');head.append(element('div','eyebrow','Treatment '+treatment.letter),element('h3','',treatment.title));const link=element('a','still');link.href=treatment.asset;link.target='_blank';link.rel='noopener';link.setAttribute('aria-label','Open full-resolution treatment '+treatment.letter+' capture');const img=element('img');img.src=treatment.asset;img.alt='Actual Unity Web treatment '+treatment.letter+', '+names[item.phase].toLowerCase()+', '+names[item.fitting].toLowerCase();img.loading='lazy';link.append(img);card.append(head,link,element('div','card-foot','Unmodified PNG · Open at full resolution'));grid.append(card);}}
+function render(updateViews){
+  const choices=data.pairs.filter(p=>p.phase===phase.value&&p.fitting===fitting.value);
+  if(updateViews)options(viewport,[...new Set(choices.map(p=>p.viewport))],v=>v.replace('x',' × '));
+  const item=choices.find(p=>p.viewport===viewport.value),grid=document.getElementById('pair'),summary=document.getElementById('pair-meta');
+  grid.replaceChildren();summary.replaceChildren();
+  if(!item){summary.append(element('span','', 'This combination was not recorded.'));return;}
+  summary.append(element('strong','',names[item.phase]+' / '+names[item.fitting]),element('span','',item.viewport.replace('x',' × ')+' · Tick '+item.tick+' / '+item.seconds.toFixed(2)+' s · '+(item.fullEffects?'Full effects':'Reduced effects')+' · Matched paused state'));
+  for(const treatment of [{letter:'A',title:'Sunlit ash clearing',asset:item.left_asset},{letter:'B',title:'Cool industrial perimeter',asset:item.right_asset}]){
+    const card=element('figure','card'),head=element('figcaption','card-head');
+    head.append(element('div','eyebrow','Treatment '+treatment.letter),element('h3','',treatment.title));
+    const link=element('a','still'),img=element('img'),asset=stillUrl(treatment.asset);
+    link.target='_blank';link.rel='noopener';link.setAttribute('aria-label','Open full-resolution treatment '+treatment.letter+' capture');
+    img.alt='Actual Unity Web treatment '+treatment.letter+', '+names[item.phase].toLowerCase()+', '+names[item.fitting].toLowerCase();img.loading='lazy';
+    if(asset!==null){link.href=asset;img.src=asset;}
+    else{link.setAttribute('aria-disabled','true');img.alt='Capture unavailable: invalid local asset path.';}
+    link.append(img);
+    card.append(head,link,element('div','card-foot',asset===null?'Capture unavailable: invalid local asset path.':'Unmodified PNG · Open at full resolution'));
+    grid.append(card);
+  }
+}
 phase.addEventListener('change',()=>render(true));fitting.addEventListener('change',()=>render(true));viewport.addEventListener('change',()=>render(false));render(true);
 const ordered=[...data.clips].sort((a,b)=>{const key=c=>(c.name.endsWith('early')?0:2)+(c.name.includes('-B-')?1:0);return key(a)-key(b);});
-for(const clip of ordered){const letter=clip.name.includes('-A-')?'A':'B',moment=clip.name.endsWith('early')?'Early':'Busy',card=element('article','card'),head=element('div','card-head');head.append(element('div','eyebrow','Treatment '+letter+' / '+moment),element('h3','',letter==='A'?'Sunlit ash clearing':'Cool industrial perimeter'),element('p','',clip.encoded_duration_seconds.toFixed(2)+' s · '+clip.encoded_fps+' fps · Field repair · Full effects'));const video=element('video');video.controls=true;video.preload='metadata';video.playsInline=true;video.src=clip.asset;video.setAttribute('aria-label',moment+' encounter, treatment '+letter+' at normal speed');const foot=element('div','card-foot'),link=element('a','','Frame-timestamp metadata');link.href=clip.metadata_asset;foot.append(element('p','quiet','Captured '+clip.frames+' frames / '+clip.duration_seconds.toFixed(3)+' s; encoded '+clip.encoded_frames+' frames / '+clip.encoded_duration_seconds.toFixed(2)+' s.'),link);card.append(head,video,foot);document.getElementById('clips').append(card);}
-for(const capture of data.captures){const link=element('a','',capture.path);link.href=capture.asset;link.target='_blank';link.rel='noopener';document.getElementById('archive').append(link);}
+for(const clip of ordered){
+  const letter=clip.name.includes('-A-')?'A':'B',moment=clip.name.endsWith('early')?'Early':'Busy',card=element('article','card'),head=element('div','card-head');
+  head.append(element('div','eyebrow','Treatment '+letter+' / '+moment),element('h3','',letter==='A'?'Sunlit ash clearing':'Cool industrial perimeter'),element('p','',clip.encoded_duration_seconds.toFixed(2)+' s · '+clip.encoded_fps+' fps · Field repair · Full effects'));
+  const video=element('video'),asset=motionUrl(clip.asset);
+  video.controls=true;video.preload='metadata';video.playsInline=true;
+  if(asset!==null)video.src=asset;
+  video.setAttribute('aria-label',moment+' encounter, treatment '+letter+' at normal speed');
+  const foot=element('div','card-foot'),link=element('a','','Frame-timestamp metadata'),metadata=metadataUrl(clip.metadata_asset);
+  if(metadata!==null)link.href=metadata;
+  else{link.setAttribute('aria-disabled','true');link.textContent='Frame metadata unavailable: invalid local asset path.';}
+  if(asset===null)foot.append(element('p','quiet','Motion unavailable: invalid local asset path.'));
+  foot.append(element('p','quiet','Captured '+clip.frames+' frames / '+clip.duration_seconds.toFixed(3)+' s; encoded '+clip.encoded_frames+' frames / '+clip.encoded_duration_seconds.toFixed(2)+' s.'),link);
+  card.append(head,video,foot);document.getElementById('clips').append(card);
+}
+for(const capture of data.captures){
+  const link=element('a','',capture.path),asset=stillUrl(capture.asset);
+  if(asset!==null)link.href=asset;
+  else{link.setAttribute('aria-disabled','true');link.title='Capture unavailable: invalid local asset path.';}
+  link.target='_blank';link.rel='noopener';document.getElementById('archive').append(link);
+}
 document.getElementById('provenance').textContent=data.provenance;
 document.getElementById('motion-timing').textContent=data.motionTiming;
 </script></html>

@@ -27,6 +27,22 @@ checks, then verified unchanged scene and source bytes. It did not regenerate ar
 | `python -m unittest discover -s Tools -p test_*.py -v` | 27 host test methods | [Host command](validation-20260926/supporting/host-tests.json) |
 | `VisualReviewBuild.Check` spacing regression | Both complete natural runs; minimum footprint gaps 0.375 m / 0.372 m | [Command](validation-20260926/spacing-result.json), [safe editor markers](validation-20260926/editor-markers.json) |
 
+The separate [gallery URL regression](verify_gallery_urls.py) exercises all five
+metadata-fed URL assignments, legitimate local assets and literal display text.
+From `campaign-unity`, run:
+
+```powershell
+python docs/visual-review-01/verify_gallery_urls.py docs/visual-review-01/browser-20260926T093232Z/index.html
+```
+
+Add `--revision b14aeb2208b8a34bc81fa2c2320f42ac31a4aa4f` to reproduce the
+historical unsafe-URL baseline. Fixtures and receipts stay in ignored Evidence;
+the check closes its owned browser and does not alter the gallery package.
+The same final helper produces 121 failures on that baseline and passes all
+152 checks on the corrected gallery. URLs now use fixed local folders and
+encoded, strictly validated filenames; invalid metadata leaves the corresponding
+URL unset. All copied captures, videos and receipts remain byte-identical.
+
 Browser runs used installed Chrome 153.0.8010.50 in an owned `--headless=new`
 default context, without focus emulation, on WebGL 2 / NVIDIA RTX 5070 Ti through
 ANGLE D3D11. Pointer input, real browser-tab focus loss, frozen suspension and
