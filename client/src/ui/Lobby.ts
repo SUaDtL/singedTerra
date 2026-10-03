@@ -383,6 +383,14 @@ export type VerifiedChallengeSessionFactory = (
   authenticatedAccountId: () => string | null,
 ) => VerifiedChallengeSession;
 
+// Resolve the browser getter inside each storage owner's guarded operation.
+// Unavailable persistence must refuse verified play without blocking local play.
+const verifiedBrowserStorage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = {
+  getItem: (key) => window.localStorage.getItem(key),
+  setItem: (key, value) => window.localStorage.setItem(key, value),
+  removeItem: (key) => window.localStorage.removeItem(key),
+};
+
 const defaultVerifiedChallengeSessionFactory: VerifiedChallengeSessionFactory = (authenticatedAccountId) => {
   const transport = new VerifiedChallengeTransport(async (operation, body) => {
     const { supabase } = await import('../lib/supabase');
@@ -394,7 +402,7 @@ const defaultVerifiedChallengeSessionFactory: VerifiedChallengeSessionFactory = 
   });
   return new VerifiedChallengeSession(
     transport,
-    new VerifiedChallengeStorage(localStorage),
+    new VerifiedChallengeStorage(verifiedBrowserStorage),
     authenticatedAccountId,
   );
 };
@@ -568,7 +576,7 @@ export class Lobby {
     );
     this.accountSession = createAccountSession(() => { this.renderForAccountChange(); });
     this.verifiedSession = new VerifiedDeploymentSession(
-      this.accountSession, (now) => new VerifiedDeploymentStorage(localStorage, now),
+      this.accountSession, (now) => new VerifiedDeploymentStorage(verifiedBrowserStorage, now),
     );
     const authenticatedAccountId = (): string | null => this.accountSession.state.status === 'authenticated'
       ? this.accountSession.state.profile.id
