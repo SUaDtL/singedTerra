@@ -139,4 +139,62 @@ describe('buildLobbyBrowseView', () => {
     join.click();
     expect(onJoin).not.toHaveBeenCalled();
   });
+
+  // These are supplied builder states, not a pending-fetch or error-creation claim.
+  it('renders the supplied loading state while busy', () => {
+    const onRefresh = vi.fn();
+    const root = buildLobbyBrowseView({
+      nameColor: sharedSection('name-color'),
+      garage: sharedSection('garage'),
+      status: sharedSection('status'),
+      rooms: [],
+      busy: true,
+      onJoin: vi.fn(),
+      onRefresh,
+      onCreate: vi.fn(),
+      onJoinByCode: vi.fn(),
+    });
+    document.body.append(root);
+    try {
+      const refresh = button(root, 'Refreshing rooms…');
+      expect(refresh.isConnected).toBe(true);
+      expect(refresh.hidden).toBe(false);
+      expect(refresh.disabled).toBe(true);
+      expect(refresh.getAttribute('aria-busy')).toBe('true');
+      expect(refresh.closest('[hidden], [aria-hidden="true"]')).toBeNull();
+      refresh.click();
+      expect(onRefresh).not.toHaveBeenCalled();
+    } finally {
+      root.remove();
+    }
+  });
+
+  it('renders the supplied error node', () => {
+    const status = sharedSection('status');
+    status.setAttribute('role', 'alert');
+    status.textContent = 'Unable to load public rooms.';
+    const root = buildLobbyBrowseView({
+      nameColor: sharedSection('name-color'),
+      garage: sharedSection('garage'),
+      status,
+      rooms: [],
+      busy: false,
+      onJoin: vi.fn(),
+      onRefresh: vi.fn(),
+      onCreate: vi.fn(),
+      onJoinByCode: vi.fn(),
+    });
+    document.body.append(root);
+    try {
+      expect(root.querySelector('[role="alert"]')).toBe(status);
+      expect(status.isConnected).toBe(true);
+      expect(status.hidden).toBe(false);
+      expect(status.closest('[hidden], [aria-hidden="true"]')).toBeNull();
+      expect(status.textContent).toBe('Unable to load public rooms.');
+      expect(root.querySelector('.lobby-operations-board__crew')?.contains(status)).toBe(true);
+      expect(button(root, 'Refresh rooms').disabled).toBe(false);
+    } finally {
+      root.remove();
+    }
+  });
 });
