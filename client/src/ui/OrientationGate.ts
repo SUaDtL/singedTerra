@@ -69,8 +69,8 @@ function browserPorts(root: Document): OrientationLaunchPorts {
 
 const RESULT_COPY: Readonly<Record<OrientationLaunchResult, string>> = {
   locked: 'Landscape requested. Rotate if your browser needs a nudge.',
-  fullscreen: 'Fullscreen is ready — rotate your device to continue.',
-  manual: 'Your browser keeps orientation manual — rotate your device to continue.',
+  fullscreen: 'Fullscreen is ready. Rotate your device to continue.',
+  manual: 'Your browser keeps orientation manual. Rotate your device to continue.',
 };
 
 function applicationSurfaceState(roots: ApplicationSurfaceRoots): ApplicationSurfaceState {
