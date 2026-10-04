@@ -294,7 +294,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Boundaries: client input handling and focused-control regression tests only
 - [x] mvp1.fall.0001 - Deterministic collapse fall damage and one-use Parachute accessory  (done 2026-08-03)
   - Boundaries: none
-- [~] governance.classification.0001 - Add data-classification comments to legacy rooms, room_actions, and match_scores tables via a new forward-only migration  (started 2026-08-03)
+- [x] governance.classification.0001 - Add data-classification comments to legacy rooms, room_actions, and match_scores tables via a new forward-only migration  (done 2026-10-03)
   - Desc: GH #125; preserve immutable applied migrations and make the existing classification convention explicit for legacy tables.
   - Boundaries: New SQL comments only; no schema, data, RLS, grants, or runtime behavior changes
 - [x] reliability.rematch.0001 - Extend bounded rematch successor recovery  (from sprint:rematch-recovery)  (done 2026-08-03)
@@ -333,6 +333,6 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - [x] art.feature.0001 - Replace conventional blast code art with one authored, fail-soft nine-frame explosion sheet while preserving deterministic state, weapon reach, reduced motion, and procedural fallback.  (from sprint:authored-explosion-art)  (done 2026-08-02)
 - [x] impact.feature.0001 - Add a two-render-frame reduced-motion-safe pre-impact hold for large detonations.  (from sprint:heavy-impact-hit-stop)  (done 2026-08-02)
 - [x] wall.concrete.0001 - Add an opt-in concrete sidewall mode with deterministic impact semantics, live/AI parity, room lifecycle coverage, and distinct player feedback.  (from sprint:wrap-sidewalls)  (done 2026-08-03)
-- [ ] Refresh .codearbiter/security-controls.md against ADR-0007, ADR-0008, ADR-0009 and migrations 005/010: document seat-token authorization, service-role-only rate_limits/room_seats, authoritative next-seat cursor, token CSPRNG use, and the accepted rate-limit ADR.  (from sprint:supabase-service-boundary-types)
+- [x] governance.security.0001 - Refresh .codearbiter/security-controls.md against ADR-0007, ADR-0008, ADR-0009 and migrations 005/010: document seat-token authorization, service-role-only rate_limits/room_seats, authoritative next-seat cursor, token CSPRNG use, and the accepted rate-limit ADR.  (from sprint:supabase-service-boundary-types)  (done 2026-10-03)
   - Boundaries: auth, secrets, database
 - [x] deps.audit.0001 - Triage the 8 existing npm audit advisories and two blocked install scripts by source, exploitability, and safe remediation; do not approve scripts or upgrade dependencies without a separate dependency review.  (from sprint:pages-stale-deploy-guard)  (done 2026-07-28)

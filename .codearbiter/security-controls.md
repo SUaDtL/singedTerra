@@ -8,7 +8,7 @@ Originally extracted from code 2026-06-20; account transition accepted 2026-08-0
 ## Auth / identity
 
 - **Optional account auth (ADR-0011)** — Supabase Auth email/password supplies a durable user id and browser-managed JWT session for owner-only profile access. Signup begins with email confirmation disabled: no magic link, OTP, resend, SMTP, password-recovery delivery, or paid provider. Google SSO is deferred. Passwords and session tokens are handled only by Supabase Auth and MUST NOT enter repo source, logs, URLs, public tables, Realtime, or application-owned persistence.
-- **Gameplay identity remains split** — each human seat has two server-minted values: a public `playerId`, which is safe to put in room rows and action logs, and a secret 128-bit CSPRNG UUID seat token, which remains the bearer credential for that seat. `create_room` and `join_room` mint and return the token once with the new seat. An account JWT does not replace or imply ownership of a seat.
+- **Gameplay identity remains split ([ADR-0009](decisions/0009-split-seat-identity.md)):** each human seat has two server-minted values: a public `playerId`, which is safe to put in room rows and action logs, and a secret CSPRNG-generated UUID seat token, which remains the bearer credential for that seat. [`create_room`](../supabase/functions/create_room/index.ts#L254) and [`join_room`](../supabase/functions/join_room/index.ts#L188) mint and return the token once with the new seat. An account JWT does not replace or imply ownership of a seat.
 - The client persists that secret only in its existing best-effort `localStorage` entry keyed by the public `playerId`, so it can follow the same seat through a rematch. The token is never a Realtime value, URL value, log value, or identity/display field.
 - The public gameplay referees retain `verify_jwt = false`; they remain public POST endpoints gated by seat token and database controls. The separately authenticated account-aware `claim_match`, `account_summary`, `record_hotseat_match`, and `verified_replay_probe` functions also retain `verify_jwt = false` so each handler explicitly validates exactly one account bearer with Supabase Auth. `claim_match` binds that account to the independently verified seat token for the same public room/player id and derives stored user and tank identities server-side. `record_hotseat_match` accepts exactly one client-generated match UUID plus a boolean Player 1 outcome and derives the stored user only from Auth. `account_summary` ignores request-owned identity and totals, scopes both private linkage/result reads to the Auth-derived user id, and combines bounded network and local counts. `verified_replay_probe` accepts no body or client-owned identity. No account-aware function may accept a client-supplied user id as authority.
 - **Hot-seat progression trust ceiling** - local outcomes are explicitly client-attested and forgeable by a modified browser. The server authenticates the account, validates the bounded shape, and makes a match UUID idempotent; it does not independently simulate local play. XP and levels remain casual history and MUST NOT attach gameplay advantages, scarce rewards, entitlements, ranks, or anti-cheat claims.
@@ -35,8 +35,8 @@ The public game tables (`rooms`, `room_actions`, `match_scores`) have **RLS enab
 
 The credential and limiter tables are deliberately stricter:
 
-- `room_seats` stores the secret token and has RLS with no anon policies plus revoked anon table grants: default-deny, service-role-only access.
-- `rate_limits` likewise has RLS with no anon policies: default-deny, service-role-only access through the `bump_rate_limit` RPC, whose `PUBLIC` execution grant is revoked.
+- `room_seats` stores the secret token and has RLS with no anon policies plus revoked anon table grants: default-deny, service-role-only access ([migration 010](../supabase/migrations/010_room_seats.sql)).
+- `rate_limits` likewise has RLS with no anon policies: default-deny, service-role-only access through the `bump_rate_limit` RPC, whose `PUBLIC` execution grant is revoked ([migration 005](../supabase/migrations/005_rate_limits.sql)).
 - `match_participants` is the immutable owner-private linkage table for `claim_match` and the source of account-scoped links for `account_summary`: anonymous users receive no grants or policies; authenticated users receive owner-only SELECT where `auth.uid() = user_id` and no direct writes; only the service-role claim referee may insert. The service-role summary function reads only the Auth-derived user's links, requires the exact participant count to equal the returned row count so any PostgREST truncation fails closed, then reads scores only for those linked room ids in sequential batches of at most 200 UUIDs so each Database REST URL stays conservatively below the hosted 16 KB limit. Missing, duplicate, malformed, or unrequested score data and every batch query error fail generically without partial counts. Its room, player, and tank ids remain public gameplay identifiers, while the account link is private and its timestamp internal.
 - `hotseat_match_results` stores immutable account-local match UUIDs, client-attested win booleans, and server timestamps. Anonymous users have no access; authenticated users receive owner-only SELECT and no direct writes; service role receives SELECT/INSERT only. `record_hotseat_match` derives `user_id` from Auth and exact replay is idempotent, while `account_summary` reads only exact head-counts scoped to that same Auth-derived user.
 - `verified_deployment_contracts` is INTERNAL service-only admission and drain state. `verified_deployments` stores the Auth-derived owner, immutable server-owned deterministic config, exact contract/engine/ruleset versions, status, and hard expiry. `verified_match_results` stores one immutable PRIVATE canonical human-fire transcript and replay-derived outcome per owner/session. All three tables enable RLS and grant no direct anonymous or authenticated access. The service role receives only the exact table operations and RPC execution needed by start, abandon, completion, summary, and drain tooling. Direct result mutation is rejected, deployment identity/config/version fields are immutable, and owner deletion cascades without weakening operational mutation guards.
@@ -126,18 +126,34 @@ This is the load-bearing control: even with JWT off and CORS open, no client can
 
 ## Edge Function referee gating (`submit_action`)
 
-Authorization is enforced in-function (it does NOT run physics):
+The thin referee does not run physics. For protocol v2,
+[`submit_action`](../supabase/functions/submit_action/index.ts#L225) validates the
+request shape, then delegates mutable room checks and the commit to the
+service-role-only `submit_room_command_v2` RPC. [Migration 021](../supabase/migrations/021_atomic_room_commands.sql)
+performs the following under a room-row `FOR UPDATE` lock:
 
-1. **Seat credential** — mutations for an existing human seat first verify that the presented token matches that room and public `playerId` in `room_seats` (else 403). Creating or joining a seat is the minting exception.
-2. **Membership** — submitter's `playerId` must be in `room.players` (else 403).
-3. **Turn ownership** — for turn-ending actions, acting seat must equal `room.active_player_index`. A client may proxy a seat only if that seat is a **bot**; it cannot impersonate another human.
-4. **Sequence uniqueness**: `UNIQUE(room_id, seq)` prevents duplicate sequence
-   rows; a conflicting insert returns 409 `seq_conflict`. This does not establish
-   exactly-once logical intent across competing CPU proxies or uncertain
-   retries. R06/R07 own the authorized transaction and retry corrections; their
-   implementation and acceptance remain recorded in the current recovery ledger.
+1. **Seat credential and membership:** the submitter must belong to the room and
+   present that room/public-seat pair's secret token. A new seat receives its
+   credential through `create_room` or `join_room` instead.
+2. **Actor and compatibility:** the acting seat must belong to the room; proxying
+   another seat is allowed only for a bot. The RPC checks the stored command
+   protocol and ruleset, and derives the committed actor/tank identity itself.
+3. **Intent receipt:** after authorization and compatibility checks, an identical
+   retry for `(room_id, command_version, intent_id)` returns its stored receipt
+   before active-room, revision, or turn checks. Reusing that intent with changed
+   command content returns `intent_conflict`; the Edge response is 409.
+4. **New intent commit:** the room must be active and the expected revision must
+   match the next log sequence. The actor must match the stored active seat except
+   for `next_round` and a client-reported round-over purchase bound to that actor's
+   tank. The RPC inserts the action and receipt, then advances the cursor for a
+   turn-ending action in the same transaction.
 
-Known trust boundary (ADR-0008): the next-turn seat (`nextActiveIndex`) is
+The [legacy request path](../supabase/functions/submit_action/index.ts#L251) retains
+its separate authorization checks and `submit_room_action_for_seat` RPC.
+`UNIQUE(room_id, seq)` remains a final sequence constraint; it alone does not
+establish logical-intent idempotency.
+
+Known trust boundary ([ADR-0008](decisions/0008-referee-turn-authority.md)): the next-turn seat (`nextActiveIndex`) is
 computed client-side and structurally checked by the thin referee. A wrong
 reported successor does not reliably self-correct: it can stall the room or
 admit an out-of-rotation action. ADR-0008 retains this residual semantic-trust
@@ -150,13 +166,13 @@ must not be represented as server-authoritative gameplay verification.
 - **Approved source: runtime env only.** Edge Functions read `Deno.env.get('SUPABASE_URL')` and `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')` (`_shared/mod.ts`). Client reads `import.meta.env.VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` at build time.
 - The `VITE_SUPABASE_ANON_KEY` is **public-by-design** (publishable key, ships in the bundle). The **service-role key must never** appear in client code, committed source, logs, or the bundle.
 - `.env` files are gitignored (`.env`, `client/.env`, `supabase/.env`) and confirmed untracked. No hardcoded secret exists in committed source.
-- **Ops mismatch to fix:** `supabase/functions/.env.example` names the var `SUPABASE_SECRET_KEYS`, but the loader reads `SUPABASE_SERVICE_ROLE_KEY` — a fresh deploy following the example would fail to load the key. Tracked in `open-tasks.md`.
+- **Environment example matches the runtime loader:** the [Edge environment example](../supabase/functions/.env.example) and [`getServiceClient()`](../supabase/functions/_shared/mod.ts#L337) both name `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Crypto
 
 - **No application crypto** — no signing/hashing/encryption libraries, no Vault/KMS. Banned by default: do not home-roll crypto or introduce a crypto dependency without an ADR.
 - **Build integrity (ADR-0017):** Node's built-in createHash('sha256') is approved only for deterministic asset checksums and build/source provenance. These unkeyed hashes verify generated bytes; they are not credentials, signatures, authentication, password storage or gameplay authority. No additional crypto library or runtime security primitive is introduced.
-- Platform CSPRNG supplies the security-sensitive seat tokens via `crypto.randomUUID()`, as well as public player IDs, game seeds, and the 4-char room code; Postgres `pgcrypto` is used only for `gen_random_uuid()`.
+- Platform CSPRNG supplies the security-sensitive seat tokens through [`mintSeatToken()`](../supabase/functions/_shared/mod.ts#L504) (`crypto.randomUUID()`), as well as public player IDs, game seeds, and the 4-char room code; Postgres `pgcrypto` is used only for `gen_random_uuid()`.
 
 ## CORS
 
@@ -164,14 +180,14 @@ must not be represented as server-authoritative gameplay verification.
 
 ## Rate limiting (resolves CONFIRM-04)
 
-Every deployed Edge Function enforces a **per-IP fixed-window** limit via `withCors()` (`_shared/mod.ts`),
-backed by a **service-role-only** `rate_limits` counter table + the `bump_rate_limit` RPC (migration
-`005_rate_limits.sql`; `REVOKE … FROM PUBLIC` / `GRANT … TO service_role`, mirroring 004). The cap is
+[Accepted ADR-0007](decisions/0007-per-ip-rate-limiting.md) defines the **per-IP fixed-window**
+limit enforced through `withCors()` in the [shared Edge request path](../supabase/functions/_shared/mod.ts).
+It is backed by a **service-role-only** `rate_limits` counter table and the `bump_rate_limit` RPC
+([migration 005](../supabase/migrations/005_rate_limits.sql); `REVOKE … FROM PUBLIC` / `GRANT … TO service_role`). The cap is
 60 requests/min/IP by default, tightened on the expensive writers (`create_room` 10, `join_room` 20,
 `restart_game` 10); `claim_match` and `account_summary` each have an explicit 60-request bucket, `record_hotseat_match` is capped at 20, and the fixed-work `verified_replay_probe` is capped at 10. These named constants live in
 `_shared/mod.ts` and are tunable without a migration. Over-limit
-returns **429**. Client IP is read from `x-forwarded-for` (first hop) / `x-real-ip`. (A formal ADR for
-this decision is owed via `/ca:adr`.)
+returns **429**. Client IP is read from `x-forwarded-for` (first hop) / `x-real-ip`.
 
 Verified Deployment adds a second, stricter boundary after Auth. Each of its three endpoints shares the Auth-derived account identity with a fail-closed 10/minute bucket before body consumption or deterministic replay. This account limit supplements rather than replaces the coarse per-IP shield.
 
