@@ -119,6 +119,12 @@ namespace SingedTerra.Art
             SetView(encounterWasWide,true);
         }
         public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
+        // The session admits terminal time only after its pause/focus/failure guards.
+        // Keep the camera, idle motion and committed encounter locked.
+        public void AdvanceTerminalShot(float elapsed)
+        {
+            if(EncounterActive&&EncounterPaused)AdvanceShot(Mathf.Min(elapsed,.05f));
+        }
         public void PlayEncounterShot(Vector3 target)
         {
             if(!EncounterActive)return;
@@ -140,6 +146,15 @@ namespace SingedTerra.Art
             float dt=focused&&!EncounterPaused?Mathf.Min(Time.unscaledDeltaTime,.05f):0;
             if(animate&&!EncounterActive)phase+=dt;
             if(!EncounterActive)turret.localRotation=turretHome*Quaternion.AngleAxis(Mathf.Sin(phase*.28f)*12, turretUp);
+            AdvanceShot(dt);
+            float t=1-Mathf.Exp(-dt*7);
+            // Arc interpolation avoids moving through the model between opposite views.
+            view.transform.position=lookGoal+Vector3.Slerp(view.transform.position-lookGoal,cameraGoal-lookGoal,t);
+            Quaternion q=Quaternion.LookRotation(lookGoal-view.transform.position);
+            view.transform.rotation=Quaternion.Slerp(view.transform.rotation,q,t);
+        }
+        void AdvanceShot(float dt)
+        {
             bool wasRecoiling=recoilTime>0;
             if(recoilTime>0)recoilTime=Mathf.Max(0,recoilTime-dt);
             float kick=recoilTime>0?Mathf.Sin((1-recoilTime/.7f)*Mathf.PI)*.32f:0;
@@ -152,11 +167,6 @@ namespace SingedTerra.Art
                     {preview=previewCount,peakWorld=peakRecoilWorld,returnWorld=distance}));
             }
             flashTime=Mathf.Max(0,flashTime-dt);flash.SetActive(flashTime>0);
-            float t=1-Mathf.Exp(-dt*7);
-            // Arc interpolation avoids moving through the model between opposite views.
-            view.transform.position=lookGoal+Vector3.Slerp(view.transform.position-lookGoal,cameraGoal-lookGoal,t);
-            Quaternion q=Quaternion.LookRotation(lookGoal-view.transform.position);
-            view.transform.rotation=Quaternion.Slerp(view.transform.rotation,q,t);
         }
         void OnApplicationFocus(bool value){focused=value;}
         void OnApplicationPause(bool value){focused=!value;}

@@ -68,6 +68,8 @@ internal static class Program
             .SetValue(session, model);
         typeof(EncounterSession).GetProperty(nameof(EncounterSession.View)).SetValue(session, view);
         UnityEngine.Time.unscaledDeltaTime = .05f;
+        typeof(EncounterSession).GetField("art", BindingFlags.Instance | BindingFlags.NonPublic)
+            .SetValue(session, new SingedTerra.Art.TankPresentation());
 
         for (int frame = 0; frame < 4; frame++)
         {
@@ -125,6 +127,7 @@ namespace SingedTerra.Art
         public bool BeginEncounter() => true;
         public void EndEncounter() { }
         public void SetEncounterPaused(bool value) { }
+        public void AdvanceTerminalShot(float elapsed) { }
     }
 }
 

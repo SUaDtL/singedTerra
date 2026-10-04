@@ -70,6 +70,7 @@ namespace SingedTerra.Encounter
                 {
                     // The terminal tick has already rendered; only age its remaining feedback.
                     View.Advance((float)Math.Min(elapsed, .1));
+                    art.AdvanceTerminalShot((float)Math.Min(elapsed, .1));
                     return;
                 }
                 accumulated += elapsed;
