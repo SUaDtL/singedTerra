@@ -255,6 +255,7 @@ assembled examples demonstrate reuse, not selected game classes or unlocks.
 Editable source: `ArtSource/PartsLibrary_01.blend`.
 Unity prefabs: `Unity/Assets/PartsLibrary/Prefabs/`.
 Static authoring layout: `Unity/Assets/PartsLibrary/PartsLibrary_Layout.unity`.
+Interactive gallery scene: `Unity/Assets/PartsLibrary/PartsGallery.unity`.
 Machine-readable inventory: `Unity/Assets/Art/PartsLibrary/catalog.json`.
 
 The index includes Blender renders of the actual meshes, mounting conventions,
@@ -262,10 +263,14 @@ source provenance and actual Unity geometry measurements. These are not concept
 images or Unity/browser screenshots. New field-base props are scenery only;
 they do not implement construction, R&D, resources or collision/cover rules.
 
-Blender generation and Unity compilation/import completed. The optional
-interactive gallery control append was blocked and remains unfinished outside
-Unity source. No new Web export or gallery-input test is claimed. Existing
-FieldAssembly, original art and encounter behavior remain unchanged.
+Blender generation and Unity compilation/import completed. The separate
+gallery now supports 23 item selections, list paging, assembly cycling,
+three paints and pointer camera orbit. Its source-bound Web export and
+ordinary pointer check are recorded in
+[gallery completion evidence](docs/parts-library-01/GALLERY-COMPLETION.md).
+The FieldAssembly and BattlefieldReview scenes and original art were preserved.
+The small terminal presentation repair ages existing visual effects after
+defeat without advancing encounter rules.
 
 Nominal Blender and imported Unity triangle counts differ for nine entries;
 both counts and an independent FBX reimport probe are retained. No topology

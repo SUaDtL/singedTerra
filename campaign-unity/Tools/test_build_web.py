@@ -33,12 +33,14 @@ class SavedBuildContract(unittest.TestCase):
         self.project = self.root / 'Unity'
         for name in ('FieldAssembly', 'BattlefieldReview'):
             self.write('Assets/Scenes/' + name + '.unity', 'saved ' + name)
+        self.write('Assets/PartsLibrary/PartsGallery.unity', 'saved PartsGallery')
         self.write('Assets/Scripts/Model.cs', 'unchanged rules')
         self.write('Packages/com.unity.render-pipelines.universal/package.json', '{"version":"17.3.0"}')
         self.write('Packages/manifest.json', '{"dependencies":{}}')
         self.commands = []
         self.change_source = False
         self.review_marker = True
+        self.gallery_marker = True
 
     def write(self, relative, value):
         path = self.project / relative
@@ -63,6 +65,8 @@ class SavedBuildContract(unittest.TestCase):
                     stdout.write(b'ST_ART_WEB_BUILD_PASS\nST_ENC_MODEL_PASS\n')
                     if owner.review_marker:
                         stdout.write(b'ST_VIS_VALIDATE_PASS\nST_VIS_CHECKS_PASS\nST_VIS_WEB_BUILD_PASS\n')
+                    if owner.gallery_marker:
+                        stdout.write(b'ST_KIT_GALLERY_PASS\nST_KIT_GALLERY_WEB_BUILD_PASS\n')
                     if owner.change_source:
                         owner.write('Assets/Scripts/Model.cs', 'changed while building')
 
@@ -109,6 +113,21 @@ class SavedBuildContract(unittest.TestCase):
         self.assertIsNotNone(failure, 'a receipt cannot bind changed source to earlier output')
         self.assertEqual(receipt['status'], 'failed')
         self.assertIn('source', receipt['error'].lower())
+
+    def test_gallery_exports_separate_saved_scene_with_its_own_checks(self):
+        failure, receipt = self.execute('gallery')
+        self.assertIsNone(failure)
+        command = next(c for c in self.commands if '-executeMethod' in c)
+        self.assertEqual(command[command.index('-executeMethod') + 1], 'PartsGalleryBuild.BuildWeb')
+        self.assertEqual(receipt['scene'], 'Assets/PartsLibrary/PartsGallery.unity')
+        self.assertEqual(receipt['scene_before'], receipt['scene_after'])
+
+    def test_gallery_requires_its_own_fresh_checks(self):
+        self.gallery_marker = False
+        failure, receipt = self.execute('gallery')
+        self.assertIsNotNone(failure)
+        self.assertEqual(receipt['status'], 'failed')
+        self.assertIn('gallery', receipt['error'].lower())
 
     def test_review_requires_its_own_fresh_checks(self):
         self.review_marker = False

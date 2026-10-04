@@ -363,5 +363,25 @@ classic, backend, player-save, release or production change occurred.
 The draft stays unmerged. Repository CI is separately checked at publication;
 its success cannot substitute for the specific Unity/browser results above.
 
+## October 4 gallery completion and terminal feedback
+
+The dated September 25 and 26 records above remain historical. The separate
+ST-KIT-01 gallery scene and controls were completed and exported with the pinned
+Unity 6000.3.24f1 editor. The source-bound build receipt reports identical
+source and scene digests before and after export. An owned headless Chromium
+session exercised actual pointer selection, list paging to the final assembly,
+assembly cycling, paint selection, orbit buttons, model drag and reset. The
+rendered initial piece and assembly frames were inspected; the final camera
+framing leaves the full assembled model above the controls. The owned browser
+and loopback server exited.
+
+The terminal feedback regression first failed against the return-on-terminal
+session path. Its focused Mono harness now passes for both review fittings,
+including frozen terminal model snapshots, no event replay, effect expiry,
+focus/app-pause hold and presentation-failure handling. This harness uses a
+stub visual owner; it does not claim a fresh BattlefieldReview Web defeat run.
+See [the gallery completion record](docs/parts-library-01/GALLERY-COMPLETION.md)
+for exact build identity, commands and proof limits.
+
 API basis for the test-context correction (not a game implementation change):
 https://playwright.dev/python/docs/api/class-browsertype#browser-type-connect-over-cdp-option-no-defaults
