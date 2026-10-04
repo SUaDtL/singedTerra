@@ -59,13 +59,20 @@ namespace SingedTerra.Encounter
         }
         void Update()
         {
-            if (model == null || model.Status != EncounterStatus.Running || Paused || Failure != "") return;
+            if (model == null || Paused || Failure != "") return;
             if (!focused || applicationPaused) { Suspend("background"); return; }
             double elapsed = Time.unscaledDeltaTime;
-            if (elapsed > .5 || accumulated + elapsed > .5) { Suspend("frame-gap"); return; }
-            accumulated += elapsed;
+            if (model.Status == EncounterStatus.Running && (elapsed > .5 || accumulated + elapsed > .5))
+            { Suspend("frame-gap"); return; }
             try
             {
+                if (model.Status != EncounterStatus.Running)
+                {
+                    // The terminal tick has already rendered; only age its remaining feedback.
+                    View.Advance((float)Math.Min(elapsed, .1));
+                    return;
+                }
+                accumulated += elapsed;
                 int steps = 0;
                 while (accumulated + 1e-9 >= .05 && steps < 8 && model.Status == EncounterStatus.Running)
                 {
