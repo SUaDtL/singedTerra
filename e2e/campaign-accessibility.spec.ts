@@ -32,6 +32,7 @@ async function setReadout(page: Page, kind: 'angle' | 'power', target: number): 
     const current = await number(output);
     if (current === target) return;
     await (current < target ? increase : decrease).click();
+    await expect.poll(() => number(output)).not.toBe(current);
   }
   throw new Error(`${kind} did not reach ${target}`);
 }

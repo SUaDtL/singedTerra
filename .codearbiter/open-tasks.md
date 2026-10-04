@@ -161,9 +161,10 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] ci.regression.0001 - Wait for each campaign aim and power readout update before the browser test sends the next adjustment, preserving the exact reload checkpoint assertions.  (from pr529-postmerge)  (done 2026-10-03)
 - [x] ui.copy.0001 - T02's design review noted two unchanged OrientationGate fallback strings using em dashes as prose separators. This is outside the surface-lifecycle slice and does not affect behavior.  (from sprint:command-center-launcher-overhaul#triage-1)  (done 2026-10-03)
   - Boundaries: client, pre-game-ux
-- [ ] ci.efficiency.0001 - Measure removal of duplicated typecheck and prebuild work in CI check-work while preserving full browser shards, release provenance, and required results; deliver only if a material benefit is demonstrated.  (from post-campaign-ci-review-2026-09-16)
+- [x] ci.efficiency.0001 - Measure removal of duplicated typecheck and prebuild work in CI check-work while preserving full browser shards, release provenance, and required results; deliver only if a material benefit is demonstrated.  (from post-campaign-ci-review-2026-09-16)  (done 2026-10-03)
   - Boundaries: ci, release-provenance
 - [ ] campaign.distribution.0001 - Use the T14 desktop report and T15 player or device evidence to choose the next distribution and retention action; keep the current Pages deployment unless evidence changes that decision.  (from reassessment-v3:T18)
   - Boundaries: distribution, product-evidence
@@ -179,9 +180,9 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - [x] Move the floating trajectory-guide G toggle into a coherent settings surface, alongside sound and other genuinely useful match preferences, with a compact discoverable settings entry point.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
 - [x] Restore distinctive, readable, cohesive angle, power, and wind instrumentation with polished game-quality gauges while preserving a single authoritative owner for each value.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
 - [x] Recompose the battle bottom bar so every protected pixel has a gameplay purpose: either add genuinely useful information and interaction or reduce the rail height; do not solve empty space by merely enlarging buttons.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
-- [ ] Add direct acceptance-return assertions for legacy buy, move, and shield GameEngine actions before any verified flow consumes those return values.  (from commander-career-milestone-2 final coverage review)
+- [x] engine.acceptance.0001 - Add direct acceptance-return assertions for legacy buy, move, and shield GameEngine actions before any verified flow consumes those return values.  (from commander-career-milestone-2 final coverage review)  (done 2026-10-03)
   - Boundaries: shared-engine
-- [ ] Complete generated database typings for service-only verified deployment contract tables and drain RPCs with read-only or never mutation surfaces.  (from commander-career-milestone-2 final migration review)
+- [x] database.types.0001 - Complete generated database typings for service-only verified deployment contract tables and drain RPCs with read-only or never mutation surfaces.  (from commander-career-milestone-2 final migration review)  (done 2026-10-03)
   - Boundaries: database-contract
 - [ ] Carry authenticated identity coherently into online lobby flows: suppress the incorrect 'sign in to record future matches' CTA when a valid session exists, and prefill or eliminate redundant host/join name entry from the account display name while preserving an explicit override only if product policy requires it. [H/S]  (from user steering 2026-08-10)
   - Boundaries: authentication, display-identity
@@ -293,7 +294,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Boundaries: client input handling and focused-control regression tests only
 - [x] mvp1.fall.0001 - Deterministic collapse fall damage and one-use Parachute accessory  (done 2026-08-03)
   - Boundaries: none
-- [~] governance.classification.0001 - Add data-classification comments to legacy rooms, room_actions, and match_scores tables via a new forward-only migration  (started 2026-08-03)
+- [x] governance.classification.0001 - Add data-classification comments to legacy rooms, room_actions, and match_scores tables via a new forward-only migration  (done 2026-10-03)
   - Desc: GH #125; preserve immutable applied migrations and make the existing classification convention explicit for legacy tables.
   - Boundaries: New SQL comments only; no schema, data, RLS, grants, or runtime behavior changes
 - [x] reliability.rematch.0001 - Extend bounded rematch successor recovery  (from sprint:rematch-recovery)  (done 2026-08-03)
@@ -332,6 +333,6 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - [x] art.feature.0001 - Replace conventional blast code art with one authored, fail-soft nine-frame explosion sheet while preserving deterministic state, weapon reach, reduced motion, and procedural fallback.  (from sprint:authored-explosion-art)  (done 2026-08-02)
 - [x] impact.feature.0001 - Add a two-render-frame reduced-motion-safe pre-impact hold for large detonations.  (from sprint:heavy-impact-hit-stop)  (done 2026-08-02)
 - [x] wall.concrete.0001 - Add an opt-in concrete sidewall mode with deterministic impact semantics, live/AI parity, room lifecycle coverage, and distinct player feedback.  (from sprint:wrap-sidewalls)  (done 2026-08-03)
-- [ ] Refresh .codearbiter/security-controls.md against ADR-0007, ADR-0008, ADR-0009 and migrations 005/010: document seat-token authorization, service-role-only rate_limits/room_seats, authoritative next-seat cursor, token CSPRNG use, and the accepted rate-limit ADR.  (from sprint:supabase-service-boundary-types)
+- [x] governance.security.0001 - Refresh .codearbiter/security-controls.md against ADR-0007, ADR-0008, ADR-0009 and migrations 005/010: document seat-token authorization, service-role-only rate_limits/room_seats, authoritative next-seat cursor, token CSPRNG use, and the accepted rate-limit ADR.  (from sprint:supabase-service-boundary-types)  (done 2026-10-03)
   - Boundaries: auth, secrets, database
 - [x] deps.audit.0001 - Triage the 8 existing npm audit advisories and two blocked install scripts by source, exploitability, and safe remediation; do not approve scripts or upgrade dependencies without a separate dependency review.  (from sprint:pages-stale-deploy-guard)  (done 2026-07-28)

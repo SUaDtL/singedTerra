@@ -97,7 +97,7 @@ function endRoundWithP1(engine) {
     angle: tank.angle,
     power: tank.power,
   };
-  engine.applyAction({ type: 'move', delta: MOVE_STEP });
+  if (engine.applyAction({ type: 'move', delta: MOVE_STEP }) !== true) fail('accepted movement must return true');
   if (tank.x !== before.x + MOVE_STEP) fail(`move +8 landed at x=${tank.x}`);
   if (tank.y !== before.y) fail(`flat move changed y ${before.y}->${tank.y}`);
   if (tank.fuel !== before.fuel - MOVE_STEP) fail(`move spent ${before.fuel - tank.fuel} fuel`);
@@ -121,7 +121,7 @@ function endRoundWithP1(engine) {
   const tank = state.tanks[0];
   const before = `${tank.x}:${tank.y}:${tank.fuel}`;
   for (const delta of [0, 9, -9, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
-    engine.applyAction({ type: 'move', delta });
+    if (engine.applyAction({ type: 'move', delta }) !== false) fail(`invalid delta ${delta} must return false`);
   }
   if (`${tank.x}:${tank.y}:${tank.fuel}` !== before) {
     fail('an invalid delta mutated movement state');
@@ -135,7 +135,7 @@ function endRoundWithP1(engine) {
   const state = flatten(engine);
   const tank = state.tanks[0];
   tank.fuel = 3;
-  engine.applyAction({ type: 'move', delta: MOVE_STEP });
+  if (engine.applyAction({ type: 'move', delta: MOVE_STEP }) !== true) fail('partial movement must return true');
   if (tank.x !== 303 || tank.fuel !== 0) {
     fail(`fuel-limited partial move landed x=${tank.x}, fuel=${tank.fuel}`);
   }
@@ -162,7 +162,7 @@ function endRoundWithP1(engine) {
   const state = flatten(engine);
   const tank = state.tanks[0];
   setColumnSurface(state, tank.x + 1, SURFACE - 5);
-  engine.applyAction({ type: 'move', delta: MOVE_STEP });
+  if (engine.applyAction({ type: 'move', delta: MOVE_STEP }) !== false) fail('blocked movement must return false');
   if (tank.x !== 300 || tank.fuel !== START_FUEL) fail('tank climbed a five-pixel wall');
 
   setColumnSurface(state, tank.x + 1, SURFACE + 5);

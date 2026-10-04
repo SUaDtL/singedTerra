@@ -58,6 +58,18 @@ export type Database = {
         Update: { display_name?: string; updated_at?: string };
         Relationships: [];
       };
+      verified_deployment_contracts: {
+        Row: {
+          contract_version: number;
+          starts_enabled: boolean;
+          disabled_at: string;
+          last_started_at: string | null;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       verified_deployments: {
         Row: {
           id: string;
@@ -74,6 +86,42 @@ export type Database = {
         Insert: never;
         Update: never;
         Relationships: [];
+      };
+      verified_match_results: {
+        Row: {
+          session_id: string;
+          user_id: string;
+          transcript: Array<{ angle: number; power: number }>;
+          won: boolean;
+          outcome: "win" | "loss" | "draw";
+          verified_xp: number;
+          prior_verified_matches: number;
+          prior_verified_wins: number;
+          prior_total_xp: number;
+          current_verified_matches: number;
+          current_verified_wins: number;
+          current_total_xp: number;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "verified_match_results_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verified_match_results_session_id_user_id_fkey";
+            columns: ["session_id", "user_id"];
+            // Generated metadata matches complete FK/unique column lists.
+            isOneToOne: false;
+            referencedRelation: "verified_deployments";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
       rooms: {
         Row: {
@@ -419,6 +467,21 @@ export type Database = {
           p_supported_contract_versions: number[];
         };
         Returns: Array<Database["public"]["Tables"]["verified_deployments"]["Row"] & { resumed: boolean }>;
+      };
+      set_verified_deployment_starts: {
+        Args: { p_contract_version: number; p_starts_enabled: boolean };
+        Returns: Database["public"]["Tables"]["verified_deployment_contracts"]["Row"][];
+      };
+      verified_deployment_drain_status: {
+        Args: { p_contract_version: number };
+        Returns: Array<{
+          contract_version: number;
+          starts_enabled: boolean;
+          disabled_at: string;
+          last_started_at: string | null;
+          safe_after: string;
+          unexpired_sessions: number;
+        }>;
       };
       abandon_verified_deployment: {
         Args: { p_user_id: string; p_session_id: string };
