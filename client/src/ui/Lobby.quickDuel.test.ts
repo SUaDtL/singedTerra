@@ -372,6 +372,31 @@ describe('Lobby Quick Duel', () => {
     expect(onReady.mock.calls[0]![0].quickOperation?.id).toBe('first-salvo');
   });
 
+  it('constructs the guest lobby and launches local duels when the localStorage getter throws', () => {
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('Browser storage is blocked', 'SecurityError');
+    });
+    const lobby = new Lobby(root, onReady, undefined, undefined, () => 42);
+    lobby.show();
+
+    button(root, 'Start First Salvo').click();
+    expect(onReady).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      mode: 'hotseat',
+      settings: { seed: 42, rounds: 1 },
+      quickOperation: expect.objectContaining({ id: 'first-salvo' }),
+    }));
+
+    lobby.show();
+    button(root, 'Quick Duel vs CPU').click();
+    expect(onReady).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      mode: 'hotseat',
+      settings: { seed: 42, rounds: 3 },
+      quickOperation: expect.objectContaining({ id: 'standard' }),
+    }));
+    expect(onReady).toHaveBeenCalledTimes(2);
+    lobby.hide();
+  });
+
   it('requests exactly one fresh unsigned seed for each redeployment in one Lobby', () => {
     const supplied = [0, 0xffff_ffff];
     const generateQuickDuelSeed = vi.fn(() => supplied.shift()!);

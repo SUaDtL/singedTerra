@@ -222,6 +222,88 @@ type Relationship<TableName extends keyof Tables> =
   Tables[TableName]["Relationships"][number];
 
 type _ServiceClientMustNotBeAny = AssertFalse<IsAny<ServiceClient>>;
+
+// Migrations 016 and 020 define these service-only rows and operational RPCs.
+type ExpectedVerifiedDeploymentContract = {
+  contract_version: number;
+  starts_enabled: boolean;
+  disabled_at: string;
+  last_started_at: string | null;
+  updated_at: string;
+};
+type ExpectedVerifiedMatchResult = {
+  session_id: string;
+  user_id: string;
+  transcript: Array<{ angle: number; power: number }>;
+  won: boolean;
+  outcome: "win" | "loss" | "draw";
+  verified_xp: number;
+  prior_verified_matches: number;
+  prior_verified_wins: number;
+  prior_total_xp: number;
+  current_verified_matches: number;
+  current_verified_wins: number;
+  current_total_xp: number;
+  created_at: string;
+};
+type ExpectedVerifiedDeploymentDrainStatus = {
+  contract_version: number;
+  starts_enabled: boolean;
+  disabled_at: string;
+  last_started_at: string | null;
+  safe_after: string;
+  unexpired_sessions: number;
+};
+type _VerifiedDeploymentContractsAreExact = AssertExact<
+  Tables["verified_deployment_contracts"],
+  {
+    Row: ExpectedVerifiedDeploymentContract;
+    Insert: never;
+    Update: never;
+    Relationships: [];
+  }
+>;
+type _VerifiedMatchResultsAreExact = AssertExact<
+  Tables["verified_match_results"],
+  {
+    Row: ExpectedVerifiedMatchResult;
+    Insert: never;
+    Update: never;
+    Relationships: [
+      {
+        foreignKeyName: "verified_match_results_user_id_fkey";
+        columns: ["user_id"];
+        isOneToOne: false;
+        referencedRelation: "users";
+        referencedColumns: ["id"];
+      },
+      {
+        foreignKeyName: "verified_match_results_session_id_user_id_fkey";
+        columns: ["session_id", "user_id"];
+        isOneToOne: false;
+        referencedRelation: "verified_deployments";
+        referencedColumns: ["id", "user_id"];
+      },
+    ];
+  }
+>;
+type _SetVerifiedDeploymentStartsArgsAreExact = AssertExact<
+  Functions["set_verified_deployment_starts"]["Args"],
+  { p_contract_version: number; p_starts_enabled: boolean }
+>;
+type _SetVerifiedDeploymentStartsReturnsAreExact = AssertExact<
+  Functions["set_verified_deployment_starts"]["Returns"],
+  ExpectedVerifiedDeploymentContract[]
+>;
+type _VerifiedDeploymentDrainStatusArgsAreExact = AssertExact<
+  Functions["verified_deployment_drain_status"]["Args"],
+  { p_contract_version: number }
+>;
+type _VerifiedDeploymentDrainStatusReturnsAreExact = AssertExact<
+  Functions["verified_deployment_drain_status"]["Returns"],
+  ExpectedVerifiedDeploymentDrainStatus[]
+>;
+
 type _TableKeysAreExact = AssertExact<
   keyof Tables,
   | "rooms"
@@ -233,6 +315,8 @@ type _TableKeysAreExact = AssertExact<
   | "room_seats"
   | "profiles"
   | "verified_deployments"
+  | "verified_deployment_contracts"
+  | "verified_match_results"
 >;
 type _RpcKeysAreExact = AssertExact<
   keyof Functions,
@@ -251,6 +335,8 @@ type _RpcKeysAreExact = AssertExact<
   | "complete_verified_deployment"
   | "verified_progression_summary"
   | "verified_deployment_completion_context"
+  | "set_verified_deployment_starts"
+  | "verified_deployment_drain_status"
   | "get_verified_challenge"
   | "abandon_verified_challenge"
   | "verified_career_ledger_snapshot"
@@ -695,6 +781,12 @@ type _RoomSeatsRelationshipMustMatchEveryLiteral = AssertTrue<
 >;
 
 type _AllExactContracts = AssertAll<{
+  verifiedDeploymentContracts: _VerifiedDeploymentContractsAreExact;
+  verifiedMatchResults: _VerifiedMatchResultsAreExact;
+  setVerifiedDeploymentStartsArgs: _SetVerifiedDeploymentStartsArgsAreExact;
+  setVerifiedDeploymentStartsReturns: _SetVerifiedDeploymentStartsReturnsAreExact;
+  verifiedDeploymentDrainStatusArgs: _VerifiedDeploymentDrainStatusArgsAreExact;
+  verifiedDeploymentDrainStatusReturns: _VerifiedDeploymentDrainStatusReturnsAreExact;
   startChallengeArgs: AssertExact<Functions['start_verified_challenge']['Args'], {
     p_account_id: string; p_trial_id: string; p_supported_descriptor_versions: number[];
   }>;
@@ -799,6 +891,18 @@ type _AllExactContracts = AssertAll<{
 }>;
 
 function invalidDatabaseContractsAreRejected(client: ServiceClient): void {
+  // @ts-expect-error Admission controls can only be changed through their guarded RPC.
+  client.from("verified_deployment_contracts").insert({ contract_version: 3 });
+  // @ts-expect-error Direct control updates must not bypass the drain guard.
+  client.from("verified_deployment_contracts").update({ starts_enabled: true });
+  // @ts-expect-error Result evidence is produced by completion RPCs only.
+  client.from("verified_match_results").insert({ session_id: "session" });
+  // @ts-expect-error Persisted results are immutable.
+  client.from("verified_match_results").update({ verified_xp: 200 });
+  // @ts-expect-error Admission changes require an explicit enabled/disabled decision.
+  client.rpc("set_verified_deployment_starts", { p_contract_version: 3 });
+  // @ts-expect-error Drain status requires a numeric contract version.
+  client.rpc("verified_deployment_drain_status", { p_contract_version: "3" });
   // @ts-expect-error The migration contract is a closed table-name set.
   client.from("missing_table");
   // @ts-expect-error The migration contract is a closed RPC-name set.

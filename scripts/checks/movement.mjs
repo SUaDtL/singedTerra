@@ -97,7 +97,7 @@ function endRoundWithP1(engine) {
     angle: tank.angle,
     power: tank.power,
   };
-  engine.applyAction({ type: 'move', delta: MOVE_STEP });
+  if (engine.applyAction({ type: 'move', delta: MOVE_STEP }) !== true) fail('accepted movement must return true');
   if (tank.x !== before.x + MOVE_STEP) fail(`move +8 landed at x=${tank.x}`);
   if (tank.y !== before.y) fail(`flat move changed y ${before.y}->${tank.y}`);
   if (tank.fuel !== before.fuel - MOVE_STEP) fail(`move spent ${before.fuel - tank.fuel} fuel`);
@@ -111,6 +111,7 @@ function endRoundWithP1(engine) {
   ) {
     fail('movement changed turn, phase, wind, or aim');
   }
+  if (!failed) log('PASS: fresh fuel and turn-neutral bounded movement');
 }
 
 // Invalid deltas are exact no-ops.
@@ -120,11 +121,12 @@ function endRoundWithP1(engine) {
   const tank = state.tanks[0];
   const before = `${tank.x}:${tank.y}:${tank.fuel}`;
   for (const delta of [0, 9, -9, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
-    engine.applyAction({ type: 'move', delta });
+    if (engine.applyAction({ type: 'move', delta }) !== false) fail(`invalid delta ${delta} must return false`);
   }
   if (`${tank.x}:${tank.y}:${tank.fuel}` !== before) {
     fail('an invalid delta mutated movement state');
   }
+  if (!failed) log('PASS: invalid movement delta sequence preserves position and fuel');
 }
 
 // Partial movement spends only actual traversed distance.
@@ -133,10 +135,11 @@ function endRoundWithP1(engine) {
   const state = flatten(engine);
   const tank = state.tanks[0];
   tank.fuel = 3;
-  engine.applyAction({ type: 'move', delta: MOVE_STEP });
+  if (engine.applyAction({ type: 'move', delta: MOVE_STEP }) !== true) fail('partial movement must return true');
   if (tank.x !== 303 || tank.fuel !== 0) {
     fail(`fuel-limited partial move landed x=${tank.x}, fuel=${tank.fuel}`);
   }
+  if (!failed) log('PASS: fuel-limited partial movement charges traversed distance');
 }
 
 // Battlefield bounds stop a step without charging rejected distance.
@@ -150,6 +153,7 @@ function endRoundWithP1(engine) {
   if (tank.x !== CANVAS_WIDTH - TANK_WIDTH / 2 || tank.fuel !== START_FUEL - 2) {
     fail(`right boundary resolution x=${tank.x}, fuel=${tank.fuel}`);
   }
+  if (!failed) log('PASS: battlefield bounds charge only accepted distance');
 }
 
 // A >4px terrain rise or drop is impassable.
@@ -158,12 +162,13 @@ function endRoundWithP1(engine) {
   const state = flatten(engine);
   const tank = state.tanks[0];
   setColumnSurface(state, tank.x + 1, SURFACE - 5);
-  engine.applyAction({ type: 'move', delta: MOVE_STEP });
+  if (engine.applyAction({ type: 'move', delta: MOVE_STEP }) !== false) fail('blocked movement must return false');
   if (tank.x !== 300 || tank.fuel !== START_FUEL) fail('tank climbed a five-pixel wall');
 
   setColumnSurface(state, tank.x + 1, SURFACE + 5);
   engine.applyAction({ type: 'move', delta: MOVE_STEP });
   if (tank.x !== 300 || tank.fuel !== START_FUEL) fail('tank dropped down a five-pixel cliff');
+  if (!failed) log('PASS: terrain rises and drops over four pixels block movement');
 }
 
 // Another living tank blocks the candidate footprint.
@@ -177,6 +182,7 @@ function endRoundWithP1(engine) {
   if (tank.x !== 303 || tank.fuel !== START_FUEL - 3) {
     fail(`tank collision should allow 3px then stop; x=${tank.x}, fuel=${tank.fuel}`);
   }
+  if (!failed) log('PASS: living tank collision charges only accepted distance');
 }
 
 // Dead, buried, off-phase, and off-turn tanks cannot move.
@@ -197,6 +203,7 @@ function endRoundWithP1(engine) {
       fail('a gated tank moved or spent fuel');
     }
   }
+  if (!failed) log('PASS: dead buried off-phase and off-turn tanks cannot move');
 }
 
 // Fuel Tank purchase uses canonical economy and is turn-neutral.
@@ -228,6 +235,7 @@ function endRoundWithP1(engine) {
   if (gatedTank.fuel !== START_FUEL || gatedTank.credits !== FUEL_TANK_PRICE * 2) {
     fail('arms-level 2 accepted the arms-level 3 Fuel Tank');
   }
+  if (!failed) log('PASS: fuel tank purchase respects credits arms-level and turn neutrality');
 }
 
 // Fuel resets on a staged fresh round instead of carrying.
@@ -241,6 +249,7 @@ function endRoundWithP1(engine) {
   if (!staged.tanks.every((tank) => tank.fuel === START_FUEL)) {
     fail(`fresh-round fuel did not reset: ${staged.tanks.map((tank) => tank.fuel)}`);
   }
+  if (!failed) log('PASS: fresh-round fuel resets');
 }
 
 // The sanctioned log translator preserves ordered movement and byte parity.
@@ -265,6 +274,7 @@ function endRoundWithP1(engine) {
   if (a.getState().tanks[0].x !== 297 || a.getState().tanks[0].fuel !== 81) {
     fail(`movement replay landed at x=${a.getState().tanks[0].x}, fuel=${a.getState().tanks[0].fuel}`);
   }
+  if (!failed) log('PASS: ordered movement replay converges through replayNetworkAction');
 }
 
 if (failed) {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { VERIFIED_CHALLENGE_CQ1, type VerifiedChallengeReceipt } from '@shared/net/verifiedChallenge'
 import { projectVerifiedCareer } from '@shared/net/verifiedCareer'
-import { VerifiedChallengeTransportError } from '../client/verifiedChallenge'
+import { VerifiedChallengeTransport, VerifiedChallengeTransportError } from '../client/verifiedChallenge'
 import {
   VerifiedChallengeSession,
   type VerifiedChallengeSessionTransport,
@@ -148,6 +148,31 @@ afterEach(() => {
 })
 
 describe('Lobby Crosswind Qualification', () => {
+  it('refuses the default verified challenge when the localStorage getter throws', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-09-13T12:05:00.000Z'))
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('Browser storage is blocked', 'SecurityError')
+    })
+    const start = vi.spyOn(VerifiedChallengeTransport.prototype, 'start')
+      .mockResolvedValue({ descriptor, resumed: false })
+    const complete = vi.spyOn(VerifiedChallengeTransport.prototype, 'complete')
+    const root = document.createElement('div')
+    const onReady = vi.fn<(config: LobbyConfig) => void>()
+    const account = new FakeAccountSession()
+    const lobby = new Lobby(root, onReady, () => account)
+
+    await expect(lobby.launchVerifiedChallenge()).resolves.toEqual({
+      status: 'start-unavailable', reason: 'unavailable', retryAfterSeconds: null,
+    })
+    expect(start).toHaveBeenCalledOnce()
+    expect(onReady).not.toHaveBeenCalled()
+    expect(lobby.recordVerifiedChallengeFire(fire)).toBe(false)
+    await lobby.completeVerifiedChallenge()
+    expect(complete).not.toHaveBeenCalled()
+    lobby.hide()
+  })
+
   it('keeps focused controls mounted while the retry countdown updates', async () => {
     vi.useFakeTimers()
     const complete = vi.fn(async () => { throw new VerifiedChallengeTransportError('verification_busy', 503, 5) })

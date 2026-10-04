@@ -63,7 +63,7 @@ function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e
   const activeBefore = e.getState().activePlayerId;
   const phaseBefore = e.getState().phase;
 
-  e.applyAction({ type: 'buy', weapon: 'missile' });
+  if (e.applyAction({ type: 'buy', weapon: 'missile' }) !== true) fail('affordable buy must return true');
 
   const st = e.getState();
   const t0 = st.tanks[0];
@@ -90,7 +90,7 @@ function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e
   const creditsBefore = e.getState().tanks[0].credits;
   const ammoBefore = e.getState().tanks[0].inventory.nuke.count;
   if (creditsBefore >= nuke.price) fail('could not drain credits below a nuke price for the affordability test');
-  e.applyAction({ type: 'buy', weapon: 'nuke' }); // should be rejected
+  if (e.applyAction({ type: 'buy', weapon: 'nuke' }) !== false) fail('unaffordable buy must return false');
   const t0 = e.getState().tanks[0];
   log(`[afford] credits=${creditsBefore} (< nuke $${nuke.price}); after rejected buy credits=${t0.credits} nukeAmmo=${ammoBefore}->${t0.inventory.nuke.count}`);
   if (t0.credits !== creditsBefore) fail('unaffordable buy still spent credits');
@@ -102,7 +102,7 @@ function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e
 {
   const e = freshEngine();
   const creditsBefore = e.getState().tanks[0].credits;
-  e.applyAction({ type: 'buy', weapon: 'baby_missile' }); // unlimited — nothing to buy
+  if (e.applyAction({ type: 'buy', weapon: 'baby_missile' }) !== false) fail('unlimited-stock buy must return false');
   const t0 = e.getState().tanks[0];
   if (t0.credits !== creditsBefore) fail('buying an unlimited weapon spent credits (should be a no-op)');
   if (!t0.inventory.baby_missile.unlimited) fail('baby_missile lost its unlimited flag');

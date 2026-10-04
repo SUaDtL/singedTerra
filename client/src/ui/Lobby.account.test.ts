@@ -1510,6 +1510,30 @@ describe('Lobby account composition', () => {
     expect(log).not.toHaveBeenCalled()
   })
 
+  it('refuses verified deployment when the localStorage getter throws', async () => {
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('Browser storage is blocked', 'SecurityError')
+    })
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+
+    await expect(lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z')))
+      .resolves.toBeNull()
+    expect(account.startVerifiedDeployment).toHaveBeenCalledOnce()
+    expect(lobby.verifiedDeployment).toEqual({
+      status: 'failed',
+      error: 'Verified deployment is unavailable. Try again.',
+    })
+    expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(false)
+    await expect(lobby.completeVerifiedDeployment(Date.parse('2026-08-12T13:10:00.000Z')))
+      .resolves.toBeNull()
+    expect(account.completeVerifiedDeployment).not.toHaveBeenCalled()
+  })
+
   it('refuses unsupported descriptor versions before persistence or completion', async () => {
     const root = document.createElement('div')
     let account!: FakeAccountSession
