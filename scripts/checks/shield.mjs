@@ -126,7 +126,7 @@ log(`[baselines] missile=${baselineMissile.toFixed(1)} nuke=${baselineNuke.toFix
   const activeBefore = st0.activePlayerId;
   if (hpBefore !== 0) fail(`P1 started with shieldHp=${hpBefore}, expected 0`);
 
-  e.applyAction({ type: 'use_shield' });
+  if (e.applyAction({ type: 'use_shield' }) !== true) fail('shield activation must return true');
   const st1 = e.getState();
   const p1b = st1.tanks[0];
 
@@ -137,6 +137,16 @@ log(`[baselines] missile=${baselineMissile.toFixed(1)} nuke=${baselineNuke.toFix
   if (st1.turn !== turnBefore + 1) fail(`use_shield did not advance the turn counter (${turnBefore}->${st1.turn})`);
   if (st1.phase !== 'PLAYER_TURN') fail(`phase after use_shield is ${st1.phase}, expected PLAYER_TURN`);
   if (!failed) log('PASS: use_shield fills the damage pool, spends a round, and ends the turn.');
+}
+
+// Empty stock must report refusal without changing shield, ammo, or turn state.
+{
+  const e = freshEngine();
+  e.getState().tanks[0].inventory.shield.count = 0;
+  const before = JSON.stringify(e.getState());
+  if (e.applyAction({ type: 'use_shield' }) !== false) fail('empty shield stock must return false');
+  if (JSON.stringify(e.getState()) !== before) fail('refused shield activation mutated state');
+  if (!failed) log('PASS: empty shield stock returns false without mutation.');
 }
 
 // --- Check 2: commensurate absorption (missile drains ~baseline, health unchanged) ---

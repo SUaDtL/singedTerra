@@ -110,7 +110,7 @@ function terrainsEqual(a, b) {
   p1WinsRound(e);
   if (e.getState().phase !== 'ROUND_OVER') fail('expected ROUND_OVER for the shop test');
   // Buy a nuke for p1 (named tank) during the between-rounds shop.
-  e.applyAction({ type: 'buy', weapon: 'nuke', tankId: 'p1' });
+  if (e.applyAction({ type: 'buy', weapon: 'nuke', tankId: 'p1' }) !== true) fail('between-round buy must return true');
   const bought = e.getState().tanks[0].inventory.nuke.count;
   if (bought <= nukeBefore) fail(`ROUND_OVER buy did not add inventory (${nukeBefore} -> ${bought})`);
   startNextRound(e);
