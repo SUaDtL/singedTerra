@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using SingedTerra.Art;
+using SingedTerra.LastStand;
 
 namespace SingedTerra.Encounter
 {
@@ -11,6 +12,7 @@ namespace SingedTerra.Encounter
         TankPresentation art;
         EncounterModel model;
         SingedTerra.VisualReview.BattlefieldReview review;
+        LastStandLoopController loop;
         double accumulated;
         int run, lastReportSecond = -1;
         bool focused = true, applicationPaused;
@@ -19,11 +21,13 @@ namespace SingedTerra.Encounter
         public bool Paused { get; private set; }
         public string Reason { get; private set; } = "";
         public string Failure { get; private set; } = "";
+        public bool CanRun => focused && !applicationPaused;
         public event Action Changed;
         public void Initialize(TankPresentation presentation, ArtHud hud, Canvas canvas, Font font)
         {
             art = presentation; focused = Application.isFocused;
             review = art.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
+            loop = art.GetComponent<LastStandLoopController>();
             if (review) review.Session = this;
             View = new GameObject("EncounterPresentation").AddComponent<EncounterView>();
             View.transform.SetParent(transform, false); View.Initialize(art);
@@ -35,7 +39,8 @@ namespace SingedTerra.Encounter
             if (model != null || !focused || applicationPaused) return;
             bool launcher = art.showingLauncher;
             if (!art.BeginEncounter()) return;
-            model = new EncounterModel(launcher, review ? EncounterProfile.VisualReview : EncounterProfile.Legacy); run++; accumulated = 0;
+            model = new EncounterModel(launcher, loop ? EncounterProfile.PlayablePrototype : review ? EncounterProfile.VisualReview : EncounterProfile.Legacy,
+                loop ? loop.Progression.CannonDamage : EncounterModel.CannonDamage); run++; accumulated = 0;
             Paused = false; Reason = ""; Failure = ""; lastReportSecond = -1;
             View.Clear(); View.Render(model); Emit("deploy");
         }
@@ -104,7 +109,7 @@ namespace SingedTerra.Encounter
         {
             Debug.Log("ST_ENC_STATE " + JsonUtility.ToJson(new State
             {
-                action = action, rules = model?.Profile.Id ?? (review ? EncounterProfile.VisualReview.Id : EncounterModel.RulesVersion), run = run,
+                action = action, rules = model?.Profile.Id ?? (loop ? EncounterProfile.PlayablePrototype.Id : review ? EncounterProfile.VisualReview.Id : EncounterModel.RulesVersion), run = run,
                 status = model == null ? "Fitting" : model.Status.ToString(),
                 fitting = (model == null ? art.showingLauncher : model.HasLauncher) ? "launcher" : "repair",
                 reason = Reason, paused = Paused, focused = focused, applicationPaused = applicationPaused,

@@ -5,13 +5,15 @@ namespace SingedTerra.Encounter
     {
         public static readonly EncounterProfile Legacy = new EncounterProfile(false);
         public static readonly EncounterProfile VisualReview = new EncounterProfile(true);
+        public static readonly EncounterProfile PlayablePrototype = new EncounterProfile(true, true);
         public bool IsReview { get; }
-        public string Id => IsReview ? "review-pacing-v1" : EncounterModel.RulesVersion;
+        public bool IsPlayable { get; }
+        public string Id => IsPlayable ? "playable-prototype-v1" : IsReview ? "review-pacing-v1" : EncounterModel.RulesVersion;
         public int SpawnRadius => IsReview ? 25000 : EncounterModel.SpawnDistance;
         public int MainRange => IsReview ? 22000 : EncounterModel.CannonRange;
         public int AuxiliaryRange => IsReview ? 25000 : EncounterModel.LauncherRange;
         public int Horizon => IsReview ? 3600 : EncounterModel.TickLimit;
-        private EncounterProfile(bool review) { IsReview = review; }
+        private EncounterProfile(bool review, bool playable = false) { IsReview = review; IsPlayable = playable; }
         public int Speed(FoeKind kind) => IsReview
             ? (kind == FoeKind.Close ? 50 : 40) : (kind == FoeKind.Close ? 110 : 70);
         public int Stop(FoeKind kind) => IsReview

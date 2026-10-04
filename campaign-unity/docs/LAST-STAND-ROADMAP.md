@@ -37,10 +37,29 @@ or upgrade design. The review profile is a bounded comparison fixture, not the
 selected first-tier economy or difficulty curve. See the
 [gallery and review notes](visual-review-01/browser-20260926T093232Z/REVIEW.md).
 
+## Dedicated local loop implemented
+
+The approved [playable-loop spec](../../.codearbiter/specs/last-stand-playable-loop.html)
+and [plan](../../.codearbiter/plans/last-stand-playable-loop.html) scope one
+separate `LastStandPrototype` scene. Its provisional `playable-prototype-v1`
+profile copies review pacing. An ordinary defeat stages one salvage; the player
+claims it, buys a permanent Cannon Attack level, and redeploys. Levels 0..3
+deal 20/30/40/50 cannon damage and cost 1/2/3 salvage to advance. The first
+30 HP foe therefore survives a base cannon hit with 10 HP but dies to the
+first upgraded hit. These values are reversible prototype tuning.
+
+Progression uses one versioned local browser save on the same origin and is
+single-tab only. It does not supply account authority, cross-origin sync or
+multi-tab atomicity. The separate `BattlefieldReview` scene remains a
+non-awarding art comparison. Current implementation results are recorded in
+[the loop validation note](last-stand-playable-loop-validation.md), which keeps
+owner sound and whole-feature acceptance pending until observed.
+
 ## What exists now
 
-`EncounterModel` and `EncounterSession` provide a deterministic, non-awarding
-automatic encounter with two bounded profiles. The model has automatic cannon
+`EncounterModel` and `EncounterSession` provide a deterministic automatic
+encounter. Field and review modes remain non-awarding; the dedicated playable
+profile connects ordinary defeat to the local progression controller. The model has automatic cannon
 fire, an independent launcher or repair fitting, close and ranged enemies,
 eventual defeat and a test horizon. The scene and tests support visual review.
 The pure [track model](../Unity/Assets/Scripts/MechanicsShopModel.cs) is implemented
@@ -48,19 +67,21 @@ and covered by [five focused tests](../Tools/last_stand_shop/test_shop.py).
 The [approved spec](../../.codearbiter/specs/last-stand-upgrade-foundation.html)
 and [plan](../../.codearbiter/plans/last-stand-upgrade-foundation.html) record its
 bounded scope and authoritative completion status. The owner approved this
-independent preparation as pair PJ3M; that approval does not accept the initial
-battle or authorize a playable shop. There is no playable Mechanics Shop, stat or
-encounter integration, reward payout, currency, save system, persistent upgrade,
-or first-upgrade loop in this Unity path.
+independent preparation as pair PJ3M. That foundation does not implement the
+temporary in-run Mechanics Shop interface. The later NU2Z approval covers the
+separate permanent Cannon Attack loop described above: reward, wallet, saved
+upgrade and its actual effect on the next encounter. Neither approval records
+owner acceptance of the initial battlefield.
 
 ## Next bounded work
 
 1. Complete the owner A/B choice and normal-speed visual acceptance for the
    initial battlefield. Preserve the chosen elements and unresolved changes.
-2. Define and implement the first playable retained upgrade and second-run
-   effect after the visual checkpoint. This needs selected track effects,
-   prices, caps, earning and claim rules, and run/save authority. No example
-   value in the source pack supplies those decisions.
+2. Review the implemented defeat-to-upgrade loop, its normal-speed motion and
+   sound, and then tune the approved prototype from that feedback. The bounded
+   first-upgrade effect is implemented and browser-verified; owner acceptance
+   and live-player feedback remain pending. Future prices, caps and economy
+   expansion need their own decisions.
 3. Expand equipment, Skills, R&D, targeting and longer progression in later
    scoped slices using their distinct owner decisions. The first shop model does
    not collapse those systems into one level or currency. Permanent R&D

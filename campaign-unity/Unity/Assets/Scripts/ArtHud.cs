@@ -43,16 +43,17 @@ namespace SingedTerra.Art
         void Start()
         {
             bool review=presentation.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
+            var loop=presentation.GetComponent<SingedTerra.LastStand.LastStandLoopController>();
             font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var g=new GameObject("ArtInterface",typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
             g.transform.SetParent(transform,false);canvas=g.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
             var scaler=g.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution=new Vector2(1600,900);scaler.matchWidthOrHeight=.5f;
+            scaler.referenceResolution=loop?new Vector2(1280,720):new Vector2(1600,900);scaler.matchWidthOrHeight=.5f;
             if(!FindFirstObjectByType<EventSystem>())new GameObject("ArtInput",typeof(EventSystem),typeof(StandaloneInputModule)).transform.SetParent(transform,false);
             var title=Panel("Identity",new Vector2(0,1),new Vector2(0,1),new Vector2(28,-28),new Vector2(330,116));
             Label(title,"Brand","singedTerra",32,new Vector2(18,-12),new Vector2(300,40),gold);
-            Label(title,"Slice",review?"LAST STAND 01 / PREPARATION":"STARTER 01  /  FIELD ASSEMBLY",16,new Vector2(20,-61),new Vector2(294,25),paper);
-            Label(title,"Stage",review?"INSPECT, FIT, THEN DEPLOY":"WORKING ART  -  NO COMBAT",12,new Vector2(20,-88),new Vector2(294,20),gold);
+            Label(title,"Slice",loop?"LAST STAND  /  PROTOTYPE":review?"LAST STAND 01 / PREPARATION":"STARTER 01  /  FIELD ASSEMBLY",16,new Vector2(20,-61),new Vector2(294,25),paper);
+            Label(title,"Stage",loop?"FIT, DEPLOY, RETURN STRONGER":review?"INSPECT, FIT, THEN DEPLOY":"WORKING ART  -  NO COMBAT",12,new Vector2(20,-88),new Vector2(294,20),gold);
             var part=Panel("Attachment",new Vector2(1,1),new Vector2(1,1),new Vector2(-28,-28),new Vector2(285,106));
             Label(part,"Heading","OPTIONAL FITTING",13,new Vector2(18,-13),new Vector2(250,22),gold);
             partDetail=Label(part,"Part","",20,new Vector2(18,-38),new Vector2(250,30),paper);
@@ -69,11 +70,12 @@ namespace SingedTerra.Art
             InspectionButton("OrbitRight","ORBIT RIGHT",-114,presentation.OrbitRight);
             InspectionButton("OrbitReset","FRONT VIEW",114,presentation.ResetInspection);
             calloutLabel=InspectionButton("Callouts","",342,presentation.ToggleCallouts);
-            gameObject.AddComponent<TankPartCallouts>().Initialize(canvas,presentation,font,inspectionControls);
+            if(!loop)gameObject.AddComponent<TankPartCallouts>().Initialize(canvas,presentation,font,inspectionControls);
             presentation.Changed+=Refresh;Refresh();
             artNodes=new Transform[canvas.transform.childCount];
             for(int i=0;i<artNodes.Length;i++)artNodes[i]=canvas.transform.GetChild(i);
             gameObject.AddComponent<SingedTerra.Encounter.EncounterSession>().Initialize(presentation,this,canvas,font);
+            if(loop)loop.Initialize(presentation,gameObject.GetComponent<SingedTerra.Encounter.EncounterSession>(),this,canvas,font);
         }
         Text InspectionButton(string name,string value,float x,UnityEngine.Events.UnityAction action)
         {
@@ -85,6 +87,11 @@ namespace SingedTerra.Art
         void Refresh()
         {
             if(!viewLabel)return;
+            if(presentation.GetComponent<SingedTerra.LastStand.LastStandLoopController>())
+            {
+                foreach(var node in artNodes ?? System.Array.Empty<Transform>())node.gameObject.SetActive(false);
+                return;
+            }
             inspectionControls.gameObject.SetActive(!presentation.battlefield);
             calloutLabel.text=presentation.ShowPartCallouts?"HIDE PART LABELS":"SHOW PART LABELS";
             viewLabel.text=presentation.battlefield?"INSPECTION VIEW":"BATTLEFIELD VIEW";
@@ -96,6 +103,10 @@ namespace SingedTerra.Art
         {
             foreach(var node in artNodes)node.gameObject.SetActive(!active);
             if(!active)Refresh();
+        }
+        public void SetPlayableVisible()
+        {
+            foreach(var node in artNodes)node.gameObject.SetActive(false);
         }
         void OnDestroy(){if(presentation)presentation.Changed-=Refresh;}
     }

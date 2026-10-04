@@ -13,30 +13,44 @@ def source_binding():
     for folder in ('Unity/Assets','Unity/ProjectSettings','Tools'):
         files.extend(f for f in (ROOT/folder).rglob('*') if f.is_file() and '__pycache__' not in f.parts)
     files.extend(f for f in (PROJECT/'Packages').glob('*.json') if f.is_file())
-    for name in ('unity-battlefield-visual-review.md','unity-parts-library.md'):
+    for name in ('unity-battlefield-visual-review.md','unity-parts-library.md','last-stand-playable-loop.html'):
         spec=ROOT.parent/'.codearbiter/specs'/name
         if spec.is_file():files.append(spec)
+    plan=ROOT.parent/'.codearbiter/plans/last-stand-playable-loop.html'
+    if plan.is_file():files.append(plan)
     inventory={os.path.relpath(f,ROOT).replace('\\','/'):digest(f) for f in sorted(set(files))}
     head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT).decode('utf-8').strip()
     dirty=subprocess.check_output(['git','status','--porcelain=v1','--untracked-files=all','--',
                                    'campaign-unity','.codearbiter/specs/unity-battlefield-visual-review.md',
-                                   '.codearbiter/specs/unity-parts-library.md'],
+                                   '.codearbiter/specs/unity-parts-library.md',
+                                   '.codearbiter/specs/last-stand-playable-loop.html',
+                                   '.codearbiter/plans/last-stand-playable-loop.html'],
                                   cwd=ROOT.parent).decode('utf-8').splitlines()
     return {'head':head,'dirty':dirty,'files':inventory,
             'sha256':hashlib.sha256(json.dumps(inventory,sort_keys=True).encode('utf-8')).hexdigest()}
 
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--editor',required=True,type=Path)
-p.add_argument('--scene',choices=('field','review','gallery'),default='field',help='Existing saved scene to export (default: field)')
+p.add_argument('--scene',choices=('field','review','gallery','last-stand'),default='field',help='Existing saved scene to export (default: field)')
 a=p.parse_args();editor=a.editor.resolve();require(editor.is_file(),'Editor executable missing')
 stamp=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:6]
-evidence=ROOT/'Evidence'/('build-'+stamp);evidence.mkdir(parents=True,exist_ok=False)
+evidence_root=ROOT/'Evidence'
+if a.scene=='last-stand':evidence_root=evidence_root/'last-stand-playable-loop'/'t03'
+evidence=evidence_root/('build-'+stamp);evidence.mkdir(parents=True,exist_ok=False)
 build=ROOT/'Builds'/('Web-'+stamp)
 scene_path={'field':'Assets/Scenes/FieldAssembly.unity',
             'review':'Assets/Scenes/BattlefieldReview.unity',
-            'gallery':'Assets/PartsLibrary/PartsGallery.unity'}[a.scene]
+            'gallery':'Assets/PartsLibrary/PartsGallery.unity',
+            'last-stand':'Assets/Scenes/LastStandPrototype.unity'}[a.scene]
 scene=PROJECT/scene_path
+protected_scenes={name:digest(PROJECT/path) for name,path in {
+    'field':'Assets/Scenes/FieldAssembly.unity',
+    'review':'Assets/Scenes/BattlefieldReview.unity'}.items()}
 record={'status':'running','build':str(build),'stages':[],'scene':scene_path,
-        'scene_before':digest(scene),'android':False,'publish':False}
+        'scene_before':digest(scene),'protected_scenes_before':protected_scenes,
+        'approved_artifacts':{
+            'ST-LS-LOOP-SPEC':{'revision':4,'model_sha256':'0fce3f7b2eb7f6743b3b5c5960b8fdece577c884403710bca32ea84427ddf1df','normative_sha256':'58b5ecaec95493a38751a65320949dd846716b86abf46a6cab82a62161b694aa'},
+            'ST-LS-LOOP-PLAN':{'revision':6,'model_sha256':'f912cf6d951328966555e3c2f9511fcaca3bbefc5c21d04de7c896f1920a7304','normative_sha256':'b8a8dd6156609bb6c14d5ce45ce34c8fb4124d37af806b240741e90e640f00b1'}},
+        'android':False,'publish':False}
 env=os.environ.copy();env['ST_ART_WEB_OUTPUT']=str(build)
 if os.name=='nt':
     common=Path(env.get('ProgramData',env.get('SystemDrive','C:')+'/ProgramData'))
@@ -73,7 +87,7 @@ try:
     require(json.loads((vendor/'package.json').read_text(encoding='utf-8'))['version']=='17.3.0','Unexpected embedded URP')
     record['source_before']=source_binding();save()
     method={'field':'SceneBuild.BuildWeb','review':'VisualReviewBuild.BuildWeb',
-            'gallery':'PartsGalleryBuild.BuildWeb'}[a.scene]
+            'gallery':'PartsGalleryBuild.BuildWeb','last-stand':'LastStandLoopBuild.BuildWeb'}[a.scene]
     run('unity-web',[str(editor),'-batchmode','-quit','-projectPath',str(PROJECT),'-buildTarget','WebGL','-executeMethod',method,'-logFile','-'])
     log=(evidence/'unity-web.log').read_text(encoding='utf-8',errors='replace')
     if a.scene=='review':
@@ -82,14 +96,26 @@ try:
     elif a.scene=='gallery':
         for marker in ('ST_KIT_GALLERY_PASS','ST_KIT_GALLERY_WEB_BUILD_PASS'):
             require(marker in log,'Missing gallery checks: '+marker)
+    elif a.scene=='last-stand':
+        for marker in ('ST_LS_UNITY_PASS test_real_session_modes_and_damage',
+                       'ST_LS_UNITY_PASS test_pause_terminal_ui_and_audio_lifecycle',
+                       'ST_LS_WEB_BUILD_PASS'):
+            require(marker in log,'Missing Last Stand checks: '+marker)
     else:require('ST_ART_WEB_BUILD_PASS' in log,'Missing Unity success marker')
     if a.scene!='gallery':require('ST_ENC_MODEL_PASS' in log,'Missing encounter model checks')
     require(digest(scene)==record['scene_before'],'Build unexpectedly changed saved scene')
-    run('web-entry',[sys.executable,str(ROOT/'Tools/make_web_entry.py'),str(build)],30)
+    require({name:digest(PROJECT/path) for name,path in {
+        'field':'Assets/Scenes/FieldAssembly.unity',
+        'review':'Assets/Scenes/BattlefieldReview.unity'}.items()}==protected_scenes,
+        'Build changed protected field or review scene')
+    run('web-entry',[sys.executable,str(ROOT/'Tools/make_web_entry.py'),str(build),'--scene',a.scene],30)
     index=build/'index.html';s=index.read_text(encoding='utf-8');index.write_text(s.replace('</head>','<link rel="icon" href="TemplateData/favicon.ico">\n</head>'),encoding='utf-8')
     record['source_after']=source_binding()
     require(record['source_before']==record['source_after'],'Build source changed during export; output is not source-bound')
-    record.update(status='pass',scene_after=digest(scene),artifacts={f.relative_to(build).as_posix():digest(f) for f in build.rglob('*') if f.is_file()})
+    record.update(status='pass',scene_after=digest(scene),protected_scenes_after={name:digest(PROJECT/path) for name,path in {
+        'field':'Assets/Scenes/FieldAssembly.unity',
+        'review':'Assets/Scenes/BattlefieldReview.unity'}.items()},
+        artifacts={f.relative_to(build).as_posix():digest(f) for f in build.rglob('*') if f.is_file()})
 except Exception as exc:
     record.update(status='failed',error=type(exc).__name__+': '+str(exc));raise
 finally:save();print(json.dumps({'status':record['status'],'build':str(build),'evidence':str(evidence)}),flush=True)

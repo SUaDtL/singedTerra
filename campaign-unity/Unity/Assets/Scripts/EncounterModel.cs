@@ -40,6 +40,7 @@ namespace SingedTerra.Encounter
         int nextSpawn = 1, nextCannon = 1, nextLauncher = 1, nextRepair = RepairPeriod;
         public bool HasLauncher { get; }
         public EncounterProfile Profile { get; }
+        public int CommittedCannonDamage { get; }
         public int Tick { get; private set; }
         public int Hull { get; private set; } = MaximumHull;
         public int Spawned { get; private set; }
@@ -53,9 +54,11 @@ namespace SingedTerra.Encounter
         public IReadOnlyList<EncounterFoe> Foes => foes;
         public IReadOnlyList<EncounterEvent> Events => events;
         public EncounterModel(bool launcher) : this(launcher, EncounterProfile.Legacy) { }
-        public EncounterModel(bool launcher, EncounterProfile profile)
+        public EncounterModel(bool launcher, EncounterProfile profile, int cannonDamage = CannonDamage)
         {
             Profile = profile ?? throw new ArgumentNullException(nameof(profile));
+            if (cannonDamage < CannonDamage || cannonDamage > 50) throw new ArgumentOutOfRangeException(nameof(cannonDamage));
+            CommittedCannonDamage = cannonDamage;
             HasLauncher = launcher;
             for (int i = 0; i < Capacity; i++) foes[i] = new EncounterFoe();
         }
@@ -69,7 +72,7 @@ namespace SingedTerra.Encounter
                 if (foe.Alive)
                     foe.Distance = Math.Max(StopDistance(foe), foe.Distance -
                         Profile.Speed(foe.Kind));
-            if (Tick >= nextCannon && Shoot(Profile.MainRange, CannonDamage, EncounterEventKind.Cannon))
+            if (Tick >= nextCannon && Shoot(Profile.MainRange, CommittedCannonDamage, EncounterEventKind.Cannon))
             { CannonShots++; nextCannon = Tick + CannonPeriod; }
             if (HasLauncher)
             {

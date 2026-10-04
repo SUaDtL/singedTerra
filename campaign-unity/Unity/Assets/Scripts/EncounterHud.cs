@@ -48,6 +48,7 @@ namespace SingedTerra.Encounter
         public void Initialize(EncounterSession owner, ArtHud hud, Canvas canvas, Font sharedFont)
         {
             session = owner; artHud = hud; font = sharedFont;
+            if (owner.GetComponent<SingedTerra.LastStand.LastStandLoopController>()) return;
             visualReview = owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             if (visualReview)
             {

@@ -1,19 +1,25 @@
-# singedTerra Unity browser encounter
+# singedTerra Unity Last Stand prototype
 
-The current continuation is **ST-VIS-01**: a separately saved `BattlefieldReview`
-scene with two battlefield treatments, the retained player tank, imported close
-and ranged opponents, a compact bronze HUD, and automatic last-stand combat.
-The original `FieldAssembly` scene and encounter fixture remain available.
+The dedicated `LastStandPrototype` scene now supports a complete local loop:
+deploy, survive until defeat, claim salvage, buy permanent Cannon Attack,
+reload, and redeploy stronger. The first upgrade changes cannon damage from
+20 to 30, enough to destroy the same first enemy in one hit. The saved progression,
+compact controls, pause/focus behavior and procedural audio have passed the
+[focused Unity and browser checks](docs/last-stand-playable-loop-validation.md).
+
+The separate **ST-VIS-01** `BattlefieldReview` scene retains two battlefield
+treatments, the player tank, imported close and ranged opponents, and the bronze
+HUD. The original `FieldAssembly` scene and encounter fixture remain available.
 The [Last Stand roadmap](docs/LAST-STAND-ROADMAP.md) records the settled
 product direction and the bounded next slices.
 The pure Mechanics Shop model is implemented and covered by five focused tests.
 The [approved spec](../.codearbiter/specs/last-stand-upgrade-foundation.html)
 and [plan](../.codearbiter/plans/last-stand-upgrade-foundation.html) record its
-scope and authoritative completion status. It remains separate from the playable
-encounter and UI and adds no economy or save system.
+scope and authoritative completion status. That temporary in-run track model
+remains separate from the playable loop's permanent Cannon Attack progression.
 
-This is a visual review candidate. The owner still chooses what to keep, change,
-or mix, and reviews normal-speed motion before playable upgrades are integrated.
+This remains a prototype awaiting owner acceptance. The owner still chooses what
+to keep, change, or mix in the battlefield treatments and reviews motion and sound.
 Live-player sessions remain deferred while the owner is remote on a phone;
 phone performance and live-player observation are unverified.
 Open the [A/B gallery](docs/visual-review-01/browser-20260926T093232Z/index.html)
@@ -45,7 +51,8 @@ launcher, npm workspaces, account services, rewards, or Pages deployment.
 
 The owner selected Unity for the browser PoC and continued mobile development
 using the same project/assets. Android builds and phone/emulator setup are deferred
-until after the full browser PoC. The initial art slice predates the automatic encounter; no economy is implemented.
+until after the full browser PoC. The initial art slice predates the automatic
+encounter and the local prototype economy described above.
 
 ## Contents and ownership
 
@@ -59,6 +66,15 @@ selected equipment catalogue or approved starting slot count.
 controls. Recoil previews are not manual campaign aiming/firing or gameplay rules.
 
 ## Open and build
+
+For the dedicated Last Stand local prototype, export the saved playable scene
+with `python Tools/build_web.py --editor "C:\path\to\6000.3.24f1\Editor\Unity.exe" --scene last-stand`.
+The default build remains `field`; `review` and `gallery` remain explicit routes.
+The exporter records the playable scene and protected field/review scene hashes,
+the exact source inventory, and the approved loop artifact identities. The
+Last Stand entry identifies the mode in its title and loading text. See
+[the loop validation note](docs/last-stand-playable-loop-validation.md) for
+the focused browser command and its actual result.
 
 Use Unity 6000.3.24f1 with matching Web Build Support and URP 17.3.0 for this
 checkpoint. These are reproducibility pins, not a permanent version policy.
