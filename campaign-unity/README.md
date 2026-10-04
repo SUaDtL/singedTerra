@@ -4,9 +4,18 @@ The current continuation is **ST-VIS-01**: a separately saved `BattlefieldReview
 scene with two battlefield treatments, the retained player tank, imported close
 and ranged opponents, a compact bronze HUD, and automatic last-stand combat.
 The original `FieldAssembly` scene and encounter fixture remain available.
+The [Last Stand roadmap](docs/LAST-STAND-ROADMAP.md) records the settled
+product direction and the bounded next slices.
+The pure Mechanics Shop model is implemented and covered by five focused tests.
+The [approved spec](../.codearbiter/specs/last-stand-upgrade-foundation.html)
+and [plan](../.codearbiter/plans/last-stand-upgrade-foundation.html) record its
+scope and authoritative completion status. It remains separate from the playable
+encounter and UI and adds no economy or save system.
 
 This is a visual review candidate. The owner still chooses what to keep, change,
-or mix, and reviews normal-speed motion before this work advances to upgrades.
+or mix, and reviews normal-speed motion before playable upgrades are integrated.
+Live-player sessions remain deferred while the owner is remote on a phone;
+phone performance and live-player observation are unverified.
 Open the [A/B gallery](docs/visual-review-01/browser-20260926T093232Z/index.html)
 for six matched still pairs and four normal-speed recordings. The
 [review notes](docs/visual-review-01/browser-20260926T093232Z/REVIEW.md) and
