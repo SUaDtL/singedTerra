@@ -182,7 +182,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - [x] Recompose the battle bottom bar so every protected pixel has a gameplay purpose: either add genuinely useful information and interaction or reduce the rail height; do not solve empty space by merely enlarging buttons.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
 - [ ] Add direct acceptance-return assertions for legacy buy, move, and shield GameEngine actions before any verified flow consumes those return values.  (from commander-career-milestone-2 final coverage review)
   - Boundaries: shared-engine
-- [ ] Complete generated database typings for service-only verified deployment contract tables and drain RPCs with read-only or never mutation surfaces.  (from commander-career-milestone-2 final migration review)
+- [x] database.types.0001 - Complete generated database typings for service-only verified deployment contract tables and drain RPCs with read-only or never mutation surfaces.  (from commander-career-milestone-2 final migration review)  (done 2026-10-03)
   - Boundaries: database-contract
 - [ ] Carry authenticated identity coherently into online lobby flows: suppress the incorrect 'sign in to record future matches' CTA when a valid session exists, and prefill or eliminate redundant host/join name entry from the account display name while preserving an explicit override only if product policy requires it. [H/S]  (from user steering 2026-08-10)
   - Boundaries: authentication, display-identity
