@@ -7,6 +7,7 @@ import base64
 import datetime
 import json
 import math
+import statistics
 import subprocess
 import threading
 import time
@@ -27,20 +28,9 @@ SPEC = {'revision': 4, 'model_sha256': '0fce3f7b2eb7f6743b3b5c5960b8fdece577c884
 PLAN = {'revision': 6, 'model_sha256': 'f912cf6d951328966555e3c2f9511fcaca3bbefc5c21d04de7c896f1920a7304',
         'normative_sha256': 'b8a8dd6156609bb6c14d5ce45ce34c8fb4124d37af806b240741e90e640f00b1'}
 
-KNOWN_UNSUPPORTED_RENDERER_SHADERS = {
-    'Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)':
-        'Hidden/CoreSRP/CoreCopy',
-    'Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)':
-        'Hidden/Universal Render Pipeline/StencilDitherMaskSeed',
-    'Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)':
-        'Hidden/Universal/HDRDebugView',
-}
-
-
 def classify_console(messages):
-    """Fail closed on console errors, except exact known internal shader limits."""
+    """Fail closed on browser, Unity, and shader errors, including split messages."""
     errors = []
-    counts = {}
     consumed = set()
     for index, message in enumerate(messages):
         text = str(message.get('text', '')).strip()
@@ -53,35 +43,89 @@ def classify_console(messages):
         if 'exception' in text.lower() or 'uncaught' in text.lower():
             errors.append({'index': index, 'type': kind, 'text': text})
             continue
-        if text == 'ERROR: Shader':
-            if kind != 'log' or index + 1 >= len(messages):
-                errors.append({'index': index, 'type': kind, 'text': text,
-                               'reason': 'shader error prefix has no adjacent detail'})
-                continue
-            detail_message = messages[index + 1]
-            detail = str(detail_message.get('text', '')).strip()
-            shader_name = KNOWN_UNSUPPORTED_RENDERER_SHADERS.get(detail)
-            if detail_message.get('type') != 'log' or shader_name is None:
-                errors.append({'index': index, 'type': kind, 'text': text,
-                               'detail': detail,
-                               'reason': 'unrecognized or non-log shader error'})
-                continue
-            counts[shader_name] = counts.get(shader_name, 0) + 1
-            consumed.add(index + 1)
+        lowered = text.casefold()
+        if lowered.startswith('[unitycache]') and (
+                'not stored in the browser cache' in lowered or 'failed' in lowered or
+                'error:' in lowered):
+            errors.append({'index': index, 'type': kind, 'text': text,
+                           'reason': 'Unity browser cache operation failed'})
             continue
-        if text.startswith('ERROR:') or 'shader is not supported on this gpu' in text.lower():
+        if text.casefold() == 'error: shader':
+            error = {'index': index, 'type': kind, 'text': text}
+            if index + 1 < len(messages):
+                detail_message = messages[index + 1]
+                detail = str(detail_message.get('text', '')).strip()
+                if detail_message.get('type') == 'log' and detail:
+                    error['detail'] = detail
+                    consumed.add(index + 1)
+            errors.append(error)
+            continue
+        if (lowered.startswith('error:') or 'shader is not supported' in lowered or
+                ('shader' in lowered and ('error' in lowered or 'failed' in lowered))):
             errors.append({'index': index, 'type': kind, 'text': text,
                            'reason': 'unclassified error output'})
 
-    names = [name for name in KNOWN_UNSUPPORTED_RENDERER_SHADERS.values() if counts.get(name)]
-    known_count = sum(counts.values())
     return {
-        'status': 'failed' if errors else 'pass-with-known-limitations' if known_count else 'pass',
-        'known_shader_notice_count': known_count,
-        'known_shader_notice_names': names,
-        'known_shader_notice_counts': counts,
+        'status': 'failed' if errors else 'pass',
         'errors': errors,
     }
+
+
+def classify_request_failures(failures, messages):
+    """Recognize only a 304 network abort whose same-load Unity cache read succeeded."""
+    accepted, errors = [], []
+    for failure in failures:
+        success = (f"[UnityCache] '{failure['url']}' successfully revalidated "
+                   "and served from the browser cache")
+        if (failure['failure'] == 'net::ERR_ABORTED' and
+                failure['response_status'] == 304 and
+                failure['method'] == 'GET' and failure['resource_type'] == 'fetch' and
+                failure['url'].endswith('.data') and
+                any(message.get('type') == 'log' and message.get('load') == failure['load'] and
+                    message.get('text') == success for message in messages)):
+            accepted.append(failure)
+        else:
+            errors.append('request failed: ' + json.dumps(failure, sort_keys=True))
+    return accepted, errors
+
+
+# rAF timestamps come from the page's own clock. They measure delivered browser
+# animation frames independently of CDP screencast transport and file encoding.
+FRAME_PROBE = r"""(() => {
+  let active = false;
+  let frames = [];
+  let generation = 0;
+  function sample(t, current) {
+    if (!active || current !== generation) return;
+    if (frames.length < 30000) frames.push(t);
+    requestAnimationFrame(next => sample(next, current));
+  }
+  window.__stFrameProbe = {
+    start() {
+      frames = []; active = true; generation++;
+      const current = generation;
+      requestAnimationFrame(t => sample(t, current));
+      return performance.now();
+    },
+    stop() { active = false; generation++; return frames; }
+  };
+})()"""
+
+
+def frame_timing(frames, begin, end):
+    """Summarize callbacks within one named active-play window, without bridging boundaries."""
+    selected = [value for value in frames if begin <= value <= end]
+    require(len(selected) >= 30, 'Too few real animation frames in active-play window')
+    gaps = [later - earlier for earlier, later in zip(selected, selected[1:])]
+    require(all(math.isfinite(gap) and gap > 0 for gap in gaps), 'Invalid animation frame gap')
+    ordered = sorted(gaps)
+    return {'callbacks': len(selected), 'observed_seconds': (selected[-1] - selected[0]) / 1000,
+            'median_ms': statistics.median(gaps),
+            'p95_ms': ordered[math.ceil(len(ordered) * .95) - 1],
+            'p99_ms': ordered[math.ceil(len(ordered) * .99) - 1],
+            'max_ms': ordered[-1],
+            'gaps_over_50ms': sum(gap > 50 for gap in gaps),
+            'gaps_over_100ms': sum(gap > 100 for gap in gaps)}
 
 # Test-page-only mirror of the signal actually connected to WebAudio output.
 # Original connect is called first, with its original arguments and return value.
@@ -199,10 +243,7 @@ def build_once(output):
     require(artifact_hashes(build) == source['artifacts'], 'Export bytes differ from source-bound receipt')
     for relative, expected in source['source_after']['files'].items():
         path = ROOT / relative
-        if relative.startswith(('Unity/Assets/', 'Unity/ProjectSettings/', 'Tools/')) or relative in (
-            '../.codearbiter/specs/last-stand-playable-loop.html',
-            '../.codearbiter/plans/last-stand-playable-loop.html'):
-            require(path.is_file() and digest(path) == expected, 'Current build source differs: ' + relative)
+        require(path.is_file() and digest(path) == expected, 'Current build source differs: ' + relative)
     return receipt, build, source
 
 
@@ -235,6 +276,8 @@ class LastStandWebTests(unittest.TestCase):
         native = None
         page = None
         messages = []
+        request_failures = []
+        load = [0]
         states, hits, layouts, trace = [], [], [], []
         try:
             receipt, build, source = build_once(output)
@@ -262,9 +305,11 @@ class LastStandWebTests(unittest.TestCase):
                 page = native.context.pages[0]
                 page.set_viewport_size({'width': 1280, 'height': 720})
                 page.add_init_script(AUDIO_CAPTURE)
+                page.add_init_script(FRAME_PROBE)
                 def collect(message):
                     raw = message.text
-                    messages.append({'type': message.type, 'text': raw, 't': time.monotonic()})
+                    messages.append({'type': message.type, 'text': raw,
+                                     't': time.monotonic(), 'load': load[0]})
                     if message.type == 'error': report['errors'].append(raw)
                     for tag, target in [('ST_LS_STATE ', states), ('ST_LS_HIT ', hits), ('ST_LS_HUD_LAYOUT ', layouts)]:
                         if tag in raw:
@@ -272,7 +317,14 @@ class LastStandWebTests(unittest.TestCase):
                 page.on('console', collect)
                 trace = observe_input(page)
                 page.on('pageerror', lambda error: report['errors'].append(str(error)))
-                page.on('requestfailed', lambda request: report['errors'].append('request failed: ' + request.url))
+                def failed_request(request):
+                    response = request.response()
+                    request_failures.append({
+                        'url': request.url, 'failure': request.failure,
+                        'method': request.method, 'resource_type': request.resource_type,
+                        'response_status': response.status if response else None,
+                        'load': load[0]})
+                page.on('requestfailed', failed_request)
                 page.on('response', lambda response: report['errors'].append('HTTP ' + str(response.status) + ' ' + response.url)
                         if response.status >= 400 else None)
 
@@ -383,6 +435,16 @@ class LastStandWebTests(unittest.TestCase):
                 page.goto(url, wait_until='domcontentloaded')
                 focus_loaded_page('initial load')
                 ready = until(states, 0, lambda item: item['action'] == 'ready', 60)
+                report['renderer'] = page.evaluate("""() => {
+                  const canvas = document.querySelector('#unity-canvas');
+                  const gl = canvas && (canvas.getContext('webgl2') || canvas.getContext('webgl'));
+                  if (!gl) return {available:false};
+                  const info = gl.getExtension('WEBGL_debug_renderer_info');
+                  return {available:true, vendor:gl.getParameter(gl.VENDOR),
+                    renderer:gl.getParameter(gl.RENDERER), version:gl.getParameter(gl.VERSION),
+                    unmasked_vendor:info ? gl.getParameter(info.UNMASKED_VENDOR_WEBGL) : null,
+                    unmasked_renderer:info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : null};
+                }""")
                 check(ready['phase'] == 'garage' and ready['wallet'] == 0 and ready['level'] == 0, 'new save starts in garage')
                 check(ready['saveState'] == 'ready', 'initial save write and readback succeeded')
                 fitting = next(item for item in layouts[-1]['controls'] if item['name'] == 'ToggleFitting')
@@ -391,6 +453,7 @@ class LastStandWebTests(unittest.TestCase):
                 start_audio = audio_mark()
                 deployed = click('Deploy', 'deploy')
                 check(deployed['phase'] == 'battle' and deployed['cannonDamage'] == 20, 'base run actually deployed')
+                frame_probe_start_ms = page.evaluate('window.__stFrameProbe.start()')
                 motion = MotionCapture(native.context, page, output, 'normal-speed-repair')
                 motion_start_ms = audio_mark()
                 first = until(hits, 0, lambda item: item['cannonDamage'] == 20, 45)
@@ -418,6 +481,7 @@ class LastStandWebTests(unittest.TestCase):
                 check(resume_sound['maximum_rms'] <= max(.005, sound['maximum_rms'] * 2),
                       'resume has no output burst above twice normal admitted peak', resume_sound)
                 focus_start = len(states)
+                focus_start_ms = audio_mark()
                 other = native.context.new_page()
                 other.goto('about:blank'); other.bring_to_front()
                 hidden = page.evaluate('({hidden:document.hidden, focused:document.hasFocus()})')
@@ -425,6 +489,7 @@ class LastStandWebTests(unittest.TestCase):
                 hidden_start = audio_mark()
                 page.wait_for_timeout(1200)
                 page.bring_to_front(); other.close()
+                hidden_end_ms = audio_mark()
                 hidden_sound = audio_energy(hidden_start + 200, audio_mark(), minimum_samples=1)
                 check(hidden_sound['maximum_rms'] < .0005, 'hidden or unfocused Web audio is silent', hidden_sound)
                 suspended = until(states, focus_start, lambda item: item['paused'], 8)
@@ -432,8 +497,10 @@ class LastStandWebTests(unittest.TestCase):
                 if states[-1]['phase'] == 'battle':
                     check(not click('Pause', 'session', lambda item: not item['paused'])['paused'],
                           'explicit resume after focus loss')
+                post_focus_start_ms = audio_mark()
                 defeat_start = len(states)
                 settling = until(states, defeat_start, lambda item: item['phase'] == 'settling', 110)
+                settling_ms = audio_mark()
                 defeat_time = audio_mark()
                 page.wait_for_timeout(750)
                 result = until(states, defeat_start, lambda item: item['phase'] == 'result', 8)
@@ -441,6 +508,39 @@ class LastStandWebTests(unittest.TestCase):
                 defeat_sound = audio_energy(defeat_time - 250, audio_mark())
                 check(defeat_sound['maximum_rms'] > .0005, 'rendered defeat cue measured at ordinary defeat', defeat_sound)
                 shot('02-defeat-pending')
+                frame_times = page.evaluate('window.__stFrameProbe.stop()')
+                frame_path = output / 'animation-frame-timestamps.json'
+                frame_path.write_text(json.dumps({'clock': 'page performance.now milliseconds',
+                    'timestamps': frame_times, 'active_windows': [
+                        ['first-foe-before-impact', motion_start_ms, first_hit_ms],
+                        ['first-hit-through-pause', first_hit_ms, pause_start],
+                        ['resumed-before-focus-loss', resume_start, focus_start_ms],
+                        ['resumed-after-focus-loss', post_focus_start_ms, settling_ms]],
+                    'nonactive_windows': [
+                        ['explicit-pause', pause_start, resume_start],
+                        ['hidden-or-unfocused', hidden_start, hidden_end_ms]]},
+                    indent=2, allow_nan=False), encoding='utf-8')
+                active_windows = [
+                    ('first-foe-before-impact', motion_start_ms, first_hit_ms),
+                    ('first-hit-through-pause', first_hit_ms, pause_start),
+                    ('resumed-before-focus-loss', resume_start, focus_start_ms),
+                    ('resumed-after-focus-loss', post_focus_start_ms, settling_ms)]
+                report['frame_timing'] = {
+                    'source': 'in-page requestAnimationFrame callbacks during observed browser visibility',
+                    'raw': frame_path.name, 'raw_sha256': digest(frame_path),
+                    'probe_start_ms': frame_probe_start_ms,
+                    'capture_active': {name: frame_timing(frame_times, begin, end)
+                                       for name, begin, end in active_windows},
+                    'nonactive': {name: {'wall_seconds': (end - begin) / 1000,
+                                         'callbacks': sum(begin <= value <= end for value in frame_times)}
+                                  for name, begin, end in [
+                                      ('explicit-pause', pause_start, resume_start),
+                                      ('hidden-or-unfocused', hidden_start, hidden_end_ms)]}}
+                active_samples = list(report['frame_timing']['capture_active'].values())
+                check(all(item['p95_ms'] <= 50 and item['p99_ms'] <= 100 and item['max_ms'] <= 250
+                          for item in active_samples),
+                      'active gameplay frame cadence stays within 50 ms p95, 100 ms p99, 250 ms maximum',
+                      report['frame_timing']['capture_active'])
                 report['motion'] = motion.encode()
                 record = page.evaluate('(key)=>localStorage.getItem(key)', SAVE_KEY)
                 check(record and json.loads(record)['pendingDefeat']['reward'] == 1, 'pending defeat is in real localStorage')
@@ -455,15 +555,61 @@ class LastStandWebTests(unittest.TestCase):
                 else:
                     command += ['-ss', '%.3f' % -offset_seconds]
                 command += ['-i', str(output / first_audio[0]['file']), '-c:v', 'copy', '-c:a', 'aac',
-                            '-b:a', '160k', '-shortest', str(movie)]
+                            '-b:a', '160k', str(movie)]
                 mux = subprocess.run(command, capture_output=True, text=True, timeout=120)
                 (output / 'audio-video-mux.log').write_text(mux.stdout + '\n' + mux.stderr, encoding='utf-8')
                 check(mux.returncode == 0 and movie.is_file() and movie.stat().st_size > 10000,
                       'normal-speed motion and captured rendered WebAudio muxed')
+                mux_probe = subprocess.run(['ffprobe', '-v', 'error', '-count_frames',
+                    '-show_entries', 'stream=codec_type,start_time,duration,nb_read_frames',
+                    '-of', 'json', str(movie)], capture_output=True, text=True, timeout=30)
+                check(mux_probe.returncode == 0, 'muxed motion and audio streams are readable')
+                streams = json.loads(mux_probe.stdout)['streams']
+                video_stream = next(item for item in streams if item['codec_type'] == 'video')
+                audio_stream = next(item for item in streams if item['codec_type'] == 'audio')
+                check(int(video_stream['nb_read_frames']) == report['motion']['encoded_frames'] and
+                      abs(float(video_stream['duration']) - report['motion']['encoded_duration_seconds']) <= .25 and
+                      int(audio_stream['nb_read_frames']) > 0,
+                      'audio mux preserves every real video frame and its normal-speed duration', streams)
                 report['playable_capture'] = {'file': movie.name, 'sha256': digest(movie),
-                    'audio_alignment_seconds': offset_seconds, 'audio_source': first_audio[0]['file']}
+                    'audio_alignment_seconds': offset_seconds, 'audio_source': first_audio[0]['file'],
+                    'video_frames': int(video_stream['nb_read_frames']),
+                    'video_duration_seconds': float(video_stream['duration']),
+                    'audio_start_seconds': float(audio_stream['start_time']),
+                    'audio_duration_seconds': float(audio_stream['duration'])}
+                review_start = (post_focus_start_ms - motion_start_ms) / 1000
+                review_duration = (defeat_time + 750 - post_focus_start_ms) / 1000
+                check(review_start >= 0 and review_duration >= 15,
+                      'uninterrupted active-play review segment is long enough',
+                      {'start_seconds': review_start, 'duration_seconds': review_duration})
+                review_movie = output / 'active-play-review-with-audio.mp4'
+                review_command = ['ffmpeg', '-hide_banner', '-nostdin', '-y', '-i', str(movie),
+                                  '-ss', '%.3f' % review_start, '-t', '%.3f' % review_duration,
+                                  '-fps_mode', 'passthrough', '-c:v', 'libx264', '-crf', '19',
+                                  '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k',
+                                  '-movflags', '+faststart', str(review_movie)]
+                review_mux = subprocess.run(review_command, capture_output=True, text=True, timeout=120)
+                (output / 'active-play-review-encode.log').write_text(
+                    review_mux.stdout + '\n' + review_mux.stderr, encoding='utf-8')
+                check(review_mux.returncode == 0 and review_movie.is_file() and
+                      review_movie.stat().st_size > 10000,
+                      'active-play review clip uses real captured frames and rendered audio')
+                review_probe = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                    '-count_frames', '-show_entries', 'stream=nb_read_frames', '-of', 'json',
+                    str(review_movie)], capture_output=True, text=True, timeout=30)
+                check(review_probe.returncode == 0, 'review clip video frame count is readable')
+                review_encoded_frames = int(json.loads(review_probe.stdout)['streams'][0]['nb_read_frames'])
+                check(review_encoded_frames > 0, 'review clip contains captured video frames')
+                report['active_play_review'] = {
+                    'file': review_movie.name, 'sha256': digest(review_movie),
+                    'source': movie.name, 'start_seconds': review_start,
+                    'duration_seconds': review_duration,
+                    'encoded_frames': review_encoded_frames,
+                    'frame_count_method': 'ffprobe decoded frame count; passthrough timestamps and no interpolation',
+                    'edit': 'single hard trim after deliberate focus-loss test; original frame cadence preserved'}
 
                 reload_start = len(states)
+                load[0] += 1
                 page.reload(wait_until='domcontentloaded')
                 focus_loaded_page('pending reload')
                 restored = until(states, reload_start, lambda item: item['action'] == 'ready', 60)
@@ -488,6 +634,7 @@ class LastStandWebTests(unittest.TestCase):
                 save_audio('workshop', {'purchase': (purchase_start, audio_mark())})
 
                 reload_start = len(states)
+                load[0] += 1
                 page.reload(wait_until='domcontentloaded')
                 focus_loaded_page('purchased upgrade reload')
                 again = until(states, reload_start, lambda item: item['action'] == 'ready', 60)
@@ -498,7 +645,28 @@ class LastStandWebTests(unittest.TestCase):
                 layout('Deploy'); shot('06-reloaded-upgrade')
                 upgraded = click('Deploy', 'deploy')
                 check(upgraded['phase'] == 'battle' and upgraded['cannonDamage'] == 30, 'upgraded run deployed with committed damage')
+                no_capture_start_ms = page.evaluate('window.__stFrameProbe.start()')
                 second_hit = until(hits, len(hits), lambda item: item['cannonDamage'] == 30, 45)
+                no_capture_end_ms = audio_mark()
+                no_capture_frames = page.evaluate('window.__stFrameProbe.stop()')
+                no_capture_path = output / 'animation-frame-no-capture-timestamps.json'
+                no_capture_path.write_text(json.dumps({'clock': 'page performance.now milliseconds',
+                    'timestamps': no_capture_frames, 'active_window':
+                    [no_capture_start_ms, no_capture_end_ms]}, indent=2, allow_nan=False), encoding='utf-8')
+                report['frame_timing']['no_capture_active'] = frame_timing(
+                    no_capture_frames, no_capture_start_ms, no_capture_end_ms)
+                report['frame_timing']['no_capture_raw'] = no_capture_path.name
+                report['frame_timing']['no_capture_raw_sha256'] = digest(no_capture_path)
+                captured_prehit = report['frame_timing']['capture_active']['first-foe-before-impact']
+                uncaptured_prehit = report['frame_timing']['no_capture_active']
+                report['frame_timing']['capture_comparison'] = {
+                    'basis': 'separate real deployments before first impact; same scene, upgraded cannon in second run',
+                    'captured_p95_ms': captured_prehit['p95_ms'],
+                    'uncaptured_p95_ms': uncaptured_prehit['p95_ms'],
+                    'p95_delta_ms': captured_prehit['p95_ms'] - uncaptured_prehit['p95_ms']}
+                check(captured_prehit['p95_ms'] <= uncaptured_prehit['p95_ms'] * 1.5 + 5,
+                      'screencast adds at most 50 percent plus 5 ms to active pre-impact p95',
+                      report['frame_timing']['capture_comparison'])
                 check(second_hit['firstFoeHull'] == 0 and second_hit['kills'] >= 1,
                       'same first foe dies to one upgraded cannon hit', second_hit)
                 shot('07-upgraded-first-hit')
@@ -512,6 +680,11 @@ class LastStandWebTests(unittest.TestCase):
                 console_classification = classify_console(messages)
                 report['console_classification'] = console_classification
                 report['errors'].extend(console_classification['errors'])
+                report['request_failures'] = request_failures
+                accepted_cache_revalidations, request_errors = classify_request_failures(
+                    request_failures, messages)
+                report['accepted_cache_revalidations'] = accepted_cache_revalidations
+                report['errors'].extend(request_errors)
                 check(not report['errors'], 'no unclassified browser, Unity console, request or page errors',
                       {'errors': report['errors'], 'console': console_classification})
                 report['input_trace'] = validate_input(trace, report['actions'])

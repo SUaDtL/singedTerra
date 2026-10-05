@@ -1,6 +1,7 @@
 """Build a saved art scene; no Android, scene regeneration or deployment."""
 from pathlib import Path
 import argparse,datetime,hashlib,json,os,shutil,subprocess,sys,uuid
+from unity_shader_log import accepts_log, shader_diagnostics
 ROOT=Path(__file__).resolve().parents[1];PROJECT=ROOT/'Unity'
 def require(ok,message):
     if not ok:raise RuntimeError(message)
@@ -90,6 +91,11 @@ try:
             'gallery':'PartsGalleryBuild.BuildWeb','last-stand':'LastStandLoopBuild.BuildWeb'}[a.scene]
     run('unity-web',[str(editor),'-batchmode','-quit','-projectPath',str(PROJECT),'-buildTarget','WebGL','-executeMethod',method,'-logFile','-'])
     log=(evidence/'unity-web.log').read_text(encoding='utf-8',errors='replace')
+    if a.scene=='last-stand':
+        require('ST_LS_WEB_BUILD_PASS' in log,'Missing Last Stand Web build marker')
+        diagnostics=shader_diagnostics(log)
+        require(accepts_log(log,'ST_LS_WEB_BUILD_PASS'),
+                'Unity shader compiler diagnostics: '+' | '.join(diagnostics[:8]))
     if a.scene=='review':
         for marker in ('ST_VIS_VALIDATE_PASS','ST_VIS_CHECKS_PASS','ST_VIS_WEB_BUILD_PASS'):
             require(marker in log,'Missing visual review checks: '+marker)
@@ -99,7 +105,8 @@ try:
     elif a.scene=='last-stand':
         for marker in ('ST_LS_UNITY_PASS test_real_session_modes_and_damage',
                        'ST_LS_UNITY_PASS test_pause_terminal_ui_and_audio_lifecycle',
-                       'ST_LS_WEB_BUILD_PASS'):
+                       'ST_LS_UNITY_PASS test_batched_frame_retains_shot_audio',
+                       'ST_LS_UNITY_PASS test_same_tick_launcher_kill_keeps_impact_cue'):
             require(marker in log,'Missing Last Stand checks: '+marker)
     else:require('ST_ART_WEB_BUILD_PASS' in log,'Missing Unity success marker')
     if a.scene!='gallery':require('ST_ENC_MODEL_PASS' in log,'Missing encounter model checks')

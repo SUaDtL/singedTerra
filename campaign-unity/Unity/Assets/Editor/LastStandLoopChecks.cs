@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -47,6 +48,10 @@ public static class LastStandLoopChecks
             LastStandLoopController.StorageFactory=()=>new MemoryStorage();
             PauseTerminalUiAndAudioLifecycle();
             Debug.Log("ST_LS_UNITY_PASS test_pause_terminal_ui_and_audio_lifecycle");
+            BatchedFrameRetainsShotAudio();
+            Debug.Log("ST_LS_UNITY_PASS test_batched_frame_retains_shot_audio");
+            SameTickLauncherKillKeepsImpactCue();
+            Debug.Log("ST_LS_UNITY_PASS test_same_tick_launcher_kill_keeps_impact_cue");
         }
         finally
         {
@@ -152,5 +157,55 @@ public static class LastStandLoopChecks
         int tick=model.Tick; model.Step(); Require(model.Tick==tick,"terminal combat does not step");
         Invoke(loop,"Update");
         Require(loop.Phase=="settling" || loop.Phase=="result","bounded result transition");
+    }
+    static void BatchedFrameRetainsShotAudio()
+    {
+        EditorSceneManager.OpenScene(Playable,OpenSceneMode.Single);
+        InitializeScene();
+        var loop=UnityEngine.Object.FindFirstObjectByType<LastStandLoopController>();
+        Focus(loop.Session); loop.Deploy();
+        Require(loop.Audio.Unlocked && !loop.Audio.Suspended && loop.Session.Model!=null,
+            "batched audio dispatch ready");
+        var model=loop.Session.Model;
+        while(model.Tick<59)model.Step();
+        Require(model.CannonShots==0,"first shot follows setup tick");
+        typeof(EncounterSession).GetField("accumulated",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(loop.Session,.11d);
+        var heard=new List<string>();
+        Application.LogCallback observer=(message,stack,type)=>
+        {
+            if(message.StartsWith("ST_LS_HIT ",StringComparison.Ordinal))heard.Add(message);
+        };
+        Application.logMessageReceived+=observer;
+        try
+        {
+            Invoke(loop.Session,"Update");
+            Require(model.Tick>=61 && model.CannonShots==1 && model.Events.Count==0,
+                "one shot occurred before final tick of admitted frame");
+            Require(heard.Count==1,"batched shot reaches audio dispatch");
+            var admitted=heard.Count;
+            loop.TogglePause(); loop.TogglePause();
+            Invoke(loop,"OnSessionChanged");
+            Require(heard.Count==admitted,"resume does not replay prior batched cues");
+        }
+        finally { Application.logMessageReceived-=observer; }
+    }
+    static void SameTickLauncherKillKeepsImpactCue()
+    {
+        var model=new EncounterModel(true,EncounterProfile.PlayablePrototype,20);
+        bool found=false;
+        while(model.Status==EncounterStatus.Running && !found)
+        {
+            model.Step();
+            foreach(var first in model.Events)
+            foreach(var second in model.Events)
+            {
+                if(first.Kind!=EncounterEventKind.Cannon || second.Kind!=EncounterEventKind.Launcher ||
+                    first.Slot!=second.Slot || model.Foes[first.Slot].Alive)continue;
+                Require(!first.Killed && second.Killed,
+                    "cannon impact and launcher destruction retain event-time outcome");
+                found=true; break;
+            }
+        }
+        Require(found,"approved launcher profile reaches same-tick finishing shot");
     }
 }

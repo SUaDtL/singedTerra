@@ -16,16 +16,19 @@ class NativeChromeLaunch(unittest.TestCase):
                 executable.write_bytes(b'controlled installed-browser fixture')
                 evidence = root / 'evidence'
                 evidence.mkdir()
-                profile = evidence / 'isolated-chrome-profile'
                 child = Mock()
                 child.poll.return_value = 0
                 playwright = Mock()
                 browser = playwright.chromium.connect_over_cdp.return_value
                 browser.contexts = [Mock()]
                 commands = []
+                profiles = []
 
                 def launch(command, **kwargs):
                     commands.append(command)
+                    profile = Path(next(arg.split('=', 1)[1] for arg in command
+                                        if arg.startswith('--user-data-dir=')))
+                    profiles.append(profile)
                     (profile / 'DevToolsActivePort').write_text('9321\n/controlled\n', encoding='utf-8')
                     return child
 
@@ -36,6 +39,9 @@ class NativeChromeLaunch(unittest.TestCase):
                     else:
                         native = NativeChrome(playwright, evidence)
                     native.close()
+                profile = profiles[0]
+                self.assertTrue(profile.name.startswith('st-chrome-'))
+                self.assertFalse(profile.exists())
                 expected = [str(executable), '--user-data-dir=' + str(profile),
                             '--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0',
                             '--no-first-run', '--no-default-browser-check', '--window-size=1616,988']
@@ -49,6 +55,7 @@ class NativeChromeCleanup(unittest.TestCase):
         obj=NativeChrome.__new__(NativeChrome)
         obj.browser=Mock();obj.process=Mock();obj.process.poll.return_value=0
         obj.log=Mock();obj.closed=False
+        obj.profile_owner=None;obj.profile_path=None;obj.profile_receipt=None
         return obj
     def test_graceful_owned_close(self):
         obj=self.subject();obj.close()

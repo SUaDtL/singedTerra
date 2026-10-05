@@ -23,7 +23,6 @@ namespace SingedTerra.LastStand
         ArtHud artHud;
         LastStandLoopHud hud;
         float settle;
-        int heardTick = -1;
         bool purchasePending;
         public event Action Changed;
 
@@ -39,6 +38,7 @@ namespace SingedTerra.LastStand
             Audio.Initialize();
             hud = new LastStandLoopHud(this, canvas, font);
             session.Changed += OnSessionChanged;
+            session.Stepped += OnSessionStepped;
             artHud.SetPlayableVisible();
             Phase = Progression.PendingDefeat != null ? "result" : Progression.Wallet > 0 ? "workshop" : "garage";
             if (Progression.SaveState != "ready") Notice = Progression.SaveError;
@@ -65,8 +65,21 @@ namespace SingedTerra.LastStand
                 Refresh("deploy-failed");
                 return;
             }
-            Phase = "battle"; Notice = ""; heardTick = -1;
+            Phase = "battle"; Notice = "";
             Refresh("deploy");
+        }
+
+        void OnSessionStepped(EncounterModel model)
+        {
+            if (Phase != "battle" || Session.Paused || Session.Failure != "") return;
+            foreach (var evt in model.Events)
+            {
+                Audio.PlayEvent(evt.Kind, evt.Amount, !evt.Killed);
+                if (evt.Kind == EncounterEventKind.Cannon)
+                    Debug.Log("ST_LS_HIT " + JsonUtility.ToJson(new HitState { tick = model.Tick,
+                        cannonDamage = model.CommittedCannonDamage, firstFoeHull = model.Foes[0].Hull,
+                        kills = model.Kills }));
+            }
         }
 
         void OnSessionChanged()
@@ -81,17 +94,6 @@ namespace SingedTerra.LastStand
                     Progression.AbandonRun(); Session.ReturnToInspection();
                     Phase = "garage"; Notice = "This run stopped because of a technical problem. No salvage was awarded.";
                     Refresh("technical-failure"); return;
-                }
-                if (!Session.Paused && model.Tick != heardTick)
-                {
-                    heardTick = model.Tick;
-                    foreach (var evt in model.Events)
-                    {
-                        Audio.PlayEvent(evt.Kind, evt.Amount, model.Foes[evt.Slot < 0 ? 0 : evt.Slot].Alive);
-                        if (evt.Kind == EncounterEventKind.Cannon)
-                            Debug.Log("ST_LS_HIT " + JsonUtility.ToJson(new HitState { tick = model.Tick, cannonDamage = model.CommittedCannonDamage,
-                                firstFoeHull = model.Foes[0].Hull, kills = model.Kills }));
-                    }
                 }
                 if (model.Status == EncounterStatus.Defeated)
                 {
@@ -172,7 +174,11 @@ namespace SingedTerra.LastStand
         public void ToggleMute() { Audio.ToggleMute(); Refresh("mute"); }
         void OnApplicationFocus(bool active) { if (!active && Audio) Audio.SetSuspended(true); }
         void OnApplicationPause(bool active) { if (active && Audio) Audio.SetSuspended(true); }
-        void OnDestroy() { if (Session) Session.Changed -= OnSessionChanged; hud?.Dispose(); }
+        void OnDestroy()
+        {
+            if (Session) { Session.Changed -= OnSessionChanged; Session.Stepped -= OnSessionStepped; }
+            hud?.Dispose();
+        }
 
         void Refresh(string action)
         {

@@ -7,11 +7,39 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 sys.dont_write_bytecode = True
 
-from verify_last_stand_loop import classify_console
+from verify_last_stand_loop import classify_console, classify_request_failures
 
 
 class ConsoleClassificationTests(unittest.TestCase):
-    def test_split_known_renderer_notices_across_three_page_loads(self):
+    def test_aborted_304_cache_revalidation_requires_same_load_success(self):
+        url = "http://127.0.0.1:52763/Build/Web-current.data"
+        failure = {'url': url, 'failure': 'net::ERR_ABORTED', 'method': 'GET',
+                   'resource_type': 'fetch', 'response_status': 304, 'load': 2}
+        success = {'type': 'log', 'load': 2, 'text':
+                   f"[UnityCache] '{url}' successfully revalidated and served from the browser cache"}
+        accepted, errors = classify_request_failures([failure], [success])
+        self.assertEqual(errors, [])
+        self.assertEqual(accepted, [failure])
+        for changed in (
+            {**failure, 'failure': 'net::ERR_CONNECTION_RESET'},
+            {**failure, 'response_status': None},
+            {**failure, 'method': 'POST'},
+            {**failure, 'resource_type': 'script'},
+            {**failure, 'url': url.replace('.data', '.wasm')},
+        ):
+            with self.subTest(changed=changed):
+                self.assertEqual(classify_request_failures([changed], [success])[0], [])
+                self.assertTrue(classify_request_failures([changed], [success])[1])
+        for messages in ([], [{**success, 'load': 1}],
+                         [{**success, 'text': success['text'].replace('successfully revalidated',
+                                                                  'failed to revalidate')}],
+                         [{**success, 'text': success['text'].replace(url, url + '-other')}],
+                         [{**success, 'type': 'error'}]):
+            with self.subTest(messages=messages):
+                self.assertEqual(classify_request_failures([failure], messages)[0], [])
+                self.assertTrue(classify_request_failures([failure], messages)[1])
+
+    def test_split_renderer_shader_errors_fail_across_three_page_loads(self):
         details = [
             "Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)",
             "Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)",
@@ -25,13 +53,31 @@ class ConsoleClassificationTests(unittest.TestCase):
                     {"type": "log", "text": detail},
                 ])
         result = classify_console(messages)
-        self.assertEqual(result["status"], "pass-with-known-limitations")
-        self.assertEqual(result["known_shader_notice_count"], 9)
-        self.assertEqual(result["known_shader_notice_names"], [
-            "Hidden/CoreSRP/CoreCopy",
-            "Hidden/Universal Render Pipeline/StencilDitherMaskSeed",
-            "Hidden/Universal/HDRDebugView",
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(len(result["errors"]), 9)
+        for error, detail in zip(result["errors"], details * 3):
+            self.assertEqual(error["text"], "ERROR: Shader")
+            self.assertEqual(error["detail"], detail)
+
+    def test_clean_telemetry_passes(self):
+        result = classify_console([{"type": "log", "text": "ST_LS_STATE {}"}])
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["errors"], [])
+
+    def test_unity_cache_failed_operation_is_an_error(self):
+        message = ("[UnityCache] 'http://127.0.0.1/game.data' successfully downloaded "
+                   "but not stored in the browser cache due to the error: "
+                   "InvalidAccessError: Failed to execute 'put' on 'Cache': Entry already exists.")
+        result = classify_console([{"type": "log", "text": message}])
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["errors"][0]["text"], message)
+
+    def test_unity_cache_store_and_revalidation_pass(self):
+        result = classify_console([
+            {"type": "log", "text": "[UnityCache] game.data successfully downloaded and stored in the browser cache"},
+            {"type": "log", "text": "[UnityCache] game.data successfully revalidated and served from the browser cache"},
         ])
+        self.assertEqual(result["status"], "pass")
         self.assertEqual(result["errors"], [])
 
     def test_unknown_shader_and_exception_fail_closed(self):

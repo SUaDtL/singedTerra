@@ -23,6 +23,7 @@ namespace SingedTerra.Encounter
         public string Failure { get; private set; } = "";
         public bool CanRun => focused && !applicationPaused;
         public event Action Changed;
+        public event Action<EncounterModel> Stepped;
         public void Initialize(TankPresentation presentation, ArtHud hud, Canvas canvas, Font font)
         {
             art = presentation; focused = Application.isFocused;
@@ -82,7 +83,7 @@ namespace SingedTerra.Encounter
                 int steps = 0;
                 while (accumulated + 1e-9 >= .05 && steps < 8 && model.Status == EncounterStatus.Running)
                 {
-                    model.Step(); View.Present(model); accumulated -= .05; steps++;
+                    model.Step(); Stepped?.Invoke(model); View.Present(model); accumulated -= .05; steps++;
                 }
                 if(model.Status != EncounterStatus.Running)art.SetEncounterPaused(true);
                 View.Render(model); View.Advance((float)Math.Min(elapsed, .1));

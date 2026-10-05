@@ -45,6 +45,14 @@ class LastStandUnityTests(unittest.TestCase):
         self.assertEqual(self.exit_code, 0, self.log[-5000:])
         self.assertIn("ST_LS_UNITY_PASS test_pause_terminal_ui_and_audio_lifecycle", self.log, self.log[-5000:])
 
+    def test_batched_frame_retains_shot_audio(self):
+        self.assertEqual(self.exit_code, 0, self.log[-5000:])
+        self.assertIn("ST_LS_UNITY_PASS test_batched_frame_retains_shot_audio", self.log, self.log[-5000:])
+
+    def test_same_tick_launcher_kill_keeps_impact_cue(self):
+        self.assertEqual(self.exit_code, 0, self.log[-5000:])
+        self.assertIn("ST_LS_UNITY_PASS test_same_tick_launcher_kill_keeps_impact_cue", self.log, self.log[-5000:])
+
 
 if __name__ == "__main__":
     unittest.main()

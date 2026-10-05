@@ -1,6 +1,6 @@
 """Owned, isolated Chrome with unmodified focus/visibility; no user profile."""
 from pathlib import Path
-import os, subprocess, time
+import json, os, subprocess, tempfile, time
 
 class NativeChrome:
     def __init__(self, playwright, evidence, headless=False):
@@ -8,20 +8,29 @@ class NativeChrome:
         self.process = None
         self.log = None
         self.closed = False
+        self.profile_owner = None
+        self.profile_path = None
+        self.profile_receipt = Path(evidence) / 'browser-profile.json'
         chrome = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Google/Chrome/Application/chrome.exe'
         if not chrome.is_file():
             raise RuntimeError('Installed Chrome executable not found')
-        profile = Path(evidence) / 'isolated-chrome-profile'
-        profile.mkdir(exist_ok=False)
-        self.log = (Path(evidence) / 'native-chrome.log').open('wb')
         try:
-            command = [str(chrome), '--user-data-dir=' + str(profile),
+            # Chrome's CacheStorage index can exceed Windows path limits when the
+            # profile is nested under a long evidence directory.
+            self.profile_owner = tempfile.TemporaryDirectory(prefix='st-chrome-')
+            self.profile_path = Path(self.profile_owner.name).resolve()
+            self.profile_receipt.write_text(json.dumps({
+                'path': str(self.profile_path), 'status': 'active',
+                'ownership': 'temporary profile created for this Chrome process'}, indent=2),
+                encoding='utf-8')
+            self.log = (Path(evidence) / 'native-chrome.log').open('wb')
+            command = [str(chrome), '--user-data-dir=' + str(self.profile_path),
                 '--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0',
                 '--no-first-run', '--no-default-browser-check', '--window-size=1616,988']
             if headless:
                 command.append('--headless=new')
             self.process = subprocess.Popen(command + ['about:blank'], stdout=self.log, stderr=subprocess.STDOUT)
-            active = profile / 'DevToolsActivePort'
+            active = self.profile_path / 'DevToolsActivePort'
             end = time.monotonic() + 20
             while not active.is_file():
                 if self.process.poll() is not None or time.monotonic() >= end:
@@ -62,4 +71,14 @@ class NativeChrome:
                 self.process.wait(timeout=5)
         if self.log:
             self.log.close()
+        if self.profile_owner:
+            target = self.profile_path.resolve()
+            temp_root = Path(tempfile.gettempdir()).resolve()
+            if not target.is_relative_to(temp_root) or not target.name.startswith('st-chrome-'):
+                raise RuntimeError('Refusing to clean Chrome profile outside owned temporary directory')
+            self.profile_owner.cleanup()
+            self.profile_receipt.write_text(json.dumps({
+                'path': str(target), 'status': 'removed', 'forced_browser_stop': self.forced,
+                'ownership': 'temporary profile created for this Chrome process'}, indent=2),
+                encoding='utf-8')
         self.closed = self.process is None or self.process.poll() is not None

@@ -24,8 +24,9 @@ namespace SingedTerra.Encounter
     {
         public readonly EncounterEventKind Kind;
         public readonly int Slot, Amount;
-        public EncounterEvent(EncounterEventKind kind, int slot, int amount)
-        { Kind = kind; Slot = slot; Amount = amount; }
+        public readonly bool Killed;
+        public EncounterEvent(EncounterEventKind kind, int slot, int amount, bool killed = false)
+        { Kind = kind; Slot = slot; Amount = amount; Killed = killed; }
     }
     public sealed class EncounterModel
     {
@@ -117,7 +118,7 @@ namespace SingedTerra.Encounter
             if (selected < 0) return false;
             var target = foes[selected]; int amount = Math.Min(target.Hull, damage);
             target.Hull -= amount; if (!target.Alive) Kills++;
-            events.Add(new EncounterEvent(kind, selected, amount)); return true;
+            events.Add(new EncounterEvent(kind, selected, amount, !target.Alive)); return true;
         }
         void AttackTank()
         {
