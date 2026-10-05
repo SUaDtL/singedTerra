@@ -438,7 +438,9 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   await expect(page.locator('#app')).toBeHidden();
   await expect(page.locator('.command-center__library')).toBeVisible();
   await expect(page.locator('.command-center__workspace-host')).toBeVisible();
-  await expect(page.locator('.command-center__body')).toHaveAttribute('data-command-collection', 'singleton');
+  await expect(page.locator('.command-center__body')).toHaveAttribute('data-command-collection', 'library');
+  await expect(page.locator('.command-center__item[data-command-item="ash-road"]')).toBeVisible();
+  await expect(page.locator('.command-center__item[data-command-item="last-stand"]')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Fuel Stop', exact: true })).toBeVisible();
   await expect(page.getByText('Immediate objective', { exact: true })).toBeVisible();
   await expect(page.locator('[data-campaign-route-map]')).toBeVisible();
@@ -513,7 +515,7 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
     battleHidden: true,
     battleInert: true,
     battleAriaHidden: 'true',
-    libraryOverflowY: geometry.narrow ? 'hidden' : 'visible',
+    libraryOverflowY: geometry.viewport.width <= 500 ? 'visible' : geometry.narrow ? 'hidden' : 'auto',
     workspaceOverflowY: 'hidden',
     preparationBodyOverflowY: 'auto',
   });
@@ -534,7 +536,7 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   await assertLobbyFrame(page);
   await assertTargets(page);
 
-  const longLabel = await page.locator('.command-center__item-label').evaluate((element) => {
+  const longLabel = await page.locator('[data-command-item="ash-road"] .command-center__item-label').evaluate((element) => {
     element.textContent = 'Ash Road Expedition with an Improbably Long Campaign Designation';
     const item = element.closest<HTMLElement>('.command-center__item')!;
     const textBox = element.getBoundingClientRect();
@@ -546,7 +548,7 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   });
   expect(longLabel.itemOverflow, `${geometry.label} long-label overflow`).toBeLessThanOrEqual(1);
   expect(longLabel.contained, `${geometry.label} long-label containment`).toBe(true);
-  await page.locator('.command-center__item-label').evaluate((element) => {
+  await page.locator('[data-command-item="ash-road"] .command-center__item-label').evaluate((element) => {
     element.textContent = 'Ash Road';
   });
 
