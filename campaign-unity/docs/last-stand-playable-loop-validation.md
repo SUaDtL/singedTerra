@@ -192,6 +192,41 @@ reviewable against the source profile:
 
 ## Remaining acceptance and prototype boundaries
 
+The Campaigns entry packages the passing
+`Web-20261005T005554Z-4472c0` Last Stand export under
+`client/public/last-stand/`. Its manifest binds the original build receipt,
+source inventory and unchanged Unity runtime asset bytes; the authored site
+wrapper is hashed separately. The original 568-input source-inventory match
+describes the export at capture time; later wrapper and site edits are outside
+that snapshot. This menu integration did not recompile Unity. The normal site
+build verifies the staged
+payload and Vite copies it into `client/dist/last-stand/`. The Unity page uses
+the fixed relative `../#campaigns/last-stand` return link. The lobby consumes
+that exact fragment after selecting Last Stand, while explicit room invites
+and validated imported ST1 challenges retain priority. The Unity save stays in
+its own browser key and does not mutate the Ash Road campaign save.
+
+Focused local checks passed for Web entry rendering, missing/corrupt payload
+rejection, command selection, ST1 compatibility, TypeScript types and the
+normal `npm run build` with `VITE_BASE=/singedTerra/`. A scoped V8 run passed
+18 tests, but the numeric coverage report included only `registry.ts` (100%
+statements/lines/functions, 93.54% branches); it gave no numeric result for
+the new Last Stand view or this whole task.
+
+The local Chrome integration run at `/singedTerra/` passed eight checks:
+Campaigns presents Ash Road and Last Stand; Unity assets wait until launch;
+the actual garage and deployed battle load; Return restores Last Stand without
+reopening the splash; Ash Road still opens afterward; and a simulated wasm
+request failure leaves Return usable. Captures cover wide 1600x900, standard
+1280x720, compact 800x600, and narrow 390x844 and 320x700 layouts. The
+thirteen screenshots show no nav overlap with the Unity controls; 390px and
+320px Campaigns entries and launch stay visible without horizontal overflow.
+The run records no Unity asset requests before launch and zero console errors.
+The receipt and screenshots are retained only in ignored local
+`campaign-unity/Evidence/last-stand-campaign-entry/`, with the result in
+`browser-result.json`. This is local build and browser validation, not
+current-head hosted CI, public Pages deployment or owner visual acceptance.
+
 The save uses `singedTerra.lastStand.prototype.v1` in one browser origin.
 Missing storage initializes a version-1 record; blocked or corrupt storage
 preserves the record and presents Retry. This is a single-tab local prototype,

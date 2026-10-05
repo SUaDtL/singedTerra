@@ -86,6 +86,34 @@ afterEach(() => {
 });
 
 describe('Ash Road command contribution', () => {
+  it('switches between independent campaign items and launches the packaged Last Stand route', () => {
+    const root = document.createElement('div');
+    const context = savedContext('compatible');
+    const shell = createCommandCenterShell(root, {
+      contributions: [createAshRoadCommandCategoryContribution<CampaignCommandContext>()],
+      context,
+      initialSelection: {
+        categoryId: commandCategoryId('campaigns'),
+        itemId: commandItemId('ash-road'),
+      },
+      selectionStore: { read: () => null, remember: () => true, clear: () => undefined },
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-command-item="last-stand"]')!.click();
+    const launch = root.querySelector<HTMLAnchorElement>('[data-command-action="launch-last-stand"]');
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull();
+    expect(launch?.getAttribute('href')).toBe(`${import.meta.env.BASE_URL}last-stand/`);
+    expect(root.textContent).toContain('Your Last Stand save stays separate from Ash Road.');
+    expect(context.onStart).not.toHaveBeenCalled();
+    expect(context.onResume).not.toHaveBeenCalled();
+    expect(context.onNewRun).not.toHaveBeenCalled();
+
+    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!.click();
+    expect(getByRole(root, 'heading', { name: 'Fuel Stop' })).toBeTruthy();
+    expect(root.querySelector('[data-last-stand-command-view]')).toBeNull();
+    shell.destroy();
+  });
+
   it('mounts Campaigns and Ash Road through the real registry shell without leaking command input', () => {
     const root = document.createElement('div');
     document.body.append(root);
@@ -108,6 +136,8 @@ describe('Ash Road command contribution', () => {
     expect(root.querySelector('[data-command-category="campaigns"]')?.textContent).toBe('Campaigns');
     expect(root.querySelector('[data-command-item="ash-road"]')?.textContent)
       .toContain('Ash Road');
+    expect(root.querySelector('[data-command-item="last-stand"]')?.textContent)
+      .toContain('Last Stand');
     expect(getByRole(root, 'heading', { name: 'Fuel Stop' })).toBeTruthy();
 
     fireEvent.click(button(root, 'Start Ash Road'));

@@ -9,17 +9,17 @@ canvas{display:block;width:100vw;height:100vh;outline:none}
 #loading{position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:#191d19;gap:16px}
 h1{font-weight:500;letter-spacing:.05em;margin:0;color:#c5a25e}progress{width:310px;height:10px;accent-color:#c5a25e}
 #error{display:none;white-space:pre-wrap;max-width:75vw;color:#e6bb9a}
+__RETURN_STYLE__
 </style>
 </head>
 <body>
+__RETURN_LINK__
 <canvas id="unity-canvas" width="1600" height="900" tabindex="0" aria-label="__CANVAS_LABEL__"></canvas>
-<div id="loading"><h1>singedTerra</h1><span id="status">__LOADING__</span><progress id="progress" value="0" max="1"></progress><p id="error"></p></div>
+<div id="loading"><h1>singedTerra</h1><span id="status">__LOADING__</span><progress id="progress" value="0" max="1"></progress><p id="error"></p>__RETRY_LINK__</div>
 <script src="__LOADER__"></script>
 <script>
 const canvas=document.querySelector('#unity-canvas');
 const config={dataUrl:'__DATA__',frameworkUrl:'__FRAMEWORK__',codeUrl:'__WASM__',streamingAssetsUrl:'StreamingAssets',companyName:'singedTerra',productName:'__PRODUCT__',productVersion:'0.1-art01',matchWebGLToCanvasSize:true};
-config.showBanner=(message,type)=>{console[type==='error'?'error':'warn'](message);if(type==='error')showError(message)};
-function showError(message){document.querySelector('#loading').style.display='grid';document.querySelector('#status').textContent='Scene could not load';const e=document.querySelector('#error');e.style.display='block';e.textContent=String(message)}
-createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p).then(()=>{document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);
+__BOOTSTRAP__
 </script>
 </body></html>

@@ -30,6 +30,12 @@ The browser proof of concept and later mobile game use the same Unity project
 and assets. Android build and phone setup follow the browser proof of concept.
 The older TypeScript artillery game remains a separate product path.
 
+The site now presents Last Stand under Campaigns. Its native link opens the
+packaged Unity Web export on the same origin, and the export returns to the
+Last Stand campaign entry. The first playable loop keeps its own local save;
+Ash Road progress, account rewards and verified play are separate. This entry
+does not settle the pending visual, motion or sound acceptance.
+
 The current `BattlefieldReview` scene offers two matched treatments. The owner
 still needs to choose what to keep, change or mix and review actual normal-speed
 motion. That acceptance applies to the viewed elements, not to gameplay balance

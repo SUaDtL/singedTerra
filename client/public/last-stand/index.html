@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>singedTerra - Last Stand</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#191d19;color:#ddd1b7;font-family:Arial,sans-serif}
+canvas{display:block;width:100vw;height:100vh;outline:none}
+#loading{position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:#191d19;gap:16px}
+h1{font-weight:500;letter-spacing:.05em;margin:0;color:#c5a25e}progress{width:310px;height:10px;accent-color:#c5a25e}
+#error{display:none;white-space:pre-wrap;max-width:75vw;color:#e6bb9a}
+:root{--nav-height:52px}
+#last-stand-nav{box-sizing:border-box;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));border-bottom:1px solid #725b38;background:#242a26;color:#c5a25e;font-size:13px;font-weight:700;letter-spacing:.08em}
+canvas{height:calc(100vh - var(--nav-height))}
+#loading{top:var(--nav-height)}
+#last-stand-return{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px solid #a98a52;border-radius:4px;background:#303a31;color:#f2e3c5;font-size:13px;font-weight:700;letter-spacing:.02em;text-decoration:none;white-space:nowrap}
+#last-stand-return:hover,#last-stand-return:focus-visible{background:#38443a;border-color:#d4b772;color:#fff3d8}
+#last-stand-return:focus-visible{outline:3px solid #e7cb83;outline-offset:3px}
+#last-stand-return .short{display:none}
+#retry{display:none;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #a98a52;border-radius:4px;color:#f2e3c5;text-decoration:none}
+#retry:hover,#retry:focus-visible{background:#38443a;color:#fff3d8}
+#retry:focus-visible{outline:3px solid #e7cb83;outline-offset:3px}
+@media(max-width:900px){#last-stand-return .full{display:none}#last-stand-return .short{display:inline}}
+@media(max-width:560px){#last-stand-nav{padding-inline:10px;font-size:12px}#last-stand-return{padding:0 10px}}
+</style>
+<link rel="icon" href="TemplateData/favicon.ico">
+</head>
+<body>
+<nav id="last-stand-nav" aria-label="Last Stand navigation"><span>LAST STAND</span><a id="last-stand-return" href="../#campaigns/last-stand" aria-label="Return to Campaigns"><span class="full" aria-hidden="true">← Return to Campaigns</span><span class="short" aria-hidden="true">← Campaigns</span></a></nav>
+<canvas id="unity-canvas" width="1600" height="900" tabindex="0" aria-label="Interactive Last Stand"></canvas>
+<div id="loading"><h1>singedTerra</h1><span id="status">Loading Last Stand</span><progress id="progress" value="0" max="1"></progress><p id="error"></p><a id="retry" href="">Retry</a></div>
+<script src="Build/Web-20261005T005554Z-4472c0.loader.js"></script>
+<script>
+const canvas=document.querySelector('#unity-canvas');
+const config={dataUrl:'Build/Web-20261005T005554Z-4472c0.data',frameworkUrl:'Build/Web-20261005T005554Z-4472c0.framework.js',codeUrl:'Build/Web-20261005T005554Z-4472c0.wasm',streamingAssetsUrl:'StreamingAssets',companyName:'singedTerra',productName:'Last Stand Prototype',productVersion:'0.1-art01',matchWebGLToCanvasSize:true};
+config.showBanner=(message,type)=>{console[type==='error'?'error':'warn'](message);if(type==='error')showError(message)};
+function showError(message){console.error('Last Stand load failed',message);document.querySelector('#loading').style.display='grid';document.querySelector('#status').textContent='Scene could not load';document.querySelector('#progress').style.display='none';const e=document.querySelector('#error');e.style.display='block';e.textContent='Last Stand could not start. Check your connection and try again.';document.querySelector('#retry').style.display='inline-flex'}
+if(typeof createUnityInstance !== 'function')showError('Unity loader unavailable');
+else Promise.resolve().then(()=>createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p)).then(()=>{document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);
+</script>
+</body></html>

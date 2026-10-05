@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged; Lobby verified storage acquisition made lazy; ST1 token parsing, launch configuration, medium CPU policy and deterministic replay unchanged",
+  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged; Lobby verified storage acquisition made lazy; Last Stand Campaigns entry and exact return fragment affect menu selection only; explicit invite/rejoin and validated imported ST1 challenge retain priority; package prebuild verifies the receipt-bound Unity Web payload; ST1 token parsing, launch configuration, medium CPU policy and deterministic replay unchanged",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -80,11 +80,11 @@
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "2069412f338848f81f8c46cf623e2b19f391f21dbd279e53d0a888b31b8b0e5a"
+      "sha256": "9bc1b787afc3f09448eeb0f8bd933fde61093d68f5ce4a363524f87dcadfa8d3"
     },
     {
       "path": "package.json",
-      "sha256": "943807ea95e03d5e3b8ed8931dae625fd050dc145a8ed2864666f979a671da75"
+      "sha256": "8de4bc804a463131b61bb172eefcd697f5f759e6915d8d504a0b497ef7cbf82c"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",

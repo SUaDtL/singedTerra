@@ -44,6 +44,7 @@ export interface CampaignEntry {
 
 export interface CommandEntryPriorities {
   readonly explicitInviteOrRejoin?: CommandSelection;
+  readonly explicitCampaignReturn?: CommandSelection;
   readonly importedChallenge?: ImportedChallengeEntry;
   readonly campaign?: CampaignEntry;
   readonly firstSalvo: CommandSelection;
@@ -52,6 +53,7 @@ export interface CommandEntryPriorities {
 
 export type CommandSelectionSource =
   | 'explicit-invite-or-rejoin'
+  | 'explicit-campaign-return'
   | 'imported-challenge'
   | 'remembered'
   | 'compatible-campaign'
@@ -222,6 +224,13 @@ export function resolveInitialCommandSelection<Context>(
     const importedSelection = resolveCandidate(registry, 'imported-challenge', imported.selection);
     if (importedSelection) return importedSelection;
   }
+
+  const campaignReturn = resolveCandidate(
+    registry,
+    'explicit-campaign-return',
+    priorities.explicitCampaignReturn,
+  );
+  if (campaignReturn) return campaignReturn;
 
   const remembered = resolveCandidate(registry, 'remembered', store?.read() ?? undefined);
   if (remembered) return remembered;

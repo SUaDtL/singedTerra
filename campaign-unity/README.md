@@ -45,9 +45,13 @@ window and leave it foreground and untouched until the check finishes. Omit
 `--scene review` to build the retained FieldAssembly scene. Neither build route
 regenerates saved art.
 
-Draft, production-intent asset checkpoint. This project is deliberately separate
-from the existing TypeScript artillery application. It is not wired into its
-launcher, npm workspaces, account services, rewards, or Pages deployment.
+Draft, production-intent asset checkpoint. The Last Stand Web export now has an
+entry in the main site's Campaigns page. The entry opens a same-origin Unity
+page with a Return to Campaigns link. Unity gameplay and its local save remain
+separate from the TypeScript artillery application, account services and rewards.
+The Unity source project is not an npm workspace or a CI build dependency.
+The site build includes one verified Web export; this branch has not been
+deployed to Pages.
 
 The owner selected Unity for the browser PoC and continued mobile development
 using the same project/assets. Android builds and phone/emulator setup are deferred
@@ -72,9 +76,20 @@ with `python Tools/build_web.py --editor "C:\path\to\6000.3.24f1\Editor\Unity.ex
 The default build remains `field`; `review` and `gallery` remain explicit routes.
 The exporter records the playable scene and protected field/review scene hashes,
 the exact source inventory, and the approved loop artifact identities. The
-Last Stand entry identifies the mode in its title and loading text. See
+Last Stand entry identifies the mode in its title and loading text and keeps
+Return to Campaigns available while loading, after a load failure and during
+play. See
 [the loop validation note](docs/last-stand-playable-loop-validation.md) for
 the focused browser command and its actual result.
+
+The checked-in site payload is `../client/public/last-stand/`, staged from the
+passing `Web-20261005T005554Z-4472c0` export. Its
+`asset-manifest.json` records the relative build receipt and exact runtime
+asset hashes. The four Unity loader/framework/data/wasm files are unchanged;
+the site wrapper is newly authored and has its own hash. `npm run build`
+verifies this payload before Vite copies it to `client/dist/last-stand/`.
+Fresh Unity exports need an inspected, receipt-bound payload update before the
+site build can use them.
 
 Use Unity 6000.3.24f1 with matching Web Build Support and URP 17.3.0 for this
 checkpoint. These are reproducibility pins, not a permanent version policy.
@@ -106,8 +121,10 @@ The same-version URP embedding workaround is retained without shipping the vendo
 payload. On a fresh checkout the builder copies URP 17.3.0 from the pinned installed
 editor to the ignored Unity/Packages directory, checks all copied hashes, and lets
 Unity create import metadata. It does not patch the installed editor/cache. The
-lockfile and restoration receipt identify the dependencies; no engine binaries,
-fonts, Library caches, licence files or compiled Web binaries belong in Git.
+lockfile and restoration receipt identify the dependencies. The Unity editor,
+fonts, Library caches and restored vendor package remain outside Git. The one
+receipt-bound Last Stand Web export under `client/public/last-stand/` is the
+site delivery asset; other generated Web builds remain ignored.
 Unity's embedding reference: https://docs.unity3d.com/6000.3/Documentation/Manual/upm-embed.html
 Pointer API reference: https://playwright.dev/python/docs/api/class-mouse
 

@@ -4,6 +4,7 @@ import { createCampaignLoadout, type CampaignLoadout } from '../../campaign/load
 import { ASH_ROAD_EPISODE } from '../../campaign/content/episode';
 import { ASH_ROAD_STORY } from '../../campaign/content/story';
 import type { CampaignResumeCandidate } from './CampaignSavePresentation';
+import { createLastStandCommandView } from './LastStandCommandView';
 import {
   createPreparationFrame,
   createPreparationPrimaryAction,
@@ -548,6 +549,14 @@ export function createAshRoadCommandCategoryContribution<
         viewContext,
         viewLifetime,
       ),
+    }, {
+      id: commandItemId('last-stand'),
+      summary: {
+        label: 'Last Stand',
+        description: 'Survive, salvage, upgrade, and redeploy.',
+      },
+      availability: () => true,
+      createView: (viewHost) => createLastStandCommandView<Context>(viewHost),
     }],
   };
 }
