@@ -1,0 +1,553 @@
+{
+  "kind": "browser-only-verification-no-rebuild",
+  "build": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Builds\\Web-20260926T092302Z-d0c083",
+  "prior_receipt": "None",
+  "status": "pass",
+  "checks": [
+    {
+      "check": "initial repair",
+      "pass": true
+    },
+    {
+      "check": "pause idle with held pointer",
+      "pass": true
+    },
+    {
+      "check": "launcher replaces repair",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 1",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 2",
+      "pass": true
+    },
+    {
+      "check": "inspection recoil cycle 3",
+      "pass": true
+    },
+    {
+      "check": "battlefield view",
+      "pass": true
+    },
+    {
+      "check": "repair in battlefield",
+      "pass": true
+    },
+    {
+      "check": "battlefield recoil",
+      "pass": true
+    },
+    {
+      "check": "inspection restored",
+      "pass": true
+    },
+    {
+      "check": "attachment after resize",
+      "pass": true
+    },
+    {
+      "check": "resume idle",
+      "pass": true
+    },
+    {
+      "check": "recoil with rotating turret",
+      "pass": true
+    },
+    {
+      "check": "no observed browser errors",
+      "pass": true
+    },
+    {
+      "check": "no failed requests",
+      "pass": true
+    }
+  ],
+  "clicks": [
+    {
+      "action": "motion",
+      "x": 1142.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "attachment",
+      "x": 686.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "preview",
+      "x": 914.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "preview",
+      "x": 914.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "preview",
+      "x": 914.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "battlefield",
+      "x": 458.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "attachment",
+      "x": 686.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "preview",
+      "x": 914.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "inspection",
+      "x": 458.0,
+      "y": 842.0,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900
+      }
+    },
+    {
+      "action": "attachment",
+      "x": 548.8,
+      "y": 673.6,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "action": "motion",
+      "x": 913.6,
+      "y": 673.6,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "action": "preview",
+      "x": 731.2,
+      "y": 673.6,
+      "hold_ms": 150,
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      }
+    }
+  ],
+  "recoils": [
+    {
+      "preview": 1,
+      "peakWorld": 0.31988397240638733,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 2,
+      "peakWorld": 0.31994837522506714,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 3,
+      "peakWorld": 0.31998705863952637,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 4,
+      "peakWorld": 0.3197937607765198,
+      "returnWorld": 0.0
+    },
+    {
+      "preview": 5,
+      "peakWorld": 0.3199998140335083,
+      "returnWorld": 0.0
+    }
+  ],
+  "inputs": {
+    "index.html": "f7e14a5dfd41bf2eb28f4bfbb019815f81f55d3f31b769e4b4254a43a8666d32",
+    "Build/Web-20260926T092302Z-d0c083.data": "e13197076c9223da6a4be3edb306c7d0aa07b56a74fbad0ee9fc0de16934bd9a",
+    "Build/Web-20260926T092302Z-d0c083.framework.js": "08abaf9ed03ce8ab4e76503baac5c236b9bf747bf8ec14d5f6ca2610f58c4bb2",
+    "Build/Web-20260926T092302Z-d0c083.loader.js": "eda8877831723be3452ea1fe6e18a3fe48aed97ad973caafeeeab9828b56bce0",
+    "Build/Web-20260926T092302Z-d0c083.wasm": "d81517746a16e6cfcf5cd1240b60da285aa264f3a2d6cda9de14145e3d885258",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "phone_tested": false,
+  "performance_measured": false,
+  "headless": true,
+  "browser_mode": "owned-headless-new-no-overrides",
+  "focus_scope": "not-exercised-by-this-verifier",
+  "windows_window_acceptance": false,
+  "debug_port": 51840,
+  "browser_version": "153.0.8010.50",
+  "input_trace": [
+    {
+      "kind": "focus",
+      "time": 1790415104271,
+      "target": "",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "focus",
+      "time": 1790415104271,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415107013,
+      "x": 1142,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415107170,
+      "x": 1142,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415108082,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415108239,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415109071,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415109231,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415110123,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415110278,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415111154,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415111310,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415112505,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415112663,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415114840,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415114997,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415115940,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415116107,
+      "x": 914,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415116987,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415117142,
+      "x": 458,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415119647,
+      "x": 548.7999877929688,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415119804,
+      "x": 548.7999877929688,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415119991,
+      "x": 913.5999755859375,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415120148,
+      "x": 913.5999755859375,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415120335,
+      "x": 731.2000122070312,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415120492,
+      "x": 731.2000122070312,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    }
+  ],
+  "browser_closed": true,
+  "browser_forced": false,
+  "errors": [],
+  "network": []
+}

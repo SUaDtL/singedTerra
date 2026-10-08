@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand upgrade foundation · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-UPGRADE-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-upgrade-foundation.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">APPROVED · authority must be verified at use</span><h1>Last Stand upgrade foundation</h1><p class="deck">Pure Mechanics Shop track rules</p><div class="meta"><span>ST-LS-UPGRADE-SPEC</span><span>Revision 5 · schema 0.3.1</span><span>20 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INTENT-01 -->
+<article class="record" id="INTENT-01" data-ca-symbol="INTENT-01" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-01">INTENT-01</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>B continuing the Last Stand roadmap</div><div class="field"><span class="label">Outcome</span>A pure fixture-scoped track model implements the accepted level, price, cap and new-run rules as independent preparation while visual acceptance remains pending.</div><div class="field"><span class="label">Problem</span>The Unity encounter has no reusable Mechanics Shop track rules.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-VIS">SRC-VIS</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div></article>
+<!-- CA:END:INTENT-01 -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:SCOPE-01 -->
+<article class="record" id="SCOPE-01" data-ca-symbol="SCOPE-01" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-01">SCOPE-01</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Implement only pure Mechanics Shop track level and price rules.</div></article>
+<!-- CA:END:SCOPE-01 -->
+
+<!-- CA:BEGIN:SCOPE-02 -->
+<article class="record" id="SCOPE-02" data-ca-symbol="SCOPE-02" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-02">SCOPE-02</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Add a Unity C# pure Mechanics Shop track model and focused C#-backed tests; fixture values are supplied only by tests.</div></article>
+<!-- CA:END:SCOPE-02 -->
+
+<!-- CA:BEGIN:SCOPE-03 -->
+<article class="record" id="SCOPE-03" data-ca-symbol="SCOPE-03" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-03">SCOPE-03</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Independent preparatory implementation may proceed after this exact paired approval while A/B and live-player visual review remain pending; it does not accept or advance the playable visual milestone.</div></article>
+<!-- CA:END:SCOPE-03 -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:NON-01 -->
+<article class="record" id="NON-01" data-ca-symbol="NON-01" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-01">NON-01</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No shop UI, stat effect, wallet, payout, currency conversion, save, encounter integration, production cap or price curve, merge, or deployment.</div></article>
+<!-- CA:END:NON-01 -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APPROACH-01 -->
+<article class="record" id="APPROACH-01" data-ca-symbol="APPROACH-01" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-01">APPROACH-01</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DEC-01">DEC-01</a></li></ul></div><div class="field"><span class="label">Choice</span>Create a standalone Unity C# track state with injected cap and run-price function, and test actual compiled C# behavior through named Python unittest cases.</div><div class="field"><span class="label">Tradeoff</span>A pure foundation can be verified before the first playable shop, but it deliberately cannot demonstrate rewards, stat changes or second-run player experience.</div></article>
+<!-- CA:END:APPROACH-01 -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:CON-01 -->
+<article class="record" id="CON-01" data-ca-symbol="CON-01" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-01">CON-01</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-02</li><li>SCOPE-03</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-VIS">SRC-VIS</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve ST-VIS-01 owner keep/change/mix and normal-speed motion acceptance before playable upgrade integration or visual milestone completion.</div></article>
+<!-- CA:END:CON-01 -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:DEC-01 -->
+<article class="record" id="DEC-01" data-ca-symbol="DEC-01" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-01">DEC-01</a><h3>Mechanics Shop track accounting</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Use P+n capped at M and next C(n+1); new runs reset n, resume preserves n.</div><div class="field"><span class="label">Rationale</span>Owner DIR-044 explicitly selected this simple track rule.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-OWNER">SRC-OWNER</a></div></article>
+<!-- CA:END:DEC-01 -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:AC-01 -->
+<article class="record" id="AC-01" data-ca-symbol="AC-01" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-01">AC-01</a><h3>Track level and price</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Every configured track follows the owner-selected simple one-level purchase rule.</div></div></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Current level is capped P+n.</li><li>The next in-run price depends on n+1, not P+n+1.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-01">SCOPE-01</a></li><li><a href="#SCOPE-02">SCOPE-02</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-01 -->
+<article class="record" id="SC-01" data-ca-symbol="SC-01" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-01">SC-01</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Two tracks share M and C but start at P=0 and P=10 with n=0.</div><div class="field"><span class="label">Then</span>Both see the same first and second prices, while levels differ by ten.</div><div class="field"><span class="label">When</span>Each buys its first and second run level.</div></article>
+<!-- CA:END:SC-01 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li></ul></div><div class="field"><span class="label">Statement</span>A pure track state reports min(M,P+n), remaining M-P-n, and C(n+1) independent of P.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-01 -->
+<article class="record" id="V-01" data-ca-symbol="V-01" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-01">V-01</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated</div><div class="field"><span class="label">Negative control</span>C(P+n+1) must fail the test</div><div class="field"><span class="label">Oracle</span>Exact level, remaining and price for fixture values</div><div class="field"><span class="label">Planned target</span>Named Python unittest driving compiled C# model</div></article>
+<!-- CA:END:V-01 -->
+</div></article>
+<!-- CA:END:AC-01 -->
+
+<!-- CA:BEGIN:AC-02 -->
+<article class="record" id="AC-02" data-ca-symbol="AC-02" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-02">AC-02</a><h3>Cap and lifecycle</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Cap and run identity apply to every pure track state.</div></div></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Cap refusal preserves state.</li><li>New-run reset clears only temporary run purchases; resume preserves them.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-02">SCOPE-02</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-02 -->
+<article class="record" id="SC-02" data-ca-symbol="SC-02" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-02">SC-02</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A fixture track reaches M.</div><div class="field"><span class="label">Then</span>The capped state is unchanged and the fresh run starts at P with first price C(1).</div><div class="field"><span class="label">When</span>A further purchase is attempted and then a fresh run starts.</div></article>
+<!-- CA:END:SC-02 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li></ul></div><div class="field"><span class="label">Statement</span>A purchase at cap is refused without changing n; a new run resets n to zero while resuming the same run preserves n and next price.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-02 -->
+<article class="record" id="V-02" data-ca-symbol="V-02" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-02">V-02</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated</div><div class="field"><span class="label">Negative control</span>Resetting n on resume must fail</div><div class="field"><span class="label">Oracle</span>Cap refusal and explicit new-run/resume state outcomes</div><div class="field"><span class="label">Planned target</span>Named Python unittest driving compiled C# model</div></article>
+<!-- CA:END:V-02 -->
+</div></article>
+<!-- CA:END:AC-02 -->
+
+<!-- CA:BEGIN:AC-03 -->
+<article class="record" id="AC-03" data-ca-symbol="AC-03" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-03">AC-03</a><h3>Fixture-only and isolated</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>invariant</div><div class="field"><span class="label">Rationale</span>Scope isolation and visual gate apply throughout this preparatory sprint.</div></div></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Only fixture inputs and pure shop state are added.</li><li>Visual owner acceptance remains pending and encounter outcomes do not change.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-03">SCOPE-03</a></li></ul></div><div class="field"><span class="label">Kind</span>invariant</div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-03 -->
+<article class="record" id="SC-03" data-ca-symbol="SC-03" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-03">SC-03</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The review scene and legacy encounter remain at the current head.</div><div class="field"><span class="label">Then</span>No encounter, economy, save or visual integration changes and fixture values remain test-only.</div><div class="field"><span class="label">When</span>The shop foundation is compiled and tested.</div></article>
+<!-- CA:END:SC-03 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-VIS">SRC-VIS</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Statement</span>The model takes cap and prices as fixture input and does not add UI, stats, reward, currency, save, or encounter behavior. Existing encounter fixture outcomes remain unchanged.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-03 -->
+<article class="record" id="V-03" data-ca-symbol="V-03" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-03">V-03</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A selected 200-level cap or implicit money balance violates scope</div><div class="field"><span class="label">Oracle</span>Invalid fixture refusal, no integration paths, and unchanged encounter sources</div><div class="field"><span class="label">Planned target</span>Named model tests and diff review</div></article>
+<!-- CA:END:V-03 -->
+</div></article>
+<!-- CA:END:AC-03 -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2><span class="missing">None recorded</span></section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-OWNER -->
+<article class="record" id="SRC-OWNER" data-ca-symbol="SRC-OWNER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-OWNER">SRC-OWNER</a><h3>Owner product direction revision 15</h3></div><div class="field"><span class="label">Locator</span>singedTerra-visual-polish-source-update-2026-09-25.zip:sources/01-PRODUCT-DIRECTION.md#6.1</div><div class="field"><span class="label">Note</span>DIR-044 specifies P+n, C(n+1), cap and fresh-run reset; DIR-059 keeps visual acceptance before the playable upgrade loop.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-OWNER -->
+
+<!-- CA:BEGIN:SRC-VIS -->
+<article class="record" id="SRC-VIS" data-ca-symbol="SRC-VIS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-VIS">SRC-VIS</a><h3>ST-VIS-01 visual checkpoint</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/specs/unity-battlefield-visual-review.md</div><div class="field"><span class="label">Note</span>Owner A/B keep-change-mix and normal-speed motion acceptance remain pending; comparison profile is a non-awarding fixture.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-VIS -->
+
+<!-- CA:BEGIN:SRC-CODE -->
+<article class="record" id="SRC-CODE" data-ca-symbol="SRC-CODE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CODE">SRC-CODE</a><h3>Current Unity encounter code</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs and EncounterSession.cs</div><div class="field"><span class="label">Note</span>Existing encounter is non-awarding and has no upgrade, reward, currency or save owner.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CODE -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Observed date</span>2026-10-04</div><div class="field"><span class="label">Repository</span><span class="missing">Not yet supplied</span></div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Execution must verify current receipt sources and binding.</p><div class="fields"><div class="field"><span class="label">Approvals</span><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-UPGRADE-SPEC</div><div class="field"><span class="label">Attestation level</span>workflow_attested</div><div class="field"><span class="label">Authority kind</span>user_workflow</div><div class="field"><span class="label">Normative sha256</span>93abb97bfd6708534f01ba908c75a86cd60737b544e78dc7e244925d9b5e5e49</div><div class="field"><span class="label">Source ref</span>.codearbiter/.artifacts/receipts/38f23cbe116e8d403fa0fe07f44af2223ee3388575e168c0bccfec4ce9b5cabc.json</div><div class="field"><span class="label">Source sha256</span>38f23cbe116e8d403fa0fe07f44af2223ee3388575e168c0bccfec4ce9b5cabc</div></div></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>approved</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 93abb97bfd6708534f01ba908c75a86cd60737b544e78dc7e244925d9b5e5e49<br>Model SHA-256: 97e62aa9cad8040d122259482843e18fbabbe622e18d134cc5b075381b244412</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-UPGRADE-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [
+      {
+        "artifact_id": "ST-LS-UPGRADE-SPEC",
+        "attestation_level": "workflow_attested",
+        "authority_kind": "user_workflow",
+        "normative_sha256": "93abb97bfd6708534f01ba908c75a86cd60737b544e78dc7e244925d9b5e5e49",
+        "source_ref": ".codearbiter/.artifacts/receipts/38f23cbe116e8d403fa0fe07f44af2223ee3388575e168c0bccfec4ce9b5cabc.json",
+        "source_sha256": "38f23cbe116e8d403fa0fe07f44af2223ee3388575e168c0bccfec4ce9b5cabc"
+      }
+    ],
+    "review_notes": [],
+    "state": "approved"
+  },
+  "integrity": {
+    "model_sha256": "97e62aa9cad8040d122259482843e18fbabbe622e18d134cc5b075381b244412",
+    "normative_sha256": "93abb97bfd6708534f01ba908c75a86cd60737b544e78dc7e244925d9b5e5e49",
+    "symbol_count": 20
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "DEC-01"
+      ],
+      "choice": "Create a standalone Unity C# track state with injected cap and run-price function, and test actual compiled C# behavior through named Python unittest cases.",
+      "id": "APPROACH-01",
+      "tradeoff": "A pure foundation can be verified before the first playable shop, but it deliberately cannot demonstrate rewards, stat changes or second-run player experience."
+    },
+    "baseline": {
+      "commit": null,
+      "observed_date": "2026-10-04",
+      "repository": null
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "SCOPE-02",
+          "SCOPE-03"
+        ],
+        "id": "CON-01",
+        "source_refs": [
+          "SRC-VIS"
+        ],
+        "statement": "Preserve ST-VIS-01 owner keep/change/mix and normal-speed motion acceptance before playable upgrade integration or visual milestone completion."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Every configured track follows the owner-selected simple one-level purchase rule."
+        },
+        "guarantees": [
+          "Current level is capped P+n.",
+          "The next in-run price depends on n+1, not P+n+1."
+        ],
+        "id": "AC-01",
+        "intent_refs": [
+          "SCOPE-01",
+          "SCOPE-02"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "scenarios": [
+          {
+            "given": "Two tracks share M and C but start at P=0 and P=10 with n=0.",
+            "id": "SC-01",
+            "then": "Both see the same first and second prices, while levels differ by ten.",
+            "when": "Each buys its first and second run level."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER"
+        ],
+        "statement": "A pure track state reports min(M,P+n), remaining M-P-n, and C(n+1) independent of P.",
+        "title": "Track level and price",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-01",
+          "method": "automated",
+          "negative_control": "C(P+n+1) must fail the test",
+          "oracle": "Exact level, remaining and price for fixture values",
+          "planned_target": "Named Python unittest driving compiled C# model"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Cap and run identity apply to every pure track state."
+        },
+        "guarantees": [
+          "Cap refusal preserves state.",
+          "New-run reset clears only temporary run purchases; resume preserves them."
+        ],
+        "id": "AC-02",
+        "intent_refs": [
+          "SCOPE-02"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "scenarios": [
+          {
+            "given": "A fixture track reaches M.",
+            "id": "SC-02",
+            "then": "The capped state is unchanged and the fresh run starts at P with first price C(1).",
+            "when": "A further purchase is attempted and then a fresh run starts."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER"
+        ],
+        "statement": "A purchase at cap is refused without changing n; a new run resets n to zero while resuming the same run preserves n and next price.",
+        "title": "Cap and lifecycle",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-02",
+          "method": "automated",
+          "negative_control": "Resetting n on resume must fail",
+          "oracle": "Cap refusal and explicit new-run/resume state outcomes",
+          "planned_target": "Named Python unittest driving compiled C# model"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "invariant",
+          "rationale": "Scope isolation and visual gate apply throughout this preparatory sprint."
+        },
+        "guarantees": [
+          "Only fixture inputs and pure shop state are added.",
+          "Visual owner acceptance remains pending and encounter outcomes do not change."
+        ],
+        "id": "AC-03",
+        "intent_refs": [
+          "SCOPE-03"
+        ],
+        "kind": "invariant",
+        "obligation": "must",
+        "scenarios": [
+          {
+            "given": "The review scene and legacy encounter remain at the current head.",
+            "id": "SC-03",
+            "then": "No encounter, economy, save or visual integration changes and fixture values remain test-only.",
+            "when": "The shop foundation is compiled and tested."
+          }
+        ],
+        "source_refs": [
+          "SRC-VIS",
+          "SRC-CODE"
+        ],
+        "statement": "The model takes cap and prices as fixture input and does not add UI, stats, reward, currency, save, or encounter behavior. Existing encounter fixture outcomes remain unchanged.",
+        "title": "Fixture-only and isolated",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-03",
+          "method": "automated_and_review",
+          "negative_control": "A selected 200-level cap or implicit money balance violates scope",
+          "oracle": "Invalid fixture refusal, no integration paths, and unchanged encounter sources",
+          "planned_target": "Named model tests and diff review"
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "inherited",
+        "choice": "Use P+n capped at M and next C(n+1); new runs reset n, resume preserves n.",
+        "id": "DEC-01",
+        "rationale": "Owner DIR-044 explicitly selected this simple track rule.",
+        "source_ref": "SRC-OWNER",
+        "topic": "Mechanics Shop track accounting"
+      }
+    ],
+    "governs": [],
+    "intent": {
+      "caller": "B continuing the Last Stand roadmap",
+      "id": "INTENT-01",
+      "outcome": "A pure fixture-scoped track model implements the accepted level, price, cap and new-run rules as independent preparation while visual acceptance remains pending.",
+      "problem": "The Unity encounter has no reusable Mechanics Shop track rules.",
+      "source_refs": [
+        "SRC-OWNER",
+        "SRC-VIS",
+        "SRC-CODE"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "NON-01",
+        "statement": "No shop UI, stat effect, wallet, payout, currency conversion, save, encounter integration, production cap or price curve, merge, or deployment."
+      }
+    ],
+    "open_decisions": [],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "SCOPE-01",
+        "statement": "Implement only pure Mechanics Shop track level and price rules."
+      },
+      {
+        "id": "SCOPE-02",
+        "statement": "Add a Unity C# pure Mechanics Shop track model and focused C#-backed tests; fixture values are supplied only by tests."
+      },
+      {
+        "id": "SCOPE-03",
+        "statement": "Independent preparatory implementation may proceed after this exact paired approval while A/B and live-player visual review remain pending; it does not accept or advance the playable visual milestone."
+      }
+    ],
+    "sections": [],
+    "sources": [
+      {
+        "id": "SRC-OWNER",
+        "locator": "singedTerra-visual-polish-source-update-2026-09-25.zip:sources/01-PRODUCT-DIRECTION.md#6.1",
+        "note": "DIR-044 specifies P+n, C(n+1), cap and fresh-run reset; DIR-059 keeps visual acceptance before the playable upgrade loop.",
+        "title": "Owner product direction revision 15",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-VIS",
+        "locator": ".codearbiter/specs/unity-battlefield-visual-review.md",
+        "note": "Owner A/B keep-change-mix and normal-speed motion acceptance remain pending; comparison profile is a non-awarding fixture.",
+        "title": "ST-VIS-01 visual checkpoint",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CODE",
+        "locator": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs and EncounterSession.cs",
+        "note": "Existing encounter is non-awarding and has no upgrade, reward, currency or save owner.",
+        "title": "Current Unity encounter code",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "summary": "Pure Mechanics Shop track rules",
+    "title": "Last Stand upgrade foundation"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-upgrade-foundation.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 5,
+  "schema_version": "0.3.1",
+  "slug": "last-stand-upgrade-foundation"
+}
+</script>
+</body></html>

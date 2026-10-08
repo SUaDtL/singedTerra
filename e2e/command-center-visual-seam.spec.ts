@@ -76,14 +76,15 @@ test.describe('T11 command-center production visual seam', () => {
     expect(focus.style).not.toBe('none');
     expect(focus.width).toBeGreaterThanOrEqual(2);
 
-    const resilientText = await page.locator('.command-center__item-label').evaluate((element) => ({
+    const ashRoadLabel = page.locator('[data-command-item="ash-road"] .command-center__item-label');
+    const resilientText = await ashRoadLabel.evaluate((element) => ({
       overflowWrap: getComputedStyle(element).overflowWrap,
       whiteSpace: getComputedStyle(element).whiteSpace,
     }));
     expect(resilientText.overflowWrap).toBe('anywhere');
     expect(resilientText.whiteSpace).toBe('normal');
 
-    const longLabel = await page.locator('.command-center__item-label').evaluate((element) => {
+    const longLabel = await ashRoadLabel.evaluate((element) => {
       element.textContent = 'Ash Road Expedition with an Improbably Long Campaign Designation and Extended Theater Command';
       const item = element.closest<HTMLElement>('.command-center__item')!;
       const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
@@ -195,7 +196,7 @@ test.describe('T11 command-center production visual seam', () => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await gotoCampaignCommandCenter(page);
 
-    const preferences = await page.locator('.command-center__item').evaluate((element) => {
+    const preferences = await page.locator('.command-center__item[data-command-item="ash-road"]').evaluate((element) => {
       const style = getComputedStyle(element);
       return {
         animationDuration: style.animationDuration,

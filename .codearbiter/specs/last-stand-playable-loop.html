@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand playable loop · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-LOOP-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-playable-loop.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">APPROVED · authority must be verified at use</span><h1>Last Stand playable loop</h1><p class="deck">A dedicated local prototype: fight, defeat, claim salvage, buy permanent Cannon Attack, and redeploy with a visible combat improvement. Build direction and prototype values are proposed for this pair; owner art acceptance remains separate.</p><div class="meta"><span>ST-LS-LOOP-SPEC</span><span>Revision 4 · schema 0.3.1</span><span>36 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INTENT-01 -->
+<article class="record" id="INTENT-01" data-ca-symbol="INTENT-01" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-01">INTENT-01</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Owner building Last Stand in the Unity Web prototype</div><div class="field"><span class="label">Outcome</span>A player can deploy, reach ordinary defeat, claim exactly one salvage, buy Cannon Attack, reload on the same origin, and redeploy with a clearly stronger cannon in a coherent interface with original sound feedback.</div><div class="field"><span class="label">Problem</span>The existing encounter and pure shop fixture do not yet deliver an awarding, saved, playable upgrade loop.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li><li><a href="#SRC-02">SRC-02</a></li></ul></div></article>
+<!-- CA:END:INTENT-01 -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:SCOPE-01 -->
+<article class="record" id="SCOPE-01" data-ca-symbol="SCOPE-01" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-01">SCOPE-01</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Defeat reward and capped permanent Cannon Attack with real next-run damage.</div></article>
+<!-- CA:END:SCOPE-01 -->
+
+<!-- CA:BEGIN:SCOPE-02 -->
+<article class="record" id="SCOPE-02" data-ca-symbol="SCOPE-02" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-02">SCOPE-02</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Versioned local save, idempotent Claim, failure/retry, and same-origin reload.</div></article>
+<!-- CA:END:SCOPE-02 -->
+
+<!-- CA:BEGIN:SCOPE-03 -->
+<article class="record" id="SCOPE-03" data-ca-symbol="SCOPE-03" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-03">SCOPE-03</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Dedicated gameplay scene, coherent garage/battle/results/workshop flow, compact layout, and original sound feedback.</div></article>
+<!-- CA:END:SCOPE-03 -->
+
+<!-- CA:BEGIN:SCOPE-04 -->
+<article class="record" id="SCOPE-04" data-ca-symbol="SCOPE-04" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-04">SCOPE-04</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Preserve review/legacy behavior and prove the bounded real loop through actual C#, Unity, and browser execution.</div></article>
+<!-- CA:END:SCOPE-04 -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:NON-GOAL-01 -->
+<article class="record" id="NON-GOAL-01" data-ca-symbol="NON-GOAL-01" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-GOAL-01">NON-GOAL-01</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No owner art selection, live-player session, merge, deployment, account/backend/cloud save, multi-tab economy authority, mobile certification, final balance, new enemies/weapons, in-run shop integration, music, middleware, or new test framework.</div></article>
+<!-- CA:END:NON-GOAL-01 -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APPROACH-01 -->
+<article class="record" id="APPROACH-01" data-ca-symbol="APPROACH-01" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-01">APPROACH-01</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DEC-01">DEC-01</a></li><li><a href="#DEC-02">DEC-02</a></li><li><a href="#DEC-03">DEC-03</a></li></ul></div><div class="field"><span class="label">Choice</span>Use a dedicated LastStandPrototype scene copied from the existing battlefield scene, a scene-local loop controller, pure progression state, a tiny localStorage bridge, and the existing session/art owners.</div><div class="field"><span class="label">Tradeoff</span>A local single-tab prototype demonstrates the real loop quickly. It does not promise cloud accounts, authoritative rewards, cross-origin persistence, multi-tab atomicity, or final balance.</div></article>
+<!-- CA:END:APPROACH-01 -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:CONSTRAINT-01 -->
+<article class="record" id="CONSTRAINT-01" data-ca-symbol="CONSTRAINT-01" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-01">CONSTRAINT-01</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li><li><a href="#SRC-02">SRC-02</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve the owner A/B keep/change/mix and normal-speed visual acceptance gates, the no-merge instruction, and remote live-player deferral. Draft readiness and automated evidence do not satisfy those gates.</div></article>
+<!-- CA:END:CONSTRAINT-01 -->
+
+<!-- CA:BEGIN:CONSTRAINT-02 -->
+<article class="record" id="CONSTRAINT-02" data-ca-symbol="CONSTRAINT-02" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-02">CONSTRAINT-02</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-02">SRC-02</a></li><li><a href="#SRC-03">SRC-03</a></li></ul></div><div class="field"><span class="label">Statement</span>All new awards are forgeable local prototype state only. Do not touch classic-client account progression, Supabase, SQL, credentials, verified awards, the existing MechanicsShopModel contract, or old native artifact records. No runtime dependency or broad verification framework.</div></article>
+<!-- CA:END:CONSTRAINT-02 -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:DEC-01 -->
+<article class="record" id="DEC-01" data-ca-symbol="DEC-01" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-01">DEC-01</a><h3>Build order and owner gates</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Build the dedicated playable loop now while A/B still choice and normal-speed motion acceptance remain pending; do not merge PR 524 until owner acceptance.</div><div class="field"><span class="label">Rationale</span>The owner explicitly wants a practical polished loop next. Building this new mode does not select an art treatment or claim acceptance of existing alternatives.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-01">SRC-01</a></div></article>
+<!-- CA:END:DEC-01 -->
+
+<!-- CA:BEGIN:DEC-02 -->
+<article class="record" id="DEC-02" data-ca-symbol="DEC-02" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-02">DEC-02</a><h3>Reversible prototype economy</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Cannon Attack levels 0..3 deal 20/30/40/50 cannon damage. Each ordinary defeat offers 1 salvage; next permanent level costs 1/2/3 salvage. Initial wallet and level are zero.</div><div class="field"><span class="label">Rationale</span>The first upgrade visibly changes a 30 HP first foe from surviving at 10 HP to a one-hit cannon defeat. Three capped levels avoid a one-purchase dead end without introducing an upgrade catalog. This is independent of fixture-only in-run C(n+1) shop pricing.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-01">SRC-01</a></div></article>
+<!-- CA:END:DEC-02 -->
+
+<!-- CA:BEGIN:DEC-03 -->
+<article class="record" id="DEC-03" data-ca-symbol="DEC-03" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-03">DEC-03</a><h3>Dedicated mode and save boundary</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Use profile playable-prototype-v1 with an explicit copy of provisional review pacing, a local version-1 JSON save, and original procedural SFX. Preserve the non-awarding review scene and legacy encounter.</div><div class="field"><span class="label">Rationale</span>Reuses art and established timing without silently changing review mechanics or adding a backend, audio middleware, save framework, or dependency.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-03">SRC-03</a></div></article>
+<!-- CA:END:DEC-03 -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:AC-01 -->
+<article class="record" id="AC-01" data-ca-symbol="AC-01" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-01">AC-01</a><h3>One defeat, one reward</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the bounded playable prototype loop.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Only ordinary Defeated in gameplay mode produces a staged 1-salvage reward. Capture terminal time/kills before releasing the model. Claim is idempotent, and abandon, pause, focus loss, technical failure and non-defeat horizon award zero. Each fitting can reach ordinary defeat under playable-prototype-v1.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-01">SCOPE-01</a></li><li><a href="#SCOPE-04">SCOPE-04</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>A new gameplay run and zero wallet</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCN-01 -->
+<article class="record" id="SCN-01" data-ca-symbol="SCN-01" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCN-01">SCN-01</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A new gameplay run and zero wallet</div><div class="field"><span class="label">Then</span>Wallet gains exactly one salvage for the ordinary defeat; excluded outcomes gain zero.</div><div class="field"><span class="label">When</span>Ordinary defeat is staged, Claim is clicked twice, then excluded terminal reasons are attempted</div></article>
+<!-- CA:END:SCN-01 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li></ul></div><div class="field"><span class="label">Statement</span>Only ordinary Defeated in gameplay mode produces a staged 1-salvage reward. Capture terminal time/kills before releasing the model. Claim is idempotent, and abandon, pause, focus loss, technical failure and non-defeat horizon award zero. Each fitting can reach ordinary defeat under playable-prototype-v1.</div><div class="field"><span class="label">Trigger</span>Ordinary defeat is staged, Claim is clicked twice, then excluded terminal reasons are attempted</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-01 -->
+<article class="record" id="VERIFY-01" data-ca-symbol="VERIFY-01" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-01">VERIFY-01</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A duplicate Claim or failure transition that grants salvage fails the focused case.</div><div class="field"><span class="label">Oracle</span>Repeated terminal/Claim input leaves exactly one credit; excluded outcomes leave wallet unchanged; both fittings terminate as Defeated.</div><div class="field"><span class="label">Planned target</span>Compiled progression cases and real Unity lifecycle check</div></article>
+<!-- CA:END:VERIFY-01 -->
+</div></article>
+<!-- CA:END:AC-01 -->
+
+<!-- CA:BEGIN:AC-02 -->
+<article class="record" id="AC-02" data-ca-symbol="AC-02" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-02">AC-02</a><h3>Save before economic success</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the bounded playable prototype loop.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Use the versioned single JSON object and save/retry contract in SEC-01. Deployment, claim and purchase become successful only after exact localStorage readback. Restore saved pending reward and purchased level on same-origin reload. Reject malformed/version/shape/ID state without erasing it or enabling purchases.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-02">SCOPE-02</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>A pending defeat or purchase and versioned local save</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCN-02 -->
+<article class="record" id="SCN-02" data-ca-symbol="SCN-02" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCN-02">SCN-02</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A pending defeat or purchase and versioned local save</div><div class="field"><span class="label">Then</span>No false Saved state or duplicate award; the exact committed pending reward, balance and level restore.</div><div class="field"><span class="label">When</span>Storage write/readback fails, Retry is used, then the same-origin page reloads</div></article>
+<!-- CA:END:SCN-02 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li></ul></div><div class="field"><span class="label">Statement</span>Use the versioned single JSON object and save/retry contract in SEC-01. Deployment, claim and purchase become successful only after exact localStorage readback. Restore saved pending reward and purchased level on same-origin reload. Reject malformed/version/shape/ID state without erasing it or enabling purchases.</div><div class="field"><span class="label">Trigger</span>Storage write/readback fails, Retry is used, then the same-origin page reloads</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-02 -->
+<article class="record" id="VERIFY-02" data-ca-symbol="VERIFY-02" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-02">VERIFY-02</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Throwing getter/setter, mismatched readback, write-then-read failure and malformed save each refuse false success.</div><div class="field"><span class="label">Oracle</span>Failed get/set/readback preserves committed wallet/level and disables economic transitions; retry safely reconciles an uncertain successful write; reload preserves one pending or claimed reward without duplication.</div><div class="field"><span class="label">Planned target</span>Compiled save-transition cases, actual WebGL bridge and real-browser reload</div></article>
+<!-- CA:END:VERIFY-02 -->
+</div></article>
+<!-- CA:END:AC-02 -->
+
+<!-- CA:BEGIN:AC-03 -->
+<article class="record" id="AC-03" data-ca-symbol="AC-03" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-03">AC-03</a><h3>Upgrade changes real next-run combat</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the bounded playable prototype loop.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Cannon Attack level 0..3 uses damage 20/30/40/50 and permanent costs 1/2/3. Insufficient funds and cap refuse without mutation; purchases occur outside combat and apply on the next Deploy. With the same repair fitting and gameplay profile, the first 30 HP foe has 10 HP after one baseline cannon hit and is defeated by one level-1 cannon hit.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-01">SCOPE-01</a></li><li><a href="#SCOPE-04">SCOPE-04</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The repair fitting and identical gameplay profile at Cannon Attack levels 0 and 1</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCN-03 -->
+<article class="record" id="SCN-03" data-ca-symbol="SCN-03" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCN-03">SCN-03</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The repair fitting and identical gameplay profile at Cannon Attack levels 0 and 1</div><div class="field"><span class="label">Then</span>Baseline enemy retains 10 HP; upgraded enemy is defeated; insufficient or capped purchases do not spend.</div><div class="field"><span class="label">When</span>The first cannon hit reaches the first 30 HP enemy in each run</div></article>
+<!-- CA:END:SCN-03 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li></ul></div><div class="field"><span class="label">Statement</span>Cannon Attack level 0..3 uses damage 20/30/40/50 and permanent costs 1/2/3. Insufficient funds and cap refuse without mutation; purchases occur outside combat and apply on the next Deploy. With the same repair fitting and gameplay profile, the first 30 HP foe has 10 HP after one baseline cannon hit and is defeated by one level-1 cannon hit.</div><div class="field"><span class="label">Trigger</span>The first cannon hit reaches the first 30 HP enemy in each run</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-03 -->
+<article class="record" id="VERIFY-03" data-ca-symbol="VERIFY-03" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-03">VERIFY-03</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A cosmetic-only damage label, changed fitting/profile, charge on cap, or live mid-run upgrade fails.</div><div class="field"><span class="label">Oracle</span>Real EncounterModel damage and visible combat outcome agree with garage/workshop/battle damage labels; active run loadout/damage remain frozen.</div><div class="field"><span class="label">Planned target</span>Actual C# model and imported Unity session, corroborated by normal-speed browser loop</div></article>
+<!-- CA:END:VERIFY-03 -->
+</div></article>
+<!-- CA:END:AC-03 -->
+
+<!-- CA:BEGIN:AC-04 -->
+<article class="record" id="AC-04" data-ca-symbol="AC-04" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-04">AC-04</a><h3>Clear compact player loop</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the bounded playable prototype loop.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Provide the SEC-02 garage, battle, results and one-card workshop flow using one existing session and Canvas. Display truthful saved-state/failure/retry, balance, price and current -&gt; next damage. Keep the action visible at 800x600, and label the dedicated Web entry Last Stand.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-03">SCOPE-03</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The dedicated gameplay build at 800x600 and 1280x720</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCN-04 -->
+<article class="record" id="SCN-04" data-ca-symbol="SCN-04" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCN-04">SCN-04</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The dedicated gameplay build at 800x600 and 1280x720</div><div class="field"><span class="label">Then</span>Each phase exposes a reachable primary action and truthful saved/damage labels with no review controls.</div><div class="field"><span class="label">When</span>Real pointer input completes Deploy, Claim, Buy and Redeploy</div></article>
+<!-- CA:END:SCN-04 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li></ul></div><div class="field"><span class="label">Statement</span>Provide the SEC-02 garage, battle, results and one-card workshop flow using one existing session and Canvas. Display truthful saved-state/failure/retry, balance, price and current -&gt; next damage. Keep the action visible at 800x600, and label the dedicated Web entry Last Stand.</div><div class="field"><span class="label">Trigger</span>Real pointer input completes Deploy, Claim, Buy and Redeploy</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-04 -->
+<article class="record" id="VERIFY-04" data-ca-symbol="VERIFY-04" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-04">VERIFY-04</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A compact hidden CTA or failed-storage success label prevents a passing browser result.</div><div class="field"><span class="label">Oracle</span>No overlapping phase controls, duplicate Canvas/session, off-screen action, false Saved label or gameplay A/B/debug controls; pointer input completes Claim, Buy and Redeploy.</div><div class="field"><span class="label">Planned target</span>Real Unity hierarchy/lifecycle check and normal-speed browser pointer/capture proof at 1280x720 and 800x600</div></article>
+<!-- CA:END:VERIFY-04 -->
+</div></article>
+<!-- CA:END:AC-04 -->
+
+<!-- CA:BEGIN:AC-05 -->
+<article class="record" id="AC-05" data-ca-symbol="AC-05" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-05">AC-05</a><h3>Owned sound and terminal polish</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the bounded playable prototype loop.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Use original procedural cannon, impact/destruction, defeat and purchase cues with a bounded voice pool, a visible session-persistent mute, and Web unlock from Deploy. Paused/hidden states stop sound and do not replay queued cues. Let terminal shot/impact visuals settle without advancing ended combat before showing results.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-03">SCOPE-03</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Web audio unlocked from Deploy and a live or terminal gameplay run</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCN-05 -->
+<article class="record" id="SCN-05" data-ca-symbol="SCN-05" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCN-05">SCN-05</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Web audio unlocked from Deploy and a live or terminal gameplay run</div><div class="field"><span class="label">Then</span>Distinct owned cues are heard only when admitted; no queued burst, and ended combat remains frozen while terminal visuals settle.</div><div class="field"><span class="label">When</span>Shot, hit, defeat and buy occur, then mute, pause and focus loss are exercised</div></article>
+<!-- CA:END:SCN-05 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li></ul></div><div class="field"><span class="label">Statement</span>Use original procedural cannon, impact/destruction, defeat and purchase cues with a bounded voice pool, a visible session-persistent mute, and Web unlock from Deploy. Paused/hidden states stop sound and do not replay queued cues. Let terminal shot/impact visuals settle without advancing ended combat before showing results.</div><div class="field"><span class="label">Trigger</span>Shot, hit, defeat and buy occur, then mute, pause and focus loss are exercised</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-05 -->
+<article class="record" id="VERIFY-05" data-ca-symbol="VERIFY-05" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-05">VERIFY-05</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A looping/queued burst, muted cue, hidden audio or resumed terminal model tick fails inspection/check.</div><div class="field"><span class="label">Oracle</span>Shot, hit/kill, defeat and buy have distinct audible feedback at normal speed; mute and pause/focus suppress it, and terminal model tick/hull remain fixed while admitted transients settle.</div><div class="field"><span class="label">Planned target</span>Real Unity pause/terminal/audio-owner check plus normal-speed Web capture/listen and mute/pause interaction</div></article>
+<!-- CA:END:VERIFY-05 -->
+</div></article>
+<!-- CA:END:AC-05 -->
+
+<!-- CA:BEGIN:AC-06 -->
+<article class="record" id="AC-06" data-ca-symbol="AC-06" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-06">AC-06</a><h3>Dedicated mode preserves existing owners</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the bounded playable prototype loop.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Only LastStandPrototype selects playable-prototype-v1 and economic transitions. It explicitly wins profile routing over the copied BattlefieldReview component. Reuse existing art/session/Canvas; saved BattlefieldReview and FieldAssembly scenes, A/B non-awarding behavior, legacy deterministic outcomes and the fixture-only MechanicsShopModel remain intact.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-04">SCOPE-04</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Gameplay, BattlefieldReview and FieldAssembly scenes</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCN-06 -->
+<article class="record" id="SCN-06" data-ca-symbol="SCN-06" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCN-06">SCN-06</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Gameplay, BattlefieldReview and FieldAssembly scenes</div><div class="field"><span class="label">Then</span>Only gameplay can award; review and legacy profiles/outcomes and saved scene hashes remain unchanged.</div><div class="field"><span class="label">When</span>Each scene initializes and its real session runs the appropriate profile</div></article>
+<!-- CA:END:SCN-06 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-01">SRC-01</a></li></ul></div><div class="field"><span class="label">Statement</span>Only LastStandPrototype selects playable-prototype-v1 and economic transitions. It explicitly wins profile routing over the copied BattlefieldReview component. Reuse existing art/session/Canvas; saved BattlefieldReview and FieldAssembly scenes, A/B non-awarding behavior, legacy deterministic outcomes and the fixture-only MechanicsShopModel remain intact.</div><div class="field"><span class="label">Trigger</span>Each scene initializes and its real session runs the appropriate profile</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-06 -->
+<article class="record" id="VERIFY-06" data-ca-symbol="VERIFY-06" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-06">VERIFY-06</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Accidentally routing gameplay to review profile, adding a second session, or awarding from review is rejected.</div><div class="field"><span class="label">Oracle</span>Review and legacy cannot stage/claim salvage, retain their prior profiles and outcomes, and no account/backend/art-acceptance authority changes.</div><div class="field"><span class="label">Planned target</span>Scene/source hashes, existing focused legacy fixture and real Unity mode checks</div></article>
+<!-- CA:END:VERIFY-06 -->
+</div></article>
+<!-- CA:END:AC-06 -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-01 -->
+<article class="record" id="SEC-01" data-ca-symbol="SEC-01" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-01">SEC-01</a><h3>Save and failure contract</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Store one JSON object under singedTerra.lastStand.prototype.v1: version=1, nonnegative integral credits, permanentLevel 0..3, monotonic nextRunId, lastFinalizedRunId, and optional pendingDefeat containing runId, reward=1, elapsedTicks and kills. Reserve and persist a new run ID before Deploy. Capture ordinary defeat metrics before ReturnToInspection releases the model, and persist the pending reward before enabling Claim. Claim atomically clears pendingDefeat, adds one credit, and records the finalized run ID in one write. Purchase atomically subtracts its exact cost and increments the level in one write. Commit in-memory economic state only after setItem and exact readback succeed. Exact duplicate callbacks/claims do not award twice. A lost active run on reload is abandoned without reward; a saved pending defeat restores the claim flow. A missing record initializes zero state through a successful write; malformed, unsupported-version or inconsistent saved data is preserved and blocks economic transitions with an explanation and Retry. Storage failure preserves current committed state and pending operation; Retry reconciles a matching already-written candidate before retrying so a write followed by failed readback cannot duplicate rewards. Do not silently replace durable storage with memory or auto-reset corrupt data. No claim of crash-proof disk persistence or concurrent-tab atomicity.</p></div></div></article>
+<!-- CA:END:SEC-01 -->
+
+<!-- CA:BEGIN:SEC-02 -->
+<article class="record" id="SEC-02" data-ca-symbol="SEC-02" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-02">SEC-02</a><h3>Player flow and feedback</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Garage has fitting, permanent level, cannon damage and next benefit, saved-state text and Deploy. Battle shows hull, elapsed time, kills, current cannon damage, pause and mute. Ordinary defeat lets final recoil/impact effects settle for a short bounded transition, then presents time, kills, reward, balance and Claim and Continue. Workshop has one Cannon Attack card with current -&gt; next damage, cost, balance, insufficient/capped/disabled states, purchase confirmation and Redeploy. Results/workshop replace nonessential battle and review controls; at 800x600 the primary action stays visible and reachable. No A/B selector, recoil-preview, orbit or part-debug controls in gameplay mode. Original procedural cannon, impact/destruction, defeat and purchase cues use bounded overlapping AudioSources, unlock from Deploy, stop while paused/hidden and obey a visible mute retained for the current session. No deferred audio burst on resume. Web title/loading identify Last Stand.</p></div></div></article>
+<!-- CA:END:SEC-02 -->
+
+<!-- CA:BEGIN:SEC-03 -->
+<article class="record" id="SEC-03" data-ca-symbol="SEC-03" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-03">SEC-03</a><h3>Verification boundaries</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Use focused actual C# compiler cases, one real Unity Editor lifecycle/combat/scene check, and one source-bound Web export plus a bounded real-pointer loop at normal speed. Browser proof includes same-origin reload, saved pending reward and post-purchase state, plus compact layout and audio/mute/pause inspection. Existing early-tick review smoke alone is insufficient for this loop. Do not claim numeric C# coverage: Unity/C# is unmentioned in the repository Testing profile and no configured numeric coverage runner exists. Preserve source and saved review/legacy scene hashes. Owner visual acceptance and live-player feedback remain explicitly pending.</p></div></div></article>
+<!-- CA:END:SEC-03 -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-01 -->
+<article class="record" id="SRC-01" data-ca-symbol="SRC-01" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-01">SRC-01</a><h3>Owner request for one polished Last Stand loop</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-04</div><div class="field"><span class="label">Note</span>Owner requests continued building of one polished loop after fight -&gt; defeat -&gt; earn -&gt; buy one permanent upgrade -&gt; restart visibly improved was described. Pushes to PR 524 remain allowed through gates; no merge until owner acceptance; live-player sessions deferred while remote.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-01 -->
+
+<!-- CA:BEGIN:SRC-02 -->
+<article class="record" id="SRC-02" data-ca-symbol="SRC-02" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-02">SRC-02</a><h3>Existing Unity review and Last Stand direction</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/specs/unity-battlefield-visual-review.md; campaign-unity/docs/LAST-STAND-ROADMAP.md; campaign-unity/README.md</div><div class="field"><span class="label">Note</span>Review scene and owner still/motion acceptance are retained. Existing fixture-only Mechanics Shop rules and its separate native approval records are not repurposed as permanent-price approval.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-02 -->
+
+<!-- CA:BEGIN:SRC-03 -->
+<article class="record" id="SRC-03" data-ca-symbol="SRC-03" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-03">SRC-03</a><h3>Existing Unity owners and focused verification tools</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts; campaign-unity/Tools/build_web.py; campaign-unity/Tools/last_stand_shop/test_shop.py</div><div class="field"><span class="label">Note</span>Reuse deterministic model, single session/Canvas, existing tank/environment art, pinned Unity 6000.3.24f1, compiler harness pattern, and browser driver. No new runtime dependency.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-03 -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>e55361fa62c055222bd36c8bebd169dff68704d2</div><div class="field"><span class="label">Observed date</span>2026-10-04</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Execution must verify current receipt sources and binding.</p><div class="fields"><div class="field"><span class="label">Approvals</span><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-LOOP-SPEC</div><div class="field"><span class="label">Attestation level</span>workflow_attested</div><div class="field"><span class="label">Authority kind</span>user_workflow</div><div class="field"><span class="label">Normative sha256</span>58b5ecaec95493a38751a65320949dd846716b86abf46a6cab82a62161b694aa</div><div class="field"><span class="label">Source ref</span>.codearbiter/.artifacts/receipts/40dfbaf29b0f269f5874228586dd33fb5e8312ad3d9c72ee0e67d0803dd01ee5.json</div><div class="field"><span class="label">Source sha256</span>40dfbaf29b0f269f5874228586dd33fb5e8312ad3d9c72ee0e67d0803dd01ee5</div></div></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>approved</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 58b5ecaec95493a38751a65320949dd846716b86abf46a6cab82a62161b694aa<br>Model SHA-256: 0fce3f7b2eb7f6743b3b5c5960b8fdece577c884403710bca32ea84427ddf1df</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-LOOP-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [
+      {
+        "artifact_id": "ST-LS-LOOP-SPEC",
+        "attestation_level": "workflow_attested",
+        "authority_kind": "user_workflow",
+        "normative_sha256": "58b5ecaec95493a38751a65320949dd846716b86abf46a6cab82a62161b694aa",
+        "source_ref": ".codearbiter/.artifacts/receipts/40dfbaf29b0f269f5874228586dd33fb5e8312ad3d9c72ee0e67d0803dd01ee5.json",
+        "source_sha256": "40dfbaf29b0f269f5874228586dd33fb5e8312ad3d9c72ee0e67d0803dd01ee5"
+      }
+    ],
+    "review_notes": [],
+    "state": "approved"
+  },
+  "integrity": {
+    "model_sha256": "0fce3f7b2eb7f6743b3b5c5960b8fdece577c884403710bca32ea84427ddf1df",
+    "normative_sha256": "58b5ecaec95493a38751a65320949dd846716b86abf46a6cab82a62161b694aa",
+    "symbol_count": 36
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "DEC-01",
+        "DEC-02",
+        "DEC-03"
+      ],
+      "choice": "Use a dedicated LastStandPrototype scene copied from the existing battlefield scene, a scene-local loop controller, pure progression state, a tiny localStorage bridge, and the existing session/art owners.",
+      "id": "APPROACH-01",
+      "tradeoff": "A local single-tab prototype demonstrates the real loop quickly. It does not promise cloud accounts, authoritative rewards, cross-origin persistence, multi-tab atomicity, or final balance."
+    },
+    "baseline": {
+      "commit": "e55361fa62c055222bd36c8bebd169dff68704d2",
+      "observed_date": "2026-10-04",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04"
+        ],
+        "id": "CONSTRAINT-01",
+        "source_refs": [
+          "SRC-01",
+          "SRC-02"
+        ],
+        "statement": "Preserve the owner A/B keep/change/mix and normal-speed visual acceptance gates, the no-merge instruction, and remote live-player deferral. Draft readiness and automated evidence do not satisfy those gates."
+      },
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04"
+        ],
+        "id": "CONSTRAINT-02",
+        "source_refs": [
+          "SRC-02",
+          "SRC-03"
+        ],
+        "statement": "All new awards are forgeable local prototype state only. Do not touch classic-client account progression, Supabase, SQL, credentials, verified awards, the existing MechanicsShopModel contract, or old native artifact records. No runtime dependency or broad verification framework."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the bounded playable prototype loop."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02"
+        ],
+        "guarantees": [
+          "Only ordinary Defeated in gameplay mode produces a staged 1-salvage reward. Capture terminal time/kills before releasing the model. Claim is idempotent, and abandon, pause, focus loss, technical failure and non-defeat horizon award zero. Each fitting can reach ordinary defeat under playable-prototype-v1."
+        ],
+        "id": "AC-01",
+        "intent_refs": [
+          "SCOPE-01",
+          "SCOPE-04"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "A new gameplay run and zero wallet"
+        ],
+        "scenarios": [
+          {
+            "given": "A new gameplay run and zero wallet",
+            "id": "SCN-01",
+            "then": "Wallet gains exactly one salvage for the ordinary defeat; excluded outcomes gain zero.",
+            "when": "Ordinary defeat is staged, Claim is clicked twice, then excluded terminal reasons are attempted"
+          }
+        ],
+        "source_refs": [
+          "SRC-01"
+        ],
+        "statement": "Only ordinary Defeated in gameplay mode produces a staged 1-salvage reward. Capture terminal time/kills before releasing the model. Claim is idempotent, and abandon, pause, focus loss, technical failure and non-defeat horizon award zero. Each fitting can reach ordinary defeat under playable-prototype-v1.",
+        "title": "One defeat, one reward",
+        "trigger": "Ordinary defeat is staged, Claim is clicked twice, then excluded terminal reasons are attempted",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-01",
+          "method": "automated_and_review",
+          "negative_control": "A duplicate Claim or failure transition that grants salvage fails the focused case.",
+          "oracle": "Repeated terminal/Claim input leaves exactly one credit; excluded outcomes leave wallet unchanged; both fittings terminate as Defeated.",
+          "planned_target": "Compiled progression cases and real Unity lifecycle check"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the bounded playable prototype loop."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02"
+        ],
+        "guarantees": [
+          "Use the versioned single JSON object and save/retry contract in SEC-01. Deployment, claim and purchase become successful only after exact localStorage readback. Restore saved pending reward and purchased level on same-origin reload. Reject malformed/version/shape/ID state without erasing it or enabling purchases."
+        ],
+        "id": "AC-02",
+        "intent_refs": [
+          "SCOPE-02"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "A pending defeat or purchase and versioned local save"
+        ],
+        "scenarios": [
+          {
+            "given": "A pending defeat or purchase and versioned local save",
+            "id": "SCN-02",
+            "then": "No false Saved state or duplicate award; the exact committed pending reward, balance and level restore.",
+            "when": "Storage write/readback fails, Retry is used, then the same-origin page reloads"
+          }
+        ],
+        "source_refs": [
+          "SRC-01"
+        ],
+        "statement": "Use the versioned single JSON object and save/retry contract in SEC-01. Deployment, claim and purchase become successful only after exact localStorage readback. Restore saved pending reward and purchased level on same-origin reload. Reject malformed/version/shape/ID state without erasing it or enabling purchases.",
+        "title": "Save before economic success",
+        "trigger": "Storage write/readback fails, Retry is used, then the same-origin page reloads",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-02",
+          "method": "automated_and_review",
+          "negative_control": "Throwing getter/setter, mismatched readback, write-then-read failure and malformed save each refuse false success.",
+          "oracle": "Failed get/set/readback preserves committed wallet/level and disables economic transitions; retry safely reconciles an uncertain successful write; reload preserves one pending or claimed reward without duplication.",
+          "planned_target": "Compiled save-transition cases, actual WebGL bridge and real-browser reload"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the bounded playable prototype loop."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02"
+        ],
+        "guarantees": [
+          "Cannon Attack level 0..3 uses damage 20/30/40/50 and permanent costs 1/2/3. Insufficient funds and cap refuse without mutation; purchases occur outside combat and apply on the next Deploy. With the same repair fitting and gameplay profile, the first 30 HP foe has 10 HP after one baseline cannon hit and is defeated by one level-1 cannon hit."
+        ],
+        "id": "AC-03",
+        "intent_refs": [
+          "SCOPE-01",
+          "SCOPE-04"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The repair fitting and identical gameplay profile at Cannon Attack levels 0 and 1"
+        ],
+        "scenarios": [
+          {
+            "given": "The repair fitting and identical gameplay profile at Cannon Attack levels 0 and 1",
+            "id": "SCN-03",
+            "then": "Baseline enemy retains 10 HP; upgraded enemy is defeated; insufficient or capped purchases do not spend.",
+            "when": "The first cannon hit reaches the first 30 HP enemy in each run"
+          }
+        ],
+        "source_refs": [
+          "SRC-01"
+        ],
+        "statement": "Cannon Attack level 0..3 uses damage 20/30/40/50 and permanent costs 1/2/3. Insufficient funds and cap refuse without mutation; purchases occur outside combat and apply on the next Deploy. With the same repair fitting and gameplay profile, the first 30 HP foe has 10 HP after one baseline cannon hit and is defeated by one level-1 cannon hit.",
+        "title": "Upgrade changes real next-run combat",
+        "trigger": "The first cannon hit reaches the first 30 HP enemy in each run",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-03",
+          "method": "automated_and_review",
+          "negative_control": "A cosmetic-only damage label, changed fitting/profile, charge on cap, or live mid-run upgrade fails.",
+          "oracle": "Real EncounterModel damage and visible combat outcome agree with garage/workshop/battle damage labels; active run loadout/damage remain frozen.",
+          "planned_target": "Actual C# model and imported Unity session, corroborated by normal-speed browser loop"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the bounded playable prototype loop."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02"
+        ],
+        "guarantees": [
+          "Provide the SEC-02 garage, battle, results and one-card workshop flow using one existing session and Canvas. Display truthful saved-state/failure/retry, balance, price and current -\u003e next damage. Keep the action visible at 800x600, and label the dedicated Web entry Last Stand."
+        ],
+        "id": "AC-04",
+        "intent_refs": [
+          "SCOPE-03"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The dedicated gameplay build at 800x600 and 1280x720"
+        ],
+        "scenarios": [
+          {
+            "given": "The dedicated gameplay build at 800x600 and 1280x720",
+            "id": "SCN-04",
+            "then": "Each phase exposes a reachable primary action and truthful saved/damage labels with no review controls.",
+            "when": "Real pointer input completes Deploy, Claim, Buy and Redeploy"
+          }
+        ],
+        "source_refs": [
+          "SRC-01"
+        ],
+        "statement": "Provide the SEC-02 garage, battle, results and one-card workshop flow using one existing session and Canvas. Display truthful saved-state/failure/retry, balance, price and current -\u003e next damage. Keep the action visible at 800x600, and label the dedicated Web entry Last Stand.",
+        "title": "Clear compact player loop",
+        "trigger": "Real pointer input completes Deploy, Claim, Buy and Redeploy",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-04",
+          "method": "automated_and_review",
+          "negative_control": "A compact hidden CTA or failed-storage success label prevents a passing browser result.",
+          "oracle": "No overlapping phase controls, duplicate Canvas/session, off-screen action, false Saved label or gameplay A/B/debug controls; pointer input completes Claim, Buy and Redeploy.",
+          "planned_target": "Real Unity hierarchy/lifecycle check and normal-speed browser pointer/capture proof at 1280x720 and 800x600"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the bounded playable prototype loop."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02"
+        ],
+        "guarantees": [
+          "Use original procedural cannon, impact/destruction, defeat and purchase cues with a bounded voice pool, a visible session-persistent mute, and Web unlock from Deploy. Paused/hidden states stop sound and do not replay queued cues. Let terminal shot/impact visuals settle without advancing ended combat before showing results."
+        ],
+        "id": "AC-05",
+        "intent_refs": [
+          "SCOPE-03"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Web audio unlocked from Deploy and a live or terminal gameplay run"
+        ],
+        "scenarios": [
+          {
+            "given": "Web audio unlocked from Deploy and a live or terminal gameplay run",
+            "id": "SCN-05",
+            "then": "Distinct owned cues are heard only when admitted; no queued burst, and ended combat remains frozen while terminal visuals settle.",
+            "when": "Shot, hit, defeat and buy occur, then mute, pause and focus loss are exercised"
+          }
+        ],
+        "source_refs": [
+          "SRC-01"
+        ],
+        "statement": "Use original procedural cannon, impact/destruction, defeat and purchase cues with a bounded voice pool, a visible session-persistent mute, and Web unlock from Deploy. Paused/hidden states stop sound and do not replay queued cues. Let terminal shot/impact visuals settle without advancing ended combat before showing results.",
+        "title": "Owned sound and terminal polish",
+        "trigger": "Shot, hit, defeat and buy occur, then mute, pause and focus loss are exercised",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-05",
+          "method": "automated_and_review",
+          "negative_control": "A looping/queued burst, muted cue, hidden audio or resumed terminal model tick fails inspection/check.",
+          "oracle": "Shot, hit/kill, defeat and buy have distinct audible feedback at normal speed; mute and pause/focus suppress it, and terminal model tick/hull remain fixed while admitted transients settle.",
+          "planned_target": "Real Unity pause/terminal/audio-owner check plus normal-speed Web capture/listen and mute/pause interaction"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the bounded playable prototype loop."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02"
+        ],
+        "guarantees": [
+          "Only LastStandPrototype selects playable-prototype-v1 and economic transitions. It explicitly wins profile routing over the copied BattlefieldReview component. Reuse existing art/session/Canvas; saved BattlefieldReview and FieldAssembly scenes, A/B non-awarding behavior, legacy deterministic outcomes and the fixture-only MechanicsShopModel remain intact."
+        ],
+        "id": "AC-06",
+        "intent_refs": [
+          "SCOPE-04"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Gameplay, BattlefieldReview and FieldAssembly scenes"
+        ],
+        "scenarios": [
+          {
+            "given": "Gameplay, BattlefieldReview and FieldAssembly scenes",
+            "id": "SCN-06",
+            "then": "Only gameplay can award; review and legacy profiles/outcomes and saved scene hashes remain unchanged.",
+            "when": "Each scene initializes and its real session runs the appropriate profile"
+          }
+        ],
+        "source_refs": [
+          "SRC-01"
+        ],
+        "statement": "Only LastStandPrototype selects playable-prototype-v1 and economic transitions. It explicitly wins profile routing over the copied BattlefieldReview component. Reuse existing art/session/Canvas; saved BattlefieldReview and FieldAssembly scenes, A/B non-awarding behavior, legacy deterministic outcomes and the fixture-only MechanicsShopModel remain intact.",
+        "title": "Dedicated mode preserves existing owners",
+        "trigger": "Each scene initializes and its real session runs the appropriate profile",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-06",
+          "method": "automated_and_review",
+          "negative_control": "Accidentally routing gameplay to review profile, adding a second session, or awarding from review is rejected.",
+          "oracle": "Review and legacy cannot stage/claim salvage, retain their prior profiles and outcomes, and no account/backend/art-acceptance authority changes.",
+          "planned_target": "Scene/source hashes, existing focused legacy fixture and real Unity mode checks"
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "proposed",
+        "choice": "Build the dedicated playable loop now while A/B still choice and normal-speed motion acceptance remain pending; do not merge PR 524 until owner acceptance.",
+        "id": "DEC-01",
+        "rationale": "The owner explicitly wants a practical polished loop next. Building this new mode does not select an art treatment or claim acceptance of existing alternatives.",
+        "source_ref": "SRC-01",
+        "topic": "Build order and owner gates"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Cannon Attack levels 0..3 deal 20/30/40/50 cannon damage. Each ordinary defeat offers 1 salvage; next permanent level costs 1/2/3 salvage. Initial wallet and level are zero.",
+        "id": "DEC-02",
+        "rationale": "The first upgrade visibly changes a 30 HP first foe from surviving at 10 HP to a one-hit cannon defeat. Three capped levels avoid a one-purchase dead end without introducing an upgrade catalog. This is independent of fixture-only in-run C(n+1) shop pricing.",
+        "source_ref": "SRC-01",
+        "topic": "Reversible prototype economy"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Use profile playable-prototype-v1 with an explicit copy of provisional review pacing, a local version-1 JSON save, and original procedural SFX. Preserve the non-awarding review scene and legacy encounter.",
+        "id": "DEC-03",
+        "rationale": "Reuses art and established timing without silently changing review mechanics or adding a backend, audio middleware, save framework, or dependency.",
+        "source_ref": "SRC-03",
+        "topic": "Dedicated mode and save boundary"
+      }
+    ],
+    "governs": [],
+    "intent": {
+      "caller": "Owner building Last Stand in the Unity Web prototype",
+      "id": "INTENT-01",
+      "outcome": "A player can deploy, reach ordinary defeat, claim exactly one salvage, buy Cannon Attack, reload on the same origin, and redeploy with a clearly stronger cannon in a coherent interface with original sound feedback.",
+      "problem": "The existing encounter and pure shop fixture do not yet deliver an awarding, saved, playable upgrade loop.",
+      "source_refs": [
+        "SRC-01",
+        "SRC-02"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "NON-GOAL-01",
+        "statement": "No owner art selection, live-player session, merge, deployment, account/backend/cloud save, multi-tab economy authority, mobile certification, final balance, new enemies/weapons, in-run shop integration, music, middleware, or new test framework."
+      }
+    ],
+    "open_decisions": [],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "SCOPE-01",
+        "statement": "Defeat reward and capped permanent Cannon Attack with real next-run damage."
+      },
+      {
+        "id": "SCOPE-02",
+        "statement": "Versioned local save, idempotent Claim, failure/retry, and same-origin reload."
+      },
+      {
+        "id": "SCOPE-03",
+        "statement": "Dedicated gameplay scene, coherent garage/battle/results/workshop flow, compact layout, and original sound feedback."
+      },
+      {
+        "id": "SCOPE-04",
+        "statement": "Preserve review/legacy behavior and prove the bounded real loop through actual C#, Unity, and browser execution."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Store one JSON object under singedTerra.lastStand.prototype.v1: version=1, nonnegative integral credits, permanentLevel 0..3, monotonic nextRunId, lastFinalizedRunId, and optional pendingDefeat containing runId, reward=1, elapsedTicks and kills. Reserve and persist a new run ID before Deploy. Capture ordinary defeat metrics before ReturnToInspection releases the model, and persist the pending reward before enabling Claim. Claim atomically clears pendingDefeat, adds one credit, and records the finalized run ID in one write. Purchase atomically subtracts its exact cost and increments the level in one write. Commit in-memory economic state only after setItem and exact readback succeed. Exact duplicate callbacks/claims do not award twice. A lost active run on reload is abandoned without reward; a saved pending defeat restores the claim flow. A missing record initializes zero state through a successful write; malformed, unsupported-version or inconsistent saved data is preserved and blocks economic transitions with an explanation and Retry. Storage failure preserves current committed state and pending operation; Retry reconciles a matching already-written candidate before retrying so a write followed by failed readback cannot duplicate rewards. Do not silently replace durable storage with memory or auto-reset corrupt data. No claim of crash-proof disk persistence or concurrent-tab atomicity.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-01",
+        "title": "Save and failure contract"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Garage has fitting, permanent level, cannon damage and next benefit, saved-state text and Deploy. Battle shows hull, elapsed time, kills, current cannon damage, pause and mute. Ordinary defeat lets final recoil/impact effects settle for a short bounded transition, then presents time, kills, reward, balance and Claim and Continue. Workshop has one Cannon Attack card with current -\u003e next damage, cost, balance, insufficient/capped/disabled states, purchase confirmation and Redeploy. Results/workshop replace nonessential battle and review controls; at 800x600 the primary action stays visible and reachable. No A/B selector, recoil-preview, orbit or part-debug controls in gameplay mode. Original procedural cannon, impact/destruction, defeat and purchase cues use bounded overlapping AudioSources, unlock from Deploy, stop while paused/hidden and obey a visible mute retained for the current session. No deferred audio burst on resume. Web title/loading identify Last Stand.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-02",
+        "title": "Player flow and feedback"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Use focused actual C# compiler cases, one real Unity Editor lifecycle/combat/scene check, and one source-bound Web export plus a bounded real-pointer loop at normal speed. Browser proof includes same-origin reload, saved pending reward and post-purchase state, plus compact layout and audio/mute/pause inspection. Existing early-tick review smoke alone is insufficient for this loop. Do not claim numeric C# coverage: Unity/C# is unmentioned in the repository Testing profile and no configured numeric coverage runner exists. Preserve source and saved review/legacy scene hashes. Owner visual acceptance and live-player feedback remain explicitly pending.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-03",
+        "title": "Verification boundaries"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-01",
+        "locator": "Current conversation, 2026-10-04",
+        "note": "Owner requests continued building of one polished loop after fight -\u003e defeat -\u003e earn -\u003e buy one permanent upgrade -\u003e restart visibly improved was described. Pushes to PR 524 remain allowed through gates; no merge until owner acceptance; live-player sessions deferred while remote.",
+        "title": "Owner request for one polished Last Stand loop",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-02",
+        "locator": ".codearbiter/specs/unity-battlefield-visual-review.md; campaign-unity/docs/LAST-STAND-ROADMAP.md; campaign-unity/README.md",
+        "note": "Review scene and owner still/motion acceptance are retained. Existing fixture-only Mechanics Shop rules and its separate native approval records are not repurposed as permanent-price approval.",
+        "title": "Existing Unity review and Last Stand direction",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-03",
+        "locator": "campaign-unity/Unity/Assets/Scripts; campaign-unity/Tools/build_web.py; campaign-unity/Tools/last_stand_shop/test_shop.py",
+        "note": "Reuse deterministic model, single session/Canvas, existing tank/environment art, pinned Unity 6000.3.24f1, compiler harness pattern, and browser driver. No new runtime dependency.",
+        "title": "Existing Unity owners and focused verification tools",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "summary": "A dedicated local prototype: fight, defeat, claim salvage, buy permanent Cannon Attack, and redeploy with a visible combat improvement. Build direction and prototype values are proposed for this pair; owner art acceptance remains separate.",
+    "title": "Last Stand playable loop"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-playable-loop.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 4,
+  "schema_version": "0.3.1",
+  "slug": "last-stand-playable-loop"
+}
+</script>
+</body></html>

@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "files": [
+    {
+      "path": "review-build-result.json",
+      "kind": "unchanged final technical receipt",
+      "sha256": "1717f2d740d42b1582e876287cfc12e91b01272ea1ce1b3f7c54076076f5ec35",
+      "bytes": 148509,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\build-20260926T092206Z-090ef5\\result.json"
+    },
+    {
+      "path": "field-build-result.json",
+      "kind": "unchanged final technical receipt",
+      "sha256": "9b27d0868e6f4bc6642ab0a40f61fa0af01b0dfb3248a0270ebde9611b8f093c",
+      "bytes": 148505,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\build-20260926T092302Z-d0c083\\result.json"
+    },
+    {
+      "path": "visual-result.json",
+      "kind": "unchanged final technical receipt",
+      "sha256": "d21310aaaf607ae3ca80d10d3c294da798cab80b83c8e47e5b1b7e6ada850f94",
+      "bytes": 263480,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-browser-20260926T092354Z-2a2185\\result.json"
+    },
+    {
+      "path": "art-result.json",
+      "kind": "unchanged final technical receipt",
+      "sha256": "e01d85e5119d9713e34efdb3f686ee8d3435fb8549432fe820d0ca2b75908c0a",
+      "bytes": 12855,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\browser-verify-20260926T093143Z-85eaff\\result.json"
+    },
+    {
+      "path": "inspection-result.json",
+      "kind": "unchanged final technical receipt",
+      "sha256": "c8f59bdf493900a6421248f142b1c3754658a90f55e7420d53f7a608952be375",
+      "bytes": 139837,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\inspection-20260926T093300Z-a74c4d\\result.json"
+    },
+    {
+      "path": "encounter-result.json",
+      "kind": "unchanged final technical receipt",
+      "sha256": "7d52270bc49b3fb4f3795ca739b9667c0040042cf76fbadc1416f15bf5f7625d",
+      "bytes": 27735,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\encounter-browser-20260926T093449Z-344f69\\result.json"
+    },
+    {
+      "path": "spacing-result.json",
+      "kind": "unchanged final technical receipt",
+      "sha256": "1c1d56c0bb852b9049077c0bc50a8fefceafe627888efa740f19520c06741b3b",
+      "bytes": 514,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-review-fixed-spacing-green-20260926T092021Z-566ac6\\result.json"
+    },
+    {
+      "path": "supporting/shader-stall-red.json",
+      "kind": "unchanged bounded supporting receipt; see validation notes for scope",
+      "sha256": "40b25eee37380d881457eeb7f0081e2b434950c3b0e9a170b22fb9b955401e4d",
+      "bytes": 3516,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\frame-gap-profile-1790412615194087500\\result.json"
+    },
+    {
+      "path": "supporting/shader-stall-green.json",
+      "kind": "unchanged bounded supporting receipt; see validation notes for scope",
+      "sha256": "fe0466cbf8025e8f8207726daf423d432ce1d7b413aa0aa9f25fb095aaca18fe",
+      "bytes": 2919,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\frame-gap-profile-20260926T085934Z-e07ae2\\result.json"
+    },
+    {
+      "path": "supporting/spacing-red.json",
+      "kind": "unchanged bounded supporting receipt; see validation notes for scope",
+      "sha256": "1e90b433dc0e5a1b1cef435098f9e95d88c136de7c02de7a6006f05432b2ab95",
+      "bytes": 514,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-review-spacing-red-20260926T091235Z-6c584f\\result.json"
+    },
+    {
+      "path": "supporting/host-tests.json",
+      "kind": "unchanged bounded supporting receipt; see validation notes for scope",
+      "sha256": "975fb88122d9c933af04348ccfaf5b9d67e8cf0bc24e08401c5a902982d9753e",
+      "bytes": 327,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\visual-host-final-20260926T090957Z-c73f55\\result.json"
+    },
+    {
+      "path": "supporting/cleanup-red.json",
+      "kind": "unchanged bounded supporting receipt; see validation notes for scope",
+      "sha256": "c05f3daa07a2032acf61450e98c13324b9e801b1323f5c355490cb3530d114fe",
+      "bytes": 488,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\cleanup-injection-red-1790412212404398900\\result.json"
+    },
+    {
+      "path": "supporting/cleanup-green.json",
+      "kind": "unchanged bounded supporting receipt; see validation notes for scope",
+      "sha256": "c4cfc5221ded31e64516d1ef23ad57973aaca944042a0d6bff86dbdf1fce66ce",
+      "bytes": 486,
+      "source": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\cleanup-injection-green-1790412275417138800\\result.json"
+    },
+    {
+      "path": "editor-markers.json",
+      "kind": "only explicitly named safe test markers; full editor logs are excluded",
+      "sha256": "1f49f0486376619eae09cb9c2005b36cc0e9b57e7baa3a0f03005996d82c5e84",
+      "bytes": 73827
+    }
+  ],
+  "source_head_at_export": "b09e2d0b73bfca41b639b3d60914a967ed7a91e7",
+  "source_inventory_sha256": "ed67dc19b37220e3745655ab47e1ef901a215e9cf464ca9f0b342d89e52bb1e9",
+  "owner_visual_acceptance": false
+}

@@ -14,3 +14,8 @@ docs/balance/*.json text eol=lf
 shared/src/verified/retained/** text eol=lf
 # Preserve the retained generator output's byte-bound trailing whitespace.
 shared/src/verified/retained/cq1.mjs whitespace=-blank-at-eol
+
+# Retain the Unity Web export's verified bytes across Windows and Linux checkouts.
+client/public/last-stand/** -text
+# Preserve the receipt-bound framework export's trailing whitespace bytes.
+client/public/last-stand/Build/Web-20261005T005554Z-4472c0.framework.js whitespace=-blank-at-eol

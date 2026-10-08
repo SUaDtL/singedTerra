@@ -1,0 +1,709 @@
+{
+    "scene": "Assets/Scenes/BattlefieldReview.unity",
+    "sceneBefore": "4dde2f399eb39bda79323f72d1a6bf35a743bd6cb483f28d30600bfde1e49703",
+    "sceneAfter": "510429daf6c91eda2504b51aecc2045c6e2021903b6ca5d2c5a5828191fb30af",
+    "rangedPaintBefore": "ac058f5339d5c9ea6f88dd564e6c16682c6f22ccc7c7b90733512cfd0215c9ea",
+    "rangedPaintAfter": "d0b94d899a67a08d1e43d50ff34daec09606af34d31e8e446530b995e84cba87",
+    "backup": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Evidence\\scene-polish-before-20260926T022951Z-e8c64c",
+    "editor": "6000.3.24f1",
+    "retainedSeedAssets": [
+        {
+            "path": "Assets/SeedPack02/catalog.json",
+            "sha256": "930fd1c4098b76c986f0dc093d47f62b717e80816f0b2a4792e833473c004740"
+        },
+        {
+            "path": "Assets/SeedPack02/catalog.json.meta",
+            "sha256": "66863a744ef9cb9352c070145388e2eb7b972a26165639fa3ec44857f1e14ceb"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated.meta",
+            "sha256": "1dd0ad3df7c0fae9ee6e66bf161be1d1750ae353e84d5c62ef12ee8318a39425"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials.meta",
+            "sha256": "45a6c5c6be41c84f163ca912a9b39a3b2aa85283bf58050695723a16a44c8dc8"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Amber.mat",
+            "sha256": "33daebc9d846a75483e31ffc06bc1ccea4d529c90a9263e4aedded1027961db7"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Amber.mat.meta",
+            "sha256": "bfe6bac485471e282e58adf2d1c44aa43b7fced538c49e5e509f6df813ec41f0"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Char.mat",
+            "sha256": "c1e9a56b8841c140bf8d814ce987a3637a1a0e567c0d8667bb2732af841f2ffd"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Char.mat.meta",
+            "sha256": "84f47b05c6b998ac4dffe7ac8b6af0593c7209d1f8903c7097f48a35092fc9b8"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Concrete.mat",
+            "sha256": "2b21cc456925c7cc16b7ea9e95123a44ffe97b1c0628be7353c4ff4c26210618"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Concrete.mat.meta",
+            "sha256": "da54d2601f4b9599f17d536ec1ffe2ceb2077c8ff5c2feb8dba6630fb3f167ed"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Earth.mat",
+            "sha256": "a1ac163d8f33be65d0e7d57e886088d2ab5529a882d8dd84ae8ee3c9f402c95a"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Earth.mat.meta",
+            "sha256": "8af28dc4ba76197021eace046b5bf8685f1cf614374d2bab685d7be7d65ace1d"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Edge.mat",
+            "sha256": "5f29eb5922dd5ac504d71a70ac10eed8d66d6f11694b8c6969837eef9984fbe6"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Edge.mat.meta",
+            "sha256": "a2378aff80110c983b29849bf650773b562c843506c51d92469bcd97a5a41c76"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Ivory.mat",
+            "sha256": "f3294e08d8240c9bc6a29ee977437396416460abe376de4e2d3abce27872bdf8"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Ivory.mat.meta",
+            "sha256": "464486c75e1fcf2982b1fcfd68352f533985faeedc130bb296ac815d8b5505cf"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Olive.mat",
+            "sha256": "e3f3e4af2c673e1e955038ea6ba3a6f4bfa39414f186d62fba863bbc32ee542d"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Olive.mat.meta",
+            "sha256": "431e9c4c2868d88ebf5fa4b82576938b75d03172a2545269de9933cdf03c1105"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Optic.mat",
+            "sha256": "eeac5474a2c93114620baac042b7998aadd299746d76e8953a24b2e3c266fc9a"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Optic.mat.meta",
+            "sha256": "9aa0abf40cc57da4b819c7d119c126ebc6e364c904ceca485496ec9fb1073bf8"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Oxide.mat",
+            "sha256": "cc1fedddcdb2a152b960fa072ac515e5ab60490af760334123c3f74d920beb7b"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Oxide.mat.meta",
+            "sha256": "adf241bb533d13831d6d2a88a6f99b681fb2af7cde5c159bc3bbad3c628774d1"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Rubber.mat",
+            "sha256": "cbe1304a13805762ae2af371bfc580b47bb07f37924d969d49e64dda0745d2f6"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Rubber.mat.meta",
+            "sha256": "7697763c5797bbf2973a84816647ba27026e539abe36d627a6f493a7e628486f"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Sand.mat",
+            "sha256": "007679d3cbc3710a5680acf73b6c8c6da9bc0381ef37d14e33c64c9874bb2fc3"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Sand.mat.meta",
+            "sha256": "4d6a8e398cb7969959287357ee8b975259072ad2ec7175b2020fba6e0d1b430b"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Steel.mat",
+            "sha256": "9405558354df78207d50966eb0c9184d6f7bef5680ca1eb8804a86462f8a9ea7"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Materials/ST2_Steel.mat.meta",
+            "sha256": "7340aaac05422af52c51d45268c40f3b5b6729ad259d6776fed2916e1030f08f"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs.meta",
+            "sha256": "3c3aa47ee961b3c411a8790eeabc45ae5b1c2c545c9c0739c7037c9ad9a6eb88"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B01.prefab",
+            "sha256": "939ba73ffee0424fae8a1c69ea36b8a496ddb9f32d8b77f3186f1031c233ca6e"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B01.prefab.meta",
+            "sha256": "1261e15956a91cc0185729a7726231f03f234100dd42115f4c6de033062b95e4"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B02.prefab",
+            "sha256": "a42f55c72858cedb9100f0d06022d53db6db23d7e5420c0065836ac374a98802"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B02.prefab.meta",
+            "sha256": "02af961df204af75a949123db0347f4765d32d2163aad1748310303e367f3742"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B03.prefab",
+            "sha256": "eef244696acf6232a9f876c826d6ecf6ffd85759b60eba872cb8d1a15cb614d6"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B03.prefab.meta",
+            "sha256": "d21e9ded69c6c244bd906b5f8c8ebabbeee40b2456103a93af92f1bd23dba3c8"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B04.prefab",
+            "sha256": "571c4b1f7bb53149fb3b2b18ce03038ec9a8e8d641808b36ae14b84cb5a019a2"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B04.prefab.meta",
+            "sha256": "90f32881bc7a82f0765f10d73502955a1ce8bc83751a2f732f7b6ab1f2cdf04d"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B05.prefab",
+            "sha256": "562bd2c6a98ea1169aaf78df7190a154a7dc12fdd9c587c3424fda1094110166"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-B05.prefab.meta",
+            "sha256": "969b1a5c8b9e41b9536600985f11e5a5236ca4ce8ffeac67ad73831eeff518c1"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E01.prefab",
+            "sha256": "cfbc3071ac514391fccf0d56babd7acbfb63dee3ef036a29ede674c041c8cee7"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E01.prefab.meta",
+            "sha256": "c59c9300267f8c437a5df6b4bdad54fa15ec0c3f53cbbe4e876ad42b51e405b0"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E01_LOD.prefab",
+            "sha256": "f5b05d29573af6c8bda11f7a61384020b91891492dcd90266c83942758f8581c"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E01_LOD.prefab.meta",
+            "sha256": "362fac52eccdce3a19eb453c9b59216c7ec0a687ec90fb9b2513bdaaeae0b0b2"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E01_LOD1.prefab",
+            "sha256": "4b0480a19b1122f5defd675fba4b1ff0330b0d6252da6eae4fea61406cf8793e"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E01_LOD1.prefab.meta",
+            "sha256": "92ec2e8acba180bdf935d6fa2fdb61ffe3c2dafca57260e768ab15b67745ccb9"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E02.prefab",
+            "sha256": "9c2475cded9de12bce26406a07a8a556189bbcafe98673e631f2151af0020551"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E02.prefab.meta",
+            "sha256": "58da6768c6ee5db973f8af218fc7a1582f883f81ce60d1cc416d6034919d00c4"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E02_LOD.prefab",
+            "sha256": "0ea0ed7537149e39eab60666c6e8256e339c22a2dcc71e2951a6eb0886fdc8cd"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E02_LOD.prefab.meta",
+            "sha256": "e2ed9d532a7e63fa911cf2767642c0e3591b06626f514ba5a00588364618f4fc"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E02_LOD1.prefab",
+            "sha256": "f6057c4295d43ddf28373bc5b5594b9c3c28dcd0f21c57c1fe6ca1608f2d656e"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E02_LOD1.prefab.meta",
+            "sha256": "06bcb0a2a15074e999f6e80a23f535d5d3325d48a10ac35527f0d5e6d2fc8442"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E03.prefab",
+            "sha256": "bc39e08e4405e53f719a0e501c491ab8d94e2b1c5ac0ce3e22545f0c4e2111f8"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E03.prefab.meta",
+            "sha256": "46c2f2b3469929bbd937729ef3e593509b84a6f80f088888cfab79a6441a3400"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E03_LOD.prefab",
+            "sha256": "5675359329a24a8947a85da74a48552ed4e470d92db70cf2a4a33269f5e613a7"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E03_LOD.prefab.meta",
+            "sha256": "397dedcda03736605b58533c869a77a08d56214a29458009701a65e5ed2afb60"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E03_LOD1.prefab",
+            "sha256": "ef9ff0ccc9853c493b202eb2c053d472759be98d353795baec7d1ea32c199a55"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E03_LOD1.prefab.meta",
+            "sha256": "defee03c1dbb5fcf52cd74f06723b78ef778611c4d5c84ce7a385e1b1acdf9dd"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E04.prefab",
+            "sha256": "833dcc5a1036ddbbbf2cca30121fd2a961d87468decc28b881fb5a18e4eb434a"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E04.prefab.meta",
+            "sha256": "8a298f4c1dbdbe6ec3f62ddc01984ac28e04d1844bb1e0c26c14f60f40ceb66c"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E04_LOD.prefab",
+            "sha256": "84c59c92233a52ce7d53375a235abd262222c8646193fc58f2790388af7537f0"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E04_LOD.prefab.meta",
+            "sha256": "89ab26818a4a377891fc3efca20ade59140a2f79b528f5c3f489fa8f07e4fb19"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E04_LOD1.prefab",
+            "sha256": "d332734a8d5122642d2deb55dbb38946549fa41de3061e517db8e71fbae1e34e"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E04_LOD1.prefab.meta",
+            "sha256": "faccfa21ca7e2c091a9d8108258dee8eb3d76fe0a9d28c7f9b0fb31ed3dbeb3b"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E05.prefab",
+            "sha256": "7ead97cc9f269a121817f7284f55b0f64853cf066a7cc17ffeeb5fa66e3f5008"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E05.prefab.meta",
+            "sha256": "b12396238673bf77f845526dc9b1a7b791c8d802014dffb2037995c64446b8ad"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E05_LOD.prefab",
+            "sha256": "b8e7ab630a850224b601c2683816f03357df73e01ad3135e3945fb4fca05cf1d"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E05_LOD.prefab.meta",
+            "sha256": "e46eefd25c70dbfa32f0f196f0629267c98210f767fa0ad2f666177c19a3af70"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E05_LOD1.prefab",
+            "sha256": "f1ab3b8396bf4a91dd849dfcec90cd5d7554c795155d2ff896d3e9ce22a27e48"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-E05_LOD1.prefab.meta",
+            "sha256": "2491be79f5a16a02e855dbc119bbe50a25dbddfe86ba6235aac381a1cd933747"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P01.prefab",
+            "sha256": "e636bb13eb224726b1754a3648632eb9bb21d22707b6c48ea34773138a118e22"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P01.prefab.meta",
+            "sha256": "6b6fb2bc9bb386d684b84d4dcd30f9ced56c9b8d65998fbdfaf84797b198b661"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P02.prefab",
+            "sha256": "b4929274f345ddf0a5760b407fd301ba8a514e674bb8928c1c5560af45f71511"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P02.prefab.meta",
+            "sha256": "911cf4532e26b6e505ba94aa9db5fc08aa5ed6c2975cdbc2555d2c7a0c0a58d3"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P03.prefab",
+            "sha256": "87f45f529cfa4e2d6664aed21f19bef47ffc6f74266d3a8d8af2c85286507e3e"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P03.prefab.meta",
+            "sha256": "4c23e1bac57da903f487860a4ad59039878193bf3caca139db76f4f114a814f1"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P04.prefab",
+            "sha256": "fc685e96dbec51e5cbdf71397b7df6520272d6f9990d317767840588d3e62701"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P04.prefab.meta",
+            "sha256": "0f5de621decb66b6ceb2f2c368ef49bea2e8d4fd91fa0d02da954e6d89e9f988"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P05.prefab",
+            "sha256": "1cd1e8f97ab6a15f5ce091f8586424d51b07158e634ef6960ff47d283f8e9862"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P05.prefab.meta",
+            "sha256": "a3a66b8f9d4ee566a8100f5f1e4a5cbc45862f56b241fda6fc41ef18665b1f3c"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P06.prefab",
+            "sha256": "8c2b92a8b742b4d9071588597c513c719a3e6eb49752e8d28c41ea594889e5dc"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P06.prefab.meta",
+            "sha256": "f200db98e0303f01e7f02236392889b7d7389fbaa942de5589e0793f4dda8e75"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P07.prefab",
+            "sha256": "7917c31ee3bf4ec6c74cff5f38ea3203b7806470a2d11247ec6fd4d32e529273"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-P07.prefab.meta",
+            "sha256": "804c9d26685c2b31b99520b31838ba7db66000be3d528c935283271193ce44bb"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T01.prefab",
+            "sha256": "faae8655c0d65958103536931be9799f984bd1e110efe77eca369e5bd9951dbb"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T01.prefab.meta",
+            "sha256": "b1e0c7e893cc9185cba09c80ccf7db89bbc4d376c5de23ab241947368c63daeb"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T02.prefab",
+            "sha256": "abbe3ccbe7a1bc5e57b10254337cbc18811629d332e867c767ab88fd4881ab96"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T02.prefab.meta",
+            "sha256": "72a9dc9da747cff0a026dd481271fdc75aae44bc16c401d1d57984456866ead1"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T03.prefab",
+            "sha256": "08d46d74a0356d7082617cecad460c254c76f321a65746a2826faf10c77d7007"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T03.prefab.meta",
+            "sha256": "ea8eef0259f85b08bd34103cb17f63e7f41fdd9af4409ae39215c0bc08162980"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T04.prefab",
+            "sha256": "c941ebe30b5d602cd1301e81d5e1acf29010a585f3315f67f2b83a7094d49c1e"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T04.prefab.meta",
+            "sha256": "be2a3c6c92c6b24669af3e8b67067e6cfedffc7b878d8c141e7e395927b0dd11"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T05.prefab",
+            "sha256": "cbea1b5ca659648ece79341a26097d8c64a17b752b923e25c1d8671f3d9d18c8"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T05.prefab.meta",
+            "sha256": "b5f0a87cf955c760fac3fc8495efb7b41cd5dd9d34b94cdf07526f3df7162609"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T06.prefab",
+            "sha256": "ffe6e3683e6c6ce4fad528e9c1585f0c72931c4bcb414e4d394a479cac1f64d6"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T06.prefab.meta",
+            "sha256": "11312b6f93aab950bfeb04a6bfb1c3d802114474f1e9ff0455e2954d9dd459ce"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T07.prefab",
+            "sha256": "ebb77ce62906c040fdb2c06cbc31ce51ec447ef888677699383d3e0249f40f33"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/Prefabs/ST2-T07.prefab.meta",
+            "sha256": "ae96f1ea106eced0f12a50a0d89cb0c1c249bed9af870bef70d337aab1717342"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/SeedPack02_Layout.unity",
+            "sha256": "240b0fb054e89b662b057da2fd9b37559078aa700d54f9765eacd04d775d9c91"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/SeedPack02_Layout.unity.meta",
+            "sha256": "862842436243c354ffd0eb2db75272416d969e8254c685b289445b5dfef38d10"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/SeedPipeline.asset",
+            "sha256": "6d580f177a5b98d8bac2e0102b3eebfe60bee2c1aa5a7215381c7984aeb37bc3"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/SeedPipeline.asset.meta",
+            "sha256": "232b00371645b274055981ca2bc7152b7de89961d0c6d879ed779153404b30be"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/SeedRenderer.asset",
+            "sha256": "34082b636b4c7805a6d96753266cee9a1ceae739993330656ccf0f6f0966965d"
+        },
+        {
+            "path": "Assets/SeedPack02/Generated/SeedRenderer.asset.meta",
+            "sha256": "2089e8279c7a04b6166e35878e080190685f3b8ed28bac33c654c03f4733ad34"
+        },
+        {
+            "path": "Assets/SeedPack02/Models.meta",
+            "sha256": "cb4f454ad2dca92add7b020d82cb85f545e6e95c7d979857427c81f1c5e2a665"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B01.fbx",
+            "sha256": "f981abeb543824a9c4707630c3a8d071a2c12da206c392f26d10e38f97e5ea33"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B01.fbx.meta",
+            "sha256": "620603c60940e6ea9408dbaad3d5d314a319f9562ccd90988f42799f3b65c327"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B02.fbx",
+            "sha256": "aa475732c9c7817fdcee18ed6b4b0fd487b06b21f8abed782944a79d05dbd92a"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B02.fbx.meta",
+            "sha256": "90ca5af3cb27f576839fc93399efc2add32415e66aae557241b9ecc27b045cc7"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B03.fbx",
+            "sha256": "6cf195957318ceb4bf9f9931e2082d9bbd8d378ee84f7dd3a088c4eb565bd737"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B03.fbx.meta",
+            "sha256": "01bec34c2cbed071ab047b996ad26f80e324755dc69f75f87bda871deaf4acf5"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B04.fbx",
+            "sha256": "28f1bc62550a1d792915063718c97799143603ea4fd4b1734a7cb5512c7f85bf"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B04.fbx.meta",
+            "sha256": "cfbd5e58b47c90a5b556c76283cf89978867491bc99eca6ee36a7a377ec5326b"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B05.fbx",
+            "sha256": "bf72d6c52ca33804a94526c4bdf3ec4da73a28d684e8c178d043ae4bf15d13d9"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-B05.fbx.meta",
+            "sha256": "eb9186fef2a4cbd90c16221c844e354457ef637b71e6b79639ab987faaaa7626"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E01.fbx",
+            "sha256": "ea285bb8f9db8c5ba577e6ccddddac0af8b3ecdf671ef09fa770fa094bf3379e"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E01.fbx.meta",
+            "sha256": "b95c6faf42591f8bd1110f8120a85056c9961d59493a76e601d534a9c6fef4bc"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E01_LOD1.fbx",
+            "sha256": "6e4002c01ff2901ef418b72ba5e80ec3ec35bc607432bee5e33e47de8a12ced5"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E01_LOD1.fbx.meta",
+            "sha256": "8f4060d80b4fb7c66a86fac11885b66d60bcecd3ed31b2e19fb57d4c99498d8c"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E02.fbx",
+            "sha256": "f800c3c6f2c80dcb51ee913ee976f8064305d771d923887de1846132993d868f"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E02.fbx.meta",
+            "sha256": "705e3308281dd2ea0811169a5c9f6d47f3851daa1d84a9fee9f5d45da65d29e0"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E02_LOD1.fbx",
+            "sha256": "6000eb8bf05c88794d97fee3795b5a95b3889d4f71839a535642dc50c2c738b7"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E02_LOD1.fbx.meta",
+            "sha256": "4c7de6d57f7c12ff939f9b44b3a671a2f2056966ab5ade297585df495c31dbe7"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E03.fbx",
+            "sha256": "d23d7a6b524abc8e893c81242144fbf93350011f17a3db3102d261e1521d00a6"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E03.fbx.meta",
+            "sha256": "36e35a735b95adbd87563fb76c67af3a12d1e80df2499b19ea72f1f9c9ad1692"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E03_LOD1.fbx",
+            "sha256": "d4c9c46e24f10cf5838d5b001449df0e1acf1017623793e01e0643b58452fdc7"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E03_LOD1.fbx.meta",
+            "sha256": "6cb220d77cc519e09dfc30dd01c46ca726489a8837395a355389315071554eb8"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E04.fbx",
+            "sha256": "31d50daa610d9d4bea6faaa8eef727697cdc282235617eff99617ab0b67e5fdd"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E04.fbx.meta",
+            "sha256": "f8a70767df0285490857b49e65c59964f7efcd2e57f273f348e29bd0e55542ac"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E04_LOD1.fbx",
+            "sha256": "7cddb8208b587856020c33ab1651fb83eeb0fab446c2a5f7eefc07780535e621"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E04_LOD1.fbx.meta",
+            "sha256": "f802d8ec1bdc035f5218080b5ea0c4279da6ac4325d3386ed29a0ce915083778"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E05.fbx",
+            "sha256": "903b9bbc2a52f64101f51fb72906fa10bb5ae15a4b1020f7de3b094092201f87"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E05.fbx.meta",
+            "sha256": "25adb28e0625ee31b3e9e72ebfa7f2537e6bef313ad7dd95dae645016e77729a"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E05_LOD1.fbx",
+            "sha256": "3bb313c775df8d7f6aae1717b0be748e06e65ccc451eb31298147aa16b548001"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-E05_LOD1.fbx.meta",
+            "sha256": "56f3e61f41c36d709c5740d40c7aba1a0188e1839125c9d0890663e126e289db"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P01.fbx",
+            "sha256": "36795ae35c697f6d064ccdbbcc86d70b52c136dc5ca3a002c43d0f3e47994cde"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P01.fbx.meta",
+            "sha256": "b60bcd110288efd714b90bd5b9f9380119f528fe16d36653fd29a4727ea8aad0"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P02.fbx",
+            "sha256": "6b0f513859ec5b87495d2adff5f9ce79abee3b8f2ef970cc0f71f00c3565a74c"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P02.fbx.meta",
+            "sha256": "cd311ecac18a45844e6a791f588acda2069f4b967f76efe2d2efe358f5667914"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P03.fbx",
+            "sha256": "f92959578194dc155324a8884f3d5fb6d47c75dcf2d6ea81157fce1452d7a71b"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P03.fbx.meta",
+            "sha256": "a3ab536fc51b262fe2b888ef3fe66a7b62ea14ea7359b170e9e4cb5e62e3b5b4"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P04.fbx",
+            "sha256": "0434cfcaab75208c4ddc486c569404ba9d21733b4d0f63c025b7919870086f30"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P04.fbx.meta",
+            "sha256": "e022d4c5ba9fe43f7a7e2f418fa9061e6f60b1dab849e1634cf24ba67dac33fb"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P05.fbx",
+            "sha256": "b3b629a4cd47e2a8dfd3e5ca8f7f0fa5ae5bfff199775d802f94cca48372c389"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P05.fbx.meta",
+            "sha256": "b5da51885e27fbb81cf1904ca94bbf3108255d49b0ec0377a8ad905b643976ac"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P06.fbx",
+            "sha256": "72836b461f17a06335d723dc3b80b70b795a058a1fac1882e0d140d2f86330c6"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P06.fbx.meta",
+            "sha256": "51d09e67cb5677c6d19cddc066ac7131f7b8b75f06aadc636cc9e23c7db59b27"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P07.fbx",
+            "sha256": "16a279cfaa175523c7503ebcb7c6e9db98ccaf7631c929b7d252e466322dba33"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-P07.fbx.meta",
+            "sha256": "a7e9e458a5a7ee89f9430cb30d3b911c1177e42be0b57474525ddd3250a1e7da"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T01.fbx",
+            "sha256": "33e25ffe334aacdb9489c8857f1e64c2c951f0951ea449bc6fed3f3544e5357e"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T01.fbx.meta",
+            "sha256": "97d16144e07c5e6c48c2024afa8469e5388a53f8473a5bf6458a36e4ad5e2681"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T02.fbx",
+            "sha256": "b8778ae91f14eae98f440910fb8d84d6729212af5f29b978d14c0b6bb0690a79"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T02.fbx.meta",
+            "sha256": "64366d9a1d11dd786926bb740e79a580197ea9e8bcf6836c4726d43f47c9cec4"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T03.fbx",
+            "sha256": "48e6c653f870c2549327a57d0402a21a2f08e95f4b4897daace85b52fd4b921d"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T03.fbx.meta",
+            "sha256": "fde36d5499bdc777bdc2444f9355138b98da729d2da5ffc332ee3ed185fe530c"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T04.fbx",
+            "sha256": "cc46b4e422e33c91ac615350630e67daac841061737ceed955ba2eba8ce0d80c"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T04.fbx.meta",
+            "sha256": "0545d3e755906a1a8a066e8db1184a5706ec4697276fb2257d6290488aa6690e"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T05.fbx",
+            "sha256": "515c00a2dbdb63150a118226a551a95bea43bdda1938d106ec6d74f12850a5ad"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T05.fbx.meta",
+            "sha256": "594517e484d841606a9f7fdebde36ce9304bdb40a685bde9323c705827e02de7"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T06.fbx",
+            "sha256": "ca32d0df0630411eb2619369646fbceda0e762d1a0104fe59d0339b0cc87dcda"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T06.fbx.meta",
+            "sha256": "f903cd52bbe0b4a433b24e494ba45ef6bcd40122eb96996cdc03c4c7bbe4fbab"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T07.fbx",
+            "sha256": "37e335df506d3027c0c3ea5c80a2776e7e926265c73d504cf796c03e431e6b95"
+        },
+        {
+            "path": "Assets/SeedPack02/Models/ST2-T07.fbx.meta",
+            "sha256": "86ed162e36f5340cafe6140a73e9fb8f2665d544fb9ddb9a0990891c81b1ffc6"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures.meta",
+            "sha256": "59b5d74f80139cf658c8bf7d74cbe16f0374ef22269055424066324268802383"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Concrete_BaseColor.png",
+            "sha256": "07952d869057f3d8900f3af3c6f6e39e336ed9766f3171a47be3e1c30bbf8408"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Concrete_BaseColor.png.meta",
+            "sha256": "46a2b7b62228292a64604bc72f55f03fbb9cf5accd6dd4830ba43d687b6ff8f8"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Earth_BaseColor.png",
+            "sha256": "ef686cb3e12629df9e262bb8fb28d6968a716e3cb21d928c6c34e3c42668271c"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Earth_BaseColor.png.meta",
+            "sha256": "d8e301752bbd68cd72533c9f29e2362b631757076e7a525a2a44e157fa9810bc"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Olive_BaseColor.png",
+            "sha256": "0b8485da61b3f1917e0bf897536ae5c904a24655eb871c468a5d9fce8a2aa3ce"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Olive_BaseColor.png.meta",
+            "sha256": "b3d501d628be9d4b76be93e667d71b3f02799f629ae76a201f9c59598631ed90"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Oxide_BaseColor.png",
+            "sha256": "a38f089002c28004385592de22f9e234729d01ce63fc0d0028e5397c464c7a06"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Oxide_BaseColor.png.meta",
+            "sha256": "6f5da543ff6409ebc47fc300271712b23186d86fcba78b6878ea5b829958bcfa"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Sand_BaseColor.png",
+            "sha256": "7d87a2543727670f89fc6d125957d3d50bcba0e7829a823c4426822e8e393e07"
+        },
+        {
+            "path": "Assets/SeedPack02/Textures/ST2_Sand_BaseColor.png.meta",
+            "sha256": "6aa29eda564b1775177bb9b3545ea8104583a8aba398d9af7ce907977285352a"
+        }
+    ],
+    "removedTreadMarks": 42,
+    "removedFlatStones": 7,
+    "addedPrefabs": 19,
+    "footprintClearance": 29.5,
+    "approachRadius": 27.5,
+    "gameplayChanged": false
+}

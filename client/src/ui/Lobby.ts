@@ -502,6 +502,7 @@ export class Lobby {
   private commandCenterShell: CommandCenterShell<LobbyCommandCenterContext> | null = null;
   private campaignInitialPromotionEligible = false;
   private selectedCampaignKit: CampaignKitId = 'precision';
+  private campaignReturnRequested = false;
   private pendingLaunchFocus: LobbyLaunchFocusSnapshot | null = null;
 
   // Create form state
@@ -565,6 +566,7 @@ export class Lobby {
     this.root = root;
     this.onReady = onReady;
     this.commandSelectionStore = createSessionCommandSelectionStore(window.sessionStorage);
+    this.campaignReturnRequested = window.location.hash === '#campaigns/last-stand';
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.roomController = new LobbyRoomController(
@@ -1440,6 +1442,12 @@ export class Lobby {
       ...(this.contextualOnlineEntryPending && (this.inviteRouteRequested || this.rejoinCandidate)
         ? { explicitInviteOrRejoin: online }
         : {}),
+      ...(this.campaignReturnRequested
+        ? { explicitCampaignReturn: {
+          categoryId: commandCategoryId('campaigns'),
+          itemId: commandItemId('last-stand'),
+        } }
+        : {}),
       ...(this.seedChallenge.status === 'valid' ? {
         importedChallenge: { explicit: true, validated: true, selection: importedChallenge },
       } : {}),
@@ -1450,6 +1458,13 @@ export class Lobby {
       firstSalvo,
       standardQuickDuel,
     }, this.commandSelectionStore);
+    if (window.location.hash === '#campaigns/last-stand') {
+      if (resolvedInitialSelection?.source !== 'explicit-campaign-return') {
+        this.campaignReturnRequested = false;
+      }
+      window.history.replaceState(window.history.state, '',
+        `${window.location.pathname}${window.location.search}`);
+    }
     if (resolvedInitialSelection?.source === 'explicit-invite-or-rejoin') {
       this.contextualOnlineEntryPending = false;
       this.inviteRouteRequested = false;
@@ -1466,6 +1481,10 @@ export class Lobby {
         read: () => this.commandSelectionStore.read(),
         remember: (selection) => {
           this.contextualOnlineEntryPending = false;
+          if (selection.categoryId !== commandCategoryId('campaigns')
+            || selection.itemId !== commandItemId('last-stand')) {
+            this.campaignReturnRequested = false;
+          }
           return this.commandSelectionStore.remember(selection);
         },
         clear: () => { this.commandSelectionStore.clear(); },

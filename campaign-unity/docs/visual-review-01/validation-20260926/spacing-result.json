@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe",
+    "-batchmode",
+    "-quit",
+    "-projectPath",
+    "C:/Users/brenn/st-art-pr/campaign-unity/Unity",
+    "-buildTarget",
+    "WebGL",
+    "-executeMethod",
+    "VisualReviewBuild.Check",
+    "-logFile",
+    "-"
+  ],
+  "cwd": "C:\\Users\\brenn\\st-art-pr\\campaign-unity",
+  "kind": "explicit-local-development-command",
+  "exit_code": 0,
+  "completed_utc": "2026-09-26T09:20:31.295846+00:00"
+}

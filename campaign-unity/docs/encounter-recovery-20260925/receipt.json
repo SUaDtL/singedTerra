@@ -1,0 +1,147 @@
+{
+  "utc": "2026-09-25T10:32:58.195869+00:00",
+  "parent_sha": "d87e261b11878ce7e6678fff4925535e1ffb86f0",
+  "build": "Web-20260925T102215Z-797845",
+  "build_status": "pass",
+  "artifacts": {
+    "index.html": "d8f3463dc9f45b568b60a5c5cf3fb2c620193ed66a3dbb43f2a33ed2a7c1cd04",
+    "Build/Web-20260925T102215Z-797845.data": "482890879bcc5ffc8838d34f1dee00d92decb5fb35c7049a5ddfcc13909ece87",
+    "Build/Web-20260925T102215Z-797845.framework.js": "1b68826d1f4141afaa72d6f6646408e04e0bda3f01376bbca1f38c4671a04b14",
+    "Build/Web-20260925T102215Z-797845.loader.js": "21bbefddd287b367790a381a151ea0faf84b9a6bb6f123c6924c44a5cccf3d3b",
+    "Build/Web-20260925T102215Z-797845.wasm": "d11b455a03cb9c6dd18e8252af2109157cbb9a8dc4894ffe5a8135ba8de5d5c4",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "scene_sha256": "5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65",
+  "model": {
+    "rules": "encounter-fixture-v1",
+    "cases": 14,
+    "summaries": [
+      "False|Defeated|334|0|21|8|16|0|31|31",
+      "True|Defeated|388|0|25|13|19|13|0|19"
+    ]
+  },
+  "pose_directions_passed": 8,
+  "pose_red_run": "build-20260925T102040Z-c2031d",
+  "browser_attempts": [
+    {
+      "run": "browser-verify-20260925T102334Z-aa65b1",
+      "status": "failed",
+      "checks": 9,
+      "error": "RuntimeError: Missing event: inspection",
+      "raw_sha256": "6bab15a84be51975ad42e39c39d726832e574ced1501f3b066226e7b1ccf1fc8"
+    },
+    {
+      "run": "inspection-20260925T102959Z-2cec48",
+      "status": "failed",
+      "checks": 84,
+      "error": "RuntimeError: circle 5 yaw",
+      "raw_sha256": "ad2509dad2f207073fa641ea0ed76d0cc155daeca35134e65e4810def0150463"
+    },
+    {
+      "run": "encounter-browser-20260925T101630Z-c87a04",
+      "status": "failed",
+      "checks": 9,
+      "error": "RuntimeError: real tab loses visibility and focus without emulation",
+      "raw_sha256": "964bc825c9d01df87386ebab2fe13390482554b22bf60e2a3824c7b976c83537"
+    },
+    {
+      "run": "encounter-browser-20260925T101808Z-0ae7e9",
+      "status": "failed",
+      "checks": 13,
+      "error": "RuntimeError: actual minimized page is hidden and unfocused",
+      "raw_sha256": "8fdd4f161049f777d4ddcae2bd0f475a4477acb12a6a818d75ed0df5780c7ed1"
+    },
+    {
+      "run": "encounter-browser-20260925T102757Z-7baf5d",
+      "status": "failed",
+      "checks": 16,
+      "error": "RuntimeError: Missing expected encounter event",
+      "raw_sha256": "4ff51cdc0bb233577d35947818f193b7d6bb20710b94319622c7ffdcc4e4bb94"
+    }
+  ],
+  "final_browser_terminal": [
+    {
+      "action": "terminal",
+      "rules": "encounter-fixture-v1",
+      "status": "Defeated",
+      "fitting": "repair",
+      "reason": "",
+      "summary": "False|Defeated|334|0|21|8|16|0|31|31",
+      "run": 1,
+      "tick": 334,
+      "hp": 0,
+      "maxHp": 120,
+      "spawned": 21,
+      "kills": 8,
+      "cannon": 16,
+      "launcher": 0,
+      "healed": 31,
+      "closeHits": 8,
+      "rangedHits": 23,
+      "alive": 13,
+      "visibleUnits": 13,
+      "pool": 32,
+      "paused": false,
+      "focused": true,
+      "applicationPaused": false,
+      "locked": true,
+      "fullEffects": true,
+      "failed": false
+    }
+  ],
+  "full_browser_acceptance": false,
+  "host_tests": {
+    "methods": 8,
+    "exit": 0,
+    "log_sha256": "986ad96f81bf1f52d442109d901ab4e0c3ff8e37cba2a515db028bc1515a0d2f"
+  },
+  "original_saved_files_checked": 85,
+  "original_saved_changes": [],
+  "original_written": false,
+  "unsaved_memory_recovered": false,
+  "blocked_writes": [
+    "Evidence/restore_native_background_testing.py",
+    "Evidence/diagnose_art_pointer.py"
+  ],
+  "blocked_writes_executed": false,
+  "runtime_source_sha256": {
+    "Unity/Assets/Scripts/ArtHud.cs": "7242656ac0eff8d1fe5f5cfe8cc75eafb35690f789b20338f0a131b8898ae314",
+    "Unity/Assets/Scripts/EncounterHud.cs": "fb9019ffa338b3242a5b591da415279e75dc68ee478745549e0a81176f3d9105",
+    "Unity/Assets/Scripts/EncounterModel.cs": "bf099d53fd6f4613dfb54b0146f44c20b15acb664ed06e55180969b3cfeb55da",
+    "Unity/Assets/Scripts/EncounterSession.cs": "8207ee79b87a177348408ea1160ae6c1b45d183df1ae28d0040fa3c03e1f5c26",
+    "Unity/Assets/Scripts/EncounterView.cs": "8a8d7236054dafe5e08de921ca7b6dca27022cfed08f75bd4ebc429dff9752ca",
+    "Unity/Assets/Scripts/TankPartCallouts.cs": "91d0b89e119d77a7afe8beaebe0e065069651372a0a0f0bd085dc4ea13fafc15",
+    "Unity/Assets/Scripts/TankPresentation.cs": "2febb99f7d983ccab593001fd7a030d459d5a00beaa441db7c839c4b32e06c8f",
+    "Unity/Assets/Editor/EncounterChecks.cs": "bc81c7475f367024657cb2a59c5fb543d1f8c1f421eadfc179b2df4d00d57457",
+    "Unity/Assets/Editor/EncounterPoseChecks.cs": "0aeb7b43b90f98f4fd71f1384d75a00d5646269b67eae07061a45e5e2f73ade7",
+    "Unity/Assets/Editor/SceneBuild.cs": "45cdc5aed68d5c6f1a59d426b43c3f26f316b7536c13ec5f45a2e648a8000ae1",
+    "Tools/build_art.py": "507e2fe71e21a418f40695bf45b14b4ac3ed2b70e38883f8f4098243f90bd274",
+    "Tools/build_web.py": "219289d607f3e0a2b293d3fd9b3d44f9c47afc87cbf1b42f59e59827c7e5d81f",
+    "Tools/inspection_checks.py": "2ef89c2e94b58f1e7e2e8b5db3ad630d4e0ef25c43f0dffdc764e833b2d5f3d9",
+    "Tools/make_web_entry.py": "9b4c36748309f5cc743f5c4501bb943ce8eb2b3e39ddf20d0ec14916a34520f3",
+    "Tools/run_task.py": "9b98297fe1112a07d38733640993481d0ebd77618439fd6f9f1e48773590b6d4",
+    "Tools/test_inspection_checks.py": "9233e3095fa9ccfca08124f26c5165b4a44c96feec3658b2cce493ad1a40fb83",
+    "Tools/verify_encounter.py": "1fb435eac7841e4ba448e9926b9c0c27d6a067586f1056b7ead997be09ee6e69",
+    "Tools/verify_inspection.py": "e3b8519e8780574a3d7e42d981510c5ffa7c86cb6ddaa43cc0c681a19913ff17",
+    "Tools/verify_web.py": "d8e1b296418a4ac51d1f90ddc5e795dfb6b28d46e8dcb7663c7b23ad4464cbea"
+  },
+  "captures": {
+    "01-repair-automatic.png": "c02788d95ce500e539c903d9eef9a911de19871d760b4798f8b5d6eee6b0028f",
+    "02-repair-full-defeat.png": "8fc88b177d96456d9256efec014bf94268f9dd8a8a5174050b9416f743b58bbd",
+    "failure-frame.png": "fc9de37ee1f4ec0627c4795dbb285de9204866bb186c67955a50e9fbb051f292"
+  },
+  "android": false,
+  "deployment": false
+}

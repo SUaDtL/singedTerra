@@ -1,0 +1,127 @@
+{
+  "utc": "2026-09-25T07:36:54.073094+00:00",
+  "runtime_commit": "ab6a62a5c9c7efde2ea96403d8f888fa460113db",
+  "build": "Web-20260925T064755Z-6d9dd3",
+  "browser_result": "browser-result.json",
+  "raw_result_sha256": "56941df9e593807d2e8595af6304fb02466e5ece8596e5268a63151c15dcba24",
+  "checks": 247,
+  "observations": 29,
+  "pointer_actions": 28,
+  "projection_error_max_px": 0.035400689987011756,
+  "host_test_methods": 8,
+  "controls_tested": [
+    "left/right orbit",
+    "front reset",
+    "eight-step full circle",
+    "show/hide labels",
+    "view/orientation/preference retention",
+    "fitting retarget",
+    "landscape resizing"
+  ],
+  "viewports": [
+    [
+      1600,
+      900
+    ],
+    [
+      1280,
+      720
+    ],
+    [
+      1024,
+      768
+    ]
+  ],
+  "prior_attempts": [
+    {
+      "run": "inspection-20260925T072927Z-d9ee21",
+      "error": "RuntimeError: Missing event: motion",
+      "checks": [
+        {
+          "check": "exact previously built artifact identity",
+          "pass": true
+        },
+        {
+          "check": "saved single camera FOV is 43 degrees",
+          "pass": true
+        }
+      ],
+      "server_closed": true,
+      "receipt_sha256": "4d136a333166f22bd84ab930d6d7179cf2606766ca2a85c52dabe31f858fd076"
+    },
+    {
+      "run": "inspection-20260925T073107Z-536b36",
+      "error": "RuntimeError: Missing event: motion",
+      "checks": [
+        {
+          "check": "exact previously built artifact identity",
+          "pass": true
+        },
+        {
+          "check": "saved single camera FOV is 43 degrees",
+          "pass": true
+        }
+      ],
+      "server_closed": true,
+      "receipt_sha256": "79892560648eb06d7b6629d8a7863daef163e783f477137297654fa8574c5ed3"
+    },
+    {
+      "run": "inspection-20260925T073440Z-5cdad7",
+      "error": "RuntimeError: exact previously built artifact identity",
+      "checks": [
+        {
+          "check": "exact previously built artifact identity",
+          "pass": false
+        }
+      ],
+      "server_closed": true,
+      "receipt_sha256": "835c5b78ded77d809af725f534694f715dc4a3850c57b37b93de67feb5d7f7f1"
+    }
+  ],
+  "preview_shutdown": {
+    "utc": "2026-09-25T07:25:09.9416281Z",
+    "stopped": [
+      70124,
+      53860,
+      23760
+    ],
+    "remaining_listeners": [],
+    "other_processes_stopped": false
+  },
+  "original_preservation": {
+    "tested_runtime_mismatches": [],
+    "original_saved_changes": [],
+    "original_files_checked": 85,
+    "original_written": false
+  },
+  "warnings": [
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat"
+  ],
+  "shader_diagnostics": [
+    "Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)",
+    "Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)",
+    "Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)"
+  ],
+  "shader_diagnostics_resolved": false,
+  "game_source_changed": false,
+  "rebuild_performed": false,
+  "final_art_approval": false,
+  "android_work": false,
+  "public_deployment": false,
+  "captures": {
+    "02-right-orbit.png": "f964e68a811d5f3dadc1db3ea109678cfe352872160807cdc8f20298127571c0",
+    "03-circle-4.png": "984868fd33651b021580ef3141b28a694ae45d54e4fba835050df575bef7ef28",
+    "05-hidden-labels.png": "a15694d3c28c392ade76158a44e70985006e10698bade118554059074255cea5",
+    "08-resize-1024.png": "06b6ae4dd711b284b12af0981326d19da4cf89ec8336f27b679246a199beb1f0"
+  },
+  "sources": {
+    "Tools/verify_inspection.py": "76459bab7be992caf74cf375f44aaaff050f7f77d56ebe9b928ce9d1b98002dc",
+    "Tools/inspection_checks.py": "2ef89c2e94b58f1e7e2e8b5db3ad630d4e0ef25c43f0dffdc764e833b2d5f3d9",
+    "Tools/test_inspection_checks.py": "9233e3095fa9ccfca08124f26c5165b4a44c96feec3658b2cce493ad1a40fb83"
+  }
+}

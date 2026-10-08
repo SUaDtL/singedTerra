@@ -1,0 +1,162 @@
+{
+  "kind": "diagnostic only; isolated actual browser; no game commands via JS",
+  "build": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Builds\\Web-20260926T084435Z-1fdc45",
+  "profile_start_performance_ms": 3071.699999988079,
+  "elapsed": 60.47775570000522,
+  "terminal": {
+    "action": "suspend",
+    "rules": "review-pacing-v1",
+    "status": "Running",
+    "fitting": "repair",
+    "reason": "frame-gap",
+    "summary": "",
+    "run": 1,
+    "tick": 1185,
+    "hp": 120,
+    "maxHp": 120,
+    "spawned": 31,
+    "kills": 21,
+    "cannon": 49,
+    "launcher": 0,
+    "healed": 0,
+    "closeHits": 0,
+    "rangedHits": 0,
+    "alive": 10,
+    "visibleUnits": 10,
+    "pool": 32,
+    "paused": true,
+    "focused": true,
+    "applicationPaused": false,
+    "locked": true,
+    "fullEffects": true,
+    "failed": false
+  },
+  "diagnostic": {
+    "gaps": [
+      {
+        "start": 442.7,
+        "end": 676.2,
+        "duration": 233.50000000000006
+      },
+      {
+        "start": 2710.5,
+        "end": 3010.6,
+        "duration": 300.0999999999999
+      },
+      {
+        "start": 3327.5,
+        "end": 3711,
+        "duration": 383.5
+      },
+      {
+        "start": 6128.9,
+        "end": 6328.9,
+        "duration": 200
+      },
+      {
+        "start": 29940.3,
+        "end": 30056.9,
+        "duration": 116.60000000000218
+      },
+      {
+        "start": 47331.9,
+        "end": 47615.3,
+        "duration": 283.40000000000146
+      },
+      {
+        "start": 50533.3,
+        "end": 50850.1,
+        "duration": 316.79999999999563
+      },
+      {
+        "start": 53734.9,
+        "end": 53985,
+        "duration": 250.09999999999854
+      },
+      {
+        "start": 56536.2,
+        "end": 56886.4,
+        "duration": 350.20000000000437
+      },
+      {
+        "start": 58937.4,
+        "end": 59387.7,
+        "duration": 450.29999999999563
+      },
+      {
+        "start": 61338.5,
+        "end": 61605.2,
+        "duration": 266.6999999999971
+      },
+      {
+        "start": 62539.1,
+        "end": 63039.2,
+        "duration": 500.09999999999854
+      }
+    ],
+    "longTasks": [
+      {
+        "start": 433.5,
+        "duration": 254,
+        "name": "self"
+      },
+      {
+        "start": 2710.5,
+        "duration": 305,
+        "name": "self"
+      },
+      {
+        "start": 3327.5,
+        "duration": 396,
+        "name": "self"
+      },
+      {
+        "start": 6128.899999976158,
+        "duration": 208,
+        "name": "self"
+      },
+      {
+        "start": 29940.19999998808,
+        "duration": 121,
+        "name": "self"
+      },
+      {
+        "start": 47331.89999997616,
+        "duration": 289,
+        "name": "self"
+      },
+      {
+        "start": 50533.39999997616,
+        "duration": 326,
+        "name": "self"
+      },
+      {
+        "start": 53734.89999997616,
+        "duration": 254,
+        "name": "self"
+      },
+      {
+        "start": 56536.19999998808,
+        "duration": 365,
+        "name": "self"
+      },
+      {
+        "start": 58937.39999997616,
+        "duration": 450,
+        "name": "self"
+      },
+      {
+        "start": 61338.5,
+        "duration": 274,
+        "name": "self"
+      },
+      {
+        "start": 62539,
+        "duration": 502,
+        "name": "self"
+      }
+    ]
+  },
+  "profile_end_performance_ms": 63555.39999997616,
+  "browser_closed": true
+}

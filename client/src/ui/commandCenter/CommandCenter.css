@@ -1344,6 +1344,134 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
 }
 
+#lobby .last-stand-command__board {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(270px, 0.7fr);
+  align-items: stretch;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+#lobby .last-stand-command__lead,
+#lobby .last-stand-command__briefing {
+  min-width: 0;
+  margin: 0;
+  padding: clamp(18px, 2vw, 36px);
+  border: 12px solid #6a3d20;
+  border-image-source: var(--command-panel-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 12px;
+  background:
+    linear-gradient(145deg, rgba(67, 39, 23, 0.44), transparent 42%),
+    var(--command-iron-tile, none) center / 256px 256px repeat,
+    #0c0f11;
+}
+
+#lobby .last-stand-command__lead {
+  min-height: clamp(260px, 36vh, 460px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background:
+    radial-gradient(circle at 75% 20%, rgba(193, 111, 42, 0.25), transparent 38%),
+    var(--command-map-tile, none) center / 256px 256px repeat,
+    #11100e;
+}
+
+#lobby .last-stand-command__eyebrow,
+#lobby .last-stand-command__briefing dt {
+  margin: 0;
+  color: var(--command-gold);
+  font: 800 var(--preparation-label-size, 12px)/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#lobby .last-stand-command__headline {
+  max-width: 18ch;
+  margin: 12px 0;
+  color: var(--command-copy);
+  font: 900 clamp(28px, 3cqi, 48px)/1.05 var(--font-display);
+}
+
+#lobby .last-stand-command__description {
+  max-width: 55ch;
+  margin: 0;
+  color: var(--command-copy);
+  font-size: var(--preparation-copy-size, 16px);
+  line-height: 1.45;
+}
+
+#lobby .last-stand-command__briefing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: 6px;
+}
+
+#lobby .last-stand-command__briefing dd {
+  margin: 0 0 16px;
+  color: var(--command-copy);
+  font-size: var(--preparation-copy-size, 16px);
+  line-height: 1.35;
+}
+
+#lobby .last-stand-command__launch {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+#lobby .last-stand-command__launch:focus-visible {
+  outline: 3px solid var(--command-gold-bright);
+  outline-offset: 2px;
+}
+
+@container preparation-workspace (max-width: 700px) {
+  #lobby .last-stand-command__board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .last-stand-command__lead {
+    min-height: 220px;
+  }
+
+  #lobby .last-stand-command__briefing {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
+    gap: 6px 12px;
+  }
+
+  #lobby .last-stand-command__briefing dt {
+    grid-row: 1;
+  }
+
+  #lobby .last-stand-command__briefing dd {
+    grid-row: 2;
+    margin: 0;
+  }
+}
+
+@container preparation-workspace (max-width: 500px) {
+  #lobby .last-stand-command__briefing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .last-stand-command__briefing dt,
+  #lobby .last-stand-command__briefing dd {
+    grid-row: auto;
+  }
+
+  #lobby .last-stand-command__briefing dd {
+    margin-bottom: 12px;
+  }
+}
+
 #lobby .campaign-command__identity {
   z-index: 3;
   grid-column: 1;
@@ -4784,6 +4912,65 @@
     height: 56px;
     min-height: 56px;
     box-sizing: border-box;
+  }
+}
+
+/* At phone width, keep both Campaigns choices visible instead of hiding the
+   second operation beyond a horizontal catalog scroller. */
+@media (max-width: 500px) and (orientation: portrait) {
+  #lobby .command-center__body:has(.command-center__item[data-command-item='last-stand'])
+    .command-center__library {
+    min-height: 84px;
+    grid-template: auto 44px / minmax(0, 1fr);
+    gap: 4px;
+    padding: 5px 8px;
+  }
+
+  #lobby .command-center__body:has(.command-center__item[data-command-item='last-stand'])
+    .command-center__library > h2 {
+    padding: 0;
+    font-size: 15px;
+  }
+
+  #lobby .command-center__body:has(.command-center__item[data-command-item='last-stand'])
+    .command-center__library-items {
+    min-width: 0;
+    min-height: 44px;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    gap: 6px;
+    overflow: visible;
+    padding: 0;
+  }
+
+  #lobby .command-center__body:has(.command-center__item[data-command-item='last-stand'])
+    .command-center__item {
+    min-width: 0;
+    min-height: 44px;
+    padding: 4px 7px;
+  }
+}
+
+@media (max-width: 400px) and (orientation: portrait) {
+  #lobby .command-center__navigation {
+    grid-template: auto / minmax(0, 1fr) 106px;
+    gap: 6px;
+    padding: 5px 6px;
+  }
+
+  #lobby .command-center__title {
+    min-width: 0;
+    padding: 0;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #lobby .command-center__modes-trigger {
+    width: 106px;
+    min-width: 106px;
+    padding-inline: 4px;
   }
 }
 

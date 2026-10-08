@@ -241,6 +241,47 @@ function deferred<T>() {
 }
 
 describe('Lobby account composition', () => {
+  it('opens the Last Stand campaign from an explicit return URL and consumes the signal', () => {
+    window.history.replaceState(null, '', '/#campaigns/last-stand')
+    sessionStorage.setItem('singedterra.command-center.selection.v1', JSON.stringify({
+      categoryId: 'skirmishes', itemId: 'standard',
+    }))
+    const root = document.createElement('div')
+    const lobby = new Lobby(root, vi.fn())
+    lobby.show()
+
+    expect(root.querySelector('[data-command-item="last-stand"]')?.getAttribute('aria-current'))
+      .toBe('true')
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull()
+    expect(window.location.hash).toBe('')
+  })
+
+  it('does not treat a similar campaign fragment as a Last Stand return', () => {
+    window.history.replaceState(null, '', '/#campaigns/last-stand/extra')
+    const root = document.createElement('div')
+    const lobby = new Lobby(root, vi.fn())
+    lobby.show()
+
+    expect(root.querySelector('[data-last-stand-command-view]')).toBeNull()
+    expect(root.querySelector('[data-command-item="last-stand"]')).toBeNull()
+    expect(window.location.hash).toBe('#campaigns/last-stand/extra')
+  })
+
+  it('keeps the returned campaign selected when command selection storage is blocked', () => {
+    window.history.replaceState(null, '', '/#campaigns/last-stand')
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => {
+      if (key === 'singedterra.command-center.selection.v1') throw new Error('storage blocked')
+      return null
+    })
+    const root = document.createElement('div')
+    const lobby = new Lobby(root, vi.fn())
+    lobby.show()
+    lobby.show()
+
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull()
+    expect(window.location.hash).toBe('')
+  })
+
   it('keeps practice available while verified deployment requires authentication', () => {
     const root = document.createElement('div')
     const onReady = vi.fn()

@@ -1,0 +1,756 @@
+{
+  "schema": 1,
+  "revision": 1,
+  "scope": "ST-KIT-01 art only; no gameplay bindings",
+  "source": "ArtSource/PartsLibrary_01.blend",
+  "original_source_sha256": "d7b79d877c841a57110a833c8e74e866be6be181b3dac9c91829e44511f5ea3f",
+  "blender": "5.2.0 LTS",
+  "blender_front": "+Y",
+  "blender_up": "+Z",
+  "unity_front": "-Z",
+  "unity_up": "+Y",
+  "units": "meters",
+  "items": [
+    {
+      "id": "STK-H01",
+      "title": "Service hull",
+      "category": "Core",
+      "mount": "chassis",
+      "description": "Retained starter component; normalized assembly origin.",
+      "provenance": "derived from StarterTank_and_Clearing.blend",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-H01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-H01.prefab",
+      "source_collection": "STK-H01",
+      "bounds_min": [
+        -2.1600000858306885,
+        -2.950000047683716,
+        0.5
+      ],
+      "bounds_max": [
+        2.1600000858306885,
+        2.950000047683716,
+        1.9825000762939453
+      ],
+      "triangles": 8996,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Marking",
+        "Steel"
+      ],
+      "fbx_sha256": "00630047cfe3692ecb117cf2dfb3659084b6d67b12496f284a5d07e82668d28f"
+    },
+    {
+      "id": "STK-T01",
+      "title": "Tracked running gear",
+      "category": "Core",
+      "mount": "chassis",
+      "description": "Retained starter component; normalized assembly origin.",
+      "provenance": "derived from StarterTank_and_Clearing.blend",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-T01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-T01.prefab",
+      "source_collection": "STK-T01",
+      "bounds_min": [
+        -2.0950002670288086,
+        -3.0499515533447266,
+        0.0574999637901783
+      ],
+      "bounds_max": [
+        2.0950000286102295,
+        3.0499515533447266,
+        1.5425000190734863
+      ],
+      "triangles": 50432,
+      "meshes": 4,
+      "materials": [
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "fbx_sha256": "41ad5edd04a4d95ffbd28683eb8cc438d2048d1b8f07734d1aaa738be5c9fefa"
+    },
+    {
+      "id": "STK-U01",
+      "title": "Cast turret",
+      "category": "Core",
+      "mount": "turret-ring",
+      "description": "Retained starter component; normalized assembly origin.",
+      "provenance": "derived from StarterTank_and_Clearing.blend",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-U01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-U01.prefab",
+      "source_collection": "STK-U01",
+      "bounds_min": [
+        -1.2636359930038452,
+        -1.6949999332427979,
+        -0.1499999761581421
+      ],
+      "bounds_max": [
+        1.2636359930038452,
+        1.4449996948242188,
+        2.200000047683716
+      ],
+      "triangles": 5368,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "fbx_sha256": "58c1a72ea424ac7ef2af99c2bd2af5f7b907dde0d39458ad88601b68d6d0e66c"
+    },
+    {
+      "id": "STK-G01",
+      "title": "Long service cannon",
+      "category": "Gun",
+      "mount": "gun-breech",
+      "description": "Retained starter component; normalized assembly origin.",
+      "provenance": "derived from StarterTank_and_Clearing.blend",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-G01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-G01.prefab",
+      "source_collection": "STK-G01",
+      "bounds_min": [
+        -0.25999999046325684,
+        0.11000002175569534,
+        -0.2600000202655792
+      ],
+      "bounds_max": [
+        0.25999999046325684,
+        3.2939999103546143,
+        0.2600000202655792
+      ],
+      "triangles": 3132,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "fbx_sha256": "2f7faf9f1e80f1417277cb500e66bece713e92826ac021312ff33492da4f7cd5"
+    },
+    {
+      "id": "STK-M01",
+      "title": "Field repair unit",
+      "category": "Module",
+      "mount": "side-saddle",
+      "description": "Retained starter component; normalized assembly origin.",
+      "provenance": "derived from StarterTank_and_Clearing.blend",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-M01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-M01.prefab",
+      "source_collection": "STK-M01",
+      "bounds_min": [
+        -0.3700000047683716,
+        -0.6399999856948853,
+        -0.07999999821186066
+      ],
+      "bounds_max": [
+        0.3700000047683716,
+        0.4300000071525574,
+        0.5750001668930054
+      ],
+      "triangles": 836,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Optic",
+        "Steel"
+      ],
+      "fbx_sha256": "e41bf4d9663963cc1a6d3abb1e667342f9e9e21a14b45bdc94e0ed886044238b"
+    },
+    {
+      "id": "STK-M02",
+      "title": "Four-tube launcher",
+      "category": "Module",
+      "mount": "side-saddle",
+      "description": "Retained starter component; normalized assembly origin.",
+      "provenance": "derived from StarterTank_and_Clearing.blend",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-M02.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-M02.prefab",
+      "source_collection": "STK-M02",
+      "bounds_min": [
+        -0.39500004053115845,
+        -0.4300000071525574,
+        -0.07999999821186066
+      ],
+      "bounds_max": [
+        0.3700000047683716,
+        0.7510000467300415,
+        0.9449999928474426
+      ],
+      "triangles": 2472,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "fbx_sha256": "9c1a45b9aba47beaac447248ae7eb9889d0a2a9c45971a09ac2ab4e6b7f9c3e6"
+    },
+    {
+      "id": "STK-G02",
+      "title": "Stub siege cannon",
+      "category": "Gun",
+      "mount": "gun-breech",
+      "description": "Short reinforced barrel, vented sleeve and recessed bore; no selected damage.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-G02.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-G02.prefab",
+      "source_collection": "STK-G02",
+      "bounds_min": [
+        -0.3700000047683716,
+        -0.060000017285346985,
+        -0.3700000047683716
+      ],
+      "bounds_max": [
+        0.3700000047683716,
+        1.812000036239624,
+        0.3700000047683716
+      ],
+      "triangles": 2348,
+      "meshes": 6,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Soot",
+        "Steel"
+      ],
+      "fbx_sha256": "da994063869ad167aa8bf33f4a25cfd50995efad04323731b7a40657fde3c46d"
+    },
+    {
+      "id": "STK-G03",
+      "title": "Twin autocannon",
+      "category": "Gun",
+      "mount": "gun-breech",
+      "description": "Paired barrels and ammunition boxes; visual candidate, no rate or ammunition rules.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-G03.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-G03.prefab",
+      "source_collection": "STK-G03",
+      "bounds_min": [
+        -0.8259999752044678,
+        -0.23999999463558197,
+        -0.32500001788139343
+      ],
+      "bounds_max": [
+        0.825999915599823,
+        2.51200008392334,
+        0.3100000023841858
+      ],
+      "triangles": 3228,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "fbx_sha256": "db8fdc285017eb71bdeeebf737ae68684838967bc0d132894c270574e8075f6c"
+    },
+    {
+      "id": "STK-M03",
+      "title": "Survey radar",
+      "category": "Module",
+      "mount": "side-saddle",
+      "description": "A compact dish, console and mast. No targeting unlock or radar gameplay granted.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-M03.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-M03.prefab",
+      "source_collection": "STK-M03",
+      "bounds_min": [
+        -0.6000000238418579,
+        -0.42000001668930054,
+        1.158351459196183e-08
+      ],
+      "bounds_max": [
+        0.6000000238418579,
+        0.44999998807907104,
+        1.940000057220459
+      ],
+      "triangles": 1172,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "fbx_sha256": "3e402d959710ebd2b9e5cfc23cfb3108a563568d679043f26463675111a10f59"
+    },
+    {
+      "id": "STK-M04",
+      "title": "Heat-exchanger pack",
+      "category": "Module",
+      "mount": "side-saddle",
+      "description": "Radiator fins, insulated reservoir and pipework; no heat-resource system selected.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-M04.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-M04.prefab",
+      "source_collection": "STK-M04",
+      "bounds_min": [
+        -0.3799999952316284,
+        -0.4300000071525574,
+        0.0
+      ],
+      "bounds_max": [
+        0.3799999952316284,
+        0.4300000071525574,
+        0.9200000166893005
+      ],
+      "triangles": 1348,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Soot",
+        "Steel"
+      ],
+      "fbx_sha256": "00e24f771666664f22a10aae104281d70410dde3266c3cfeccea19ecdce2b7f3"
+    },
+    {
+      "id": "STK-A01",
+      "title": "Glacis applique",
+      "category": "Armor",
+      "mount": "hull-front",
+      "description": "Replaceable bolted front armor shape; not a selected defense-stat increment.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-A01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-A01.prefab",
+      "source_collection": "STK-A01",
+      "bounds_min": [
+        -1.1100000143051147,
+        -0.1782006472349167,
+        -0.3463878929615021
+      ],
+      "bounds_max": [
+        1.1100000143051147,
+        0.2888466715812683,
+        0.3494337499141693
+      ],
+      "triangles": 1752,
+      "meshes": 3,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Steel"
+      ],
+      "fbx_sha256": "e855d949f23e19ef163a591fb15f7b0a41b31de40a348e8256e92b26e25ec251"
+    },
+    {
+      "id": "STK-A02",
+      "title": "Spaced side skirts",
+      "category": "Armor",
+      "mount": "chassis",
+      "description": "Paired standoff rails and panels. Pair is one art assembly, not two gameplay slots.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-A02.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-A02.prefab",
+      "source_collection": "STK-A02",
+      "bounds_min": [
+        -2.438999891281128,
+        -2.4100000858306885,
+        0.6800000071525574
+      ],
+      "bounds_max": [
+        2.438999891281128,
+        2.4099998474121094,
+        1.559999942779541
+      ],
+      "triangles": 6112,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Steel"
+      ],
+      "fbx_sha256": "28bd1c5cd2b5e71cc1f2e6d889b70759bd1d10dce544ea0fad635f45d20ae261"
+    },
+    {
+      "id": "STK-A03",
+      "title": "Turret cheek package",
+      "category": "Armor",
+      "mount": "turret-ring",
+      "description": "Two angled cheek arrays; a visible armor candidate rather than a rarity tier.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-A03.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-A03.prefab",
+      "source_collection": "STK-A03",
+      "bounds_min": [
+        -1.533485770225525,
+        -0.7150000333786011,
+        0.21380522847175598
+      ],
+      "bounds_max": [
+        1.5334858894348145,
+        0.7150000333786011,
+        0.7061947584152222
+      ],
+      "triangles": 2616,
+      "meshes": 3,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Steel"
+      ],
+      "fbx_sha256": "b847b6e6bdf1047d2cf7a04a8413b97f284730e19b704406f3ce18319d8f90f5"
+    },
+    {
+      "id": "STK-C01",
+      "title": "Crew stowage rack",
+      "category": "Cosmetic",
+      "mount": "hull-rear",
+      "description": "Bedroll, tool case and fuel cans; appearance only, no cargo bonus.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-C01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-C01.prefab",
+      "source_collection": "STK-C01",
+      "bounds_min": [
+        -0.8500000238418579,
+        -0.3799999952316284,
+        0.0
+      ],
+      "bounds_max": [
+        0.8500000834465027,
+        0.3799999952316284,
+        0.6200000047683716
+      ],
+      "triangles": 1320,
+      "meshes": 6,
+      "materials": [
+        "Brass",
+        "Canvas",
+        "Edge",
+        "Oxide",
+        "Rubber",
+        "Steel"
+      ],
+      "fbx_sha256": "62ecb691edcb763d0594b5e2f7e5d18bc00b8f92fa8e43174eae39c8115e5fbc"
+    },
+    {
+      "id": "STK-C02",
+      "title": "Identification pennant",
+      "category": "Cosmetic",
+      "mount": "turret-rear",
+      "description": "Rigid wind-shaped field pennant; no faction, rank or collection reward selected.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-C02.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-C02.prefab",
+      "source_collection": "STK-C02",
+      "bounds_min": [
+        -0.12999999523162842,
+        -0.12999999523162842,
+        0.0
+      ],
+      "bounds_max": [
+        0.7005280256271362,
+        0.12999999523162842,
+        1.649999976158142
+      ],
+      "triangles": 584,
+      "meshes": 4,
+      "materials": [
+        "Edge",
+        "Marking",
+        "Oxide",
+        "Steel"
+      ],
+      "fbx_sha256": "4018f8d925a8bfb35eb910e7d9124559b85e148389e88ae3805f1f519e247975"
+    },
+    {
+      "id": "STK-C03",
+      "title": "Bolted unit plaque",
+      "category": "Cosmetic",
+      "mount": "hull-front",
+      "description": "Bronze twin-chevron unit mark; original emblem, no stat or entitlement.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-C03.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-C03.prefab",
+      "source_collection": "STK-C03",
+      "bounds_min": [
+        -0.2800000011920929,
+        -0.027499999850988388,
+        -0.23999999463558197
+      ],
+      "bounds_max": [
+        0.2800000011920929,
+        0.055000003427267075,
+        0.23999999463558197
+      ],
+      "triangles": 1420,
+      "meshes": 3,
+      "materials": [
+        "Brass",
+        "Edge",
+        "Marking"
+      ],
+      "fbx_sha256": "b4792223e921c0ca2c8dea48ceb040af96743265862726aca4e7be3008a24642"
+    },
+    {
+      "id": "STK-B01",
+      "title": "Sandbag wall",
+      "category": "Field base",
+      "mount": "ground",
+      "description": "Three staggered rows with tied ends; scenery only, no blocking or cover rules.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-B01.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-B01.prefab",
+      "source_collection": "STK-B01",
+      "bounds_min": [
+        -1.5749856233596802,
+        -0.29518449306488037,
+        0.002682015299797058
+      ],
+      "bounds_max": [
+        1.7709906101226807,
+        0.29518449306488037,
+        0.9773179888725281
+      ],
+      "triangles": 2592,
+      "meshes": 2,
+      "materials": [
+        "Canvas",
+        "Rubber"
+      ],
+      "fbx_sha256": "e1b07e4c542bbb164497473c53731f5c2b63a9ef8c262276fe4d897d99960142"
+    },
+    {
+      "id": "STK-B02",
+      "title": "Blast barrier",
+      "category": "Field base",
+      "mount": "ground",
+      "description": "Low concrete barrier with lift eyes and hazard stripes; no collision contract.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-B02.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-B02.prefab",
+      "source_collection": "STK-B02",
+      "bounds_min": [
+        -1.5,
+        -0.4699999988079071,
+        0.0
+      ],
+      "bounds_max": [
+        1.5,
+        0.4699999988079071,
+        1.2781805992126465
+      ],
+      "triangles": 1272,
+      "meshes": 4,
+      "materials": [
+        "Concrete",
+        "Soot",
+        "Steel",
+        "Warning"
+      ],
+      "fbx_sha256": "b8727b344e73e11b605a5d67d2360e798525146f629c7b36ccb5cd03516788ef"
+    },
+    {
+      "id": "STK-B03",
+      "title": "Supply pallet",
+      "category": "Field base",
+      "mount": "ground",
+      "description": "Pallet, strapped transit cases and shell crate; scenery, not inventory or rewards.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-B03.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-B03.prefab",
+      "source_collection": "STK-B03",
+      "bounds_min": [
+        -0.8049999475479126,
+        -0.6200000047683716,
+        0.0
+      ],
+      "bounds_max": [
+        0.8049999475479126,
+        0.6200000047683716,
+        1.3600000143051147
+      ],
+      "triangles": 1836,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Steel",
+        "Wood"
+      ],
+      "fbx_sha256": "336a791ae50d5e710307eeb9fce99d1abe42b166f0dfc2de752f9aeeef8f0e35"
+    },
+    {
+      "id": "STK-B04",
+      "title": "Maintenance generator",
+      "category": "Field base",
+      "mount": "ground",
+      "description": "Engine, radiator, service hatch and hazard panel; scenery, no power currency.",
+      "provenance": "new original geometry",
+      "fbx": "Unity/Assets/Art/PartsLibrary/STK-B04.fbx",
+      "prefab": "Unity/Assets/PartsLibrary/Prefabs/STK-B04.prefab",
+      "source_collection": "STK-B04",
+      "bounds_min": [
+        -1.125,
+        -0.675000011920929,
+        0.0
+      ],
+      "bounds_max": [
+        1.125,
+        0.6750000715255737,
+        1.7400000095367432
+      ],
+      "triangles": 2444,
+      "meshes": 6,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Soot",
+        "Steel"
+      ],
+      "fbx_sha256": "c80b9a6328b43ba9db3d721a224c1fe75ac157b3ccc014375cc792e629519cb8"
+    }
+  ],
+  "materials": {
+    "Armor": {
+      "color": [
+        0.3400000035762787,
+        0.3199999928474426,
+        0.20999999344348907,
+        1.0
+      ],
+      "metallic": 0.5,
+      "roughness": 0.6499999761581421
+    },
+    "Brass": {
+      "color": [
+        0.5699999928474426,
+        0.3400000035762787,
+        0.11999999731779099,
+        1.0
+      ],
+      "metallic": 0.6499999761581421,
+      "roughness": 0.5
+    },
+    "Concrete": {
+      "color": [
+        0.28999999165534973,
+        0.2800000011920929,
+        0.25,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421
+    },
+    "Edge": {
+      "color": [
+        0.20999999344348907,
+        0.23000000417232513,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.6499999761581421,
+      "roughness": 0.5
+    },
+    "Marking": {
+      "color": [
+        0.7300000190734863,
+        0.6700000166893005,
+        0.4699999988079071,
+        1.0
+      ],
+      "metallic": 0.10000000149011612,
+      "roughness": 0.800000011920929
+    },
+    "Optic": {
+      "color": [
+        0.07999999821186066,
+        0.27000001072883606,
+        0.28999999165534973,
+        1.0
+      ],
+      "metallic": 0.5,
+      "roughness": 0.25
+    },
+    "Rubber": {
+      "color": [
+        0.04500000178813934,
+        0.052000001072883606,
+        0.04800000041723251,
+        1.0
+      ],
+      "metallic": 0.10000000149011612,
+      "roughness": 0.8500000238418579
+    },
+    "Soot": {
+      "color": [
+        0.07000000029802322,
+        0.06499999761581421,
+        0.054999999701976776,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    "Steel": {
+      "color": [
+        0.12999999523162842,
+        0.14499999582767487,
+        0.14000000059604645,
+        1.0
+      ],
+      "metallic": 0.75,
+      "roughness": 0.5
+    },
+    "Wood": {
+      "color": [
+        0.23000000417232513,
+        0.12999999523162842,
+        0.06499999761581421,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421
+    },
+    "Canvas": {
+      "color": [
+        0.30000001192092896,
+        0.3199999928474426,
+        0.20999999344348907,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.949999988079071
+    },
+    "Oxide": {
+      "color": [
+        0.3799999952316284,
+        0.11500000208616257,
+        0.06499999761581421,
+        1.0
+      ],
+      "metallic": 0.3499999940395355,
+      "roughness": 0.7200000286102295
+    },
+    "Warning": {
+      "color": [
+        0.7699999809265137,
+        0.5099999904632568,
+        0.11999999731779099,
+        1.0
+      ],
+      "metallic": 0.15000000596046448,
+      "roughness": 0.6499999761581421
+    }
+  },
+  "source_sha256": "9fc11239e5aba6bc8ce2a97a6026af4548b012f2fa34a2ae3b655a3b64cfe048"
+}
