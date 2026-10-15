@@ -118,6 +118,67 @@ test('hidden return requires both actual global witnesses in either focus/visibi
     assert.throws(()=>invoke([loss,...pair]),/boundary absent/);
 });
 
+function settlingFixture(){
+  // Explicit inert transition records, never host evidence.
+  const id={load:16,timeOrigin:100000,scope:'healthy'},model={tick:1,hp:120,kills:0,spawned:1,
+    cannon:0,launcher:0,healed:0,closeHits:0,rangedHits:0,alive:1,status:'Running'};
+  const session={...id,action:'session',phase:'battle',t:101,sessionRun:1,runId:7,pendingRunId:0,
+    wallet:0,cannonDamage:20,tick:1,hull:120,kills:0,paused:false,saveState:'ready'};
+  const encounter={...id,...model,action:'tick',t:100,run:1,fitting:'repair',paused:false,failed:false,catchingUp:false};
+  const terminal={...encounter,t:200,tick:2,hp:0,status:'Defeated',action:'terminal'};
+  const staged={...session,t:202,action:'defeat-staged',phase:'settling',tick:2,hull:0,runId:0,pendingRunId:7};
+  const result={...staged,t:300,action:'result',phase:'result',tick:0};
+  const layout={...id,t:201,phase:'settling',controls:[{name:'Claim',active:false,interactable:false},
+    {name:'Pause',active:true,interactable:true}]};
+  return {before:{...encounter,hull:120,loop:session},result,states:[session,staged,result],
+    encounters:[encounter,terminal],layouts:[layout],oracle:{1:model,2:{...model,tick:2,hp:0,status:'Defeated'}}};
+}
+
+test('portable settling observes the real transient transition without a late pointer command',async()=>{
+  const begin=source.indexOf('    const hiddenStart=awayWindows[0][1]'),end=source.indexOf('    check(result.pendingRunId',begin);
+  assert.ok(begin>0 && end>begin);
+  const x=settlingFixture(),states=[x.states[0]],report={lifecycle:[]};
+  const run=new Function('player','awayWindows','mark','states','armGameClick','check','until','load','focused',
+    'phaseMatrix','gameClick','page','observation','report','layouts','encounters','reference','validateSettlingTransition',
+    'return(async()=>{'+source.slice(begin,end)+'return result;})()');
+  const until=async(items,_start,predicate)=>{
+    if(items.length===1)items.push(...x.states.slice(1));
+    return items.filter(predicate).at(-1);
+  };
+  const result=await run(false,[['hidden',10,20]],async()=>100,states,
+    async()=>async()=>{throw new Error('Portable pointer arrived after transient settling');},
+    (ok,name)=>assert.ok(ok,name),until,16,()=>{},()=>{throw new Error('Portable transient phase cannot promise paused matrix');},
+    ()=>{}, {waitForTimeout:async()=>{}},async()=>x.before,report,x.layouts,x.encounters,()=>x.oracle,
+    journey.validateSettlingTransition);
+  assert.equal(result.phase,'result');
+  assert.equal(report.lifecycle.find(item=>item.kind==='settling-transition').scope,'transient-functional-telemetry');
+});
+
+test('transient settling binds actual terminal, pre-staging layout and pending manual result',()=>{
+  const proof=journey.validateSettlingTransition(settlingFixture());
+  assert.equal(proof.terminal.t,200);assert.equal(proof.staged.t,202);
+  assert.equal(proof.layouts[0].t,201,'Actual layout may precede staging but must follow terminal');
+  assert.equal(proof.result.wallet,0);assert.equal(proof.result.pendingRunId,7);
+});
+
+test('transient settling refuses stale, missing, duplicate, claimable or automatically awarded evidence',()=>{
+  const mutations=[x=>x.layouts=[],x=>x.layouts[0].timeOrigin++,x=>x.layouts[0].load++,
+    x=>x.layouts[0].t=199,x=>x.layouts[0].t=301,x=>x.layouts[0].phase='battle',
+    x=>{x.layouts[0].controls[0].active=true;x.layouts[0].controls[0].interactable=true;},
+    x=>x.layouts[0].controls=[],x=>x.states.push({...x.states[1],t:203}),
+    x=>x.states[1].pendingRunId++,x=>x.states[1].tick++,x=>x.states[1].wallet++,
+    x=>x.states.push({...x.states[1],t:250,action:'claim'}),
+    x=>x.encounters[1].run++,x=>x.encounters[1].hp++,x=>x.encounters[1].failed=true,
+    x=>x.encounters[1].catchingUp=true,x=>x.encounters.splice(1,1),
+    x=>x.before.loop.runId=0,x=>x.before.loop.wallet++,x=>x.before.run++,
+    x=>x.result.phase='battle',x=>x.result.wallet++,x=>x.result.pendingRunId++,x=>x.result.saveState='blocked',
+  ];
+  for(const [i,mutate]of mutations.entries()){
+    const x=settlingFixture();mutate(x);
+    assert.throws(()=>journey.validateSettlingTransition(x),'Invalid inert transient proof '+i+' must fail');
+  }
+});
+
 function focusAckFixture(){
   // Explicit inert events exercise the actual validator; these are not host evidence.
   const id={load:16,timeOrigin:100000,scope:'healthy'};
@@ -311,7 +372,7 @@ test('offline reader checks retained compiler bytes and fixed streams using pure
   const bytes=Buffer.from('explicit inert byte fixture'),sha=createHash('sha256').update(bytes).digest('hex');
   const binding={sources:'explicit current fixture'},reference={source_lf_sha256:{'inert.cs':sha}};
   for(const fault of ['none','stream-escape','driver','executable','run-output']){
-    let parity=0;
+    let parity=0;const settling=settlingFixture(),evidence=journey.validateSettlingTransition(settling);
     const model={host:'linux',fresh_host_compilation:true,output_sha256:sha,source_binding:binding,
       inputs:{'/explicit-inert/Program.cs':sha},exe_sha256:sha,
       commands:[0,1].map(i=>({exit:0,error:null,launch_file_sha256:sha,stdout:(i?'run':'compile')+'.stdout.txt',
@@ -321,11 +382,14 @@ test('offline reader checks retained compiler bytes and fixed streams using pure
     if(fault==='executable')model.exe_sha256='bad';
     if(fault==='run-output')model.commands[1].stdout_sha256='bad';
     const run=runInNewContext(reader.slice(begin,end)+';verifyFiles',{
-      assert,dirname,resolve,basename,read:()=>model,readFileSync:()=>bytes,digest:()=>sha,
+      assert,dirname,resolve,basename,read:path=>path.endsWith('runtime-telemetry.json')?settling:model,readFileSync:()=>bytes,digest:()=>sha,
       encounterCompilationSourceBinding:()=>binding,encounterOraclePackage:()=>reference,
-      admitEncounterOracleOutput:(_raw,bundle,sources)=>{parity++;assert.equal(bundle,reference);assert.equal(sources,reference.source_lf_sha256);},
+      validateSettlingTransition:journey.validateSettlingTransition,
+      admitEncounterOracleOutput:(_raw,bundle,sources)=>{parity++;assert.equal(bundle,reference);assert.equal(sources,reference.source_lf_sha256);
+        return {profiles:{'repair:20':settling.oracle}};},
     });
-    const call=()=>run('/explicit-inert/result.json',{qualification:{profile:'linux-functional',host:'linux'},screenshots:[]});
+    const call=()=>run('/explicit-inert/result.json',{qualification:{profile:'linux-functional',host:'linux'},screenshots:[],
+      lifecycle:[{kind:'settling-transition',evidence}]});
     if(fault==='none'){assert.doesNotThrow(call);assert.equal(parity,1);}
     else assert.throws(call,'Inert stale/escaped compiler bytes must refuse: '+fault);
   }
@@ -386,12 +450,45 @@ function fixture(){
     audio:[{},{},{}],motion:{},playable_capture:{},active_play_review:{},lifecycle:[{kind:'blur'}],
     frame_timing:{capture_active:Object.fromEntries(['first-foe-before-impact','first-hit-through-pause','resumed-before-focus-loss','resumed-after-focus-loss']
       .map(key=>[key,{p95_ms:16,p99_ms:20,max_ms:40}])),no_capture_active:{p95_ms:16}}};
+  const transition=settlingFixture(),viewports=[['approved-standard',1366,768],['approved-wide',1920,1080],
+    ['approved-portrait',390,844],['approved-landscape',844,390],['approved-compact',720,640]];
+  windows.screenshots=viewports.map(([name,width,height],i)=>{
+    const layout={...transition.layouts[0],t:230+i,width,height:height-104,pixelRatio:1},
+      state={...transition.states[1],action:'session',t:230+i,paused:true};
+    transition.layouts.push(layout);transition.states.push(state);
+    return {file:`settling-${name}.png`,sha256:sha,viewport:{width,height},load:16,scope:'healthy',layout,state};
+  });
+  const proof=journey.validateSettlingTransition(transition);
+  windows.lifecycle.push({kind:'settling-transition',scope:'interactive-five-viewports',evidence:proof},
+    {kind:'settling-interaction',scope:'native-pause-five-viewports-resume',
+      paused:{...proof.staged,t:220,paused:true},resumed:{...proof.staged,t:270,paused:false},
+      viewports:['approved-standard','approved-wide','approved-portrait','approved-landscape','approved-compact']});
   const linux=structuredClone(windows);linux.qualification={profile:'linux-functional',host:'linux',functional:'pass',
     rendered_audio:'unexecuted-requires-windows',native_blur:'unexecuted-requires-windows',capture_cadence:'unexecuted-requires-windows'};
   // A successful functional host contributes no claimed PCM/media observations.
   linux.audio=[];delete linux.motion;delete linux.playable_capture;delete linux.active_play_review;delete linux.frame_timing;
+  linux.lifecycle=linux.lifecycle.filter(item=>item.kind!=='settling-interaction');
+  linux.lifecycle.find(item=>item.kind==='settling-transition').scope='transient-functional-telemetry';
   return {windows,linux,head,inputs,runtime,served};
 }
+
+test('combined qualification requires Linux transient proof and Windows interactive settling proof',()=>{
+  const mutations=[x=>x.linux.lifecycle=[],x=>x.windows.lifecycle=x.windows.lifecycle.filter(item=>item.kind!=='settling-interaction'),
+    x=>x.linux.lifecycle.find(item=>item.kind==='settling-transition').scope='interactive-five-viewports',
+    x=>x.windows.lifecycle.find(item=>item.kind==='settling-transition').evidence.layouts=[],
+    x=>x.windows.lifecycle.find(item=>item.kind==='settling-interaction').viewports.pop(),
+    x=>x.windows.lifecycle.find(item=>item.kind==='settling-interaction').paused.paused=false,
+    x=>x.windows.lifecycle.find(item=>item.kind==='settling-interaction').resumed.pendingRunId++,
+    x=>x.windows.lifecycle.find(item=>item.kind==='settling-interaction').resumed.tick++,
+    x=>x.windows.screenshots.pop(),x=>x.windows.screenshots[0].viewport.width++,
+    x=>x.windows.screenshots[0].state.paused=false,x=>x.windows.screenshots[0].state.t=210,
+    x=>x.windows.screenshots[0].layout.t=280,x=>x.windows.screenshots[0].layout.width=0,
+    x=>x.windows.lifecycle.find(item=>item.kind==='settling-transition').evidence.layouts.pop(),
+  ];
+  for(const [i,mutate]of mutations.entries()){
+    const x=fixture();mutate(x);assert.throws(()=>assertCombinedQualification(x),'Missing inert settling proof '+i+' must fail');
+  }
+});
 
 test('both current profile results are mandatory and every incomplete or stale companion refuses',()=>{
   assert.equal(assertCombinedQualification(fixture()).status,'pass');

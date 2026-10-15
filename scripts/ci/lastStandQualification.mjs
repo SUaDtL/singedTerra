@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { LAST_STAND_JOURNEY_INPUTS, admitEncounterOracleOutput, encounterOraclePackage, encounterCompilationSourceBinding } from '../../e2e/helpers/lastStandJourney.mjs';
+import { LAST_STAND_JOURNEY_INPUTS, admitEncounterOracleOutput, encounterOraclePackage, encounterCompilationSourceBinding, validateSettlingTransition } from '../../e2e/helpers/lastStandJourney.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -49,6 +49,39 @@ export function assertCombinedQualification({windows,linux,head,inputs,runtime,s
     assert.deepEqual(report.binding.served_after,served,'Served runtime changed during execution');
     for(const key of ['rendered_audio','native_blur','capture_cadence'])
       assert.equal(report.qualification[key],host==='win32'?'pass':'unexecuted-requires-windows','Assigned obligation incomplete: '+key);
+    const settling=report.lifecycle?.filter(item=>item.kind==='settling-transition');
+    assert.ok(settling?.length===1 && settling[0].scope===(host==='win32'?'interactive-five-viewports':'transient-functional-telemetry') &&
+      settling[0].evidence?.before && settling[0].evidence.terminal && settling[0].evidence.staged &&
+      settling[0].evidence.result && settling[0].evidence.layouts?.length,'Required actual settling transition scope absent');
+  }
+  const interactions=windows.lifecycle.filter(item=>item.kind==='settling-interaction'),transition=windows.lifecycle.find(item=>item.kind==='settling-transition').evidence;
+  assert.ok(interactions.length===1 && interactions[0].scope==='native-pause-five-viewports-resume','Windows interactive settling proof absent');
+  const {paused,resumed,viewports}=interactions[0];
+  const profiles=[['approved-standard',1366,768],['approved-wide',1920,1080],['approved-portrait',390,844],
+    ['approved-landscape',844,390],['approved-compact',720,640]];
+  assert.deepEqual(viewports,profiles.map(item=>item[0]),
+    'Windows settling requires all five viewports');
+  assert.ok(paused?.phase==='settling' && paused.paused===true && resumed?.phase==='settling' && resumed.paused===false &&
+    paused.t<resumed.t && paused.load===transition.before.load && paused.timeOrigin===transition.before.timeOrigin &&
+    paused.sessionRun===transition.before.run && paused.pendingRunId===transition.before.loop.runId &&
+    paused.tick===transition.terminal.tick,'Windows real settling Pause/Resume proof absent');
+  for(const key of ['load','timeOrigin','sessionRun','pendingRunId','tick'])
+    assert.equal(resumed[key],paused[key],'Windows settling Resume changed '+key);
+  for(const [name,width,height]of profiles){
+    const shots=windows.screenshots?.filter(item=>item.file===`settling-${name}.png`);
+    assert.equal(shots?.length,1,'Actual Windows settling viewport screenshot absent: '+name);
+    const shot=shots[0],state=shot.state,layout=shot.layout;
+    assert.deepEqual(shot.viewport,{width,height},'Actual settling viewport dimensions differ: '+name);
+    assert.ok(state?.phase==='settling' && state.paused===true && layout?.phase==='settling' &&
+      Number.isFinite(state.t) && state.t>=paused.t && state.t<=resumed.t &&
+      Number.isFinite(layout.t) && layout.t>=paused.t && layout.t<=resumed.t &&
+      Number.isFinite(layout.width) && layout.width>0 && Number.isFinite(layout.height) && layout.height>0,
+      'Settling screenshot must retain an actual paused geometry inside the interaction interval');
+    for(const key of ['load','timeOrigin','sessionRun','pendingRunId','tick'])
+      assert.equal(state[key],paused[key],'Settling screenshot state differs: '+key);
+    assert.equal(layout.load,paused.load);assert.equal(layout.timeOrigin,paused.timeOrigin);
+    assert.deepEqual(transition.layouts.find(item=>item.t===layout.t && item.width===layout.width && item.height===layout.height),layout,
+      'Settling screenshot geometry absent from actual transition layouts');
   }
   assert.ok(windows.audio?.length>=3 && windows.playable_capture && windows.active_play_review && windows.motion,
     'Actual native audio and playable motion evidence required');
@@ -61,6 +94,12 @@ export function assertCombinedQualification({windows,linux,head,inputs,runtime,s
   return {status:'pass',head,profiles:['windows-player','linux-functional'],scope:'combined execution consistency; hosted checks and independent review separately required'};
 }
 
+function assertSettlingPngDimensions(bytes,viewport){
+  assert.ok(bytes.length>=24 && bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])) &&
+    bytes.toString('ascii',12,16)==='IHDR','Actual settling screenshot must be PNG');
+  assert.equal(bytes.readUInt32BE(16),viewport.width,'Actual settling PNG width differs');
+  assert.equal(bytes.readUInt32BE(20),viewport.height,'Actual settling PNG height differs');
+}
 function verifyFiles(path,report) {
   const directory=dirname(resolve(path));
   const verify=item=>{
@@ -98,7 +137,24 @@ function verifyFiles(path,report) {
   assert.equal(model.commands[1].launch_file_sha256,model.exe_sha256,'Run executable binding differs');
   const raw=readFileSync(resolve(directory,'model-oracle/actual-model.csv'));
   assert.equal(digest(raw),model.output_sha256);assert.equal(model.commands[1].stdout_sha256,model.output_sha256);
-  const reference=encounterOraclePackage();admitEncounterOracleOutput(raw,reference,reference.source_lf_sha256);
+  const reference=encounterOraclePackage(),profiles=admitEncounterOracleOutput(raw,reference,reference.source_lf_sha256).profiles;
+  const telemetry=read(resolve(directory,'runtime-telemetry.json'));
+  const recorded=report.lifecycle.find(item=>item.kind==='settling-transition').evidence;
+  const actual=validateSettlingTransition({before:recorded.before,result:recorded.result,...telemetry,
+    oracle:profiles[`${recorded.before.fitting}:${recorded.before.loop.cannonDamage}`]});
+  assert.deepEqual(actual,recorded,'Settling proof differs from actual runtime telemetry and source model');
+  if(report.qualification.host==='win32'){
+    const interaction=report.lifecycle.find(item=>item.kind==='settling-interaction');
+    const shots=report.screenshots.filter(item=>interaction.viewports.some(name=>item.file===`settling-${name}.png`));
+    for(const shot of shots){
+      assertSettlingPngDimensions(readFileSync(resolve(directory,shot.file)),shot.viewport);
+      assert.deepEqual(telemetry.layouts.find(item=>item.load===shot.layout.load && item.timeOrigin===shot.layout.timeOrigin &&
+        item.t===shot.layout.t),shot.layout,'Settling screenshot geometry differs from actual telemetry');
+    }
+    for(const state of [interaction.paused,interaction.resumed,...shots.map(item=>item.state)])
+      assert.deepEqual(telemetry.states.find(item=>item.load===state.load && item.timeOrigin===state.timeOrigin &&
+        item.action===state.action && item.t===state.t),state,'Settling interaction differs from actual runtime telemetry');
+  }
   for(const [i,command]of model.commands.entries())for(const stream of ['stdout','stderr']){
     assert.equal(command[stream],(i===0?'compile':'run')+'.'+stream+'.txt','Fixed contained model stream required');
     assert.equal(digest(readFileSync(resolve(directory,'model-oracle',command[stream]))),command[stream+'_sha256']);

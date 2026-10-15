@@ -1320,6 +1320,46 @@ export function validateModelObservation(observed,oracle) {
   const expected=oracle[observed.tick];
   for(const key of MODEL_FIELDS)assert.equal(observed[key],expected[key],'Source-bound model '+key+' differs');
 }
+export function validateSettlingTransition({before,result,states,layouts,encounters,oracle}) {
+  assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
+    before.status==='Running' && !before.paused && !before.failed && !before.catchingUp &&
+    before.loop?.phase==='battle' && before.loop.runId>0 && before.loop.wallet===0,
+    'Settling requires the actual current unfinished battle');
+  const current=item=>item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope;
+  const {loop,hull,...original}=before;
+  assert.deepEqual(encounters.find(item=>current(item) && item.run===before.run && item.t===before.t && item.action===before.action),original,
+    'Settling starting observation differs from actual telemetry');
+  assert.deepEqual(states.find(item=>current(item) && item.t===loop.t && item.action===loop.action),loop,
+    'Settling starting loop differs from actual telemetry');
+  validateModelObservation(before,oracle);
+  assert.ok(result && current(result) && result.sessionRun===before.run && result.action==='result' &&
+    result.phase==='result' && Number.isFinite(result.t) && result.t>before.t && result.runId===0 &&
+    result.pendingRunId===loop.runId && result.wallet===0 && result.saveState==='ready',
+    'Settling requires one saved pending manual result without an award');
+  assert.deepEqual(states.find(item=>current(item) && item.action==='result' && item.t===result.t),result,
+    'Settling result differs from actual telemetry');
+  const terminals=encounters.filter(item=>current(item) && item.run===before.run && item.action==='terminal' &&
+    item.t>=before.t && item.t<result.t);
+  assert.equal(terminals.length,1,'Settling requires one actual terminal');const terminal=terminals[0];
+  assert.ok(terminal.status==='Defeated' && !terminal.paused && !terminal.failed && !terminal.catchingUp,
+    'Settling terminal is not eligible');validateModelObservation(terminal,oracle);
+  const interval=states.filter(item=>current(item) && item.t>=terminal.t && item.t<=result.t);
+  assert.ok(interval.length && interval.every(item=>item.sessionRun===before.run && item.runId===0 &&
+    item.pendingRunId===loop.runId && item.wallet===0 && !['claim','purchase','deploy','redeploy'].includes(item.action)),
+    'Settling awarded or performed an automatic action');
+  const staged=interval.filter(item=>item.action==='defeat-staged');
+  assert.ok(staged.length===1 && staged[0].phase==='settling' && staged[0].tick===terminal.tick,
+    'Settling requires unique current-run staging');
+  // Layout is emitted just before its staging state. Anchor it to the actual
+  // terminal, rather than requiring the opposite log-notification order.
+  const observed=layouts.filter(item=>current(item) && item.phase==='settling' && item.t>=terminal.t && item.t<result.t);
+  assert.ok(observed.length && observed.every(item=>Array.isArray(item.controls) &&
+    item.controls.some(control=>control.name==='Claim') &&
+    !item.controls.some(control=>control.name==='Claim' && control.active && control.interactable)) &&
+    observed.some(item=>item.controls.some(control=>control.name==='Pause' && control.active && control.interactable)),
+    'Settling layout absent or Claim enabled before the manual result');
+  return {before,terminal,staged:staged[0],result,layouts:observed};
+}
 export function validateBackgroundInterval({kind,before,after,events,oracle}) {
   elapsedTicks(before,after);nativeIntervalEvents(kind,before,after,events);
   assert.equal(before.status,'Running','Background interval must start with an active model');
@@ -3333,13 +3373,21 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       awayWindows.push([kind,interval.begin,interval.recovered]);
     }
     const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark(),defeatStart=states.length;
+    const settlingBefore=await observation();let defeatTime;
+    if(player){
     const settlingClick=await armGameClick('Pause','session',item=>item.paused && item.phase==='settling');
     check(states.at(-1).phase==='battle','settling input is prepared while the actual battle is running');
-    await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);const defeatTime=await mark();
-    await settlingClick();await focused('settling paused');await phaseMatrix('settling');
+    await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);defeatTime=await mark();
+    const settlingPaused=await settlingClick();await focused('settling paused');await phaseMatrix('settling');
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'no Claim during actual settling');
-    await gameClick('Pause','session',item=>!item.paused);await page.waitForTimeout(750);
+    const settlingResumed=await gameClick('Pause','session',item=>!item.paused);await page.waitForTimeout(750);
+    report.lifecycle.push({kind:'settling-interaction',scope:'native-pause-five-viewports-resume',
+      paused:settlingPaused,resumed:settlingResumed,viewports:VIEWPORTS.slice(0,5).map(item=>item.name)});
+    }else await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);
     const result=await until(states,defeatStart,item=>item.phase==='result',8);
+    const transition=validateSettlingTransition({before:settlingBefore,result,states,layouts,encounters,oracle:reference(settlingBefore)});
+    check(true,'no Claim during actual settling',transition.layouts.map(item=>({t:item.t,phase:item.phase})));
+    report.lifecycle.push({kind:'settling-transition',scope:player?'interactive-five-viewports':'transient-functional-telemetry',evidence:transition});
     check(result.pendingRunId>0 && result.wallet===0 && result.saveState==='ready','ordinary defeat successfully saved one pending award',result);
     if(player)check((await energy(defeatTime-250,await mark())).maximum_rms>.0005,'real rendered defeat cue');await screenshot('02-defeat-pending');await phaseMatrix('result');
     const record=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));

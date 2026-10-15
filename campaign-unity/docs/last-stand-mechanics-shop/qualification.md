@@ -102,6 +102,18 @@ reports after model advancement. Focus-only notifications do not advance the
 model clock and cannot serve as those endpoints. The original strict elapsed
 tolerance and model/callback checks remain unchanged.
 
+The brief settling transition has distinct host obligations. Linux retains the
+actual current-run terminal, settling layouts, unique staging and pending Results
+state, validates them against the compiled model, and proves no enabled Claim or
+automatic award. Slow software-rendered protocol round trips can outlast this
+transient phase, so Linux does not claim an interactive paused-settling matrix.
+Windows must still Pause during settling, inspect all five viewports and Resume.
+Each required viewport needs its actual PNG, viewport dimensions and retained
+paused state/layout inside that Pause/Resume interval, bound to raw telemetry.
+The combined reader requires both scopes and reconstructs each transition from
+raw runtime telemetry and the compiled model output. Both hosts retain actual
+explicit Pause, manual Claim, persistence, upgrades, background and recovery tests.
+
 Hidden-tab return requires actual current global focus and visible notifications
 after loss, in either event order, and uses their first coherent focused/visible
 completion. Either missing witness still fails. Visible-window blur retains its
