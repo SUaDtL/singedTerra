@@ -3062,16 +3062,38 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await page.mouse.move(point.x,point.y);await page.waitForTimeout(80);
       const armedTrace=trace.length,armedLoad=load,armedViewport=page.viewportSize();let used=false;
       return async()=>{
-        check(!used && load===armedLoad,'prepared pointer is single-use in its original document');used=true;
-        check(JSON.stringify(page.viewportSize())===JSON.stringify(armedViewport),'prepared pointer refuses changed viewport geometry');
-        check(!trace.slice(armedTrace).some(event=>event.globalTarget &&
+        assert.ok(!used && load===armedLoad,'prepared pointer is single-use in its original document');used=true;
+        assert.ok(JSON.stringify(page.viewportSize())===JSON.stringify(armedViewport),'prepared pointer refuses changed viewport geometry');
+        assert.ok(!trace.slice(armedTrace).some(event=>event.globalTarget &&
           (event.kind==='blur' || event.kind==='visibilitychange' && event.hidden)),
           'prepared pointer refuses intervening native focus or visibility loss');
-        check(await page.evaluate('!document.hidden && document.hasFocus()'),'prepared pointer remains visibly focused');
+        const documentState=await page.evaluate(()=>{
+          const element=document.getElementById('unity-canvas'),box=element?.getBoundingClientRect();
+          return {focused:!document.hidden && document.hasFocus(),timeOrigin:performance.timeOrigin,
+            canvas:box?{x:box.x,y:box.y,width:box.width,height:box.height,pixelWidth:element.width,pixelHeight:element.height}:null};
+        });
+        assert.ok(documentState.focused && documentState.timeOrigin===layout.timeOrigin,'prepared pointer remains in its visibly focused document');
+        const current=layouts.at(-1),state=states.at(-1),box=documentState.canvas;
+        assert.ok(current && state && current.load===armedLoad && state.load===armedLoad &&
+          current.timeOrigin===layout.timeOrigin && state.timeOrigin===layout.timeOrigin && current.phase===state.phase &&
+          Number.isFinite(current.t) && current.t>=layout.t && current.width===layout.width && current.height===layout.height,
+          'prepared pointer requires the current same-document layout');
+        assert.ok(box && ['x','y','width','height'].every(key=>Number.isFinite(box[key]) && Math.abs(box[key]-canvas[key])<.5) &&
+          box.pixelWidth===current.width && box.pixelHeight===current.height,'prepared pointer refuses changed Canvas geometry');
+        const targets=current.controls.filter(control=>control.name===name && control.active && control.interactable);
+        assert.equal(targets.length,1,'prepared pointer requires one currently enabled target');const target=targets[0];
+        assert.ok(['x','y','width','height'].every(key=>Number.isFinite(target[key])) && target.width>0 && target.height>0 &&
+          target.x>=0 && target.y>=0 && target.x+target.width<=current.width+.5 && target.y+target.height<=current.height+.5,
+          'prepared pointer target must be within the actual Canvas');
+        const resolved={x:box.x+(target.x+target.width/2)*box.width/current.width,
+          y:box.y+(target.y+target.height/2)*box.height/current.height};
         const start=states.length;
+        await page.mouse.move(resolved.x,resolved.y);
         await page.mouse.down();await page.waitForTimeout(150);await page.mouse.up();
-        report.actions.push({name,action,...point,hold_ms:150});
-        return until(states,start,item=>item.load===armedLoad && item.action===action && predicate(item),8);
+        report.actions.push({name,action,...resolved,hold_ms:150,resolved_layout:{load:current.load,timeOrigin:current.timeOrigin,
+          phase:current.phase,t:current.t,target:{x:target.x,y:target.y,width:target.width,height:target.height}}});
+        const observed=await until(states,start,item=>item.load===armedLoad && item.action===action && predicate(item),8);
+        check(true,'prepared pointer used the actual current enabled target',{name,...resolved,phase:current.phase});return observed;
       };
     };
     const gameClick=async(...args)=>(await armGameClick(...args))();

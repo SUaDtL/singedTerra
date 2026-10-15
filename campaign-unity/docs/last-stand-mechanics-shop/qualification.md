@@ -58,3 +58,8 @@ Gameplay time, transient settling, audio windows and every behavioral deadline
 are unchanged. The settling input prepares native focus/geometry/hover before
 the brief phase, dispatches the actual pointer hold there, and requires paused
 settling before subsequent native verification or layout capture.
+Prepared input resolves the latest observed enabled button rectangle immediately
+before dispatch, so disappearing Shop controls cannot leave a stale Pause target.
+It refuses document, viewport or Canvas drift and records the actual resolved
+point; native probes and extra result-file writes stay outside the brief input
+window.
