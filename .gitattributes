@@ -19,3 +19,11 @@ shared/src/verified/retained/cq1.mjs whitespace=-blank-at-eol
 client/public/last-stand/** -text
 # Preserve the receipt-bound framework export's trailing whitespace bytes.
 client/public/last-stand/Build/Web-20261005T005554Z-4472c0.framework.js whitespace=-blank-at-eol
+
+# Portable source locks and sanitized receipts retain exact canonical LF bytes.
+campaign-unity/docs/last-stand-web/*.json text eol=lf
+client/public/last-stand/Build/*.framework.js whitespace=-blank-at-eol
+# Preserve receipt-bound Unity metadata and the retained owner review records.
+campaign-unity/Unity/Assets/Editor/LastStandBackgroundChecks.cs.meta whitespace=-blank-at-eol
+campaign-unity/docs/last-stand-mechanics-shop/preview-review.md whitespace=-blank-at-eof
+campaign-unity/docs/last-stand-mechanics-shop/validation.md whitespace=-blank-at-eof

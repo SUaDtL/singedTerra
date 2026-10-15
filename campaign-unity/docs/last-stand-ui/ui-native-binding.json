@@ -1,0 +1,128 @@
+{
+  "schema": "singedterra-last-stand-ui-binding/v1",
+  "authority": "documentary-observation-only",
+  "task": "ST-LS-UI-PLAN#T-10",
+  "note": "Current native UI approvals separately bound to exact material export; legacy LOOP keys are documentary exporter observations only.",
+  "worktree": {
+    "root": "C:\\Users\\brenn\\st-art-pr",
+    "head": "61b0c9a3a2854597bdfdb5c1f667e2e78f3e20dd",
+    "branch": "codex/unity-web-starter-art"
+  },
+  "approvedUi": {
+    "ST-LS-UI-SPEC": {
+      "revision": 5,
+      "model_sha256": "31e0b5dd62fe61c22cf4bd15e080077a36b1db2eed28c2fdb515d52aabc06b9d",
+      "normative_sha256": "64bb97154ea7fdc8f5f3872663b995d270cd6f0a2bdb7f7fd87c6fdd6b14d958"
+    },
+    "ST-LS-UI-PLAN": {
+      "revision": 30,
+      "model_sha256": "c4b1e6d3d0d336a65535a2c3cf41fb153a92b29024bec16f6d5bec7461774651",
+      "normative_sha256": "cf63498b21bc0d08d5c9054b16891dc3bc286672d97605ae05f8bf77ede7c4d6"
+    }
+  },
+  "nativeBefore": {
+    "path": "C:\\Users\\brenn\\codearbiter-review-integration-20261006\\ui-reference-refinement-preview-storage-resume-20261009\\native-observation-export.json",
+    "bytes": 248935,
+    "sha256": "fb96cb1c75353eb626031cbe10c5b2d02c85ff2ea3cacbd36c98b6ddbf70051b"
+  },
+  "nativeAfter": {
+    "path": "C:\\Users\\brenn\\codearbiter-review-integration-20261006\\ui-reference-refinement-preview-storage-resume-20261009\\native-observation-after.json",
+    "bytes": 248935,
+    "sha256": "4ae565559cf74bb6710232e958fa7195a52b846ce6b9a9820e8027b97ee33e88"
+  },
+  "legacyExportObservations": {
+    "ST-LS-LOOP-SPEC": {
+      "revision": 9,
+      "model_sha256": "b4233b147ae028520aa7b2d3a3c098b7eefe7e8ce5c9fc9893f39805a3e26b68",
+      "normative_sha256": "f8b080068be66c6b897c0852dad46e05c85ce3b21f74ff546f8b08b6870169d6"
+    },
+    "ST-LS-LOOP-PLAN": {
+      "revision": 34,
+      "model_sha256": "628da568d7419e9a57c0bf6b18405efc1159f4b0f31147b6c4c2d2d0c28c5cee",
+      "normative_sha256": "df9520dc7fc412f106f246c7b0713790bcc9032c6f1349b90117ad5de318419e"
+    }
+  },
+  "export": {
+    "receipt": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261009T143803Z-532a81/result.json",
+    "rawReceiptSha256": "9ea9f1ec035158a766b785e5f475bb2e5909aa4d60707d8d835329fe77c78357",
+    "sourceClosureSha256": "51c1dbed663e5677c148176f9474d8232ee9d72afc30e1c5ba44ec8b8d35d36c",
+    "toolchainSha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6",
+    "stagingPlanSha256": "300a9d72e242010f937d3aa55b33b472a8c7b07be3741c54678fc5448127133a"
+  },
+  "package": {
+    "manifestSha256": "ce8f09693dc45e47904a31e74d11d22ceb018b293fffee13bae45a739a77637f",
+    "sanitizedReceiptSha256": "31c8debd6c40cc8f61964cd7ee89ca32782a0aa9f1aa7eef94e22eb704864a70",
+    "sourceLockSha256": "fd311ce6e5a02459d1507d35928cd19076103fd131b3426b9216506da8d9133b",
+    "files": {
+      "Build/Web-20261009T143803Z-532a81.data": "56b894d422ee9d3427aad1ec3d7f8278a26d3cc87f5532df5646b5c893c68e8d",
+      "Build/Web-20261009T143803Z-532a81.framework.js": "9a2a15caf853a56b317b9f4e1d4fd1f0c1236512fe279a5122ef3a2891a469c3",
+      "Build/Web-20261009T143803Z-532a81.loader.js": "0be04fe45495407f3157c29b05ba6f86a4ca8968973c202d333ffd93c0400b0b",
+      "Build/Web-20261009T143803Z-532a81.wasm": "356a6ae4068b1a552e389ee80d5bc624742c33b6466fa58060bec7de8c18df53",
+      "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+      "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+      "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+      "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+      "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+      "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+      "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+      "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+      "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+      "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+      "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+      "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+    },
+    "wrapperSha256": "e68f88405d35ade8a7dcc879e5d3bae55f6e7e52c83e5a7c850f40567a0558d7"
+  },
+  "normalChecks": {
+    "path": "C:\\Users\\brenn\\codearbiter-review-integration-20261006\\ui-reference-refinement-preview-storage-resume-20261009\\normal-checks.json",
+    "bytes": 2875256,
+    "sha256": "f7eb931de92e9d8113fc543b0b89f3e4e061b9904d72aad9ef85318b1dfb367f"
+  },
+  "tools": {
+    "node": {
+      "path": "C:\\Program Files\\nodejs\\node.exe",
+      "bytes": 92534088,
+      "sha256": "9a4eb5f1c29c6a2e93852ead46b999e284a6a5ca8bab4d4e241d587d025a52de"
+    },
+    "npmCli": {
+      "path": "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+      "bytes": 56,
+      "sha256": "3ce7cba6f5128dd5f54c98b6a5036b0f850496878cc2e21044b675fe3c594e3e"
+    },
+    "python": {
+      "path": "C:\\Python314\\python.exe",
+      "bytes": 106208,
+      "sha256": "03168c01b7b7491423350e82c26fee71f35b43694d1319d3c668bda6903a0c38"
+    },
+    "buildWeb": {
+      "path": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Tools\\build_web.py",
+      "bytes": 12564,
+      "sha256": "a353b4c6100ebe56cb38788f750ff3fd24fd24577f8519eecd4e5419c7a34cc1"
+    },
+    "packager": {
+      "path": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Tools\\package_last_stand_web.py",
+      "bytes": 12653,
+      "sha256": "a60a645671b2d4b9e461727c1a225504c8eb7ecb0f236f585340511228875755"
+    },
+    "sourceValidator": {
+      "path": "C:\\Users\\brenn\\st-art-pr\\scripts\\assets\\verify-last-stand-source.mjs",
+      "bytes": 7392,
+      "sha256": "f0cae0340b182fcdde9c6ebb867eae5aaa3fe2581ba1f40002af8dc00495a8f4"
+    },
+    "runtimeValidator": {
+      "path": "C:\\Users\\brenn\\st-art-pr\\scripts\\assets\\verify-last-stand.mjs",
+      "bytes": 4216,
+      "sha256": "8cba09d85ef6fa7c780c02709b58cd92261384d485461c6f016dc32304706da3"
+    },
+    "deliveryTests": {
+      "path": "C:\\Users\\brenn\\st-art-pr\\campaign-unity\\Tools\\last_stand_ui\\test_build_delivery.py",
+      "bytes": 16762,
+      "sha256": "f34917e89f9b35f78329e002285df710840c4ad3050ce2a78ec08b6394f50a3a"
+    }
+  },
+  "pending": [
+    "Current native background qualification",
+    "Whole-loop qualification",
+    "Matched owner media/visual/motion/listening/whole-feature acceptance"
+  ]
+}

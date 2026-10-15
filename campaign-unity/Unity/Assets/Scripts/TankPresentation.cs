@@ -34,7 +34,8 @@ namespace SingedTerra.Art
             turretUp=turret.InverseTransformDirection(Vector3.up);
             inspectionForward=Vector3.ProjectOnPlane(muzzle.position-barrel.position,Vector3.up).normalized;
             if(inspectionForward.sqrMagnitude<.5f)throw new InvalidOperationException("No horizontal inspection axis");
-            Application.targetFrameRate=60;Application.runInBackground=false;
+            Application.targetFrameRate=60;
+            if(!GetComponent<SingedTerra.LastStand.LastStandLoopController>())Application.runInBackground=false;
             repairModule.SetActive(true);launcherModule.SetActive(false);
             flash.SetActive(false);SetView(false,true);Report("ready");
         }
@@ -119,6 +120,11 @@ namespace SingedTerra.Art
             SetView(encounterWasWide,true);
         }
         public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
+        public void ClearEncounterFeedback()
+        {
+            if(!EncounterActive)return;
+            recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
+        }
         // The session admits terminal time only after its pause/focus/failure guards.
         // Keep the camera, idle motion and committed encounter locked.
         public void AdvanceTerminalShot(float elapsed)

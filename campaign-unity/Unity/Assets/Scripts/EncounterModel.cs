@@ -38,10 +38,17 @@ namespace SingedTerra.Encounter
         public const int RepairPeriod = 20, RepairAmount = 3;
         readonly EncounterFoe[] foes = new EncounterFoe[Capacity];
         readonly List<EncounterEvent> events = new List<EncounterEvent>(64);
+        Func<int, int> incomingHitProjection = rawHit => rawHit;
         int nextSpawn = 1, nextCannon = 1, nextLauncher = 1, nextRepair = RepairPeriod;
+        int lastCannonShot;
         public bool HasLauncher { get; }
         public EncounterProfile Profile { get; }
         public int CommittedCannonDamage { get; }
+        public int CurrentCannonDamage { get; private set; }
+        public int CurrentLauncherDamage { get; private set; } = LauncherDamage;
+        public int CurrentMaximumHull { get; private set; } = MaximumHull;
+        public int CurrentCannonPeriod { get; private set; } = CannonPeriod;
+        public int CurrentRepairAmount { get; private set; } = RepairAmount;
         public int Tick { get; private set; }
         public int Hull { get; private set; } = MaximumHull;
         public int Spawned { get; private set; }
@@ -60,8 +67,48 @@ namespace SingedTerra.Encounter
             Profile = profile ?? throw new ArgumentNullException(nameof(profile));
             if (cannonDamage < CannonDamage || cannonDamage > 50) throw new ArgumentOutOfRangeException(nameof(cannonDamage));
             CommittedCannonDamage = cannonDamage;
+            CurrentCannonDamage = cannonDamage;
             HasLauncher = launcher;
             for (int i = 0; i < Capacity; i++) foes[i] = new EncounterFoe();
+        }
+        // Consume validated catalog projections without owning shop levels or formulas.
+        public bool TryApplyPlayableAttackProjection(int cannonDamage, int launcherDamage)
+        {
+            if (!Profile.IsPlayable || Status != EncounterStatus.Running ||
+                cannonDamage < CannonDamage || launcherDamage < LauncherDamage) return false;
+            CurrentCannonDamage = cannonDamage;
+            CurrentLauncherDamage = launcherDamage;
+            return true;
+        }
+        // The catalog supplies immutable numeric capacity and a captured pure hit
+        // projection. This model owns only their applied combat state.
+        public bool TryApplyPlayableDefenseProjection(int maximumHull, Func<int, int> incomingHit)
+        {
+            if (!Profile.IsPlayable || Status != EncounterStatus.Running ||
+                maximumHull < CurrentMaximumHull || incomingHit == null || incomingHit(1) != 1) return false;
+            int nextHull = (int)Math.Min((long)maximumHull, Hull + (long)maximumHull - CurrentMaximumHull);
+            CurrentMaximumHull = maximumHull;
+            incomingHitProjection = incomingHit;
+            Hull = nextHull;
+            return true;
+        }
+        // The catalog owns levels and the formula; only actual shots anchor cadence.
+        public bool TryApplyPlayableCannonPeriodProjection(int period)
+        {
+            if (!Profile.IsPlayable || Status != EncounterStatus.Running ||
+                period < 1 || period > CannonPeriod) return false;
+            if (period == CurrentCannonPeriod) return true;
+            CurrentCannonPeriod = period;
+            if (lastCannonShot > 0) nextCannon = Math.Max(Tick + 1, lastCannonShot + period);
+            return true;
+        }
+        // The catalog supplies the amount; the repair fitting retains its fixed cadence.
+        public bool TryApplyPlayableRepairProjection(int amount)
+        {
+            if (!Profile.IsPlayable || Status != EncounterStatus.Running ||
+                HasLauncher || amount < RepairAmount) return false;
+            CurrentRepairAmount = amount;
+            return true;
         }
         public void Step()
         {
@@ -73,16 +120,16 @@ namespace SingedTerra.Encounter
                 if (foe.Alive)
                     foe.Distance = Math.Max(StopDistance(foe), foe.Distance -
                         Profile.Speed(foe.Kind));
-            if (Tick >= nextCannon && Shoot(Profile.MainRange, CommittedCannonDamage, EncounterEventKind.Cannon))
-            { CannonShots++; nextCannon = Tick + CannonPeriod; }
+            if (Tick >= nextCannon && Shoot(Profile.MainRange, CurrentCannonDamage, EncounterEventKind.Cannon))
+            { CannonShots++; lastCannonShot = Tick; nextCannon = Tick + CurrentCannonPeriod; }
             if (HasLauncher)
             {
-                if (Tick >= nextLauncher && Shoot(Profile.AuxiliaryRange, LauncherDamage, EncounterEventKind.Launcher))
+                if (Tick >= nextLauncher && Shoot(Profile.AuxiliaryRange, CurrentLauncherDamage, EncounterEventKind.Launcher))
                 { LauncherShots++; nextLauncher = Tick + LauncherPeriod; }
             }
             else if (Tick >= nextRepair)
             {
-                int amount = Math.Min(RepairAmount, MaximumHull - Hull);
+                int amount = Math.Min(CurrentRepairAmount, CurrentMaximumHull - Hull);
                 Hull += amount; Restored += amount; nextRepair = Tick + RepairPeriod;
                 if (amount > 0) events.Add(new EncounterEvent(EncounterEventKind.Repair, -1, amount));
             }
@@ -126,7 +173,8 @@ namespace SingedTerra.Encounter
             {
                 var foe = foes[i];
                 if (!foe.Alive || foe.Distance > StopDistance(foe) || Tick < foe.NextAttack) continue;
-                int damage = Math.Min(Hull, foe.Damage); Hull -= damage;
+                int projectedHit = incomingHitProjection(foe.Damage);
+                int damage = Math.Min(Hull, Math.Max(1, Math.Min(foe.Damage, projectedHit))); Hull -= damage;
                 bool close = foe.Kind == FoeKind.Close;
                 if (close) CloseHits++; else RangedHits++;
                 foe.NextAttack = Tick + (close ? 20 : 30);

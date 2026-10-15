@@ -12,13 +12,15 @@ namespace SingedTerra.LastStand
         AudioClip cannon, impact, destruction, defeat, purchase;
         int cursor;
         bool unlocked, suspended;
+        bool focused, applicationPaused;
         public bool Unlocked => unlocked;
         public bool Suspended => suspended;
         public bool Muted { get; private set; }
-        public bool CanPlay => unlocked && !Muted && !suspended && Application.isFocused;
+        public bool CanPlay => unlocked && !Muted && !suspended && focused && !applicationPaused;
 
         public void Initialize()
         {
+            focused = Application.isFocused;
             var listeners=FindObjectsByType<AudioListener>(FindObjectsInactive.Include,FindObjectsSortMode.None);
             if(listeners.Length==0)
                 GetComponent<SingedTerra.Art.TankPresentation>().view.gameObject.AddComponent<AudioListener>();
@@ -78,8 +80,10 @@ namespace SingedTerra.LastStand
         }
         public void PlayDefeat() { Play(defeat,"defeat"); }
         public void PlayPurchase() { Play(purchase,"purchase"); }
-        void OnApplicationFocus(bool focused) { if(!focused)SetSuspended(true); }
-        void OnApplicationPause(bool paused) { if(paused)SetSuspended(true); }
+        // Visibility callbacks own visibility only. The controller owns explicit
+        // Pause/failure/catch-up suspension, which focus return must not clear.
+        void OnApplicationFocus(bool value) { focused=value; if(!value)Stop(); }
+        void OnApplicationPause(bool value) { applicationPaused=value; if(value)Stop(); }
         void OnDestroy()
         {
             foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase})if(clip)Destroy(clip);

@@ -84,7 +84,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "8de4bc804a463131b61bb172eefcd697f5f759e6915d8d504a0b497ef7cbf82c"
+      "sha256": "3bb28100d58b08a1c2fbb844999e22c36d4aed640db802c36bf9fd268de2f03f"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",

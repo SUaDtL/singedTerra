@@ -18,6 +18,7 @@ async function gotoCampaignCommandCenter(page: Page): Promise<void> {
       await page.getByRole('button', { name: 'Close Modes', exact: true }).click();
     }
   }
+  await page.locator('.command-center__library-items [data-command-item="ash-road"]').click();
   await expect(page.locator('#lobby [data-campaign-command-view]')).toBeVisible();
   await expect(page.locator('#lobby [data-command-primary]')).toHaveCount(1);
 }
@@ -49,6 +50,54 @@ async function assertRenderedTargetsArePhysicalSize(page: Page): Promise<void> {
 }
 
 test.describe('T11 command-center production visual seam', () => {
+  test('keeps Last Stand loss disclosure visible beside its reachable launch action', async ({ page }, testInfo) => {
+    // This case owns its viewport matrix; the other outer projects would repeat it.
+    test.skip(testInfo.project.name !== 'desktop-fine', 'The desktop project owns this explicit viewport matrix.');
+    const unityRequests: string[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname.includes('/last-stand/')) unityRequests.push(request.url());
+    });
+    for (const [width, height] of [[1600, 900], [1280, 720], [800, 600], [740, 390], [390, 844], [320, 700]]) {
+      await page.setViewportSize({ width: width!, height: height! });
+      await gotoLobby(page);
+      const campaigns = page.locator('.command-center__category-rail')
+        .getByRole('button', { name: 'Campaigns', exact: true });
+      if (await campaigns.isVisible()) await campaigns.click();
+      else {
+        await page.getByRole('button', { name: 'Modes', exact: true }).click();
+        await page.getByRole('navigation', { name: 'Modes', exact: true })
+          .getByRole('button', { name: 'Campaigns', exact: true }).click();
+        await page.getByRole('button', { name: 'Close Modes', exact: true }).click();
+      }
+      await page.locator('.command-center__library-items [data-command-item="last-stand"]').click();
+      const disclosure = page.locator('[data-last-stand-loss-disclosure]');
+      const launch = page.locator('[data-command-action="launch-last-stand"]');
+      await expect(disclosure, `${width}x${height} unfinished-run disclosure`).toBeVisible();
+      await expect(disclosure).toBeInViewport({ ratio: 1 });
+      await expect(disclosure).toHaveText('Leaving or reloading an unfinished run loses its progress without a reward. Saved upgrades and pending defeat rewards stay in this browser only after a successful save.');
+      const overflow = await disclosure.evaluate((element) => ({
+        x: element.scrollWidth - element.clientWidth,
+        y: element.scrollHeight - element.clientHeight,
+      }));
+      expect(overflow.x).toBeLessThanOrEqual(1);
+      expect(overflow.y).toBeLessThanOrEqual(1);
+      await expect(launch).toBeInViewport({ ratio: 1 });
+      await expect(launch).toHaveAttribute('href', /\/last-stand\/$/);
+      await expect(launch).toHaveAttribute('aria-describedby', (await disclosure.getAttribute('id'))!);
+      await launch.focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(launch).toBeFocused();
+      await assertLobbyFrame(page);
+      const ashRoad = page.locator('.command-center__library-items [data-command-item="ash-road"]');
+      await expect(ashRoad).toBeInViewport({ ratio: 1 });
+      await ashRoad.click();
+      await expect(page.locator('[data-campaign-command-view]')).toBeVisible();
+      await expect(ashRoad).toHaveAttribute('aria-current', 'true');
+    }
+    expect(unityRequests, 'Campaigns entry must not request Unity before launch').toEqual([]);
+  });
+
   test('renders one campaign-first hierarchy with a dominant reachable action', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await gotoCampaignCommandCenter(page);

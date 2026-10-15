@@ -85,6 +85,33 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('CampaignCommandView', () => {
+  it('defaults to Last Stand only without saved choice or compatible Ash Road resume', () => {
+    for (const destination of ['fresh', 'remembered', 'resume'] as const) {
+      const root = document.createElement('div');
+      const ashRoad = { categoryId: commandCategoryId('campaigns'), itemId: commandItemId('ash-road') };
+      const shell = createCommandCenterShell(root, {
+        contributions: [createAshRoadCommandCategoryContribution<CampaignCommandContext>()],
+        context: savedContext(destination === 'resume' ? 'compatible' : 'empty'),
+        initialSelection: destination === 'resume' ? ashRoad : null,
+        selectionStore: {
+          read: () => destination === 'remembered' ? ashRoad : null,
+          remember: () => true,
+          clear: () => undefined,
+        },
+      });
+      expect(root.querySelector('[data-command-item][aria-current="true"]')?.getAttribute('data-command-item'))
+        .toBe(destination === 'fresh' ? 'last-stand' : 'ash-road');
+      expect(root.querySelector('[data-command-item]')?.getAttribute('data-command-item')).toBe('last-stand');
+      expect(root.querySelector('[data-command-item="ash-road"]')?.textContent)
+        .toContain('Legacy campaign. Start or continue your refinery convoy.');
+      root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!.click();
+      expect(root.querySelector('[data-campaign-command-view]')).not.toBeNull();
+      shell.destroy();
+    }
+  });
+});
+
 describe('Ash Road command contribution', () => {
   it('switches between independent campaign items and launches the packaged Last Stand route', () => {
     const root = document.createElement('div');

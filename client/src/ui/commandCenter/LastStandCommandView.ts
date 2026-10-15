@@ -1,6 +1,8 @@
 import { createPreparationFrame } from '../PreparationFrame';
 import type { MountedCommandView } from './contracts';
 
+let lastStandCommandViewId = 0;
+
 /** The Unity build owns its local progression; this view owns only its entry link. */
 export function createLastStandCommandView<Context>(host: HTMLElement): MountedCommandView<Context> {
   const document = host.ownerDocument;
@@ -30,7 +32,7 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
   for (const [term, value] of [
     ['Assignment', 'Endure the assault'],
     ['Progress', 'Salvage and permanent cannon upgrades'],
-    ['Save', 'Stored locally on this device'],
+    ['Save', 'Separate local save in this browser'],
   ] as const) {
     const dt = document.createElement('dt');
     dt.textContent = term;
@@ -46,6 +48,13 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
   launch.href = `${import.meta.env.BASE_URL}last-stand/`;
   launch.textContent = 'Launch Last Stand';
 
+  const disclosure = document.createElement('p');
+  disclosure.id = `last-stand-loss-${++lastStandCommandViewId}`;
+  disclosure.className = 'last-stand-command__loss';
+  disclosure.dataset.lastStandLossDisclosure = '';
+  disclosure.textContent = 'Leaving or reloading an unfinished run loses its progress without a reward. Saved upgrades and pending defeat rewards stay in this browser only after a successful save.';
+  launch.setAttribute('aria-describedby', disclosure.id);
+
   createPreparationFrame(document, {
     root,
     eyebrow: 'Campaigns / Last Stand',
@@ -54,6 +63,7 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
     body: board,
     dockLabel: 'Field deployment',
     dockStatus: 'Your Last Stand save stays separate from Ash Road.',
+    dockMessage: disclosure,
     secondaryActions: launch,
   });
   host.replaceChildren(root);

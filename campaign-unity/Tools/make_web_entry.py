@@ -9,26 +9,45 @@ IDENTITY = {
     'gallery': ('Parts Gallery', 'Loading parts gallery', 'Interactive parts gallery', 'Parts Gallery'),
     'last-stand': ('Last Stand', 'Loading Last Stand', 'Interactive Last Stand', 'Last Stand Prototype'),
 }
-RETURN_STYLE = ''':root{--nav-height:52px}
-#last-stand-nav{box-sizing:border-box;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));border-bottom:1px solid #725b38;background:#242a26;color:#c5a25e;font-size:13px;font-weight:700;letter-spacing:.08em}
+RETURN_STYLE = ''':root{--nav-height:104px}
+#last-stand-nav{box-sizing:border-box;height:var(--nav-height);display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:center;align-items:center;gap:4px 12px;padding:8px max(16px,env(safe-area-inset-right)) 8px max(16px,env(safe-area-inset-left));border-bottom:1px solid #725b38;background:#242a26;color:#c5a25e;font-size:14px;font-weight:700;letter-spacing:.08em}
+#last-stand-loss{grid-column:1/-1;margin:0;color:#ddd1b7;font-size:14px;font-weight:400;line-height:1.4;letter-spacing:normal}
 canvas{height:calc(100vh - var(--nav-height))}
 #loading{top:var(--nav-height)}
-#last-stand-return{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px solid #a98a52;border-radius:4px;background:#303a31;color:#f2e3c5;font-size:13px;font-weight:700;letter-spacing:.02em;text-decoration:none;white-space:nowrap}
+#last-stand-return{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px solid #a98a52;border-radius:4px;background:#303a31;color:#f2e3c5;font-size:14px;font-weight:700;letter-spacing:.02em;text-decoration:none;white-space:nowrap}
 #last-stand-return:hover,#last-stand-return:focus-visible{background:#38443a;border-color:#d4b772;color:#fff3d8}
 #last-stand-return:focus-visible{outline:3px solid #e7cb83;outline-offset:3px}
 #last-stand-return .short{display:none}
 #retry{display:none;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #a98a52;border-radius:4px;color:#f2e3c5;text-decoration:none}
 #retry:hover,#retry:focus-visible{background:#38443a;color:#fff3d8}
 #retry:focus-visible{outline:3px solid #e7cb83;outline-offset:3px}
-@media(max-width:900px){#last-stand-return .full{display:none}#last-stand-return .short{display:inline}}
-@media(max-width:560px){#last-stand-nav{padding-inline:10px;font-size:12px}#last-stand-return{padding:0 10px}}'''
+@media(max-width:900px){:root{--nav-height:124px}#last-stand-return .full{display:none}#last-stand-return .short{display:inline}}
+@media(max-width:560px){:root{--nav-height:156px}#last-stand-nav{padding-inline:10px}#last-stand-return{padding:0 10px}}
+@media(max-width:360px){:root{--nav-height:188px}}'''
 LEGACY_BOOTSTRAP = """config.showBanner=(message,type)=>{console[type==='error'?'error':'warn'](message);if(type==='error')showError(message)};
 function showError(message){document.querySelector('#loading').style.display='grid';document.querySelector('#status').textContent='Scene could not load';const e=document.querySelector('#error');e.style.display='block';e.textContent=String(message)}
 createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p).then(()=>{document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);"""
 LAST_STAND_BOOTSTRAP = """config.showBanner=(message,type)=>{console[type==='error'?'error':'warn'](message);if(type==='error')showError(message)};
 function showError(message){console.error('Last Stand load failed',message);document.querySelector('#loading').style.display='grid';document.querySelector('#status').textContent='Scene could not load';document.querySelector('#progress').style.display='none';const e=document.querySelector('#error');e.style.display='block';e.textContent='Last Stand could not start. Check your connection and try again.';document.querySelector('#retry').style.display='inline-flex'}
+// Register before Unity: native Return/Retry keep normal browser activation.
+const wrapperKeyboardControls=[document.querySelector('#last-stand-return'),document.querySelector('#retry')];
+let lastStandInstance;
+function navigateCanvas(direction){if(lastStandInstance&&typeof lastStandInstance.SendMessage==='function')lastStandInstance.SendMessage('LastStandLoopHud','NavigateKeyboard',direction)}
+canvas.addEventListener('focus',()=>navigateCanvas('enter-first'));
+canvas.addEventListener('blur',()=>navigateCanvas('leave'));
+window.addEventListener('st-last-stand-keyboard-exit',()=>document.querySelector('#last-stand-return').focus());
+function keepWrapperKeyboard(event){
+  if(wrapperKeyboardControls.includes(event.target)){event.stopImmediatePropagation();return}
+  if(event.key==='Tab'&&!event.ctrlKey&&!event.altKey&&!event.metaKey){
+    event.stopImmediatePropagation();
+    if(event.target===canvas&&lastStandInstance&&typeof lastStandInstance.SendMessage==='function'){
+      event.preventDefault();if(event.type==='keydown'&&!event.repeat)navigateCanvas(event.shiftKey?'previous':'next');
+    }
+  }
+}
+['keydown','keyup','keypress'].forEach(type=>window.addEventListener(type,keepWrapperKeyboard,true));
 if(typeof createUnityInstance !== 'function')showError('Unity loader unavailable');
-else Promise.resolve().then(()=>createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p)).then(()=>{document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);"""
+else Promise.resolve().then(()=>createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p)).then(instance=>{lastStandInstance=instance;document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);"""
 
 def render_web_entry(build: Path, scene: str, root: Path) -> str:
     text = (root / 'Tools/web-index-template.html').read_text(encoding='utf-8')
@@ -38,9 +57,11 @@ def render_web_entry(build: Path, scene: str, root: Path) -> str:
     text = text.replace('__RETURN_STYLE__', RETURN_STYLE if last_stand else '')
     text = text.replace('__RETURN_LINK__',
                         '<nav id="last-stand-nav" aria-label="Last Stand navigation"><span>LAST STAND</span>'
-                        '<a id="last-stand-return" href="../#campaigns/last-stand" aria-label="Return to Campaigns">'
+                        '<a id="last-stand-return" href="../#campaigns/last-stand" aria-label="Return to Campaigns" aria-describedby="last-stand-loss">'
                         '<span class="full" aria-hidden="true">← Return to Campaigns</span>'
-                        '<span class="short" aria-hidden="true">← Campaigns</span></a></nav>'
+                        '<span class="short" aria-hidden="true">← Campaigns</span></a>'
+                        '<p id="last-stand-loss">Leaving or reloading an unfinished run loses its progress without a reward. '
+                        'Saved upgrades and pending defeat rewards stay in this browser only after a successful save.</p></nav>'
                         if last_stand else '')
     text = text.replace('__RETRY_LINK__', '<a id="retry" href="">Retry</a>' if last_stand else '')
     text = text.replace('__BOOTSTRAP__', LAST_STAND_BOOTSTRAP if last_stand else LEGACY_BOOTSTRAP)

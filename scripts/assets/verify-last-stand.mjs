@@ -3,6 +3,8 @@ import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { verifyLastStandSource } from './verify-last-stand-source.mjs';
+
 const SHA256 = /^[0-9a-f]{64}$/;
 const FILE = /^(?:Build|TemplateData)\/[A-Za-z0-9_.-]+$/;
 const REQUIRED = ['.loader.js', '.framework.js', '.data', '.wasm'];
@@ -10,7 +12,7 @@ const REQUIRED = ['.loader.js', '.framework.js', '.data', '.wasm'];
 function fail(message) { throw new Error(`Last Stand payload: ${message}`); }
 function digest(bytes) { return createHash('sha256').update(bytes).digest('hex'); }
 
-export function verifyLastStandPayload(root) {
+export function verifyLastStandPayload(root, repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..')) {
   let manifest;
   try { manifest = JSON.parse(readFileSync(join(root, 'asset-manifest.json'), 'utf8')); }
   catch { fail('manifest missing or invalid'); }
@@ -21,6 +23,12 @@ export function verifyLastStandPayload(root) {
       || !/^Web-[A-Za-z0-9-]+$/.test(manifest?.source?.build ?? '')
       || !manifest.files || Array.isArray(manifest.files)
       || typeof manifest.files !== 'object') fail('manifest contract invalid');
+
+  const { receipt } = verifyLastStandSource(repo, root);
+  const runtime = Object.fromEntries(Object.entries(receipt.artifacts ?? {}).filter(([name]) => name !== 'index.html'));
+  if (JSON.stringify(Object.entries(runtime).sort()) !== JSON.stringify(Object.entries(manifest.files).sort())
+      || receipt.build !== manifest.source.build || receipt.artifacts?.['index.html'] !== manifest.source.originalIndexSha256
+      || (!manifest.wrapperFiles && receipt.wrapperSha256 !== manifest.wrapperSha256)) fail('fresh receipt runtime or wrapper binding differs');
 
   const expected = Object.keys(manifest.files).sort();
   if (expected.length < REQUIRED.length || expected.some((name) => !FILE.test(name))) {

@@ -127,6 +127,7 @@ function openCampaigns(root: HTMLElement): void {
   root.querySelector<HTMLButtonElement>(
     '[data-command-surface="rail"][data-command-category="campaigns"]',
   )?.click();
+  root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')?.click();
 }
 
 interface CampaignLobbyInternals {
@@ -188,6 +189,10 @@ describe('Lobby campaign save presentation owner', () => {
       'Multiplayer',
     ]);
     (rail.querySelector('[data-command-category="campaigns"]') as HTMLButtonElement).click();
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull();
+    expect(root.querySelector('[data-command-item="last-stand"]')?.getAttribute('aria-current'))
+      .toBe('true');
+    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!.click();
     expect(root.querySelector('[data-command-item="ash-road"]')?.textContent).toContain('Ash Road');
     expect(root.querySelectorAll('[data-campaign-command-view]')).toHaveLength(1);
     expect(root.querySelectorAll('[data-command-primary]')).toHaveLength(1);

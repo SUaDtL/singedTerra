@@ -35,6 +35,7 @@ class SavedBuildContract(unittest.TestCase):
             self.write('Assets/Scenes/' + name + '.unity', 'saved ' + name)
         self.write('Assets/PartsLibrary/PartsGallery.unity', 'saved PartsGallery')
         self.write('Assets/Scripts/Model.cs', 'unchanged rules')
+        self.write('ProjectSettings/GraphicsSettings.asset', 'fixture settings')
         self.write('Packages/com.unity.render-pipelines.universal/package.json', '{"version":"17.3.0"}')
         self.write('Packages/manifest.json', '{"dependencies":{}}')
         self.commands = []
@@ -143,6 +144,77 @@ class SavedBuildContract(unittest.TestCase):
         self.assertIsNone(receipt)
         self.assertEqual(self.commands, [])
 
+
+
+
+"""Complete export-input closure regression controls, without launching Unity."""
+import ast
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+# Evaluate definitions only: the original script starts Unity on import.
+def build_definitions(root):
+    path = Path(__file__).with_name('build_web.py')
+    tree = ast.parse(path.read_text(encoding='utf-8'))
+    tree.body = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom, ast.FunctionDef))]
+    scope = {'__file__': str(path), 'ROOT': root, 'PROJECT': root / 'Unity'}
+    exec(compile(tree, str(path), 'exec'), scope)
+    return scope
+
+class BuildWebTests(unittest.TestCase):
+    def test_complete_source_closure_before_and_after_export(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / 'campaign-unity'
+            for name, data in {'Unity/Assets/model.cs': b'one\r\n',
+                               'Unity/Assets/image.png': b'\x89PNG\x00\r\n',
+                               'Unity/ProjectSettings/settings.asset': b'settings',
+                               'Unity/Packages/manifest.json': b'{}',
+                               'Unity/Packages/com.unity.render-pipelines.universal/Shader.shader': b'shader',
+                               'Tools/build_web.py': b'tool', 'Tools/unity_shader_log.py': b'shader helper',
+                               'Tools/make_web_entry.py': b'wrapper', 'Tools/web-index-template.html': b'template'}.items():
+                path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+            scope = build_definitions(root)
+            with patch.object(subprocess, 'check_output', return_value=b'head'):
+                before = scope['source_binding']()
+                vendor = 'Unity/Packages/com.unity.render-pipelines.universal/Shader.shader'
+                self.assertIn(vendor, before['files'], 'Complete closure must inventory ignored package bodies')
+                (root / vendor).write_text('changed shader')
+                after = scope['source_binding']()
+                self.assertNotEqual(before['sha256'], after['sha256'])
+                (root / 'Unity/Packages/extra.txt').write_text('unexpected')
+                self.assertNotEqual(after['sha256'], scope['source_binding']()['sha256'])
+                self.assertEqual(before['closure']['files']['Unity/Assets/model.cs']['mode'], 'lf-text')
+                self.assertEqual(before['closure']['files']['Unity/Assets/image.png']['mode'], 'raw')
+                text = root / 'Unity/Assets/model.cs'
+                text.write_bytes(b'one\n')
+                self.assertEqual(before['closure']['files']['Unity/Assets/model.cs'],
+                                 scope['source_binding']()['closure']['files']['Unity/Assets/model.cs'])
+
+
+    def test_toolchain_inventory_rejects_changed_and_added_module_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            editor = root / 'Editor/Unity.exe'
+            files = {'Editor/Unity.exe': b'editor',
+                     'Editor/Data/PlaybackEngines/WebGLSupport/compiler.bin': b'compiler',
+                     'Editor/Data/Resources/PackageManager/BuiltInPackages/com.unity.render-pipelines.universal/package.json': b'{"version":"17.3.0"}'}
+            for name, data in files.items():
+                path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+            scope = build_definitions(root)
+            collect = scope.get('toolchain_binding', lambda editor: {})
+            before = collect(editor)
+            self.assertIn('Editor/Data/PlaybackEngines/WebGLSupport/compiler.bin', before.get('files', {}),
+                          'Export toolchain must inventory actual WebGL module bytes')
+            (root / 'Editor/Data/PlaybackEngines/WebGLSupport/compiler.bin').write_bytes(b'drift')
+            self.assertNotEqual(before, collect(editor))
+            (root / 'Editor/Data/PlaybackEngines/WebGLSupport/added.bin').write_bytes(b'new')
+            self.assertNotEqual(before, collect(editor))
 
 if __name__ == '__main__':
     unittest.main()

@@ -270,6 +270,7 @@ describe('Lobby return focus', () => {
     root.querySelector<HTMLButtonElement>(
       '[data-command-surface="rail"][data-command-category="campaigns"]',
     )?.click()
+    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!.click()
     const primary = root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!
     primary.focus()
     const snapshot = launchOwner.captureLaunchFocus!()

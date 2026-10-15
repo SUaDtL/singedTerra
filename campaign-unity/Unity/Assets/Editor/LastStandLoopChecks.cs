@@ -169,7 +169,10 @@ public static class LastStandLoopChecks
         var model=loop.Session.Model;
         while(model.Tick<59)model.Step();
         Require(model.CannonShots==0,"first shot follows setup tick");
-        typeof(EncounterSession).GetField("accumulated",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(loop.Session,.11d);
+        // Admit the same batch through ordinary Update without placing its
+        // clock anchor ahead of subsequent real Pause/Resume action timestamps.
+        typeof(EncounterSession).GetField("runClock",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(loop.Session,
+            new LastStandRunClock(Time.realtimeSinceStartupAsDouble-.11d,model.Profile.Horizon));
         var heard=new List<string>();
         Application.LogCallback observer=(message,stack,type)=>
         {

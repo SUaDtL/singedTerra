@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SingedTerra.LastStand
@@ -18,24 +19,49 @@ namespace SingedTerra.LastStand
     public sealed class LastStandProgression
     {
         public const string StorageKey = "singedTerra.lastStand.prototype.v1";
-        private const int MaximumLevel = 3;
+        private const int MaximumLevel = LastStandUpgradeCatalog.PermanentCap;
         private static readonly Regex SavePattern = new Regex(
             @"\A[\x20\t\r\n]*\{[\x20\t\r\n]*""version""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""credits""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""permanentLevel""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""nextRunId""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""lastFinalizedRunId""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""pendingDefeat""[\x20\t\r\n]*:[\x20\t\r\n]*(?:null|\{[\x20\t\r\n]*""runId""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""elapsedTicks""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""kills""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""reward""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*\})[\x20\t\r\n]*\}[\x20\t\r\n]*\z",
             RegexOptions.CultureInvariant);
 
+        private const string JsonSpace = @"[\x20\t\r\n]*";
+        private const string JsonInteger = @"(?:0|[1-9][0-9]*)";
+        private static string JsonField(string name, string value) => JsonSpace + "\"" + name + "\"" +
+            JsonSpace + ":" + JsonSpace + value + JsonSpace;
+        private static string IntegerField(string name) => JsonField(name, "(?<" + name + ">" + JsonInteger + ")");
+        private static readonly string TrackField = "\"[A-Za-z]+\"" + JsonSpace + ":" + JsonSpace + JsonInteger + JsonSpace;
+        private static readonly Regex V2SavePattern = new Regex(@"\A" + JsonSpace + @"\{" +
+            IntegerField("version") + "," + IntegerField("credits") + "," +
+            JsonField("permanentLevels", @"\{(?<levels>" + JsonSpace + "(?:" + TrackField + "(?:," +
+                JsonSpace + TrackField + ")*)?)" + @"\}") + "," +
+            IntegerField("nextRunId") + "," + IntegerField("lastFinalizedRunId") + "," +
+            JsonField("pendingDefeat", @"(?:null|\{" + IntegerField("runId") + "," +
+                IntegerField("elapsedTicks") + "," + IntegerField("kills") + "," + IntegerField("reward") + @"\})") +
+            @"\}" + JsonSpace + @"\z", RegexOptions.CultureInvariant);
+        private static readonly Regex TrackValuePattern = new Regex("\"(?<key>[A-Za-z]+)\"" +
+            JsonSpace + ":" + JsonSpace + "(?<level>" + JsonInteger + ")", RegexOptions.CultureInvariant);
+
         private sealed class Record
         {
             public int Wallet;
-            public int Level;
+            public int[] Levels = new int[LastStandUpgradeCatalog.Tracks.Count];
+            public int Level
+            {
+                get => Levels[(int)LastStandUpgradeTrackId.CannonAttack];
+                set => Levels[(int)LastStandUpgradeTrackId.CannonAttack] = value;
+            }
             public int NextRunId;
             public int FinalizedRunId;
             public PendingDefeat Pending;
-            public Record Copy() => new Record { Wallet = Wallet, Level = Level,
+            public Record Copy() => new Record { Wallet = Wallet, Levels = (int[])Levels.Clone(),
                 NextRunId = NextRunId, FinalizedRunId = FinalizedRunId, Pending = Pending };
         }
 
         private readonly ILastStandStorage storage;
         private Record committed;
+        // Original storage bytes, including v1 schema/whitespace, are the
+        // conflict basis until the staged v2 candidate is confirmed.
+        private string committedRaw;
         private Record candidate;
         private Action afterCommit;
         private int activeRunId;
@@ -58,6 +84,12 @@ namespace SingedTerra.LastStand
         public string SaveState { get; private set; }
         public string SaveError { get; private set; }
 
+        public int GetPermanentLevel(LastStandUpgradeTrackId id)
+        {
+            var definition = LastStandUpgradeCatalog.Get(id);
+            return committed == null ? 0 : committed.Levels[(int)definition.Id];
+        }
+
         public static LastStandProgression Load(ILastStandStorage storage)
         {
             var model = new LastStandProgression(storage);
@@ -76,13 +108,16 @@ namespace SingedTerra.LastStand
                     return Retry();
                 }
                 Record parsed;
-                if (!TryParse(value, out parsed))
+                bool requiresMigration;
+                if (!TryParse(value, out parsed, out requiresMigration))
                 {
                     SaveState = "blocked";
                     SaveError = "Saved Last Stand data is invalid or unsupported. Repair it before retrying.";
                     return false;
                 }
                 committed = parsed;
+                committedRaw = value;
+                if (requiresMigration) return Commit(parsed.Copy(), null);
                 SaveState = "ready";
                 SaveError = null;
                 return true;
@@ -138,15 +173,19 @@ namespace SingedTerra.LastStand
             return Commit(next, null);
         }
 
-        public bool TryPurchase()
+        public bool TryPurchase() => TryPurchase(LastStandUpgradeTrackId.CannonAttack);
+
+        public bool TryPurchase(LastStandUpgradeTrackId id)
         {
-            if (!Ready || activeRunId != 0 || committed.Pending != null || committed.Level == MaximumLevel)
+            int index = (int)id;
+            if (index < 0 || index >= LastStandUpgradeCatalog.Tracks.Count) return false;
+            if (!Ready || activeRunId != 0 || committed.Pending != null || committed.Levels[index] == MaximumLevel)
                 return false;
-            var cost = NextCost;
+            int cost = committed.Levels[index] + 1;
             if (committed.Wallet < cost) return false;
             var next = committed.Copy();
             next.Wallet -= cost;
-            next.Level++;
+            next.Levels[index]++;
             return Commit(next, null);
         }
 
@@ -167,7 +206,7 @@ namespace SingedTerra.LastStand
                 var existing = storage.Read();
                 if (existing != desired)
                 {
-                    if (committed != null && existing != Serialize(committed) ||
+                    if (committed != null && existing != committedRaw ||
                         committed == null && existing != null)
                     {
                         SaveState = "blocked";
@@ -179,6 +218,7 @@ namespace SingedTerra.LastStand
                         throw new InvalidOperationException("Saved data did not match the requested record.");
                 }
                 committed = candidate;
+                committedRaw = desired;
                 candidate = null;
                 var completion = afterCommit;
                 afterCommit = null;
@@ -201,38 +241,79 @@ namespace SingedTerra.LastStand
             var pendingJson = pending == null ? "null" : "{\"runId\":" + pending.RunId +
                 ",\"elapsedTicks\":" + pending.ElapsedTicks + ",\"kills\":" + pending.Kills +
                 ",\"reward\":1}";
-            return "{\"version\":1,\"credits\":" + record.Wallet +
-                ",\"permanentLevel\":" + record.Level +
+            var levels = new StringBuilder();
+            foreach (var track in LastStandUpgradeCatalog.Tracks)
+            {
+                if (levels.Length != 0) levels.Append(',');
+                levels.Append('"').Append(track.Key).Append("\":")
+                    .Append(record.Levels[(int)track.Id].ToString(CultureInfo.InvariantCulture));
+            }
+            return "{\"version\":2,\"credits\":" + record.Wallet +
+                ",\"permanentLevels\":{" + levels + "}" +
                 ",\"nextRunId\":" + record.NextRunId +
                 ",\"lastFinalizedRunId\":" + record.FinalizedRunId +
                 ",\"pendingDefeat\":" + pendingJson + "}";
         }
 
-        private static bool TryParse(string json, out Record record)
+        private static bool TryParse(string json, out Record record, out bool requiresMigration)
         {
             record = null;
+            requiresMigration = false;
             if (json == null || json.Length > 2048) return false;
             var match = SavePattern.Match(json);
-            if (!match.Success) return false;
             var values = new int[10];
-            for (var i = 1; i <= 9; i++)
+            var levels = new int[LastStandUpgradeCatalog.Tracks.Count];
+            if (match.Success)
             {
-                if (match.Groups[i].Success &&
-                    !int.TryParse(match.Groups[i].Value, NumberStyles.None, CultureInfo.InvariantCulture, out values[i]))
-                    return false;
+                for (var i = 1; i <= 9; i++)
+                {
+                    if (match.Groups[i].Success && !TryInteger(match.Groups[i].Value, out values[i]))
+                        return false;
+                }
+                if (values[1] != 1 || values[3] > MaximumLevel) return false;
+                levels[(int)LastStandUpgradeTrackId.CannonAttack] = values[3];
+                requiresMigration = true;
             }
-            if (values[1] != 1 || values[3] > MaximumLevel || values[4] < 1 || values[5] >= values[4])
-                return false;
+            else
+            {
+                match = V2SavePattern.Match(json);
+                if (!match.Success) return false;
+                string[] names = { "", "version", "credits", "", "nextRunId", "lastFinalizedRunId",
+                    "runId", "elapsedTicks", "kills", "reward" };
+                for (var i = 1; i <= 9; i++)
+                {
+                    if (i != 3 && match.Groups[names[i]].Success && !TryInteger(match.Groups[names[i]].Value, out values[i]))
+                        return false;
+                }
+                if (values[1] != 2) return false;
+                var seen = new bool[levels.Length];
+                var tracks = TrackValuePattern.Matches(match.Groups["levels"].Value);
+                if (tracks.Count != levels.Length) return false;
+                foreach (Match track in tracks)
+                {
+                    LastStandUpgradeDefinition definition;
+                    int level;
+                    if (!LastStandUpgradeCatalog.TryGet(track.Groups["key"].Value, out definition) ||
+                        seen[(int)definition.Id] || !TryInteger(track.Groups["level"].Value, out level) || level > MaximumLevel)
+                        return false;
+                    seen[(int)definition.Id] = true;
+                    levels[(int)definition.Id] = level;
+                }
+            }
+            if (values[4] < 1 || values[5] >= values[4]) return false;
             PendingDefeat pending = null;
-            if (match.Groups[6].Success)
+            if (requiresMigration ? match.Groups[6].Success : match.Groups["runId"].Success)
             {
                 if (values[6] < 1 || values[6] != values[4] - 1 || values[6] <= values[5] || values[9] != 1)
                     return false;
                 pending = new PendingDefeat(values[6], values[7], values[8]);
             }
-            record = new Record { Wallet = values[2], Level = values[3], NextRunId = values[4],
+            record = new Record { Wallet = values[2], Levels = levels, NextRunId = values[4],
                 FinalizedRunId = values[5], Pending = pending };
             return true;
         }
+
+        private static bool TryInteger(string value, out int number) =>
+            int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out number);
     }
 }

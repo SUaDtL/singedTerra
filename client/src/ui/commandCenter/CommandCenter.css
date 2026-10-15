@@ -1427,6 +1427,14 @@
   touch-action: manipulation;
 }
 
+#lobby .last-stand-command__loss {
+  max-width: 70ch;
+  margin: 8px 0 0;
+  color: var(--command-copy);
+  font-size: var(--preparation-label-size, 12px);
+  line-height: 1.45;
+}
+
 #lobby .last-stand-command__launch:focus-visible {
   outline: 3px solid var(--command-gold-bright);
   outline-offset: 2px;
@@ -4604,6 +4612,19 @@
     display: none;
   }
 
+  /* Last Stand's launch consequence remains visible when optional dock copy yields. */
+  #lobby .last-stand-command .preparation-frame__dock-copy {
+    display: grid;
+  }
+
+  #lobby .last-stand-command :is(.preparation-frame__dock-label, .preparation-frame__dock-status) {
+    display: none;
+  }
+
+  #lobby .last-stand-command__loss {
+    margin: 0 0 4px;
+  }
+
   #lobby .preparation-frame__dock-copy:has(.lobby-error:not(:empty)) {
     display: grid;
   }
@@ -4778,6 +4799,18 @@
 
   #lobby .preparation-frame__dock-copy {
     display: none;
+  }
+
+  #lobby .last-stand-command .preparation-frame__dock-copy {
+    display: grid;
+  }
+
+  #lobby .last-stand-command :is(.preparation-frame__dock-label, .preparation-frame__dock-status) {
+    display: none;
+  }
+
+  #lobby .last-stand-command__loss {
+    margin: 0 0 4px;
   }
 
   #lobby .preparation-frame__dock-copy:has(.lobby-error:not(:empty)) {

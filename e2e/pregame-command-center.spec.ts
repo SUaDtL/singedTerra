@@ -344,6 +344,7 @@ async function openAshRoad(page: Page): Promise<void> {
     await sheet.getByRole('button', { name: 'Campaigns', exact: true }).click();
     await page.getByRole('button', { name: 'Close Modes', exact: true }).click();
   }
+  await page.locator('.command-center__library-items [data-command-item="ash-road"]').click();
   await expect(page.locator('.command-center__item[data-command-item="ash-road"]'))
     .toHaveAttribute('aria-current', 'true');
   await expect(page.locator('[data-campaign-command-view]')).toBeVisible();

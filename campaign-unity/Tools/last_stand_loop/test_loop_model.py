@@ -24,6 +24,8 @@ MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
 CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 MODEL = PROJECT / "Unity/Assets/Scripts/LastStandProgression.cs"
 STORE = PROJECT / "Unity/Assets/Scripts/LastStandStore.cs"
+CATALOG = PROJECT / "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs"
+TRACK = PROJECT / "Unity/Assets/Scripts/MechanicsShopModel.cs"
 DRIVER = Path(__file__).with_name("Program.cs")
 
 
@@ -38,7 +40,7 @@ class LastStandModelTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "LastStandModelTests.exe"
         build = subprocess.run(
             [str(MONO), str(CSC), "-nologo", f"-out:{cls.executable}",
-             str(MODEL), str(STORE), str(DRIVER)],
+             str(MODEL), str(STORE), str(CATALOG), str(TRACK), str(DRIVER)],
             capture_output=True, text=True, encoding="utf-8-sig", timeout=60,
         )
         if build.returncode:

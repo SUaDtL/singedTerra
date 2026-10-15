@@ -34,6 +34,7 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
     root.querySelector<HTMLButtonElement>(
       '[data-command-surface="rail"][data-command-category="campaigns"]',
     )?.click();
+    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')?.click();
     match = [...root.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === text);
   }

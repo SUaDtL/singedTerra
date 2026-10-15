@@ -538,18 +538,6 @@ export function createAshRoadCommandCategoryContribution<
     order: 10,
     availability: () => true,
     provideItems: () => [{
-      id: commandItemId('ash-road'),
-      summary: {
-        label: 'Ash Road',
-        description: 'Escort the refinery convoy through hostile ground.',
-      },
-      availability: () => true,
-      createView: (viewHost, viewContext, viewLifetime) => createCampaignCommandView(
-        viewHost,
-        viewContext,
-        viewLifetime,
-      ),
-    }, {
       id: commandItemId('last-stand'),
       summary: {
         label: 'Last Stand',
@@ -557,6 +545,18 @@ export function createAshRoadCommandCategoryContribution<
       },
       availability: () => true,
       createView: (viewHost) => createLastStandCommandView<Context>(viewHost),
+    }, {
+      id: commandItemId('ash-road'),
+      summary: {
+        label: 'Ash Road',
+        description: 'Legacy campaign. Start or continue your refinery convoy.',
+      },
+      availability: () => true,
+      createView: (viewHost, viewContext, viewLifetime) => createCampaignCommandView(
+        viewHost,
+        viewContext,
+        viewLifetime,
+      ),
     }],
   };
 }
