@@ -1267,10 +1267,12 @@ test('background guards reject counted explicit Pause and automatic foreground r
   // Every material caller awaits this same boundary; ad-hoc latest-array
   // merges may not bypass document/run/tick admission for Pause or intervals.
   assert.doesNotMatch(callerSource,/=(?:\s*)observation\(/);
-  assert.match(callerSource,/pauseBefore=await observation\(/);
-  assert.match(callerSource,/pausedObservation=await observation\(/);
+  assert.match(callerSource,/const layoutPause=await battleLayouts\(/);
+  assert.match(callerSource,/pauseBefore=layoutPause\?\.before\?\?await observation\(/);
+  assert.match(callerSource,/pausedObservation=layoutPause\?\.paused\?\?await observation\(/);
   assert.match(callerSource,/resumed=await observation\(/);
-  assert.match(callerSource,/after:await observation\(/);
+  assert.match(callerSource,/const pauseAfter=await observation\(/);
+  assert.match(callerSource,/resumed,after:pauseAfter,events:trace,oracle:reference\(resumed\)/);
   assert.match(callerSource,/const before=await observation\(/);
   assert.match(callerSource,/const after=await observation\(/);
 });

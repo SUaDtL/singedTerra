@@ -118,11 +118,11 @@ test('hidden return requires both actual global witnesses in either focus/visibi
     assert.throws(()=>invoke([loss,...pair]),/boundary absent/);
 });
 
-async function battleLayoutFixture(player=false,fault){
+async function battleLayoutFixture(player=false,fault,withMute=false){
   const begin=source.indexOf('    const battleLayouts=async()=>{');
   const end=source.indexOf('    // Two unfinished exits',begin);
   const callBegin=source.indexOf("    if(player)check(sound.maximum_rms");
-  const callEnd=source.indexOf('    const muted=',callBegin);
+  const callEnd=source.indexOf(withMute?'    const pauseStart=':'    const muted=',callBegin);
   const base={t:100,timeOrigin:10000,load:1,run:1,tick:10,hull:120,kills:0,terminalElapsed:0,
     status:'Running',paused:false,loop:{phase:'battle'}};
   const rows=[base,{...base,t:200,paused:true},{...base,t:800,paused:true},
@@ -130,31 +130,45 @@ async function battleLayoutFixture(player=false,fault){
   if(fault==='origin')rows[2].timeOrigin++;
   if(fault==='run')rows[2].run++;
   if(['tick','hull','kills','terminalElapsed'].includes(fault))rows[2][fault]++;
-  if(fault==='resume-tick')rows[3].tick++;
-  let paused=false;const calls=[],report={lifecycle:[]};
+  if(fault==='resume-tick')journey.validateExplicitPause({before:base,
+    paused:{...base,t:200,paused:true,reason:'user'},returned:{...base,t:11200,paused:true,reason:'user'},
+    resumed:{...base,t:11300,tick:11},after:{...base,t:12100,tick:26},events:[],oracle:{}});
+  let paused=false,muted=false;const calls=[],report={lifecycle:[]};
   const run=new Function('player','check','sound','screenshot','phaseMatrix','observation','gameClick','mark',
-    'reference','validateModelObservation','sameDocument','elapsedTicks','report','VIEWPORTS','assert',
+    'reference','validateModelObservation','sameDocument','elapsedTicks','report','VIEWPORTS','assert','page','energy','gameKey',
     'return (async()=>{'+(begin<0?'':source.slice(begin,end))+source.slice(callBegin,callEnd)+'})()');
   await run(player,(ok,name)=>assert.ok(ok,name),{maximum_rms:1},async()=>{
     assert.equal(paused,!player,'Linux battle screenshot must be publicly paused; Windows stays live');calls.push('screenshot');
   },async label=>{
     assert.equal(paused,!player,'Slow Linux battle layouts must be publicly paused');calls.push(label);
   },async()=>structuredClone(rows.shift()),async(name,action,predicate)=>{
+    if(name==='ToggleMute'){
+      assert.ok(paused,'Linux mute inspection must remain under actual Pause');muted=!muted;calls.push('mute');return {muted};
+    }
     assert.equal(name,'Pause');paused=!paused;calls.push(paused?'pause':'resume');
     const state={phase:'battle',paused};assert.ok(predicate(state));return state;
   },async()=>950,()=>({}),()=>{},(a,b)=>{
     assert.equal(a.timeOrigin,b.timeOrigin,'same document origin');assert.equal(a.run,b.run,'same run');
   },(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),report,
-    ['standard','wide','portrait','compact','small'].map(name=>({name})),assert);
+    ['standard','wide','portrait','compact','small'].map(name=>({name})),assert,
+    {waitForTimeout:async()=>{}},async()=>null,async()=>assert.fail('Linux must not toggle a second Pause during its paused inspection'));
   return {calls,report};
 }
 
 test('actual first-hit call pauses Linux layout inspection and preserves Windows live battle',async()=>{
   const linux=await battleLayoutFixture();
-  assert.deepEqual(linux.calls,['pause','screenshot','battle','resume']);
+  assert.deepEqual(linux.calls,['pause','screenshot','battle']);
   assert.equal(linux.report.lifecycle[0].kind,'paused-battle-layout');
   assert.equal(linux.report.lifecycle[0].viewports.length,5);
   assert.deepEqual((await battleLayoutFixture(true)).calls,['screenshot'],'Canonical timed capture must not repeat the live viewport sweep');
+});
+
+test('actual Linux mute and Pause preparation reuse the real paused layout interval',async()=>{
+  const {calls}=await battleLayoutFixture(false,undefined,true);
+  assert.deepEqual(calls,['pause','screenshot','battle','mute','mute']);
+  assert.ok(source.includes("if(player)await phaseMatrix('explicit-pause')"),'One actual Linux paused matrix covers both geometry observations');
+  assert.ok(source.includes('validateExplicitPause({before:pauseBefore,paused:pausedObservation,returned,'),
+    'Original actual Resume/counter/time/model oracle remains mandatory');
 });
 
 test('actual Windows live layout inspection uses the existing unfinished run before no-award reload',async()=>{
@@ -184,7 +198,7 @@ test('paused layout and Resume reject changed counters or document identity',asy
 
 test('central workload budget separates web-server startup and bounds actual owners',()=>{
   assert.equal(typeof journey.lastStandJourneyTimeBudget,'function','Actual caller budget must be centralized');
-  for(const [host,testMs]of [['win32',1_200_000],['linux',1_800_000]]){
+  for(const [host,testMs]of [['win32',1_200_000],['linux',3_600_000]]){
     for(const served of [false,true]){
       const b=journey.lastStandJourneyTimeBudget(host,{served});
       assert.equal(b.testMs,testMs);assert.equal(b.startupMs,served?0:180_000);
@@ -272,7 +286,7 @@ test('qualification has a closed Windows default and rejects every incompatible 
 test('actual owned watcher admits the derived cleanup budget but retains a closed host bound',async()=>{
   const begin=source.indexOf('export async function watchOwnedProcess('),end=source.indexOf('\nexport function nativeChromeArgs',begin);
   for(const [host,lifetime,expected]of [['win32',1_430_000,'stopped'],['win32',1_440_001,'failed'],
-    ['linux',2_030_000,'stopped'],['linux',2_040_001,'failed'],['linux',640_000,'stopped']]){
+    ['linux',3_830_000,'stopped'],['linux',3_840_001,'failed'],['linux',640_000,'stopped']]){
     let record;
     const run=runInNewContext(source.slice(begin,end).replace('export async','async')+';watchOwnedProcess',{
       assert,process:{platform:host},admitEvidenceParent:()=>{},relative:()=> 'supervisor-inert.json',

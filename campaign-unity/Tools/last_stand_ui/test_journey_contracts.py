@@ -219,7 +219,7 @@ class JourneyContractTests(unittest.TestCase):
         derived = dict(zip(['nt', 'posix'], json.loads(budget_result.stdout)))
         # Standalone clocks start before the actual 180-second web-server startup;
         # the outer Python owner also admits supervised cleanup.
-        for host, minimum, maximum in [('nt', 1430, 1480), ('posix', 2030, 2080)]:
+        for host, minimum, maximum in [('nt', 1430, 1480), ('posix', 3830, 3880)]:
             calls = []
             def run(argv, **options):
                 calls.append((argv, options))

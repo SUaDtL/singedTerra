@@ -53,12 +53,14 @@ stale, reversed or additional parent fails. Hosted run/check identity still must
 match the candidate, and all authored/runtime byte comparisons remain required.
 
 Native ownership probes and media work get up to 1,200 seconds of test wall
-time. Linux gets 1,800 seconds: its observed software-rendered partial journey
-already took 515 seconds, with several mandatory branches still remaining.
+time. Linux gets a bounded 3,600 seconds. Its later observed partial journey
+took 1,043 seconds, with measured 98/136-second paused matrices; six downstream
+matrices, a ten-viewport workshop sweep, combats and recovery loads still remained.
+The total admits that measured observation workload, not extra gameplay time.
 The central host budget derives browser, standalone timer and supervisor bounds.
 Standalone clocks start before Playwright's separate 180-second web-server
 startup allowance; browser/test clocks start afterward. The Python outer
-wrapper admits startup and supervised cleanup (1,480/2,080 seconds).
+wrapper admits startup and supervised cleanup (1,480/3,880 seconds).
 Gameplay time, transient settling, audio windows and every behavioral deadline
 are unchanged. The settling input prepares native focus/geometry/hover before
 the brief phase, dispatches the actual pointer hold there, and requires paused
@@ -70,7 +72,10 @@ point; native probes and extra result-file writes stay outside the brief input
 window.
 
 Linux pauses through the actual public Pause control before its five-viewport
-battle layout inspection, then resumes through that control. It records this
+battle layout inspection, then keeps that same Pause during mute/input inspection
+and the actual hidden explicit-Pause interval. One matrix explicitly covers both
+paused-battle and explicit-Pause geometry. It finally resumes through the real
+keyboard control and unchanged explicit-Pause/model oracle. It records this
 as paused battle layout coverage, requires unchanged tick, hull, kills and
 terminal elapsed time through the Resume acknowledgement, and validates fresh
 normal-time progression against the compiled model. The genuine previous

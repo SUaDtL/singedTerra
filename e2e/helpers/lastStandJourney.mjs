@@ -1720,7 +1720,7 @@ export function removeOwnedProfile(profile) {
 }
 export function lastStandJourneyTimeBudget(host=process.platform,{served=false}={}) {
   assert.ok(['win32','linux'].includes(host),'Unsupported journey budget host');
-  const testMs=host==='win32'?1_200_000:1_800_000,startupMs=served?0:180_000;
+  const testMs=host==='win32'?1_200_000:3_600_000,startupMs=served?0:180_000;
   // Test/browser clocks start after webServer setup; the standalone owner
   // starts before it and must also admit owned-tree cleanup.
   return Object.freeze({testMs,startupMs,browserMs:testMs+40_000,
@@ -3253,17 +3253,15 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       const returned=await observation({paused:true,run:paused.run});
       sameDocument(paused,returned);
       check(returned.loop.phase==='battle' && returned.paused,'layout inspection remains paused battle');
-      await gameClick('Pause','session',item=>item.phase==='battle' && !item.paused);
-      const resumed=await observation({action:'pause',paused:false,minT:returned.t,run:returned.run});
-      sameDocument(returned,resumed);
       for(const key of ['tick','hull','kills','terminalElapsed']){
         check(returned[key]===paused[key],'paused layout changed '+key,{paused,returned});
-        check(resumed[key]===paused[key],'layout Resume counted paused '+key,{paused,resumed});
       }
-      const after=await observation({minT:resumed.t+700,run:resumed.run});
-      elapsedTicks(resumed,after);validateModelObservation(after,reference(after));
-      report.lifecycle.push({kind:'paused-battle-layout',viewports:VIEWPORTS.slice(0,5).map(item=>item.name),
-        paused_ms:resumed.t-paused.t,before,paused,returned,resumed,after});
+      // Keep the same real Pause for mute/input inspection and the explicit
+      // hidden-Pause proof below; its final keyboard Resume uses the original
+      // counter/time/model oracle. One matrix covers the same paused geometry.
+      const record={kind:'paused-battle-layout',covers:['paused battle','explicit Pause'],
+        viewports:VIEWPORTS.slice(0,5).map(item=>item.name),before,paused,returned};
+      report.lifecycle.push(record);return record;
     };
     // Two unfinished exits exercise native Return and ordinary reload without an award.
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
@@ -3300,20 +3298,24 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     const first=await until(hits,baselineHitStart,item=>item.load===deployed.load && item.timeOrigin===deployed.timeOrigin && item.cannonDamage===20,45);const firstHit=await mark();
     check(first.firstFoeHull===10,'first base cannon leaves identical 30 HP foe at 10 HP',first);
     await page.waitForTimeout(750);const sound=await energy(Math.max(startAudio,firstHit-500),await mark());
-    if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);await battleLayouts();
+    if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);const layoutPause=await battleLayouts();
     const muted=await gameClick('ToggleMute','mute');check(muted.muted,'actual mute state enabled');const muteStart=await mark();await page.waitForTimeout(1200);
     const mute=await energy(muteStart+150,await mark());if(player)check(mute.maximum_rms<.0005,'mute suppresses rendered output',mute);
-    const unmuted=await gameClick('ToggleMute','mute');check(!unmuted.muted,'actual mute state disabled');const pauseBefore=await observation();const paused=await gameKey('Pause','session',item=>item.paused);
-    const pausedObservation=await observation({action:'pause',paused:true,minT:pauseBefore.t,run:pauseBefore.run});
+    const unmuted=await gameClick('ToggleMute','mute');check(!unmuted.muted,'actual mute state disabled');
+    const pauseBefore=layoutPause?.before??await observation();
+    const paused=layoutPause?.paused??await gameKey('Pause','session',item=>item.paused);
+    const pausedObservation=layoutPause?.paused??await observation({action:'pause',paused:true,minT:pauseBefore.t,run:pauseBefore.run});
     const pauseStart=await mark();await page.waitForTimeout(1200);const pauseSound=await energy(pauseStart+150,await mark());
     check(states.at(-1).tick===paused.tick,'pause stops combat ticks');
     if(player)check(pauseSound.maximum_rms<.0005,'pause stops sound',pauseSound);
-    await phaseMatrix('explicit-pause');await away('hidden',10500);const returned=await observation({paused:true,run:pausedObservation.run});
+    if(player)await phaseMatrix('explicit-pause');await away('hidden',10500);const returned=await observation({paused:true,run:pausedObservation.run});
     await gameKey('Pause','session',item=>!item.paused);
     const resumed=await observation({action:'pause',paused:false,minT:returned.t,run:returned.run});
     const resumeStart=await mark();await until(encounters,0,item=>item.load===load && item.t>=resumeStart+700 && !item.paused && !item.catchingUp,8);
+    const pauseAfter=await observation({minT:resumeStart+700,run:resumed.run});
     report.lifecycle.push({kind:'explicit-pause',evidence:validateExplicitPause({before:pauseBefore,paused:pausedObservation,returned,
-      resumed,after:await observation({minT:resumeStart+700,run:resumed.run}),events:trace,oracle:reference(resumed)})});
+      resumed,after:pauseAfter,events:trace,oracle:reference(resumed)})});
+    if(layoutPause)Object.assign(layoutPause,{resumed,after:pauseAfter,paused_ms:resumed.t-pausedObservation.t});
     const resumeSound=await energy(resumeStart,await mark());if(player)check(resumeSound.maximum_rms<=Math.max(.005,sound.maximum_rms*2),'resume has no deferred burst',resumeSound);
     const focusStartMs=await mark(),awayWindows=[];
     report.focus_obligations={hidden_tab:'required',visible_window_blur:process.platform==='win32'?'required':'unexecuted on this portable headless host'};
