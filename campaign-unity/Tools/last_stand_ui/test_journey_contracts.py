@@ -212,7 +212,14 @@ class JourneyContractTests(unittest.TestCase):
         from types import SimpleNamespace
         source = ast.parse((ROOT / 'campaign-unity/Tools/verify_last_stand_loop.py').read_text(encoding='utf-8'))
         actual = next(node for node in source.body if isinstance(node, ast.ClassDef) and node.name == 'LastStandWebTests')
-        for host, minimum, maximum in [('nt', 1205, 1300), ('posix', 605, 660)]:
+        budget_result = subprocess.run(['node', '--input-type=module', '-e',
+            "import {lastStandJourneyTimeBudget as budget} from './e2e/helpers/lastStandJourney.mjs';"
+            "console.log(JSON.stringify(['win32','linux'].map(host=>budget(host).pythonMs/1000)));"],
+            cwd=ROOT, capture_output=True, text=True, check=True, timeout=30)
+        derived = dict(zip(['nt', 'posix'], json.loads(budget_result.stdout)))
+        # Standalone clocks start before the actual 180-second web-server startup;
+        # the outer Python owner also admits supervised cleanup.
+        for host, minimum, maximum in [('nt', 1430, 1480), ('posix', 2030, 2080)]:
             calls = []
             def run(argv, **options):
                 calls.append((argv, options))
@@ -224,6 +231,7 @@ class JourneyContractTests(unittest.TestCase):
             self.assertEqual(len(calls), 1)
             self.assertGreater(calls[0][1]['timeout'], minimum, 'Outer wrapper must allow owned supervisor cleanup')
             self.assertLessEqual(calls[0][1]['timeout'], maximum)
+            self.assertEqual(calls[0][1]['timeout'], derived[host], 'Actual Python wrapper must match the central host budget')
             self.assertEqual(calls[0][0][0], 'node')
 
 

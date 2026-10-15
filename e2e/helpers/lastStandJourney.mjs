@@ -1710,7 +1710,18 @@ export function removeOwnedProfile(profile) {
   } else rmSync(target,{recursive:true});
   assert.ok(!existsSync(target),'Owned profile remains');
 }
-export function ownedSupervisorLifetimeLimit(host=process.platform) {return host==='win32'?1_260_000:640_000;}
+export function lastStandJourneyTimeBudget(host=process.platform,{served=false}={}) {
+  assert.ok(['win32','linux'].includes(host),'Unsupported journey budget host');
+  const testMs=host==='win32'?1_200_000:1_800_000,startupMs=served?0:180_000;
+  // Test/browser clocks start after webServer setup; the standalone owner
+  // starts before it and must also admit owned-tree cleanup.
+  return Object.freeze({testMs,startupMs,browserMs:testMs+40_000,
+    runnerMs:testMs+startupMs+5_000,supervisorMs:testMs+startupMs+50_000,
+    pythonMs:testMs+180_000+100_000});
+}
+export function ownedSupervisorLifetimeLimit(host=process.platform) {
+  return ['win32','linux'].includes(host)?lastStandJourneyTimeBudget(host).supervisorMs+10_000:640_000;
+}
 export function startOwnedSupervisor(child, output, profile, lifetimeMs=640_000) {
   assert.ok(Number.isInteger(lifetimeMs) && lifetimeMs>0 && lifetimeMs<=ownedSupervisorLifetimeLimit(),'Invalid owned lifetime');
   admitEvidenceParent(output);
@@ -2843,7 +2854,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(true,`served exact runtime/wrapper bytes: ${path}`);
       report.binding.served[path]={sha256:hash(bytes),bytes:bytes.length};
     }
-    native=await ownedChrome(chromium,output,'native',player?1_240_000:640_000); page=native.context.pages()[0];
+    native=await ownedChrome(chromium,output,'native',lastStandJourneyTimeBudget().browserMs); page=native.context.pages()[0];
     page.setDefaultTimeout(10_000);
     if(process.env.LAST_STAND_INDUCE_CLEANUP_FAILURE==='1')check(false,'bounded induced failure after owned browser startup');
     report.browser_version=native.browser.version();
@@ -3178,6 +3189,32 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
         report.audio.push(evidence);result.push(evidence);
       }return result;
     };
+    const battleLayouts=async()=>{
+      // Slow Linux inspection can exceed a whole battle. Windows retains its
+      // live native/media matrix; Linux uses the real public Pause control.
+      if(player){await screenshot('01-base-first-hit');await phaseMatrix('battle');return;}
+      const before=await observation();
+      check(before.loop.phase==='battle' && !before.paused,'layout inspection starts in active battle');
+      await gameClick('Pause','session',item=>item.phase==='battle' && item.paused);
+      const paused=await observation({action:'pause',paused:true,minT:before.t,run:before.run});
+      check(paused.loop.phase==='battle','layout inspection paused actual battle');
+      validateModelObservation(paused,reference(paused));
+      await screenshot('01-base-first-hit');await phaseMatrix('battle');
+      const returned=await observation({paused:true,run:paused.run});
+      sameDocument(paused,returned);
+      check(returned.loop.phase==='battle' && returned.paused,'layout inspection remains paused battle');
+      await gameClick('Pause','session',item=>item.phase==='battle' && !item.paused);
+      const resumed=await observation({action:'pause',paused:false,minT:returned.t,run:returned.run});
+      sameDocument(returned,resumed);
+      for(const key of ['tick','hull','kills','terminalElapsed']){
+        check(returned[key]===paused[key],'paused layout changed '+key,{paused,returned});
+        check(resumed[key]===paused[key],'layout Resume counted paused '+key,{paused,resumed});
+      }
+      const after=await observation({minT:resumed.t+700,run:resumed.run});
+      elapsedTicks(resumed,after);validateModelObservation(after,reference(after));
+      report.lifecycle.push({kind:'paused-battle-layout',viewports:VIEWPORTS.slice(0,5).map(item=>item.name),
+        paused_ms:resumed.t-paused.t,before,paused,returned,resumed,after});
+    };
     // Two unfinished exits exercise native Return and ordinary reload without an award.
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
@@ -3211,7 +3248,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     const first=await until(hits,baselineHitStart,item=>item.load===deployed.load && item.timeOrigin===deployed.timeOrigin && item.cannonDamage===20,45);const firstHit=await mark();
     check(first.firstFoeHull===10,'first base cannon leaves identical 30 HP foe at 10 HP',first);
     await page.waitForTimeout(750);const sound=await energy(Math.max(startAudio,firstHit-500),await mark());
-    if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);await screenshot('01-base-first-hit');await phaseMatrix('battle');
+    if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);await battleLayouts();
     const muted=await gameClick('ToggleMute','mute');check(muted.muted,'actual mute state enabled');const muteStart=await mark();await page.waitForTimeout(1200);
     const mute=await energy(muteStart+150,await mark());if(player)check(mute.maximum_rms<.0005,'mute suppresses rendered output',mute);
     const unmuted=await gameClick('ToggleMute','mute');check(!unmuted.muted,'actual mute state disabled');const pauseBefore=await observation();const paused=await gameKey('Pause','session',item=>item.paused);

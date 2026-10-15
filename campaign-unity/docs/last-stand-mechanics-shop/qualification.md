@@ -52,8 +52,13 @@ candidate. Fetch the observed merge commit before offline collection; an absent,
 stale, reversed or additional parent fails. Hosted run/check identity still must
 match the candidate, and all authored/runtime byte comparisons remain required.
 
-Native ownership probes and media work get up to 1,200 seconds of runner wall
-time, with a matching standalone supervisor bound; Linux keeps 600 seconds.
+Native ownership probes and media work get up to 1,200 seconds of test wall
+time. Linux gets 1,800 seconds: its observed software-rendered partial journey
+already took 515 seconds, with several mandatory branches still remaining.
+The central host budget derives browser, standalone timer and supervisor bounds.
+Standalone clocks start before Playwright's separate 180-second web-server
+startup allowance; browser/test clocks start afterward. The Python outer
+wrapper admits startup and supervised cleanup (1,480/2,080 seconds).
 Gameplay time, transient settling, audio windows and every behavioral deadline
 are unchanged. The settling input prepares native focus/geometry/hover before
 the brief phase, dispatches the actual pointer hold there, and requires paused
@@ -63,3 +68,12 @@ before dispatch, so disappearing Shop controls cannot leave a stale Pause target
 It refuses document, viewport or Canvas drift and records the actual resolved
 point; native probes and extra result-file writes stay outside the brief input
 window.
+
+Linux pauses through the actual public Pause control before its five-viewport
+battle layout inspection, then resumes through that control. It records this
+as paused battle layout coverage, requires unchanged tick, hull, kills and
+terminal elapsed time through the Resume acknowledgement, and validates fresh
+normal-time progression against the compiled model. The genuine previous
+Linux run reached defeat during live layout capture; this changes observation
+strategy, not combat duration. Windows retains live battle layouts and all
+original player checks.

@@ -8,6 +8,78 @@ import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+
+async function battleLayoutFixture(player=false,fault){
+  const begin=source.indexOf('    const battleLayouts=async()=>{');
+  const end=source.indexOf('    // Two unfinished exits',begin);
+  const callBegin=source.indexOf("    if(player)check(sound.maximum_rms");
+  const callEnd=source.indexOf('    const muted=',callBegin);
+  const base={t:100,timeOrigin:10000,load:1,run:1,tick:10,hull:120,kills:0,terminalElapsed:0,
+    status:'Running',paused:false,loop:{phase:'battle'}};
+  const rows=[base,{...base,t:200,paused:true},{...base,t:800,paused:true},
+    {...base,t:900},{...base,t:1700,tick:26}];
+  if(fault==='origin')rows[2].timeOrigin++;
+  if(fault==='run')rows[2].run++;
+  if(['tick','hull','kills','terminalElapsed'].includes(fault))rows[2][fault]++;
+  if(fault==='resume-tick')rows[3].tick++;
+  let paused=false;const calls=[],report={lifecycle:[]};
+  const run=new Function('player','check','sound','screenshot','phaseMatrix','observation','gameClick','mark',
+    'reference','validateModelObservation','sameDocument','elapsedTicks','report','VIEWPORTS','assert',
+    'return (async()=>{'+(begin<0?'':source.slice(begin,end))+source.slice(callBegin,callEnd)+'})()');
+  await run(player,(ok,name)=>assert.ok(ok,name),{maximum_rms:1},async()=>{
+    assert.equal(paused,!player,'Linux battle screenshot must be publicly paused; Windows stays live');calls.push('screenshot');
+  },async label=>{
+    assert.equal(paused,!player,'Slow Linux battle layouts must be publicly paused');calls.push(label);
+  },async()=>structuredClone(rows.shift()),async(name,action,predicate)=>{
+    assert.equal(name,'Pause');paused=!paused;calls.push(paused?'pause':'resume');
+    const state={phase:'battle',paused};assert.ok(predicate(state));return state;
+  },async()=>950,()=>({}),()=>{},(a,b)=>{
+    assert.equal(a.timeOrigin,b.timeOrigin,'same document origin');assert.equal(a.run,b.run,'same run');
+  },(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),report,
+    ['standard','wide','portrait','compact','small'].map(name=>({name})),assert);
+  return {calls,report};
+}
+
+test('actual first-hit call pauses Linux layout inspection and preserves Windows live battle',async()=>{
+  const linux=await battleLayoutFixture();
+  assert.deepEqual(linux.calls,['pause','screenshot','battle','resume']);
+  assert.equal(linux.report.lifecycle[0].kind,'paused-battle-layout');
+  assert.equal(linux.report.lifecycle[0].viewports.length,5);
+  assert.deepEqual((await battleLayoutFixture(true)).calls,['screenshot','battle']);
+});
+
+test('paused layout and Resume reject changed counters or document identity',async()=>{
+  for(const fault of ['tick','hull','kills','terminalElapsed','resume-tick','origin','run'])
+    await assert.rejects(battleLayoutFixture(false,fault),/changed|counted|origin|run/);
+});
+
+test('central workload budget separates web-server startup and bounds actual owners',()=>{
+  assert.equal(typeof journey.lastStandJourneyTimeBudget,'function','Actual caller budget must be centralized');
+  for(const [host,testMs]of [['win32',1_200_000],['linux',1_800_000]]){
+    for(const served of [false,true]){
+      const b=journey.lastStandJourneyTimeBudget(host,{served});
+      assert.equal(b.testMs,testMs);assert.equal(b.startupMs,served?0:180_000);
+      assert.equal(b.browserMs,testMs+40_000);
+      assert.equal(b.runnerMs,testMs+b.startupMs+5_000);
+      assert.ok(b.supervisorMs>=b.runnerMs+35_000);
+      assert.ok(journey.ownedSupervisorLifetimeLimit(host)>=b.supervisorMs);
+      assert.ok(b.pythonMs>=b.supervisorMs+35_000);
+    }
+  }
+  assert.throws(()=>journey.lastStandJourneyTimeBudget('darwin'),/host/);
+  for(const [file,needles]of [
+    ['../../e2e/last-stand-playable-loop.spec.ts',['test.setTimeout(lastStandJourneyTimeBudget().testMs)']],
+    ['../last-stand-playable-loop.mjs',['lastStandJourneyTimeBudget(process.platform,{served:Boolean(process.env.E2E_LIVE_URL)})',
+      'startOwnedSupervisor(child,output,null,budget.supervisorMs)','budget.runnerMs']],
+  ]){
+    const text=readFileSync(new URL(file,import.meta.url),'utf8');
+    for(const needle of needles)assert.ok(text.includes(needle),file+' uses actual derived '+needle);
+  }
+  assert.ok(source.includes("ownedChrome(chromium,output,'native',lastStandJourneyTimeBudget().browserMs)"));
+  assert.ok(source.includes("mode='native', lifetimeMs=640_000"),'Unrelated generic Chrome default stays unchanged');
+  const config=readFileSync(new URL('../../playwright.config.ts',import.meta.url),'utf8');
+  assert.ok(config.includes('timeout: 180_000'),'Budget agrees with actual webServer startup allowance');
+});
 test('offline reader refuses an intact older oracle with stale current-source binding',()=>{
   const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
   const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('\nif(process.argv[1]',begin);
@@ -68,13 +140,14 @@ test('qualification has a closed Windows default and rejects every incompatible 
     assert.throws(()=>journey.lastStandQualificationProfile(name,host),/profile|host/);
 });
 
-test('actual owned watcher admits the Windows cleanup budget but retains a closed host bound',async()=>{
+test('actual owned watcher admits the derived cleanup budget but retains a closed host bound',async()=>{
   const begin=source.indexOf('export async function watchOwnedProcess('),end=source.indexOf('\nexport function nativeChromeArgs',begin);
-  for(const [host,lifetime,expected]of [['win32',1_250_000,'stopped'],['win32',1_260_001,'failed'],['linux',1_250_000,'failed'],['linux',640_000,'stopped']]){
+  for(const [host,lifetime,expected]of [['win32',1_430_000,'stopped'],['win32',1_440_001,'failed'],
+    ['linux',2_030_000,'stopped'],['linux',2_040_001,'failed'],['linux',640_000,'stopped']]){
     let record;
     const run=runInNewContext(source.slice(begin,end).replace('export async','async')+';watchOwnedProcess',{
       assert,process:{platform:host},admitEvidenceParent:()=>{},relative:()=> 'supervisor-inert.json',
-      ownedSupervisorLifetimeLimit:()=>host==='win32'?1_260_000:640_000,
+      ownedSupervisorLifetimeLimit:()=>journey.ownedSupervisorLifetimeLimit(host),
       processTable:()=>[],collectOwnedDescendants:()=>[],writeFileSync:(_path,json)=>record=JSON.parse(json),
       existsSync:()=>true,stopOwnedProcessTree:async()=>({known:[],remaining:[]}),readdirSync:()=>[],
     });

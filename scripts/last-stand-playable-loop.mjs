@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { admitEvidenceParent, startOwnedSupervisor, watchOwnedProcess, runLastStandShopJourney } from '../e2e/helpers/lastStandJourney.mjs';
+import { admitEvidenceParent, startOwnedSupervisor, watchOwnedProcess, runLastStandShopJourney, lastStandJourneyTimeBudget } from '../e2e/helpers/lastStandJourney.mjs';
 
 if(process.argv[2]==='--watch-owner') {
   const path=resolve(process.argv[3]);admitEvidenceParent(path);
@@ -25,6 +25,7 @@ if(process.argv[2]==='--watch-owner') {
   const argv=['node_modules/@playwright/test/cli.js','test','e2e/last-stand-playable-loop.spec.ts',
     '--reporter=json','--workers=1','--config=playwright.config.ts','--project=desktop-fine','--retries=0'];
   const report={status:'running',argv,output,owner:process.pid,cleanup:null};let stdout='',stderr='',supervisor,child,code=1,timer;
+  const budget=lastStandJourneyTimeBudget(process.platform,{served:Boolean(process.env.E2E_LIVE_URL)});
   try {
     child=spawn(process.execPath,argv,{cwd:root,env:{...process.env,VITE_BASE:'/singedTerra/',E2E_DENY_EXTERNAL_NETWORK:'1',
       LAST_STAND_ENTRYPOINT:'historical-python-artifact',LAST_STAND_EVIDENCE_PARENT:output},stdio:['ignore','pipe','pipe'],windowsHide:true});
@@ -32,10 +33,10 @@ if(process.argv[2]==='--watch-owner') {
     child.stdout.on('data',chunk=>{stdout+=chunk;});
     child.stderr.on('data',chunk=>{stderr+=chunk;process.stderr.write(chunk);});
     child.on('error',error=>{report.spawn_error=String(error);});
-    supervisor=startOwnedSupervisor(child,output,null,process.platform==='win32'?1_250_000:640_000);
+    supervisor=startOwnedSupervisor(child,output,null,budget.supervisorMs);
     const stop=async reason=>{report.reason=reason;try{report.cleanup=await supervisor.stop();}catch(error){report.cleanup_error=String(error);}};
     for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{void stop(signal);});
-    timer=setTimeout(()=>{void stop('runner-timeout');},process.platform==='win32'?1_205_000:605_000);
+    timer=setTimeout(()=>{void stop('runner-timeout');},budget.runnerMs);
     code=await finished;report.exit=code;report.status=code===0 && !report.reason?'pass':'failed';
   } catch(error){report.status='failed';report.error=String(error);}
   finally {

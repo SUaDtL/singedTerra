@@ -1,5 +1,5 @@
 import { chromium, test } from '@playwright/test';
-import { runLastStandJourney, closeLastStandOwnedBrowsers } from './helpers/lastStandJourney.mjs';
+import { runLastStandJourney, closeLastStandOwnedBrowsers, lastStandJourneyTimeBudget } from './helpers/lastStandJourney.mjs';
 import { ASH_ROAD_COMBAT_PROFILE_REFERENCE, resolveCampaignCombatProfile } from '../shared/src/campaign/combatProfiles';
 import { parseCampaignRun } from '../shared/src/campaign/definitions';
 import { ASH_ROAD_EPISODE } from '../client/src/campaign/content/episode';
@@ -34,7 +34,7 @@ test('Last Stand Campaigns journey preserves no-award exit and a stronger redepl
   test.skip(testInfo.project.name !== 'desktop-fine', 'One journey owns its explicit viewport matrix');
   // Native ownership probes and captured media are deliberately outside the
   // unchanged game-time/audio windows; allow their slower Windows wall time.
-  test.setTimeout(process.platform === 'win32' ? 1_200_000 : 600_000);
+  test.setTimeout(lastStandJourneyTimeBudget().testMs);
   if (!baseURL) throw new Error('Production baseURL is required');
   const result = await runLastStandJourney({ baseURL, chromium, ashRoadRecord: compatibleAshRoad(),
     entrypoint: process.env['LAST_STAND_ENTRYPOINT'] ?? 'maintained-playwright',
