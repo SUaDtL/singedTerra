@@ -2,6 +2,7 @@
 // substitutes for the genuine executions and independent review of their media.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -15,7 +16,7 @@ export function currentQualificationInputs(directory=root) {
   return Object.fromEntries(LAST_STAND_JOURNEY_INPUTS.map(path=>[path,digest(readFileSync(resolve(directory,path),'utf8').replace(/\r\n/g,'\n'))]));
 }
 
-export function assertCombinedQualification({windows,linux,head,inputs,runtime,served}) {
+export function assertCombinedQualification({windows,linux,head,inputs,runtime,served,baseHead,linuxParents=[]}) {
   assert.match(head,/^[a-f0-9]{40}$/,'Exact candidate HEAD required');
   assert.deepEqual(Object.keys(inputs).sort(),[...LAST_STAND_JOURNEY_INPUTS].sort(),'Complete closed authored-input map required');
   for(const value of Object.values(inputs))assert.match(value,/^[a-f0-9]{64}$/);
@@ -35,7 +36,12 @@ export function assertCombinedQualification({windows,linux,head,inputs,runtime,s
       assert.ok(report.checks.some(item=>item.name===name && item.pass===true),'Required functional branch absent: '+name);
     for(const key of ['error','observer_failures','cleanup_error','persist_error','runtime_drift_error','motion_cleanup_error'])
       assert.ok(!report[key],'Failed execution cannot qualify: '+key);
-    assert.equal(report.binding?.current_head,head,'Stale candidate HEAD');
+    const checkout=report.binding?.current_head;
+    assert.match(checkout??'',/^[a-f0-9]{40}$/,'Observed checkout HEAD required');
+    if(host==='linux' && checkout!==head) {
+      assert.match(baseHead??'',/^[a-f0-9]{40}$/,'Current base HEAD required');
+      assert.deepEqual(linuxParents,[baseHead,head],'Linux PR merge checkout must have current base and exact candidate as its two ordered parents');
+    } else assert.equal(checkout,head,'Stale candidate HEAD');
     assert.deepEqual(report.binding.portable_text_inputs,inputs,'Authored helper/runner/workflow bytes changed');
     assert.deepEqual(Object.keys(report.binding.input_files).sort(),[...LAST_STAND_JOURNEY_INPUTS].sort(),'Raw input observation map incomplete');
     for(const key of runtimeKeys)assert.equal(report.binding[key],runtime[key],'Raw runtime/source binding changed: '+key);
@@ -89,6 +95,17 @@ function verifyFiles(path,report) {
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   assert.equal(process.argv.length,5,'Usage: node scripts/ci/lastStandQualification.mjs WINDOWS_RESULT LINUX_RESULT EXACT_HEAD');
   const [windowsPath,linuxPath,head]=process.argv.slice(2),windows=read(windowsPath),linux=read(linuxPath);
+  const git=args=>execFileSync('git',['--no-replace-objects',...args],{cwd:root,encoding:'utf8',timeout:10_000,windowsHide:true}).trim();
+  assert.match(head,/^[a-f0-9]{40}$/,'Exact candidate HEAD required');
+  assert.equal(git(['rev-parse','HEAD']),head,'Collector checkout must be the exact candidate');
+  const linuxCheckout=linux.binding?.current_head;
+  assert.match(linuxCheckout??'',/^[a-f0-9]{40}$/,'Observed Linux checkout HEAD required');
+  const baseHead=git(['rev-parse','origin/main']);
+  let linuxParents=[];
+  if(linuxCheckout!==head) {
+    assert.equal(git(['cat-file','-t',linuxCheckout]),'commit','Linux checkout must be a commit object');
+    linuxParents=git(['show','-s','--no-show-signature','--format=%P',linuxCheckout]).split(' ');
+  }
   const manifestPath=resolve(root,'client/public/last-stand/asset-manifest.json'),manifest=read(manifestPath);
   const runtime={manifest_sha256:digest(readFileSync(manifestPath)),receipt_sha256:manifest.source.receiptSha256,
     source_lock_sha256:manifest.source.sourceLockSha256,source_inventory_sha256:manifest.source.sourceInventorySha256,
@@ -97,7 +114,7 @@ if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).
     const bytes=readFileSync(resolve(root,'client/public/last-stand',path));assert.equal(digest(bytes),sha256);
     return [path,{sha256,bytes:bytes.length}];
   }));
-  const result=assertCombinedQualification({windows,linux,head,inputs:currentQualificationInputs(),runtime,served});
+  const result=assertCombinedQualification({windows,linux,head,inputs:currentQualificationInputs(),runtime,served,baseHead,linuxParents});
   verifyFiles(windowsPath,windows);verifyFiles(linuxPath,linux);
   console.log(JSON.stringify({...result,windows_result_sha256:digest(readFileSync(windowsPath)),linux_result_sha256:digest(readFileSync(linuxPath))}));
 }

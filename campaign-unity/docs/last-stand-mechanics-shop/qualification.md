@@ -44,6 +44,14 @@ checks execution consistency; it does not create authority or prove execution
 merely by reading JSON. Independent review must inspect the genuine runs and
 raw evidence. Any relevant candidate change requires fresh matching execution.
 
+Windows tests the candidate branch commit. GitHub's default PR checkout tests
+its generated merge commit. Preserve that observed Linux SHA: the reader admits
+it only when the fetched Git object has exactly two ordered parents, current
+`origin/main` and the exact candidate. The collector itself must be on the
+candidate. Fetch the observed merge commit before offline collection; an absent,
+stale, reversed or additional parent fails. Hosted run/check identity still must
+match the candidate, and all authored/runtime byte comparisons remain required.
+
 Native ownership probes and media work get up to 1,200 seconds of runner wall
 time, with a matching standalone supervisor bound; Linux keeps 600 seconds.
 Gameplay time, transient settling, audio windows and every behavioral deadline

@@ -135,6 +135,27 @@ test('both current profile results are mandatory and every incomplete or stale c
   }
 });
 
+test('GitHub merge checkout requires the exact candidate and current base as its two ordered parents',()=>{
+  const value=fixture();value.baseHead='d'.repeat(40);value.linuxParents=[value.baseHead,value.head];
+  value.linux.binding.current_head='c'.repeat(40);
+  assert.equal(assertCombinedQualification(value).status,'pass');
+  assert.equal(value.linux.binding.current_head,'c'.repeat(40),'Observed report checkout is never rewritten');
+  for(const parents of [[],[value.head],[value.head,value.baseHead],['e'.repeat(40),value.head],
+    [value.baseHead,'e'.repeat(40)],[value.baseHead,value.head,'e'.repeat(40)]])
+    assert.throws(()=>assertCombinedQualification({...value,linuxParents:parents}),/parent|checkout|HEAD/);
+});
+
+test('actual merge-parent collector refuses a blob before reading parent-like contents',()=>{
+  const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
+  const begin=reader.search(/  (?:const|let) linuxParents=/),end=reader.indexOf('  const manifestPath=',begin);
+  assert.ok(begin>0 && end>begin);
+  const run=new Function('git','linuxCheckout','head','assert',reader.slice(begin,end)+'return linuxParents;');
+  const calls=[];
+  const git=args=>{calls.push(args);return args[0]==='cat-file'?'blob':'d'.repeat(40)+' '+'b'.repeat(40);};
+  assert.throws(()=>run(git,'c'.repeat(40),'b'.repeat(40),assert),/commit object/);
+  assert.deepEqual(calls,[['cat-file','-t','c'.repeat(40)]]);
+});
+
 test('functional allocation keeps paused-time, manual Claim, purchase, save and stronger-hit failures fatal',()=>{
   for(const name of ['pause stops combat ticks','one Claim pays exactly one salvage','one salvage commits Cannon Attack level1',
     'purchase reload retains permanent level and spent balance','same first foe one-hit defeated by real 30 damage',
