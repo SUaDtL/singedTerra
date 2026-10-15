@@ -9,6 +9,33 @@ import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
 
+async function ownedPortProbe(contents,{exitCode=null}={}){
+  const begin=source.indexOf("    const active = join(profile, 'DevToolsActivePort');"),
+    end=source.indexOf('    browser = await chromium.connectOverCDP',begin);
+  assert.ok(begin>0 && end>begin);
+  const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
+  let clock=0,reads=0,delays=0;
+  const run=new AsyncFunction('join','profile','Date','existsSync','child','assert','delay','readFileSync',
+    source.slice(begin,end)+'return port;');
+  const port=await run((...parts)=>parts.join('/'),'owned-inert-profile',{now:()=>clock},()=>true,{exitCode},assert,
+    async ms=>{clock+=ms;delays++;},()=>contents[Math.min(reads++,contents.length-1)]);
+  return {port,clock,reads,delays};
+}
+
+test('owned Chrome waits for a complete port line after empty and partial file creation',async()=>{
+  const result=await ownedPortProbe(['','37','37049\n/devtools/browser/inert']);
+  assert.equal(result.port,37049);assert.equal(result.delays,2);assert.equal(result.reads,3);
+  assert.equal(result.clock,100);
+});
+
+test('owned Chrome port readiness preserves strict bounds, child liveness and original deadline',async()=>{
+  for(const line of ['0','1023','65536','NaN','37049wrong'])
+    await assert.rejects(ownedPortProbe([line+'\n/devtools/browser/inert']),/Invalid owned CDP port/);
+  await assert.rejects(ownedPortProbe(['37049\n/devtools/browser/inert'],{exitCode:0}),/Owned Chrome did not expose loopback CDP/);
+  await assert.rejects(ownedPortProbe(['']),/Owned Chrome did not expose loopback CDP/);
+  for(const port of [1024,37049,65535])assert.equal((await ownedPortProbe([port+'\n/devtools/browser/inert'])).port,port);
+});
+
 function proceduralCueCheck(player,names){
   const begin=source.indexOf('    const cueNames=messages.filter'),end=source.indexOf('    // Loader and wasm faults',begin);
   assert.ok(begin>0 && end>begin);

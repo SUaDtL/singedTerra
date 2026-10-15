@@ -2426,12 +2426,19 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
     ownedBrowsers.add(close);
     const active = join(profile, 'DevToolsActivePort');
     const deadline = Date.now() + 20_000;
-    while (!existsSync(active)) {
+    let port;
+    while (true) {
       assert.ok(child.exitCode === null && Date.now() < deadline, 'Owned Chrome did not expose loopback CDP');
+      if(existsSync(active)){
+        const contents=readFileSync(active,'utf8');
+        if(contents.includes('\n')){
+          port=Number(contents.split('\n')[0]);
+          assert.ok(Number.isInteger(port) && port >= 1024 && port <= 65535, 'Invalid owned CDP port');
+          break;
+        }
+      }
       await delay(50);
     }
-    const port = Number(readFileSync(active, 'utf8').split('\n')[0]);
-    assert.ok(Number.isInteger(port) && port >= 1024 && port <= 65535, 'Invalid owned CDP port');
     browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, { noDefaults: true, timeout: 20_000 });
     assert.equal(browser.contexts().length, 1, 'One native default context required');
     ownedBrowserWindows.set(browser,{root:supervisor.root,profile,executable,context:browser.contexts()[0],output});
