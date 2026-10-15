@@ -2712,9 +2712,26 @@ export async function routeLastStandRequest(route, base, {fault,rejoin,rejoinBin
 export function classifyBrowserEvidence(messages, failures, httpErrors, expectedFaults=[]) {
   const expected=[],accepted=[],requestErrors=[];
   const matches=(item,entry)=>item.load===entry.load && item.scope===entry.scope;
+  const failedRequest=entry=>failures.filter(item=>matches(item,entry) && item.url===entry.url && item.method==='GET' &&
+    item.resource_type===entry.resourceType && item.response_status===null && item.failure==='net::ERR_FAILED').length===1;
+  const stackLines=text=>typeof text==='string'?text.split('\n').map(line=>line.trim()).filter(Boolean):[];
+  const boundBootstrap=(text,entry,header)=>{
+    const lines=stackLines(text),prefixes=[`at instantiateAsync (${entry.frameworkURL}:`,`at createWasm (${entry.frameworkURL}:`,
+      `at ${entry.frameworkURL}:`,`at ${entry.loaderURL}:`];
+    return lines.length===5 && lines[0]===header && prefixes.every((prefix,i)=>lines[i+1].startsWith(prefix) &&
+      (i<2?/^\d+:\d+\)$/:/^\d+:\d+$/).test(lines[i+1].slice(prefix.length)));
+  };
+  const wasmConsoles=new Map();
+  for(const entry of expectedFaults)if(entry.scope==='wasm-fault' && entry.resourceType==='fetch' && entry.url.endsWith('.wasm') &&
+    [entry.documentURL,entry.frameworkURL,entry.loaderURL].every(value=>typeof value==='string') && failedRequest(entry)){
+    const candidates=messages.filter(item=>matches(item,entry) && item.type==='error' && item.location?.url===entry.documentURL &&
+      boundBootstrap(item.text,entry,'Last Stand load failed TypeError: Failed to fetch'));
+    if(candidates.length===1)wasmConsoles.set(entry,candidates[0]);
+  }
   const consoleErrors=classifyConsole(messages).filter(item=>{
-    const fault=expectedFaults.find(entry=>matches(item,entry) && failures.some(failure=>matches(failure,entry) && failure.url===entry.url && failure.failure==='net::ERR_FAILED') &&
-      ((entry.consoleTexts??[]).includes(item.text) || (item.text==='Failed to load resource: net::ERR_FAILED' && item.location?.url===entry.url)));
+    const fault=expectedFaults.find(entry=>matches(item,entry) && failedRequest(entry) &&
+      ((entry.consoleTexts??[]).includes(item.text) || wasmConsoles.get(entry)===item ||
+        (item.text==='Failed to load resource: net::ERR_FAILED' && item.location?.url===entry.url)));
     if(fault){expected.push(item);return false;}return true;
   });
   for(const failure of failures) {
@@ -2725,7 +2742,14 @@ export function classifyBrowserEvidence(messages, failures, httpErrors, expected
       failure.failure==='net::ERR_FAILED' && failure.response_status===null && failure.resource_type===entry.resourceType))expected.push(failure);
     else requestErrors.push(failure);
   }
-  return { consoleErrors,requestErrors,httpErrors,accepted,expected };
+  const unexpectedHTTP=httpErrors.filter(item=>{
+    const fault=[...wasmConsoles].find(([entry,message])=>matches(item,entry) && item.kind==='pageerror' &&
+      item.text==='TypeError: Failed to fetch' && boundBootstrap(item.stack,entry,'TypeError: Failed to fetch') &&
+      stackLines(item.stack).join('\n')===stackLines(message.text.slice('Last Stand load failed '.length)).join('\n') &&
+      httpErrors.filter(other=>matches(other,entry) && other.kind==='pageerror' && other.text==='TypeError: Failed to fetch').length===1);
+    if(fault){expected.push(item);return false;}return true;
+  });
+  return { consoleErrors,requestErrors,httpErrors:unexpectedHTTP,accepted,expected };
 }
 // Serialized into the current document. Observe only: no start/resume/finish calls.
 function renderedAudioSnapshot({withSamples=false}={}) {
@@ -2888,7 +2912,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
         }
       }catch(error){retainObserverFailure(record,error);}
     });
-    page.on('pageerror',error=>httpErrors.push({scope,load,kind:'pageerror',text:String(error)}));
+    page.on('pageerror',error=>httpErrors.push({scope,load,kind:'pageerror',text:String(error),stack:error.stack}));
     page.on('request',request=>requests.push({url:request.url(),load,scope}));
     page.on('requestfailed',async request=>{
       const response=await request.response().catch(()=>null);
@@ -3401,7 +3425,10 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       const leaf=Object.keys(manifest.files).find(path=>path.endsWith(extension));
       fault=new URL(`last-stand/${leaf}`,base).pathname;
       expectedFaults.push({scope,load:load+1,url:new URL(fault,base).href,resourceType:extension==='.wasm'?'fetch':'script',
-        consoleTexts:extension==='.loader.js'?['Last Stand load failed Unity loader unavailable']:[]});
+        consoleTexts:extension==='.loader.js'?['Last Stand load failed Unity loader unavailable']:[],
+        ...(extension==='.wasm'?{documentURL:new URL('last-stand/',base).href,
+          frameworkURL:new URL('last-stand/'+Object.keys(manifest.files).find(path=>path.endsWith('.framework.js')),base).href,
+          loaderURL:new URL('last-stand/'+Object.keys(manifest.files).find(path=>path.endsWith('.loader.js')),base).href}:{})});
       await goto('last-stand/');await page.locator('#error').waitFor({state:'visible'});
       check((await page.locator('#status').innerText())==='Scene could not load',`${scope}: visible failure`);
       check(await page.locator('#last-stand-return').getAttribute('href')==='../#campaigns/last-stand',`${scope}: independent native return href`);

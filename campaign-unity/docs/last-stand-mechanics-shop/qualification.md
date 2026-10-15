@@ -98,3 +98,10 @@ after loss, in either event order, and uses their first coherent focused/visible
 completion. Either missing witness still fails. Visible-window blur retains its
 original visible focus-event boundary. No event, audio or runtime state is
 synthesized, and every original interval/model/no-replay check remains required.
+
+The injected WASM failure admits only its declared current-load GET/fetch/
+null-response/ERR_FAILED request and the unique wrapper error at the exact
+document URL with the closed exported-framework/loader stack. A single matching
+page error additionally requires the same retained stack. Missing, duplicate,
+stale, unrelated, HTTP and other script errors remain fatal. Genuine historical
+failures remain failed; classification repair requires fresh execution.

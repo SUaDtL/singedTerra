@@ -9,6 +9,42 @@ import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
 
+function inducedWasmFixture(){
+  const id={scope:'wasm-fault',load:20},root='http://localhost:4173/singedTerra/last-stand/';
+  const entry={...id,url:root+'Build/inert.wasm',resourceType:'fetch',consoleTexts:[],
+    documentURL:root,frameworkURL:root+'Build/inert.framework.js',loaderURL:root+'Build/inert.loader.js'};
+  const stack=`TypeError: Failed to fetch\n    at instantiateAsync (${entry.frameworkURL}:9:15253)\n    at createWasm (${entry.frameworkURL}:9:16334)\n    at ${entry.frameworkURL}:9:345789\n    at ${entry.loaderURL}:1:21444`;
+  const message={...id,type:'error',text:'Last Stand load failed '+stack,location:{url:root}};
+  const failure={...id,url:entry.url,method:'GET',resource_type:'fetch',response_status:null,failure:'net::ERR_FAILED'};
+  const pageError={...id,kind:'pageerror',text:'TypeError: Failed to fetch',stack};
+  return {entry,messages:[message],failures:[failure],httpErrors:[pageError]};
+}
+
+test('only the induced exact wasm bootstrap error pair is classified expected',()=>{
+  const value=inducedWasmFixture();
+  const result=journey.classifyBrowserEvidence(value.messages,value.failures,value.httpErrors,[value.entry]);
+  assert.equal(result.consoleErrors.length,0,'Exact injected wasm wrapper failure must be classified');
+  assert.equal(result.requestErrors.length,0);assert.equal(result.httpErrors.length,0);
+  assert.equal(result.expected.length,3);
+});
+
+test('wasm classification refuses missing, duplicate, stale, unrelated or unbound witnesses',()=>{
+  const mutations=[x=>x.failures=[],x=>x.failures[0].method='POST',x=>x.failures[0].response_status=500,
+    x=>x.failures[0].resource_type='script',x=>x.failures[0].url+='wrong',x=>x.failures[0].load++,
+    x=>x.messages[0].scope='healthy',x=>x.messages[0].location.url+='wrong',x=>x.messages[0].text+='\nUnrelated exception',
+    x=>x.messages[0].text=x.messages[0].text.replace('instantiateAsync','UnrelatedShader'),
+    x=>x.messages[0].text=x.messages[0].text.replaceAll(x.entry.frameworkURL,'http://unrelated.invalid/a.js'),
+    x=>x.messages.push({...x.messages[0]}),x=>x.httpErrors.push({...x.httpErrors[0]}),
+    x=>delete x.httpErrors[0].stack,x=>x.httpErrors[0].load++,x=>x.httpErrors[0].text='Unrelated crash',
+    x=>x.httpErrors[0].stack+='\nUnrelated shader',x=>x.httpErrors.push({kind:'http',status:500,url:'http://unrelated.invalid/'}),
+  ];
+  for(const [i,mutate]of mutations.entries()){
+    const x=inducedWasmFixture();mutate(x);
+    const r=journey.classifyBrowserEvidence(x.messages,x.failures,x.httpErrors,[x.entry]);
+    assert.ok(r.consoleErrors.length || r.requestErrors.length || r.httpErrors.length,'Unbound inert wasm fault '+i+' must remain fatal');
+  }
+});
+
 async function motionFixture(timestamps=[3,1,2]){
   const begin=source.indexOf('async function startMotion('),end=source.indexOf('\nfunction decodedAudio(',begin);
   assert.ok(begin>0 && end>begin);const files=new Map();let receive;
