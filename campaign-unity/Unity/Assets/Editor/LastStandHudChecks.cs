@@ -85,6 +85,7 @@ public static class LastStandHudChecks
             Case("test_live_values_and_fitting", LiveValuesAndFitting, ref failures);
             Case("test_deploy_readiness_and_primary_hierarchy", DeployReadinessAndPrimary, ref failures);
             Case("test_garage_profile_geometry_and_contrast", GarageGeometryAndContrast, ref failures);
+            Case("test_short_landscape_garage_readability", ShortLandscapeGarageReadability, ref failures);
         }
         finally
         {
@@ -255,6 +256,41 @@ public static class LastStandHudChecks
             Debug.Log("ST_LS_HUD_PROFILE " + profile.x + "x" + profile.y + " blocked=" + blocked + " canvasScale=" + f.Canvas.scaleFactor);
         }
     }
+    static void ShortLandscapeGarageReadability()
+    {
+        foreach (bool blocked in new[] {false,true})
+        foreach (int level in new[] {0,3})
+        using (var f = new Fixture(568,196,level:level,denyRead:blocked))
+        foreach (bool launcher in new[] {false,true})
+        {
+            f.Art.showingLauncher = launcher; f.Hud.Refresh(); Canvas.ForceUpdateCanvases();
+            AssertGarageFields(f); AssertGarageSaveTruth(f); RequireGarageVisible(f);
+            var card = Bounds(f,(RectTransform)f.Root.Find("LastStandCard"));
+            var controls = new List<Rect>();
+            foreach (var button in f.Root.GetComponentsInChildren<Button>())
+            {
+                var bounds = Bounds(f,(RectTransform)button.transform);
+                Require(bounds.width >= 43.9 && bounds.height >= 43.9,"short landscape actual target " + button.name);
+                Require(bounds.xMin >= -.2 && bounds.yMin >= -.2 && bounds.xMax <= 568.2 && bounds.yMax <= 196.2,
+                    "short landscape target onscreen " + button.name);
+                Require(!Overlap(bounds,card),"short landscape target/card nonoverlap " + button.name);
+                foreach (var prior in controls) Require(!Overlap(bounds,prior),"short landscape target nonoverlap");
+                controls.Add(bounds);
+            }
+            foreach (var text in f.Root.GetComponentsInChildren<Text>())
+            {
+                var bounds = Bounds(f,text.rectTransform);
+                float scale = bounds.width / text.rectTransform.rect.width;
+                Require(text.fontSize * scale >= 13.99,"short landscape actual14px text " + text.name);
+                Require(text.preferredHeight <= text.rectTransform.rect.height + .2f,
+                    "short landscape complete text " + text.name + " preferred=" + text.preferredHeight + " rect=" + text.rectTransform.rect.height +
+                    " width=" + bounds.width + " label=" + text.text + " blocked=" + blocked + " level=" + level + " launcher=" + launcher);
+                Require(bounds.xMin >= -.2 && bounds.yMin >= -.2 && bounds.xMax <= 568.2 && bounds.yMax <= 196.2,
+                    "short landscape text onscreen " + text.name);
+            }
+        }
+    }
+
     // Additive field-boundary oracles. Fixture/domain truth is independent of
     // the presentation text: a repeated digit in another row cannot satisfy it.
     static Match Field(string text, string pattern, string label)

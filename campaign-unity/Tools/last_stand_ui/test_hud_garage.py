@@ -26,6 +26,9 @@ class HudGarageTests(unittest.TestCase):
     def test_garage_profile_geometry_and_contrast(self):
         self.check_case(self._testMethodName)
 
+    def test_short_landscape_garage_readability(self):
+        self.check_case(self._testMethodName)
+
 
 if __name__ == "__main__":
     unittest.main()

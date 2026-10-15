@@ -162,8 +162,13 @@ namespace SingedTerra.LastStand
             // landscape Canvas keeps full-size instruments/actions by reducing
             // shared panel margins, never by charging the outer header twice.
             bool shortBattle = battle && width >= PortraitBreakpoint && height * .2f < Edge + BattleCardHeight;
-            float edge = shortBattle ? ShortBattleEdge : Edge;
-            float padding = battle ? (shortBattle ? ShortBattlePadding : BattlePadding) : PanelPadding;
+            // A very short closed recovery view uses one full-height action
+            // row so its information card keeps every reserved reading line.
+            // The five approved profiles retain their existing composition.
+            bool shortRecovery = !battle && width >= PortraitBreakpoint && height < 240;
+            float edge = shortBattle || shortRecovery ? ShortBattleEdge : Edge;
+            float padding = battle ? (shortBattle ? ShortBattlePadding : BattlePadding) :
+                shortRecovery ? ShortBattlePadding : PanelPadding;
             float dockWidth = DockWidth(width, actionCount, edge, padding);
             bool commandConsole = battle && width >= 1000 && actionCount >= 2 &&
                 dockWidth >= actionCount * MinimumActionWidth + (actionCount - 1) * Gap + 2 * padding &&
@@ -173,7 +178,7 @@ namespace SingedTerra.LastStand
             // the original two-action projection retain their existing dock.
             var dock = new List<Slot>();
             Dock(dock, width, height, activeControls, edge, padding, commandConsole,
-                battle && actionCount == 3 && !commandConsole);
+                battle && actionCount == 3 && !commandConsole,shortRecovery);
             if (battle) Battle(slots, width, height, edge, padding, commandConsole, actionCount);
             else Card(slots, width, height, dock.Count == 0 ? height - 2 * Edge : dock[0].Bounds.Y - Edge - Gap);
             slots.AddRange(dock);
@@ -326,10 +331,15 @@ namespace SingedTerra.LastStand
                         throw new ArgumentOutOfRangeException("height", "Recovery space must retain every detail and save-status line above the dock.");
                     float compactInner = wide - 2 * compactPadding, readingColumn = (compactInner - 2 * Gap) / 3;
                     float compactX = Edge + compactPadding, compactY = Edge + compactPadding;
+                    bool veryShort = height < 240;
+                    float headingWidth = veryShort ? Math.Min(readingColumn,128) : readingColumn;
+                    float detailWidth = veryShort ? (compactInner-headingWidth-2*Gap)*.6f : readingColumn;
+                    float statusWidth = compactInner-headingWidth-detailWidth-2*Gap;
                     Add(slots,"LastStandCard",null,"panel",Edge,Edge,wide,2 * compactPadding + content);
-                    Text(slots,"PhaseHeading","LastStandCard",compactX,compactY,readingColumn,HeadingLines * HeadingLineHeight,HeadingTextSize);
-                    Text(slots,"PhaseDetail","LastStandCard",compactX + readingColumn + Gap,compactY,readingColumn,content,BodyTextSize);
-                    Text(slots,"SaveStatus","LastStandCard",compactX + 2 * (readingColumn + Gap),compactY,readingColumn,content);
+                    Text(slots,"PhaseHeading","LastStandCard",compactX,compactY,headingWidth,
+                        veryShort ? content : HeadingLines * HeadingLineHeight,veryShort ? BodyTextSize : HeadingTextSize);
+                    Text(slots,"PhaseDetail","LastStandCard",compactX + headingWidth + Gap,compactY,detailWidth,content,BodyTextSize);
+                    Text(slots,"SaveStatus","LastStandCard",compactX + headingWidth + detailWidth + 2*Gap,compactY,statusWidth,content);
                     return;
                 }
                 float inner = wide - 2 * PanelPadding, column = (inner - Gap) / 2;
@@ -425,14 +435,15 @@ namespace SingedTerra.LastStand
         }
 
         static void Dock(List<Slot> slots, float width, float height, string[] controls, float edge, float padding, bool commandConsole,
-            bool compactBattle = false)
+            bool compactBattle = false, bool singleRow = false)
         {
             if (controls.Length == 0) return;
             float dockWidth = DockWidth(width, controls.Length, edge, padding, compactBattle);
-            int columns = compactBattle ? controls.Length : Math.Max(1, Math.Min(controls.Length,
+            int columns = compactBattle || singleRow ? controls.Length : Math.Max(1, Math.Min(controls.Length,
                 (int)Math.Floor((dockWidth - 2 * padding + Gap) / (MinimumActionWidth + Gap))));
             int rows = (controls.Length + columns - 1) / columns;
-            float dockHeight = 2 * padding + rows * MinimumTargetSize + (rows - 1) * Gap;
+            float rowHeight = singleRow ? 3 * LineHeight : MinimumTargetSize;
+            float dockHeight = 2 * padding + rows * rowHeight + (rows - 1) * Gap;
             float left = (width - dockWidth) / 2, top = height - edge - dockHeight;
             if (commandConsole)
             {
@@ -453,11 +464,12 @@ namespace SingedTerra.LastStand
                 float controlWidth = compactBattle ? (i == 0 ? MinimumActionWidth : i == 2 ? CompactBattleActionWidth :
                     dockWidth - 2 * padding - 2 * Gap - MinimumActionWidth - CompactBattleActionWidth) : actionWidth;
                 float x = compactBattle ? compactX : left + padding + (i % columns) * (actionWidth + Gap);
-                float targetHeight = commandConsole ? 52 : MinimumTargetSize;
-                float y = commandConsole ? top + dockHeight - padding - targetHeight : top + padding + (i / columns) * (MinimumTargetSize + Gap);
+                float targetHeight = commandConsole ? 52 : rowHeight;
+                float y = commandConsole ? top + dockHeight - padding - targetHeight : top + padding + (i / columns) * (rowHeight + Gap);
                 Add(slots, controls[i], "LastStandDock", "control", x, y, controlWidth, targetHeight);
-                Text(slots, controls[i] + "Text", controls[i], x + ActionHorizontalPadding, y + ActionVerticalPadding,
-                    controlWidth - 2 * ActionHorizontalPadding, targetHeight - 2 * ActionVerticalPadding);
+                float horizontalPadding = singleRow ? ActionVerticalPadding : ActionHorizontalPadding;
+                Text(slots, controls[i] + "Text", controls[i], x + horizontalPadding, y + ActionVerticalPadding,
+                    controlWidth - 2 * horizontalPadding, targetHeight - 2 * ActionVerticalPadding);
                 compactX += controlWidth + Gap;
             }
         }

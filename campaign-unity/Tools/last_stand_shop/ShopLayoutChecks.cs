@@ -388,6 +388,27 @@ static class ShopLayoutChecks
         }
     }
 
+    static void ShortLandscapeClosedRecovery()
+    {
+        // The maintained browser journey's 568x320 page leaves 568x196 after
+        // the ordinary navigation/disclosure. Exercise the actual projection.
+        foreach (var controls in new[] { ReadyGarageControls, PermanentControls, RecoveryControls })
+        {
+            var p = Project(568,196,"garage",controls,false,0);
+            Fit(p,568,196);
+            foreach (string id in controls)
+            {
+                var bounds = Find(p,id).Bounds;
+                Require(bounds.Width >= 44 && bounds.Height >= 44,"Short landscape retains target " + id);
+            }
+            foreach (var slot in p.Slots.Where(slot => slot.Kind == "text"))
+                Require(slot.FontSize >= 14,"Short landscape retains readable text " + slot.Id);
+            Require(Find(p,"PhaseHeading").Bounds.Height >= 52,"Short landscape retains both heading lines.");
+            foreach (string id in new[] {"PhaseDetail","SaveStatus"})
+                Require(Find(p,id).Bounds.Height >= 100,"Short landscape retains every reserved line " + id);
+        }
+    }
+
     static int Main(string[] args)
     {
         try
@@ -399,6 +420,7 @@ static class ShopLayoutChecks
                 case "shop_text_contrast_targets_and_refusal_bounds": TextTargetsRefusals(); break;
                 case "shop_compact_meaningful_summary": CompactSummary(); break;
                 case "shop_measured_long_notice": MeasuredLongNotice(); break;
+                case "shop_short_landscape_closed_recovery": ShortLandscapeClosedRecovery(); break;
                 default: throw new ArgumentException("Unknown check.");
             }
             Console.WriteLine("PASS " + args[0]);
