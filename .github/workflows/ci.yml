@@ -185,11 +185,30 @@ jobs:
       - name: Initialize Last Stand evidence root
         if: matrix.lane == 'product'
         run: node scripts/ci/prepareLastStandEvidence.mjs
+      # Chromium's documented installed-helper path keeps the pinned browser
+      # sandboxed under Ubuntu's restricted unprivileged user namespaces.
+      - name: Validate Last Stand browser sandbox
+        if: matrix.lane == 'product'
+        run: |
+          sandbox=/opt/google/chrome/chrome-sandbox
+          test -f "$sandbox"
+          test ! -L "$sandbox"
+          test -x "$sandbox"
+          test -u "$sandbox"
+          test ! -w "$sandbox"
+          test ! -w /opt/google/chrome
+          helper_metadata="$(stat --format='%u:%a' -- "$sandbox")"
+          test "$helper_metadata" = '0:4755'
+          helper_api="$("$sandbox" --get-api)"
+          test "$helper_api" = '1'
+          chromium="$(node --input-type=module -e "import { chromium } from '@playwright/test'; process.stdout.write(chromium.executablePath())")"
+          test ! -e "$(dirname "$chromium")/chrome-sandbox"
       - name: Last Stand shared Campaigns journey
         if: matrix.lane == 'product'
         env:
           VITE_BASE: /singedTerra/
           E2E_DENY_EXTERNAL_NETWORK: '1'
+          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
         run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0
       - name: Upload Playwright failure artifacts
         if: failure()
