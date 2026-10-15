@@ -9,6 +9,30 @@ import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
 
+function proceduralCueCheck(player,names){
+  const begin=source.indexOf('    const cueNames=messages.filter'),end=source.indexOf('    // Loader and wasm faults',begin);
+  assert.ok(begin>0 && end>begin);
+  const checks=[],report={qualification:{procedural_cues:player?'pending':'unexecuted-requires-windows'}};
+  const check=(pass,name,detail)=>{checks.push({pass,name,detail});assert.ok(pass,name);};
+  new Function('messages','check','player','report',source.slice(begin,end))(
+    names.map(name=>({text:'ST_LS_AUDIO event='+name})),check,player,report);
+  return {report,checks};
+}
+
+test('Linux retains observed cue telemetry without claiming the Windows five-cue obligation',()=>{
+  const {report,checks}=proceduralCueCheck(false,['cannon','impact','destruction','purchase']);
+  assert.equal(report.qualification.procedural_cues,'unexecuted-requires-windows');
+  assert.equal(checks.some(item=>item.name==='all five procedural cues admitted'),false);
+});
+
+test('Windows still requires every procedural cue before its scope passes',()=>{
+  const names=['cannon','impact','destruction','defeat','purchase'];
+  for(const missing of names)assert.throws(()=>proceduralCueCheck(true,names.filter(name=>name!==missing)),/all five procedural cues admitted/);
+  const {report,checks}=proceduralCueCheck(true,names);
+  assert.equal(report.qualification.procedural_cues,'pass');
+  assert.deepEqual(checks,[{pass:true,name:'all five procedural cues admitted',detail:names}]);
+});
+
 function inducedWasmFixture(){
   const id={scope:'wasm-fault',load:20},root='http://localhost:4173/singedTerra/last-stand/';
   const entry={...id,url:root+'Build/inert.wasm',resourceType:'fetch',consoleTexts:[],
@@ -445,11 +469,12 @@ function fixture(){
     'same first foe one-hit defeated by real 30 damage','background terminal produces one persisted manual result',
     'background Claim cannot award twice','.loader.js: real Retry recovered genuine scene','.wasm: real Retry recovered genuine scene',
     'corrupt bytes preserved by Retry','blocked writes recover through real Retry','pause stops combat ticks'];
-  const windows={status:'pass',qualification:{profile:'windows-player',host:'win32',functional:'pass',rendered_audio:'pass',native_blur:'pass',capture_cadence:'pass'},
+  const windows={status:'pass',qualification:{profile:'windows-player',host:'win32',functional:'pass',rendered_audio:'pass',native_blur:'pass',capture_cadence:'pass',procedural_cues:'pass'},
     checks:names.map(name=>({name,pass:true})),binding:{current_head:head,portable_text_inputs:inputs,input_files:inputs,...runtime,served,served_after:served},
     audio:[{},{},{}],motion:{},playable_capture:{},active_play_review:{},lifecycle:[{kind:'blur'}],
     frame_timing:{capture_active:Object.fromEntries(['first-foe-before-impact','first-hit-through-pause','resumed-before-focus-loss','resumed-after-focus-loss']
       .map(key=>[key,{p95_ms:16,p99_ms:20,max_ms:40}])),no_capture_active:{p95_ms:16}}};
+  windows.checks.push({name:'all five procedural cues admitted',pass:true,detail:['cannon','impact','destruction','defeat','purchase']});
   const transition=settlingFixture(),viewports=[['approved-standard',1366,768],['approved-wide',1920,1080],
     ['approved-portrait',390,844],['approved-landscape',844,390],['approved-compact',720,640]];
   windows.screenshots=viewports.map(([name,width,height],i)=>{
@@ -464,13 +489,30 @@ function fixture(){
       paused:{...proof.staged,t:220,paused:true},resumed:{...proof.staged,t:270,paused:false},
       viewports:['approved-standard','approved-wide','approved-portrait','approved-landscape','approved-compact']});
   const linux=structuredClone(windows);linux.qualification={profile:'linux-functional',host:'linux',functional:'pass',
-    rendered_audio:'unexecuted-requires-windows',native_blur:'unexecuted-requires-windows',capture_cadence:'unexecuted-requires-windows'};
+    rendered_audio:'unexecuted-requires-windows',native_blur:'unexecuted-requires-windows',capture_cadence:'unexecuted-requires-windows',procedural_cues:'unexecuted-requires-windows'};
+  linux.checks=linux.checks.filter(item=>item.name!=='all five procedural cues admitted');
   // A successful functional host contributes no claimed PCM/media observations.
   linux.audio=[];delete linux.motion;delete linux.playable_capture;delete linux.active_play_review;delete linux.frame_timing;
   linux.lifecycle=linux.lifecycle.filter(item=>item.kind!=='settling-interaction');
   linux.lifecycle.find(item=>item.kind==='settling-transition').scope='transient-functional-telemetry';
   return {windows,linux,head,inputs,runtime,served};
 }
+
+test('combined qualification refuses missing Windows five-cue evidence or Linux media claims',()=>{
+  assert.equal(assertCombinedQualification(fixture()).status,'pass');
+  const name='all five procedural cues admitted';
+  const mutations=[x=>delete x.windows.qualification.procedural_cues,x=>x.windows.qualification.procedural_cues='pending',
+    x=>delete x.linux.qualification.procedural_cues,x=>x.linux.qualification.procedural_cues='pass',
+    x=>x.windows.checks=x.windows.checks.filter(item=>item.name!==name),
+    x=>x.windows.checks.find(item=>item.name===name).detail=['cannon','impact','destruction','purchase'],
+    x=>x.windows.checks.find(item=>item.name===name).detail='cannon impact destruction defeat purchase',
+    x=>x.windows.checks.push({...x.windows.checks.find(item=>item.name===name)}),
+    x=>x.linux.checks.push({...x.windows.checks.find(item=>item.name===name)})];
+  for(const [i,mutate]of mutations.entries()){
+    const value=fixture();mutate(value);
+    assert.throws(()=>assertCombinedQualification(value),'Missing or misassigned procedural-cue evidence '+i+' must refuse');
+  }
+});
 
 test('combined qualification requires Linux transient proof and Windows interactive settling proof',()=>{
   const mutations=[x=>x.linux.lifecycle=[],x=>x.windows.lifecycle=x.windows.lifecycle.filter(item=>item.kind!=='settling-interaction'),

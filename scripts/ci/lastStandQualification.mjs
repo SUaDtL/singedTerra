@@ -47,8 +47,13 @@ export function assertCombinedQualification({windows,linux,head,inputs,runtime,s
     for(const key of runtimeKeys)assert.equal(report.binding[key],runtime[key],'Raw runtime/source binding changed: '+key);
     assert.deepEqual(report.binding.served,served,'Served raw runtime bytes changed');
     assert.deepEqual(report.binding.served_after,served,'Served runtime changed during execution');
-    for(const key of ['rendered_audio','native_blur','capture_cadence'])
+    for(const key of ['rendered_audio','native_blur','capture_cadence','procedural_cues'])
       assert.equal(report.qualification[key],host==='win32'?'pass':'unexecuted-requires-windows','Assigned obligation incomplete: '+key);
+    const cueChecks=report.checks.filter(item=>item.name==='all five procedural cues admitted');
+    if(host==='win32')assert.ok(cueChecks.length===1 && Array.isArray(cueChecks[0].detail) &&
+      ['cannon','impact','destruction','defeat','purchase'].every(cue=>cueChecks[0].detail.includes(cue)),
+      'Windows actual five-cue admission evidence absent');
+    else assert.equal(cueChecks.length,0,'Linux cannot claim the Windows five-cue media obligation');
     const settling=report.lifecycle?.filter(item=>item.kind==='settling-transition');
     assert.ok(settling?.length===1 && settling[0].scope===(host==='win32'?'interactive-five-viewports':'transient-functional-telemetry') &&
       settling[0].evidence?.before && settling[0].evidence.terminal && settling[0].evidence.staged &&

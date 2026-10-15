@@ -2884,6 +2884,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     lifecycle:[],qualification:{profile:qualification.name,host:process.platform,release:release(),arch:arch(),
       functional:'pending',rendered_audio:player?'pending':'unexecuted-requires-windows',
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
+      procedural_cues:player?'pending':'unexecuted-requires-windows',
       merge_ready:false} };
   const states=[], encounters=[], hits=[], layouts=[], cues=[], messages=[], trace=[], failures=[], httpErrors=[], requests=[], expectedFaults=[];
   let native, page, motion, modelOracle, load=0, scope='healthy', fault, rejoin=false, rejoinBinding, originalError;
@@ -3473,7 +3474,10 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750]});
     const cueNames=messages.filter(item=>!item.text.startsWith('ST_TEST_RUNTIME ') && item.text.includes('ST_LS_AUDIO event='))
       .map(item=>item.text.split('ST_LS_AUDIO event=')[1].split('\n')[0]);
-    check(['cannon','impact','destruction','defeat','purchase'].every(cue=>cueNames.includes(cue)),'all five procedural cues admitted',cueNames);
+    if(player){
+      check(['cannon','impact','destruction','defeat','purchase'].every(cue=>cueNames.includes(cue)),'all five procedural cues admitted',cueNames);
+      report.qualification.procedural_cues='pass';
+    }
 
     // Loader and wasm faults: real error UI, keyboard Return, and ordinary Retry.
     for(const extension of ['.loader.js','.wasm']){

@@ -23,6 +23,14 @@ here and separately required from Windows. No silent samples or media passes
 are synthesized. The former Linux run genuinely failed: a busy software-rendered
 main thread delivered only three passive samples in the fixed 1,462 ms window.
 
+Positive presence of all five procedural cues is also a Windows obligation.
+Normal delayed callback reconciliation can suppress defeat feedback on Linux
+while staging and manually claiming the correct result. Both hosts retain their
+actual cue logs and no-replay checks. Windows must pass the original all-five
+assertion with its observed names before `procedural_cues` becomes `pass`;
+Linux records `unexecuted-requires-windows` and makes no positive five-cue claim.
+The combined reader requires these scopes and the Windows five-cue evidence.
+
 Both profiles freshly compile the actual current C# model and compare every one
 of its 13,904 rows and 13 fields with the immutable reference. Both bind the
 current source/export/served bytes before and after execution. Raw authored-file
