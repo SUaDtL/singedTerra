@@ -1386,7 +1386,15 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     'Invalid global native audio event');
   const loss=global.find(e=>before.t<=e.t && e.t<=begin && !e.focused &&
     (kind==='blur'?e.kind==='blur' && !e.hidden:e.kind==='visibilitychange' && e.hidden));
-  const returned=loss && global.find(e=>e.t>loss.t && e.t<=recovered && e.kind==='focus' && e.focused && !e.hidden);
+  let returned;
+  if(loss && kind==='blur')returned=global.find(e=>e.t>loss.t && e.t<=recovered && e.kind==='focus' && e.focused && !e.hidden);
+  if(loss && kind==='hidden'){
+    // Browser focus and visibility notifications may arrive in either order.
+    // Require both genuine global witnesses, then their coherent completion.
+    const eligible=global.filter(e=>e.t>loss.t && e.t<=recovered);
+    const focus=eligible.find(e=>e.kind==='focus' && e.focused),visible=eligible.find(e=>e.kind==='visibilitychange' && !e.hidden);
+    if(focus && visible)returned=eligible.find(e=>e.t>=Math.max(focus.t,visible.t) && e.focused && !e.hidden);
+  }
   assert.ok(loss && returned,'Current global native audio loss/return boundary absent');
   assert.ok(returned.t-loss.t>=ms,'Actual native unfocused audio span is shorter than the declared interval');
   const observed=cues.filter(c=>current(c) && c.t>=loss.t+200 && c.t<=recovered);
@@ -3196,10 +3204,21 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
         report.audio.push(evidence);result.push(evidence);
       }return result;
     };
+    const liveBattleLayouts=async()=>{
+      if(!player)return;
+      const before=await observation();
+      check(before.loop.phase==='battle' && !before.paused,'Windows live layout starts in active battle');
+      await phaseMatrix('battle');
+      const after=await observation();
+      check(after.loop.phase==='battle' && !after.paused,'Windows live layout remains active battle');
+      elapsedTicks(before,after);validateModelObservation(before,reference(before));validateModelObservation(after,reference(after));
+      report.lifecycle.push({kind:'live-battle-layout',scope:'existing unfinished reload run',
+        viewports:VIEWPORTS.slice(0,5).map(item=>item.name),before,after});
+    };
     const battleLayouts=async()=>{
       // Slow Linux inspection can exceed a whole battle. Windows retains its
       // live native/media matrix; Linux uses the real public Pause control.
-      if(player){await screenshot('01-base-first-hit');await phaseMatrix('battle');return;}
+      if(player){await screenshot('01-base-first-hit');return;}
       const before=await observation();
       check(before.loop.phase==='battle' && !before.paused,'layout inspection starts in active battle');
       await gameClick('Pause','session',item=>item.phase==='battle' && item.paused);
@@ -3243,9 +3262,11 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     let start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
     let restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished Return abandoned without award',restored);
-    await gameClick('Deploy','deploy');await page.waitForTimeout(1200);start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
+    await gameClick('Deploy','deploy');await page.waitForTimeout(1200);await liveBattleLayouts();
+    start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished reload abandoned without award',restored);
+    if(player)report.lifecycle.push({kind:'live-battle-layout-abandonment',ready:restored});
     check(layouts.at(-1).controls.find(item=>item.name==='ToggleFitting').label.trim().toUpperCase()==='FIT LAUNCHER','baseline repair fitting retained');
     await screenshot('00-garage');await phaseMatrix('garage');
     const baselineHitStart=hits.length;

@@ -67,6 +67,21 @@ test('offline motion verification requires intact raw trace and a complete nativ
   }
 });
 
+test('hidden return requires both actual global witnesses in either focus/visibility order',()=>{
+  const id={load:16,timeOrigin:100000,scope:'healthy'};
+  const event=(kind,t,focused,hidden)=>({...id,kind,t,focused,hidden,globalTarget:true});
+  const invoke=events=>journey.validateAwayAudioReturn({kind:'hidden',before:{...id,t:0},begin:20,recovered:100,ms:40,
+    events,cues:[],states:[],encounters:[],oracle:{}});
+  const loss=event('visibilitychange',10,false,true);
+  for(const pair of [[event('focus',70,true,true),event('visibilitychange',72,true,false)],
+    [event('visibilitychange',70,false,false),event('focus',72,true,false)]])
+    assert.equal(invoke([loss,...pair]).boundary.returned.t,72);
+  for(const pair of [[event('visibilitychange',72,true,false)],[event('focus',72,true,false)],
+    [event('focus',70,true,true),{...event('visibilitychange',72,true,false),globalTarget:false}],
+    [{...event('focus',70,true,true),load:15},event('visibilitychange',72,true,false)]])
+    assert.throws(()=>invoke([loss,...pair]),/boundary absent/);
+});
+
 async function battleLayoutFixture(player=false,fault){
   const begin=source.indexOf('    const battleLayouts=async()=>{');
   const end=source.indexOf('    // Two unfinished exits',begin);
@@ -103,7 +118,27 @@ test('actual first-hit call pauses Linux layout inspection and preserves Windows
   assert.deepEqual(linux.calls,['pause','screenshot','battle','resume']);
   assert.equal(linux.report.lifecycle[0].kind,'paused-battle-layout');
   assert.equal(linux.report.lifecycle[0].viewports.length,5);
-  assert.deepEqual((await battleLayoutFixture(true)).calls,['screenshot','battle']);
+  assert.deepEqual((await battleLayoutFixture(true)).calls,['screenshot'],'Canonical timed capture must not repeat the live viewport sweep');
+});
+
+test('actual Windows live layout inspection uses the existing unfinished run before no-award reload',async()=>{
+  const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
+  assert.ok(begin>0 && end>begin,'Separate actual live layout owner required');
+  const call=source.indexOf('await liveBattleLayouts();',end),reload=source.indexOf('load++;await page.reload',call);
+  assert.ok(call>0 && reload>call && reload<source.indexOf('    const baselineHitStart=',call),
+    'Live layout caller must use the existing real unfinished reload before canonical recording');
+  for(const player of [false,true]){
+    const base={t:50,load:1,timeOrigin:10000,run:1,tick:1,paused:false,loop:{phase:'battle'}},
+      after={...base,t:1050,tick:21},states=[{phase:'battle',paused:false}],report={lifecycle:[]},calls=[];
+    const run=new Function('player','observation','check','phaseMatrix','states','report','VIEWPORTS',
+      'validateModelObservation','reference','elapsedTicks',source.slice(begin,end)+'return liveBattleLayouts();');
+    let next=base;
+    await run(player,async()=>{const value=next;next=after;return value;},(ok,name)=>assert.ok(ok,name),
+      async label=>calls.push(label),states,report,['standard','wide','portrait','compact','small'].map(name=>({name})),
+      ()=>{},()=>({}),(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50));
+    assert.deepEqual(calls,player?['battle']:[]);
+    if(player)assert.equal(report.lifecycle[0].viewports.length,5);
+  }
 });
 
 test('paused layout and Resume reject changed counters or document identity',async()=>{

@@ -1336,8 +1336,11 @@ async function assertNativeAudioBoundaries() {
       trace.push(e);
     };
     const populateReturn=()=>{
-      if(fault!=='missing-return')trace.push(event('focus',fault==='short-real-unfocused-span'?3000:returned,
-        {focused:true,hidden:false,globalTarget:fault!=='element-return'}));
+      if(fault!=='missing-return'){
+        const t=fault==='short-real-unfocused-span'?3000:returned;
+        trace.push(event('focus',t,{focused:true,hidden:false,globalTarget:fault!=='element-return'}));
+        if(kind==='hidden')trace.push(event('visibilitychange',t,{focused:true,hidden:false,globalTarget:fault!=='element-return'}));
+      }
       encounters.push({...oracle[842],...identity,t:returned+.2,run:sessionRun,action:'visibility',focused:true,
         applicationPaused:false,catchingUp:false,paused:false,failed:false});
       for(let tick=842;tick<=888;tick++)states.push({tick,hull:oracle[tick].hp,kills:oracle[tick].kills,
@@ -1426,6 +1429,7 @@ async function assertNativeAudioTerminalReturns() {
     const event=(type,t,values={})=>({kind:type,t,...identity,globalTarget:true,target:'',focused:false,hidden:kind==='hidden',...values});
     const populateReturn=()=>{
       trace.push(event('focus',returned,{focused:true,hidden:false}));
+      if(kind==='hidden')trace.push(event('visibilitychange',returned,{focused:true,hidden:false}));
       const admission={...oracle[terminalTick-2],...identity,t:returned+.2,run:sessionRun,action:'visibility',focused:true,
         applicationPaused:false,catchingUp:false,paused:false,failed:false};encounters.push(admission);
       const tail=fault==='fresh-short-terminal-tail'?.2:0,nextTime=returned+110+tail*1000;
