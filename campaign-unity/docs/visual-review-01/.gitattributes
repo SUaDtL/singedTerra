@@ -1,0 +1,3 @@
+# Preserve byte-bound browser artifacts and copied receipts on every checkout.
+browser-*/** -text
+validation-20260926/** -text

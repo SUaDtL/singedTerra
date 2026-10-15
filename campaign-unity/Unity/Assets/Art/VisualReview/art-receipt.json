@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "scope": "ST-VIS-01 art",
+  "blender": "5.2.0 LTS",
+  "models": [
+    {
+      "id": "STV-E01",
+      "sha256": "41968663acfa2fabc6bb26f1c43763d134070855684432cedbc68b012bbd2467",
+      "nominal_triangles": 8868
+    },
+    {
+      "id": "STV-E02",
+      "sha256": "887f9d06f8739704b1cb52f0cebe9fea7e835f2b0d1036afc0f03882036a8c02",
+      "nominal_triangles": 9216
+    }
+  ],
+  "source_sha256": "2320e17ce2f753968869625f171e81f3b29ce8acaec65a96478c90d178752385",
+  "textures": {
+    "GroundAsh.png": "b63ca7e956fae1f9321d627973df4854e7b411d8100a109f32e7b0f2dec93044",
+    "GroundIron.png": "c017f2f8ec06c566b5ca1f72f3e7901fd1b2284e17aa47ec0e7553971d7926df",
+    "VehicleWear.png": "9df687f1da5ca519bb4cec752d8b36b7dffe6852d2f60b2aeb028cc73e173ee5"
+  }
+}

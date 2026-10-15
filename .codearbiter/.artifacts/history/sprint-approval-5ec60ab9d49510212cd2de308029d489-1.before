@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand playable loop plan · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-LOOP-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-playable-loop.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · authority must be verified at use</span><h1>Last Stand playable loop plan</h1><p class="deck">Three cohesive tasks deliver the local progression/save, dedicated player scene and feedback, then one bounded real Unity/Web proof. No implementation authority exists before the paired approval receipt.</p><div class="meta"><span>ST-LS-LOOP-PLAN</span><span>Revision 4 · schema 0.3.1</span><span>7 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-LOOP-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>58b5ecaec95493a38751a65320949dd846716b86abf46a6cab82a62161b694aa</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2><span class="missing">None recorded</span></section><section class="group" id="group-tasks"><a class="back" href="#main-content">Top</a><h2>Tasks</h2>
+<!-- CA:BEGIN:T-01 -->
+<article class="record" id="T-01" data-ca-symbol="T-01" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-01">T-01</a><h3>Pure progression and local save transactions</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-01</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-playable-loop.html#AC-01">ST-LS-LOOP-SPEC#AC-01</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-02">ST-LS-LOOP-SPEC#AC-02</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-03">ST-LS-LOOP-SPEC#AC-03</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>All six named C#-executed cases pass after retained RED, including write-success/readback-failure reconciliation.</li><li>One single-record save contract has no silent memory fallback, corrupt-state reset, account/backend integration or new dependency.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-01</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandStore.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandStore.cs.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Plugins.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Plugins/WebGL.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_loop/Program.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_loop/test_loop_model.py</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Tools/last_stand_shop/test_shop.py</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only the task-owned playable-loop changes; retain prior art scenes, existing MechanicsShopModel, historical evidence and native approval records. Do not erase or migrate a player save during rollback.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Write the six named compiled-C# cases first using the existing shop harness pattern; retain behavioral RED for reward duplication, cap/price math, malformed state and failed/uncertain save transitions.</li><li>Implement LastStandProgression as pure validated state transitions: level 0..3, cannon damage 20+10*level, cost level+1, zero initial state, monotonic reserved run IDs, one pending ordinary-defeat reward, one-record claim and purchase candidates. Do not reuse or change fixture-only MechanicsShopModel pricing.</li><li>Implement LastStandStore plus the tiny WebGL localStorage get/set/exact-readback bridge. Validate the complete version-1 shape and IDs, handle missing/corrupt/unsupported data explicitly, preserve committed state on failure and reconcile a matching candidate after uncertain writes. Only a successful save unlocks economic transitions. Editor adapter exists only for real Editor checks and is never a successful fallback for blocked Web persistence.</li><li>Run the declared focused command; maps-to TDD obligations AC-01 reward/idempotence, AC-02 transaction/failure and AC-03 price/cap/next-run snapshot.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Python314\\python.exe&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_loop&#34;,&#34;-p&#34;,&#34;test_loop_model.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Compile and execute actual LastStandProgression C# with pinned Mono/Roslyn. Inject storage outcomes at its transaction boundary without replacing game logic; assert exact state and failed-write immutability.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>candidate worktree</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_defeat_reward_idempotence (test_loop_model.LastStandModelTests)</li><li>test_non_defeat_no_reward (test_loop_model.LastStandModelTests)</li><li>test_upgrade_prices_cap_and_next_run (test_loop_model.LastStandModelTests)</li><li>test_save_shape_and_reload (test_loop_model.LastStandModelTests)</li><li>test_storage_failure_retry (test_loop_model.LastStandModelTests)</li><li>test_uncertain_write_reconciliation (test_loop_model.LastStandModelTests)</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-01 -->
+
+<!-- CA:BEGIN:T-02 -->
+<article class="record" id="T-02" data-ca-symbol="T-02" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-02">T-02</a><h3>Dedicated playable scene, player flow and sound</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-01</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-playable-loop.html#AC-01">ST-LS-LOOP-SPEC#AC-01</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-02">ST-LS-LOOP-SPEC#AC-02</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-03">ST-LS-LOOP-SPEC#AC-03</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-04">ST-LS-LOOP-SPEC#AC-04</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-05">ST-LS-LOOP-SPEC#AC-05</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-06">ST-LS-LOOP-SPEC#AC-06</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-01">T-01</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>The two actual Unity named checks pass after meaningful RED; all six spec criteria have their integrated owner path.</li><li>Saved review and legacy scene hashes and legacy outcomes are preserved; no new art choice, duplicate Canvas/session or review economy exists.</li><li>Pure model tests remain passing after integration; technical failure/pause/focus never award or resume terminal combat.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-01</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scenes/LastStandPrototype.unity</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scenes/LastStandPrototype.unity.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs.meta</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/ArtHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/BattlefieldReview.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_loop/test_loop_unity.py</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scripts/TankPresentation.cs</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scripts/ReviewBattleHud.cs</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scenes/BattlefieldReview.unity</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scenes/FieldAssembly.unity</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only the task-owned playable-loop changes; retain prior art scenes, existing MechanicsShopModel, historical evidence and native approval records. Do not erase or migrate a player save during rollback.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Add the two named real Unity regression cases and a thin unittest launcher; retain RED against actual imported scene/session/model owners before runtime edits. Verify no Unity editor owns the project before invoking the pinned editor.</li><li>Copy the saved battlefield scene to LastStandPrototype using existing art components; add a scene-local LastStandLoopController. Route gameplay explicitly to playable-prototype-v1 before the existing BattlefieldReview-presence route, preserving review/legacy scene bytes. Copy provisional review pacing without rebalance. Supply the committed permanent cannon damage only at Deploy and keep active combat/fitting frozen.</li><li>Reuse ArtHud Canvas and EncounterSession. Add LastStandLoopHud for garage, battle, result and workshop phases. Capture ordinary-defeat metrics before releasing the model; await saved pending reward before Claim; reserve/persist a run before Deploy; map save failures to truthful visible Retry. Hide existing inspection/debug/A-B controls only in gameplay mode; preserve pause/focus/application-pause and terminal transient behavior.</li><li>Implement original procedural clips in LastStandAudio with bounded voices, Deploy-click Web unlock and session mute. Drive cannon, impact/destruction, defeat and purchase cues from existing events/committed transitions; stop voices on pause/focus loss and discard queued events. Let terminal shot/impact finish in a bounded transition before the result card takes focus, without stepping terminal combat.</li><li>Run one real Editor check through the declared wrapper: both fittings reach Defeated; same repair fitting/profile demonstrates actual 20 versus 30 damage; review cannot award; one Canvas/session; compact phase state and pause/terminal/audio admission. Maps-to TDD AC-01..AC-06.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Python314\\python.exe&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_loop&#34;,&#34;-p&#34;,&#34;test_loop_unity.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Launch the pinned actual Unity Editor once through LastStandLoopChecks; verify real imported TankPresentation/EncounterSession/EncounterModel plus save adapter and UI/audio owners. Parse actual check results and reject missing/failed markers; no fake Unity framework.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>candidate worktree</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_real_session_modes_and_damage (test_loop_unity.LastStandUnityTests)</li><li>test_pause_terminal_ui_and_audio_lifecycle (test_loop_unity.LastStandUnityTests)</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-02 -->
+
+<!-- CA:BEGIN:T-03 -->
+<article class="record" id="T-03" data-ca-symbol="T-03" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-03">T-03</a><h3>One source-bound Web loop proof and handoff</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-01</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-playable-loop.html#AC-01">ST-LS-LOOP-SPEC#AC-01</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-02">ST-LS-LOOP-SPEC#AC-02</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-03">ST-LS-LOOP-SPEC#AC-03</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-04">ST-LS-LOOP-SPEC#AC-04</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-05">ST-LS-LOOP-SPEC#AC-05</a></li><li><a href="../specs/last-stand-playable-loop.html#AC-06">ST-LS-LOOP-SPEC#AC-06</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-02">T-02</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>The named real-browser loop passes against the exact fresh build with retained automated evidence, actual captured Web audio, measured audio admission/suppression/no-burst behavior and a normal-speed visual observation. Playable audio/video is retained for owner listening before merge; human listening is not required to finish this implementation task.</li><li>Source/scene preservation is proven; focused model and Unity results remain applicable to frozen sources. Numeric C# coverage remains unmeasured, not fabricated.</li><li>Independent completion review and CP-01 quality disposition cover the exact final implementation evidence; owner listening, whole-feature polish, A/B/motion acceptance and deferred live-player feedback remain separate, and merge remains forbidden.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-01</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs.meta</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/build_web.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/make_web_entry.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/web-index-template.html</code></td></tr><tr><td>modify</td><td><code>campaign-unity/README.md</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs/LAST-STAND-ROADMAP.md</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/verify_last_stand_loop.py</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-playable-loop-validation.md</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Tools/native_chrome.py</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Tools/input_observer.py</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Tools/verify_visual_review.py</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Editor/VisualReviewBuild.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only the task-owned playable-loop changes; retain prior art scenes, existing MechanicsShopModel, historical evidence and native approval records. Do not erase or migrate a player save during rollback.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Add LastStandLoopBuild and the last-stand scene route to build_web.py without changing field/review/gallery defaults. Preserve before/after saved-scene hashes and existing source binding; include the new approved spec/plan identities in this build evidence without inventing a new provenance framework. Make Web title/loading copy mode-aware with Last Stand for this route.</li><li>Create one focused unittest-compatible verify_last_stand_loop.py using native_chrome and existing real-pointer observation helpers. It performs one build_web.py --scene last-stand export with the pinned editor, prepares the mode-aware entry, verifies its fresh source binding, serves that exact build and exercises the normal-speed repair-fitting loop. Reuse the browser driver; do not add a production diagnostic mode.</li><li>Observe first baseline cannon hit leaves 10 HP, continue to ordinary defeat, retain a pending reward across same-origin reload, Claim once, buy level 1 for one salvage, reload again and Redeploy; observe the first identical foe die on one cannon hit. Assert wallet/level/save UI and real-pointer action sequence, compact 800x600 primary-action reachability, normal 1280x720 layout, and no errors. Retain screenshots, short normal-speed video with actual captured Web audio output, a normal-speed visual observation and the source-bound result. The test must fail if an observed gameplay or save outcome is missing.</li><li>Exercise visible mute and pause/focus without duplicate sounds or combat advancement. Capture actual Web audio output for cannon/impact/defeat/purchase cues at normal speed and measure output when admitted versus muted, paused or hidden, including no queued burst on resume; event callback logs alone do not prove audio output. Retain playable audio/video for owner listening and subjective polish acceptance before merge. Inspect storage-blocked/corrupt state through the real bridge using the focused test setup without erasing a user save. Browser output must distinguish measured audio output and visual observations from any human listening that has actually occurred; do not report an unperformed listen as completed.</li><li>Update README/roadmap and a concise validation note with actual commands/results, configured-tooling limits, prototype tuning, local save ceiling and pending owner art/live-player acceptance. No acceptance claim, merge, deployment, or future result is prewritten. Maps-to TDD AC-01..AC-06; root runs required current-head PR CI after authorized commit/push.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Python314\\python.exe&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools&#34;,&#34;-p&#34;,&#34;verify_last_stand_loop.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>One actual source-bound Unity Web export and normal-speed real-browser pointer journey proves defeat, staged/claimed reward, purchase, same-origin reload, improved next-run damage, compact controls and actual storage-failure UI. Actual captured Web audio and measured admitted/mute/pause/no-burst output support implementation verification. Subjective listening and whole-feature polish judgment remain at owner acceptance before merge; never claim an unperformed listen. No synthetic pass or broad matrix.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>candidate worktree</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_defeat_buy_reload_redeploy (verify_last_stand_loop.LastStandWebTests)</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-03 -->
+</section><section class="group" id="group-checkpoints"><a class="back" href="#main-content">Top</a><h2>Checkpoints</h2>
+<!-- CA:BEGIN:CP-01 -->
+<article class="record" id="CP-01" data-ca-symbol="CP-01" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-01">CP-01</a><h3>One polished local Last Stand loop</h3></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Exit</span>All six criteria are covered by actual named verification plus independent completion review, captured Web audio with measured admitted/mute/pause/no-burst output, and normal-speed visual observation. The working local prototype demonstrates defeat -&gt; claim -&gt; buy -&gt; reload -&gt; visibly improved next run. Formal implementation acceptance requires current native receipts. Retained playable audio/video supports the owner listening and whole-feature polish judgment before merge; unperformed listening is never claimed. Owner art acceptance, deferred live-player feedback and merge remain separate.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-01">T-01</a></li><li><a href="#T-02">T-02</a></li><li><a href="#T-03">T-03</a></li></ul></div></article>
+<!-- CA:END:CP-01 -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-01 -->
+<article class="record" id="SEC-01" data-ca-symbol="SEC-01" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-01">SEC-01</a><h3>MVP and authority boundary</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The MVP is T-01 through T-03 together at CP-01. No partial task constitutes the polished loop. Execute only after a genuine paired approval receipt; leave owner A/B/motion acceptance and the no-merge gate pending. The owner may optionally delegate implementation-method revisions within existing task steps only; no changes to criteria, task paths, verification, dependencies, rollback, input policy, prototype values, security boundaries or acceptance authority are delegated. Existing push authority remains separate from plan approval.</p></div></div></article>
+<!-- CA:END:SEC-01 -->
+
+<!-- CA:BEGIN:SEC-02 -->
+<article class="record" id="SEC-02" data-ca-symbol="SEC-02" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-02">SEC-02</a><h3>Focused evidence and maturity disposition</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Each implementation task follows meaningful behavioral RED then minimal GREEN against actual C# or imported Unity owners. Reuse the existing pinned compiler/unittest pattern with stable qualified unittest names. Thin proposed Python wrappers launch one actual Unity check or one real Web export/browser exercise; never substitute a stubbed model/session or a prewritten PASS marker. No suite-wide client/legacy matrix, no 126-check browser campaign and no CI workflow rewrite. Run the existing legacy deterministic fixture only when its touched source warrants it. Unity/C# numeric coverage is unmeasured and no configured runner exists; the repository Testing section names TypeScript/Edge/DOM layers, so retain the full Testing quote and this unmentioned-surface limitation in delivery. Required current PR CI still applies. Implementation evidence includes actual captured Web audio output, measured admitted/mute/pause/no-burst behavior and normal-speed visual observation. Retain playable audio/video for the owner to listen and judge subjective sound quality and whole-feature polish before merge. No human listening or perceived balance is claimed unless actually observed; owner listening is not a mid-sprint implementation prerequisite.</p></div></div></article>
+<!-- CA:END:SEC-02 -->
+
+<!-- CA:BEGIN:SEC-03 -->
+<article class="record" id="SEC-03" data-ca-symbol="SEC-03" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-03">SEC-03</a><h3>Practical execution limits</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Check running Unity editor processes before every invocation and never take over an open project. Use the pinned C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe and C:/Python314/python.exe, with no installs. Model cases should take seconds; run the Unity check once and the single Web export once after runtime source freezes. The browser exercise uses an isolated same-origin local profile and real pointer input, no synthetic reward, accelerated clock, direct controller calls, or production debug hook. Capture the first baseline repair run to ordinary defeat, claim, buy and reload, then the upgraded first-enemy outcome. A second fitting reaches ordinary defeat in the faster deterministic Unity check, not a second long browser run. Keep new evidence under ignored campaign-unity/Evidence/last-stand-playable-loop; no temporary outputs enter source roots. If the existing native completion producer remains unavailable, preserve the pending result and report it; this new pair inherits no earlier task-specific completion exception.</p></div></div></article>
+<!-- CA:END:SEC-03 -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2><span class="missing">None recorded</span></section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Observed date</span>2026-10-04</div><div class="field"><span class="label">Repository</span><span class="missing">Not yet supplied</span></div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group" id="group-verification_inputs"><a class="back" href="#main-content">Top</a><h2>Verification inputs</h2><div class="fields"><div class="field"><span class="label">Exclude directories</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Roots</span><ul class="items"><li>campaign-unity/Unity/Assets</li><li>campaign-unity/Unity/ProjectSettings</li><li>campaign-unity/Unity/Packages</li><li>campaign-unity/Tools</li><li>campaign-unity/README.md</li><li>campaign-unity/docs</li></ul></div></div></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Execution must verify current receipt sources and binding.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: c9bdb73e16719ba56ef6ab8652d4b3784bca06a3f67d873830b5fbbf067cab85<br>Model SHA-256: 7b69d6ccb738d78359cfb3c72ab04911d0280b7a9e2b72a8e0ac64f597c077cd</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-LOOP-PLAN",
+  "execution": {
+    "prerequisite_evidence": {},
+    "prerequisites": {},
+    "scopes": {},
+    "tasks": {
+      "T-01": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-02": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-03": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      }
+    }
+  },
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "7b69d6ccb738d78359cfb3c72ab04911d0280b7a9e2b72a8e0ac64f597c077cd",
+    "normative_sha256": "c9bdb73e16719ba56ef6ab8652d4b3784bca06a3f67d873830b5fbbf067cab85",
+    "symbol_count": 7
+  },
+  "kind": "plan",
+  "normative": {
+    "baseline": {
+      "commit": null,
+      "observed_date": "2026-10-04",
+      "repository": null
+    },
+    "checkpoints": [
+      {
+        "depends_on": [],
+        "exit": "All six criteria are covered by actual named verification plus independent completion review, captured Web audio with measured admitted/mute/pause/no-burst output, and normal-speed visual observation. The working local prototype demonstrates defeat -\u003e claim -\u003e buy -\u003e reload -\u003e visibly improved next run. Formal implementation acceptance requires current native receipts. Retained playable audio/video supports the owner listening and whole-feature polish judgment before merge; unperformed listening is never claimed. Owner art acceptance, deferred live-player feedback and merge remain separate.",
+        "id": "CP-01",
+        "tasks": [
+          "T-01",
+          "T-02",
+          "T-03"
+        ],
+        "title": "One polished local Last Stand loop"
+      }
+    ],
+    "criterion_dispositions": [],
+    "prerequisites": [],
+    "retired_symbols": [],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "The MVP is T-01 through T-03 together at CP-01. No partial task constitutes the polished loop. Execute only after a genuine paired approval receipt; leave owner A/B/motion acceptance and the no-merge gate pending. The owner may optionally delegate implementation-method revisions within existing task steps only; no changes to criteria, task paths, verification, dependencies, rollback, input policy, prototype values, security boundaries or acceptance authority are delegated. Existing push authority remains separate from plan approval.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-01",
+        "title": "MVP and authority boundary"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Each implementation task follows meaningful behavioral RED then minimal GREEN against actual C# or imported Unity owners. Reuse the existing pinned compiler/unittest pattern with stable qualified unittest names. Thin proposed Python wrappers launch one actual Unity check or one real Web export/browser exercise; never substitute a stubbed model/session or a prewritten PASS marker. No suite-wide client/legacy matrix, no 126-check browser campaign and no CI workflow rewrite. Run the existing legacy deterministic fixture only when its touched source warrants it. Unity/C# numeric coverage is unmeasured and no configured runner exists; the repository Testing section names TypeScript/Edge/DOM layers, so retain the full Testing quote and this unmentioned-surface limitation in delivery. Required current PR CI still applies. Implementation evidence includes actual captured Web audio output, measured admitted/mute/pause/no-burst behavior and normal-speed visual observation. Retain playable audio/video for the owner to listen and judge subjective sound quality and whole-feature polish before merge. No human listening or perceived balance is claimed unless actually observed; owner listening is not a mid-sprint implementation prerequisite.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-02",
+        "title": "Focused evidence and maturity disposition"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Check running Unity editor processes before every invocation and never take over an open project. Use the pinned C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe and C:/Python314/python.exe, with no installs. Model cases should take seconds; run the Unity check once and the single Web export once after runtime source freezes. The browser exercise uses an isolated same-origin local profile and real pointer input, no synthetic reward, accelerated clock, direct controller calls, or production debug hook. Capture the first baseline repair run to ordinary defeat, claim, buy and reload, then the upgraded first-enemy outcome. A second fitting reaches ordinary defeat in the faster deterministic Unity check, not a second long browser run. Keep new evidence under ignored campaign-unity/Evidence/last-stand-playable-loop; no temporary outputs enter source roots. If the existing native completion producer remains unavailable, preserve the pending result and report it; this new pair inherits no earlier task-specific completion exception.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-03",
+        "title": "Practical execution limits"
+      }
+    ],
+    "sources": [],
+    "spec_ref": {
+      "artifact_id": "ST-LS-LOOP-SPEC",
+      "binding_mode": "draft_preview",
+      "normative_sha256": "58b5ecaec95493a38751a65320949dd846716b86abf46a6cab82a62161b694aa"
+    },
+    "summary": "Three cohesive tasks deliver the local progression/save, dedicated player scene and feedback, then one bounded real Unity/Web proof. No implementation authority exists before the paired approval receipt.",
+    "tasks": [
+      {
+        "checkpoint": "CP-01",
+        "criterion_refs": [
+          "ST-LS-LOOP-SPEC#AC-01",
+          "ST-LS-LOOP-SPEC#AC-02",
+          "ST-LS-LOOP-SPEC#AC-03"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "All six named C#-executed cases pass after retained RED, including write-success/readback-failure reconciliation.",
+          "One single-record save contract has no silent memory fallback, corrupt-state reset, account/backend integration or new dependency."
+        ],
+        "execution_scope": "CP-01",
+        "id": "T-01",
+        "paths": [
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Plugins.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Plugins/WebGL.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_loop/Program.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_loop/test_loop_model.py"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Tools/last_stand_shop/test_shop.py"
+          }
+        ],
+        "rollback": "Revert only the task-owned playable-loop changes; retain prior art scenes, existing MechanicsShopModel, historical evidence and native approval records. Do not erase or migrate a player save during rollback.",
+        "steps": [
+          "Write the six named compiled-C# cases first using the existing shop harness pattern; retain behavioral RED for reward duplication, cap/price math, malformed state and failed/uncertain save transitions.",
+          "Implement LastStandProgression as pure validated state transitions: level 0..3, cannon damage 20+10*level, cost level+1, zero initial state, monotonic reserved run IDs, one pending ordinary-defeat reward, one-record claim and purchase candidates. Do not reuse or change fixture-only MechanicsShopModel pricing.",
+          "Implement LastStandStore plus the tiny WebGL localStorage get/set/exact-readback bridge. Validate the complete version-1 shape and IDs, handle missing/corrupt/unsupported data explicitly, preserve committed state on failure and reconcile a matching candidate after uncertain writes. Only a successful save unlocks economic transitions. Editor adapter exists only for real Editor checks and is never a successful fallback for blocked Web persistence.",
+          "Run the declared focused command; maps-to TDD obligations AC-01 reward/idempotence, AC-02 transaction/failure and AC-03 price/cap/next-run snapshot."
+        ],
+        "title": "Pure progression and local save transactions",
+        "verification": [
+          {
+            "argv": [
+              "C:\\Python314\\python.exe",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_loop",
+              "-p",
+              "test_loop_model.py",
+              "-v"
+            ],
+            "assertion": "Compile and execute actual LastStandProgression C# with pinned Mono/Roslyn. Inject storage outcomes at its transaction boundary without replacing game logic; assert exact state and failed-write immutability.",
+            "availability": "proposed",
+            "cwd": "candidate worktree",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_defeat_reward_idempotence (test_loop_model.LastStandModelTests)",
+              "test_non_defeat_no_reward (test_loop_model.LastStandModelTests)",
+              "test_upgrade_prices_cap_and_next_run (test_loop_model.LastStandModelTests)",
+              "test_save_shape_and_reload (test_loop_model.LastStandModelTests)",
+              "test_storage_failure_retry (test_loop_model.LastStandModelTests)",
+              "test_uncertain_write_reconciliation (test_loop_model.LastStandModelTests)"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-01",
+        "criterion_refs": [
+          "ST-LS-LOOP-SPEC#AC-01",
+          "ST-LS-LOOP-SPEC#AC-02",
+          "ST-LS-LOOP-SPEC#AC-03",
+          "ST-LS-LOOP-SPEC#AC-04",
+          "ST-LS-LOOP-SPEC#AC-05",
+          "ST-LS-LOOP-SPEC#AC-06"
+        ],
+        "depends_on": [
+          "T-01"
+        ],
+        "done_when": [
+          "The two actual Unity named checks pass after meaningful RED; all six spec criteria have their integrated owner path.",
+          "Saved review and legacy scene hashes and legacy outcomes are preserved; no new art choice, duplicate Canvas/session or review economy exists.",
+          "Pure model tests remain passing after integration; technical failure/pause/focus never award or resume terminal combat."
+        ],
+        "execution_scope": "CP-01",
+        "id": "T-02",
+        "paths": [
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scenes/LastStandPrototype.unity"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scenes/LastStandPrototype.unity.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs.meta"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/ArtHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/BattlefieldReview.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_loop/test_loop_unity.py"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scripts/TankPresentation.cs"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scripts/ReviewBattleHud.cs"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scenes/BattlefieldReview.unity"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scenes/FieldAssembly.unity"
+          }
+        ],
+        "rollback": "Revert only the task-owned playable-loop changes; retain prior art scenes, existing MechanicsShopModel, historical evidence and native approval records. Do not erase or migrate a player save during rollback.",
+        "steps": [
+          "Add the two named real Unity regression cases and a thin unittest launcher; retain RED against actual imported scene/session/model owners before runtime edits. Verify no Unity editor owns the project before invoking the pinned editor.",
+          "Copy the saved battlefield scene to LastStandPrototype using existing art components; add a scene-local LastStandLoopController. Route gameplay explicitly to playable-prototype-v1 before the existing BattlefieldReview-presence route, preserving review/legacy scene bytes. Copy provisional review pacing without rebalance. Supply the committed permanent cannon damage only at Deploy and keep active combat/fitting frozen.",
+          "Reuse ArtHud Canvas and EncounterSession. Add LastStandLoopHud for garage, battle, result and workshop phases. Capture ordinary-defeat metrics before releasing the model; await saved pending reward before Claim; reserve/persist a run before Deploy; map save failures to truthful visible Retry. Hide existing inspection/debug/A-B controls only in gameplay mode; preserve pause/focus/application-pause and terminal transient behavior.",
+          "Implement original procedural clips in LastStandAudio with bounded voices, Deploy-click Web unlock and session mute. Drive cannon, impact/destruction, defeat and purchase cues from existing events/committed transitions; stop voices on pause/focus loss and discard queued events. Let terminal shot/impact finish in a bounded transition before the result card takes focus, without stepping terminal combat.",
+          "Run one real Editor check through the declared wrapper: both fittings reach Defeated; same repair fitting/profile demonstrates actual 20 versus 30 damage; review cannot award; one Canvas/session; compact phase state and pause/terminal/audio admission. Maps-to TDD AC-01..AC-06."
+        ],
+        "title": "Dedicated playable scene, player flow and sound",
+        "verification": [
+          {
+            "argv": [
+              "C:\\Python314\\python.exe",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_loop",
+              "-p",
+              "test_loop_unity.py",
+              "-v"
+            ],
+            "assertion": "Launch the pinned actual Unity Editor once through LastStandLoopChecks; verify real imported TankPresentation/EncounterSession/EncounterModel plus save adapter and UI/audio owners. Parse actual check results and reject missing/failed markers; no fake Unity framework.",
+            "availability": "proposed",
+            "cwd": "candidate worktree",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_real_session_modes_and_damage (test_loop_unity.LastStandUnityTests)",
+              "test_pause_terminal_ui_and_audio_lifecycle (test_loop_unity.LastStandUnityTests)"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-01",
+        "criterion_refs": [
+          "ST-LS-LOOP-SPEC#AC-01",
+          "ST-LS-LOOP-SPEC#AC-02",
+          "ST-LS-LOOP-SPEC#AC-03",
+          "ST-LS-LOOP-SPEC#AC-04",
+          "ST-LS-LOOP-SPEC#AC-05",
+          "ST-LS-LOOP-SPEC#AC-06"
+        ],
+        "depends_on": [
+          "T-02"
+        ],
+        "done_when": [
+          "The named real-browser loop passes against the exact fresh build with retained automated evidence, actual captured Web audio, measured audio admission/suppression/no-burst behavior and a normal-speed visual observation. Playable audio/video is retained for owner listening before merge; human listening is not required to finish this implementation task.",
+          "Source/scene preservation is proven; focused model and Unity results remain applicable to frozen sources. Numeric C# coverage remains unmeasured, not fabricated.",
+          "Independent completion review and CP-01 quality disposition cover the exact final implementation evidence; owner listening, whole-feature polish, A/B/motion acceptance and deferred live-player feedback remain separate, and merge remains forbidden."
+        ],
+        "execution_scope": "CP-01",
+        "id": "T-03",
+        "paths": [
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs.meta"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/build_web.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/make_web_entry.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/web-index-template.html"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/README.md"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs/LAST-STAND-ROADMAP.md"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/verify_last_stand_loop.py"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-playable-loop-validation.md"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Tools/native_chrome.py"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Tools/input_observer.py"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Tools/verify_visual_review.py"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Editor/VisualReviewBuild.cs"
+          }
+        ],
+        "rollback": "Revert only the task-owned playable-loop changes; retain prior art scenes, existing MechanicsShopModel, historical evidence and native approval records. Do not erase or migrate a player save during rollback.",
+        "steps": [
+          "Add LastStandLoopBuild and the last-stand scene route to build_web.py without changing field/review/gallery defaults. Preserve before/after saved-scene hashes and existing source binding; include the new approved spec/plan identities in this build evidence without inventing a new provenance framework. Make Web title/loading copy mode-aware with Last Stand for this route.",
+          "Create one focused unittest-compatible verify_last_stand_loop.py using native_chrome and existing real-pointer observation helpers. It performs one build_web.py --scene last-stand export with the pinned editor, prepares the mode-aware entry, verifies its fresh source binding, serves that exact build and exercises the normal-speed repair-fitting loop. Reuse the browser driver; do not add a production diagnostic mode.",
+          "Observe first baseline cannon hit leaves 10 HP, continue to ordinary defeat, retain a pending reward across same-origin reload, Claim once, buy level 1 for one salvage, reload again and Redeploy; observe the first identical foe die on one cannon hit. Assert wallet/level/save UI and real-pointer action sequence, compact 800x600 primary-action reachability, normal 1280x720 layout, and no errors. Retain screenshots, short normal-speed video with actual captured Web audio output, a normal-speed visual observation and the source-bound result. The test must fail if an observed gameplay or save outcome is missing.",
+          "Exercise visible mute and pause/focus without duplicate sounds or combat advancement. Capture actual Web audio output for cannon/impact/defeat/purchase cues at normal speed and measure output when admitted versus muted, paused or hidden, including no queued burst on resume; event callback logs alone do not prove audio output. Retain playable audio/video for owner listening and subjective polish acceptance before merge. Inspect storage-blocked/corrupt state through the real bridge using the focused test setup without erasing a user save. Browser output must distinguish measured audio output and visual observations from any human listening that has actually occurred; do not report an unperformed listen as completed.",
+          "Update README/roadmap and a concise validation note with actual commands/results, configured-tooling limits, prototype tuning, local save ceiling and pending owner art/live-player acceptance. No acceptance claim, merge, deployment, or future result is prewritten. Maps-to TDD AC-01..AC-06; root runs required current-head PR CI after authorized commit/push."
+        ],
+        "title": "One source-bound Web loop proof and handoff",
+        "verification": [
+          {
+            "argv": [
+              "C:\\Python314\\python.exe",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools",
+              "-p",
+              "verify_last_stand_loop.py",
+              "-v"
+            ],
+            "assertion": "One actual source-bound Unity Web export and normal-speed real-browser pointer journey proves defeat, staged/claimed reward, purchase, same-origin reload, improved next-run damage, compact controls and actual storage-failure UI. Actual captured Web audio and measured admitted/mute/pause/no-burst output support implementation verification. Subjective listening and whole-feature polish judgment remain at owner acceptance before merge; never claim an unperformed listen. No synthetic pass or broad matrix.",
+            "availability": "proposed",
+            "cwd": "candidate worktree",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_defeat_buy_reload_redeploy (verify_last_stand_loop.LastStandWebTests)"
+            ]
+          }
+        ]
+      }
+    ],
+    "title": "Last Stand playable loop plan",
+    "verification_inputs": {
+      "exclude_directories": [],
+      "roots": [
+        "campaign-unity/Unity/Assets",
+        "campaign-unity/Unity/ProjectSettings",
+        "campaign-unity/Unity/Packages",
+        "campaign-unity/Tools",
+        "campaign-unity/README.md",
+        "campaign-unity/docs"
+      ]
+    }
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../specs/last-stand-playable-loop.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 4,
+  "schema_version": "0.3.1",
+  "slug": "last-stand-playable-loop"
+}
+</script>
+</body></html>

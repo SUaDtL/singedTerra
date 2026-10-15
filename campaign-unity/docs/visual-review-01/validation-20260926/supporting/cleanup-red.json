@@ -1,0 +1,22 @@
+[
+  {
+    "script": "verify_inspection.py",
+    "injected": "viewport startup failure",
+    "exit": 1,
+    "owned_processes": 1,
+    "closed_before_controller_cleanup": [
+      false
+    ],
+    "controller_cleanup_complete": true
+  },
+  {
+    "script": "verify_encounter.py",
+    "injected": "viewport startup failure",
+    "exit": 1,
+    "owned_processes": 1,
+    "closed_before_controller_cleanup": [
+      false
+    ],
+    "controller_cleanup_complete": true
+  }
+]

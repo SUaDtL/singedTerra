@@ -8,8 +8,8 @@ import {
 
 const TRANSITION_VIEWPORT = { width: 1180, height: 860 } as const;
 const CAMPAIGN_TRANSITIONS = [
-  { width: 1220, height: 900, splitSupport: true, splitMission: true },
-  { width: 1180, height: 900, splitSupport: false, splitMission: true },
+  { width: 1800, height: 900, splitSupport: true, splitMission: true },
+  { width: 1220, height: 900, splitSupport: false, splitMission: true },
   { width: 900, height: 720, splitSupport: false, splitMission: true },
   { width: 820, height: 720, splitSupport: false, splitMission: false },
 ] as const;

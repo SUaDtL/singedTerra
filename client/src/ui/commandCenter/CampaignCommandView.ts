@@ -4,6 +4,7 @@ import { createCampaignLoadout, type CampaignLoadout } from '../../campaign/load
 import { ASH_ROAD_EPISODE } from '../../campaign/content/episode';
 import { ASH_ROAD_STORY } from '../../campaign/content/story';
 import type { CampaignResumeCandidate } from './CampaignSavePresentation';
+import { createLastStandCommandView } from './LastStandCommandView';
 import {
   createPreparationFrame,
   createPreparationPrimaryAction,
@@ -537,10 +538,18 @@ export function createAshRoadCommandCategoryContribution<
     order: 10,
     availability: () => true,
     provideItems: () => [{
+      id: commandItemId('last-stand'),
+      summary: {
+        label: 'Last Stand',
+        description: 'Survive, salvage, upgrade, and redeploy.',
+      },
+      availability: () => true,
+      createView: (viewHost) => createLastStandCommandView<Context>(viewHost),
+    }, {
       id: commandItemId('ash-road'),
       summary: {
         label: 'Ash Road',
-        description: 'Escort the refinery convoy through hostile ground.',
+        description: 'Legacy campaign. Start or continue your refinery convoy.',
       },
       availability: () => true,
       createView: (viewHost, viewContext, viewLifetime) => createCampaignCommandView(

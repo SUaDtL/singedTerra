@@ -1,0 +1,595 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!29 &1
+OcclusionCullingSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_OcclusionBakeSettings:
+    smallestOccluder: 5
+    smallestHole: 0.25
+    backfaceThreshold: 100
+  m_SceneGUID: 00000000000000000000000000000000
+  m_OcclusionCullingData: {fileID: 0}
+--- !u!104 &2
+RenderSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 10
+  m_Fog: 0
+  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_FogMode: 3
+  m_FogDensity: 0.01
+  m_LinearFogStart: 0
+  m_LinearFogEnd: 300
+  m_AmbientSkyColor: {r: 0.52, g: 0.54, b: 0.52, a: 1}
+  m_AmbientEquatorColor: {r: 0.29, g: 0.28, b: 0.24, a: 1}
+  m_AmbientGroundColor: {r: 0.15, g: 0.14, b: 0.12, a: 1}
+  m_AmbientIntensity: 1
+  m_AmbientMode: 1
+  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_HaloStrength: 0.5
+  m_FlareStrength: 1
+  m_FlareFadeSpeed: 3
+  m_HaloTexture: {fileID: 0}
+  m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
+  m_DefaultReflectionMode: 0
+  m_DefaultReflectionResolution: 128
+  m_ReflectionBounces: 1
+  m_ReflectionIntensity: 1
+  m_CustomReflection: {fileID: 0}
+  m_Sun: {fileID: 444503173}
+  m_UseRadianceAmbientProbe: 0
+--- !u!157 &3
+LightmapSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
+  m_GISettings:
+    serializedVersion: 2
+    m_BounceScale: 1
+    m_IndirectOutputScale: 1
+    m_AlbedoBoost: 1
+    m_EnvironmentLightingMode: 0
+    m_EnableBakedLightmaps: 1
+    m_EnableRealtimeLightmaps: 0
+  m_LightmapEditorSettings:
+    serializedVersion: 12
+    m_Resolution: 2
+    m_BakeResolution: 40
+    m_AtlasSize: 1024
+    m_AO: 0
+    m_AOMaxDistance: 1
+    m_CompAOExponent: 1
+    m_CompAOExponentDirect: 0
+    m_ExtractAmbientOcclusion: 0
+    m_Padding: 2
+    m_LightmapParameters: {fileID: 0}
+    m_LightmapsBakeMode: 1
+    m_TextureCompression: 1
+    m_ReflectionCompression: 2
+    m_MixedBakeMode: 2
+    m_BakeBackend: 2
+    m_PVRSampling: 1
+    m_PVRDirectSampleCount: 32
+    m_PVRSampleCount: 512
+    m_PVRBounces: 2
+    m_PVREnvironmentSampleCount: 256
+    m_PVREnvironmentReferencePointCount: 2048
+    m_PVRFilteringMode: 1
+    m_PVRDenoiserTypeDirect: 1
+    m_PVRDenoiserTypeIndirect: 1
+    m_PVRDenoiserTypeAO: 1
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
+    m_PVREnvironmentMIS: 1
+    m_PVRCulling: 1
+    m_PVRFilteringGaussRadiusDirect: 1
+    m_PVRFilteringGaussRadiusIndirect: 1
+    m_PVRFilteringGaussRadiusAO: 1
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
+  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
+  m_LightingSettings: {fileID: 0}
+--- !u!196 &4
+NavMeshSettings:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_BuildSettings:
+    serializedVersion: 3
+    agentTypeID: 0
+    agentRadius: 0.5
+    agentHeight: 2
+    agentSlope: 45
+    agentClimb: 0.4
+    ledgeDropHeight: 0
+    maxJumpAcrossDistance: 0
+    minRegionArea: 2
+    manualCellSize: 0
+    cellSize: 0.16666667
+    manualTileSize: 0
+    tileSize: 256
+    buildHeightMesh: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
+    debug:
+      m_Flags: 0
+  m_NavMeshData: {fileID: 0}
+--- !u!1 &444503172
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 444503174}
+  - component: {fileID: 444503173}
+  m_Layer: 0
+  m_Name: GalleryKey
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!108 &444503173
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 444503172}
+  m_Enabled: 1
+  serializedVersion: 12
+  m_Type: 1
+  m_Color: {r: 1, g: 0.92, b: 0.77, a: 1}
+  m_Intensity: 1.6
+  m_Range: 10
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 2
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!4 &444503174
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 444503172}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.38791165, y: -0.27470842, z: 0.12230807, w: 0.8712638}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1304343896
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1304343898}
+  - component: {fileID: 1304343897}
+  m_Layer: 0
+  m_Name: GalleryCamera
+  m_TagString: MainCamera
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!20 &1304343897
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1304343896}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.12, g: 0.13, b: 0.12, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.1
+  far clip plane: 120
+  field of view: 43
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!4 &1304343898
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1304343896}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1666794194
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1666794196}
+  - component: {fileID: 1666794195}
+  m_Layer: 0
+  m_Name: PartsGallery
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1666794195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666794194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77e200fa3a42eaf4ab2029db3173ff71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SingedTerra.PartsGallery.PartsGalleryController
+  viewCamera: {fileID: 1304343897}
+  entries:
+  - id: STK-H01
+    title: Service hull
+    category: Core
+    mount: chassis
+    description: Retained starter component; normalized assembly origin.
+    prefab: {fileID: 6053256315622477619, guid: 385e1fd8790de6a41af463a51fcae0fb, type: 3}
+  - id: STK-T01
+    title: Tracked running gear
+    category: Core
+    mount: chassis
+    description: Retained starter component; normalized assembly origin.
+    prefab: {fileID: 8973363262467984771, guid: e25753785b18fec42b78fb19a2551c3a, type: 3}
+  - id: STK-U01
+    title: Cast turret
+    category: Core
+    mount: turret-ring
+    description: Retained starter component; normalized assembly origin.
+    prefab: {fileID: 8608939666003543014, guid: 0d09e982d325c274f98cc462c442aa1c, type: 3}
+  - id: STK-G01
+    title: Long service cannon
+    category: Gun
+    mount: gun-breech
+    description: Retained starter component; normalized assembly origin.
+    prefab: {fileID: 1569942881232996393, guid: 0afd919ee7028b14eac8716f1cc34412, type: 3}
+  - id: STK-M01
+    title: Field repair unit
+    category: Module
+    mount: side-saddle
+    description: Retained starter component; normalized assembly origin.
+    prefab: {fileID: 1644813634714508658, guid: 5477fb64b690c224d8b1b74ce6cc02ad, type: 3}
+  - id: STK-M02
+    title: Four-tube launcher
+    category: Module
+    mount: side-saddle
+    description: Retained starter component; normalized assembly origin.
+    prefab: {fileID: 7354520542762224177, guid: 26ff6d94eb94fbb4fb142ea36d4227d1, type: 3}
+  - id: STK-G02
+    title: Stub siege cannon
+    category: Gun
+    mount: gun-breech
+    description: Short reinforced barrel, vented sleeve and recessed bore; no selected
+      damage.
+    prefab: {fileID: 6933552084964206981, guid: 44013e99ae9a147408cf50fd0211220e, type: 3}
+  - id: STK-G03
+    title: Twin autocannon
+    category: Gun
+    mount: gun-breech
+    description: Paired barrels and ammunition boxes; visual candidate, no rate or
+      ammunition rules.
+    prefab: {fileID: 6836823326466116411, guid: 4b7b0c25fbadb864eae6e993a14d9861, type: 3}
+  - id: STK-M03
+    title: Survey radar
+    category: Module
+    mount: side-saddle
+    description: A compact dish, console and mast. No targeting unlock or radar gameplay
+      granted.
+    prefab: {fileID: 7557991203433448611, guid: 22cc14e527e4109419ba68fe99f76003, type: 3}
+  - id: STK-M04
+    title: Heat-exchanger pack
+    category: Module
+    mount: side-saddle
+    description: Radiator fins, insulated reservoir and pipework; no heat-resource
+      system selected.
+    prefab: {fileID: 1044567209054612419, guid: c6b60f910e950b24eaed1bf72b18dabf, type: 3}
+  - id: STK-A01
+    title: Glacis applique
+    category: Armor
+    mount: hull-front
+    description: Replaceable bolted front armor shape; not a selected defense-stat
+      increment.
+    prefab: {fileID: 2989176865257746171, guid: a785e4cb68df9384da99748082ad217a, type: 3}
+  - id: STK-A02
+    title: Spaced side skirts
+    category: Armor
+    mount: chassis
+    description: Paired standoff rails and panels. Pair is one art assembly, not
+      two gameplay slots.
+    prefab: {fileID: 1976237897514343228, guid: 65e14735e5182834dbcc7cb9bd93aee8, type: 3}
+  - id: STK-A03
+    title: Turret cheek package
+    category: Armor
+    mount: turret-ring
+    description: Two angled cheek arrays; a visible armor candidate rather than a
+      rarity tier.
+    prefab: {fileID: 3917565797288780483, guid: cd5d13d4f4b84de49b28b14e2e976556, type: 3}
+  - id: STK-C01
+    title: Crew stowage rack
+    category: Cosmetic
+    mount: hull-rear
+    description: Bedroll, tool case and fuel cans; appearance only, no cargo bonus.
+    prefab: {fileID: 139273372062098680, guid: 421902777cb294842ab446d0384a4434, type: 3}
+  - id: STK-C02
+    title: Identification pennant
+    category: Cosmetic
+    mount: turret-rear
+    description: Rigid wind-shaped field pennant; no faction, rank or collection
+      reward selected.
+    prefab: {fileID: 1331230026021381268, guid: 3e752f91f69e1c249ad2d9bc3b1128cf, type: 3}
+  - id: STK-C03
+    title: Bolted unit plaque
+    category: Cosmetic
+    mount: hull-front
+    description: Bronze twin-chevron unit mark; original emblem, no stat or entitlement.
+    prefab: {fileID: 6784817018690568672, guid: e483c385d47a0e740aadb2cd06641dcb, type: 3}
+  - id: STK-B01
+    title: Sandbag wall
+    category: Field base
+    mount: ground
+    description: Three staggered rows with tied ends; scenery only, no blocking or
+      cover rules.
+    prefab: {fileID: 1143143305063335694, guid: 27ef42595203f434b84a89234c5b50e8, type: 3}
+  - id: STK-B02
+    title: Blast barrier
+    category: Field base
+    mount: ground
+    description: Low concrete barrier with lift eyes and hazard stripes; no collision
+      contract.
+    prefab: {fileID: 8589683050610224777, guid: f48d405750062bf418db3c8879bf76a9, type: 3}
+  - id: STK-B03
+    title: Supply pallet
+    category: Field base
+    mount: ground
+    description: Pallet, strapped transit cases and shell crate; scenery, not inventory
+      or rewards.
+    prefab: {fileID: 7548005035661751837, guid: bb8e058b875c44b429e12d0c1ec09266, type: 3}
+  - id: STK-B04
+    title: Maintenance generator
+    category: Field base
+    mount: ground
+    description: Engine, radiator, service hatch and hazard panel; scenery, no power
+      currency.
+    prefab: {fileID: 8549488777780648709, guid: eb326cabdca2a0b459d2a87a1ab6d4a3, type: 3}
+  - id: STK-S01
+    title: Service
+    category: Assembly
+    mount: complete tank
+    description: 'Olive service study: G01 cannon, M01 module and C01 fitting.'
+    prefab: {fileID: 7576351743980252814, guid: ed6a09d1124004f42be0150d95fa0a14, type: 3}
+  - id: STK-S02
+    title: Bulwark
+    category: Assembly
+    mount: complete tank
+    description: 'Slate armor study: G02 gun, M04 module and A01-A03 armor.'
+    prefab: {fileID: 4732286141104463204, guid: 779719def38ef4d48ada54d9c57d5ff9, type: 3}
+  - id: STK-S03
+    title: Fire support
+    category: Assembly
+    mount: complete tank
+    description: 'Oxide support study: G03 gun, M02 module and C02-C03 fittings.'
+    prefab: {fileID: 4584166135225130415, guid: c4d3391a3da1e234bbfbf7a666896a4f, type: 3}
+--- !u!4 &1666794196
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666794194}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1831715471
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1831715474}
+  - component: {fileID: 1831715473}
+  - component: {fileID: 1831715472}
+  m_Layer: 0
+  m_Name: Inspection plinth
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &1831715472
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831715471}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 3c90e2c9d22ae9f47aa567baf65e21c8, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1831715473
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831715471}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1831715474
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831715471}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.16, z: 0}
+  m_LocalScale: {x: 7.2, y: 0.14, z: 7.2}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 1304343898}
+  - {fileID: 444503174}
+  - {fileID: 1831715474}
+  - {fileID: 1666794196}

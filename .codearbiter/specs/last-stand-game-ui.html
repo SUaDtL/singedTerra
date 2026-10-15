@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand game UI and background play — Field Console · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-UI-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-game-ui.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">APPROVED · authority must be verified at use</span><h1>Last Stand game UI and background play — Field Console</h1><p class="deck">Replace oversized prototype overlays with a coherent live Unity interface and continue the active idle run across focus loss and hidden-tab throttling, preserving combat/economy/saves, explicit Pause and manual Claim; deliver a source-bound localhost preview for owner review.</p><div class="meta"><span>ST-LS-UI-SPEC</span><span>Revision 5 · schema 0.3.1</span><span>64 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INTENT-01 -->
+<article class="record" id="INTENT-01" data-ca-symbol="INTENT-01" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-01">INTENT-01</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Players using the dedicated Last Stand browser mode; the owner previews it on localhost.</div><div class="field"><span class="label">Outcome</span>A consistent Field Console interface makes the existing garage-to-defeat-to-upgrade loop legible, operable and visually coherent with its battlefield. An unpaused active run continues logically while the loaded page is unfocused or hidden and returns with current state rather than requiring Resume.</div><div class="field"><span class="label">Problem</span>The current Last Stand screen has oversized generic panels that obscure the tank and do not provide the readable hierarchy and compact battle interface needed for a polished first piece. The current focus/frame-gap suspension also prevents the loaded idle run from progressing when the player switches windows.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-02">SOURCE-02</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div></article>
+<!-- CA:END:INTENT-01 -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:SCOPE-01 -->
+<article class="record" id="SCOPE-01" data-ca-symbol="SCOPE-01" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-01">SCOPE-01</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Replace the dedicated Last Stand garage presentation with Field Console A: a readable loadout card, visible tank and primary Deploy action.</div></article>
+<!-- CA:END:SCOPE-01 -->
+
+<!-- CA:BEGIN:SCOPE-02 -->
+<article class="record" id="SCOPE-02" data-ca-symbol="SCOPE-02" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-02">SCOPE-02</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Replace the combat presentation with an edge-aligned HUD for hull, elapsed time, disabled enemies, cannon damage, fitting, pause/resume and sound.</div></article>
+<!-- CA:END:SCOPE-02 -->
+
+<!-- CA:BEGIN:SCOPE-03 -->
+<article class="record" id="SCOPE-03" data-ca-symbol="SCOPE-03" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-03">SCOPE-03</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Apply the same interface to settling, pending defeat, Claim, permanent Cannon Attack workshop and storage-recovery states.</div></article>
+<!-- CA:END:SCOPE-03 -->
+
+<!-- CA:BEGIN:SCOPE-04 -->
+<article class="record" id="SCOPE-04" data-ca-symbol="SCOPE-04" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-04">SCOPE-04</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Deliver responsive pointer, touch and keyboard controls plus the existing native Return to Campaigns and unfinished-run/save disclosure.</div></article>
+<!-- CA:END:SCOPE-04 -->
+
+<!-- CA:BEGIN:SCOPE-05 -->
+<article class="record" id="SCOPE-05" data-ca-symbol="SCOPE-05" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-05">SCOPE-05</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Rebuild and package the dedicated Unity Web runtime with matching source receipts, preserve progression/save and explicit pause/mute contracts under the approved background policy, and update the localhost preview for owner inspection.</div></article>
+<!-- CA:END:SCOPE-05 -->
+
+<!-- CA:BEGIN:SCOPE-06 -->
+<article class="record" id="SCOPE-06" data-ca-symbol="SCOPE-06" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-06">SCOPE-06</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Continue an active dedicated Last Stand run while its loaded page is unfocused or hidden, account for elapsed time after browser throttling, preserve explicit Pause and manual exactly-once Claim, and restore current foreground feedback without replaying missed cues.</div></article>
+<!-- CA:END:SCOPE-06 -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:NON-GOAL-01 -->
+<article class="record" id="NON-GOAL-01" data-ca-symbol="NON-GOAL-01" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-GOAL-01">NON-GOAL-01</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No game-balance/economy/skill/equipment expansion, temporary in-run Mechanics Shop, accounts, network progression, world art/camera changes, new dependency or publication.</div></article>
+<!-- CA:END:NON-GOAL-01 -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APPROACH-01 -->
+<article class="record" id="APPROACH-01" data-ca-symbol="APPROACH-01" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-01">APPROACH-01</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DECISION-01">DECISION-01</a></li><li><a href="#DECISION-02">DECISION-02</a></li><li><a href="#DECISION-04">DECISION-04</a></li></ul></div><div class="field"><span class="label">Choice</span>Select generated candidate A Field Console under the user instruction to implement the best idea. Use the existing Unity Canvas as the single in-game presentation owner, live text/buttons and bounded responsive layout. Keep the native HTML navigation shell. Opt only the dedicated Last Stand runtime into background operation and drive its unchanged fixed-step model from a same-document monotonic elapsed clock with bounded catch-up; coalesce presentation and suppress missed audio cues.</div><div class="field"><span class="label">Tradeoff</span>A provides clear primary actions and compact framed values. B offers more open space but weaker grouping; C adds physical texture but consumes visual attention. A requires deliberate compact reflow and focus styling; it avoids a second browser HUD/state synchronization owner. A background setting alone cannot defeat browser throttling. Elapsed-time reconciliation preserves logical progress without a worker, server or new storage scheme; frames may be delayed until the browser schedules the page again.</div></article>
+<!-- CA:END:APPROACH-01 -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:CONSTRAINT-01 -->
+<article class="record" id="CONSTRAINT-01" data-ca-symbol="CONSTRAINT-01" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-01">CONSTRAINT-01</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li><li>SCOPE-05</li><li>SCOPE-06</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>This UI and requested background-play feature requires its own native specification and plan approval before implementation. It does not widen or approve diagnostic T-06. Preserve the original Last Stand and foundation artifacts, receipts and historical evidence; new focus-policy verification belongs to this feature.</div></article>
+<!-- CA:END:CONSTRAINT-01 -->
+
+<!-- CA:BEGIN:CONSTRAINT-02 -->
+<article class="record" id="CONSTRAINT-02" data-ca-symbol="CONSTRAINT-02" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-02">CONSTRAINT-02</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li><li>SCOPE-05</li><li>SCOPE-06</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>UI reads actual loop/session/progression state and routes actions to existing owners. The only runtime behavior expansion is dedicated Last Stand background timing, explicit-pause accounting, settling and lifecycle feedback admission. Preserve EncounterModel rules, 20 Hz ordering and terminal horizon, one local save, exact-once manual Claim, prices/rewards and 20/30/40/50 damage with 1/2/3 salvage costs. No closed-page/reload/offline rewards or automatic Claim, purchase or redeploy.</div></article>
+<!-- CA:END:CONSTRAINT-02 -->
+
+<!-- CA:BEGIN:CONSTRAINT-03 -->
+<article class="record" id="CONSTRAINT-03" data-ca-symbol="CONSTRAINT-03" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-03">CONSTRAINT-03</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li><li>SCOPE-05</li><li>SCOPE-06</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve current tank, terrain, camera and battlefield treatments. Existing owner A/B keep/change/mix, normal-speed motion, listening and whole-feature acceptance remain separate. UI concept selection does not accept battlefield art or current runtime audio.</div></article>
+<!-- CA:END:CONSTRAINT-03 -->
+
+<!-- CA:BEGIN:CONSTRAINT-04 -->
+<article class="record" id="CONSTRAINT-04" data-ca-symbol="CONSTRAINT-04" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-04">CONSTRAINT-04</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li><li>SCOPE-05</li><li>SCOPE-06</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>No accounts, Supabase, verified rewards, MechanicsShopModel, temporary in-run shop, new gameplay systems, dependencies, telemetry, persistent configuration, Android work or public publication. Scope runInBackground to the dedicated Last Stand runtime lifecycle; preserve its prior value when leaving that runtime. Preserve Ash Road route/save and classic battle-console ADR-0017/0018 ownership.</div></article>
+<!-- CA:END:CONSTRAINT-04 -->
+
+<!-- CA:BEGIN:CONSTRAINT-05 -->
+<article class="record" id="CONSTRAINT-05" data-ca-symbol="CONSTRAINT-05" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-05">CONSTRAINT-05</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li><li>SCOPE-05</li><li>SCOPE-06</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>Bound source edits to LastStandLoopHud.cs, optional LastStandHudLayout.cs and LastStandRunClock.cs, LastStandLoopController.cs, LastStandAudio.cs and EncounterSession.cs for dedicated playable-policy isolation; TankPresentation.cs only if its focus/terminal-feedback guards need matching isolation, with no art/camera treatment change. Permit LastStandLoopChecks.cs, existing encounter/pose/preservation checks and focused additions, the Last Stand browser journey/layout assertions, native web entry styling, source-bound build/package outputs and dedicated documentation. Do not edit LastStandProgression, LastStandStore, EncounterModel, global ProjectSettings, scenes, world art or other routes.</div></article>
+<!-- CA:END:CONSTRAINT-05 -->
+
+<!-- CA:BEGIN:CONSTRAINT-06 -->
+<article class="record" id="CONSTRAINT-06" data-ca-symbol="CONSTRAINT-06" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-06">CONSTRAINT-06</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li><li>SCOPE-05</li><li>SCOPE-06</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>Render labels and values as live text and controls; the concept raster is a reference, never a flattened interactive screen. Keep stable button identities, current gating and ST_LS_HUD_LAYOUT observations. Optional decoration must not cover input, mask disabled states or become behavioral authority.</div></article>
+<!-- CA:END:CONSTRAINT-06 -->
+
+<!-- CA:BEGIN:CONSTRAINT-07 -->
+<article class="record" id="CONSTRAINT-07" data-ca-symbol="CONSTRAINT-07" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CONSTRAINT-07">CONSTRAINT-07</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>SCOPE-01</li><li>SCOPE-02</li><li>SCOPE-03</li><li>SCOPE-04</li><li>SCOPE-05</li><li>SCOPE-06</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>No stage, commit, push, PR, merge, remote deployment, dependency install or unrelated process cleanup under this UI request. Keep the user preview running and preserve all dirty work and historical proof.</div></article>
+<!-- CA:END:CONSTRAINT-07 -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:DECISION-01 -->
+<article class="record" id="DECISION-01" data-ca-symbol="DECISION-01" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DECISION-01">DECISION-01</a><h3>Selected interface</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>A Field Console: graphite/olive panels, brass accents, ivory live text, distinct primary action, compact perimeter battle HUD.</div><div class="field"><span class="label">Rationale</span>The user delegated choosing the best concept. A is the strongest match to the actual tank and improves hierarchy without excessive ornamental metal.</div><div class="field"><span class="label">Source ref</span><a href="#SOURCE-01">SOURCE-01</a></div></article>
+<!-- CA:END:DECISION-01 -->
+
+<!-- CA:BEGIN:DECISION-02 -->
+<article class="record" id="DECISION-02" data-ca-symbol="DECISION-02" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DECISION-02">DECISION-02</a><h3>Presentation owner</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Retain the existing dedicated Unity Canvas; use live UI controls and responsive layout. Do not introduce a second HTML in-game HUD or new framework.</div><div class="field"><span class="label">Rationale</span>Current state and intents already live behind the Unity loop owner; all required values are exposed. This limits synchronization/focus risk and retains browser/mobile-project continuity.</div><div class="field"><span class="label">Source ref</span><a href="#SOURCE-03">SOURCE-03</a></div></article>
+<!-- CA:END:DECISION-02 -->
+
+<!-- CA:BEGIN:DECISION-03 -->
+<article class="record" id="DECISION-03" data-ca-symbol="DECISION-03" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DECISION-03">DECISION-03</a><h3>Visual parameters</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Use HULL terminology and actual current/120 value, green hull fill with numeric status, amber primary actions,44 pixel minimum targets,14 pixel minimum text,4.5:1 normal text contrast and five listed viewport profiles.</div><div class="field"><span class="label">Rationale</span>Generated ARMOR wording and missing timer/kills are corrected to the actual model. Numeric readability and geometry limits make polish reviewable while final owner visual acceptance remains explicit.</div><div class="field"><span class="label">Source ref</span><a href="#SOURCE-03">SOURCE-03</a></div></article>
+<!-- CA:END:DECISION-03 -->
+
+<!-- CA:BEGIN:DECISION-04 -->
+<article class="record" id="DECISION-04" data-ca-symbol="DECISION-04" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DECISION-04">DECISION-04</a><h3>Dedicated Last Stand background policy</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Unpaused runs continue across window blur, hidden tabs and delayed callbacks while the same document remains loaded. Explicit Pause excludes elapsed paused time. Use the existing 0.05 second model step with at most 128 steps per callback and retain remaining debt up to the existing terminal horizon. Background and catch-up cues are silent; new eligible foreground cues resume after reconciliation. Claim remains manual; no automatic purchase/redeploy or closed-page progression.</div><div class="field"><span class="label">Rationale</span>The user explicitly requested idle background play. Same-document elapsed reconciliation addresses actual browser throttling, with bounded CPU work and unchanged deterministic combat/economy. Background silence retains the current sound expectation and prevents an audible burst on return. Budget is a reversible implementation parameter selected for this draft.</div><div class="field"><span class="label">Source ref</span><a href="#SOURCE-05">SOURCE-05</a></div></article>
+<!-- CA:END:DECISION-04 -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:AC-01 -->
+<article class="record" id="AC-01" data-ca-symbol="AC-01" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-01">AC-01</a><h3>Garage hierarchy and fitting</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Values match domain state; one primary Deploy is present, disabled when the existing domain gate denies deployment.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-01">SCOPE-01</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Ready garage at base and upgraded levels, both fittings.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-01 -->
+<article class="record" id="SCENARIO-01" data-ca-symbol="SCENARIO-01" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-01">SCENARIO-01</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Ready garage at base and upgraded levels, both fittings.</div><div class="field"><span class="label">Then</span>Values match domain state; one primary Deploy is present, disabled when the existing domain gate denies deployment.</div><div class="field"><span class="label">When</span>Load garage and activate the fitting control.</div></article>
+<!-- CA:END:SCENARIO-01 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>A ready garage shows current fitting, Cannon Attack level/cap, damage, salvage, next upgrade and local save status. Deploy is visually primary and uses the existing readiness gates. Fit Launcher/Repair updates the actual selected attachment and live fitting label without changing progression.</div><div class="field"><span class="label">Trigger</span>Load garage and activate the fitting control.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-01 -->
+<article class="record" id="VERIFY-01" data-ca-symbol="VERIFY-01" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-01">VERIFY-01</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Force denied deployment and switch fitting; no false-ready value or hidden gate is permitted.</div><div class="field"><span class="label">Oracle</span>Values match domain state; one primary Deploy is present, disabled when the existing domain gate denies deployment.</div><div class="field"><span class="label">Planned target</span>Actual Unity geometry/state checks and source-bound browser screenshots of garage.</div></article>
+<!-- CA:END:VERIFY-01 -->
+</div></article>
+<!-- CA:END:AC-01 -->
+
+<!-- CA:BEGIN:AC-02 -->
+<article class="record" id="AC-02" data-ca-symbol="AC-02" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-02">AC-02</a><h3>Compact battle HUD</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>The HUD follows the actual model and leaves the stated central area clear; resume and mute route to existing owners.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-02">SCOPE-02</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Running and paused encounters with changing hull/tick/kills.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-02 -->
+<article class="record" id="SCENARIO-02" data-ca-symbol="SCENARIO-02" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-02">SCENARIO-02</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Running and paused encounters with changing hull/tick/kills.</div><div class="field"><span class="label">Then</span>The HUD follows the actual model and leaves the stated central area clear; resume and mute route to existing owners.</div><div class="field"><span class="label">When</span>Run and pause the encounter.</div></article>
+<!-- CA:END:SCENARIO-02 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>During a real run, show live HULL with a filled bar and current/120 value, elapsed time, disabled count, committed cannon damage and fitting. Pause/Resume and Sound remain reachable. No opaque panel intersects the central 60 percent width by 60 percent height rectangle; all combat chrome together occupies at most 25 percent of canvas area. Paused state is visible.</div><div class="field"><span class="label">Trigger</span>Run and pause the encounter.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-02 -->
+<article class="record" id="VERIFY-02" data-ca-symbol="VERIFY-02" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-02">VERIFY-02</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>At base and upgraded damage, stale values or central panel placement fail.</div><div class="field"><span class="label">Oracle</span>The HUD follows the actual model and leaves the stated central area clear; resume and mute route to existing owners.</div><div class="field"><span class="label">Planned target</span>Focused layout checks plus actual browser geometry, screenshot and normal-speed movie.</div></article>
+<!-- CA:END:VERIFY-02 -->
+</div></article>
+<!-- CA:END:AC-02 -->
+
+<!-- CA:BEGIN:AC-03 -->
+<article class="record" id="AC-03" data-ca-symbol="AC-03" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-03">AC-03</a><h3>Settling and defeat Claim</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>No premature or repeated award; presentation distinguishes pending earned salvage from wallet and accurately reflects existing gates.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-03">SCOPE-03</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>A defeated encounter settles and persists its pending award.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-03 -->
+<article class="record" id="SCENARIO-03" data-ca-symbol="SCENARIO-03" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-03">SCENARIO-03</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A defeated encounter settles and persists its pending award.</div><div class="field"><span class="label">Then</span>No premature or repeated award; presentation distinguishes pending earned salvage from wallet and accurately reflects existing gates.</div><div class="field"><span class="label">When</span>Observe settling, Claim and reload.</div></article>
+<!-- CA:END:SCENARIO-03 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>Settling presents the last-impact state without an actionable Claim. A persisted pending defeat shows actual duration/kills, earned 1 salvage separately from wallet balance, and one Claim action. Claim enters workshop through the existing exactly-once owner. Reloading pending defeat or claimed state preserves those semantics.</div><div class="field"><span class="label">Trigger</span>Observe settling, Claim and reload.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-03 -->
+<article class="record" id="VERIFY-03" data-ca-symbol="VERIFY-03" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-03">VERIFY-03</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Duplicate Claim and failed persistence retain current guard outcomes and honest labels.</div><div class="field"><span class="label">Oracle</span>No premature or repeated award; presentation distinguishes pending earned salvage from wallet and accurately reflects existing gates.</div><div class="field"><span class="label">Planned target</span>Existing production progression journey extended with settling/result screenshots and focused UI state checks.</div></article>
+<!-- CA:END:VERIFY-03 -->
+</div></article>
+<!-- CA:END:AC-03 -->
+
+<!-- CA:BEGIN:AC-04 -->
+<article class="record" id="AC-04" data-ca-symbol="AC-04" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-04">AC-04</a><h3>Workshop upgrade and redeploy</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Live values and disabled states match progression; no invented equipment or temporary shop is shown.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-03">SCOPE-03</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Workshop with enough/insufficient salvage and capped upgrade.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-04 -->
+<article class="record" id="SCENARIO-04" data-ca-symbol="SCENARIO-04" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-04">SCENARIO-04</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Workshop with enough/insufficient salvage and capped upgrade.</div><div class="field"><span class="label">Then</span>Live values and disabled states match progression; no invented equipment or temporary shop is shown.</div><div class="field"><span class="label">When</span>Purchase, reload and redeploy through public controls.</div></article>
+<!-- CA:END:SCENARIO-04 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>Workshop presents actual level/cap, wallet, current damage, next damage and cost, affordable/disabled states, fitting choice and Redeploy. A base-to-first upgrade displays 20 to 30 for 1 salvage and becomes 30 after successful purchase; cap shows MAX without a purchase offer. Redeploy follows existing readiness rules.</div><div class="field"><span class="label">Trigger</span>Purchase, reload and redeploy through public controls.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-04 -->
+<article class="record" id="VERIFY-04" data-ca-symbol="VERIFY-04" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-04">VERIFY-04</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Failed purchase cannot show bought state; capped and insufficient-wallet controls stay disabled.</div><div class="field"><span class="label">Oracle</span>Live values and disabled states match progression; no invented equipment or temporary shop is shown.</div><div class="field"><span class="label">Planned target</span>Actual existing purchase/reload/stronger-redeploy journey and focused cap/insufficient-wallet UI checks.</div></article>
+<!-- CA:END:VERIFY-04 -->
+</div></article>
+<!-- CA:END:AC-04 -->
+
+<!-- CA:BEGIN:AC-05 -->
+<article class="record" id="AC-05" data-ca-symbol="AC-05" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-05">AC-05</a><h3>Honest save and load recovery</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Visible error and disabled controls agree with the existing owner; successful retry returns the real recovered state.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-03">SCOPE-03</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Existing denied storage, corrupt record, load error and failed save fixtures.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-05 -->
+<article class="record" id="SCENARIO-05" data-ca-symbol="SCENARIO-05" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-05">SCENARIO-05</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Existing denied storage, corrupt record, load error and failed save fixtures.</div><div class="field"><span class="label">Then</span>Visible error and disabled controls agree with the existing owner; successful retry returns the real recovered state.</div><div class="field"><span class="label">When</span>Load or attempt existing transitions and use Retry/Return.</div></article>
+<!-- CA:END:SCENARIO-05 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>Blocked/corrupt/loading/failed-save states show a readable specific status with current Retry Save availability and native Return. They do not claim local-save readiness, earned awards or successful purchase before the current owner reports successful persistence. Notices survive layout changes without clipping.</div><div class="field"><span class="label">Trigger</span>Load or attempt existing transitions and use Retry/Return.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-05 -->
+<article class="record" id="VERIFY-05" data-ca-symbol="VERIFY-05" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-05">VERIFY-05</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Inject existing fault fixtures; a ready badge or hidden error before recovery fails.</div><div class="field"><span class="label">Oracle</span>Visible error and disabled controls agree with the existing owner; successful retry returns the real recovered state.</div><div class="field"><span class="label">Planned target</span>Existing storage/load fault journey and focused UI error-state/geometry assertions.</div></article>
+<!-- CA:END:VERIFY-05 -->
+</div></article>
+<!-- CA:END:AC-05 -->
+
+<!-- CA:BEGIN:AC-06 -->
+<article class="record" id="AC-06" data-ca-symbol="AC-06" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-06">AC-06</a><h3>Responsive reading and operable controls</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Every active control and required label fits and remains readable; compact reflow keeps the tank/battle visible and primary actions clear.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-04">SCOPE-04</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Each listed phase and viewport profile.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-06 -->
+<article class="record" id="SCENARIO-06" data-ca-symbol="SCENARIO-06" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-06">SCENARIO-06</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Each listed phase and viewport profile.</div><div class="field"><span class="label">Then</span>Every active control and required label fits and remains readable; compact reflow keeps the tank/battle visible and primary actions clear.</div><div class="field"><span class="label">When</span>Resize, inspect and operate all active public controls.</div></article>
+<!-- CA:END:SCENARIO-06 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>Garage, combat, result, workshop and error layouts fit 1366x768 and 1920x1080 desktop,390x844 portrait,844x390 narrow landscape and720x640 compact views. Visible text is at least 14 CSS-equivalent pixels, interactive targets at least 44x44 CSS-equivalent pixels and normal text contrast at least 4.5:1. No label/control is clipped, offscreen or overlapped; focus, disabled, hover/press and active toggle states remain distinguishable without color alone.</div><div class="field"><span class="label">Trigger</span>Resize, inspect and operate all active public controls.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-06 -->
+<article class="record" id="VERIFY-06" data-ca-symbol="VERIFY-06" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-06">VERIFY-06</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Long storage notice and narrow landscape must not obscure buttons or silently truncate required content.</div><div class="field"><span class="label">Oracle</span>Every active control and required label fits and remains readable; compact reflow keeps the tank/battle visible and primary actions clear.</div><div class="field"><span class="label">Planned target</span>Pure/Unity layout assertions, actual public browser viewport screenshots and owner visual review.</div></article>
+<!-- CA:END:VERIFY-06 -->
+</div></article>
+<!-- CA:END:AC-06 -->
+
+<!-- CA:BEGIN:AC-07 -->
+<article class="record" id="AC-07" data-ca-symbol="AC-07" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-07">AC-07</a><h3>Keyboard and native navigation continuity</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>One UI owner receives each action; no double activation, trapped Return or awarded unfinished run; Ash Road continues its existing save.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-04">SCOPE-04</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Dedicated Last Stand reached from Campaigns with an existing compatible Ash Road save.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-07 -->
+<article class="record" id="SCENARIO-07" data-ca-symbol="SCENARIO-07" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-07">SCENARIO-07</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Dedicated Last Stand reached from Campaigns with an existing compatible Ash Road save.</div><div class="field"><span class="label">Then</span>One UI owner receives each action; no double activation, trapped Return or awarded unfinished run; Ash Road continues its existing save.</div><div class="field"><span class="label">When</span>Use native keyboard Launch, in-game controls, Tab/Shift+Tab and Return; exit an unfinished run.</div></article>
+<!-- CA:END:SCENARIO-07 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li></ul></div><div class="field"><span class="label">Statement</span>Keyboard traverses active enabled Unity actions in visible order, shows a visible focus treatment, activates each with its supported key and reaches native Return after readiness. Pointer/touch click areas match reported visual bounds. Return and unfinished-run disclosure remain visible and preserve no-award exit/reload plus Ash Road routing/save continuity.</div><div class="field"><span class="label">Trigger</span>Use native keyboard Launch, in-game controls, Tab/Shift+Tab and Return; exit an unfinished run.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-07 -->
+<article class="record" id="VERIFY-07" data-ca-symbol="VERIFY-07" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-07">VERIFY-07</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Hidden/disabled controls cannot receive activation; native Return must work after Unity readiness.</div><div class="field"><span class="label">Oracle</span>One UI owner receives each action; no double activation, trapped Return or awarded unfinished run; Ash Road continues its existing save.</div><div class="field"><span class="label">Planned target</span>Maintained actual native-keyboard/pointer journey, layout assertions and route/save checks.</div></article>
+<!-- CA:END:VERIFY-07 -->
+</div></article>
+<!-- CA:END:AC-07 -->
+
+<!-- CA:BEGIN:AC-08 -->
+<article class="record" id="AC-08" data-ca-symbol="AC-08" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-08">AC-08</a><h3>Source-bound localhost delivery and acceptance</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the dedicated Last Stand UI polish.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Compiled runtime and source match; public local controls show Field Console A; existing gates remain honest and owner acceptance is separately recorded.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-05">SCOPE-05</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Approved UI/background implementation with unchanged combat rules, economy and storage contracts.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-08 -->
+<article class="record" id="SCENARIO-08" data-ca-symbol="SCENARIO-08" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-08">SCENARIO-08</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Approved UI/background implementation with unchanged combat rules, economy and storage contracts.</div><div class="field"><span class="label">Then</span>Compiled runtime and source match; public local controls show Field Console A; existing gates remain honest and owner acceptance is separately recorded.</div><div class="field"><span class="label">When</span>Run the existing build/package/journey verification and update the user preview after recording evidence.</div></article>
+<!-- CA:END:SCENARIO-08 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-01">SOURCE-01</a></li><li><a href="#SOURCE-03">SOURCE-03</a></li><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>The dedicated export is rebuilt from the approved UI/background source with current source-lock/receipt/manifest binding and normal build/package validators. Focused UI and background checks pass before the matching localhost preview is served for review. Run the maintained real-browser loop with its actual outcome retained. Replace only dedicated Last Stand focus-suspension/no-catch-up expectations with AC-09/10/11 background oracles; retain legacy/review focus guards, explicit pause, mute/no-burst, real audio capture, storage and progression checks. Existing purchase-audio or other full-loop failures remain blockers to overall playable-loop readiness; serving a review preview does not satisfy that gate. Matched screenshots and normal-speed motion support owner review; subjective acceptance stays pending until explicitly observed.</div><div class="field"><span class="label">Trigger</span>Run the existing build/package/journey verification and update the user preview after recording evidence.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-08 -->
+<article class="record" id="VERIFY-08" data-ca-symbol="VERIFY-08" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-08">VERIFY-08</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A stale export/manifest or substituted screenshot fails UI preview delivery. A failed full-loop journey remains a blocker to overall playable-loop readiness and cannot be relabelled as a pass.</div><div class="field"><span class="label">Oracle</span>Compiled runtime and source match; public local controls show Field Console A; existing gates remain honest and owner acceptance is separately recorded.</div><div class="field"><span class="label">Planned target</span>Existing source-bound build receipt checks, strict typecheck, focused UI/background checks, actual browser journey with revised dedicated focus oracles and honest retained outcome, legacy/review preservation checks, and owner visual/listening review.</div></article>
+<!-- CA:END:VERIFY-08 -->
+</div></article>
+<!-- CA:END:AC-08 -->
+
+<!-- CA:BEGIN:AC-09 -->
+<article class="record" id="AC-09" data-ca-symbol="AC-09" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-09">AC-09</a><h3>Loaded-page elapsed background continuation</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the owner-requested dedicated Last Stand background play.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Tick, hull, kills and committed state equal the unchanged model stepped for the same admitted duration, independent of foreground/background callback partitioning. Focus loss alone never requires Resume; debt drains without lost ticks or duplicated time.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-06">SCOPE-06</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>An unpaused playable run has a known start clock/model snapshot; other profiles retain their existing policy.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-09 -->
+<article class="record" id="SCENARIO-09" data-ca-symbol="SCENARIO-09" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-09">SCENARIO-09</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>An unpaused playable run has a known start clock/model snapshot; other profiles retain their existing policy.</div><div class="field"><span class="label">Then</span>Tick, hull, kills and committed state equal the unchanged model stepped for the same admitted duration, independent of foreground/background callback partitioning. Focus loss alone never requires Resume; debt drains without lost ticks or duplicated time.</div><div class="field"><span class="label">When</span>Lose real browser-window focus or hide the tab, then let scheduled callbacks or foreground return occur; feed equivalent elapsed partitions to focused clock tests.</div></article>
+<!-- CA:END:SCENARIO-09 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-06">SOURCE-06</a></li><li><a href="#SOURCE-07">SOURCE-07</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>A running dedicated Last Stand encounter stays logically unpaused across visible window blur, hidden tabs and application visibility callbacks. Unity background operation is enabled only for that dedicated lifecycle. Use nonnegative monotonic same-document elapsed time and the unchanged 0.05 second fixed step; admit at most 128 steps per callback, retain fractional time and remaining debt, stop at the existing defeat/limit terminal boundary, and never convert a valid long frame gap into Pause or discard elapsed time. Catch-up state is honestly indicated and conflicting run controls are gated until debt is reconciled. Duplicate callbacks consume no duplicate elapsed time; invalid/backward clock input follows a no-award technical failure path.</div><div class="field"><span class="label">Trigger</span>Lose real browser-window focus or hide the tab, then let scheduled callbacks or foreground return occur; feed equivalent elapsed partitions to focused clock tests.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-09 -->
+<article class="record" id="VERIFY-09" data-ca-symbol="VERIFY-09" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-09">VERIFY-09</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Restore the old focus/frame-gap suspension, clamp elapsed time to one frame, drop over-budget debt or count a repeated callback twice: each must fail a focused behavioral assertion.</div><div class="field"><span class="label">Oracle</span>Tick, hull, kills and committed state equal the unchanged model stepped for the same admitted duration, independent of foreground/background callback partitioning. Focus loss alone never requires Resume; debt drains without lost ticks or duplicated time.</div><div class="field"><span class="label">Planned target</span>Focused injected-clock/model tests for 0/0.049/0.05/1/10/200 second partitions, fractional carry, duplicate/invalid clocks and budget drainage; actual owned browser window-blur and hidden-tab intervals with observed document focus/visibility, state and elapsed timestamps.</div></article>
+<!-- CA:END:VERIFY-09 -->
+</div></article>
+<!-- CA:END:AC-09 -->
+
+<!-- CA:BEGIN:AC-10 -->
+<article class="record" id="AC-10" data-ca-symbol="AC-10" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-10">AC-10</a><h3>Explicit Pause and background terminal ownership</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the owner-requested dedicated Last Stand background play.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Paused ticks/hull/kills and settling remain unchanged across at least 10 seconds away; Resume excludes that interval. Unpaused terminal progression stages exactly one pending award, respects persistence failure, and never starts a second run. Claim/exit/reload retain the existing wallet and save oracles.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-06">SCOPE-06</a></li></ul></div><div class="field"><span class="label">Kind</span>invariant</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>A playable run is running, explicitly paused, settling, pending result or ended; storage can succeed or fail using current fixtures.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-10 -->
+<article class="record" id="SCENARIO-10" data-ca-symbol="SCENARIO-10" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-10">SCENARIO-10</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A playable run is running, explicitly paused, settling, pending result or ended; storage can succeed or fail using current fixtures.</div><div class="field"><span class="label">Then</span>Paused ticks/hull/kills and settling remain unchanged across at least 10 seconds away; Resume excludes that interval. Unpaused terminal progression stages exactly one pending award, respects persistence failure, and never starts a second run. Claim/exit/reload retain the existing wallet and save oracles.</div><div class="field"><span class="label">When</span>Pause before hiding, hide during an active run through terminal time, return repeatedly, Claim twice, and exit/reload unfinished or pending runs.</div></article>
+<!-- CA:END:SCENARIO-10 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-06">SOURCE-06</a></li><li><a href="#SOURCE-07">SOURCE-07</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>Explicit Pause stops model time and settling until the player resumes; blur/hidden/foreground return never clears that choice or charges paused time later. Reconcile active elapsed time through the pause action boundary and start a new clock anchor on Resume. An unpaused run may reach defeat and finish its existing 0.48 second settling interval in background elapsed time; on the next scheduled callback/return it exposes one persisted pending result and manual Claim. Limit/technical failure remains non-awarding; no Claim/purchase/redeploy is automatic. Closing, exiting or reloading an unfinished active run retains existing no-award semantics; a persisted pending defeat still reloads and claims exactly once.</div><div class="field"><span class="label">Trigger</span>Pause before hiding, hide during an active run through terminal time, return repeatedly, Claim twice, and exit/reload unfinished or pending runs.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-10 -->
+<article class="record" id="VERIFY-10" data-ca-symbol="VERIFY-10" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-10">VERIFY-10</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Auto-resume on focus, include paused elapsed time, stall settling solely on blur, award at the run limit or duplicate terminal staging/Claim: each must fail; failed persistence must never show a successful award.</div><div class="field"><span class="label">Oracle</span>Paused ticks/hull/kills and settling remain unchanged across at least 10 seconds away; Resume excludes that interval. Unpaused terminal progression stages exactly one pending award, respects persistence failure, and never starts a second run. Claim/exit/reload retain the existing wallet and save oracles.</div><div class="field"><span class="label">Planned target</span>Focused lifecycle/clock/domain tests for pause boundaries and settling; actual browser paused-hidden-return plus unpaused-hidden-defeat/Claim/reload journey and existing denied-storage/no-award-exit cases.</div></article>
+<!-- CA:END:VERIFY-10 -->
+</div></article>
+<!-- CA:END:AC-10 -->
+
+<!-- CA:BEGIN:AC-11 -->
+<article class="record" id="AC-11" data-ca-symbol="AC-11" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#AC-11">AC-11</a><h3>Foreground feedback and profile isolation</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the owner-requested dedicated Last Stand background play.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CONSTRAINT-01">CONSTRAINT-01</a></li><li><a href="#CONSTRAINT-02">CONSTRAINT-02</a></li><li><a href="#CONSTRAINT-03">CONSTRAINT-03</a></li><li><a href="#CONSTRAINT-04">CONSTRAINT-04</a></li><li><a href="#CONSTRAINT-05">CONSTRAINT-05</a></li><li><a href="#CONSTRAINT-06">CONSTRAINT-06</a></li><li><a href="#CONSTRAINT-07">CONSTRAINT-07</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Observed rendered WebAudio is silent away and contains no replay burst on return; the next eligible current event has actual captured audio. Current model state is visible, mute/Pause persist, and unaffected profiles still suspend and require explicit resume.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-06">SCOPE-06</a></li></ul></div><div class="field"><span class="label">Kind</span>compatibility</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Unlocked dedicated Last Stand audio and existing legacy/review fixtures; focus/hidden transitions include battle, garage and workshop.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SCENARIO-11 -->
+<article class="record" id="SCENARIO-11" data-ca-symbol="SCENARIO-11" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SCENARIO-11">SCENARIO-11</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Unlocked dedicated Last Stand audio and existing legacy/review fixtures; focus/hidden transitions include battle, garage and workshop.</div><div class="field"><span class="label">Then</span>Observed rendered WebAudio is silent away and contains no replay burst on return; the next eligible current event has actual captured audio. Current model state is visible, mute/Pause persist, and unaffected profiles still suspend and require explicit resume.</div><div class="field"><span class="label">When</span>Switch windows/tabs, return with and without outstanding debt, activate current foreground actions, and run existing legacy/review focus-preservation checks.</div></article>
+<!-- CA:END:SCENARIO-11 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SOURCE-05">SOURCE-05</a></li><li><a href="#SOURCE-06">SOURCE-06</a></li><li><a href="#SOURCE-07">SOURCE-07</a></li><li><a href="#SOURCE-08">SOURCE-08</a></li></ul></div><div class="field"><span class="label">Statement</span>Keep unfocused/hidden dedicated Last Stand audio silent while simulation progresses. Do not queue or replay background/catch-up combat, impact, defeat or purchase cues on foreground return. After reconciliation, current eligible foreground cues including the next real purchase gesture work when audio is unlocked, unmuted and explicitly unpaused, without a stale focus-suspension latch. Muted and explicitly paused states remain silent. Present the latest coherent HUD/world state instead of replaying missed visual transients. Legacy and VisualReview encounters retain focus/application/frame-gap suspension and explicit-resume behavior, and leaving the dedicated runtime restores prior background-setting behavior; Ash Road and classic client remain unchanged.</div><div class="field"><span class="label">Trigger</span>Switch windows/tabs, return with and without outstanding debt, activate current foreground actions, and run existing legacy/review focus-preservation checks.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VERIFY-11 -->
+<article class="record" id="VERIFY-11" data-ca-symbol="VERIFY-11" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VERIFY-11">VERIFY-11</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Replay a missed cue, retain a stale suspended latch, clear mute/Pause on focus, or apply idle continuation to Legacy/VisualReview: each must fail. Empty capture/sample evidence cannot count as proof of silence or sound.</div><div class="field"><span class="label">Oracle</span>Observed rendered WebAudio is silent away and contains no replay burst on return; the next eligible current event has actual captured audio. Current model state is visible, mute/Pause persist, and unaffected profiles still suspend and require explicit resume.</div><div class="field"><span class="label">Planned target</span>Focused lifecycle/audio admission and profile-isolation checks; actual rendered-audio windows and real foreground purchase/cannon events in the maintained browser journey; existing EncounterPoseChecks and review/legacy focus/browser preservation checks.</div></article>
+<!-- CA:END:VERIFY-11 -->
+</div></article>
+<!-- CA:END:AC-11 -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-01 -->
+<article class="record" id="SEC-01" data-ca-symbol="SEC-01" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-01">SEC-01</a><h3>Decided parameters and concept limitations</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The A reference determines visual direction, not gameplay. Reintroduce elapsed time, disabled count and HULL from current state rather than copying the generated simplified combat mockup. Result/workshop/error states use the same palette, framing and hierarchy. Button identities and actual gating remain stable. Retain the existing shared font and render readable live labels. Exact panel geometry and layout methods are reversible planning decisions within the stated source boundary.</p><div class="refs">References: <a href="#DECISION-01">DECISION-01</a> <a href="#DECISION-02">DECISION-02</a> <a href="#DECISION-03">DECISION-03</a> </div></div></div></article>
+<!-- CA:END:SEC-01 -->
+
+<!-- CA:BEGIN:SEC-02 -->
+<article class="record" id="SEC-02" data-ca-symbol="SEC-02" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-02">SEC-02</a><h3>Mechanical and adversarial review</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Negative-intent question: if every criterion passed and nothing else changed, what would still be broken? Original battlefield visual acceptance and balance remain separate; a purchase-audio or other full-loop failure still blocks overall readiness even after a UI preview. The added criteria explicitly cover focus/hidden timing, paused elapsed time, terminal settling/manual awards, no replay feedback and legacy/review isolation; there is no additional in-scope phase/action left uncited. Strongest failure case: merely enabling background updates still loses throttled elapsed time, while naive catch-up can replay sounds, include paused time or change shared review behavior. AC-09/10/11 require clock-partition equivalence, bounded retained debt, real focus/hidden observations, actual nonempty audio evidence and unaffected-profile tests. Browser suspension can defer execution; SEC-03 makes that limit explicit. Compact viewport/focus risk remains governed by AC-06/07. The generated concept omits time/kills and uses ARMOR; AC-02 corrects it. No accepted classic-client ADR changes. No new follow-up harvest residue is promoted.</p><div class="refs">References: <a href="#AC-02">AC-02</a> <a href="#AC-06">AC-06</a> <a href="#AC-07">AC-07</a> <a href="#AC-08">AC-08</a> <a href="#AC-09">AC-09</a> <a href="#AC-10">AC-10</a> <a href="#AC-11">AC-11</a> <a href="#SEC-03">SEC-03</a> <a href="#SOURCE-04">SOURCE-04</a> <a href="#SOURCE-06">SOURCE-06</a> <a href="#SOURCE-07">SOURCE-07</a> </div></div></div></article>
+<!-- CA:END:SEC-02 -->
+
+<!-- CA:BEGIN:SEC-03 -->
+<article class="record" id="SEC-03" data-ca-symbol="SEC-03" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-03">SEC-03</a><h3>Background continuation parameters and browser limits</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>This amendment interprets the requested idle behavior as a current, already-deployed run continuing while its page remains loaded, including hidden/minimized tabs. It stops at the existing terminal outcome and awaits manual Claim. It adds no closed-page progress, automatic loop repetition or offline reward economy. Explicit Pause remains the player-controlled stop. Model clock and presentation/audio admission are separate responsibilities.</p><div class="refs">References: <a href="#SCOPE-06">SCOPE-06</a> <a href="#AC-09">AC-09</a> <a href="#AC-10">AC-10</a> <a href="#AC-11">AC-11</a> </div></div><div class="block"><p>Browsers may throttle or suspend callbacks; hidden frames and immediate hidden storage writes cannot be guaranteed. Account for elapsed active time when the same page next receives a callback, retaining bounded debt and suppressing old cues. A discarded or reloaded document follows existing unfinished-run/no-award behavior. The guarantee is coherent same-document logical continuation, not constant frame execution in a frozen tab.</p><div class="refs">References: <a href="#SOURCE-06">SOURCE-06</a> <a href="#SOURCE-07">SOURCE-07</a> <a href="#AC-09">AC-09</a> <a href="#AC-10">AC-10</a> </div></div></div></article>
+<!-- CA:END:SEC-03 -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SOURCE-01 -->
+<article class="record" id="SOURCE-01" data-ca-symbol="SOURCE-01" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-01">SOURCE-01</a><h3>Owner request for a real Last Stand in-game UI</h3></div><div class="field"><span class="label">Locator</span>Codex chat 01a10da4-f88b-7c00-baa4-f3209c902abf,2026-10-07</div><div class="field"><span class="label">Note</span>Generate ideas and implement the best one. User delegated visual candidate selection; exact spec/native approval remains separate.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SOURCE-01 -->
+
+<!-- CA:BEGIN:SOURCE-02 -->
+<article class="record" id="SOURCE-02" data-ca-symbol="SOURCE-02" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-02">SOURCE-02</a><h3>Matched generated UI directions A/B/C</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/last-stand-ui/concepts-20261007.png</div><div class="field"><span class="label">Note</span>Generated from the actual localhost garage screenshot using the available image generator. No Imagen 2.5 model selector was exposed. A is the selected interface reference; scenery and generated text are not implementation authority.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SOURCE-02 -->
+
+<!-- CA:BEGIN:SOURCE-03 -->
+<article class="record" id="SOURCE-03" data-ca-symbol="SOURCE-03" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-03">SOURCE-03</a><h3>Current Unity loop HUD and prototype contract</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</div><div class="field"><span class="label">Note</span>Current live Canvas values/actions checked with controller source and LAST-STAND-ROADMAP.md. Existing approved loop/foundation scope and pending owner gates are preserved.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SOURCE-03 -->
+
+<!-- CA:BEGIN:SOURCE-04 -->
+<article class="record" id="SOURCE-04" data-ca-symbol="SOURCE-04" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-04">SOURCE-04</a><h3>Classic-client battle-console boundary</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/decisions/0018-preact-battle-console-semantic-ownership.md</div><div class="field"><span class="label">Note</span>Accepted Preact semantic ownership governs the classic client surface. This separate Unity HUD does not modify that surface or supersede its ADR.</div><div class="field"><span class="label">Type</span>decision_record</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SOURCE-04 -->
+
+<!-- CA:BEGIN:SOURCE-05 -->
+<article class="record" id="SOURCE-05" data-ca-symbol="SOURCE-05" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-05">SOURCE-05</a><h3>Owner request for idle background play</h3></div><div class="field"><span class="label">Locator</span>Codex chat 01a10da4-f88b-7c00-baa4-f3209c902abf, 2026-10-07: also the game should continue playing even when it is not the focused window</div><div class="field"><span class="label">Note</span>Amends the pending Last Stand UI feature. Focus loss must cease to pause the active run; it does not approve the prior draft or request closed-page offline progression.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SOURCE-05 -->
+
+<!-- CA:BEGIN:SOURCE-06 -->
+<article class="record" id="SOURCE-06" data-ca-symbol="SOURCE-06" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-06">SOURCE-06</a><h3>Unity 6.3 Web background performance</h3></div><div class="field"><span class="label">Locator</span>Web content in background tabs</div><div class="field"><span class="label">Note</span>Observed 2026-10-07. Unity permits background operation through runInBackground, while browsers throttle hidden content; default frame timing can lose elapsed progression.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://docs.unity3d.com/6000.3/Documentation/Manual/webgl-performance.html</div></article>
+<!-- CA:END:SOURCE-06 -->
+
+<!-- CA:BEGIN:SOURCE-07 -->
+<article class="record" id="SOURCE-07" data-ca-symbol="SOURCE-07" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-07">SOURCE-07</a><h3>MDN Page Visibility API</h3></div><div class="field"><span class="label">Locator</span>Concepts and usage; policies in place to aid background page performance</div><div class="field"><span class="label">Note</span>Observed 2026-10-07. Blur and hidden are distinct; browsers throttle timers and may stop animation callbacks. Promise elapsed-time continuation while the same page remains loaded, not guaranteed hidden rendering.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API</div></article>
+<!-- CA:END:SOURCE-07 -->
+
+<!-- CA:BEGIN:SOURCE-08 -->
+<article class="record" id="SOURCE-08" data-ca-symbol="SOURCE-08" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SOURCE-08">SOURCE-08</a><h3>Shared encounter and dedicated Last Stand lifecycle</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs; LastStandLoopController.cs; LastStandAudio.cs; EncounterProfile.cs; e2e/helpers/lastStandJourney.mjs</div><div class="field"><span class="label">Note</span>Current focus/application/frame-gap suspension is shared. PlayablePrototype is distinguishable from Legacy and VisualReview. Current journey expects focus suspension; only dedicated Last Stand expectations may change under this new approved specification. Model is 20 Hz and playable horizon 3600 ticks.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SOURCE-08 -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>61b0c9a3a2854597bdfdb5c1f667e2e78f3e20dd</div><div class="field"><span class="label">Observed date</span>2026-10-07</div><div class="field"><span class="label">Repository</span>https://github.com/SUaDtL/singedTerra.git</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs</li><li>campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs</li><li>campaign-unity/docs/last-stand-ui/**</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Execution must verify current receipt sources and binding.</p><div class="fields"><div class="field"><span class="label">Approvals</span><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-UI-SPEC</div><div class="field"><span class="label">Attestation level</span>workflow_attested</div><div class="field"><span class="label">Authority kind</span>user_workflow</div><div class="field"><span class="label">Normative sha256</span>64bb97154ea7fdc8f5f3872663b995d270cd6f0a2bdb7f7fd87c6fdd6b14d958</div><div class="field"><span class="label">Source ref</span>.codearbiter/.artifacts/receipts/99f152a805629becbe10890b3ba7a239cbbcb652e9d7e9dba8884dd7aa31e9fb.json</div><div class="field"><span class="label">Source sha256</span>99f152a805629becbe10890b3ba7a239cbbcb652e9d7e9dba8884dd7aa31e9fb</div></div></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>approved</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 64bb97154ea7fdc8f5f3872663b995d270cd6f0a2bdb7f7fd87c6fdd6b14d958<br>Model SHA-256: 31e0b5dd62fe61c22cf4bd15e080077a36b1db2eed28c2fdb515d52aabc06b9d</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-UI-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [
+      {
+        "artifact_id": "ST-LS-UI-SPEC",
+        "attestation_level": "workflow_attested",
+        "authority_kind": "user_workflow",
+        "normative_sha256": "64bb97154ea7fdc8f5f3872663b995d270cd6f0a2bdb7f7fd87c6fdd6b14d958",
+        "source_ref": ".codearbiter/.artifacts/receipts/99f152a805629becbe10890b3ba7a239cbbcb652e9d7e9dba8884dd7aa31e9fb.json",
+        "source_sha256": "99f152a805629becbe10890b3ba7a239cbbcb652e9d7e9dba8884dd7aa31e9fb"
+      }
+    ],
+    "review_notes": [],
+    "state": "approved"
+  },
+  "integrity": {
+    "model_sha256": "31e0b5dd62fe61c22cf4bd15e080077a36b1db2eed28c2fdb515d52aabc06b9d",
+    "normative_sha256": "64bb97154ea7fdc8f5f3872663b995d270cd6f0a2bdb7f7fd87c6fdd6b14d958",
+    "symbol_count": 64
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "DECISION-01",
+        "DECISION-02",
+        "DECISION-04"
+      ],
+      "choice": "Select generated candidate A Field Console under the user instruction to implement the best idea. Use the existing Unity Canvas as the single in-game presentation owner, live text/buttons and bounded responsive layout. Keep the native HTML navigation shell. Opt only the dedicated Last Stand runtime into background operation and drive its unchanged fixed-step model from a same-document monotonic elapsed clock with bounded catch-up; coalesce presentation and suppress missed audio cues.",
+      "id": "APPROACH-01",
+      "tradeoff": "A provides clear primary actions and compact framed values. B offers more open space but weaker grouping; C adds physical texture but consumes visual attention. A requires deliberate compact reflow and focus styling; it avoids a second browser HUD/state synchronization owner. A background setting alone cannot defeat browser throttling. Elapsed-time reconciliation preserves logical progress without a worker, server or new storage scheme; frames may be delayed until the browser schedules the page again."
+    },
+    "baseline": {
+      "commit": "61b0c9a3a2854597bdfdb5c1f667e2e78f3e20dd",
+      "observed_date": "2026-10-07",
+      "repository": "https://github.com/SUaDtL/singedTerra.git"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04",
+          "SCOPE-05",
+          "SCOPE-06"
+        ],
+        "id": "CONSTRAINT-01",
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03",
+          "SOURCE-05",
+          "SOURCE-08"
+        ],
+        "statement": "This UI and requested background-play feature requires its own native specification and plan approval before implementation. It does not widen or approve diagnostic T-06. Preserve the original Last Stand and foundation artifacts, receipts and historical evidence; new focus-policy verification belongs to this feature."
+      },
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04",
+          "SCOPE-05",
+          "SCOPE-06"
+        ],
+        "id": "CONSTRAINT-02",
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03",
+          "SOURCE-05",
+          "SOURCE-08"
+        ],
+        "statement": "UI reads actual loop/session/progression state and routes actions to existing owners. The only runtime behavior expansion is dedicated Last Stand background timing, explicit-pause accounting, settling and lifecycle feedback admission. Preserve EncounterModel rules, 20 Hz ordering and terminal horizon, one local save, exact-once manual Claim, prices/rewards and 20/30/40/50 damage with 1/2/3 salvage costs. No closed-page/reload/offline rewards or automatic Claim, purchase or redeploy."
+      },
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04",
+          "SCOPE-05",
+          "SCOPE-06"
+        ],
+        "id": "CONSTRAINT-03",
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "Preserve current tank, terrain, camera and battlefield treatments. Existing owner A/B keep/change/mix, normal-speed motion, listening and whole-feature acceptance remain separate. UI concept selection does not accept battlefield art or current runtime audio."
+      },
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04",
+          "SCOPE-05",
+          "SCOPE-06"
+        ],
+        "id": "CONSTRAINT-04",
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03",
+          "SOURCE-05",
+          "SOURCE-08"
+        ],
+        "statement": "No accounts, Supabase, verified rewards, MechanicsShopModel, temporary in-run shop, new gameplay systems, dependencies, telemetry, persistent configuration, Android work or public publication. Scope runInBackground to the dedicated Last Stand runtime lifecycle; preserve its prior value when leaving that runtime. Preserve Ash Road route/save and classic battle-console ADR-0017/0018 ownership."
+      },
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04",
+          "SCOPE-05",
+          "SCOPE-06"
+        ],
+        "id": "CONSTRAINT-05",
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03",
+          "SOURCE-05",
+          "SOURCE-08"
+        ],
+        "statement": "Bound source edits to LastStandLoopHud.cs, optional LastStandHudLayout.cs and LastStandRunClock.cs, LastStandLoopController.cs, LastStandAudio.cs and EncounterSession.cs for dedicated playable-policy isolation; TankPresentation.cs only if its focus/terminal-feedback guards need matching isolation, with no art/camera treatment change. Permit LastStandLoopChecks.cs, existing encounter/pose/preservation checks and focused additions, the Last Stand browser journey/layout assertions, native web entry styling, source-bound build/package outputs and dedicated documentation. Do not edit LastStandProgression, LastStandStore, EncounterModel, global ProjectSettings, scenes, world art or other routes."
+      },
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04",
+          "SCOPE-05",
+          "SCOPE-06"
+        ],
+        "id": "CONSTRAINT-06",
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "Render labels and values as live text and controls; the concept raster is a reference, never a flattened interactive screen. Keep stable button identities, current gating and ST_LS_HUD_LAYOUT observations. Optional decoration must not cover input, mask disabled states or become behavioral authority."
+      },
+      {
+        "applies_to": [
+          "SCOPE-01",
+          "SCOPE-02",
+          "SCOPE-03",
+          "SCOPE-04",
+          "SCOPE-05",
+          "SCOPE-06"
+        ],
+        "id": "CONSTRAINT-07",
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "No stage, commit, push, PR, merge, remote deployment, dependency install or unrelated process cleanup under this UI request. Keep the user preview running and preserve all dirty work and historical proof."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Values match domain state; one primary Deploy is present, disabled when the existing domain gate denies deployment."
+        ],
+        "id": "AC-01",
+        "intent_refs": [
+          "SCOPE-01"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Ready garage at base and upgraded levels, both fittings."
+        ],
+        "scenarios": [
+          {
+            "given": "Ready garage at base and upgraded levels, both fittings.",
+            "id": "SCENARIO-01",
+            "then": "Values match domain state; one primary Deploy is present, disabled when the existing domain gate denies deployment.",
+            "when": "Load garage and activate the fitting control."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "A ready garage shows current fitting, Cannon Attack level/cap, damage, salvage, next upgrade and local save status. Deploy is visually primary and uses the existing readiness gates. Fit Launcher/Repair updates the actual selected attachment and live fitting label without changing progression.",
+        "title": "Garage hierarchy and fitting",
+        "trigger": "Load garage and activate the fitting control.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-01",
+          "method": "automated_and_review",
+          "negative_control": "Force denied deployment and switch fitting; no false-ready value or hidden gate is permitted.",
+          "oracle": "Values match domain state; one primary Deploy is present, disabled when the existing domain gate denies deployment.",
+          "planned_target": "Actual Unity geometry/state checks and source-bound browser screenshots of garage."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "The HUD follows the actual model and leaves the stated central area clear; resume and mute route to existing owners."
+        ],
+        "id": "AC-02",
+        "intent_refs": [
+          "SCOPE-02"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Running and paused encounters with changing hull/tick/kills."
+        ],
+        "scenarios": [
+          {
+            "given": "Running and paused encounters with changing hull/tick/kills.",
+            "id": "SCENARIO-02",
+            "then": "The HUD follows the actual model and leaves the stated central area clear; resume and mute route to existing owners.",
+            "when": "Run and pause the encounter."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "During a real run, show live HULL with a filled bar and current/120 value, elapsed time, disabled count, committed cannon damage and fitting. Pause/Resume and Sound remain reachable. No opaque panel intersects the central 60 percent width by 60 percent height rectangle; all combat chrome together occupies at most 25 percent of canvas area. Paused state is visible.",
+        "title": "Compact battle HUD",
+        "trigger": "Run and pause the encounter.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-02",
+          "method": "automated_and_review",
+          "negative_control": "At base and upgraded damage, stale values or central panel placement fail.",
+          "oracle": "The HUD follows the actual model and leaves the stated central area clear; resume and mute route to existing owners.",
+          "planned_target": "Focused layout checks plus actual browser geometry, screenshot and normal-speed movie."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "No premature or repeated award; presentation distinguishes pending earned salvage from wallet and accurately reflects existing gates."
+        ],
+        "id": "AC-03",
+        "intent_refs": [
+          "SCOPE-03"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "A defeated encounter settles and persists its pending award."
+        ],
+        "scenarios": [
+          {
+            "given": "A defeated encounter settles and persists its pending award.",
+            "id": "SCENARIO-03",
+            "then": "No premature or repeated award; presentation distinguishes pending earned salvage from wallet and accurately reflects existing gates.",
+            "when": "Observe settling, Claim and reload."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "Settling presents the last-impact state without an actionable Claim. A persisted pending defeat shows actual duration/kills, earned 1 salvage separately from wallet balance, and one Claim action. Claim enters workshop through the existing exactly-once owner. Reloading pending defeat or claimed state preserves those semantics.",
+        "title": "Settling and defeat Claim",
+        "trigger": "Observe settling, Claim and reload.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-03",
+          "method": "automated_and_review",
+          "negative_control": "Duplicate Claim and failed persistence retain current guard outcomes and honest labels.",
+          "oracle": "No premature or repeated award; presentation distinguishes pending earned salvage from wallet and accurately reflects existing gates.",
+          "planned_target": "Existing production progression journey extended with settling/result screenshots and focused UI state checks."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Live values and disabled states match progression; no invented equipment or temporary shop is shown."
+        ],
+        "id": "AC-04",
+        "intent_refs": [
+          "SCOPE-03"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Workshop with enough/insufficient salvage and capped upgrade."
+        ],
+        "scenarios": [
+          {
+            "given": "Workshop with enough/insufficient salvage and capped upgrade.",
+            "id": "SCENARIO-04",
+            "then": "Live values and disabled states match progression; no invented equipment or temporary shop is shown.",
+            "when": "Purchase, reload and redeploy through public controls."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "Workshop presents actual level/cap, wallet, current damage, next damage and cost, affordable/disabled states, fitting choice and Redeploy. A base-to-first upgrade displays 20 to 30 for 1 salvage and becomes 30 after successful purchase; cap shows MAX without a purchase offer. Redeploy follows existing readiness rules.",
+        "title": "Workshop upgrade and redeploy",
+        "trigger": "Purchase, reload and redeploy through public controls.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-04",
+          "method": "automated_and_review",
+          "negative_control": "Failed purchase cannot show bought state; capped and insufficient-wallet controls stay disabled.",
+          "oracle": "Live values and disabled states match progression; no invented equipment or temporary shop is shown.",
+          "planned_target": "Actual existing purchase/reload/stronger-redeploy journey and focused cap/insufficient-wallet UI checks."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Visible error and disabled controls agree with the existing owner; successful retry returns the real recovered state."
+        ],
+        "id": "AC-05",
+        "intent_refs": [
+          "SCOPE-03"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Existing denied storage, corrupt record, load error and failed save fixtures."
+        ],
+        "scenarios": [
+          {
+            "given": "Existing denied storage, corrupt record, load error and failed save fixtures.",
+            "id": "SCENARIO-05",
+            "then": "Visible error and disabled controls agree with the existing owner; successful retry returns the real recovered state.",
+            "when": "Load or attempt existing transitions and use Retry/Return."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "Blocked/corrupt/loading/failed-save states show a readable specific status with current Retry Save availability and native Return. They do not claim local-save readiness, earned awards or successful purchase before the current owner reports successful persistence. Notices survive layout changes without clipping.",
+        "title": "Honest save and load recovery",
+        "trigger": "Load or attempt existing transitions and use Retry/Return.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-05",
+          "method": "automated_and_review",
+          "negative_control": "Inject existing fault fixtures; a ready badge or hidden error before recovery fails.",
+          "oracle": "Visible error and disabled controls agree with the existing owner; successful retry returns the real recovered state.",
+          "planned_target": "Existing storage/load fault journey and focused UI error-state/geometry assertions."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Every active control and required label fits and remains readable; compact reflow keeps the tank/battle visible and primary actions clear."
+        ],
+        "id": "AC-06",
+        "intent_refs": [
+          "SCOPE-04"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Each listed phase and viewport profile."
+        ],
+        "scenarios": [
+          {
+            "given": "Each listed phase and viewport profile.",
+            "id": "SCENARIO-06",
+            "then": "Every active control and required label fits and remains readable; compact reflow keeps the tank/battle visible and primary actions clear.",
+            "when": "Resize, inspect and operate all active public controls."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "Garage, combat, result, workshop and error layouts fit 1366x768 and 1920x1080 desktop,390x844 portrait,844x390 narrow landscape and720x640 compact views. Visible text is at least 14 CSS-equivalent pixels, interactive targets at least 44x44 CSS-equivalent pixels and normal text contrast at least 4.5:1. No label/control is clipped, offscreen or overlapped; focus, disabled, hover/press and active toggle states remain distinguishable without color alone.",
+        "title": "Responsive reading and operable controls",
+        "trigger": "Resize, inspect and operate all active public controls.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-06",
+          "method": "automated_and_review",
+          "negative_control": "Long storage notice and narrow landscape must not obscure buttons or silently truncate required content.",
+          "oracle": "Every active control and required label fits and remains readable; compact reflow keeps the tank/battle visible and primary actions clear.",
+          "planned_target": "Pure/Unity layout assertions, actual public browser viewport screenshots and owner visual review."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "One UI owner receives each action; no double activation, trapped Return or awarded unfinished run; Ash Road continues its existing save."
+        ],
+        "id": "AC-07",
+        "intent_refs": [
+          "SCOPE-04"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Dedicated Last Stand reached from Campaigns with an existing compatible Ash Road save."
+        ],
+        "scenarios": [
+          {
+            "given": "Dedicated Last Stand reached from Campaigns with an existing compatible Ash Road save.",
+            "id": "SCENARIO-07",
+            "then": "One UI owner receives each action; no double activation, trapped Return or awarded unfinished run; Ash Road continues its existing save.",
+            "when": "Use native keyboard Launch, in-game controls, Tab/Shift+Tab and Return; exit an unfinished run."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03"
+        ],
+        "statement": "Keyboard traverses active enabled Unity actions in visible order, shows a visible focus treatment, activates each with its supported key and reaches native Return after readiness. Pointer/touch click areas match reported visual bounds. Return and unfinished-run disclosure remain visible and preserve no-award exit/reload plus Ash Road routing/save continuity.",
+        "title": "Keyboard and native navigation continuity",
+        "trigger": "Use native keyboard Launch, in-game controls, Tab/Shift+Tab and Return; exit an unfinished run.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-07",
+          "method": "automated_and_review",
+          "negative_control": "Hidden/disabled controls cannot receive activation; native Return must work after Unity readiness.",
+          "oracle": "One UI owner receives each action; no double activation, trapped Return or awarded unfinished run; Ash Road continues its existing save.",
+          "planned_target": "Maintained actual native-keyboard/pointer journey, layout assertions and route/save checks."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the dedicated Last Stand UI polish."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Compiled runtime and source match; public local controls show Field Console A; existing gates remain honest and owner acceptance is separately recorded."
+        ],
+        "id": "AC-08",
+        "intent_refs": [
+          "SCOPE-05"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Approved UI/background implementation with unchanged combat rules, economy and storage contracts."
+        ],
+        "scenarios": [
+          {
+            "given": "Approved UI/background implementation with unchanged combat rules, economy and storage contracts.",
+            "id": "SCENARIO-08",
+            "then": "Compiled runtime and source match; public local controls show Field Console A; existing gates remain honest and owner acceptance is separately recorded.",
+            "when": "Run the existing build/package/journey verification and update the user preview after recording evidence."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-01",
+          "SOURCE-03",
+          "SOURCE-05",
+          "SOURCE-08"
+        ],
+        "statement": "The dedicated export is rebuilt from the approved UI/background source with current source-lock/receipt/manifest binding and normal build/package validators. Focused UI and background checks pass before the matching localhost preview is served for review. Run the maintained real-browser loop with its actual outcome retained. Replace only dedicated Last Stand focus-suspension/no-catch-up expectations with AC-09/10/11 background oracles; retain legacy/review focus guards, explicit pause, mute/no-burst, real audio capture, storage and progression checks. Existing purchase-audio or other full-loop failures remain blockers to overall playable-loop readiness; serving a review preview does not satisfy that gate. Matched screenshots and normal-speed motion support owner review; subjective acceptance stays pending until explicitly observed.",
+        "title": "Source-bound localhost delivery and acceptance",
+        "trigger": "Run the existing build/package/journey verification and update the user preview after recording evidence.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-08",
+          "method": "automated_and_review",
+          "negative_control": "A stale export/manifest or substituted screenshot fails UI preview delivery. A failed full-loop journey remains a blocker to overall playable-loop readiness and cannot be relabelled as a pass.",
+          "oracle": "Compiled runtime and source match; public local controls show Field Console A; existing gates remain honest and owner acceptance is separately recorded.",
+          "planned_target": "Existing source-bound build receipt checks, strict typecheck, focused UI/background checks, actual browser journey with revised dedicated focus oracles and honest retained outcome, legacy/review preservation checks, and owner visual/listening review."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the owner-requested dedicated Last Stand background play."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Tick, hull, kills and committed state equal the unchanged model stepped for the same admitted duration, independent of foreground/background callback partitioning. Focus loss alone never requires Resume; debt drains without lost ticks or duplicated time."
+        ],
+        "id": "AC-09",
+        "intent_refs": [
+          "SCOPE-06"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "An unpaused playable run has a known start clock/model snapshot; other profiles retain their existing policy."
+        ],
+        "scenarios": [
+          {
+            "given": "An unpaused playable run has a known start clock/model snapshot; other profiles retain their existing policy.",
+            "id": "SCENARIO-09",
+            "then": "Tick, hull, kills and committed state equal the unchanged model stepped for the same admitted duration, independent of foreground/background callback partitioning. Focus loss alone never requires Resume; debt drains without lost ticks or duplicated time.",
+            "when": "Lose real browser-window focus or hide the tab, then let scheduled callbacks or foreground return occur; feed equivalent elapsed partitions to focused clock tests."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-05",
+          "SOURCE-06",
+          "SOURCE-07",
+          "SOURCE-08"
+        ],
+        "statement": "A running dedicated Last Stand encounter stays logically unpaused across visible window blur, hidden tabs and application visibility callbacks. Unity background operation is enabled only for that dedicated lifecycle. Use nonnegative monotonic same-document elapsed time and the unchanged 0.05 second fixed step; admit at most 128 steps per callback, retain fractional time and remaining debt, stop at the existing defeat/limit terminal boundary, and never convert a valid long frame gap into Pause or discard elapsed time. Catch-up state is honestly indicated and conflicting run controls are gated until debt is reconciled. Duplicate callbacks consume no duplicate elapsed time; invalid/backward clock input follows a no-award technical failure path.",
+        "title": "Loaded-page elapsed background continuation",
+        "trigger": "Lose real browser-window focus or hide the tab, then let scheduled callbacks or foreground return occur; feed equivalent elapsed partitions to focused clock tests.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-09",
+          "method": "automated_and_review",
+          "negative_control": "Restore the old focus/frame-gap suspension, clamp elapsed time to one frame, drop over-budget debt or count a repeated callback twice: each must fail a focused behavioral assertion.",
+          "oracle": "Tick, hull, kills and committed state equal the unchanged model stepped for the same admitted duration, independent of foreground/background callback partitioning. Focus loss alone never requires Resume; debt drains without lost ticks or duplicated time.",
+          "planned_target": "Focused injected-clock/model tests for 0/0.049/0.05/1/10/200 second partitions, fractional carry, duplicate/invalid clocks and budget drainage; actual owned browser window-blur and hidden-tab intervals with observed document focus/visibility, state and elapsed timestamps."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the owner-requested dedicated Last Stand background play."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Paused ticks/hull/kills and settling remain unchanged across at least 10 seconds away; Resume excludes that interval. Unpaused terminal progression stages exactly one pending award, respects persistence failure, and never starts a second run. Claim/exit/reload retain the existing wallet and save oracles."
+        ],
+        "id": "AC-10",
+        "intent_refs": [
+          "SCOPE-06"
+        ],
+        "kind": "invariant",
+        "obligation": "must",
+        "preconditions": [
+          "A playable run is running, explicitly paused, settling, pending result or ended; storage can succeed or fail using current fixtures."
+        ],
+        "scenarios": [
+          {
+            "given": "A playable run is running, explicitly paused, settling, pending result or ended; storage can succeed or fail using current fixtures.",
+            "id": "SCENARIO-10",
+            "then": "Paused ticks/hull/kills and settling remain unchanged across at least 10 seconds away; Resume excludes that interval. Unpaused terminal progression stages exactly one pending award, respects persistence failure, and never starts a second run. Claim/exit/reload retain the existing wallet and save oracles.",
+            "when": "Pause before hiding, hide during an active run through terminal time, return repeatedly, Claim twice, and exit/reload unfinished or pending runs."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-05",
+          "SOURCE-06",
+          "SOURCE-07",
+          "SOURCE-08"
+        ],
+        "statement": "Explicit Pause stops model time and settling until the player resumes; blur/hidden/foreground return never clears that choice or charges paused time later. Reconcile active elapsed time through the pause action boundary and start a new clock anchor on Resume. An unpaused run may reach defeat and finish its existing 0.48 second settling interval in background elapsed time; on the next scheduled callback/return it exposes one persisted pending result and manual Claim. Limit/technical failure remains non-awarding; no Claim/purchase/redeploy is automatic. Closing, exiting or reloading an unfinished active run retains existing no-award semantics; a persisted pending defeat still reloads and claims exactly once.",
+        "title": "Explicit Pause and background terminal ownership",
+        "trigger": "Pause before hiding, hide during an active run through terminal time, return repeatedly, Claim twice, and exit/reload unfinished or pending runs.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-10",
+          "method": "automated_and_review",
+          "negative_control": "Auto-resume on focus, include paused elapsed time, stall settling solely on blur, award at the run limit or duplicate terminal staging/Claim: each must fail; failed persistence must never show a successful award.",
+          "oracle": "Paused ticks/hull/kills and settling remain unchanged across at least 10 seconds away; Resume excludes that interval. Unpaused terminal progression stages exactly one pending award, respects persistence failure, and never starts a second run. Claim/exit/reload retain the existing wallet and save oracles.",
+          "planned_target": "Focused lifecycle/clock/domain tests for pause boundaries and settling; actual browser paused-hidden-return plus unpaused-hidden-defeat/Claim/reload journey and existing denied-storage/no-award-exit cases."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the owner-requested dedicated Last Stand background play."
+        },
+        "constraint_refs": [
+          "CONSTRAINT-01",
+          "CONSTRAINT-02",
+          "CONSTRAINT-03",
+          "CONSTRAINT-04",
+          "CONSTRAINT-05",
+          "CONSTRAINT-06",
+          "CONSTRAINT-07"
+        ],
+        "guarantees": [
+          "Observed rendered WebAudio is silent away and contains no replay burst on return; the next eligible current event has actual captured audio. Current model state is visible, mute/Pause persist, and unaffected profiles still suspend and require explicit resume."
+        ],
+        "id": "AC-11",
+        "intent_refs": [
+          "SCOPE-06"
+        ],
+        "kind": "compatibility",
+        "obligation": "must",
+        "preconditions": [
+          "Unlocked dedicated Last Stand audio and existing legacy/review fixtures; focus/hidden transitions include battle, garage and workshop."
+        ],
+        "scenarios": [
+          {
+            "given": "Unlocked dedicated Last Stand audio and existing legacy/review fixtures; focus/hidden transitions include battle, garage and workshop.",
+            "id": "SCENARIO-11",
+            "then": "Observed rendered WebAudio is silent away and contains no replay burst on return; the next eligible current event has actual captured audio. Current model state is visible, mute/Pause persist, and unaffected profiles still suspend and require explicit resume.",
+            "when": "Switch windows/tabs, return with and without outstanding debt, activate current foreground actions, and run existing legacy/review focus-preservation checks."
+          }
+        ],
+        "source_refs": [
+          "SOURCE-05",
+          "SOURCE-06",
+          "SOURCE-07",
+          "SOURCE-08"
+        ],
+        "statement": "Keep unfocused/hidden dedicated Last Stand audio silent while simulation progresses. Do not queue or replay background/catch-up combat, impact, defeat or purchase cues on foreground return. After reconciliation, current eligible foreground cues including the next real purchase gesture work when audio is unlocked, unmuted and explicitly unpaused, without a stale focus-suspension latch. Muted and explicitly paused states remain silent. Present the latest coherent HUD/world state instead of replaying missed visual transients. Legacy and VisualReview encounters retain focus/application/frame-gap suspension and explicit-resume behavior, and leaving the dedicated runtime restores prior background-setting behavior; Ash Road and classic client remain unchanged.",
+        "title": "Foreground feedback and profile isolation",
+        "trigger": "Switch windows/tabs, return with and without outstanding debt, activate current foreground actions, and run existing legacy/review focus-preservation checks.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VERIFY-11",
+          "method": "automated_and_review",
+          "negative_control": "Replay a missed cue, retain a stale suspended latch, clear mute/Pause on focus, or apply idle continuation to Legacy/VisualReview: each must fail. Empty capture/sample evidence cannot count as proof of silence or sound.",
+          "oracle": "Observed rendered WebAudio is silent away and contains no replay burst on return; the next eligible current event has actual captured audio. Current model state is visible, mute/Pause persist, and unaffected profiles still suspend and require explicit resume.",
+          "planned_target": "Focused lifecycle/audio admission and profile-isolation checks; actual rendered-audio windows and real foreground purchase/cannon events in the maintained browser journey; existing EncounterPoseChecks and review/legacy focus/browser preservation checks."
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "proposed",
+        "choice": "A Field Console: graphite/olive panels, brass accents, ivory live text, distinct primary action, compact perimeter battle HUD.",
+        "id": "DECISION-01",
+        "rationale": "The user delegated choosing the best concept. A is the strongest match to the actual tank and improves hierarchy without excessive ornamental metal.",
+        "source_ref": "SOURCE-01",
+        "topic": "Selected interface"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Retain the existing dedicated Unity Canvas; use live UI controls and responsive layout. Do not introduce a second HTML in-game HUD or new framework.",
+        "id": "DECISION-02",
+        "rationale": "Current state and intents already live behind the Unity loop owner; all required values are exposed. This limits synchronization/focus risk and retains browser/mobile-project continuity.",
+        "source_ref": "SOURCE-03",
+        "topic": "Presentation owner"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Use HULL terminology and actual current/120 value, green hull fill with numeric status, amber primary actions,44 pixel minimum targets,14 pixel minimum text,4.5:1 normal text contrast and five listed viewport profiles.",
+        "id": "DECISION-03",
+        "rationale": "Generated ARMOR wording and missing timer/kills are corrected to the actual model. Numeric readability and geometry limits make polish reviewable while final owner visual acceptance remains explicit.",
+        "source_ref": "SOURCE-03",
+        "topic": "Visual parameters"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Unpaused runs continue across window blur, hidden tabs and delayed callbacks while the same document remains loaded. Explicit Pause excludes elapsed paused time. Use the existing 0.05 second model step with at most 128 steps per callback and retain remaining debt up to the existing terminal horizon. Background and catch-up cues are silent; new eligible foreground cues resume after reconciliation. Claim remains manual; no automatic purchase/redeploy or closed-page progression.",
+        "id": "DECISION-04",
+        "rationale": "The user explicitly requested idle background play. Same-document elapsed reconciliation addresses actual browser throttling, with bounded CPU work and unchanged deterministic combat/economy. Background silence retains the current sound expectation and prevents an audible burst on return. Budget is a reversible implementation parameter selected for this draft.",
+        "source_ref": "SOURCE-05",
+        "topic": "Dedicated Last Stand background policy"
+      }
+    ],
+    "governs": [
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs",
+      "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs",
+      "campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs",
+      "campaign-unity/docs/last-stand-ui/**",
+      "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs",
+      "campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs",
+      "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs"
+    ],
+    "intent": {
+      "caller": "Players using the dedicated Last Stand browser mode; the owner previews it on localhost.",
+      "id": "INTENT-01",
+      "outcome": "A consistent Field Console interface makes the existing garage-to-defeat-to-upgrade loop legible, operable and visually coherent with its battlefield. An unpaused active run continues logically while the loaded page is unfocused or hidden and returns with current state rather than requiring Resume.",
+      "problem": "The current Last Stand screen has oversized generic panels that obscure the tank and do not provide the readable hierarchy and compact battle interface needed for a polished first piece. The current focus/frame-gap suspension also prevents the loaded idle run from progressing when the player switches windows.",
+      "source_refs": [
+        "SOURCE-01",
+        "SOURCE-02",
+        "SOURCE-03",
+        "SOURCE-05",
+        "SOURCE-08"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "NON-GOAL-01",
+        "statement": "No game-balance/economy/skill/equipment expansion, temporary in-run Mechanics Shop, accounts, network progression, world art/camera changes, new dependency or publication."
+      }
+    ],
+    "open_decisions": [],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "SCOPE-01",
+        "statement": "Replace the dedicated Last Stand garage presentation with Field Console A: a readable loadout card, visible tank and primary Deploy action."
+      },
+      {
+        "id": "SCOPE-02",
+        "statement": "Replace the combat presentation with an edge-aligned HUD for hull, elapsed time, disabled enemies, cannon damage, fitting, pause/resume and sound."
+      },
+      {
+        "id": "SCOPE-03",
+        "statement": "Apply the same interface to settling, pending defeat, Claim, permanent Cannon Attack workshop and storage-recovery states."
+      },
+      {
+        "id": "SCOPE-04",
+        "statement": "Deliver responsive pointer, touch and keyboard controls plus the existing native Return to Campaigns and unfinished-run/save disclosure."
+      },
+      {
+        "id": "SCOPE-05",
+        "statement": "Rebuild and package the dedicated Unity Web runtime with matching source receipts, preserve progression/save and explicit pause/mute contracts under the approved background policy, and update the localhost preview for owner inspection."
+      },
+      {
+        "id": "SCOPE-06",
+        "statement": "Continue an active dedicated Last Stand run while its loaded page is unfocused or hidden, account for elapsed time after browser throttling, preserve explicit Pause and manual exactly-once Claim, and restore current foreground feedback without replaying missed cues."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [
+              "DECISION-01",
+              "DECISION-02",
+              "DECISION-03"
+            ],
+            "text": "The A reference determines visual direction, not gameplay. Reintroduce elapsed time, disabled count and HULL from current state rather than copying the generated simplified combat mockup. Result/workshop/error states use the same palette, framing and hierarchy. Button identities and actual gating remain stable. Retain the existing shared font and render readable live labels. Exact panel geometry and layout methods are reversible planning decisions within the stated source boundary.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-01",
+        "title": "Decided parameters and concept limitations"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "AC-02",
+              "AC-06",
+              "AC-07",
+              "AC-08",
+              "AC-09",
+              "AC-10",
+              "AC-11",
+              "SEC-03",
+              "SOURCE-04",
+              "SOURCE-06",
+              "SOURCE-07"
+            ],
+            "text": "Negative-intent question: if every criterion passed and nothing else changed, what would still be broken? Original battlefield visual acceptance and balance remain separate; a purchase-audio or other full-loop failure still blocks overall readiness even after a UI preview. The added criteria explicitly cover focus/hidden timing, paused elapsed time, terminal settling/manual awards, no replay feedback and legacy/review isolation; there is no additional in-scope phase/action left uncited. Strongest failure case: merely enabling background updates still loses throttled elapsed time, while naive catch-up can replay sounds, include paused time or change shared review behavior. AC-09/10/11 require clock-partition equivalence, bounded retained debt, real focus/hidden observations, actual nonempty audio evidence and unaffected-profile tests. Browser suspension can defer execution; SEC-03 makes that limit explicit. Compact viewport/focus risk remains governed by AC-06/07. The generated concept omits time/kills and uses ARMOR; AC-02 corrects it. No accepted classic-client ADR changes. No new follow-up harvest residue is promoted.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-02",
+        "title": "Mechanical and adversarial review"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SCOPE-06",
+              "AC-09",
+              "AC-10",
+              "AC-11"
+            ],
+            "text": "This amendment interprets the requested idle behavior as a current, already-deployed run continuing while its page remains loaded, including hidden/minimized tabs. It stops at the existing terminal outcome and awaits manual Claim. It adds no closed-page progress, automatic loop repetition or offline reward economy. Explicit Pause remains the player-controlled stop. Model clock and presentation/audio admission are separate responsibilities.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SOURCE-06",
+              "SOURCE-07",
+              "AC-09",
+              "AC-10"
+            ],
+            "text": "Browsers may throttle or suspend callbacks; hidden frames and immediate hidden storage writes cannot be guaranteed. Account for elapsed active time when the same page next receives a callback, retaining bounded debt and suppressing old cues. A discarded or reloaded document follows existing unfinished-run/no-award behavior. The guarantee is coherent same-document logical continuation, not constant frame execution in a frozen tab.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-03",
+        "title": "Background continuation parameters and browser limits"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SOURCE-01",
+        "locator": "Codex chat 01a10da4-f88b-7c00-baa4-f3209c902abf,2026-10-07",
+        "note": "Generate ideas and implement the best one. User delegated visual candidate selection; exact spec/native approval remains separate.",
+        "title": "Owner request for a real Last Stand in-game UI",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SOURCE-02",
+        "locator": "campaign-unity/docs/last-stand-ui/concepts-20261007.png",
+        "note": "Generated from the actual localhost garage screenshot using the available image generator. No Imagen 2.5 model selector was exposed. A is the selected interface reference; scenery and generated text are not implementation authority.",
+        "title": "Matched generated UI directions A/B/C",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SOURCE-03",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs",
+        "note": "Current live Canvas values/actions checked with controller source and LAST-STAND-ROADMAP.md. Existing approved loop/foundation scope and pending owner gates are preserved.",
+        "title": "Current Unity loop HUD and prototype contract",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SOURCE-04",
+        "locator": ".codearbiter/decisions/0018-preact-battle-console-semantic-ownership.md",
+        "note": "Accepted Preact semantic ownership governs the classic client surface. This separate Unity HUD does not modify that surface or supersede its ADR.",
+        "title": "Classic-client battle-console boundary",
+        "type": "decision_record",
+        "url": null
+      },
+      {
+        "id": "SOURCE-05",
+        "locator": "Codex chat 01a10da4-f88b-7c00-baa4-f3209c902abf, 2026-10-07: also the game should continue playing even when it is not the focused window",
+        "note": "Amends the pending Last Stand UI feature. Focus loss must cease to pause the active run; it does not approve the prior draft or request closed-page offline progression.",
+        "title": "Owner request for idle background play",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SOURCE-06",
+        "locator": "Web content in background tabs",
+        "note": "Observed 2026-10-07. Unity permits background operation through runInBackground, while browsers throttle hidden content; default frame timing can lose elapsed progression.",
+        "title": "Unity 6.3 Web background performance",
+        "type": "primary_documentation",
+        "url": "https://docs.unity3d.com/6000.3/Documentation/Manual/webgl-performance.html"
+      },
+      {
+        "id": "SOURCE-07",
+        "locator": "Concepts and usage; policies in place to aid background page performance",
+        "note": "Observed 2026-10-07. Blur and hidden are distinct; browsers throttle timers and may stop animation callbacks. Promise elapsed-time continuation while the same page remains loaded, not guaranteed hidden rendering.",
+        "title": "MDN Page Visibility API",
+        "type": "primary_documentation",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API"
+      },
+      {
+        "id": "SOURCE-08",
+        "locator": "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs; LastStandLoopController.cs; LastStandAudio.cs; EncounterProfile.cs; e2e/helpers/lastStandJourney.mjs",
+        "note": "Current focus/application/frame-gap suspension is shared. PlayablePrototype is distinguishable from Legacy and VisualReview. Current journey expects focus suspension; only dedicated Last Stand expectations may change under this new approved specification. Model is 20 Hz and playable horizon 3600 ticks.",
+        "title": "Shared encounter and dedicated Last Stand lifecycle",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "summary": "Replace oversized prototype overlays with a coherent live Unity interface and continue the active idle run across focus loss and hidden-tab throttling, preserving combat/economy/saves, explicit Pause and manual Claim; deliver a source-bound localhost preview for owner review.",
+    "title": "Last Stand game UI and background play — Field Console"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-game-ui.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 5,
+  "schema_version": "0.3.1",
+  "slug": "last-stand-game-ui"
+}
+</script>
+</body></html>

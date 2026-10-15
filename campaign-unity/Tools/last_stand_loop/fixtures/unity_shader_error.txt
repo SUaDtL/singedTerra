@@ -1,0 +1,4 @@
+Shader error in 'Hidden/SingedTerra/WebGL/HDRDebugView': "RWTexture2D" is not supported on GLES 3.0 ; at Assets/WebGLShaders/HDRDebugViewWebGL.shader(206) (on gles3)
+Shader error in 'Hidden/SingedTerra/WebGL/CoreCopy': redefinition of 'Attributes' at Assets/WebGLShaders/CoreCopyWebGL.shader(82) (on gles3)
+Shader warning in 'Hidden/SingedTerra/WebGL/CoreCopy': Hidden/SingedTerra/WebGL/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)
+ST_LS_WEB_BUILD_PASS bytes=82134727 path=C:\Users\brenn\st-art-pr\campaign-unity\Builds\Web-20261004T235849Z-1dede9

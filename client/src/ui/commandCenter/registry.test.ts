@@ -71,6 +71,7 @@ const allAvailable = Object.freeze<FixtureContext>({
   availableCategories: new Set(['campaigns', 'multiplayer', 'skirmishes']),
   availableItems: new Set([
     'ash-road',
+    'last-stand',
     'first-salvo',
     'imported-challenge',
     'online',
@@ -86,7 +87,7 @@ function fullRegistry(context: FixtureContext = allAvailable) {
       item('first-salvo'),
       item('imported-challenge'),
     ]),
-    category('campaigns', 10, [item('ash-road')]),
+    category('campaigns', 10, [item('ash-road'), item('last-stand')]),
   ], context);
 }
 
@@ -208,6 +209,24 @@ describe('initial command selection', () => {
       source: 'imported-challenge',
       selection: selection('skirmishes', 'imported-challenge'),
     });
+  });
+
+  it('restores an explicit Last Stand return even without storage while preserving invite priority', () => {
+    const returning = selection('campaigns', 'last-stand');
+    const blockedStore = rememberedStore(null);
+    expect(resolveInitialCommandSelection(fullRegistry(), priorities({
+      explicitInviteOrRejoin: undefined,
+      importedChallenge: undefined,
+      explicitCampaignReturn: returning,
+    }), blockedStore)).toEqual({ source: 'explicit-campaign-return', selection: returning });
+    expect(resolveInitialCommandSelection(fullRegistry(), priorities({
+      importedChallenge: undefined,
+      explicitCampaignReturn: returning,
+    }), blockedStore)?.source).toBe('explicit-invite-or-rejoin');
+    expect(resolveInitialCommandSelection(fullRegistry(), priorities({
+      explicitInviteOrRejoin: undefined,
+      explicitCampaignReturn: returning,
+    }), blockedStore)?.source).toBe('imported-challenge');
   });
 
   it.each([

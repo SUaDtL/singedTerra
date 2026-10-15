@@ -18,6 +18,9 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
       item?.click();
       if (item) return item;
     }
+    if (category === 'campaigns') {
+      root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')?.click();
+    }
     match = [...root.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === text);
   }
@@ -54,6 +57,10 @@ describe('Lobby command center navigation', () => {
     root.querySelector<HTMLButtonElement>(
       '[data-command-surface="rail"][data-command-category="campaigns"]',
     )?.click();
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull();
+    expect(root.querySelector('[data-command-item="last-stand"]')?.getAttribute('aria-current'))
+      .toBe('true');
+    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!.click();
     const campaignPrimary = root.querySelector<HTMLButtonElement>(
       '[data-campaign-command-view] [data-command-primary]',
     );
@@ -161,7 +168,10 @@ describe('Lobby command center navigation', () => {
   });
 
   it('opens a valid room invite directly in Online join preparation', () => {
-    history.replaceState(null, '', '/singedTerra/?join=ab12');
+    sessionStorage.setItem('singedterra.command-center.selection.v1', JSON.stringify({
+      categoryId: 'campaigns', itemId: 'ash-road',
+    }));
+    history.replaceState(null, '', '/singedTerra/?join=ab12#challenge=ST1-CW-16');
     const lobby = new Lobby(root, vi.fn());
 
     lobby.show();

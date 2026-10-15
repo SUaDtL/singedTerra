@@ -1,0 +1,644 @@
+{
+    "schema": 1,
+    "scope": "ST-VIS-01 saved-scene authoring",
+    "editor": "6000.3.24f1",
+    "sourceScene": "Assets/Scenes/FieldAssembly.unity",
+    "sourceSceneSha256": "5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65",
+    "preserved": [
+        {
+            "path": "Assets/Art/PartsLibrary/catalog.json",
+            "sha256": "a68c63e92e14e43401398d5f64e96f3060376e9b2df5da58c97c97c5a6464b84"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/catalog.json.meta",
+            "sha256": "662f84b87e4530228aa94839b884bf14b7b3116e567d961c4e1cd2707f2ddb1a"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-A01.fbx",
+            "sha256": "e855d949f23e19ef163a591fb15f7b0a41b31de40a348e8256e92b26e25ec251"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-A01.fbx.meta",
+            "sha256": "3310b879ce882ba848c32389e81f5f1d174d9b06940cb021186745ff10eeb39c"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-A02.fbx",
+            "sha256": "28bd1c5cd2b5e71cc1f2e6d889b70759bd1d10dce544ea0fad635f45d20ae261"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-A02.fbx.meta",
+            "sha256": "2bfdc226a2742e1cf817d169410957438618fa387910ef41306dc3f9775dbfdb"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-A03.fbx",
+            "sha256": "b847b6e6bdf1047d2cf7a04a8413b97f284730e19b704406f3ce18319d8f90f5"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-A03.fbx.meta",
+            "sha256": "fae4ee4135ea663a67e218111d5f5ef3a667657a8ea5006d01b1d2540b45d168"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B01.fbx",
+            "sha256": "e1b07e4c542bbb164497473c53731f5c2b63a9ef8c262276fe4d897d99960142"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B01.fbx.meta",
+            "sha256": "7235be757e65d4fa369f4b92f5bdbfefcc1e9eb8e6dab26ea25277f4c03f82ef"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B02.fbx",
+            "sha256": "b8727b344e73e11b605a5d67d2360e798525146f629c7b36ccb5cd03516788ef"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B02.fbx.meta",
+            "sha256": "872d3e7cca1c59d2f061b23e9d532d483ff41881880a7cea8d1f9a3f46632ebf"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B03.fbx",
+            "sha256": "336a791ae50d5e710307eeb9fce99d1abe42b166f0dfc2de752f9aeeef8f0e35"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B03.fbx.meta",
+            "sha256": "27d9dab9132f5f8a8ab1c5610f4f1d023a5bc4ca5e8c5e6f9761e0e731434d58"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B04.fbx",
+            "sha256": "c80b9a6328b43ba9db3d721a224c1fe75ac157b3ccc014375cc792e629519cb8"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-B04.fbx.meta",
+            "sha256": "47f479e5e7fd0a36ac2a59c7cef24c697eebeebfdb4ed46490dea5ff2f494e55"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-C01.fbx",
+            "sha256": "62ecb691edcb763d0594b5e2f7e5d18bc00b8f92fa8e43174eae39c8115e5fbc"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-C01.fbx.meta",
+            "sha256": "48b2c7ce0aef752c138929cde0a7591233b89926a74a74e45f05ca2ee6cc2673"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-C02.fbx",
+            "sha256": "4018f8d925a8bfb35eb910e7d9124559b85e148389e88ae3805f1f519e247975"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-C02.fbx.meta",
+            "sha256": "1d8b62057fbc5e4415a46d5971e21531a3d45ec0758c946e7c85eca8403f8cf8"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-C03.fbx",
+            "sha256": "b4792223e921c0ca2c8dea48ceb040af96743265862726aca4e7be3008a24642"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-C03.fbx.meta",
+            "sha256": "bcf9ab19ac2d4ae62dfa38fe687393fe415798dbf2b8a711176a33240330d1e9"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-G01.fbx",
+            "sha256": "2f7faf9f1e80f1417277cb500e66bece713e92826ac021312ff33492da4f7cd5"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-G01.fbx.meta",
+            "sha256": "41d6a42ecdf017ab4c1a7b2761990680e6dc5e796ba936a075c4a0a9e6f2c879"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-G02.fbx",
+            "sha256": "da994063869ad167aa8bf33f4a25cfd50995efad04323731b7a40657fde3c46d"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-G02.fbx.meta",
+            "sha256": "af574b784332f451f9109c67148f795f1c57094b63c2b1f2735bb3a2984dfed5"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-G03.fbx",
+            "sha256": "db8fdc285017eb71bdeeebf737ae68684838967bc0d132894c270574e8075f6c"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-G03.fbx.meta",
+            "sha256": "643903f2f830419da42ab976ef3acfb7940424c8da91fcfadb9b4ff27c4d09be"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-H01.fbx",
+            "sha256": "00630047cfe3692ecb117cf2dfb3659084b6d67b12496f284a5d07e82668d28f"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-H01.fbx.meta",
+            "sha256": "2a501c2dc28ac2d3127746f62db8002ba3f5709f75387fb187985c14dbeeb7a7"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M01.fbx",
+            "sha256": "e41bf4d9663963cc1a6d3abb1e667342f9e9e21a14b45bdc94e0ed886044238b"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M01.fbx.meta",
+            "sha256": "8755322d83147f5cfb99bfde2a4da3778b43db262d2080fcf5eed401fad1db60"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M02.fbx",
+            "sha256": "9c1a45b9aba47beaac447248ae7eb9889d0a2a9c45971a09ac2ab4e6b7f9c3e6"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M02.fbx.meta",
+            "sha256": "4227e11506de7b0d006f0e2ec87fb7eaf46eaffa4b26ae524a62427e25105e04"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M03.fbx",
+            "sha256": "3e402d959710ebd2b9e5cfc23cfb3108a563568d679043f26463675111a10f59"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M03.fbx.meta",
+            "sha256": "75ce82cce83d792945cdb0dc31b3a757b7f544943d2c6c2fbe2ee2bd7cd6fdaf"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M04.fbx",
+            "sha256": "00e24f771666664f22a10aae104281d70410dde3266c3cfeccea19ecdce2b7f3"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-M04.fbx.meta",
+            "sha256": "282f302298001f4ce4347e90aaab0b7ae01dd3d6901821c4f43ad378d334cf07"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-T01.fbx",
+            "sha256": "41ad5edd04a4d95ffbd28683eb8cc438d2048d1b8f07734d1aaa738be5c9fefa"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-T01.fbx.meta",
+            "sha256": "11112154116a994026539144aac186611e1e69c7b7a91c967a3168eeb4f65096"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-U01.fbx",
+            "sha256": "58c1a72ea424ac7ef2af99c2bd2af5f7b907dde0d39458ad88601b68d6d0e66c"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary/STK-U01.fbx.meta",
+            "sha256": "58ae737e6372cc6afbf679f06b9382f0711f95a47b0589f966262c1f0383daac"
+        },
+        {
+            "path": "Assets/Art/Armor_BaseColor.png",
+            "sha256": "0c5cfdae6bca55e4765cb6ee02477ad35accd0899139d2ea0565589d3b4b7d46"
+        },
+        {
+            "path": "Assets/Art/Armor_BaseColor.png.meta",
+            "sha256": "992c10c29e2b793edd4888844cb607d109476502018f784c5339ddde05707b8e"
+        },
+        {
+            "path": "Assets/Art/art-manifest.json",
+            "sha256": "61313f8b4c095916587bcd8fdda344ed54b4a4cc7c850802f983908ebec7b4fd"
+        },
+        {
+            "path": "Assets/Art/art-manifest.json.meta",
+            "sha256": "12ef31ec2013ed50fd2f36c578f5aa1ef6f33d6637a920416d6d43ced7fd70ef"
+        },
+        {
+            "path": "Assets/Art/Clearing_A.fbx",
+            "sha256": "04f4ec38ddae0b9abb2028a0d041b11ecd47527a8c53b9006fb606eba7470a82"
+        },
+        {
+            "path": "Assets/Art/Clearing_A.fbx.meta",
+            "sha256": "7d51f57870dc34ba7d8fa30b3f044bff20a0045285a7b93a8cec10e3b716ece5"
+        },
+        {
+            "path": "Assets/Art/Earth_BaseColor.png",
+            "sha256": "9663cbc3de4a2e94c3805f1a1486fba2e6eacee441018f03e22930517c3581fd"
+        },
+        {
+            "path": "Assets/Art/Earth_BaseColor.png.meta",
+            "sha256": "27250ffc6202407f54d6d2e9e0caf6d917ca3b1c9313fddd0239aa9516fa5148"
+        },
+        {
+            "path": "Assets/Art/PartsLibrary.meta",
+            "sha256": "dad084a13e701d8be5e8e0c8c8ca1baa0aa73f6b8e25d111b596e70267e9a0d6"
+        },
+        {
+            "path": "Assets/Art/StarterTank_A.fbx",
+            "sha256": "9e84bb59c4ebd1c50bda3f0b9b97b85e6776e012885b480ad4a51e21902bda21"
+        },
+        {
+            "path": "Assets/Art/StarterTank_A.fbx.meta",
+            "sha256": "14cd3f7313a0e036ecd4e56cd2d21c24b7980758ae681589b3cf6057fee0a546"
+        },
+        {
+            "path": "Assets/Art/VisualReview.meta",
+            "sha256": "5781cac54e56d9f6c6b996d38fda454a5353df187514281afca19c43d9535255"
+        },
+        {
+            "path": "Assets/Materials/Armor.mat",
+            "sha256": "ab4ca54cdecc39ab10f53bba510b4be0d0548343020c90e4b87d6433cc4d3d66"
+        },
+        {
+            "path": "Assets/Materials/Armor.mat.meta",
+            "sha256": "3da4731902040d1f21cb1a859a11dcb15d15b9ebf89af1ebf55de885c054adf4"
+        },
+        {
+            "path": "Assets/Materials/ArtPipeline.asset",
+            "sha256": "5a56c053b6c4dfac1e5876b9572a94d2d5237437ea4ae3bbb4657f2b3d9c5286"
+        },
+        {
+            "path": "Assets/Materials/ArtPipeline.asset.meta",
+            "sha256": "056112e979927935e82d95222c8685a4cdc2c3aa9e9b926617da93a4ab5987b9"
+        },
+        {
+            "path": "Assets/Materials/ArtRenderer.asset",
+            "sha256": "76e6b417dbd73f44575ec7ab1cbed92be46eeca447cd8ecd0ff68e0e0f54e0c7"
+        },
+        {
+            "path": "Assets/Materials/ArtRenderer.asset.meta",
+            "sha256": "ae117494db05e1dbe53e618f0ce4cdac96a2ca359e44376b521ad2f7cf18f1b9"
+        },
+        {
+            "path": "Assets/Materials/Brass.mat",
+            "sha256": "464b8dd6a0964675cc2b9e1f8b0e62b621f4475cbce312ccbe132b605a06f77c"
+        },
+        {
+            "path": "Assets/Materials/Brass.mat.meta",
+            "sha256": "06197bc03fa1882be050bb9edeaf1710d40f1b57d0a38480a5ea2096ccd4cc9b"
+        },
+        {
+            "path": "Assets/Materials/Concrete.mat",
+            "sha256": "1a40bbaed1380f024a83387a6b61063d3e8724fab2fa00e6ce04f1ee79c3b75b"
+        },
+        {
+            "path": "Assets/Materials/Concrete.mat.meta",
+            "sha256": "bf1f964d535db8dcb1910345555faf0cbbbcdad00e368a392124f6c69df7ee35"
+        },
+        {
+            "path": "Assets/Materials/Earth.mat",
+            "sha256": "22176707d52f0cd6dbeb8da21650be6a77abd13460a07e6ccbfa1d9812276ab5"
+        },
+        {
+            "path": "Assets/Materials/Earth.mat.meta",
+            "sha256": "a3bdb1cddcc8d6752f8b84fba72469a4833260a95624fa37e66868d6258229ac"
+        },
+        {
+            "path": "Assets/Materials/Edge.mat",
+            "sha256": "9cfee552cd65ed7f4465220609393b314298fe32a40381ba59ca7b103ae5c8b0"
+        },
+        {
+            "path": "Assets/Materials/Edge.mat.meta",
+            "sha256": "35581701f530ab32104efb2abc7a6aaafe0a6110ecc124e6e759728161ce6f79"
+        },
+        {
+            "path": "Assets/Materials/Marking.mat",
+            "sha256": "28f4c8de6bf7394531411250c560fb24d34de751df822f3744feaed2b067a97b"
+        },
+        {
+            "path": "Assets/Materials/Marking.mat.meta",
+            "sha256": "6c457dbe5ffc6c56689364a7a8702fcca0ea424107af2d7fd715069fa75cb31d"
+        },
+        {
+            "path": "Assets/Materials/Optic.mat",
+            "sha256": "23da252374c09fd36a87da5245b9b76d1ad0fa02eb5dc41bc4ff5e9e16193eff"
+        },
+        {
+            "path": "Assets/Materials/Optic.mat.meta",
+            "sha256": "9531e45a2629851add4532c341a12bf4a6158281dbcc1953546ed477235559c3"
+        },
+        {
+            "path": "Assets/Materials/Rubber.mat",
+            "sha256": "8293fbdfe16fefbc5b5eb9bcfbebc2900e880176324e7ce7cdb3ddb783991a50"
+        },
+        {
+            "path": "Assets/Materials/Rubber.mat.meta",
+            "sha256": "a8a3d42dde8217f3f8469cf0b738437794e0c4fd88a6bdb6ec134224a22f5145"
+        },
+        {
+            "path": "Assets/Materials/Soot.mat",
+            "sha256": "6afd989206c3599bb3bc1f1530969016847dc18df8d30712dcc4d9b25d21247a"
+        },
+        {
+            "path": "Assets/Materials/Soot.mat.meta",
+            "sha256": "1c58b4641a2ae7f321b2a790a838b00e34bd6c6d792b59a856a169965c6a0d84"
+        },
+        {
+            "path": "Assets/Materials/Steel.mat",
+            "sha256": "776315ee436f855d048d2084e0cafa56f78ff08785575ca31ae118b8fef47637"
+        },
+        {
+            "path": "Assets/Materials/Steel.mat.meta",
+            "sha256": "07fd8e9a640dda41d16450061cd061116cb419e3b1d52c7efaab09e734d31894"
+        },
+        {
+            "path": "Assets/Materials/Wood.mat",
+            "sha256": "8a34e9daa7d09310bb17169b30fefd9bbe00b068dafc51a90e30ab1e6ab5f8d2"
+        },
+        {
+            "path": "Assets/Materials/Wood.mat.meta",
+            "sha256": "8a21f391fd50847c65981f3575ef68e9d3a779e2ab04363e80d48801ec18a209"
+        },
+        {
+            "path": "Assets/PartsLibrary/import-receipt.json",
+            "sha256": "756063431025269f85b2e721d7b6d18febd185ff03a455cf81d5613edb85c99b"
+        },
+        {
+            "path": "Assets/PartsLibrary/import-receipt.json.meta",
+            "sha256": "805b1d111dfc1f72144eede1e240dd0fdaca7cf547d623a725787a36d49ac406"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials.meta",
+            "sha256": "497539e0ab0fd9758c6ee988dc70ab65224d441cc7ddcfc1e50fbb89f71b9e80"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/Canvas.mat",
+            "sha256": "16604e35c9d360ed72ec137428f7d28ea4b3846774989d5ae9c167ebe65f6e7e"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/Canvas.mat.meta",
+            "sha256": "18bd00bd344e1db3ecfea558b535b2f98a0be6844acca425f4feba9baf19ac08"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/KitPaint_Olive.mat",
+            "sha256": "aaf948a7f3d7c97a219863b2740e9a8c90510ccfc58bac7014531f139b809635"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/KitPaint_Olive.mat.meta",
+            "sha256": "fcd04e760b339f7c4f130f95d330c3566a2bcbdd19968ab8f896e206c3a3284f"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/KitPaint_Oxide.mat",
+            "sha256": "210d38d3cce009439f051d7d1847d7f31b2866b6eb8f01ac8223e974bec0c31e"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/KitPaint_Oxide.mat.meta",
+            "sha256": "df43e0d69654731b6539590e7377c9de8e1f96bbfa9b274ed7123dfe6b4becc2"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/KitPaint_Slate.mat",
+            "sha256": "52479ea66a8eac651604b2880d38e3a0926407973b1d6a3fd668068846e5358d"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/KitPaint_Slate.mat.meta",
+            "sha256": "1891cab601dde623ffddeb1015287685fcea25207d3fb5037596b45a19810208"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/Oxide.mat",
+            "sha256": "81cd79c2d77f31c297c79cfc00f6b8d3bef5d822f1753cfaf4c20ad250d3aea1"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/Oxide.mat.meta",
+            "sha256": "bc878d4eb691e5bdac93ec0f2d173355af8572f366e94568922718a1b3fbce1a"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/Warning.mat",
+            "sha256": "cff24895aac165e20ef381ee957e014d09ffbb49df8655f3ba9686d8b1d96c33"
+        },
+        {
+            "path": "Assets/PartsLibrary/Materials/Warning.mat.meta",
+            "sha256": "39b22ce3b4363fca8c18641f85131f10935c6dc0c5faebd8995cc7de0270d26d"
+        },
+        {
+            "path": "Assets/PartsLibrary/PartsLibrary_Layout.unity",
+            "sha256": "04817e8c9ed1ea562b79f38ed0d343062f9466f2fb170396779789dd35318d13"
+        },
+        {
+            "path": "Assets/PartsLibrary/PartsLibrary_Layout.unity.meta",
+            "sha256": "d4778a9a17715592069214d9211014b84a497e1de1e029be5afc3607c9a03cff"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs.meta",
+            "sha256": "73c7269734689d8fee1a83484aede4b634d9eea4a68adc154410dc1226ac394d"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-A01.prefab",
+            "sha256": "f5b29c74f6723081f80425f9f2416c356bc871be6246b60fadc6539c09f38fd7"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-A01.prefab.meta",
+            "sha256": "224ee61a8f918b851b5e94cfa085a525ab3093c745966917065f4d967dfd0877"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-A02.prefab",
+            "sha256": "1b3e77d1fd3bedbfc6c974dc4c956e6dee503d13c657292c44b3b2326ff9e508"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-A02.prefab.meta",
+            "sha256": "dddd943388cc4cc121d72efb58f9cd854a5d36d798cfe6666541de7b53c535a2"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-A03.prefab",
+            "sha256": "6c969cca768cab82263dc95ea448985f7dbf1bd295805360427b13d386b2cbfc"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-A03.prefab.meta",
+            "sha256": "54a965b2f58141d364a01fad7afe456939af083c3b7eff345196eccc064eb5a6"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B01.prefab",
+            "sha256": "6612988bd39b3ab5ef65583008694cf1feb14e50642c1d82238c24e84214c4e7"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B01.prefab.meta",
+            "sha256": "9a662d073b5f9c378f0329601aef90e18906212d1504d503843a65d59f9380b0"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B02.prefab",
+            "sha256": "31d4c096f51ba0b774d7953c0145001e4dbf0798de951db340659415f29a2afa"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B02.prefab.meta",
+            "sha256": "9db02272ebea888d78ed6d70037e7d20127ed7ebcc27d04804fcdea6a32d5fd8"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B03.prefab",
+            "sha256": "d55f6531c0df53e238b2931ad570442439b915ad9437dd37d0542c8701eb22d4"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B03.prefab.meta",
+            "sha256": "0bc3a288b5988412db042acd4c84736915e54451c755ff815dec97759f3c3f0f"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B04.prefab",
+            "sha256": "eec71924b28e6143dee219a5af8086666054af5fa34996629191d1d3a79e517e"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-B04.prefab.meta",
+            "sha256": "54baa984a09f0f20ce9d54dfa640b33f9ffaf3dfe2b6b16ced787034ed0b8262"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-C01.prefab",
+            "sha256": "5120cbb69ec0c03324c31b91de89285c989419ed658b26e32f533a2a02cf773c"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-C01.prefab.meta",
+            "sha256": "42a9ad84b0a4a9178dea0d429d9fc5afbc20d33a0816d3674875a8b1f0d8bb2c"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-C02.prefab",
+            "sha256": "def2798cd5e94aa1efc8ecf524d4d4fd0a4f2d26811844ab4432a6e66da60dcf"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-C02.prefab.meta",
+            "sha256": "732905fb5e4a00ca502cd3a26d565f102b6939e8739f44acbdbcaf6308c6f8b4"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-C03.prefab",
+            "sha256": "8b56773c8a2dccbdaf05b0ec0110550e6aa72b2e67b5ac66ed3cbc1f3b7dde06"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-C03.prefab.meta",
+            "sha256": "7b0f0d9be351e4f9281e0877d61484376fa6cb38cf81ea0ef402423bc7796d8d"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-G01.prefab",
+            "sha256": "471c0e197dd8fa99e0757e39d157fa9beee26c08e72a9b00481bd523ef7d84af"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-G01.prefab.meta",
+            "sha256": "addfd30c72aeac1408368dcc1c556a6b04be95a18b92c9b7378337df1a248ce1"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-G02.prefab",
+            "sha256": "eddf835f5124f67f5874f8898123f436ed4f0063b5f72407a1f4658c3429834f"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-G02.prefab.meta",
+            "sha256": "599c8fd48d3663485e75977cd86ea5280fa2c0a1ef7048d2d250bc47f741bf4e"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-G03.prefab",
+            "sha256": "ab0dd8ac6261272c2b9d53f377c128f2df42fb9a6a05e0a5bc141ce6ec40fae6"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-G03.prefab.meta",
+            "sha256": "854d810e146886e1bd53fec75d636c1fb8cd41bf8db593ee8049f438fbe4aeda"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-H01.prefab",
+            "sha256": "92d7729a869f2dff688700b88877e7f08c30012fb2cf08e1d8e6055cc8da03d6"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-H01.prefab.meta",
+            "sha256": "aff27f664bb7b9b632ec8e13b6815ba31c29577839c592230af2ddb0bee928bb"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M01.prefab",
+            "sha256": "1a1b6935ba18f2debcac89a6a7784d55dabc6b0585cfa446bce807886411bad0"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M01.prefab.meta",
+            "sha256": "02f018f8288c125ce6204f5b5fae27a164208cfe5e2e2311ffed8c156824c9a1"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M02.prefab",
+            "sha256": "97198ca39dca9ee71bec522f5dad47941979c56485355e5bd05635bdddf6d52f"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M02.prefab.meta",
+            "sha256": "b7b833c3e69d538c5bca069409aea72143446ca2cbfd84cacd74e6cfff1e558a"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M03.prefab",
+            "sha256": "cb15526140779de2ef1fb6ddfc226dc121ef4c5486d4a1738840d41a440f622d"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M03.prefab.meta",
+            "sha256": "e18c8665c9ca43fba357187066c5455d555f9bd6438540c555cf58f9e558d95e"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M04.prefab",
+            "sha256": "b15aba8a680755c1e598a62cbe6658083a27b96e994fe3ea94476c157a8895b4"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-M04.prefab.meta",
+            "sha256": "c188b05a9bfba6c6f45eacf5a89b0fb981f895ef10f28ca3e93d076da64c28c4"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-S01.prefab",
+            "sha256": "5182d6b775675179ffff8ce055e377ae368e42927a3c2a000f3109c7bc424278"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-S01.prefab.meta",
+            "sha256": "410936eba1365abc71e9fc6f36a45462ae4c41f952cb55e2a22ac5c987214180"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-S02.prefab",
+            "sha256": "81edabdc833a813d4f5842280434cdcfa7889ae96cc710d650e3e3a9eb0cc752"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-S02.prefab.meta",
+            "sha256": "b83312493c220a4bb744c48d78d5149d5d54ec5fcb506c6d2f6d6e9c3032940c"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-S03.prefab",
+            "sha256": "c695b1dc848aa21b4db3bc96c4944cc7e0ba4c13fe190339fbc5aa56fe0e1957"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-S03.prefab.meta",
+            "sha256": "6d8d771e644b9e5c4966136e8ecae4da43960d732b8f38b38871edbb2de71b2c"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-T01.prefab",
+            "sha256": "c2cefcb0056babda0738c17edee99fe28f7cfd4c14bd3e95101548d38d7665c0"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-T01.prefab.meta",
+            "sha256": "7c5d907ce437d7dfa4b7361b52d9b665d64448397c6502b15ed532e62f00f11e"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-U01.prefab",
+            "sha256": "64bfeac0990eac4e3670f2154b3ca27c773b06713183573ae419512ed56577a9"
+        },
+        {
+            "path": "Assets/PartsLibrary/Prefabs/STK-U01.prefab.meta",
+            "sha256": "62361f3d1ade7d087367b7751aa5abe4920199c5df0b8af4c1ee889283ffa730"
+        },
+        {
+            "path": "Assets/Prefabs/Clearing.prefab",
+            "sha256": "652a63992267a910739e16760cc7b1d5f428b86aad0e51a0fa89be9c2138a597"
+        },
+        {
+            "path": "Assets/Prefabs/Clearing.prefab.meta",
+            "sha256": "431e9ada2eae0c4586ed9aa2fc1b88233d7edcf08b6281b62bcf0f85f270869f"
+        },
+        {
+            "path": "Assets/Prefabs/StarterTank.prefab",
+            "sha256": "a1c61da13555c1d0fe52898b583e56faa841e924b2817254493f9264d864af52"
+        },
+        {
+            "path": "Assets/Prefabs/StarterTank.prefab.meta",
+            "sha256": "9ed7eb75163c9b83ab424f5c534929c8b933852691179c052bcd5c040e7ed332"
+        },
+        {
+            "path": "Assets/Scenes/FieldAssembly.unity",
+            "sha256": "5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65"
+        },
+        {
+            "path": "Assets/Scenes/FieldAssembly.unity.meta",
+            "sha256": "599e3d5c7d820ee7ef7eb0eb77a02f7827c3a6a050ce2029d8512a849a17d2d4"
+        }
+    ],
+    "vehicles": [
+        {
+            "id": "STV-E01",
+            "size": {
+                "x": 2.318000316619873,
+                "y": 1.6405000686645508,
+                "z": 2.8499996662139894
+            },
+            "center": {
+                "x": 1.1920928955078126e-7,
+                "y": 0.8202500343322754,
+                "z": -1.1920928955078126e-7
+            },
+            "triangles": 8868,
+            "wheels": 10
+        },
+        {
+            "id": "STV-E02",
+            "size": {
+                "x": 2.318000316619873,
+                "y": 1.6405000686645508,
+                "z": 3.423999786376953
+            },
+            "center": {
+                "x": 1.1920928955078126e-7,
+                "y": 0.8202500343322754,
+                "z": -0.2870001792907715
+            },
+            "triangles": 9188,
+            "wheels": 10
+        }
+    ],
+    "groundSide": 256.0,
+    "framingRadius": 27.5,
+    "gameplayAdded": false
+}

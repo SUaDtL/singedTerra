@@ -50,6 +50,24 @@ describe('Splash (jsdom DOM behavior)', () => {
     expect(document.getElementById('st-splash-style')).not.toBeNull();
   });
 
+  it('skips only the exact Last Stand return so the restored Campaigns page is immediately usable', async () => {
+    const original = window.location.href;
+    try {
+      window.history.replaceState(null, '', '/#campaigns/last-stand');
+      const { mountSplash } = await import('./Splash');
+      mountSplash();
+      expect(document.getElementById('st-splash')).toBeNull();
+
+      window.history.replaceState(null, '', '/#campaigns/last-stand/extra');
+      vi.resetModules();
+      const nearMiss = await import('./Splash');
+      nearMiss.mountSplash();
+      expect(document.getElementById('st-splash')).not.toBeNull();
+    } finally {
+      window.history.replaceState(null, '', original);
+    }
+  });
+
   it('auto-mounts a fully-formed overlay on import, with style, art, title, prompt and hint', async () => {
     const { mountSplash } = await import('./Splash');
     // The module already auto-mounted on import above; calling mountSplash() again

@@ -1,0 +1,1147 @@
+{
+  "status": "pass",
+  "build": "Web-20260926T092302Z-d0c083",
+  "artifacts": {
+    "index.html": "f7e14a5dfd41bf2eb28f4bfbb019815f81f55d3f31b769e4b4254a43a8666d32",
+    "Build/Web-20260926T092302Z-d0c083.data": "e13197076c9223da6a4be3edb306c7d0aa07b56a74fbad0ee9fc0de16934bd9a",
+    "Build/Web-20260926T092302Z-d0c083.framework.js": "08abaf9ed03ce8ab4e76503baac5c236b9bf747bf8ec14d5f6ca2610f58c4bb2",
+    "Build/Web-20260926T092302Z-d0c083.loader.js": "eda8877831723be3452ea1fe6e18a3fe48aed97ad973caafeeeab9828b56bce0",
+    "Build/Web-20260926T092302Z-d0c083.wasm": "d81517746a16e6cfcf5cd1240b60da285aa264f3a2d6cda9de14145e3d885258",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "build_receipt_sha256": "9b27d0868e6f4bc6642ab0a40f61fa0af01b0dfb3248a0270ebde9611b8f093c",
+  "headless": true,
+  "focus_scope": "browser-tab",
+  "windows_window_acceptance": false,
+  "unexecuted": [
+    "Windows window minimize and window-manager acceptance"
+  ],
+  "checks": [
+    {
+      "check": "inspection remains initial mode",
+      "pass": true
+    },
+    {
+      "check": "repair fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "repair committed fitting",
+      "pass": true
+    },
+    {
+      "check": "world click does not issue aiming, fitting or manual preview commands",
+      "pass": true
+    },
+    {
+      "check": "user pause accepted",
+      "pass": true
+    },
+    {
+      "check": "paused tick/hull freeze and reduced decoration",
+      "pass": true
+    },
+    {
+      "check": "restore decoration without combat advance",
+      "pass": true
+    },
+    {
+      "check": "explicit resume accepted",
+      "pass": true
+    },
+    {
+      "check": "actual foreground focus loss without focus emulation",
+      "pass": true
+    },
+    {
+      "check": "real focus loss retains run without catch-up",
+      "pass": true
+    },
+    {
+      "check": "restore full tracers after focus check",
+      "pass": true
+    },
+    {
+      "check": "resume after foreground return",
+      "pass": true
+    },
+    {
+      "check": "02-repair-full actual defeat",
+      "pass": true
+    },
+    {
+      "check": "02-repair-full matches C# fixture outcome",
+      "pass": true
+    },
+    {
+      "check": "02-repair-full both threat roles and automatic cannon",
+      "pass": true
+    },
+    {
+      "check": "02-repair-full presentation matches active population",
+      "pass": true
+    },
+    {
+      "check": "terminal state never advances",
+      "pass": true
+    },
+    {
+      "check": "repair return clears encounter",
+      "pass": true
+    },
+    {
+      "check": "launcher chosen before deployment",
+      "pass": true
+    },
+    {
+      "check": "launcher fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "launcher committed fitting",
+      "pass": true
+    },
+    {
+      "check": "05-launcher-full actual defeat",
+      "pass": true
+    },
+    {
+      "check": "05-launcher-full matches C# fixture outcome",
+      "pass": true
+    },
+    {
+      "check": "05-launcher-full both threat roles and automatic cannon",
+      "pass": true
+    },
+    {
+      "check": "05-launcher-full presentation matches active population",
+      "pass": true
+    },
+    {
+      "check": "launcher full return clears encounter",
+      "pass": true
+    },
+    {
+      "check": "launcher fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "launcher committed fitting",
+      "pass": true
+    },
+    {
+      "check": "reduced tracer mode during live run",
+      "pass": true
+    },
+    {
+      "check": "07-launcher-reduced actual defeat",
+      "pass": true
+    },
+    {
+      "check": "07-launcher-reduced matches C# fixture outcome",
+      "pass": true
+    },
+    {
+      "check": "07-launcher-reduced both threat roles and automatic cannon",
+      "pass": true
+    },
+    {
+      "check": "07-launcher-reduced presentation matches active population",
+      "pass": true
+    },
+    {
+      "check": "full/reduced effects produce identical complete outcome",
+      "pass": true
+    },
+    {
+      "check": "launcher reduced return clears encounter",
+      "pass": true
+    },
+    {
+      "check": "launcher fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "launcher committed fitting",
+      "pass": true
+    },
+    {
+      "check": "repeat 1 return clears encounter",
+      "pass": true
+    },
+    {
+      "check": "launcher fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "launcher committed fitting",
+      "pass": true
+    },
+    {
+      "check": "repeat 2 return clears encounter",
+      "pass": true
+    },
+    {
+      "check": "launcher fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "launcher committed fitting",
+      "pass": true
+    },
+    {
+      "check": "repeat 3 return clears encounter",
+      "pass": true
+    },
+    {
+      "check": "launcher fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "launcher committed fitting",
+      "pass": true
+    },
+    {
+      "check": "repeat 4 return clears encounter",
+      "pass": true
+    },
+    {
+      "check": "no JavaScript or error-level console events",
+      "pass": true
+    },
+    {
+      "check": "no failed HTTP requests",
+      "pass": true
+    },
+    {
+      "check": "tested artifact unchanged",
+      "pass": true
+    }
+  ],
+  "clicks": [
+    {
+      "action": "deploy",
+      "x": 800.0,
+      "y": 54.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "pause",
+      "x": 500.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "pause",
+      "x": 500.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "pause",
+      "x": 500.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "return",
+      "x": 1100.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "attachment",
+      "x": 686.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "deploy",
+      "x": 800.0,
+      "y": 54.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "return",
+      "x": 880.0,
+      "y": 673.6,
+      "hold_ms": 150
+    },
+    {
+      "action": "deploy",
+      "x": 640.0,
+      "y": 43.2,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 640.0,
+      "y": 673.6,
+      "hold_ms": 150
+    },
+    {
+      "action": "return",
+      "x": 880.0,
+      "y": 673.6,
+      "hold_ms": 150
+    },
+    {
+      "action": "deploy",
+      "x": 640.0,
+      "y": 43.2,
+      "hold_ms": 150
+    },
+    {
+      "action": "return",
+      "x": 880.0,
+      "y": 673.6,
+      "hold_ms": 150
+    },
+    {
+      "action": "deploy",
+      "x": 640.0,
+      "y": 43.2,
+      "hold_ms": 150
+    },
+    {
+      "action": "return",
+      "x": 880.0,
+      "y": 673.6,
+      "hold_ms": 150
+    },
+    {
+      "action": "deploy",
+      "x": 640.0,
+      "y": 43.2,
+      "hold_ms": 150
+    },
+    {
+      "action": "return",
+      "x": 880.0,
+      "y": 673.6,
+      "hold_ms": 150
+    },
+    {
+      "action": "deploy",
+      "x": 640.0,
+      "y": 43.2,
+      "hold_ms": 150
+    },
+    {
+      "action": "return",
+      "x": 880.0,
+      "y": 673.6,
+      "hold_ms": 150
+    }
+  ],
+  "terminals": [
+    {
+      "action": "terminal",
+      "rules": "encounter-fixture-v1",
+      "status": "Defeated",
+      "fitting": "repair",
+      "reason": "",
+      "summary": "False|Defeated|334|0|21|8|16|0|31|31",
+      "run": 1,
+      "tick": 334,
+      "hp": 0,
+      "maxHp": 120,
+      "spawned": 21,
+      "kills": 8,
+      "cannon": 16,
+      "launcher": 0,
+      "healed": 31,
+      "closeHits": 8,
+      "rangedHits": 23,
+      "alive": 13,
+      "visibleUnits": 13,
+      "pool": 32,
+      "paused": false,
+      "focused": true,
+      "applicationPaused": false,
+      "locked": true,
+      "fullEffects": true,
+      "failed": false
+    },
+    {
+      "action": "terminal",
+      "rules": "encounter-fixture-v1",
+      "status": "Defeated",
+      "fitting": "launcher",
+      "reason": "",
+      "summary": "True|Defeated|388|0|25|13|19|13|0|19",
+      "run": 2,
+      "tick": 388,
+      "hp": 0,
+      "maxHp": 120,
+      "spawned": 25,
+      "kills": 13,
+      "cannon": 19,
+      "launcher": 13,
+      "healed": 0,
+      "closeHits": 3,
+      "rangedHits": 16,
+      "alive": 12,
+      "visibleUnits": 12,
+      "pool": 32,
+      "paused": false,
+      "focused": true,
+      "applicationPaused": false,
+      "locked": true,
+      "fullEffects": true,
+      "failed": false
+    },
+    {
+      "action": "terminal",
+      "rules": "encounter-fixture-v1",
+      "status": "Defeated",
+      "fitting": "launcher",
+      "reason": "",
+      "summary": "True|Defeated|388|0|25|13|19|13|0|19",
+      "run": 3,
+      "tick": 388,
+      "hp": 0,
+      "maxHp": 120,
+      "spawned": 25,
+      "kills": 13,
+      "cannon": 19,
+      "launcher": 13,
+      "healed": 0,
+      "closeHits": 3,
+      "rangedHits": 16,
+      "alive": 12,
+      "visibleUnits": 12,
+      "pool": 32,
+      "paused": false,
+      "focused": true,
+      "applicationPaused": false,
+      "locked": true,
+      "fullEffects": false,
+      "failed": false
+    }
+  ],
+  "expected_csharp": [
+    "False|Defeated|334|0|21|8|16|0|31|31",
+    "True|Defeated|388|0|25|13|19|13|0|19"
+  ],
+  "temporary_port": 55278,
+  "android": false,
+  "performance_test": false,
+  "browser_mode": "owned-headless-new-no-overrides",
+  "debug_port": 55281,
+  "browser_version": "153.0.8010.50",
+  "input_trace": [
+    {
+      "kind": "focus",
+      "time": 1790415292951,
+      "target": "",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "focus",
+      "time": 1790415292951,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415293958,
+      "x": 800,
+      "y": 54,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415294115,
+      "x": 800,
+      "y": 54,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415296532,
+      "x": 800,
+      "y": 450,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415296684,
+      "x": 800,
+      "y": 450,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415296982,
+      "x": 500,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415297139,
+      "x": 500,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415298491,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415298646,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415298802,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415298959,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415299112,
+      "x": 500,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415299269,
+      "x": 500,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "blur",
+      "time": 1790415299325,
+      "target": "unity-canvas",
+      "focused": false,
+      "hidden": false
+    },
+    {
+      "kind": "blur",
+      "time": 1790415299325,
+      "target": "",
+      "focused": false,
+      "hidden": false
+    },
+    {
+      "kind": "visibilitychange",
+      "time": 1790415299333,
+      "target": "",
+      "focused": false,
+      "hidden": true
+    },
+    {
+      "kind": "visibilitychange",
+      "time": 1790415300573,
+      "target": "",
+      "focused": false,
+      "hidden": false
+    },
+    {
+      "kind": "focus",
+      "time": 1790415300573,
+      "target": "",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "focus",
+      "time": 1790415300573,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415300687,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415300853,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415301003,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415301171,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415301336,
+      "x": 500,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415301502,
+      "x": 500,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415316483,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415316641,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415316798,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415316954,
+      "x": 800,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415317112,
+      "x": 1100,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415317270,
+      "x": 1100,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415317424,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415317580,
+      "x": 686,
+      "y": 842,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415317736,
+      "x": 800,
+      "y": 54,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415317891,
+      "x": 800,
+      "y": 54,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415337687,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415337846,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415338017,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415338172,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415338328,
+      "x": 640,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415338484,
+      "x": 640,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415357988,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415358144,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415358287,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415358443,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415358584,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415358739,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415358882,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415359039,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415359182,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415359340,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415359480,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415359636,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415359793,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415359948,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415360106,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415360265,
+      "x": 640,
+      "y": 43.20000076293945,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerdown",
+      "time": 1790415360423,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 1,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    },
+    {
+      "kind": "pointerup",
+      "time": 1790415360579,
+      "x": 880,
+      "y": 673.5999755859375,
+      "button": 0,
+      "buttons": 0,
+      "target": "unity-canvas",
+      "focused": true,
+      "hidden": false
+    }
+  ],
+  "background_dom": {
+    "hidden": true,
+    "focused": false
+  },
+  "browser_closed": true,
+  "browser_forced": false,
+  "server_closed": true,
+  "errors": [],
+  "requests": [],
+  "verifier_sha256": "f15289d53d6dda7edc4e2dbacaab310f6590a6518efdca19bc582104561c5d3a",
+  "warnings": [
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat"
+  ],
+  "shader_diagnostics": [
+    "Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n"
+  ],
+  "sources": {
+    "Unity/Assets/Scripts/ArtHud.cs": "b9d4423c54a4ae78000dee1abd79d56ace93b98d90d23c53e29179fdd35e40c1",
+    "Unity/Assets/Scripts/BattlefieldReview.cs": "136e893bee37dd86e8b0751d0f8818331fa0dfc8a60eca20520a66fae632c3a5",
+    "Unity/Assets/Scripts/EncounterHud.cs": "82733125e7ba368983ab1499ae637d2560004352bc24e362317c81a621970d92",
+    "Unity/Assets/Scripts/EncounterModel.cs": "72df378b2ac1b74a8202e9c747b9924c52fa9532fa5f36a227121c59ef3121ac",
+    "Unity/Assets/Scripts/EncounterProfile.cs": "0c20a2dcd1a22ca469274983a9cf40de3ebd39f0a8a4c7e16bdedd5df293a051",
+    "Unity/Assets/Scripts/EncounterSession.cs": "9feeb063b043a1e8cea8e8e383b4bf49835575acba43b7df10e0366ee68c03de",
+    "Unity/Assets/Scripts/EncounterView.cs": "689fb9853c2ab5622c1e50dd8bf92c9199d5c6dfcb1d796d719f3107be97a1b6",
+    "Unity/Assets/Scripts/ReviewBattleHud.cs": "93a7789e1eb0b9a801321fb4d2ee621efb477579b17fef87c79f66b38d2783cc",
+    "Unity/Assets/Scripts/ReviewCombatVisuals.cs": "a2e6eae97255fa935d60a80dc6dc4401cf69bd956614e24426a60c1d19bcb8c1",
+    "Unity/Assets/Scripts/TankPartCallouts.cs": "3790134539cda38f64ad2c174fc3c10c53eb2ee4aa4d137854b03ef8367b879a",
+    "Unity/Assets/Scripts/TankPresentation.cs": "546cf9e837fd583c0ed6a1ffe36cd2918c1df868d1d38f33532a8de6f81b34c0"
+  }
+}

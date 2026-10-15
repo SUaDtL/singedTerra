@@ -1,0 +1,41 @@
+{
+  "schema": "singedterra-last-stand-web/v1",
+  "source": {
+    "build": "Web-20261015T071220Z-142b35",
+    "receipt": "campaign-unity/docs/last-stand-web/receipt-sanitized.json",
+    "receiptSha256": "46fc87f62080d635869117d4910cbdee21003f277bf9ebc05a830f43a22d9f82",
+    "sourceLockSha256": "dec49f94c7612633bdc6124cfb0a99332742dd582c6fc969b6d95ef99c223f2a",
+    "sourceHead": "39fcde849946c265e3d6575805fb249a45bcdc02",
+    "sourceInventorySha256": "2f0afa96c093b81e98e350a593363be23dae9ff85964a1e20be5619ad77ac365",
+    "originalIndexSha256": "6bb4afe813cd3a91ceef42f28279c3759f32a6057d6037021a39294d1214fd64"
+  },
+  "wrapperSha256": "d1cde1982bbb7eb53056de71bf09719edd20c1cc82bd58e3ca81a4ad00d6d0a6",
+  "wrapperFiles": {
+    "Tools/make_web_entry.py": {
+      "mode": "lf-text",
+      "sha256": "c40054df47a58eee6a75aeaee76b14261972a6fa8d6881ef1786c804cf373f86"
+    },
+    "Tools/web-index-template.html": {
+      "mode": "lf-text",
+      "sha256": "3ddfe93bf5524c384eed370878455b10abe5521e050ad63bdd4a6094219df39a"
+    }
+  },
+  "files": {
+    "Build/Web-20261015T071220Z-142b35.data": "66919b8f0fc8fb2843e05382cd0a3745a0061bc627812fc591d1e4774863c80d",
+    "Build/Web-20261015T071220Z-142b35.framework.js": "7f245faa99ccede8396a972a95e9aadf299a360d6a96fb7b6dc63c77fdb12f21",
+    "Build/Web-20261015T071220Z-142b35.loader.js": "586e16bbc24282788ef0b86f185c6b5e43f611f4fe8d99d14b164fd65e3363d2",
+    "Build/Web-20261015T071220Z-142b35.wasm": "877bc8080fef9840aae197ed110d00fe05325ca508081aac3cd1adb5116d806d",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  }
+}

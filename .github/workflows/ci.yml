@@ -68,8 +68,12 @@ jobs:
         run: node --test scripts/ci/releaseCandidate.test.mjs scripts/ci/releaseWorkflow.test.mjs
       - name: Documentation evidence-template contracts
         run: node --test scripts/checks/manual_baseline.test.mjs
+      - name: Last Stand evidence setup regressions
+        run: node --test scripts/ci/lastStandEvidenceSetup.test.mjs
+      - name: Initialize Last Stand evidence root
+        run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Scope and required-result regressions
-        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs
+        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs
 
   check-work:
     name: engine, database, client and build
@@ -160,23 +164,46 @@ jobs:
       - name: Install Playwright system deps
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
+      - name: Install Last Stand media tools
+        if: matrix.lane == 'product'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ffmpeg mono-mcs
+          ffmpeg -version
+          ffprobe -version
+          /usr/bin/mono --version
+          /usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version
+      - name: Initialize Last Stand evidence root
+        if: matrix.lane == 'product'
+        run: node scripts/ci/prepareLastStandEvidence.mjs
+      - name: Prepare Last Stand browser sandbox
+        if: matrix.lane == 'product'
+        run: node scripts/ci/prepareLastStandBrowser.mjs
       - name: General browser shard 1
         if: matrix.lane == 'core-1'
-        run: npm run test:e2e -- --shard=1/2 --workers=2
+        run: npm run test:e2e -- --shard=1/2 --workers=2 --grep-invert "@live|@last-stand"
       - name: General browser shard 2
         if: matrix.lane == 'core-2'
-        run: npm run test:e2e -- --shard=2/2 --workers=2
+        run: npm run test:e2e -- --shard=2/2 --workers=2 --grep-invert "@live|@last-stand"
       - name: Battle console responsive and interaction checks
         if: matrix.lane == 'product'
         run: npx playwright test -c playwright.product-completion.config.ts
-      - name: Upload Playwright failure artifacts
-        if: failure()
+      - name: Last Stand shared Campaigns journey
+        if: matrix.lane == 'product'
+        env:
+          VITE_BASE: /singedTerra/
+          E2E_DENY_EXTERNAL_NETWORK: '1'
+          LAST_STAND_QUALIFICATION_PROFILE: linux-functional
+        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0
+      - name: Upload Playwright artifacts
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-${{ matrix.lane }}-${{ github.run_attempt }}
           path: |
             test-results/**
             playwright-report/**
+            campaign-unity/Evidence/last-stand-playable-loop/t06/**
           if-no-files-found: warn
 
   check:

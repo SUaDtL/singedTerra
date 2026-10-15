@@ -1,0 +1,174 @@
+{
+  "status": "failed",
+  "build": "Web-20260925T082431Z-e19d77",
+  "artifacts": {
+    "index.html": "1be7d7e4af993f6c0adf7f83a30e4b630be92fe12d65a7a4812e4a20b2ee479e",
+    "Build/Web-20260925T082431Z-e19d77.data": "c2bb1ac24e561922c4f87812e131492378237fa4f0faf41079d0312b32d3c041",
+    "Build/Web-20260925T082431Z-e19d77.framework.js": "1b68826d1f4141afaa72d6f6646408e04e0bda3f01376bbca1f38c4671a04b14",
+    "Build/Web-20260925T082431Z-e19d77.loader.js": "22f17464c7b65eba000e04d29452d1f129b2e4f98a6454d663e45e92f0f1201b",
+    "Build/Web-20260925T082431Z-e19d77.wasm": "6780f36c5ba944b5835d691dab76e03dd6785aa7a746c2e12b766b28adab4aeb",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "build_receipt_sha256": "47cab4259983791a00ab0c648537a980a6166dc2c87de23c642cd0d07a137f56",
+  "checks": [
+    {
+      "check": "inspection remains initial mode",
+      "pass": true
+    },
+    {
+      "check": "repair fresh deployment",
+      "pass": true
+    },
+    {
+      "check": "repair committed fitting",
+      "pass": true
+    },
+    {
+      "check": "world click does not issue aiming, fitting or manual preview commands",
+      "pass": true
+    },
+    {
+      "check": "user pause accepted",
+      "pass": true
+    },
+    {
+      "check": "paused tick/hull freeze and reduced decoration",
+      "pass": true
+    },
+    {
+      "check": "restore decoration without combat advance",
+      "pass": true
+    },
+    {
+      "check": "explicit resume accepted",
+      "pass": true
+    },
+    {
+      "check": "actual foreground focus loss without focus emulation",
+      "pass": true
+    },
+    {
+      "check": "real focus loss retains run without catch-up",
+      "pass": true
+    },
+    {
+      "check": "restore full tracers after focus check",
+      "pass": true
+    },
+    {
+      "check": "resume after foreground return",
+      "pass": true
+    },
+    {
+      "check": "actual minimized page is hidden and unfocused",
+      "pass": false
+    }
+  ],
+  "clicks": [
+    {
+      "action": "deploy",
+      "x": 800.0,
+      "y": 54.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "pause",
+      "x": 500.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "pause",
+      "x": 500.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "effects",
+      "x": 800.0,
+      "y": 842.0,
+      "hold_ms": 150
+    },
+    {
+      "action": "pause",
+      "x": 500.0,
+      "y": 842.0,
+      "hold_ms": 150
+    }
+  ],
+  "terminals": [],
+  "expected_csharp": [
+    "False|Defeated|334|0|21|8|16|0|31|31",
+    "True|Defeated|388|0|25|13|19|13|0|19"
+  ],
+  "temporary_port": 62249,
+  "android": false,
+  "performance_test": false,
+  "browser_version": "153.0.8010.50",
+  "background_dom": {
+    "hidden": false,
+    "focused": false
+  },
+  "minimized_dom": {
+    "hidden": false,
+    "focused": false
+  },
+  "browser_closed": true,
+  "error": "RuntimeError: actual minimized page is hidden and unfocused",
+  "server_closed": true,
+  "errors": [],
+  "requests": [],
+  "verifier_sha256": "344517a22d62128413db42408bed04a3f4ff6fdf0925f14d080327cb2e11b001",
+  "warnings": [
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat"
+  ],
+  "shader_diagnostics": [
+    "Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n"
+  ],
+  "sources": {
+    "Unity/Assets/Scripts/ArtHud.cs": "7242656ac0eff8d1fe5f5cfe8cc75eafb35690f789b20338f0a131b8898ae314",
+    "Unity/Assets/Scripts/EncounterHud.cs": "fb9019ffa338b3242a5b591da415279e75dc68ee478745549e0a81176f3d9105",
+    "Unity/Assets/Scripts/EncounterModel.cs": "bf099d53fd6f4613dfb54b0146f44c20b15acb664ed06e55180969b3cfeb55da",
+    "Unity/Assets/Scripts/EncounterSession.cs": "8207ee79b87a177348408ea1160ae6c1b45d183df1ae28d0040fa3c03e1f5c26",
+    "Unity/Assets/Scripts/EncounterView.cs": "8a8d7236054dafe5e08de921ca7b6dca27022cfed08f75bd4ebc429dff9752ca",
+    "Unity/Assets/Scripts/TankPartCallouts.cs": "91d0b89e119d77a7afe8beaebe0e065069651372a0a0f0bd085dc4ea13fafc15",
+    "Unity/Assets/Scripts/TankPresentation.cs": "a96e04e25b0b7b270996b4dac492659fce32a83c198d2bab8cf68a0b9d35089f"
+  }
+}

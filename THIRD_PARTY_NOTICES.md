@@ -29,13 +29,13 @@ SOFTWARE.
 
 ## Sharp asset tooling
 
-singedTerra uses Sharp 0.35.3 as a development-only deterministic image asset
+singedTerra uses Sharp 0.35.5 as a development-only deterministic image asset
 compiler. Sharp and its platform packages are licensed under the Apache
 License 2.0. Copyright 2013 Lovell Fuller and contributors. The complete
 license is distributed in the installed package and is available at
 https://www.apache.org/licenses/LICENSE-2.0.
 
-Sharp's prebuilt platform packages include libvips 8.18.3 and related image
+Sharp's prebuilt platform packages include libvips 8.18.7 and related image
 libraries under their respective licenses. The Windows x64 package identifies
 libvips, GLib, FriBidi, libexif, libheif, librsvg, and Pango as LGPLv3 via the
 "any later version" clause of LGPLv2 or LGPLv2.1; the remaining bundled

@@ -1,0 +1,1226 @@
+{
+  "utc": "2026-09-25T08:36:15.192105+00:00",
+  "parent_sha": "d87e261b11878ce7e6678fff4925535e1ffb86f0",
+  "slice": "ST-ENC-01",
+  "disposition": "implementation-and-build; encounter browser acceptance partial",
+  "build": "Web-20260925T082431Z-e19d77",
+  "build_receipt_sha256": "47cab4259983791a00ab0c648537a980a6166dc2c87de23c642cd0d07a137f56",
+  "build_stages": [
+    {
+      "stage": "editor-version",
+      "exit": 0
+    },
+    {
+      "stage": "editor-not-open",
+      "exit": 0
+    },
+    {
+      "stage": "unity-web",
+      "exit": 0
+    },
+    {
+      "stage": "web-entry",
+      "exit": 0
+    }
+  ],
+  "artifacts": {
+    "index.html": "1be7d7e4af993f6c0adf7f83a30e4b630be92fe12d65a7a4812e4a20b2ee479e",
+    "Build/Web-20260925T082431Z-e19d77.data": "c2bb1ac24e561922c4f87812e131492378237fa4f0faf41079d0312b32d3c041",
+    "Build/Web-20260925T082431Z-e19d77.framework.js": "1b68826d1f4141afaa72d6f6646408e04e0bda3f01376bbca1f38c4671a04b14",
+    "Build/Web-20260925T082431Z-e19d77.loader.js": "22f17464c7b65eba000e04d29452d1f129b2e4f98a6454d663e45e92f0f1201b",
+    "Build/Web-20260925T082431Z-e19d77.wasm": "6780f36c5ba944b5835d691dab76e03dd6785aa7a746c2e12b766b28adab4aeb",
+    "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
+    "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+  },
+  "scene_sha256": "5652aaba327cc7f26056a7ee033a98016a061e2de00e6176ea643441ca2adf65",
+  "model_checks": {
+    "rules": "encounter-fixture-v1",
+    "cases": 14,
+    "summaries": [
+      "False|Defeated|334|0|21|8|16|0|31|31",
+      "True|Defeated|388|0|25|13|19|13|0|19"
+    ]
+  },
+  "regressions": {
+    "art": {
+      "run": "browser-verify-20260925T082724Z-aeb9f0",
+      "raw_receipt_sha256": "d36a3095a10ea12e4c3478eff447c3e42969f054675a4fa78620503126e0582c",
+      "checks": [
+        {
+          "check": "initial repair",
+          "pass": true
+        },
+        {
+          "check": "pause idle with held pointer",
+          "pass": true
+        },
+        {
+          "check": "launcher replaces repair",
+          "pass": true
+        },
+        {
+          "check": "inspection recoil cycle 1",
+          "pass": true
+        },
+        {
+          "check": "inspection recoil cycle 2",
+          "pass": true
+        },
+        {
+          "check": "inspection recoil cycle 3",
+          "pass": true
+        },
+        {
+          "check": "battlefield view",
+          "pass": true
+        },
+        {
+          "check": "repair in battlefield",
+          "pass": true
+        },
+        {
+          "check": "battlefield recoil",
+          "pass": true
+        },
+        {
+          "check": "inspection restored",
+          "pass": true
+        },
+        {
+          "check": "attachment after resize",
+          "pass": true
+        },
+        {
+          "check": "resume idle",
+          "pass": true
+        },
+        {
+          "check": "recoil with rotating turret",
+          "pass": true
+        },
+        {
+          "check": "no observed browser errors",
+          "pass": true
+        },
+        {
+          "check": "no failed requests",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "server_closed": null,
+      "browser": "153.0.8010.50",
+      "recoils": [
+        {
+          "preview": 1,
+          "peakWorld": 0.3199998438358307,
+          "returnWorld": 0.0
+        },
+        {
+          "preview": 2,
+          "peakWorld": 0.3199998438358307,
+          "returnWorld": 0.0
+        },
+        {
+          "preview": 3,
+          "peakWorld": 0.31999677419662476,
+          "returnWorld": 0.0
+        },
+        {
+          "preview": 4,
+          "peakWorld": 0.31999677419662476,
+          "returnWorld": 0.0
+        },
+        {
+          "preview": 5,
+          "peakWorld": 0.32000017166137695,
+          "returnWorld": 0.0
+        }
+      ],
+      "max_projection_error_px": null
+    },
+    "inspection": {
+      "run": "inspection-20260925T082742Z-19277b",
+      "raw_receipt_sha256": "93d01f01390df7065a444fd4af36ff041bebbd68519a7f74447d4ba616770997",
+      "checks": [
+        {
+          "check": "exact previously built artifact identity",
+          "pass": true
+        },
+        {
+          "check": "saved single camera FOV is 43 degrees",
+          "pass": true
+        },
+        {
+          "check": "scene controls initialized before any pointer input",
+          "pass": true
+        },
+        {
+          "check": "pause before geometry comparison",
+          "pass": true
+        },
+        {
+          "check": "initial front view/controls",
+          "pass": true
+        },
+        {
+          "check": "initial front yaw",
+          "pass": true
+        },
+        {
+          "check": "initial front independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "initial front actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "initial front tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "initial front paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "front screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "front rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "front rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "front rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "right orbit view/controls",
+          "pass": true
+        },
+        {
+          "check": "right orbit yaw",
+          "pass": true
+        },
+        {
+          "check": "right orbit independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "right orbit actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "right orbit tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "right orbit paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "right orbit screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "right orbit rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "right orbit rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "right orbit rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "left returns front view/controls",
+          "pass": true
+        },
+        {
+          "check": "left returns front yaw",
+          "pass": true
+        },
+        {
+          "check": "left returns front independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "left returns front actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "left returns front tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "left returns front paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "left wraps view/controls",
+          "pass": true
+        },
+        {
+          "check": "left wraps yaw",
+          "pass": true
+        },
+        {
+          "check": "left wraps independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "left wraps actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "left wraps tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "left wraps paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "front reset view/controls",
+          "pass": true
+        },
+        {
+          "check": "front reset yaw",
+          "pass": true
+        },
+        {
+          "check": "front reset independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "front reset actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "front reset tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "front reset paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 1 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 1 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 1 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 1 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 1 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 1 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 1 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 1 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 1 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 1 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "circle 2 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 2 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 2 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 2 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 2 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 2 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 2 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 2 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 2 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 2 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "circle 3 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 3 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 3 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 3 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 3 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 3 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 3 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 3 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 3 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 3 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "circle 4 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 4 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 4 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 4 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 4 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 4 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 4 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 4 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 4 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 4 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "circle 5 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 5 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 5 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 5 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 5 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 5 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 5 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 5 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 5 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 5 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "circle 6 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 6 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 6 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 6 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 6 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 6 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 6 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 6 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 6 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 6 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "circle 7 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 7 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 7 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 7 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 7 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 7 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 7 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 7 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 7 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 7 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "circle 8 view/controls",
+          "pass": true
+        },
+        {
+          "check": "circle 8 yaw",
+          "pass": true
+        },
+        {
+          "check": "circle 8 independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "circle 8 actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "circle 8 tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "circle 8 paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "circle 8 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "circle 8 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "circle 8 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "circle 8 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "launcher retarget view/controls",
+          "pass": true
+        },
+        {
+          "check": "launcher retarget yaw",
+          "pass": true
+        },
+        {
+          "check": "launcher retarget independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "launcher retarget actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "launcher retarget tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "launcher retarget paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "fitting anchor changes with real mesh",
+          "pass": true
+        },
+        {
+          "check": "launcher screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "launcher rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "launcher rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "launcher rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "hide preference recorded",
+          "pass": true
+        },
+        {
+          "check": "hidden labels view/controls",
+          "pass": true
+        },
+        {
+          "check": "hidden labels yaw",
+          "pass": true
+        },
+        {
+          "check": "hidden labels independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "hidden labels actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "hidden labels tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "hidden labels paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "actual panel disappears cannon",
+          "pass": true
+        },
+        {
+          "check": "actual panel disappears hull",
+          "pass": true
+        },
+        {
+          "check": "actual panel disappears fitting",
+          "pass": true
+        },
+        {
+          "check": "orbit with labels hidden view/controls",
+          "pass": true
+        },
+        {
+          "check": "orbit with labels hidden yaw",
+          "pass": true
+        },
+        {
+          "check": "orbit with labels hidden independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "orbit with labels hidden actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "orbit with labels hidden tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "orbit with labels hidden paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "battlefield hidden view/controls",
+          "pass": true
+        },
+        {
+          "check": "battlefield hidden yaw",
+          "pass": true
+        },
+        {
+          "check": "battlefield hidden independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "battlefield hidden tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "battlefield hidden paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "hidden orbit row does not accept pointer input",
+          "pass": true
+        },
+        {
+          "check": "return retains hidden preference view/controls",
+          "pass": true
+        },
+        {
+          "check": "return retains hidden preference yaw",
+          "pass": true
+        },
+        {
+          "check": "return retains hidden preference independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "return retains hidden preference actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "return retains hidden preference tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "return retains hidden preference paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "hidden preference survives view change",
+          "pass": true
+        },
+        {
+          "check": "show labels view/controls",
+          "pass": true
+        },
+        {
+          "check": "show labels yaw",
+          "pass": true
+        },
+        {
+          "check": "show labels independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "show labels actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "show labels tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "show labels paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "restored screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "restored rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "restored rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "restored rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "battlefield with preference on view/controls",
+          "pass": true
+        },
+        {
+          "check": "battlefield with preference on yaw",
+          "pass": true
+        },
+        {
+          "check": "battlefield with preference on independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "battlefield with preference on tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "battlefield with preference on paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "battlefield does not erase label preference",
+          "pass": true
+        },
+        {
+          "check": "return shows labels view/controls",
+          "pass": true
+        },
+        {
+          "check": "return shows labels yaw",
+          "pass": true
+        },
+        {
+          "check": "return shows labels independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "return shows labels actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "return shows labels tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "return shows labels paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "1280 resize view/controls",
+          "pass": true
+        },
+        {
+          "check": "1280 resize yaw",
+          "pass": true
+        },
+        {
+          "check": "1280 resize independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "1280 resize actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "1280 resize tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "1280 resize paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "1280 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "1280 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "1280 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "1280 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "1280 orbit view/controls",
+          "pass": true
+        },
+        {
+          "check": "1280 orbit yaw",
+          "pass": true
+        },
+        {
+          "check": "1280 orbit independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "1280 orbit actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "1280 orbit tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "1280 orbit paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "1280 reverse view/controls",
+          "pass": true
+        },
+        {
+          "check": "1280 reverse yaw",
+          "pass": true
+        },
+        {
+          "check": "1280 reverse independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "1280 reverse actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "1280 reverse tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "1280 reverse paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "1024 resize view/controls",
+          "pass": true
+        },
+        {
+          "check": "1024 resize yaw",
+          "pass": true
+        },
+        {
+          "check": "1024 resize independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "1024 resize actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "1024 resize tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "1024 resize paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "1024 screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "1024 rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "1024 rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "1024 rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "1024 orbit view/controls",
+          "pass": true
+        },
+        {
+          "check": "1024 orbit yaw",
+          "pass": true
+        },
+        {
+          "check": "1024 orbit independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "1024 orbit actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "1024 orbit tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "1024 orbit paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "1024 reverse view/controls",
+          "pass": true
+        },
+        {
+          "check": "1024 reverse yaw",
+          "pass": true
+        },
+        {
+          "check": "1024 reverse independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "1024 reverse actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "1024 reverse tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "1024 reverse paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "resized reset view/controls",
+          "pass": true
+        },
+        {
+          "check": "resized reset yaw",
+          "pass": true
+        },
+        {
+          "check": "resized reset independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "resized reset actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "resized reset tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "resized reset paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "repair retarget view/controls",
+          "pass": true
+        },
+        {
+          "check": "repair retarget yaw",
+          "pass": true
+        },
+        {
+          "check": "repair retarget independent endpoint projection and panel bounds",
+          "pass": true
+        },
+        {
+          "check": "repair retarget actual orbit position",
+          "pass": true
+        },
+        {
+          "check": "repair retarget tank not rotated",
+          "pass": true
+        },
+        {
+          "check": "repair retarget paused turret not aimed",
+          "pass": true
+        },
+        {
+          "check": "final screenshot geometry",
+          "pass": true
+        },
+        {
+          "check": "final rendered anchor cannon",
+          "pass": true
+        },
+        {
+          "check": "final rendered anchor hull",
+          "pass": true
+        },
+        {
+          "check": "final rendered anchor fitting",
+          "pass": true
+        },
+        {
+          "check": "no browser errors",
+          "pass": true
+        },
+        {
+          "check": "no failed HTTP requests",
+          "pass": true
+        },
+        {
+          "check": "tested Web bytes unchanged",
+          "pass": true
+        }
+      ],
+      "errors": [],
+      "server_closed": true,
+      "browser": "153.0.8010.50",
+      "recoils": [],
+      "max_projection_error_px": 0.03956942590580074
+    }
+  },
+  "host_test_methods": 8,
+  "host_test_exit": 0,
+  "sources": {
+    "Unity/Assets/Scripts/ArtHud.cs": "7242656ac0eff8d1fe5f5cfe8cc75eafb35690f789b20338f0a131b8898ae314",
+    "Unity/Assets/Scripts/EncounterHud.cs": "fb9019ffa338b3242a5b591da415279e75dc68ee478745549e0a81176f3d9105",
+    "Unity/Assets/Scripts/EncounterModel.cs": "bf099d53fd6f4613dfb54b0146f44c20b15acb664ed06e55180969b3cfeb55da",
+    "Unity/Assets/Scripts/EncounterSession.cs": "8207ee79b87a177348408ea1160ae6c1b45d183df1ae28d0040fa3c03e1f5c26",
+    "Unity/Assets/Scripts/EncounterView.cs": "8a8d7236054dafe5e08de921ca7b6dca27022cfed08f75bd4ebc429dff9752ca",
+    "Unity/Assets/Scripts/TankPartCallouts.cs": "91d0b89e119d77a7afe8beaebe0e065069651372a0a0f0bd085dc4ea13fafc15",
+    "Unity/Assets/Scripts/TankPresentation.cs": "a96e04e25b0b7b270996b4dac492659fce32a83c198d2bab8cf68a0b9d35089f",
+    "Unity/Assets/Editor/EncounterChecks.cs": "769a02efc3af65c0246f328fd64ecb8e9f53350186d70df8d854478a5f0148e4",
+    "Unity/Assets/Editor/SceneBuild.cs": "45cdc5aed68d5c6f1a59d426b43c3f26f316b7536c13ec5f45a2e648a8000ae1",
+    "Tools/build_web.py": "219289d607f3e0a2b293d3fd9b3d44f9c47afc87cbf1b42f59e59827c7e5d81f",
+    "Tools/verify_encounter.py": "801f63aef534ea214cdf8cc9c327f332d482d4ec4e57699f4cb261dc5b6a8e4d",
+    "Tools/verify_inspection.py": "e3b8519e8780574a3d7e42d981510c5ffa7c86cb6ddaa43cc0c681a19913ff17",
+    "Tools/inspection_checks.py": "2ef89c2e94b58f1e7e2e8b5db3ad630d4e0ef25c43f0dffdc764e833b2d5f3d9",
+    "Tools/test_inspection_checks.py": "9233e3095fa9ccfca08124f26c5165b4a44c96feec3658b2cce493ad1a40fb83",
+    "Tools/verify_web.py": "d8e1b296418a4ac51d1f90ddc5e795dfb6b28d46e8dcb7663c7b23ad4464cbea"
+  },
+  "original_preservation": {
+    "checked_files": 85,
+    "changed": [],
+    "written": false,
+    "prior_unsaved_state_fate": "unknown; no editor running at preflight"
+  },
+  "encounter_browser": {
+    "basis": "transcribed executed tool result; detailed diagnostic read blocked and not rerouted",
+    "run": "encounter-browser-20260925T082525Z-3df105",
+    "status": "failed",
+    "completed_assertions": 8,
+    "error": "RuntimeError: Missing expected encounter event",
+    "exit_code": 1,
+    "server_closed": true,
+    "wait_location_from_executed_script": "second tab focus-suspension event",
+    "root_cause": "not established",
+    "not_completed": [
+      "focus recovery",
+      "browser terminal outcome",
+      "return cleanup",
+      "repeat deployments",
+      "full/reduced terminal parity"
+    ]
+  },
+  "prior_runtime_failure": {
+    "build": "Web-20260925T081925Z-86a32f",
+    "browser_run": "browser-verify-20260925T082115Z-9858ee",
+    "outcome": "failed at error gate after 13 functional checks",
+    "observed": "BoxCollider unavailable, then NullReferenceException",
+    "correction": "shared explicit render mesh; no physics or stripping-policy change"
+  },
+  "warnings": [
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat",
+    "WebGL: INVALID_ENUM: getInternalformatParameter: invalid internalformat"
+  ],
+  "shader_diagnostics": [
+    "Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n",
+    "Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n"
+  ],
+  "diagnostics_resolved": false,
+  "captures_scope": "inspection entry and resized inspection only; not combat visual acceptance",
+  "persistent_preview_started": false,
+  "android": false,
+  "production_deployment": false,
+  "final_art_approval": false,
+  "captures": {
+    "01-inspection-repair.png": "0b25d7d21a29196e16553de18bd8cb3304269f3e9df7f3cfea40c64d807cc1fd",
+    "06-resized-inspection.png": "463c5fb7298831de5a466f0c35c229374208a4323503b03564e50c86bfb0baf4"
+  }
+}
