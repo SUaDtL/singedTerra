@@ -2418,11 +2418,16 @@ async function startMotion(context, page, output) {
   };
   return { stop, encode: async () => {
     await stop(); assert.ok(frames.length >= 2, 'Missing real CDP frames');
-    const durations = frames.slice(1).map((frame, i) => frame.timestamp - frames[i].timestamp);
+    assert.ok(frames.every(frame=>Number.isFinite(frame.timestamp)),'Invalid CDP timestamp');
+    // Preserve raw delivery order above. Asynchronously encoded CDP frames can
+    // arrive out of capture order; present all of them by their native stamps.
+    const presentation=frames.map((frame,index)=>({frame,index})).sort((a,b)=>a.frame.timestamp-b.frame.timestamp);
+    const ordered=presentation.map(item=>item.frame);
+    const durations = ordered.slice(1).map((frame, i) => frame.timestamp - ordered[i].timestamp);
     assert.ok(durations.every(x => Number.isFinite(x) && x > 0), 'Non-increasing CDP timestamps');
     const lines = ['ffconcat version 1.0'];
-    durations.forEach((duration, i) => lines.push(`file '${frames[i].file}'`, 'option framerate 1000', `duration ${duration.toFixed(9)}`));
-    lines.push(`file '${frames.at(-1).file}'`, 'option framerate 1000');
+    durations.forEach((duration, i) => lines.push(`file '${ordered[i].file}'`, 'option framerate 1000', `duration ${duration.toFixed(9)}`));
+    lines.push(`file '${ordered.at(-1).file}'`, 'option framerate 1000');
     writeFileSync(join(directory, 'timeline.txt'), `${lines.join('\n')}\n`);
     const movie = join(output, 'normal-speed-repair.mp4');
     const encoded = runTool('ffmpeg', ['-hide_banner', '-nostdin', '-f', 'concat', '-safe', '0', '-i', 'timeline.txt',
@@ -2438,7 +2443,9 @@ async function startMotion(context, page, output) {
       encoded_frames: Number(stream.nb_read_frames), duration_seconds: duration,
       encoded_duration_seconds: Number(stream.duration), minimum_frame_seconds: Math.min(...durations),
       maximum_frame_seconds: Math.max(...durations), raw: 'normal-speed-repair/frames.json',
-      raw_sha256: fileHash(join(directory, 'frames.json')), mode: 'normal speed from captured timestamps' };
+      raw_sha256: fileHash(join(directory, 'frames.json')), mode: 'normal speed from captured timestamps',
+      presentation_order:presentation.map(item=>item.index),timeline:'normal-speed-repair/timeline.txt',
+      timeline_sha256:fileHash(join(directory,'timeline.txt')) };
   } };
 }
 

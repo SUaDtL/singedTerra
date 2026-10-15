@@ -71,6 +71,19 @@ function verifyFiles(path,report) {
   if(report.qualification.profile==='windows-player') {
     for(const item of [...report.audio,report.motion,report.playable_capture,report.active_play_review])verify(item);
     verify({file:report.frame_timing.raw,sha256:report.frame_timing.raw_sha256});
+    const motion=report.motion;
+    assert.equal(motion.raw,'normal-speed-repair/frames.json');
+    assert.equal(motion.timeline,'normal-speed-repair/timeline.txt');
+    for(const [file,sha]of [[motion.raw,motion.raw_sha256],[motion.timeline,motion.timeline_sha256]])
+      assert.equal(digest(readFileSync(resolve(directory,file))),sha,'Raw motion trace/timeline changed');
+    const raw=read(resolve(directory,motion.raw)).frames,order=motion.presentation_order;
+    assert.ok(Array.isArray(raw) && raw.length>=2 && raw.length===motion.frames,'Captured frame count differs');
+    assert.ok(Array.isArray(order) && order.length===raw.length && new Set(order).size===raw.length &&
+      order.every(index=>Number.isInteger(index) && index>=0 && index<raw.length),'Motion presentation must retain every raw frame once');
+    const stamps=order.map(index=>raw[index].timestamp);
+    assert.ok(stamps.every((stamp,index)=>Number.isFinite(stamp) && (!index || stamp>stamps[index-1])),
+      'Motion presentation requires distinct increasing native timestamps');
+    assert.ok(Math.abs(stamps.at(-1)-stamps[0]-motion.duration_seconds)<.000001,'Motion native duration changed');
   }
   const model=read(resolve(directory,'model-oracle/binding.json'));
   assert.equal(model.host,report.qualification.host);assert.equal(model.fresh_host_compilation,true);

@@ -77,3 +77,10 @@ normal-time progression against the compiled model. The genuine previous
 Linux run reached defeat during live layout capture; this changes observation
 strategy, not combat duration. Windows retains live battle layouts and all
 original player checks.
+
+Motion evidence retains the raw CDP delivery trace and presents every captured
+frame in its actual native timestamp order. One genuine Windows trace delivered
+two distinct timestamps out of order by 0.84 ms. The recorder retains all frames
+and records the complete presentation permutation and timeline digest; equal or
+nonfinite timestamps still fail. Original encoded frame-count and native-duration
+checks remain required. Reordering does not qualify the failed historical run.

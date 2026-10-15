@@ -9,6 +9,64 @@ import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
 
+async function motionFixture(timestamps=[3,1,2]){
+  const begin=source.indexOf('async function startMotion('),end=source.indexOf('\nfunction decodedAudio(',begin);
+  assert.ok(begin>0 && end>begin);const files=new Map();let receive;
+  const session={on:(_event,callback)=>receive=callback,detach:async()=>{},send:async method=>{
+    if(method==='Page.startScreencast')for(const [i,timestamp]of timestamps.entries())
+      await receive({sessionId:i,data:Buffer.from('explicit inert image '+i).toString('base64'),metadata:{timestamp}});
+  }};
+  const start=runInNewContext(source.slice(begin,end)+';startMotion',{
+    assert,Buffer,join:(...parts)=>parts.join('/'),mkdirSync:()=>{},
+    writeFileSync:(path,data)=>files.set(path,data),fileHash:()=> 'inert-digest',
+    runTool:tool=>tool==='ffprobe'?JSON.stringify({streams:[{nb_read_frames:timestamps.length,
+      duration:Math.max(...timestamps)-Math.min(...timestamps)}]}):'',
+  });
+  const capture=await start({newCDPSession:async()=>session},{},'/explicit-inert');
+  const report=await capture.encode();
+  return {files,report};
+}
+
+test('actual recorder presents every distinct CDP frame by native timestamp and retains arrival order',async()=>{
+  const {files,report}=await motionFixture();
+  assert.deepEqual(JSON.parse(files.get('/explicit-inert/normal-speed-repair/frames.json')).frames.map(frame=>frame.timestamp),[3,1,2]);
+  const timeline=files.get('/explicit-inert/normal-speed-repair/timeline.txt');
+  assert.deepEqual([...timeline.matchAll(/file '([^']+)'/g)].map(item=>item[1]),
+    ['frame-000001.jpg','frame-000002.jpg','frame-000000.jpg']);
+  assert.equal(report.frames,3);assert.equal(report.encoded_frames,3);assert.equal(report.duration_seconds,2);
+  assert.deepEqual(Array.from(report.presentation_order),[1,2,0]);
+});
+
+test('actual recorder still rejects duplicate or nonfinite native timestamps without dropping frames',async()=>{
+  for(const values of [[1,1,2],[1,NaN,2],[1,Infinity,2]])
+    await assert.rejects(motionFixture(values),/CDP timestamp/);
+});
+
+test('offline motion verification requires intact raw trace and a complete native presentation permutation',()=>{
+  const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
+  const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('  const model=',begin);
+  const bytes=Buffer.from('explicit inert retained media'),sha=createHash('sha256').update(bytes).digest('hex');
+  const run=runInNewContext(reader.slice(begin,end)+'};verifyFiles',{
+    assert,dirname,resolve,basename,readFileSync:()=>bytes,digest:()=>sha,
+    read:()=>({frames:[{timestamp:3},{timestamp:1},{timestamp:2}]}),
+  });
+  for(const fault of ['none','raw','timeline','duplicate-index','missing-index','wrong-order','duration']){
+    const media={file:'inert.mp4',sha256:sha},motion={...media,frames:3,duration_seconds:2,
+      raw:'normal-speed-repair/frames.json',raw_sha256:sha,presentation_order:[1,2,0],
+      timeline:'normal-speed-repair/timeline.txt',timeline_sha256:sha};
+    if(fault==='raw')motion.raw_sha256='bad';
+    if(fault==='timeline')motion.timeline_sha256='bad';
+    if(fault==='duplicate-index')motion.presentation_order=[1,1,0];
+    if(fault==='missing-index')motion.presentation_order=[1,2];
+    if(fault==='wrong-order')motion.presentation_order=[0,1,2];
+    if(fault==='duration')motion.duration_seconds=4;
+    const report={qualification:{profile:'windows-player'},audio:[],motion,playable_capture:media,active_play_review:media,
+      frame_timing:{raw:'inert.json',raw_sha256:sha}};
+    const call=()=>run('/explicit-inert/result.json',report);
+    if(fault==='none')assert.doesNotThrow(call);else assert.throws(call,'Invalid inert motion '+fault+' must refuse');
+  }
+});
+
 async function battleLayoutFixture(player=false,fault){
   const begin=source.indexOf('    const battleLayouts=async()=>{');
   const end=source.indexOf('    // Two unfinished exits',begin);
