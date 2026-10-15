@@ -164,6 +164,13 @@ jobs:
       - name: Install Playwright system deps
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
+      - name: Install Last Stand media tools
+        if: matrix.lane == 'product'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ffmpeg
+          ffmpeg -version
+          ffprobe -version
       - name: General browser shard 1
         if: matrix.lane == 'core-1'
         run: npm run test:e2e -- --shard=1/2 --workers=2 --grep-invert "@live|@last-stand"

@@ -97,6 +97,27 @@ function assertCandidateMatrix(source) {
 }
 
 test('every required check validates classified work and the complete browser matrix', () => assertWorkflow(ci));
+function assertLastStandMediaTools(source) {
+  const browser = job(source, 'browser');
+  const setup = browser.match(/      - name: Install Last Stand media tools\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+  assert.ok(setup, 'Product CI must supply FFmpeg and ffprobe before the media journey');
+  assert.match(setup, /if: matrix\.lane == 'product'/);
+  assert.match(setup, /sudo apt-get update/);
+  assert.match(setup, /sudo apt-get install --yes --no-install-recommends ffmpeg/);
+  for (const tool of ['ffmpeg', 'ffprobe']) assert.ok(setup.includes(`${tool} -version`));
+  assert.doesNotMatch(setup, /continue-on-error|\|\|\s*(true|:)/);
+  assert.ok(browser.indexOf('name: Install Last Stand media tools') <
+    browser.indexOf('name: Last Stand shared Campaigns journey'));
+}
+test('product CI supplies required FFmpeg tools before the Last Stand journey', () => {
+  assertLastStandMediaTools(ci);
+  for (const [from, to] of [
+    ['Install Last Stand media tools', 'Removed media tools'],
+    ['--no-install-recommends ffmpeg', '--no-install-recommends'],
+    ['ffprobe -version', 'echo probe skipped'],
+    ['ffmpeg -version', 'ffmpeg -version || true'],
+  ]) assert.throws(() => assertLastStandMediaTools(ci.replace(from, to)), from);
+});
 test('Last Stand has one maintained shared journey and both entrypoints', () => {
   for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/last-stand-playable-loop.spec.ts',
     'scripts/last-stand-playable-loop.mjs']) assert.ok(existsSync(path), `Missing maintained Last Stand entry: ${path}`);
