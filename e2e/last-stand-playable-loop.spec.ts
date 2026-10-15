@@ -32,10 +32,13 @@ test.afterEach(async () => { await closeLastStandOwnedBrowsers(); });
 
 test('Last Stand Campaigns journey preserves no-award exit and a stronger redeploy', { tag: '@last-stand' }, async ({ baseURL }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-fine', 'One journey owns its explicit viewport matrix');
-  test.setTimeout(600_000);
+  // Native ownership probes and captured media are deliberately outside the
+  // unchanged game-time/audio windows; allow their slower Windows wall time.
+  test.setTimeout(process.platform === 'win32' ? 1_200_000 : 600_000);
   if (!baseURL) throw new Error('Production baseURL is required');
   const result = await runLastStandJourney({ baseURL, chromium, ashRoadRecord: compatibleAshRoad(),
-    entrypoint: process.env['LAST_STAND_ENTRYPOINT'] ?? 'maintained-playwright' });
+    entrypoint: process.env['LAST_STAND_ENTRYPOINT'] ?? 'maintained-playwright',
+    profileName: process.env['LAST_STAND_QUALIFICATION_PROFILE'] ?? 'windows-player' });
   await testInfo.attach('Last Stand source-bound result', { path: result.resultPath, contentType: 'application/json' });
   await testInfo.attach('Last Stand observed lifecycle', { body: Buffer.from(JSON.stringify(result.report.lifecycle, null, 2)), contentType: 'application/json' });
 });

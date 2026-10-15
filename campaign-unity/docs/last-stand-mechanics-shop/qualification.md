@@ -1,0 +1,52 @@
+# Last Stand qualification allocation
+
+PR #524 uses one maintained journey and two closed execution profiles. This is
+the explicit owner-recorded exception to the dual-entrypoint allocation in LOOP
+AC-10/VERIFY-10/T-06 and UI AC-08/T-09/T-11. The audit row is
+`PR524-dual-host-verification-allocation`. Existing approved artifact states and
+missing native receipts are retained; this document does not replace them.
+
+`windows-player` is the default and refuses other hosts. It runs the entire
+functional journey plus actual rendered WebAudio, decoded cue recordings, native
+visible-window blur, motion encoding/muxing, animation callback cadence and capture
+overhead checks. Original sample minimums, inclusive windows, RMS thresholds,
+50/100/250 ms cadence limits, frame/mux checks and capture-overhead limits remain.
+These are measurements on the recorded environment, not universal presentation
+FPS, owner listening or visual acceptance. Run one native test at a time.
+
+`linux-functional` is selected explicitly by hosted product CI and refuses other
+hosts. It runs the entire gameplay, layout, normal-time model/background/pause,
+pending-save/reload/manual Claim, purchase/stronger redeployment, recovery,
+input and browser-error journey. Cue admission remains telemetry. PCM, native
+visible-window blur and capture/cadence qualification are explicitly unexecuted
+here and separately required from Windows. No silent samples or media passes
+are synthesized. The former Linux run genuinely failed: a busy software-rendered
+main thread delivered only three passive samples in the fixed 1,462 ms window.
+
+Both profiles freshly compile the actual current C# model and compare every one
+of its 13,904 rows and 13 fields with the immutable reference. Both bind the
+current source/export/served bytes before and after execution. Raw authored-file
+hashes remain recorded; a closed seven-file LF-normalized text map compares the
+same authored inputs across Windows CRLF and Linux LF checkouts. Runtime, media
+and model output hashes retain their raw-byte semantics.
+
+Before merge, exact-head hosted required checks must pass **and** the ordinary
+combined evidence check must pass:
+
+```
+node scripts/ci/lastStandQualification.mjs WINDOWS_RESULT LINUX_RESULT EXACT_HEAD
+```
+
+The check requires both profiles on the candidate HEAD, unchanged authored and
+runtime inputs, every assigned obligation and functional branch, retained raw
+media digests and actual model parity. Either result alone is insufficient. It
+checks execution consistency; it does not create authority or prove execution
+merely by reading JSON. Independent review must inspect the genuine runs and
+raw evidence. Any relevant candidate change requires fresh matching execution.
+
+Native ownership probes and media work get up to 1,200 seconds of runner wall
+time, with a matching standalone supervisor bound; Linux keeps 600 seconds.
+Gameplay time, transient settling, audio windows and every behavioral deadline
+are unchanged. The settling input prepares native focus/geometry/hover before
+the brief phase, dispatches the actual pointer hold there, and requires paused
+settling before subsequent native verification or layout capture.

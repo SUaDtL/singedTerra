@@ -1172,7 +1172,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute, dirname } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tmpdir, release, arch } from 'node:os';
 import { gunzipSync } from 'node:zlib';
 
 const ROOT = resolve(import.meta.dirname, '../..');
@@ -1557,6 +1557,15 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
     reference:bytes(reference),actual:bytes(raw),canonical_sha256:hash(actual),
     rows:Object.values(profiles).reduce((count,profile)=>count+Object.keys(profile).length,0),fields_per_row:13}};
 }
+export function encounterCompilationSourceBinding() {
+  const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
+  const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
+  return {source_lf_sha256:Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs'].map(name=>[name,
+    hash(readFileSync(join(ROOT,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n'))])),
+    export_binding:{manifest_sha256:fileHash(manifestPath),receipt_sha256:manifest.source.receiptSha256,
+      source_lock_sha256:manifest.source.sourceLockSha256,source_inventory_sha256:manifest.source.sourceInventorySha256,
+      wrapper_sha256:manifest.wrapperSha256,build:manifest.source.build}};
+}
 export function buildEncounterOracle(output) {
   const bound=readBoundEncounterOracle();
   const {mono,csc}=encounterOracleToolchain();
@@ -1593,7 +1602,7 @@ class Program { static void Main() {
   const admission=admitEncounterOracleOutput(raw);
   for(const [path,sha]of Object.entries(before))assert.equal(fileHash(path),sha,'Model oracle source/tool drift');
   const {profiles,comparison}=admission;
-  writeFileSync(join(directory,'binding.json'),JSON.stringify({inputs:before,commands,exe_sha256:fileHash(exe),
+  writeFileSync(join(directory,'binding.json'),JSON.stringify({inputs:before,commands,source_binding:encounterCompilationSourceBinding(),exe_sha256:fileHash(exe),
     output_sha256:hash(raw),comparison,profiles:Object.keys(profiles),host:process.platform,fresh_host_compilation:true,
     authority:'unchanged EncounterModel stepped at each actual tick'},null,2));
   assert.deepEqual(profiles,bound,'Fresh actual model differs from portable reference');return profiles;
@@ -1701,7 +1710,9 @@ export function removeOwnedProfile(profile) {
   } else rmSync(target,{recursive:true});
   assert.ok(!existsSync(target),'Owned profile remains');
 }
+export function ownedSupervisorLifetimeLimit(host=process.platform) {return host==='win32'?1_260_000:640_000;}
 export function startOwnedSupervisor(child, output, profile, lifetimeMs=640_000) {
+  assert.ok(Number.isInteger(lifetimeMs) && lifetimeMs>0 && lifetimeMs<=ownedSupervisorLifetimeLimit(),'Invalid owned lifetime');
   admitEvidenceParent(output);
   assert.ok(Number.isInteger(child.pid) && child.pid>0,'Owned spawn did not return a PID');
   const table=processTable(),root=table.find(item=>item.pid===child.pid),owner=table.find(item=>item.pid===process.pid);
@@ -1728,7 +1739,7 @@ export async function watchOwnedProcess(options) {
   try {
     assert.equal(options.root.ppid,options.owner.pid,'Supervisor root was not created by its recorded owner');
     assert.ok(options.root.exe && options.owner.exe,'Owned executable identity absent');
-    assert.ok(Number.isInteger(options.lifetimeMs) && options.lifetimeMs>0 && options.lifetimeMs<=640_000,'Invalid owned lifetime');
+    assert.ok(Number.isInteger(options.lifetimeMs) && options.lifetimeMs>0 && options.lifetimeMs<=ownedSupervisorLifetimeLimit(),'Invalid owned lifetime');
     while(true){const table=processTable();known=collectOwnedDescendants(table,known);
       writeFileSync(`${options.path}.observed.json`,JSON.stringify({known,observedAt:new Date().toISOString()},null,2));
       if(existsSync(`${options.path}.stop`)){reason='requested-stop';break;}
@@ -2313,7 +2324,7 @@ export async function activateOwnedNativeWindow({native,page,report,kind,role}) 
   }
 }
 
-export async function ownedChrome(chromium, output, mode='native') {
+export async function ownedChrome(chromium, output, mode='native', lifetimeMs=640_000) {
   const executable = process.platform === 'win32'
     ? join(process.env.ProgramFiles ?? 'C:/Program Files', 'Google/Chrome/Application/chrome.exe')
     : chromium.executablePath();
@@ -2346,7 +2357,7 @@ export async function ownedChrome(chromium, output, mode='native') {
     finally{writeFileSync(join(output,'native-chrome.log'),log);}
   };
   try {
-    supervisor=startOwnedSupervisor(child,output,profile);
+    supervisor=startOwnedSupervisor(child,output,profile,lifetimeMs);
     receipt('active');
     ownedBrowsers.add(close);
     const active = join(profile, 'DevToolsActivePort');
@@ -2750,9 +2761,20 @@ export async function retainJourneyOutcome(report, cleanup, persist, originalErr
   if(persistFailed)throw persistError;
 }
 
-export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint }) {
+export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
+  'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
+  '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs']);
+
+export function lastStandQualificationProfile(name='windows-player',host=process.platform) {
+  assert.ok(['windows-player','linux-functional'].includes(name),'Unknown Last Stand qualification profile');
+  assert.equal(host,name==='windows-player'?'win32':'linux','Qualification profile is incompatible with the actual host');
+  return Object.freeze({name,nativeMedia:name==='windows-player'});
+}
+
+export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint, profileName }) {
+  const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
   const base = admitJourneyBase(baseURL);
-  runTool('ffmpeg', ['-version']); runTool('ffprobe', ['-version']);
+  if(player){runTool('ffmpeg', ['-version']); runTool('ffprobe', ['-version']);}
   const parent = admitEvidenceParent(process.env.LAST_STAND_EVIDENCE_PARENT);
   mkdirSync(parent, { recursive:true });
   const output = join(parent, `journey-${new Date().toISOString().replace(/[:.]/g,'-')}-${randomUUID().slice(0,8)}`);
@@ -2761,10 +2783,13 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
   const report = { title:TITLE, status:'running', entrypoint, checks:[], actions:[], keyboard_actions:[], screenshots:[], audio:[],
     normal_speed:true, storage_scope:'isolated same-origin task profile', owner_listened:false,
     owner_visual_acceptance:false, owner_motion_acceptance:false, windows_window_acceptance:false,
-    focus_scope:'separate native visible-window blur and hidden tab', device_performance_claim:false, url_origin:base.origin,
+    focus_scope:player?'separate native visible-window blur and hidden tab':'hidden tab; native blur separately required from Windows', device_performance_claim:false, url_origin:base.origin,
     visual_measurements:{controls:'actual HUD bounds converted once to CSS pixels',panels:'unmeasured in browser telemetry',
       fonts:'unmeasured in browser telemetry',contrast:'unmeasured in browser telemetry',focus_treatment:'matched screenshots awaiting rendered review'},
-    lifecycle:[] };
+    lifecycle:[],qualification:{profile:qualification.name,host:process.platform,release:release(),arch:arch(),
+      functional:'pending',rendered_audio:player?'pending':'unexecuted-requires-windows',
+      native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
+      merge_ready:false} };
   const states=[], encounters=[], hits=[], layouts=[], cues=[], messages=[], trace=[], failures=[], httpErrors=[], requests=[], expectedFaults=[];
   let native, page, motion, modelOracle, load=0, scope='healthy', fault, rejoin=false, rejoinBinding, originalError;
   const observerFailures=[];let observerError;
@@ -2809,9 +2834,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       source_lock_sha256:manifest.source.sourceLockSha256, source_inventory_sha256:receipt.sourceAfterSha256,
       build:receipt.build, sourceHead:receipt.sourceHead, wrapper_sha256:manifest.wrapperSha256,
       current_head:runTool('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),
-      input_files:Object.fromEntries(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
-        'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
-        '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs'].map(path=>[path,fileHash(join(ROOT,path))])),served:{}};
+      input_files:Object.fromEntries(LAST_STAND_JOURNEY_INPUTS.map(path=>[path,fileHash(join(ROOT,path))])),
+      portable_text_inputs:Object.fromEntries(LAST_STAND_JOURNEY_INPUTS.map(path=>[path,hash(readFileSync(join(ROOT,path),'utf8').replace(/\r\n/g,'\n'))])),served:{}};
     for (const [path, expected] of Object.entries({...manifest.files,'index.html':manifest.wrapperSha256})) {
       const response=await fetchBoundRuntime(base,path);
       const bytes=response.bytes;
@@ -2819,12 +2843,13 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(true,`served exact runtime/wrapper bytes: ${path}`);
       report.binding.served[path]={sha256:hash(bytes),bytes:bytes.length};
     }
-    native=await ownedChrome(chromium,output); page=native.context.pages()[0];
+    native=await ownedChrome(chromium,output,'native',player?1_240_000:640_000); page=native.context.pages()[0];
     page.setDefaultTimeout(10_000);
     if(process.env.LAST_STAND_INDUCE_CLEANUP_FAILURE==='1')check(false,'bounded induced failure after owned browser startup');
     report.browser_version=native.browser.version();
     await page.setViewportSize({width:1280,height:720});
-    await page.addInitScript(AUDIO_CAPTURE); await page.addInitScript(FRAME_PROBE); await page.addInitScript(INPUT_PROBE);await page.addInitScript(RUNTIME_PROBE);
+    if(player){await page.addInitScript(AUDIO_CAPTURE);await page.addInitScript(FRAME_PROBE);}
+    await page.addInitScript(INPUT_PROBE);await page.addInitScript(RUNTIME_PROBE);
     page.on('console', message => {
       const raw=message.text(),record={type:message.type(),text:raw,location:message.location(),load,scope,time:Date.now()};
       messages.push(record);
@@ -2858,8 +2883,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     };
     const focused=async label=>{
       await page.bringToFront();
-      await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10_000});
       if(process.platform==='win32')await ensureOwnedNativeForeground({native,page,report,kind:label,role:'original-precondition'});
+      await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10_000});
       check(await page.evaluate('!document.hidden && document.hasFocus()'),`${label}: ${process.platform==='win32'?'native':'document'} focus and visibility`);
     };
     const screenshot=async name=>{
@@ -3030,15 +3055,26 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await resize(captureViewport);
     };
     await resize(captureViewport);
-    const gameClick=async(name,action,predicate=()=>true)=>{
+    const armGameClick=async(name,action,predicate=()=>true)=>{
       const {canvas,layout,item}=await geometry(name);await focused('gameplay pointer');
       await page.evaluate("window.__stInputArea='gameplay'");
       const point={x:canvas.x+(item.x+item.width/2)*canvas.width/layout.width,y:canvas.y+(item.y+item.height/2)*canvas.height/layout.height};
-      const start=states.length;await page.mouse.move(point.x,point.y);await page.waitForTimeout(80);
-      await page.mouse.down();await page.waitForTimeout(150);await page.mouse.up();
-      report.actions.push({name,action,...point,hold_ms:150});
-      return until(states,start,item=>item.action===action && predicate(item),8);
+      await page.mouse.move(point.x,point.y);await page.waitForTimeout(80);
+      const armedTrace=trace.length,armedLoad=load,armedViewport=page.viewportSize();let used=false;
+      return async()=>{
+        check(!used && load===armedLoad,'prepared pointer is single-use in its original document');used=true;
+        check(JSON.stringify(page.viewportSize())===JSON.stringify(armedViewport),'prepared pointer refuses changed viewport geometry');
+        check(!trace.slice(armedTrace).some(event=>event.globalTarget &&
+          (event.kind==='blur' || event.kind==='visibilitychange' && event.hidden)),
+          'prepared pointer refuses intervening native focus or visibility loss');
+        check(await page.evaluate('!document.hidden && document.hasFocus()'),'prepared pointer remains visibly focused');
+        const start=states.length;
+        await page.mouse.down();await page.waitForTimeout(150);await page.mouse.up();
+        report.actions.push({name,action,...point,hold_ms:150});
+        return until(states,start,item=>item.load===armedLoad && item.action===action && predicate(item),8);
+      };
     };
+    const gameClick=async(...args)=>(await armGameClick(...args))();
     const gameKey=async(name,action,predicate=()=>true)=>{
       await geometry(name);await keyboardFocus(page.locator('#last-stand-return'));
       await page.keyboard.press('Tab');
@@ -3058,7 +3094,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await page.evaluate("window.__stInputArea='outer'");return observed;
     };
     const mark=()=>page.evaluate('performance.now()');
-    const energy=(begin,end,min=5)=>measureRenderedAudioEnergy(page,begin,end,check,min,{report,load,scope});
+    const energy=(begin,end,min=5)=>player?measureRenderedAudioEnergy(page,begin,end,check,min,{report,load,scope}):null;
     const observation=async options=>observeRuntimePair({encounters,states,load,check,options,
       clock:()=>page.evaluate(()=>({t:performance.now(),timeOrigin:performance.timeOrigin})),wait:ms=>page.waitForTimeout(ms)});
     const reference=observed=>modelOracle[`${observed.fitting}:${observed.loop.cannonDamage}`];
@@ -3066,6 +3102,11 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       const selected=interval?validateAwayAudioReturn({...interval,cues,states,encounters,oracle:reference(interval.before)}):
         {begin,end,cues:cues.filter(item=>item.load===load && begin<=item.t && item.t<=end)};
       const measured=await energy(selected.begin,selected.end),observedCues=selected.cues;
+      if(measured===null){
+        check(observedCues.length===0,'functional telemetry has no background/return replay cue',observedCues);
+        const result={rendered_audio:'unexecuted-requires-windows',cues:observedCues};
+        report.lifecycle.push({kind:'no-replay-telemetry',begin:selected.begin,end:selected.end,...result,boundary:selected.boundary});return result;
+      }
       const result=validateNoReplayAudio({energy:measured,cues:observedCues});report.lifecycle.push({kind:'no-replay',
         begin:selected.begin,end:selected.end,energy:result,cues:observedCues,boundary:selected.boundary});return result;
     };
@@ -3144,24 +3185,25 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     const baselineHitStart=hits.length;
     const startAudio=await mark();const deployed=await gameClick('Deploy','deploy');
     check(deployed.phase==='battle' && deployed.cannonDamage===20,'normal-speed automatic baseline deployed',deployed);
-    await page.evaluate('window.__stFrameProbe.start()');motion=await startMotion(native.context,page,output);const motionStart=await mark();
+    if(player){await page.evaluate('window.__stFrameProbe.start()');motion=await startMotion(native.context,page,output);}const motionStart=await mark();
     const first=await until(hits,baselineHitStart,item=>item.load===deployed.load && item.timeOrigin===deployed.timeOrigin && item.cannonDamage===20,45);const firstHit=await mark();
     check(first.firstFoeHull===10,'first base cannon leaves identical 30 HP foe at 10 HP',first);
     await page.waitForTimeout(750);const sound=await energy(Math.max(startAudio,firstHit-500),await mark());
-    check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);await screenshot('01-base-first-hit');await phaseMatrix('battle');
-    await gameClick('ToggleMute','mute');const muteStart=await mark();await page.waitForTimeout(1200);
-    const mute=await energy(muteStart+150,await mark());check(mute.maximum_rms<.0005,'mute suppresses rendered output',mute);
-    await gameClick('ToggleMute','mute');const pauseBefore=await observation();const paused=await gameKey('Pause','session',item=>item.paused);
+    if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);await screenshot('01-base-first-hit');await phaseMatrix('battle');
+    const muted=await gameClick('ToggleMute','mute');check(muted.muted,'actual mute state enabled');const muteStart=await mark();await page.waitForTimeout(1200);
+    const mute=await energy(muteStart+150,await mark());if(player)check(mute.maximum_rms<.0005,'mute suppresses rendered output',mute);
+    const unmuted=await gameClick('ToggleMute','mute');check(!unmuted.muted,'actual mute state disabled');const pauseBefore=await observation();const paused=await gameKey('Pause','session',item=>item.paused);
     const pausedObservation=await observation({action:'pause',paused:true,minT:pauseBefore.t,run:pauseBefore.run});
     const pauseStart=await mark();await page.waitForTimeout(1200);const pauseSound=await energy(pauseStart+150,await mark());
-    check(pauseSound.maximum_rms<.0005 && states.at(-1).tick===paused.tick,'pause stops combat and sound',pauseSound);
+    check(states.at(-1).tick===paused.tick,'pause stops combat ticks');
+    if(player)check(pauseSound.maximum_rms<.0005,'pause stops sound',pauseSound);
     await phaseMatrix('explicit-pause');await away('hidden',10500);const returned=await observation({paused:true,run:pausedObservation.run});
     await gameKey('Pause','session',item=>!item.paused);
     const resumed=await observation({action:'pause',paused:false,minT:returned.t,run:returned.run});
     const resumeStart=await mark();await until(encounters,0,item=>item.load===load && item.t>=resumeStart+700 && !item.paused && !item.catchingUp,8);
     report.lifecycle.push({kind:'explicit-pause',evidence:validateExplicitPause({before:pauseBefore,paused:pausedObservation,returned,
       resumed,after:await observation({minT:resumeStart+700,run:resumed.run}),events:trace,oracle:reference(resumed)})});
-    const resumeSound=await energy(resumeStart,await mark());check(resumeSound.maximum_rms<=Math.max(.005,sound.maximum_rms*2),'resume has no deferred burst',resumeSound);
+    const resumeSound=await energy(resumeStart,await mark());if(player)check(resumeSound.maximum_rms<=Math.max(.005,sound.maximum_rms*2),'resume has no deferred burst',resumeSound);
     const focusStartMs=await mark(),awayWindows=[];
     report.focus_obligations={hidden_tab:'required',visible_window_blur:process.platform==='win32'?'required':'unexecuted on this portable headless host'};
     for(const kind of process.platform==='win32'?['blur','hidden']:['hidden']) {
@@ -3171,13 +3213,18 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       awayWindows.push([kind,interval.begin,interval.recovered]);
     }
     const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark(),defeatStart=states.length;
-    await until(states,defeatStart,item=>item.phase==='settling',110);const defeatTime=await mark();
-    await gameClick('Pause','session',item=>item.paused);await phaseMatrix('settling');
+    const settlingClick=await armGameClick('Pause','session',item=>item.paused && item.phase==='settling');
+    check(states.at(-1).phase==='battle','settling input is prepared while the actual battle is running');
+    await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);const defeatTime=await mark();
+    await settlingClick();await focused('settling paused');await phaseMatrix('settling');
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'no Claim during actual settling');
     await gameClick('Pause','session',item=>!item.paused);await page.waitForTimeout(750);
     const result=await until(states,defeatStart,item=>item.phase==='result',8);
     check(result.pendingRunId>0 && result.wallet===0 && result.saveState==='ready','ordinary defeat successfully saved one pending award',result);
-    check((await energy(defeatTime-250,await mark())).maximum_rms>.0005,'real rendered defeat cue');await screenshot('02-defeat-pending');await phaseMatrix('result');
+    if(player)check((await energy(defeatTime-250,await mark())).maximum_rms>.0005,'real rendered defeat cue');await screenshot('02-defeat-pending');await phaseMatrix('result');
+    const record=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    check(record.pendingDefeat.reward===1,'pending defeat in actual browser-local storage');
+    if(player){
     const frames=await page.evaluate('window.__stFrameProbe.stop()');
     const active=[['first-foe-before-impact',motionStart,firstHit],['first-hit-through-pause',firstHit,pauseStart],
       ['resumed-before-focus-loss',resumeStart,focusStartMs],['resumed-after-focus-loss',postFocus,defeatTime]];
@@ -3188,8 +3235,6 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(Object.values(report.frame_timing.capture_active).every(item=>item.p95_ms<=50 && item.p99_ms<=100 && item.max_ms<=250),
       'active cadence: 50 ms p95, 100 ms p99, 250 ms maximum',report.frame_timing.capture_active);
     report.motion=await motion.encode();motion=null;
-    const record=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(record.pendingDefeat.reward===1,'pending defeat in actual browser-local storage');
     const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstHit-500,firstHit+750],defeat:[defeatTime-250,defeatTime+750]});
     const offset=(firstAudio[0].started-motionStart)/1000,movie=join(output,'normal-speed-repair-with-audio.mp4');
     runTool('ffmpeg',['-hide_banner','-nostdin','-i',join(output,report.motion.file),...(offset>=0?['-itsoffset',offset.toFixed(3)]:['-ss',(-offset).toFixed(3)]),
@@ -3209,6 +3254,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(Number(reviewStream.nb_read_frames)>0,'busy review retains real captured frames');
     report.active_play_review={file:'active-play-review-with-audio.mp4',sha256:fileHash(reviewMovie),source:report.playable_capture.file,
       start_seconds:reviewStart,duration_seconds:reviewDuration,encoded_frames:Number(reviewStream.nb_read_frames),edit:'single hard trim, passthrough timestamps'};
+    }
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('pending reload');
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.phase==='result' && restored.pendingRunId===result.pendingRunId,'successful pending defeat survives reload',restored);
@@ -3217,19 +3263,21 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     for(const viewport of VIEWPORTS)await resize(viewport);await phaseMatrix('workshop');
     await resize(VIEWPORTS.find(item=>item.name==='compact'));const purchaseStart=await mark();
     const bought=await gameKey('Purchase','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
-    await page.waitForTimeout(600);check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
-    await screenshot('05-purchased');await saveAudio('workshop',{purchase:[purchaseStart,await mark()]});
+    await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
+    await screenshot('05-purchased');if(player)await saveAudio('workshop',{purchase:[purchaseStart,await mark()]});
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===0 && again.pendingRunId===0,'purchase reload retains permanent level and spent balance',again);
     check(layouts.at(-1).controls.find(item=>item.name==='ToggleFitting').label.trim().toUpperCase()==='FIT LAUNCHER','same repair fitting retained after upgrade');
     await resize(captureViewport);const hitStart=hits.length;await gameClick('Deploy','deploy');
-    const noCaptureStart=await page.evaluate('window.__stFrameProbe.start()');
+    const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
     const upgradedHit=await until(hits,hitStart,item=>item.cannonDamage===30,45);const noCaptureEnd=await mark();
+    if(player){
     const noCaptureFrames=await page.evaluate('window.__stFrameProbe.stop()');write('animation-frame-no-capture-timestamps.json',{timestamps:noCaptureFrames,active_window:[noCaptureStart,noCaptureEnd]});
     report.frame_timing.no_capture_active=frameTiming(noCaptureFrames,noCaptureStart,noCaptureEnd);
     const captured=report.frame_timing.capture_active['first-foe-before-impact'],uncaptured=report.frame_timing.no_capture_active;
     check(captured.p95_ms<=uncaptured.p95_ms*1.5+5,'screencast pre-impact p95 within 50 percent plus5ms',{captured,uncaptured});
+    }
     check(upgradedHit.firstFoeHull===0 && upgradedHit.kills>=1,'same first foe one-hit defeated by real 30 damage',upgradedHit);
     await screenshot('07-upgraded-first-hit');
     const terminalStart=states.length,terminalBefore=await observation();
@@ -3254,7 +3302,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       evidence:validateTerminalOwnership({runId:backgroundResult.pendingRunId,beforeWallet:0,states:terminalStates.slice(firstStage),
         pending:backgroundPending,claimed:backgroundClaimed,controls:layouts.at(-1).controls})});
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'background Claim cannot award twice');
-    await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750]});
+    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750]});
     const cueNames=messages.filter(item=>!item.text.startsWith('ST_TEST_RUNTIME ') && item.text.includes('ST_LS_AUDIO event='))
       .map(item=>item.text.split('ST_LS_AUDIO event=')[1].split('\n')[0]);
     check(['cannon','impact','destruction','defeat','purchase'].every(cue=>cueNames.includes(cue)),'all five procedural cues admitted',cueNames);
@@ -3317,6 +3365,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!consoleErrors.length && !requestErrors.length && !unexpectedHTTP.length,
       'no unclassified browser/Unity/shader/request errors in any scope',{consoleErrors,requestErrors,httpErrors:unexpectedHTTP});
     throwObserverFailure();
+    report.qualification.functional='pass';
+    if(player)for(const key of ['rendered_audio','native_blur','capture_cadence'])report.qualification[key]='pass';
     report.status='pass';return{resultPath,output,report};
   } catch(error) {
     originalError??=error;

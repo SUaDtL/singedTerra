@@ -72,7 +72,8 @@ function assertWorkflow(source) {
     assert.ok(browser.includes(`if: matrix.lane == 'core-${shard}'\n        run: npm run test:e2e -- --shard=${shard}/2 --workers=2 --grep-invert "@live|@last-stand"`));
   }
   assert.match(browser, /if: matrix\.lane == 'product'\n        run: npx playwright test -c playwright\.product-completion\.config\.ts/);
-  assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.lane == 'product'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0/);
+  assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.lane == 'product'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0/);
+  assert.match(browser,/name: Upload Playwright artifacts\n        if: always\(\)/,'Successful Linux qualification evidence must survive the ephemeral runner');
   assert.match(browser, /name: playwright-\$\{\{ matrix\.lane \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.equal(source.match(/uses: actions\/checkout@/g)?.length, source.match(/persist-credentials: false/g)?.length);
 }
@@ -96,7 +97,11 @@ function assertCandidateMatrix(source) {
   assert.match(job(source, 'publish'), /needs: \[gate, build, candidate-test, freshness\]/);
 }
 
-test('every required check validates classified work and the complete browser matrix', () => assertWorkflow(ci));
+test('every required check validates classified work and the complete browser matrix', () => {
+  assertWorkflow(ci);
+  assert.throws(()=>assertWorkflow(ci.replace('Upload Playwright artifacts\n        if: always()',
+    'Upload Playwright artifacts\n        if: failure()')),'Failure-only upload loses the required successful Linux companion');
+});
 function assertLastStandMediaTools(source) {
   const browser = job(source, 'browser');
   const setup = browser.match(/      - name: Install Last Stand media tools\n([\s\S]*?)(?=      - name:|$)/)?.[1];

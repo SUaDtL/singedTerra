@@ -7,6 +7,7 @@ import base64
 import datetime
 import json
 import math
+import os
 import statistics
 import struct
 import subprocess
@@ -1809,7 +1810,7 @@ class LastStandWebTests(unittest.TestCase):
         # Normal T-06 proof consumes the already exported production runtime.
         runner = ROOT.parent / 'scripts' / 'last-stand-playable-loop.mjs'
         completed = subprocess.run(['node', str(runner)], cwd=ROOT.parent,
-                                   capture_output=True, text=True, timeout=660)
+                                   capture_output=True, text=True, timeout=1300 if os.name == 'nt' else 660)
         print(completed.stdout, end='', flush=True)
         if completed.stderr:
             print(completed.stderr, end='', flush=True)

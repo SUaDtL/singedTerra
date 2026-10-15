@@ -759,7 +759,7 @@ async function assertCurrentDeploymentHitSelection() {
   const end=unique('    await page.waitForTimeout(750);');
   assert.ok(untilBegin>0 && untilEnd>untilBegin && begin>0 && end>begin,'Actual maintained baseline hit caller required');
   const run=new Function('assert','Date','page','hits','native','output','screenshot','phaseMatrix','mark','gameClick','check','startMotion','observerError',
-    'return (async()=>{'+observerGuard+'let motion;'+callerSource.slice(untilBegin,untilEnd)+callerSource.slice(begin,end)+'return first;})();');
+    'return (async()=>{const player=true;'+observerGuard+'let motion;'+callerSource.slice(untilBegin,untilEnd)+callerSource.slice(begin,end)+'return first;})();');
   const current={load:16,timeOrigin:1791536368822};
   const hit={tick:60,cannonDamage:20,firstFoeHull:10,kills:0,t:3000,...current,scope:'healthy'};
   const old={...hit,load:15,timeOrigin:1791536308831.7};

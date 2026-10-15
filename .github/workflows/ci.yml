@@ -73,7 +73,7 @@ jobs:
       - name: Initialize Last Stand evidence root
         run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Scope and required-result regressions
-        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs
+        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs
 
   check-work:
     name: engine, database, client and build
@@ -193,9 +193,10 @@ jobs:
         env:
           VITE_BASE: /singedTerra/
           E2E_DENY_EXTERNAL_NETWORK: '1'
+          LAST_STAND_QUALIFICATION_PROFILE: linux-functional
         run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0
-      - name: Upload Playwright failure artifacts
-        if: failure()
+      - name: Upload Playwright artifacts
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-${{ matrix.lane }}-${{ github.run_attempt }}

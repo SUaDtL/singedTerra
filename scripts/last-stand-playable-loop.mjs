@@ -32,10 +32,10 @@ if(process.argv[2]==='--watch-owner') {
     child.stdout.on('data',chunk=>{stdout+=chunk;});
     child.stderr.on('data',chunk=>{stderr+=chunk;process.stderr.write(chunk);});
     child.on('error',error=>{report.spawn_error=String(error);});
-    supervisor=startOwnedSupervisor(child,output);
+    supervisor=startOwnedSupervisor(child,output,null,process.platform==='win32'?1_250_000:640_000);
     const stop=async reason=>{report.reason=reason;try{report.cleanup=await supervisor.stop();}catch(error){report.cleanup_error=String(error);}};
     for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{void stop(signal);});
-    timer=setTimeout(()=>{void stop('runner-timeout');},605_000);
+    timer=setTimeout(()=>{void stop('runner-timeout');},process.platform==='win32'?1_205_000:605_000);
     code=await finished;report.exit=code;report.status=code===0 && !report.reason?'pass':'failed';
   } catch(error){report.status='failed';report.error=String(error);}
   finally {

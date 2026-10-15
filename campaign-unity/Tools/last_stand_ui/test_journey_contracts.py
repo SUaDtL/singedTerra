@@ -19,6 +19,7 @@ BACKGROUND = (
     "background guards reject duplicate terminal staging and manual Claim awards",
     "background guards reject replay cues and empty rendered audio evidence",
 )
+BACKGROUND_PREREQUISITES = ("Linux current-source qualification reaches fresh model compilation",)
 MAINTAINED = (
     "every required check validates classified work and the complete browser matrix",
     "Last Stand has one maintained shared journey and both entrypoints",
@@ -66,7 +67,12 @@ MAINTAINED_SUPPLEMENTAL = (
     "process ownership private matcher rejects incomplete executable identities",
 )
 # Preserve the original 37-name cohort above and the complete actual script order.
-MAINTAINED_COMPLETE = (MAINTAINED[:20] + MAINTAINED_SUPPLEMENTAL[:1]
+PREREQUISITES = (
+    "product CI supplies required FFmpeg tools before the Last Stand journey",
+    "product CI supplies the compiler for fresh current-source model qualification",
+    "product CI proves its pinned browser sandbox before expensive UI checks",
+)
+MAINTAINED_COMPLETE = (MAINTAINED[:1] + PREREQUISITES + MAINTAINED[1:20] + MAINTAINED_SUPPLEMENTAL[:1]
                        + MAINTAINED[20:] + MAINTAINED_SUPPLEMENTAL[1:])
 EXECUTABLE_VARIANTS = ("absent", "undefined", "empty", "null", "number", "boolean", "object", "array", "boxed string")
 # Pinned existing child identities, not expectations learned from the TAP under test.
@@ -194,11 +200,31 @@ class JourneyContractTests(unittest.TestCase):
                              "Missing, duplicate or reordered " + key + " cohort")
 
     def test_background_negative_controls(self):
-        self.guard_suite("scripts/ci/lastStandBackground.test.mjs", BACKGROUND)
+        self.guard_suite("scripts/ci/lastStandBackground.test.mjs", BACKGROUND_PREREQUISITES + BACKGROUND,
+                         {"original": BACKGROUND, "prerequisites": BACKGROUND_PREREQUISITES})
 
     def test_maintained_journey_guards(self):
         self.guard_suite("scripts/ci/ciWorkflow.test.mjs", MAINTAINED_COMPLETE,
                          {"original": MAINTAINED, "supplemental": MAINTAINED_SUPPLEMENTAL}, MAINTAINED_NESTED)
+
+    def test_actual_python_wrapper_preserves_both_host_time_budgets(self):
+        import ast
+        from types import SimpleNamespace
+        source = ast.parse((ROOT / 'campaign-unity/Tools/verify_last_stand_loop.py').read_text(encoding='utf-8'))
+        actual = next(node for node in source.body if isinstance(node, ast.ClassDef) and node.name == 'LastStandWebTests')
+        for host, minimum, maximum in [('nt', 1205, 1300), ('posix', 605, 660)]:
+            calls = []
+            def run(argv, **options):
+                calls.append((argv, options))
+                return SimpleNamespace(stdout='', stderr='', returncode=0)
+            scope = {'unittest': unittest, 'ROOT': ROOT / 'campaign-unity', 'os': SimpleNamespace(name=host),
+                     'subprocess': SimpleNamespace(run=run)}
+            exec(compile(ast.Module(body=[actual], type_ignores=[]), '<actual Python entry>', 'exec'), scope)
+            scope['LastStandWebTests']('test_defeat_buy_reload_redeploy').test_defeat_buy_reload_redeploy()
+            self.assertEqual(len(calls), 1)
+            self.assertGreater(calls[0][1]['timeout'], minimum, 'Outer wrapper must allow owned supervisor cleanup')
+            self.assertLessEqual(calls[0][1]['timeout'], maximum)
+            self.assertEqual(calls[0][0][0], 'node')
 
 
 if __name__ == "__main__":
