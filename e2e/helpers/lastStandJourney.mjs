@@ -1386,7 +1386,7 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     'Invalid global native audio event');
   const loss=global.find(e=>before.t<=e.t && e.t<=begin && !e.focused &&
     (kind==='blur'?e.kind==='blur' && !e.hidden:e.kind==='visibilitychange' && e.hidden));
-  let returned;
+  let returned,modelFocusReturn;
   if(loss && kind==='blur')returned=global.find(e=>e.t>loss.t && e.t<=recovered && e.kind==='focus' && e.focused && !e.hidden);
   if(loss && kind==='hidden'){
     // Browser focus and visibility notifications may arrive in either order.
@@ -1396,13 +1396,18 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     if(focus && visible)returned=eligible.find(e=>e.t>=Math.max(focus.t,visible.t) && e.focused && !e.hidden);
   }
   assert.ok(loss && returned,'Current global native audio loss/return boundary absent');
+  // Unity may acknowledge focus while the document is still hidden. Only the
+  // model boundary uses that actual focus; cues still wait for visible return.
+  modelFocusReturn=kind==='blur'?returned:global.findLast(e=>e.t>loss.t && e.t<=returned.t && e.kind==='focus' && e.focused);
+  assert.ok(modelFocusReturn && !global.some(e=>e.t>modelFocusReturn.t && e.t<=returned.t && !e.focused),
+    'Current uninterrupted native focus boundary absent');
   assert.ok(returned.t-loss.t>=ms,'Actual native unfocused audio span is shorter than the declared interval');
   const observed=cues.filter(c=>current(c) && c.t>=loss.t+200 && c.t<=recovered);
   assert.ok(observed.every(c=>Number.isFinite(c.t)),'Invalid current audio cue clock');
   const returnCues=observed.filter(c=>c.t>=returned.t),callbacks=[];
   if(returnCues.length) {
     const resumed=encounters.find(e=>current(e) && e.run===before.run && e.action==='visibility' &&
-      e.t>=returned.t && e.t<=returnCues[0].t && e.focused && !e.applicationPaused);
+      e.t>=modelFocusReturn.t && e.t<=returnCues[0].t && e.focused && !e.applicationPaused);
     assert.ok(resumed && !resumed.paused && !resumed.failed && !resumed.catchingUp,
       'Current reconciled foreground model boundary absent');
     validateModelObservation(resumed,oracle);
@@ -1462,7 +1467,7 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
   }
   const end=returnCues[0]?.t??recovered;
   return {begin:loss.t+200,end,cues:observed.filter(c=>c.t<end || !returnCues.length),
-    boundary:{kind,loss,returned,bookkeeping_recovered:recovered,unfocused_ms:returned.t-loss.t,callbacks}};
+    boundary:{kind,loss,returned,model_focus_return:modelFocusReturn,bookkeeping_recovered:recovered,unfocused_ms:returned.t-loss.t,callbacks}};
 }
 
 // Compile the unchanged deterministic owner, rather than maintaining a second

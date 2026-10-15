@@ -104,6 +104,13 @@ completion. Either missing witness still fails. Visible-window blur retains its
 original visible focus-event boundary. No event, audio or runtime state is
 synthesized, and every original interval/model/no-replay check remains required.
 
+Unity can acknowledge restored focus before the browser's later visibility
+notification. Model reconciliation uses the last genuine current global focus
+before coherent return, with no intervening focus loss; evidence retains that
+actual anchor. Audio eligibility and the quiet interval still use the later
+coherent focused/visible return. Stale, wrong-run, paused, catch-up and pre-focus
+model acknowledgements remain invalid. No timing grace period is introduced.
+
 The injected WASM failure admits only its declared current-load GET/fetch/
 null-response/ERR_FAILED request and the unique wrapper error at the exact
 document URL with the closed exported-framework/loader stack. A single matching

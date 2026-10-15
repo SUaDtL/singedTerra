@@ -118,6 +118,53 @@ test('hidden return requires both actual global witnesses in either focus/visibi
     assert.throws(()=>invoke([loss,...pair]),/boundary absent/);
 });
 
+function focusAckFixture(){
+  // Explicit inert events exercise the actual validator; these are not host evidence.
+  const id={load:16,timeOrigin:100000,scope:'healthy'};
+  const event=(kind,t,focused,hidden)=>({...id,kind,t,focused,hidden,globalTarget:true});
+  const model={tick:20,hp:120,kills:0,spawned:1,cannon:0,launcher:0,healed:0,
+    closeHits:0,rangedHits:0,alive:1,status:'Running'};
+  const state={...id,sessionRun:1,runId:7,cannonDamage:20,action:'session',phase:'battle',
+    paused:false,muted:false,saveState:'ready',hull:120,kills:0};
+  return {kind:'hidden',before:{...id,t:900,run:1,loop:{runId:7,cannonDamage:20}},
+    begin:1250,recovered:7200,ms:6000,
+    events:[event('visibilitychange',1000,false,true),event('focus',7000,true,true),
+      event('visibilitychange',7010,true,false)],
+    encounters:[{...id,...model,t:7002,run:1,action:'visibility',focused:true,
+      applicationPaused:false,paused:false,failed:false,catchingUp:false}],
+    states:[{...state,t:7030,tick:20},{...state,t:7080,tick:21}],
+    cues:[{...id,t:7059,text:'ST_LS_AUDIO event=cannon\n'},
+      {...id,t:7059.1,text:'ST_LS_AUDIO event=impact\n'}],
+    oracle:{20:model,21:{...model,tick:21,cannon:1}}};
+}
+
+test('hidden return admits the current model focus acknowledgement before coherent visibility',()=>{
+  const result=journey.validateAwayAudioReturn(focusAckFixture());
+  assert.equal(result.boundary.model_focus_return.t,7000);
+  assert.equal(result.boundary.returned.t,7010);
+  assert.deepEqual(result.boundary.callbacks.map(c=>[c.from,c.to]),[[20,21]]);
+  assert.equal(result.cues.length,0);
+});
+
+test('focus acknowledgement anchor preserves identity, latest focus and silent hidden boundaries',()=>{
+  const mutations=[x=>x.encounters[0].t=6999,x=>x.encounters[0].load++,
+    x=>x.encounters[0].timeOrigin++,x=>x.encounters[0].scope='stale',x=>x.encounters[0].run++,
+    x=>x.encounters[0].paused=true,x=>x.encounters[0].catchingUp=true,x=>x.encounters[0].failed=true,
+    x=>x.encounters[0].applicationPaused=true,x=>x.encounters[0].hp--,
+    x=>x.events.splice(1,1),x=>x.events.pop(),
+    x=>x.events.splice(2,0,{...x.events[1],t:7006}),
+    x=>x.events.splice(2,0,{...x.events[1],kind:'blur',t:7006,focused:false}),
+  ];
+  for(const [i,mutate]of mutations.entries()){
+    const x=focusAckFixture();mutate(x);
+    assert.throws(()=>journey.validateAwayAudioReturn(x),'Invalid inert focus acknowledgement '+i+' must fail');
+  }
+  const x=focusAckFixture();x.cues.unshift({...x.cues[0],t:7005});
+  const result=journey.validateAwayAudioReturn(x);
+  assert.equal(result.cues[0].t,7005,'A pre-visible cue must remain in the forbidden quiet window');
+  assert.throws(()=>journey.validateNoReplayAudio({energy:{samples:20,maximum_rms:0},cues:result.cues}),/replay cue/);
+});
+
 async function battleLayoutFixture(player=false,fault,withMute=false){
   const begin=source.indexOf('    const battleLayouts=async()=>{');
   const end=source.indexOf('    // Two unfinished exits',begin);
