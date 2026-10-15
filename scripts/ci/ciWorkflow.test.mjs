@@ -72,7 +72,7 @@ function assertWorkflow(source) {
     assert.ok(browser.includes(`if: matrix.lane == 'core-${shard}'\n        run: npm run test:e2e -- --shard=${shard}/2 --workers=2 --grep-invert "@live|@last-stand"`));
   }
   assert.match(browser, /if: matrix\.lane == 'product'\n        run: npx playwright test -c playwright\.product-completion\.config\.ts/);
-  assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.lane == 'product'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          CHROME_DEVEL_SANDBOX: \/opt\/google\/chrome\/chrome-sandbox\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0/);
+  assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.lane == 'product'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0/);
   assert.match(browser, /name: playwright-\$\{\{ matrix\.lane \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.equal(source.match(/uses: actions\/checkout@/g)?.length, source.match(/persist-credentials: false/g)?.length);
 }
@@ -133,26 +133,23 @@ test('product CI supplies the compiler for fresh current-source model qualificat
 });
 function assertLastStandSandbox(source) {
   const browser=job(source,'browser');
-  const setup=browser.match(/      - name: Validate Last Stand browser sandbox\n([\s\S]*?)(?=      - name:|$)/)?.[1];
-  assert.ok(setup,'Last Stand must validate its installed sandbox helper before browser startup');
+  const setup=browser.match(/      - name: Prepare Last Stand browser sandbox\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+  assert.ok(setup,'Last Stand must prove its pinned browser sandbox before expensive UI work');
   assert.match(setup,/if: matrix\.lane == 'product'/);
-  for(const required of ['sandbox=/opt/google/chrome/chrome-sandbox','test -f "$sandbox"',
-    'test ! -L "$sandbox"','test -x "$sandbox"','test -u "$sandbox"','test ! -w "$sandbox"',
-    'test ! -w /opt/google/chrome','stat --format=\'%u:%a\' -- "$sandbox"',
-    'test "$helper_metadata" = \'0:4755\'','helper_api="$("$sandbox" --get-api)"',
-    'test "$helper_api" = \'1\'','chromium.executablePath()',
-    'test ! -e "$(dirname "$chromium")/chrome-sandbox"'])assert.ok(setup.includes(required),required);
-  assert.doesNotMatch(setup,/\bsudo\b|sysctl|apparmor_parser|chmod|chown|no-sandbox|continue-on-error|\|\|\s*(true|:)/);
-  const journey=browser.match(/      - name: Last Stand shared Campaigns journey\n([\s\S]*?)(?=      - name:|$)/)?.[1];
-  assert.ok(journey?.includes('CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox'));
-  assert.ok(browser.indexOf('name: Validate Last Stand browser sandbox') <
-    browser.indexOf('name: Last Stand shared Campaigns journey'));
+  assert.match(setup,/run: node scripts\/ci\/prepareLastStandBrowser\.mjs/);
+  assert.doesNotMatch(setup,/continue-on-error|\|\|\s*(true|:)/);
+  const prepare=browser.indexOf('name: Prepare Last Stand browser sandbox');
+  const initialize=browser.indexOf('run: node scripts/ci/prepareLastStandEvidence.mjs');
+  assert.ok(initialize>=0 && initialize<prepare,'Evidence initialization must precede owned browser startup');
+  for(const consumer of ['name: Battle console responsive and interaction checks','name: Last Stand shared Campaigns journey'])
+    assert.ok(prepare<browser.indexOf(consumer),'Sandbox startup proof must precede '+consumer);
+  assert.doesNotMatch(browser,/CHROME_DEVEL_SANDBOX|no-sandbox|apparmor_restrict_unprivileged_userns/);
 }
-test('Last Stand journey requires the installed setuid sandbox helper', () => {
+test('product CI proves its pinned browser sandbox before expensive UI checks', () => {
   assertLastStandSandbox(ci);
-  for(const removed of ['Validate Last Stand browser sandbox','test ! -L "$sandbox"',
-    '0:4755','--get-api','test ! -e "$(dirname "$chromium")/chrome-sandbox"','CHROME_DEVEL_SANDBOX:'])
-    assert.throws(()=>assertLastStandSandbox(ci.replace(removed,'')),{code:'ERR_ASSERTION'},removed);
+  for(const removed of ['Prepare Last Stand browser sandbox','run: node scripts/ci/prepareLastStandBrowser.mjs',
+    'run: node scripts/ci/prepareLastStandEvidence.mjs'])
+    assert.throws(()=>assertLastStandSandbox(ci.replaceAll(removed,'')),{code:'ERR_ASSERTION'},removed);
 });
 test('Last Stand has one maintained shared journey and both entrypoints', () => {
   for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/last-stand-playable-loop.spec.ts',
