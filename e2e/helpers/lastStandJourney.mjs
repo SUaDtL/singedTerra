@@ -1463,8 +1463,13 @@ export function encounterOraclePackage() { return structuredClone(ENCOUNTER_ORAC
 const ENCOUNTER_UTF8_BOM=Buffer.from([0xef,0xbb,0xbf]);
 let currentEncounterQualification;
 let qualifyingCurrentEncounter=false;
+export function encounterOracleToolchain(platform=process.platform) {
+  assert.ok(['win32','linux'].includes(platform),'Current model compilation requires Windows or Linux');
+  if(platform==='linux')return {mono:'/usr/bin/mono',csc:'/usr/lib/mono/4.5/mcs.exe'};
+  const editor='C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Data/MonoBleedingEdge';
+  return {mono:join(editor,'bin/mono.exe'),csc:join(editor,'lib/mono/msbuild/Current/bin/Roslyn/csc.exe')};
+}
 function qualifyCurrentEncounterSource(sources) {
-  assert.equal(process.platform,'win32','Current model qualification requires actual Windows compilation');
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
   const receiptPath=join(ROOT,manifest.source.receipt);
@@ -1477,8 +1482,7 @@ function qualifyCurrentEncounterSource(sources) {
     receipt.sourceAfterSha256===manifest.source.sourceInventorySha256,'Current model export is incomplete');
   for(const [name,sha] of Object.entries(sources))assert.deepEqual(
     receipt.sourceFiles[`Unity/Assets/Scripts/${name}`],{mode:'lf-text',sha256:sha},'Current model absent from genuine export');
-  const editor='C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Data/MonoBleedingEdge';
-  const tools=Object.fromEntries([join(editor,'bin/mono.exe'),join(editor,'lib/mono/msbuild/Current/bin/Roslyn/csc.exe')].map(path=>[path,fileHash(path)]));
+  const tools=Object.fromEntries(Object.values(encounterOracleToolchain()).map(path=>[path,fileHash(path)]));
   const identity={sources:{...sources},tools,manifest_sha256:fileHash(manifestPath),receipt_sha256:fileHash(receiptPath),source_lock_sha256:fileHash(lockPath)};
   if(currentEncounterQualification) {
     assert.deepEqual(identity,currentEncounterQualification.identity,'Qualified current model inputs drifted');return;
@@ -1555,20 +1559,16 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
 }
 export function buildEncounterOracle(output) {
   const bound=readBoundEncounterOracle();
-  if(process.platform!=='win32') {
-    const directory=join(output,'model-oracle');mkdirSync(directory);
-    writeFileSync(join(directory,'binding.json'),JSON.stringify({host:process.platform,mode:'source-bound reference compiled on Windows',
-      package: {...ENCOUNTER_ORACLE_PACKAGE,gzip_base64:undefined},fresh_host_compilation:false},null,2));
-    return bound;
-  }
-  const editor='C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Data/MonoBleedingEdge';
-  const mono=join(editor,'bin/mono.exe'),csc=join(editor,'lib/mono/msbuild/Current/bin/Roslyn/csc.exe');
+  const {mono,csc}=encounterOracleToolchain();
   const sources=['EncounterModel.cs','EncounterProfile.cs'].map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
   for(const path of [mono,csc,...sources])assert.ok(existsSync(path),'Actual model oracle prerequisite absent: '+path);
   const directory=join(output,'model-oracle');mkdirSync(directory);
   const driver=join(directory,'Program.cs'),exe=join(directory,'EncounterOracle.exe');
   const text=`using System; using SingedTerra.Encounter;
-class Program { static void Main() { foreach(bool launcher in new[]{false,true}) foreach(int damage in new[]{20,30,40,50}) {
+class Program { static void Main() {
+ Console.OutputEncoding=new System.Text.UTF8Encoding(false);Console.Out.NewLine="\\r\\n";
+ System.Threading.Thread.CurrentThread.CurrentCulture=System.Globalization.CultureInfo.InvariantCulture;
+ foreach(bool launcher in new[]{false,true}) foreach(int damage in new[]{20,30,40,50}) {
  var m=new EncounterModel(launcher,EncounterProfile.PlayablePrototype,damage);
  while(true) { Console.WriteLine(string.Join(",",launcher?"launcher":"repair",damage,m.Tick,m.Hull,m.Kills,m.Spawned,
  m.CannonShots,m.LauncherShots,m.Restored,m.CloseHits,m.RangedHits,m.ActiveCount,m.Status));
@@ -1588,7 +1588,7 @@ class Program { static void Main() { foreach(bool launcher in new[]{false,true})
     writeFileSync(join(directory,'commands.json'),JSON.stringify({inputs:before,commands},null,2));
     assert.ok(!result.error && result.status===0,`Actual model ${name} failed; inspect retained stdout/stderr`);return result.stdout;
   };
-  execute('compile',[csc,'-nologo',`-out:${exe}`,...sources,driver]);
+  execute('compile',[csc,'-nologo',...(process.platform==='linux'?['-langversion:7.2']:[]),`-out:${exe}`,...sources,driver]);
   const raw=execute('run',[exe]);writeFileSync(join(directory,'actual-model.csv'),raw);
   const admission=admitEncounterOracleOutput(raw);
   for(const [path,sha]of Object.entries(before))assert.equal(fileHash(path),sha,'Model oracle source/tool drift');

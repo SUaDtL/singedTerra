@@ -118,6 +118,19 @@ test('product CI supplies required FFmpeg tools before the Last Stand journey', 
     ['ffmpeg -version', 'ffmpeg -version || true'],
   ]) assert.throws(() => assertLastStandMediaTools(ci.replace(from, to)), from);
 });
+test('product CI supplies the compiler for fresh current-source model qualification', () => {
+  const browser=job(ci,'browser');
+  const setup=browser.match(/      - name: Install Last Stand media tools\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+  const assertCompiler=source=>{
+    assert.match(source,/sudo apt-get install --yes --no-install-recommends ffmpeg mono-mcs/);
+    assert.ok(source.includes('/usr/bin/mono --version'));
+    assert.ok(source.includes('/usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version'));
+    assert.doesNotMatch(source,/continue-on-error|\|\|\s*(true|:)/);
+  };
+  assertCompiler(setup);
+  for(const removed of [' mono-mcs','/usr/bin/mono --version','/usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version'])
+    assert.throws(()=>assertCompiler(setup.replace(removed,'')),removed);
+});
 test('Last Stand has one maintained shared journey and both entrypoints', () => {
   for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/last-stand-playable-loop.spec.ts',
     'scripts/last-stand-playable-loop.mjs']) assert.ok(existsSync(path), `Missing maintained Last Stand entry: ${path}`);

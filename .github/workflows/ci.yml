@@ -168,9 +168,11 @@ jobs:
         if: matrix.lane == 'product'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends ffmpeg
+          sudo apt-get install --yes --no-install-recommends ffmpeg mono-mcs
           ffmpeg -version
           ffprobe -version
+          /usr/bin/mono --version
+          /usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version
       - name: General browser shard 1
         if: matrix.lane == 'core-1'
         run: npm run test:e2e -- --shard=1/2 --workers=2 --grep-invert "@live|@last-stand"

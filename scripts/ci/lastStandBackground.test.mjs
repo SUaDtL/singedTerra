@@ -1064,6 +1064,43 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
   assert.equal(failures.length,0,'Actual precleanup setup must verify exact owned native admission before its DOM wait and reject false document-only admission');
 }
 
+test('Linux current-source qualification reaches fresh model compilation', () => {
+  const begin=callerSource.indexOf('function qualifyCurrentEncounterSource(sources) {');
+  const end=callerSource.indexOf('\nfunction canonicalEncounterCsv(',begin);
+  assert.ok(begin>0 && end>begin,'The maintained current-source qualifier is required');
+  const root=resolve('.');
+  const sources=Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs'].map(name=>[name,
+    createHash('sha256').update(readFileSync(join(root,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n')).digest('hex')]));
+  // Explicit inert Linux-host dispatch fixture. Export/source checks use real
+  // files; compiler bytes/output below are mocks, never a compilation receipt.
+  const exercise=({fresh=true,rows=13904,fields=13,compilerError=false,drift=false}={})=>{
+    let compiled=0,toolRevision=0;
+    const written=[];
+    const tools={mono:'/usr/bin/mono',csc:'/usr/lib/mono/4.5/mcs.exe'};
+    const digest=path=>createHash('sha256').update(Object.values(tools).includes(path)
+      ? Buffer.from(`inert-linux-tool-${toolRevision}`):readFileSync(path)).digest('hex');
+    const context={assert,process:{platform:'linux'},ROOT:root,join,Object,sources,
+      encounterOracleToolchain:()=>tools,fileHash:digest,randomUUID:()=> 'inert-linux-qualifier',
+      admitEvidenceParent:()=>tmpdir(),mkdirSync:()=>{},
+      readFileSync:(path,...args)=>path.endsWith('model-oracle/binding.json') || path.endsWith('model-oracle\\binding.json')
+        ? JSON.stringify({fresh_host_compilation:fresh,comparison:{rows,fields_per_row:fields}}):readFileSync(path,...args),
+      writeFileSync:(path,text)=>written.push({path,record:JSON.parse(text)}),
+      buildEncounterOracle:()=>{compiled++;if(compilerError)throw new Error('Inert compiler failed');},
+      changeTool:()=>{toolRevision++;}};
+    runInNewContext('let currentEncounterQualification;let qualifyingCurrentEncounter=false;'+
+      callerSource.slice(begin,end)+'\nqualifyCurrentEncounterSource(sources);'+
+      (drift?'changeTool();':'')+'qualifyCurrentEncounterSource(sources);',context);
+    assert.equal(compiled,1,'Current inputs qualify once; cached inputs must still be checked');
+    assert.equal(written.length,1);
+    assert.equal(written[0].record.baseline.rows,13904);
+    assert.equal(written[0].record.baseline.fields_per_row,13);
+  };
+  assert.doesNotThrow(()=>exercise(),'Linux must reach fresh current-model compilation and strict baseline admission');
+  for(const invalid of [{fresh:false},{rows:13903},{fields:12}])assert.throws(()=>exercise(invalid),/baseline|parity/i);
+  assert.throws(()=>exercise({compilerError:true}),/compiler failed/i);
+  assert.throws(()=>exercise({drift:true}),/inputs drifted/i);
+});
+
 test('background guards reject frozen ticks and require separate native blur and hidden evidence', async () => {
   await assertPrecleanupNativeAdmission();
   await assertOriginalNativeForegroundPreconditions();
@@ -1109,7 +1146,7 @@ test('background guards reject frozen ticks and require separate native blur and
     'Fresh unchanged model output must admit one optional leading UTF-8 BOM');
   assert.deepEqual(compiled,bound,'All compiled profile/model fields must equal the unchanged reference');
   const binding=JSON.parse(readFileSync(join(output,'model-oracle/binding.json'),'utf8'));
-  if(process.platform==='win32') {
+  if(['win32','linux'].includes(process.platform)) {
     const raw=readFileSync(join(output,'model-oracle/actual-model.csv'));
     assert.equal(binding.output_sha256,digest(raw),'Actual raw output hash must be retained');
     assert.ok(binding.comparison,'The maintained caller must retain explicit encoding/comparison provenance');
@@ -1121,10 +1158,8 @@ test('background guards reject frozen ticks and require separate native blur and
     assert.equal(binding.comparison.rows,13904);
     assert.equal(binding.comparison.fields_per_row,13);
     assert.equal(binding.fresh_host_compilation,true);
-  } else {
-    assert.equal(binding.fresh_host_compilation,false,'Portable source/reference checks are not a fresh host compile');
-    assert.equal(binding.host,process.platform);
   }
+  assert.equal(binding.host,process.platform);
   for(const raw of [reference,noBOM]) {
     const admitted=journey.admitEncounterOracleOutput(raw);
     assert.deepEqual(admitted.profiles,bound);
