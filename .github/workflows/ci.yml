@@ -182,9 +182,6 @@ jobs:
       - name: Battle console responsive and interaction checks
         if: matrix.lane == 'product'
         run: npx playwright test -c playwright.product-completion.config.ts
-      - name: Initialize Last Stand evidence root
-        if: matrix.lane == 'product'
-        run: node scripts/ci/prepareLastStandEvidence.mjs
       # Chromium's documented installed-helper path keeps the pinned browser
       # sandboxed under Ubuntu's restricted unprivileged user namespaces.
       - name: Validate Last Stand browser sandbox
@@ -203,6 +200,9 @@ jobs:
           test "$helper_api" = '1'
           chromium="$(node --input-type=module -e "import { chromium } from '@playwright/test'; process.stdout.write(chromium.executablePath())")"
           test ! -e "$(dirname "$chromium")/chrome-sandbox"
+      - name: Initialize Last Stand evidence root
+        if: matrix.lane == 'product'
+        run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Last Stand shared Campaigns journey
         if: matrix.lane == 'product'
         env:
