@@ -228,14 +228,35 @@ test('actual Windows live layout inspection uses the existing unfinished run bef
     const base={t:50,load:1,timeOrigin:10000,run:1,tick:1,paused:false,loop:{phase:'battle'}},
       after={...base,t:1050,tick:21},states=[{phase:'battle',paused:false}],report={lifecycle:[]},calls=[];
     const run=new Function('player','observation','check','phaseMatrix','states','report','VIEWPORTS',
-      'validateModelObservation','reference','elapsedTicks',source.slice(begin,end)+'return liveBattleLayouts();');
+      'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
     let next=base;
     await run(player,async()=>{const value=next;next=after;return value;},(ok,name)=>assert.ok(ok,name),
       async label=>calls.push(label),states,report,['standard','wide','portrait','compact','small'].map(name=>({name})),
-      ()=>{},()=>({}),(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50));
+      ()=>{},()=>({}),(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),async()=>0);
     assert.deepEqual(calls,player?['battle']:[]);
     if(player)assert.equal(report.lifecycle[0].viewports.length,5);
   }
+});
+
+test('live layout elapsed endpoints require fresh post-advance tick observations',async()=>{
+  const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
+  const clockBegin=source.indexOf('function sameDocument('),clockEnd=source.indexOf('const MODEL_FIELDS=',clockBegin);
+  const elapsed=runInNewContext(source.slice(clockBegin,clockEnd)+';elapsedTicks',{assert});
+  const run=new Function('player','observation','check','phaseMatrix','report','VIEWPORTS',
+    'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
+  const id={load:15,timeOrigin:100000,run:1,paused:false,catchingUp:false,callbackSteps:1,loop:{phase:'battle'}};
+  // Explicit inert model/visibility rows use the retained failure's clock values.
+  const before={...id,t:6548.2,tick:20},visibility={...id,t:27053.2,tick:429,callbackSteps:0},
+    advanced={...id,t:27558.4,tick:440};
+  let swept=false;
+  const observation=async options=>!swept?before:
+    options?.action==='tick' && options.minT>=27395.5?advanced:visibility;
+  const report={lifecycle:[]};
+  await run(true,observation,(ok,name)=>assert.ok(ok,name),async()=>{swept=true;},report,[],
+    ()=>{},()=>({}),elapsed,async()=>swept?27395.5:6530);
+  assert.equal(report.lifecycle[0].before.tick,20);assert.equal(report.lifecycle[0].after.tick,440);
+  assert.throws(()=>elapsed(before,visibility),/elapsed tick reconciliation differs/,
+    'The original strict elapsed oracle must continue rejecting visibility-only clock endpoints');
 });
 
 test('paused layout and Resume reject changed counters or document identity',async()=>{

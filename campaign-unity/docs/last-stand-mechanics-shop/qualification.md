@@ -97,6 +97,10 @@ fresh canonical run retains first-hit damage/screenshot, audio, cadence, native
 focus intervals and the original 15-second uninterrupted review requirement.
 This avoids spending that recording's combat duration on viewport inspection.
 Linux keeps its paused canonical layout matrix.
+The live sweep's elapsed-time endpoints require fresh actual periodic tick
+reports after model advancement. Focus-only notifications do not advance the
+model clock and cannot serve as those endpoints. The original strict elapsed
+tolerance and model/callback checks remain unchanged.
 
 Hidden-tab return requires actual current global focus and visible notifications
 after loss, in either event order, and uses their first coherent focused/visible

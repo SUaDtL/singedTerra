@@ -3235,10 +3235,12 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     };
     const liveBattleLayouts=async()=>{
       if(!player)return;
-      const before=await observation();
+      // Focus-only notifications do not advance the model clock. Use fresh
+      // actual AdvanceAt tick reports for the strict elapsed comparison.
+      const before=await observation({action:'tick',minT:await mark()});
       check(before.loop.phase==='battle' && !before.paused,'Windows live layout starts in active battle');
       await phaseMatrix('battle');
-      const after=await observation();
+      const after=await observation({action:'tick',minT:await mark()});
       check(after.loop.phase==='battle' && !after.paused,'Windows live layout remains active battle');
       elapsedTicks(before,after);validateModelObservation(before,reference(before));validateModelObservation(after,reference(after));
       report.lifecycle.push({kind:'live-battle-layout',scope:'existing unfinished reload run',
