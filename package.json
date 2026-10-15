@@ -52,9 +52,9 @@
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.4",
     "@typescript/native": "npm:typescript@7.0.2",
-    "concurrently": "10.0.5",
+    "concurrently": "10.0.6",
     "pixelmatch": "7.2.0",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "supabase": "2.105.0",
     "tsx": "4.23.13",
     "typescript": "npm:@typescript/typescript6@6.0.2"

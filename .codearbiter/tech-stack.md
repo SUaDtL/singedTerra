@@ -33,13 +33,14 @@ Both workspace packages are `private: true`.
   imperative node/callback preservation, retaining its visual boundary.
 - **Battle-HUD visual tooling (ADR-0017, retained by ADR-0018):** exact `pixi.js@8.20.0` is
   installed in the client workspace for a lazy-loaded visual compositor, and
-  exact `sharp@0.35.3` is installed at the root as a development-only
-  deterministic asset compiler. Both passed the 2026-08-21 dependency review,
+  exact `sharp@0.35.5` is installed at the root as a development-only
+  deterministic asset compiler. Initial adoption passed the 2026-08-21 dependency review,
   signature/attestation verification, high-severity audit, Windows/Node 24
   install check, and production build. Pixi is visual/non-interactive;
   Preact semantic DOM remains the input, text, focus, and accessibility owner. Sharp
   and libvips are not shipped in the browser bundle. Static Vite/GitHub Pages
-  hosting is unchanged.
+  hosting is unchanged. The 2026-10-15 Sharp maintenance update passed independent
+  dependency review and retains the existing development-only license scope.
 - Root tooling: `concurrently`, `typescript`, `@types/node`.
 - **tsx** `^4.23.1` — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step).
 - **Supabase CLI** `2.105.0` — exact development-only deployment tool pinned in `package-lock.json`; deploy scripts use the local binary so CLI defaults cannot drift between reviewed and applied configuration.
