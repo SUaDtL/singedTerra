@@ -235,6 +235,18 @@ jobs:
       - name: Install Playwright system deps
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
+      # The general shards include Last Stand, so every lane must be ready to
+      # run its Linux functional journey against the transported candidate.
+      - name: Install Last Stand model tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends mono-mcs
+          /usr/bin/mono --version
+          /usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version
+      - name: Initialize Last Stand evidence root
+        run: node scripts/ci/prepareLastStandEvidence.mjs
+      - name: Prepare Last Stand browser sandbox
+        run: node scripts/ci/prepareLastStandBrowser.mjs
       - name: Run the selected browser suite against the exact candidate
         shell: bash
         run: |
@@ -266,6 +278,7 @@ jobs:
           E2E_LIVE_URL: http://127.0.0.1:4173/${{ github.event.repository.name }}/
           E2E_DENY_EXTERNAL_NETWORK: '1'
           BROWSER_LANE: ${{ matrix.lane }}
+          LAST_STAND_QUALIFICATION_PROFILE: linux-functional
       - name: Prove browser execution did not mutate candidate bytes
         run: node scripts/ci/releaseCandidate.mjs verify client/dist
         env:

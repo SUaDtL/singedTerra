@@ -1,6 +1,37 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
+import { lastStandQualificationProfile } from '../../e2e/helpers/lastStandJourney.mjs';
+
+function assertLastStandCandidateSetup(workflow) {
+  const candidate = workflow.slice(workflow.indexOf('\n  candidate-test:'), workflow.indexOf('\n  freshness:'));
+  const browser = candidate.slice(candidate.indexOf('      - name: Run the selected browser suite'),
+    candidate.indexOf('      - name: Prove browser execution'));
+  const profile = browser.match(/\n          LAST_STAND_QUALIFICATION_PROFILE: ([^\n]+)/)?.[1];
+  const spec = readFileSync('e2e/last-stand-playable-loop.spec.ts', 'utf8');
+  const expression = spec.match(/profileName: ([^\n]+) \}\);/)?.[1];
+  assert.ok(expression, 'Use the maintained production runner profile selection');
+  const selected = runInNewContext(expression, { process: { env: profile ? { LAST_STAND_QUALIFICATION_PROFILE: profile } : {} } });
+  assert.equal(lastStandQualificationProfile(selected, 'linux').name, 'linux-functional');
+
+  const steps = [...candidate.matchAll(/      - [\s\S]*?(?=\n      - |$)/g)];
+  const setup = command => {
+    const step = steps.find(item => item[0].includes(command));
+    assert.ok(step, `Candidate requires ${command}`);
+    assert.doesNotMatch(step[0], /continue-on-error|\|\|\s*(true|:)|\n        if:/);
+    assert.ok(step.index < candidate.indexOf('      - name: Run the selected browser suite'),
+      'Prerequisites must precede every candidate browser lane');
+    return step;
+  };
+  const compiler = setup('sudo apt-get install --yes --no-install-recommends mono-mcs');
+  assert.match(compiler[0], /\/usr\/bin\/mono --version/);
+  assert.match(compiler[0], /\/usr\/bin\/mono \/usr\/lib\/mono\/4\.5\/mcs\.exe --version/);
+  const evidence = setup('run: node scripts/ci/prepareLastStandEvidence.mjs');
+  const sandbox = setup('run: node scripts/ci/prepareLastStandBrowser.mjs');
+  assert.ok(evidence.index < sandbox.index, 'Evidence must exist before the sandbox probe');
+  assert.doesNotMatch(candidate, /CHROME_DEVEL_SANDBOX|--no-sandbox|apparmor_restrict_unprivileged_userns/);
+}
 
 function assertReleaseWorkflow(ci, pages, generalConfig, productConfig, lobbySpec) {
   assert.match(ci, /Migration-history disposable Git regressions[\s\S]*node --test scripts\/checks\/migration_classification\.test\.mjs/);
@@ -68,6 +99,27 @@ const lobbySpec = readFileSync('e2e/lobby-layout.spec.ts', 'utf8').replace(/\r\n
 
 test('release graph gates and tests the exact trusted candidate', () => {
   assert.doesNotThrow(() => assertReleaseWorkflow(ci, pages, generalConfig, productConfig, lobbySpec));
+});
+
+test('Pages candidate runs the maintained Last Stand journey with Linux prerequisites and profile', () => {
+  assertLastStandCandidateSetup(pages);
+});
+
+test('Pages rejects missing, incompatible or optional Last Stand candidate setup', () => {
+  for (const [from, to] of [
+    ['LAST_STAND_QUALIFICATION_PROFILE: linux-functional', 'LAST_STAND_QUALIFICATION_PROFILE: windows-player'],
+    ['LAST_STAND_QUALIFICATION_PROFILE: linux-functional', 'OMITTED_PROFILE: linux-functional'],
+    ['--no-install-recommends mono-mcs', '--no-install-recommends'],
+    ['/usr/bin/mono --version', 'echo runtime skipped'],
+    ['/usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version', 'echo compiler skipped'],
+    ['run: node scripts/ci/prepareLastStandEvidence.mjs', 'run: echo evidence skipped'],
+    ['run: node scripts/ci/prepareLastStandBrowser.mjs', 'run: echo sandbox skipped'],
+    ['run: node scripts/ci/prepareLastStandEvidence.mjs', "if: matrix.lane == 'product'\n        run: node scripts/ci/prepareLastStandEvidence.mjs"],
+    ['run: node scripts/ci/prepareLastStandBrowser.mjs', 'continue-on-error: true\n        run: node scripts/ci/prepareLastStandBrowser.mjs'],
+  ]) {
+    assert.notEqual(pages.replace(from, to), pages, `Mutation must apply: ${from}`);
+    assert.throws(() => assertLastStandCandidateSetup(pages.replace(from, to)), from);
+  }
 });
 
 test('policy rejects missing gates, untrusted triggers, and alternate artifacts', () => {
