@@ -70,6 +70,8 @@ jobs:
         run: node --test scripts/checks/manual_baseline.test.mjs
       - name: Last Stand evidence setup regressions
         run: node --test scripts/ci/lastStandEvidenceSetup.test.mjs
+      - name: Last Stand public-configuration regressions
+        run: node --test scripts/ci/lastStandLegacyKey.test.mjs
       - name: Initialize Last Stand evidence root
         run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Scope and required-result regressions
