@@ -9,6 +9,65 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The current in-repo visual scope is
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
+## Current approved slice — Tier Goals and Personal Bests
+
+On October 17, 2026 the owner approved the
+[tier progression specification](../../.codearbiter/specs/last-stand-tier-progression.html).
+The [matching plan](../../.codearbiter/plans/last-stand-tier-progression.html)
+tracks implementation and actual checks. This approval selects the provisional
+60-second Tier 1 goal, 90-second Tier 2 goal, and Tier 2 enemy hull scaling of
+`ceil(base * 5/4)`. A qualifying saved terminal Tier 1 result unlocks Tier 2;
+reaching the goal during live combat does not end or save the run.
+
+Each tier keeps independent best survival and disabled-count records under
+`tier-goals-v1`. Save version 3 preserves v1/v2 wallets, six permanent tracks,
+run counters and pending rewards, without inventing old tier history. Ordinary
+defeat still requires manual Claim for one Salvage. The existing 180-second
+safety limit saves eligible progress, pays zero, and requires Continue before
+another deployment. Interrupted runs grant no records, unlock or award.
+
+Production-model calibration at the existing caps supports these provisional
+goals. These measurements apply every applicable track at the stated level;
+they are numerical build comparisons, not evidence that a player earned them.
+
+| Fitting / track levels | Tier 1 survival | Tier 2 survival |
+| --- | ---: | ---: |
+| Repair / starter (0) | 77.85s | 70.55s |
+| Launcher / starter (0) | 82.35s | 79.35s |
+| Repair / permanent cap (3) | 98.85s | 98.85s |
+| Launcher / permanent cap (3) | 112.35s | 98.85s |
+| Repair / total cap (8) | 175.35s | 161.85s |
+| Launcher / total cap (8) | 180s safety limit | 175.35s |
+
+At repair level 3, equal survival still yields fewer disables on Tier 2
+(47 versus 49). All six matched builds show lower survival or fewer disables.
+The new save/model/controller tests and existing garage, battle, outcome and
+keyboard/touch checks passed locally. The matching Unity Web export passed its
+source/toolchain before-and-after checks. A fresh current-source compilation
+also matched all eight retained Tier 1 fitting/damage baselines.
+
+The normal-speed browser journey passed with a fresh, unseeded local save:
+goal acknowledgement, saved defeat/unlock, pending-result reload, manual Claim,
+an earned permanent upgrade, Tier 2 selection/deploy, unfinished Tier 2 reload,
+and Return to Campaigns. Garage, combat and saved-result geometry were checked
+at all five approved viewport sizes. Evidence is retained under
+`campaign-unity/Evidence/last-stand-tier-progression/browser-pass-20261017T230100Z/`.
+The independent contract review has no outstanding findings. These are local
+implementation checks; exact-head hosted CI, merge and publication are separate.
+Art, motion, sound and phone acceptance remain separate.
+
+The same fresh browser journey also passed after integrating the Pages fixture
+repair from PR #539. Its 15 profile observations and error-free result are in
+`campaign-unity/Evidence/last-stand-tier-progression/browser-pages-integration-3ee9f5c/`.
+The 215 affected helper/qualification guards passed across the focused run and
+its Windows line-ending recheck; both attempts remain in the evidence. PR #539
+contains the separate Pages repair and required CI invocation. Its hosted checks
+do not qualify this tier implementation.
+
+The dated T-06 RED handoffs below describe earlier revisions. PR #524 delivered
+the later qualified loop and PR #538 repaired the Linux Pages qualification
+profile. Neither historical result substitutes for checking this new slice.
+
 ## Experience and order
 
 Last Stand is a stationary, automatic defense run. The tank fights enemies

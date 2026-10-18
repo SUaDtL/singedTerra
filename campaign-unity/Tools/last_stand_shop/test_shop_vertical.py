@@ -53,7 +53,7 @@ class ShopVerticalTests(unittest.TestCase):
             )
             cls.evidence.mkdir(parents=True, exist_ok=False)
         sources = [SCRIPTS / name for name in (
-            "MechanicsShopModel.cs", "EncounterModel.cs", "EncounterProfile.cs",
+            "MechanicsShopModel.cs", "LastStandTierCatalog.cs", "EncounterModel.cs", "EncounterProfile.cs",
             "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs",
         )]
         catalog = SCRIPTS / "LastStandUpgradeCatalog.cs"

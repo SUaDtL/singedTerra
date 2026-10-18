@@ -48,7 +48,7 @@ class ShopPersistenceTests(unittest.TestCase):
             )
             cls.evidence.mkdir(parents=True, exist_ok=False)
         sources = [SCRIPTS / name for name in (
-            "MechanicsShopModel.cs", "LastStandUpgradeCatalog.cs",
+            "MechanicsShopModel.cs", "LastStandTierCatalog.cs", "LastStandUpgradeCatalog.cs",
             "LastStandProgression.cs", "LastStandStore.cs", "LastStandShopState.cs",
         )] + [DRIVER]
         cls.source_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}

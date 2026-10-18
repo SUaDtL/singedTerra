@@ -40,7 +40,7 @@ class BackgroundClockTests(unittest.TestCase):
         cls.output = tempfile.TemporaryDirectory(prefix="st-background-clock-")
         cls.executable = Path(cls.output.name) / "BackgroundClockChecks.exe"
         baseline = os.environ.get("ST_CLOCK_BASELINE") == "1"
-        sources = [SCRIPTS / "EncounterModel.cs", SCRIPTS / "EncounterProfile.cs", DRIVER]
+        sources = [SCRIPTS / "EncounterModel.cs", SCRIPTS / "EncounterProfile.cs", SCRIPTS / "LastStandTierCatalog.cs", DRIVER]
         sources.append(SCRIPTS / ("EncounterSession.cs" if baseline else "LastStandRunClock.cs"))
         command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
         if baseline:

@@ -30,6 +30,7 @@ namespace SingedTerra.LastStand
         LastStandUpgradeTrackId pendingPermanentTrack;
         int pendingPermanentPriorLevel;
         bool previousRunInBackground, ownsBackgroundSetting;
+        bool goalAcknowledged;
         const double MaximumForegroundFeedbackInterval = .5;
         public event Action Changed;
 
@@ -63,6 +64,18 @@ namespace SingedTerra.LastStand
             StartReservedRun();
         }
 
+        public void SelectTier(int tier)
+        {
+            if ((Phase != "garage" && Phase != "workshop") || Session.Model != null) return;
+            if (!Progression.TrySelectTier(tier))
+            {
+                Notice = Progression.SaveError ?? "Finish and save a Tier 1 run of 60 seconds to unlock Tier 2.";
+                Refresh("tier-unavailable"); return;
+            }
+            Notice = "Tier " + Progression.SelectedTier + " selected.";
+            Refresh("tier-selected");
+        }
+
         void StartReservedRun()
         {
             if (Progression.ActiveRunId == 0) return;
@@ -74,7 +87,7 @@ namespace SingedTerra.LastStand
             var shop = new LastStandShopState(Progression.ActiveRunId,
                 art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair, permanentLevels);
             runShop = shop; FinalAccounting = null;
-            failedRun = suppressCallbackFeedback = false;
+            failedRun = suppressCallbackFeedback = goalAcknowledged = false;
             Audio.UnlockFromGesture("deploy");
             Session.DeployReservedRun(shop);
             if (Session.Model == null)
@@ -96,6 +109,11 @@ namespace SingedTerra.LastStand
             // terminal/background step. Audio admission never owns accounting.
             if (runShop != null && model == Session.Model) runShop.ObserveAuthoritativeKills(model.Kills);
             if (Phase != "battle" || Session.Paused || Session.Failure != "") return;
+            if (!goalAcknowledged && model.Tick >= LastStandTierCatalog.Get(model.Profile.Tier).GoalTicks)
+            {
+                goalAcknowledged = true;
+                Notice = "Goal reached. Finish this run to save your progress.";
+            }
             // Preserve ordinary short foreground batches. A delayed/background
             // callback and every subsequent debt-draining callback discard old
             // cues, including the final step where the clock debt reaches zero.
@@ -161,13 +179,19 @@ namespace SingedTerra.LastStand
                         Phase = "save-error"; Refresh("save-error"); return;
                     }
                     settle = (float)Math.Max(0, .48 - Session.TerminalElapsedSeconds);
+                    Notice = SavedResultNotice();
                     Phase = "settling"; Audio.PlayDefeat(); Refresh("defeat-staged"); return;
                 }
                 if (model.Status == EncounterStatus.Limit)
                 {
                     FinalizeShop(LastStandShopPurchaseLifecycle.Limit, model);
-                    Progression.TryStageNonDefeat(); Session.ReturnToInspection();
-                    Phase = "garage"; Notice = "Run limit reached. No salvage was awarded.";
+                    if (!Progression.TryStageLimit(model.Tick, model.Kills))
+                    {
+                        Notice = Progression.SaveError ?? "Could not save the limit result. Retry the save.";
+                        Phase = "save-error"; Refresh("save-error"); return;
+                    }
+                    Phase = "result"; Notice = SavedResultNotice();
+                    Session.ReturnToInspection();
                     Refresh("limit"); return;
                 }
                 runShop?.UpdatePurchaseLifecycle(Session.Paused ? LastStandShopPurchaseLifecycle.Paused :
@@ -199,9 +223,22 @@ namespace SingedTerra.LastStand
         public void Claim()
         {
             if (Phase != "result" || Progression.PendingDefeat == null) return;
+            int reward = Progression.PendingDefeat.Reward;
             if (!Progression.TryClaim()) { Notice = Progression.SaveError ?? "Claim is unavailable."; Refresh("save-error"); return; }
             FinalAccounting = null;
-            Phase = "workshop"; Notice = "1 salvage claimed. Choose your next fitting."; Refresh("claim");
+            Phase = "workshop"; Notice = reward == 0 ? "Limit result acknowledged. No salvage was awarded." :
+                "1 salvage claimed. Choose your next fitting."; Refresh("claim");
+        }
+
+        string SavedResultNotice()
+        {
+            var result = Progression.PendingDefeat;
+            if (result == null) return "Save confirmed.";
+            string notice = result.IsLimit ? "Run limit reached. No victory or salvage. Result saved." : "Result saved.";
+            if (result.NewBestTime) notice += " New best survival.";
+            if (result.NewBestKills) notice += " New best disabled count.";
+            if (result.UnlockedTierTwo) notice += " Tier 2 unlocked.";
+            return notice;
         }
 
         public void Purchase() => Purchase(LastStandUpgradeTrackId.CannonAttack);
@@ -311,6 +348,7 @@ namespace SingedTerra.LastStand
             if (Progression.ActiveRunId != 0 && Session.Model == null) { StartReservedRun(); return; }
             if (Progression.PendingDefeat != null)
             {
+                Notice = SavedResultNotice();
                 if (Session.Model != null) Session.ReturnToInspection();
                 Phase = "result";
             }
@@ -355,13 +393,20 @@ namespace SingedTerra.LastStand
                 cannonDamage = Session.Model?.CommittedCannonDamage ?? Progression.CannonDamage,
                 runId = Progression.ActiveRunId, pendingRunId = Progression.PendingDefeat?.RunId ?? 0,
                 tick = Session.Model?.Tick ?? 0, hull = Session.Model?.Hull ?? 120, kills = Session.Model?.Kills ?? 0,
+                selectedTier = Progression.SelectedTier, activeTier = Progression.ActiveTier,
+                profileVersion = LastStandTierCatalog.ProfileVersion, tierTwoUnlocked = Progression.TierTwoUnlocked,
+                bestTicks1 = Progression.GetBestTicks(1), bestTicks2 = Progression.GetBestTicks(2),
+                bestKills1 = Progression.GetBestKills(1), bestKills2 = Progression.GetBestKills(2),
+                pendingTier = Progression.PendingDefeat?.Tier ?? 0, pendingReward = Progression.PendingDefeat?.Reward ?? 0,
+                goalMet = Session.Model != null && Session.Model.Tick >= LastStandTierCatalog.Get(Session.Model.Profile.Tier).GoalTicks,
                 paused = Session.Paused, muted = Muted }));
         }
         [Serializable] sealed class State
         {
-            public string action, phase, saveState, saveError, notice;
+            public string action, phase, saveState, saveError, notice, profileVersion;
             public int wallet, level, nextCost, cannonDamage, runId, pendingRunId, tick, hull, kills;
-            public bool paused, muted;
+            public int selectedTier, activeTier, bestTicks1, bestTicks2, bestKills1, bestKills2, pendingTier, pendingReward;
+            public bool paused, muted, tierTwoUnlocked, goalMet;
         }
         [Serializable] sealed class HitState { public int tick, cannonDamage, firstFoeHull, kills; }
     }

@@ -146,7 +146,7 @@ namespace SingedTerra.Encounter
                 int group = Spawned / 8;
                 foe.Id = Spawned + 1; foe.Lane = Profile.Lane(Spawned);
                 foe.Kind = Spawned % 3 == 2 ? FoeKind.Ranged : FoeKind.Close;
-                foe.Hull = foe.MaximumHull = 30 + group * 10;
+                foe.Hull = foe.MaximumHull = Profile.EnemyHull(30 + group * 10);
                 foe.Distance = Profile.SpawnRadius; foe.Damage = 4 + group * 2;
                 foe.NextAttack = 0; nextSpawn = Tick + Profile.Interval(Spawned); Spawned++;
                 return;

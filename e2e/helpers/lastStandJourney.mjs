@@ -54,7 +54,7 @@ export function readShopControlObservation(raw) {
   for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset'])
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
-  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute']],
+  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier']],
     ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
       'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
       'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']]];
@@ -1613,7 +1613,7 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
 export function encounterCompilationSourceBinding() {
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
-  return {source_lf_sha256:Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs'].map(name=>[name,
+  return {source_lf_sha256:Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>[name,
     hash(readFileSync(join(ROOT,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n'))])),
     export_binding:{manifest_sha256:fileHash(manifestPath),receipt_sha256:manifest.source.receiptSha256,
       source_lock_sha256:manifest.source.sourceLockSha256,source_inventory_sha256:manifest.source.sourceInventorySha256,
@@ -1622,7 +1622,7 @@ export function encounterCompilationSourceBinding() {
 export function buildEncounterOracle(output) {
   const bound=readBoundEncounterOracle();
   const {mono,csc}=encounterOracleToolchain();
-  const sources=['EncounterModel.cs','EncounterProfile.cs'].map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
+  const sources=['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
   for(const path of [mono,csc,...sources])assert.ok(existsSync(path),'Actual model oracle prerequisite absent: '+path);
   const directory=join(output,'model-oracle');mkdirSync(directory);
   const driver=join(directory,'Program.cs'),exe=join(directory,'EncounterOracle.exe');
