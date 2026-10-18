@@ -33,7 +33,8 @@ test.afterEach(async () => { await closeLastStandOwnedBrowsers(); });
 
 test('Last Stand tier goals unlock and survive reload', { tag: '@last-stand' }, async ({ page, baseURL }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-fine', 'One journey owns the five-profile matrix');
-  test.setTimeout(240_000);
+  test.setTimeout(lastStandJourneyTimeBudget().testMs);
+  page.setDefaultTimeout(lastStandJourneyTimeBudget().actionMs);
   if (!baseURL) throw new Error('Production baseURL is required');
   await runLastStandTierJourney({ page, baseURL, testInfo });
 });

@@ -403,6 +403,41 @@ test('central workload budget separates web-server startup and bounds actual own
   const config=readFileSync(new URL('../../playwright.config.ts',import.meta.url),'utf8');
   assert.ok(config.includes('timeout: 180_000'),'Budget agrees with actual webServer startup allowance');
 });
+test('tier wrapper admits the host capture budget before starting its real journey',async()=>{
+  const spec=readFileSync(new URL('../../e2e/last-stand-playable-loop.spec.ts',import.meta.url),'utf8');
+  const begin=spec.indexOf("test('Last Stand tier goals unlock and survive reload'");
+  const end=spec.indexOf("\ntest('Last Stand Campaigns journey",begin);
+  assert.ok(begin>=0 && end>begin,'Actual tier wrapper required');
+  for(const host of ['linux','win32']) {
+    const calls=[];let callback;
+    const test=Object.assign((_name,_options,body)=>{callback=body;},{
+      skip:condition=>assert.equal(condition,false),setTimeout:ms=>calls.push(['test',ms])});
+    runInNewContext(spec.slice(begin,end),{test,
+      lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget(host),
+      runLastStandTierJourney:async()=>{calls.push(['journey']);}});
+    await callback({page:{setDefaultTimeout:ms=>calls.push(['action',ms])},baseURL:'http://127.0.0.1:4173/singedTerra/'},
+      {project:{name:'desktop-fine'}});
+    assert.deepEqual(calls,[['test',journey.lastStandJourneyTimeBudget(host).testMs],
+      ['action',host==='linux'?60_000:10_000],['journey']],host+' owns capture and DOM allowances');
+  }
+});
+
+test('actual maintained journey uses a finite host DOM allowance without changing game clocks',()=>{
+  const body=source.slice(source.indexOf('export async function runLastStandJourney('));
+  const statement=body.match(/page\.setDefaultTimeout\([^;]+\);/)?.[0];
+  assert.ok(statement,'Actual maintained DOM admission required');
+  for(const [host,expected] of [['linux',60_000],['win32',10_000]]) {
+    let observed;
+    runInNewContext(statement,{page:{setDefaultTimeout:ms=>{observed=ms;}},
+      lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget(host)});
+    assert.equal(observed,expected,host+' admits software-renderer main-thread latency');
+    const budget=journey.lastStandJourneyTimeBudget(host);
+    assert.equal(budget.actionMs,observed);
+    assert.ok(Number.isFinite(observed) && observed>0 && observed<budget.testMs);
+    assert.equal(budget.testMs,host==='linux'?3_600_000:1_200_000);
+  }
+});
+
 test('offline reader refuses an intact older oracle with stale current-source binding',()=>{
   const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
   const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('\nif(process.argv[1]',begin);

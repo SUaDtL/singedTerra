@@ -1768,7 +1768,9 @@ export function lastStandJourneyTimeBudget(host=process.platform,{served=false}=
   const testMs=host==='win32'?1_200_000:3_600_000,startupMs=served?0:180_000;
   // Test/browser clocks start after webServer setup; the standalone owner
   // starts before it and must also admit owned-tree cleanup.
-  return Object.freeze({testMs,startupMs,browserMs:testMs+40_000,
+  // Software-rendered Linux Unity frames can occupy the page thread beyond
+  // the Windows DOM allowance. Keep each read/capture bounded independently.
+  return Object.freeze({testMs,startupMs,actionMs:host==='linux'?60_000:10_000,browserMs:testMs+40_000,
     runnerMs:testMs+startupMs+5_000,supervisorMs:testMs+startupMs+50_000,
     pythonMs:testMs+180_000+100_000});
 }
@@ -2961,7 +2963,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       report.binding.served[path]={sha256:hash(bytes),bytes:bytes.length};
     }
     native=await ownedChrome(chromium,output,'native',lastStandJourneyTimeBudget().browserMs); page=native.context.pages()[0];
-    page.setDefaultTimeout(10_000);
+    page.setDefaultTimeout(lastStandJourneyTimeBudget().actionMs);
     if(process.env.LAST_STAND_INDUCE_CLEANUP_FAILURE==='1')check(false,'bounded induced failure after owned browser startup');
     report.browser_version=native.browser.version();
     await page.setViewportSize({width:1280,height:720});
