@@ -3,6 +3,10 @@
 # Asset recipes pin exact contract bytes across Windows and Linux.
 .codearbiter/contracts/battle-console/** -text
 
+# Native artifact parsing requires the generator's canonical LF bytes.
+.codearbiter/specs/*.html text eol=lf
+.codearbiter/plans/*.html text eol=lf
+
 # Preserve the recorded performance artifact digests on every checkout.
 docs/performance/artifacts/*.json text eol=lf
 
