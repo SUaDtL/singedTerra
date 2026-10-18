@@ -31,6 +31,92 @@ SPEC = {'revision': 4, 'model_sha256': '0fce3f7b2eb7f6743b3b5c5960b8fdece577c884
 PLAN = {'revision': 6, 'model_sha256': 'f912cf6d951328966555e3c2f9511fcaca3bbefc5c21d04de7c896f1920a7304',
         'normative_sha256': 'b8a8dd6156609bb6c14d5ce45ce34c8fb4124d37af806b240741e90e640f00b1'}
 
+TIER_PROFILE = 'tier-goals-v1'
+SAVE_TRACKS = {'cannonAttack', 'launcherAttack', 'hullCapacity', 'armor', 'cannonCycle', 'fieldRepair'}
+
+
+def _empty_tier_records():
+    return {TIER_PROFILE: {'bestTicks1': 0, 'bestKills1': 0, 'bestTicks2': 0, 'bestKills2': 0,
+                           'tierTwoUnlocked': False}}
+
+
+def _current_progression_record(value):
+    """Closed v3 observation contract; unknown fields/profiles are not admitted."""
+    integer = lambda number: type(number) is int and 0 <= number <= 2147483647
+    if not isinstance(value, dict) or set(value) != {'version', 'credits', 'permanentLevels', 'nextRunId',
+            'lastFinalizedRunId', 'selectedTier', 'tierRecords', 'pendingDefeat'}:
+        return False
+    levels, profiles = value['permanentLevels'], value['tierRecords']
+    if (type(value['version']) is not int or value['version'] != 3 or not integer(value['credits'])
+            or not integer(value['nextRunId']) or not integer(value['lastFinalizedRunId'])
+            or not 0 <= value['lastFinalizedRunId'] < value['nextRunId']
+            or type(value['selectedTier']) is not int or value['selectedTier'] not in (1, 2)
+            or not isinstance(levels, dict) or set(levels) != SAVE_TRACKS
+            or any(not integer(level) or level > 3 for level in levels.values())
+            or not isinstance(profiles, dict) or set(profiles) != {TIER_PROFILE}):
+        return False
+    records = profiles[TIER_PROFILE]
+    if (not isinstance(records, dict) or set(records) != {'bestTicks1', 'bestKills1', 'bestTicks2', 'bestKills2', 'tierTwoUnlocked'}
+            or any(not integer(records[key]) for key in ('bestTicks1', 'bestKills1', 'bestTicks2', 'bestKills2'))
+            or records['bestTicks1'] > 3600 or records['bestTicks2'] > 3600
+            or type(records['tierTwoUnlocked']) is not bool
+            or records['tierTwoUnlocked'] != (records['bestTicks1'] >= 1200)
+            or not records['tierTwoUnlocked'] and (value['selectedTier'] != 1 or records['bestTicks2'] or records['bestKills2'])):
+        return False
+    pending = value['pendingDefeat']
+    if pending is None:
+        return True
+    if (not isinstance(pending, dict) or set(pending) != {'runId', 'elapsedTicks', 'kills', 'reward', 'tier',
+            'profileVersion', 'isLimit', 'newBestTime', 'newBestKills', 'unlockedTierTwo'}
+            or any(not integer(pending[key]) for key in ('runId', 'elapsedTicks', 'kills', 'reward', 'tier'))
+            or pending['runId'] != value['nextRunId'] - 1 or pending['runId'] <= value['lastFinalizedRunId']
+            or any(type(pending[key]) is not bool for key in ('isLimit', 'newBestTime', 'newBestKills', 'unlockedTierTwo'))):
+        return False
+    if pending['tier'] == 0:
+        return (pending['profileVersion'] == '' and pending['reward'] == 1
+                and not any(pending[key] for key in ('isLimit', 'newBestTime', 'newBestKills', 'unlockedTierTwo')))
+    tier = pending['tier']
+    if (tier not in (1, 2) or pending['profileVersion'] != TIER_PROFILE or tier != value['selectedTier']
+            or tier == 2 and not records['tierTwoUnlocked'] or pending['elapsedTicks'] > 3600
+            or pending['reward'] != (0 if pending['isLimit'] else 1)
+            or pending['isLimit'] and pending['elapsedTicks'] != 3600):
+        return False
+    return (records[f'bestTicks{tier}'] >= pending['elapsedTicks'] and records[f'bestKills{tier}'] >= pending['kills']
+            and (not pending['newBestTime'] or records[f'bestTicks{tier}'] == pending['elapsedTicks'] > 0)
+            and (not pending['newBestKills'] or records[f'bestKills{tier}'] == pending['kills'] > 0)
+            and (not pending['unlockedTierTwo'] or tier == 1 and records['tierTwoUnlocked']
+                 and pending['elapsedTicks'] >= 1200 and pending['newBestTime']))
+
+
+def _migrated_progression_record(legacy):
+    """Expected output for a declared legacy fixture, never live evidence."""
+    value = json.loads(json.dumps(legacy))
+    if value['version'] == 1:
+        level = value.pop('permanentLevel')
+        value['permanentLevels'] = {key: level if key == 'cannonAttack' else 0 for key in SAVE_TRACKS}
+    value.update(version=3, selectedTier=1, tierRecords=_empty_tier_records())
+    if value['pendingDefeat'] is not None:
+        value['pendingDefeat'].update(tier=0, profileVersion='', isLimit=False, newBestTime=False,
+                                      newBestKills=False, unlockedTierTwo=False)
+    return value
+
+
+def _terminal_progression_record(prior, run_id, ticks, kills):
+    """Expected ordinary terminal transaction from independently observed inputs."""
+    value = json.loads(json.dumps(prior))
+    require(_current_progression_record(value), 'Terminal expectation requires a valid current save')
+    tier = value['selectedTier']
+    records = value['tierRecords'][TIER_PROFILE]
+    best_time, best_kills = ticks > records[f'bestTicks{tier}'], kills > records[f'bestKills{tier}']
+    unlocked = tier == 1 and not records['tierTwoUnlocked'] and ticks >= 1200
+    records[f'bestTicks{tier}'] = max(ticks, records[f'bestTicks{tier}'])
+    records[f'bestKills{tier}'] = max(kills, records[f'bestKills{tier}'])
+    records['tierTwoUnlocked'] |= unlocked
+    value.update(nextRunId=run_id + 1, pendingDefeat={'runId': run_id, 'elapsedTicks': ticks, 'kills': kills,
+                 'reward': 1, 'tier': tier, 'profileVersion': TIER_PROFILE, 'isLimit': False,
+                 'newBestTime': best_time, 'newBestKills': best_kills, 'unlockedTierTwo': unlocked})
+    return value
+
 
 def _shop_png(path):
     """Decode the retained browser PNG directly; no new imaging dependency."""
@@ -335,7 +421,7 @@ def verify_shop_presentation_states(report, directory):
         require({k: v for k, v in event.items() if k not in ('load', 'emittedRaw')} == json.loads(event['emittedRaw'].split('ST_TEST_STORAGE ', 1)[1]),
                 'Storage observation differs from its raw emission')
     migrated = json.loads(report['migrated_storage']['raw'])
-    require(migrated['version'] == 2 and migrated['credits'] == 1 and migrated['permanentLevels']['cannonAttack'] == 3
+    require(_current_progression_record(migrated) and migrated['credits'] == 1 and migrated['permanentLevels']['cannonAttack'] == 3
             and all(level == 0 for key, level in migrated['permanentLevels'].items() if key != 'cannonAttack'),
             'Actual migration did not retain only capped Cannon ownership')
     capped = report['capped_state']
@@ -534,7 +620,7 @@ def verify_shop_vertical(report):
         require(all(type(fields[key]) in (int, float) and math.isfinite(fields[key]) and fields[key] >= 0
                     for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset'))
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
-        expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute'},
+        expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier'},
                     'shopControls': {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}}
@@ -666,17 +752,15 @@ def verify_shop_vertical(report):
         storage[item['label']] = item
         if item['data'] is not None:
             value = item['data']
-            require(set(value) == {'version', 'credits', 'permanentLevels', 'nextRunId', 'lastFinalizedRunId', 'pendingDefeat'}
-                    and value['version'] == 2 and set(value['permanentLevels']) == keys
-                    and all(type(level) is int and 0 <= level <= 3 for level in value['permanentLevels'].values()),
+            require(_current_progression_record(value),
                     'Saved Shop record contains temporary or invalid state')
     require(witnesses['initial_storage'] == storage.get('initial'), 'Detached initial storage')
     for witness_name, label in (('claim_before', 'claim-before'), ('claim_after', 'claim-after'),
                                ('permanent_after', 'permanent-after'), ('reload', 'reload')):
         require(label in storage and witnesses[witness_name] == storage[label]['data'], 'Detached saved witness: ' + label)
     claim_before, claim_after = witnesses['claim_before'], witnesses['claim_after']
-    require(claim_before['credits'] == 0 and claim_before['pendingDefeat'] == {'runId': run_id,
-            'elapsedTicks': defeat['tick'], 'kills': defeat['kills'], 'reward': 1}, 'Defeat reward was not naturally saved')
+    expected_terminal = _terminal_progression_record(storage['initial']['data'], run_id, defeat['tick'], defeat['kills'])
+    require(claim_before == expected_terminal, 'Defeat records and reward were not naturally saved')
     expected_claim = dict(claim_before, credits=1, pendingDefeat=None, lastFinalizedRunId=run_id)
     require(claim_after == expected_claim, 'Manual Claim changed or awarded unexpected state')
     permanent_before, permanent_after = witnesses['permanent_before'], witnesses['permanent_state_after']
@@ -1057,8 +1141,7 @@ def _verify_recovery_terminal_boundaries(report, records, native):
                    and accounting['finalScrap'] == 3 * len(killed) - spent,
                    'RECOVERY_FINAL_STEP_KILL: final kill was omitted or credited twice')
     prior = game['before']['storage']['data']
-    expected = dict(prior, nextRunId=deploy['runId'] + 1,
-                    pendingDefeat={'runId': deploy['runId'], 'elapsedTicks': defeat['tick'], 'kills': defeat['kills'], 'reward': 1})
+    expected = _terminal_progression_record(prior, deploy['runId'], defeat['tick'], defeat['kills'])
     claimed = dict(expected, credits=prior['credits'] + 1, pendingDefeat=None, lastFinalizedRunId=deploy['runId'])
     _recovery_need(game['result']['storage']['data'] == expected and game['claimed']['storage']['data'] == claimed
                    and game['result']['state']['wallet'] == prior['credits']
@@ -1166,8 +1249,14 @@ def verify_shop_recovery(report, require_native=False):
             if key == 'controlsOnly':
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
+                expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier'}
+                expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
+                    'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
+                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}
                 need(value['coordinates'] == 'top-left' and value['width'] > 0 and value['height'] > 0
-                     and len(value['controls']) == 8 and len(value['shopControls']) == 11, 'Incomplete recovery controls')
+                     and len(value['controls']) == 9 and len(value['shopControls']) == 11
+                     and {control['name'] for control in value['controls']} == expected_controls
+                     and {control['name'] for control in value['shopControls']} == expected_shop_controls, 'Incomplete recovery controls')
             value.update({field: observation[field] for field in ('seq', 'load', 't', 'timeOrigin', 'order', 'documentHidden', 'documentFocused')})
             derived[key].append(value)
     need(all(records[key] == value for key, value in derived.items()), 'Recovery witness differs from raw runtime emission')
@@ -1192,7 +1281,9 @@ def verify_shop_recovery(report, require_native=False):
         need(any(event.get('op') == 'snapshot' and all(event.get(key) == item[key]
                  for key in ('label', 'raw', 'load', 't', 'timeOrigin')) for event in records['storageEvents']), 'Detached storage snapshot witness')
         value = item['data']
-        if value is not None and value.get('version') == 2:
+        if value is not None and value.get('version') == 3:
+            need(_current_progression_record(value), 'Temporary, unknown or conflicting tier state persisted in storage')
+        elif value is not None and value.get('version') == 2:
             need(set(value) == {'version', 'credits', 'permanentLevels', 'nextRunId', 'lastFinalizedRunId', 'pendingDefeat'}
                  and set(value['permanentLevels']) == keys
                  and all(type(level) is int and 0 <= level <= 3 for level in value['permanentLevels'].values()),
@@ -1271,9 +1362,7 @@ def verify_shop_recovery(report, require_native=False):
             need(failed_storage['raw'] == case['fixture'] and failure['wallet'] == 2 and failure['pendingRunId'] == 6
                  and _verify_recovery_permanent_levels(failed_shop) == {key: 1 if key == 'cannonAttack' else 0 for key in keys},
                  'Denied migration lost old wallet, pending reward or level')
-            desired = dict(legacy)
-            desired.pop('permanentLevel')
-            desired.update(version=2, permanentLevels={key: 1 if key == 'cannonAttack' else 0 for key in keys})
+            desired = _migrated_progression_record(legacy)
         else:
             snapshot(case['before'], label + ' before')
             prior = case['before']['storage']['data']
@@ -1296,8 +1385,7 @@ def verify_shop_recovery(report, require_native=False):
                 need(failure['runId'] == 0 and not failed_shop['hasActiveLedger'], 'Unconfirmed reservation created an active run')
             else:
                 game = report['gameplay']
-                desired['pendingDefeat'] = {'runId': game['deploy']['runId'], 'elapsedTicks': game['defeat']['tick'],
-                                          'kills': game['defeat']['kills'], 'reward': 1}
+                desired = _terminal_progression_record(prior, game['deploy']['runId'], game['defeat']['tick'], game['defeat']['kills'])
             need(failure_data == (prior if case['fault'] == 'denied' else desired), 'Actual failed storage bytes differ: ' + label)
         fault_events = [event for event in records['storageEvents'] if event['load'] == failure['load'] and event['mode'] == case['fault']
                         and event['t'] <= failed_storage['t']]
@@ -1363,8 +1451,9 @@ def verify_shop_recovery(report, require_native=False):
                              ('purchase', 'purchases'), ('effect', 'combat'), ('defeat', 'encounters'), ('terminal', 'shopStates'), ('redeploy', 'shopStates')):
         witness(game[name], collection, 'gameplay ' + name)
     initial = game['initial']['storage']['data']
-    need(initial == {'version': 2, 'credits': 0, 'permanentLevels': {key: 0 for key in keys}, 'nextRunId': 1,
-                     'lastFinalizedRunId': 0, 'pendingDefeat': None}, 'Gameplay did not begin with a fresh zero record')
+    need(initial == {'version': 3, 'credits': 0, 'permanentLevels': {key: 0 for key in keys}, 'nextRunId': 1,
+                     'lastFinalizedRunId': 0, 'selectedTier': 1, 'tierRecords': _empty_tier_records(),
+                     'pendingDefeat': None}, 'Gameplay did not begin with a fresh zero tier record')
     fixtures = [event for event in records['storageEvents'] if event['op'] == 'fixture']
     need(len(fixtures) == 5 and fixtures[-1]['actual'] is None and fixtures[-1]['load'] < game['deploy']['load']
          and all(event['load'] < game['deploy']['load'] for event in fixtures), 'Storage fixtures leaked into gameplay')
@@ -1426,8 +1515,8 @@ def verify_shop_recovery(report, require_native=False):
          and accounting['uniqueKills'] == defeat['kills'] and accounting['earnedScrap'] == 3 * defeat['kills']
          and accounting['spentScrap'] == 5 and accounting['finalScrap'] == 3 * defeat['kills'] - 5, 'Recovery terminal accounting differs')
     result_data = game['result']['storage']['data']
-    need(result_data['credits'] == 0 and result_data['pendingDefeat'] == {'runId': 1, 'elapsedTicks': defeat['tick'], 'kills': defeat['kills'], 'reward': 1},
-         'Ordinary defeat did not stage exactly one manual reward')
+    need(result_data == _terminal_progression_record(initial, 1, defeat['tick'], defeat['kills']),
+         'Ordinary defeat did not save independent records and exactly one manual reward')
     need(len(game['refreshes']) == 3, 'Missing repeated real terminal refreshes')
     for value in game['refreshes']:
         snapshot(value, 'terminal refresh')

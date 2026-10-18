@@ -74,7 +74,7 @@ internal static class Program
                 model.TryDeploy();
                 model.TryStageDefeat(7, 4);
                 var exactSchema = storage.Value.Contains("\"credits\":0") &&
-                    storage.Value.Contains("\"version\":2") &&
+                    storage.Value.Contains("\"version\":3") &&
                     storage.Value.Contains("\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0}") &&
                     storage.Value.Contains("\"lastFinalizedRunId\":0") &&
                     !storage.Value.Contains("\"wallet\"") &&

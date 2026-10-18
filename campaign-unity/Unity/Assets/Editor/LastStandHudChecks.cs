@@ -113,7 +113,7 @@ public static class LastStandHudChecks
                 RequireGarageVisible(f);
                 Require(text.IndexOf(launcher ? "Auxiliary launcher" : "Field repair", StringComparison.OrdinalIgnoreCase) >= 0,
                     "live actual fitting");
-                Require(text.Contains(level + " / 3") && text.Contains((20 + 10 * level).ToString()), "live actual level and damage");
+                Require(text.Contains(level + "/3") && text.Contains((20 + 10 * level).ToString()), "live actual level and damage");
                 Require(text.Contains("Salvage") && text.Contains("0") && text.Contains(level == 3 ? "MAX" : (level + 1).ToString()),
                     "live wallet and next cost/MAX");
                 Require(f.Text("SaveStatus").text.Contains("LOCAL SAVE READY"), "actual confirmed save");
@@ -304,15 +304,16 @@ public static class LastStandHudChecks
         var progress = f.Loop.Progression; string text = f.Text("PhaseDetail").text;
         var fitting = Field(text, @"^Fitting:[ \t]*(Field repair|Auxiliary launcher)[ \t]*$", "Fitting");
         Require(fitting.Groups[1].Value == (f.Art.showingLauncher ? "Auxiliary launcher" : "Field repair"), "field-bound actual fitting");
-        var level = Field(text, @"^Cannon Attack[ \t]+([0-9]+)[ \t]*/[ \t]*([0-9]+)[ \t]*$", "Cannon Attack");
-        Require(int.Parse(level.Groups[1].Value) == progress.CannonAttackLevel && int.Parse(level.Groups[2].Value) == 3,
-            "field-bound actual Cannon Attack level/cap");
-        var damage = Field(text, @"^Damage[ \t]+([0-9]+)[ \t]*$", "Damage");
-        Require(int.Parse(damage.Groups[1].Value) == progress.CannonDamage, "field-bound actual Damage");
-        var economy = Field(text, @"^Salvage[ \t]+([0-9]+)[ \t]*/[ \t]*Next upgrade[ \t]+([0-9]+|MAX)[ \t]*$", "Salvage / Next upgrade");
-        Require(int.Parse(economy.Groups[1].Value) == progress.Wallet, "field-bound actual Salvage");
-        Require(economy.Groups[2].Value == (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString()), "field-bound actual Next upgrade/MAX");
-        Require(!text.Contains("ARMOR"), "real model terminology cannot become generated ARMOR");
+        var tier = Field(text, @"^Tier ([12]) / Goal ([0-9]+)s$", "tier and goal");
+        Require(int.Parse(tier.Groups[1].Value) == progress.SelectedTier && int.Parse(tier.Groups[2].Value) ==
+            (progress.SelectedTier == 1 ? 60 : 90), "approved selected tier goal");
+        var level = Field(text, @"^Cannon Attack ([0-9]+)/3 / Damage ([0-9]+)$", "cannon level and damage");
+        Require(int.Parse(level.Groups[1].Value) == progress.CannonAttackLevel &&
+            int.Parse(level.Groups[2].Value) == progress.CannonDamage, "field-bound actual cannon projection");
+        var economy = Field(text, @"^Salvage ([0-9]+) / Next ([0-9]+|MAX)$", "Salvage / Next");
+        Require(int.Parse(economy.Groups[1].Value) == progress.Wallet && economy.Groups[2].Value ==
+            (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString()), "actual wallet and next cost");
+        Require(text.Split('\n').Length == 5 && text.Split('\n')[1].StartsWith("Best"), "tier best has a dedicated reading line");
     }
     static void AssertGarageSaveTruth(Fixture f)
     {
@@ -349,10 +350,10 @@ public static class LastStandHudChecks
     static void RequireGarageVisible(Fixture f)
     {
         foreach (string id in new[] { "PhaseHeading", "PhaseDetail", "SaveStatus" }) RequireVisible(f.Text(id), "required garage " + id);
-        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute" })
+        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" })
         {
             var button = f.Button(id);
-            bool expected = id == "ToggleFitting" || id == "Deploy" || id == "ToggleMute" ||
+            bool expected = id == "ToggleFitting" || id == "Deploy" || id == "ToggleMute" || (id == "ToggleTier" && f.Loop.Progression.SaveState == "ready") ||
                 (id == "RetrySave" && f.Loop.Progression.SaveState != "ready");
             Require(button.gameObject.activeInHierarchy == expected, "actual garage control inventory " + id);
             if (!expected) continue;
@@ -463,7 +464,7 @@ public static class LastStandHudChecks
         var model = f.Loop.Session.Model; Require(model != null, "actual deployed model supplies readouts");
         var expected = new Dictionary<string,string> {
             { "HullValue", "HULL  " + model.Hull + " / " + EncounterModel.MaximumHull },
-            { "ElapsedTime", "TIME  " + (model.Tick / (float)EncounterModel.TicksPerSecond).ToString("F1") + "s" },
+            { "ElapsedTime", "T" + model.Profile.Tier + " " + model.Tick / 20 + "/" + (model.Profile.Tier == 1 ? 60 : 90) + "s" },
             { "DisabledCount", "DISABLED  " + model.Kills },
             { "CannonDamage", "CANNON  " + model.CommittedCannonDamage + " DAMAGE" },
             { "Fitting", "FITTING  " + (model.HasLauncher ? "AUXILIARY LAUNCHER" : "FIELD REPAIR") }
@@ -489,7 +490,7 @@ public static class LastStandHudChecks
     static void RequireBattleInventory(Fixture f)
     {
         RequireVisible(f.Text("PhaseHeading"), "required battle PhaseHeading");
-        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute" })
+        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" })
         {
             var button = f.Button(id); bool active = id == "Pause" || id == "ToggleMute";
             Require(button.gameObject.activeInHierarchy == active, "actual battle stable control inventory " + id);
@@ -737,8 +738,8 @@ public static class LastStandHudChecks
         Require(report.phase == runtimeLoop.Phase && report.coordinates == "top-left", "runtime current phase and top-left coordinate contract " + state);
         Require(report.width == Screen.width && report.height == Screen.height && report.width > 0 && report.height > 0,
             "runtime actual Screen dimensions " + state);
-        string[] ids = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute" };
-        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exactly eight stable control identities " + state);
+        string[] ids = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
+        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exactly nine stable control identities " + state);
         var seen = new HashSet<string>(); var corners = new Vector3[4];
         for (int i = 0; i < ids.Length; i++)
         {
@@ -770,11 +771,11 @@ public static class LastStandHudChecks
                 Math.Abs(control.width-(hi.x-lo.x)) < .2f && Math.Abs(control.height-(hi.y-lo.y)) < .2f,
                 "runtime actual shop top-left bounds " + control.name);
         }
-        Require(seen.Count == 19,"runtime exact unique core8/shop11 union");
+        Require(seen.Count == 20,"runtime exact unique core9/shop11 union");
         int count = runtimeReports.Count;
         runtimeHud.Refresh(); runtimeHud.Layout(); runtimeHud.Layout();
         Require(runtimeReports.Count == count, "runtime duplicate current layout payload suppressed " + state);
-        Debug.Log("ST_LS_HUD_RUNTIME_STATE " + state + " phase=" + report.phase + " screen=" + report.width + "x" + report.height + " eight-current-controls duplicate-suppressed");
+        Debug.Log("ST_LS_HUD_RUNTIME_STATE " + state + " phase=" + report.phase + " screen=" + report.width + "x" + report.height + " nine-current-controls duplicate-suppressed");
     }
     static void RuntimeUpdate()
     {
@@ -932,13 +933,13 @@ public static class LastStandHudChecks
     static void OutcomeInventory(OutcomeFixture f)
     {
         string phase=f.Loop.Phase; bool ready=f.Loop.Progression.SaveState=="ready";
-        string[] ids={"ToggleFitting","Deploy","Claim","Purchase","Redeploy","RetrySave","Pause","ToggleMute"};
+        string[] ids={"ToggleFitting","Deploy","Claim","Purchase","Redeploy","RetrySave","Pause","ToggleMute","ToggleTier"};
         AssertOrdinaryInventory(f.Root,"outcome " + phase);
         foreach(string id in ids)
         {
             bool active=id=="ToggleMute" || id=="RetrySave"&&!ready || id=="Pause"&&(phase=="battle"||phase=="settling") ||
                 id=="Claim"&&phase=="result" || (id=="Purchase"||id=="Redeploy"||id=="ToggleFitting")&&phase=="workshop" ||
-                (id=="Deploy"||id=="ToggleFitting")&&phase=="garage";
+                (id=="Deploy"||id=="ToggleFitting")&&phase=="garage" || id=="ToggleTier"&&ready&&(phase=="garage"||phase=="workshop");
             var b=f.Button(id); Require(b.gameObject.activeInHierarchy==active,"outcome exact active inventory "+id+" "+phase);
             if(!active)continue;
             Require(b.enabled,"outcome Button enabled "+id); RequireVisible(b.GetComponent<Image>(),"outcome visible action "+id);
@@ -988,10 +989,10 @@ public static class LastStandHudChecks
     {
         var p=f.Loop.Progression.PendingDefeat;Require(p!=null,"actual persisted pending owns result fields");
         RequireVisible(f.Text("PhaseDetail"),"outcome visible pending fields");string t=f.Text("PhaseDetail").text;
-        Require(t.Split('\n')[0]=="Time  "+(p.ElapsedTicks/(float)EncounterModel.TicksPerSecond).ToString("F1")+"s  /  Disabled  "+p.Kills,"outcome own exact duration/kills");
+        Require(t.Split('\n')[0]==(p.Tier == 0 ? "Legacy run" : "Tier " + p.Tier)+" / "+(p.ElapsedTicks/(float)EncounterModel.TicksPerSecond).ToString("F1")+"s / "+p.Kills+" disabled","outcome own exact tier/duration/kills");
         Require(t.Split('\n')[1]=="Earned salvage  "+p.Reward,"outcome separate own earned salvage field");
         Require(t.Split('\n')[2]=="Wallet  "+f.Loop.Progression.Wallet+" salvage","outcome separate committed wallet field");
-        bool claim=f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.ActiveRunId==0&&f.Loop.Progression.Wallet!=int.MaxValue;
+        bool claim=f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.ActiveRunId==0&&(p.Reward == 0 || f.Loop.Progression.Wallet!=int.MaxValue);
         Require(f.Button("Claim").IsInteractable()==claim,"outcome Claim agrees with complete owner guard");
     }
     static void OutcomeClaim()
@@ -1028,11 +1029,11 @@ public static class LastStandHudChecks
     static void OutcomeWorkshopFields(OutcomeFixture f)
     {
         var p=f.Loop.Progression;string t=f.Text("PhaseDetail").text;RequireVisible(f.Text("PhaseDetail"),"outcome visible workshop fields");
-        string next=p.NextCost==0 ? "MAX" : p.CannonDamage+" to "+(p.CannonDamage+10)+"  /  Cost  "+p.NextCost+" salvage";
-        Require(t.Split('\n')[0]=="Cannon Attack  "+p.CannonAttackLevel+" / 3","outcome exact workshop level/cap");
-        Require(t.Split('\n')[1]=="Damage  "+(p.NextCost==0 ? p.CannonDamage+"  /  MAX" : next),"outcome own damage/next/cost/MAX");
-        Require(t.Split('\n')[2]=="Wallet  "+p.Wallet+" salvage","outcome own workshop wallet");
-        Require(t.Split('\n')[3]=="Fitting: "+(f.Art.showingLauncher?"Auxiliary launcher":"Field repair"),"outcome actual workshop selected fitting");
+        Require(t.Split('\n')[0] == "Tier " + p.SelectedTier + " / Goal " + (p.SelectedTier == 1 ? 60 : 90) + "s", "workshop selected tier/goal");
+        Require(t.Split('\n')[1].StartsWith("Best"), "workshop persistent best reading line");
+        Require(t.Split('\n')[2] == "Cannon Attack " + p.CannonAttackLevel + "/3 / Damage " + p.CannonDamage, "workshop cannon state");
+        Require(t.Split('\n')[3] == "Salvage " + p.Wallet + " / Cost " + (p.NextCost == 0 ? "MAX" : p.NextCost.ToString()), "workshop saved wallet and next cost");
+        Require(t.Split('\n')[4] == "Fitting: " + (f.Art.showingLauncher ? "Auxiliary launcher" : "Field repair"), "workshop selected fitting");
         bool available=p.SaveState=="ready"&&p.ActiveRunId==0&&p.PendingDefeat==null&&p.NextCost!=0&&p.Wallet>=p.NextCost;
         Require(f.Button("Purchase").IsInteractable()==available,"outcome complete purchase owner guards");
         Require(f.Button("Purchase").GetComponentInChildren<Text>(true).text==(p.NextCost==0?"CANNON ATTACK MAX":available?"BUY CANNON ATTACK":"PURCHASE UNAVAILABLE"),"outcome no purchase offer at MAX/unavailable");
@@ -1139,7 +1140,7 @@ public static class LastStandHudChecks
 
     // T-08 adds input assertions to the same imported scene and owner fixtures.
     // Earlier assertions, fixtures, selectors and geometry remain unchanged.
-    static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute" };
+    static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
     static readonly string[] ShopControlIds = { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
         "ShopCard_cannonAttackBuy", "ShopCard_launcherAttackBuy", "ShopCard_hullCapacityBuy", "ShopCard_armorBuy",
         "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy" };
@@ -1152,14 +1153,14 @@ public static class LastStandHudChecks
     static void AssertOrdinaryInventory(RectTransform root, string state)
     {
         var core = new HashSet<string>(InputIds); var shop = new HashSet<string>(ShopControlIds);
-        Require(core.Count == 8 && shop.Count == 11,"exact stable core8 and shop11 sets " + state);
+        Require(core.Count == 9 && shop.Count == 11,"exact stable core9 and shop11 sets " + state);
         foreach (string id in InputIds)
             Require(root.Find("LastStandDock/" + id).GetComponent<Button>() == FindOrdinaryButton(root,id),
                 "unchanged exact core control path " + id + " " + state);
-        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length == 19,"exact nineteen ordinary Buttons " + state);
+        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length == 20,"exact twenty ordinary Buttons " + state);
         foreach (var button in all)
             Require(core.Remove(button.name) || shop.Remove(button.name),"unique complete ordinary Button union " + button.name + " " + state);
-        Require(core.Count == 0 && shop.Count == 0,"complete exact core8/shop11 sets " + state);
+        Require(core.Count == 0 && shop.Count == 0,"complete exact core9/shop11 sets " + state);
     }
     static readonly string[] InputStates = { "garage", "battle", "paused", "settling", "result", "workshop", "capped", "blocked", "save-error" };
     public static void RunInput()
@@ -1293,6 +1294,7 @@ public static class LastStandHudChecks
         foreach (string id in InputIds)
         using (var f = InputFixture(OutcomeProfiles[0],id == "Claim" ? "result" : id == "Purchase" || id == "Redeploy" ? "workshop" : id == "RetrySave" ? "blocked" : id == "Pause" ? "battle" : "garage"))
         {
+            if (id == "ToggleTier") { f.Deploy(); f.Defeat(); f.FinishSettling(); f.Loop.Claim(); f.Refresh(); }
             var b = f.Button(id); Require(b.IsActive() && b.IsInteractable(),"actual eligible action "+id);
             EventSystem.current.SetSelectedGameObject(b.gameObject);
             var text = b.GetComponentInChildren<Text>(true); var outline = b.GetComponent<Outline>();
@@ -1315,6 +1317,7 @@ public static class LastStandHudChecks
             if (id == "Purchase") Require(f.Loop.Progression.CannonAttackLevel == level+1 && f.Loop.Progression.Wallet == wallet-1,"Submit existing saved purchase owner");
             if (id == "RetrySave") Require(f.Loop.Progression.SaveState == "ready" && !b.gameObject.activeInHierarchy,"Submit existing storage recovery owner");
             if (id == "Pause") Require(f.Loop.Session.Paused && text.text == "RESUME","Submit existing Pause owner and active textual state");
+            if (id == "ToggleTier") Require(f.Loop.Progression.SelectedTier == 2 && f.Loop.Progression.ActiveRunId == 0, "Submit selects the unlocked tier without deployment");
             if (id == "ToggleMute") Require(f.Loop.Muted != muted && text.text == (f.Loop.Muted ? "SOUND OFF" : "SOUND ON"),"Submit existing mute owner and active textual state");
         }
     }

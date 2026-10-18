@@ -23,6 +23,20 @@ verifier = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(verifier)
 
 
+def _current_control_fixture():
+    """Invented current control inventory for parser tests, never runtime evidence."""
+    core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier')
+    shop = ('ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
+            'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
+            'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy')
+    def controls(names):
+        return [dict(name=name, label=name, accessibleLabel=name, mode='', trackKey='',
+                     x=0, y=0, width=44, height=44, active=True, interactable=True) for name in names]
+    return dict(phase='garage', coordinates='top-left', selection='Deploy', width=1366, height=768,
+                pixelRatio=1, scrollOffset=0, maximumScrollOffset=0,
+                controls=controls(core), shopControls=controls(shop))
+
+
 def _replace_recovery_copies(value, old, new):
     """JSON witnesses are independent copies; replace every exact observation."""
     if isinstance(value, dict):
@@ -505,6 +519,8 @@ console.log('PASS actual Claim readiness sequence');
         game['terminal']['finalAccounting'].update(uniqueKills=9, earnedScrap=27, spentScrap=0, finalScrap=27)
         game['result']['storage']['data']['pendingDefeat']['kills'] = 9
         game['terminal_away']['staged']['storage']['data']['pendingDefeat']['kills'] = 9
+        for snapshot in (game['result'], game['terminal_away']['staged'], game['claimed']):
+            snapshot['storage']['data']['tierRecords']['tier-goals-v1']['bestKills1'] = 9
         verifier._verify_recovery_terminal_boundaries(report, records, False)
         verifier._verify_recovery_terminal_boundaries(report, records, True)
         for fault in ('lost-credit', 'double-credit', 'invented-spend'):
@@ -990,8 +1006,15 @@ process.exitCode=outcomes.some(row=>row.status==='fail')?1:0;
                       documentHidden=True, documentFocused=False)
         accounting = {'runId': 3, 'uniqueKills': 10, 'earnedScrap': 30, 'spentScrap': 25, 'finalScrap': 5}
         terminal = dict(identity, t=501, hasFinalAccounting=True, finalAccounting=accounting, scrap=0, open=False)
-        prior = {'credits': 1, 'nextRunId': 3, 'lastFinalizedRunId': 1, 'pendingDefeat': None, 'permanentLevels': {}}
-        expected = dict(prior, nextRunId=4, pendingDefeat={'runId': 3, 'elapsedTicks': 10, 'kills': 10, 'reward': 1})
+        prior = {'version': 3, 'credits': 1, 'nextRunId': 3, 'lastFinalizedRunId': 1, 'pendingDefeat': None,
+                 'permanentLevels': {key: 0 for key in ('cannonAttack', 'launcherAttack', 'hullCapacity', 'armor', 'cannonCycle', 'fieldRepair')},
+                 'selectedTier': 1, 'tierRecords': {'tier-goals-v1': {'bestTicks1': 0, 'bestKills1': 0,
+                 'bestTicks2': 0, 'bestKills2': 0, 'tierTwoUnlocked': False}}}
+        expected = dict(prior, nextRunId=4, tierRecords={'tier-goals-v1': {'bestTicks1': 10, 'bestKills1': 10,
+                        'bestTicks2': 0, 'bestKills2': 0, 'tierTwoUnlocked': False}},
+                        pendingDefeat={'runId': 3, 'elapsedTicks': 10, 'kills': 10, 'reward': 1, 'tier': 1,
+                        'profileVersion': 'tier-goals-v1', 'isLimit': False, 'newBestTime': True,
+                        'newBestKills': True, 'unlockedTierTwo': False})
         staged = {'state': dict(identity, t=502, wallet=1), 'shop': terminal,
                   'storage': dict(identity, t=503, data=deepcopy(expected)),
                   'clock': dict(identity, t=504, hidden=True, focused=False)}
@@ -1025,6 +1048,37 @@ process.exitCode=outcomes.some(row=>row.status==='fail')?1:0;
                 game['result']['storage']['data']['pendingDefeat']['kills'] -= 1
             with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, '^RECOVERY_FINAL_STEP_KILL:'):
                 verifier._verify_recovery_terminal_boundaries(report, records, False)
+
+    def test_current_progression_contract_rejects_unknown_or_inconsistent_tier_state(self):
+        report, _ = self.terminal_fixture()
+        valid = report['terminal_case']['result']['storage']['data']
+        self.assertTrue(verifier._current_progression_record(valid))
+        for fault in ('future-version', 'unknown-profile', 'invented-unlock', 'locked-selection',
+                      'temporary-state', 'bool-count', 'lost-record', 'wrong-tier', 'limit-reward'):
+            value = deepcopy(valid)
+            if fault == 'future-version': value['version'] = 4
+            elif fault == 'unknown-profile': value['tierRecords']['unknown'] = value['tierRecords'].pop('tier-goals-v1')
+            elif fault == 'invented-unlock': value['tierRecords']['tier-goals-v1']['tierTwoUnlocked'] = True
+            elif fault == 'locked-selection': value['selectedTier'] = 2
+            elif fault == 'temporary-state': value['scrap'] = 3
+            elif fault == 'bool-count': value['tierRecords']['tier-goals-v1']['bestKills1'] = True
+            elif fault == 'lost-record': value['tierRecords']['tier-goals-v1']['bestTicks1'] = 9
+            elif fault == 'wrong-tier': value['pendingDefeat']['tier'] = 2
+            else: value['pendingDefeat']['isLimit'] = True
+            with self.subTest(fault=fault):
+                self.assertFalse(verifier._current_progression_record(value))
+
+    def test_terminal_contract_updates_independent_maxima_and_exact_goal_unlock(self):
+        report, _ = self.terminal_fixture()
+        prior = report['terminal_case']['before']['storage']['data']
+        prior['tierRecords']['tier-goals-v1'].update(bestTicks1=1199, bestKills1=30)
+        result = verifier._terminal_progression_record(prior, 3, 1200, 4)
+        self.assertEqual(result['tierRecords']['tier-goals-v1'], {'bestTicks1': 1200, 'bestKills1': 30,
+                         'bestTicks2': 0, 'bestKills2': 0, 'tierTwoUnlocked': True})
+        self.assertTrue(result['pendingDefeat']['unlockedTierTwo'])
+        self.assertTrue(result['pendingDefeat']['newBestTime'])
+        self.assertFalse(result['pendingDefeat']['newBestKills'])
+        self.assertEqual(prior['tierRecords']['tier-goals-v1']['bestTicks1'], 1199)
 
     def test_unfocused_terminal_requires_actual_document_and_unclaimed_storage(self):
         for fault in ('visible-terminal', 'foreign-transition', 'automatic-claim', 'late-manual-claim'):
@@ -1124,27 +1178,27 @@ class ShopJourneyGuardTests(unittest.TestCase):
             verifier.verify_shop_vertical({})
 
     def test_shop_controls_only_complete_prefix(self):
-        """Real truncated emission; never qualify its missing graphics."""
+        """Synthetic current inventory and truncation, never browser qualification."""
         import subprocess
         source = TOOLS.parents[1] / 'e2e/helpers/lastStandJourney.mjs'
-        fixture = Path(os.environ['ST_SHOP_CONTROL_RECORD'])
+        fixture = _current_control_fixture()
         script = r"""
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 const [source,fixture]=process.argv.slice(1);
 const actual=await import(pathToFileURL(source));
-const report=JSON.parse(readFileSync(fixture,'utf8'));
-const raw=report.records.runtime.find(row=>row.text.startsWith('ST_LS_HUD_LAYOUT ')).text;
-assert.equal(raw.length,8190,'Retained actual Unity truncation');
+const current=JSON.parse(fixture);
+const raw=('ST_LS_HUD_LAYOUT '+JSON.stringify({...current,graphics:[{text:'synthetic parser fixture '.repeat(1000)}]})).slice(0,8190);
+assert.equal(raw.length,8190,'Explicit synthetic current truncation fixture');
 assert.equal(typeof actual.readShopControlObservation,'function','Shop controls-only reader is required');
 const controls=actual.readShopControlObservation(raw);
 assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,true);
-assert.equal(controls.raw,raw,'Exact received diagnostic retained');
+assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,8);assert.equal(controls.shopControls.length,11);
-assert.equal(new Set([...controls.controls,...controls.shopControls].map(c=>c.name)).size,19);
+assert.equal(controls.controls.length,9);assert.equal(controls.shopControls.length,11);
+assert.equal(new Set([...controls.controls,...controls.shopControls].map(c=>c.name)).size,20);
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
 const complete=fields=>'ST_LS_HUD_LAYOUT '+JSON.stringify({...fields,graphics:[]});
@@ -1153,7 +1207,11 @@ const cases={
   'incomplete-control-array':raw.slice(0,raw.indexOf('"shopControls"')+40),
   'unexpected-short-tail':raw.slice(0,-1),
   'corrupt-graphics-tail':raw.slice(0,raw.indexOf(',"graphics":')+12)+'@'.repeat(8190-(raw.indexOf(',"graphics":')+12)),
-  'duplicate-controls':complete({...value,controls:[...value.controls,value.controls[0]]}),
+  'duplicate-controls':complete({...value,controls:value.controls.map((v,i)=>i===0?value.controls[1]:v)}),
+  'missing-tier-control':complete({...value,controls:value.controls.filter(v=>v.name!=='ToggleTier')}),
+  'unexpected-core-control':complete({...value,controls:value.controls.map(v=>v.name==='ToggleTier'?{...v,name:'Unexpected'}:v)}),
+  'duplicate-shop-control':complete({...value,shopControls:value.shopControls.map((v,i)=>i===0?value.shopControls[1]:v)}),
+  'unexpected-shop-control':complete({...value,shopControls:value.shopControls.map((v,i)=>i===0?{...v,name:'Unexpected'}:v)}),
   'missing-control':complete({...value,shopControls:value.shopControls.slice(1)}),
   'malformed-control':complete({...value,controls:value.controls.map((v,i)=>i===0?{...v,width:'44'}:v)})
 };
@@ -1166,15 +1224,16 @@ assert.throws(()=>actual.retainRuntimeObservation({text:raw,t:1,timeOrigin:2},1,
 console.log('PASS controls_only_preserves_original_strict_parser');
 """
         result = subprocess.run([r'C:/Program Files/nodejs/node.exe', '--input-type=module', '-e', script,
-                                 str(source), str(fixture)], cwd=TOOLS.parents[1], capture_output=True, timeout=30)
-        output = Path(os.environ['ST_SHOP_TEST_EVIDENCE'])
-        output.mkdir(parents=True, exist_ok=True)
-        (output / 'controls.stdout.txt').write_bytes(result.stdout)
-        (output / 'controls.stderr.txt').write_bytes(result.stderr)
+                                 str(source), json.dumps(fixture)], cwd=TOOLS.parents[1], capture_output=True, timeout=30)
+        if os.environ.get('ST_SHOP_TEST_EVIDENCE'):
+            output = Path(os.environ['ST_SHOP_TEST_EVIDENCE'])
+            output.mkdir(parents=True, exist_ok=True)
+            (output / 'synthetic-controls.stdout.txt').write_bytes(result.stdout)
+            (output / 'synthetic-controls.stderr.txt').write_bytes(result.stderr)
         self.assertEqual(result.returncode, 0, result.stderr.decode('utf8', 'replace'))
 
     def test_shop_controls_only_python_replay(self):
-        """Replay actual raw controls through the verifier's exact pure reader."""
+        """Replay synthetic current inputs through the actual pure reader."""
         import ast
         import math
         source = ast.parse((TOOLS / 'verify_last_stand_loop.py').read_text(encoding='utf8'))
@@ -1183,14 +1242,44 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         self.assertEqual({node.name for node in functions}, {'require', 'read_controls'})
         namespace = {'json': json, 'math': math}
         exec(compile(ast.Module(body=functions, type_ignores=[]), '<actual Shop verifier pure reader>', 'exec'), namespace)
-        report = json.loads(Path(os.environ['ST_SHOP_CONTROL_RECORD']).read_bytes())
-        retained = report['records']['controlsOnly']
-        self.assertGreater(len(retained), 1, 'Multiple actual diagnostic shapes are required')
-        for item in retained:
-            with self.subTest(seq=item['seq']):
-                expected = {key: value for key, value in item.items() if key not in ('seq', 'load', 't', 'timeOrigin')}
-                self.assertEqual(namespace['read_controls'](item['raw']), expected)
-        print('REPLAYED actual_controls_python_rows ' + str(len(retained)), flush=True)
+        value = _current_control_fixture()
+        raw = 'ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[]), separators=(',', ':'))
+        expected = dict(value, observationScope='complete-controls-only', graphicsTruncated=False, raw=raw)
+        self.assertEqual(namespace['read_controls'](raw), expected)
+        truncated = ('ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[{'text': 'synthetic parser fixture ' * 1000}]), separators=(',', ':')))[:8190]
+        self.assertEqual(namespace['read_controls'](truncated), dict(value, observationScope='complete-controls-only', graphicsTruncated=True, raw=truncated))
+        for key in ('controls', 'shopControls'):
+            for fault in ('missing', 'duplicate', 'unexpected'):
+                candidate = deepcopy(value)
+                if fault == 'missing': candidate[key].pop()
+                elif fault == 'duplicate': candidate[key][0] = deepcopy(candidate[key][1])
+                else: candidate[key][0]['name'] = 'Unexpected'
+                broken = 'ST_LS_HUD_LAYOUT ' + json.dumps(dict(candidate, graphics=[]), separators=(',', ':'))
+                with self.subTest(collection=key, fault=fault), self.assertRaisesRegex(AssertionError, 'Missing or repeated observed controls'):
+                    namespace['read_controls'](broken)
+        print('PASS synthetic_current_controls_python_full_truncated_and_exact_union', flush=True)
+
+    def test_recovery_current_control_inventory_is_exact(self):
+        """Execute the actual recovery inventory block on synthetic current inputs."""
+        import ast
+        source = ast.parse((TOOLS / 'verify_last_stand_loop.py').read_text(encoding='utf8'))
+        owner = next(node for node in source.body if isinstance(node, ast.FunctionDef) and node.name == 'verify_shop_recovery')
+        block = next(node for node in ast.walk(owner) if isinstance(node, ast.If)
+                     and ast.unparse(node.test) == "key == 'controlsOnly'")
+        code = compile(ast.Module(body=block.body, type_ignores=[]), '<actual recovery inventory block>', 'exec')
+        def admit(value):
+            namespace = {'value': dict(value, graphics=[]), 'need': verifier._recovery_need,
+                         'observation': {'text': 'synthetic current controls'}}
+            exec(code, namespace)
+        admit(_current_control_fixture())
+        for key in ('controls', 'shopControls'):
+            for fault in ('missing', 'duplicate', 'unexpected'):
+                candidate = _current_control_fixture()
+                if fault == 'missing': candidate[key].pop()
+                elif fault == 'duplicate': candidate[key][0] = deepcopy(candidate[key][1])
+                else: candidate[key][0]['name'] = 'Unexpected'
+                with self.subTest(collection=key, fault=fault), self.assertRaisesRegex(AssertionError, 'Incomplete recovery controls'):
+                    admit(candidate)
 
     def record(self):
         path = Path(os.environ['ST_SHOP_GUARD_RECORD'])
