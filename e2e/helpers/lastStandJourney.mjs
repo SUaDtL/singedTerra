@@ -2727,15 +2727,29 @@ export async function bindConfiguredRejoinFixture(base) {
   const chunk=chunks[0],bytes=await read(chunk.fileName);
   assert.ok(typeof chunk.sha256==='string' && /^[a-f0-9]{64}$/i.test(chunk.sha256) &&
     hash(bytes)===chunk.sha256.toLowerCase(),'Parent configuration chunk digest differs');
-  const initializer=bytes.toString('utf8').match(/(?:^|;)var ([A-Za-z_$][\w$]*)=[A-Za-z_$][\w$]*\((`[^`$\r\n\\]+`|"[^"\r\n\\]+"|'[^'\r\n\\]+'),(`(?:sb_publishable_[\w-]+|e2e-public-anon-key)`|"(?:sb_publishable_[\w-]+|e2e-public-anon-key)"|'(?:sb_publishable_[\w-]+|e2e-public-anon-key)')\);export\{\1 as supabase\};\s*$/);
+  const initializer=bytes.toString('utf8').match(/(?:^|;)var ([A-Za-z_$][\w$]*)=[A-Za-z_$][\w$]*\((`[^`$\r\n\\]+`|"[^"\r\n\\]+"|'[^'\r\n\\]+'),(`(?:sb_publishable_[\w-]+|e2e-public-anon-key|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)`|"(?:sb_publishable_[\w-]+|e2e-public-anon-key|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)"|'(?:sb_publishable_[\w-]+|e2e-public-anon-key|[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)')\);export\{\1 as supabase\};\s*$/);
   assert.ok(initializer,'Static public parent initializer absent');
+  const key=initializer[3].slice(1,-1),publishable=/^sb_publishable_[\w-]+$/.test(key);
+  let legacyAnon=false;
+  // Classify bundled public configuration only, never authenticate a JWT or
+  // read a user session. No key or claims escape this source-bound operation.
+  if(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(key)) {
+    try {
+      const parts=key.split('.'),decoded=parts.map(part=>Buffer.from(part,'base64url'));
+      const header=JSON.parse(decoded[0].toString('utf8')),claims=JSON.parse(decoded[1].toString('utf8'));
+      legacyAnon=decoded.every((part,index)=>part.toString('base64url')===parts[index]) && decoded[2].length===32 &&
+        header!==null && !Array.isArray(header) && header.alg==='HS256' && header.typ==='JWT' &&
+        claims!==null && !Array.isArray(claims) && claims.iss==='supabase' && claims.role==='anon';
+    } catch { /* Malformed or non-public configuration is refused below. */ }
+  }
+  assert.ok(publishable || legacyAnon || key==='e2e-public-anon-key','Static public parent key refused');
   let configured;
   try {configured=new URL(initializer[2].slice(1,-1));}catch{assert.fail('Static public parent origin refused');}
   assert.ok(!configured.username && !configured.password &&
     configured.pathname==='/' && !configured.search && !configured.hash,'Static public parent origin refused');
   // The original same-origin E2E build needs no external fixture capability.
   if(configured.origin===base.origin)return undefined;
-  assert.ok(configured.protocol==='https:' && /^sb_publishable_[\w-]+$/.test(initializer[3].slice(1,-1)),
+  assert.ok(configured.protocol==='https:' && (publishable || legacyAnon),
     'Static public parent origin refused');
   const binding=Object.freeze({});
   configuredRejoinBindings.set(binding,{base:base.href,origin:configured.origin});

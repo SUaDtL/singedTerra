@@ -38,6 +38,14 @@ function job(source, id) {
   return found[1];
 }
 
+test('required CI runs public parent configuration regressions', () => {
+  const check = source => assert.match(job(source, 'scope'),
+    /run: node --test scripts\/ci\/lastStandLegacyKey\.test\.mjs(?:\n|$)/);
+  check(ci);
+  assert.throws(() => check(ci.replace('run: node --test scripts/ci/lastStandLegacyKey.test.mjs',
+    'run: echo skipped')));
+});
+
 function assertWorkflow(source) {
   assert.match(source, /on:\n  pull_request:\n  push:\n    branches: \[main\]/);
   assert.doesNotMatch(source, /paths-ignore:|pull_request_target|continue-on-error/);
