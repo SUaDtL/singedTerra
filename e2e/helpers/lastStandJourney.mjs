@@ -3050,18 +3050,33 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await page.mouse.move(box.x+box.width/2,box.y+box.height/2); await page.mouse.down();await page.waitForTimeout(150);await page.mouse.up();
     };
     const keyboardFocus=async locator=>{
+      if(process.platform==='linux'){
+        // Read one current document snapshot per keyboard boundary. Separate
+        // locator calls each wait on the software-rendered Unity document.
+        const inspect=()=>locator.evaluate(element=>{
+          window.__stInputArea='outer';
+          const style=getComputedStyle(element);
+          return {focused:!document.hidden && document.hasFocus(),active:element===document.activeElement,
+            isReturn:element.id==='last-stand-return',canvas:!!document.getElementById('unity-canvas'),
+            outline:style.outlineStyle,width:parseFloat(style.outlineWidth)};
+        });
+        let before=await inspect();
+        if(!before.focused){await focused('outer keyboard');before=await inspect();}
+        check(before.focused,'outer keyboard: document focus and visibility');
+        if(before.isReturn && before.active && before.canvas){
+          await page.keyboard.press('Tab');
+          check(await page.locator('#unity-canvas').evaluate(element=>element===document.activeElement),
+            'native Tab enters actual Unity before Return escape');
+        }
+        if(before.canvas)await page.keyboard.press('Shift+Tab');
+        let current=await inspect();
+        for(let i=0;i<50 && !current.active;i++){await page.keyboard.press('Tab');current=await inspect();}
+        check(current.focused && current.active,'outer control reachable by native Tab');
+        check(current.outline!=='none' && current.width>=2,'visible keyboard focus indicator',current);
+        return;
+      }
       await page.evaluate("window.__stInputArea='outer'");
       await focused('outer keyboard');
-      // The wrapper enters Unity's first HUD control on canvas focus, even
-      // after backwards browser navigation. From an already focused Return,
-      // enter forwards before testing the real previous-control escape; direct
-      // Shift+Tab would enter first and then walk the entire HUD forwards.
-      if(process.platform==='linux' && await locator.evaluate(element=>element.id==='last-stand-return' && element===document.activeElement) &&
-        await page.locator('#unity-canvas').count()){
-        await page.keyboard.press('Tab');
-        check(await page.locator('#unity-canvas').evaluate(element=>element===document.activeElement),
-          'native Tab enters actual Unity before Return escape');
-      }
       // Try the browser's previous-control path from the focused canvas first.
       // No DOM focus or pointer reset may hide a Unity keyboard trap.
       if(await page.locator('#unity-canvas').count())await page.keyboard.press('Shift+Tab');
