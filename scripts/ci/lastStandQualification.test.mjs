@@ -294,7 +294,7 @@ async function battleLayoutFixture(player=false,fault,withMute=false){
     resumed:{...base,t:11300,tick:11},after:{...base,t:12100,tick:26},events:[],oracle:{}});
   let paused=false,muted=false;const calls=[],report={lifecycle:[]};
   const run=new Function('player','check','sound','screenshot','phaseMatrix','observation','gameClick','mark',
-    'reference','validateModelObservation','sameDocument','elapsedTicks','report','VIEWPORTS','assert','page','energy','gameKey',
+    'reference','validateModelObservation','sameDocument','elapsedTicks','report','matrix','assert','page','energy','gameKey',
     'return (async()=>{'+(begin<0?'':source.slice(begin,end))+source.slice(callBegin,callEnd)+'})()');
   await run(player,(ok,name)=>assert.ok(ok,name),{maximum_rms:1},async()=>{
     assert.equal(paused,!player,'Linux battle screenshot must be publicly paused; Windows stays live');calls.push('screenshot');
@@ -309,7 +309,7 @@ async function battleLayoutFixture(player=false,fault,withMute=false){
   },async()=>950,()=>({}),()=>{},(a,b)=>{
     assert.equal(a.timeOrigin,b.timeOrigin,'same document origin');assert.equal(a.run,b.run,'same run');
   },(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),report,
-    ['standard','wide','portrait','compact','small'].map(name=>({name})),assert,
+    {phaseViewports:['standard','wide','portrait','compact','small'].map(name=>({name}))},assert,
     {waitForTimeout:async()=>{}},async()=>null,async()=>assert.fail('Linux must not toggle a second Pause during its paused inspection'));
   return {calls,report};
 }
@@ -339,11 +339,11 @@ test('actual Windows live layout inspection uses the existing unfinished run bef
   for(const player of [false,true]){
     const base={t:50,load:1,timeOrigin:10000,run:1,tick:1,paused:false,loop:{phase:'battle'}},
       after={...base,t:1050,tick:21},states=[{phase:'battle',paused:false}],report={lifecycle:[]},calls=[];
-    const run=new Function('player','observation','check','phaseMatrix','states','report','VIEWPORTS',
+    const run=new Function('player','observation','check','phaseMatrix','states','report','matrix',
       'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
     let next=base;
     await run(player,async()=>{const value=next;next=after;return value;},(ok,name)=>assert.ok(ok,name),
-      async label=>calls.push(label),states,report,['standard','wide','portrait','compact','small'].map(name=>({name})),
+      async label=>calls.push(label),states,report,{phaseViewports:['standard','wide','portrait','compact','small'].map(name=>({name}))},
       ()=>{},()=>({}),(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),async()=>0);
     assert.deepEqual(calls,player?['battle']:[]);
     if(player)assert.equal(report.lifecycle[0].viewports.length,5);
@@ -354,7 +354,7 @@ test('live layout elapsed endpoints require fresh post-advance tick observations
   const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
   const clockBegin=source.indexOf('function sameDocument('),clockEnd=source.indexOf('const MODEL_FIELDS=',clockBegin);
   const elapsed=runInNewContext(source.slice(clockBegin,clockEnd)+';elapsedTicks',{assert});
-  const run=new Function('player','observation','check','phaseMatrix','report','VIEWPORTS',
+  const run=new Function('player','observation','check','phaseMatrix','report','matrix',
     'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
   const id={load:15,timeOrigin:100000,run:1,paused:false,catchingUp:false,callbackSteps:1,loop:{phase:'battle'}};
   // Explicit inert model/visibility rows use the retained failure's clock values.
@@ -364,7 +364,7 @@ test('live layout elapsed endpoints require fresh post-advance tick observations
   const observation=async options=>!swept?before:
     options?.action==='tick' && options.minT>=27395.5?advanced:visibility;
   const report={lifecycle:[]};
-  await run(true,observation,(ok,name)=>assert.ok(ok,name),async()=>{swept=true;},report,[],
+  await run(true,observation,(ok,name)=>assert.ok(ok,name),async()=>{swept=true;},report,{phaseViewports:[]},
     ()=>{},()=>({}),elapsed,async()=>swept?27395.5:6530);
   assert.equal(report.lifecycle[0].before.tick,20);assert.equal(report.lifecycle[0].after.tick,440);
   assert.throws(()=>elapsed(before,visibility),/elapsed tick reconciliation differs/,

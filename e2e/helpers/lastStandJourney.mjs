@@ -1179,18 +1179,8 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const SAVE_KEY = 'singedTerra.lastStand.prototype.v1';
 const SELECTION_KEY = 'singedterra.command-center.selection.v1';
 const TITLE = 'Last Stand Campaigns journey preserves no-award exit and a stronger redeploy';
-const VIEWPORTS = [
-  { name: 'approved-standard', width: 1366, height: 768 },
-  { name: 'approved-wide', width: 1920, height: 1080 },
-  { name: 'approved-portrait', width: 390, height: 844 },
-  { name: 'approved-landscape', width: 844, height: 390 },
-  { name: 'approved-compact', width: 720, height: 640 },
-  { name: 'wide', width: 1600, height: 900 },
-  { name: 'standard', width: 1280, height: 720 },
-  { name: 'compact', width: 800, height: 600 },
-  { name: 'narrow-landscape', width: 568, height: 320 },
-  { name: 'portrait', width: 390, height: 844 },
-];
+import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition} from './lastStandMatrix.mjs';
+export {lastStandViewportPartition} from './lastStandMatrix.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const fileHash = path => hash(readFileSync(path));
 const delay = ms => new Promise(done => setTimeout(done, ms));
@@ -2881,7 +2871,8 @@ export async function retainJourneyOutcome(report, cleanup, persist, originalErr
 
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
-  '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs']);
+  '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
+  'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs']);
 
 export function lastStandQualificationProfile(name='windows-player',host=process.platform) {
   assert.ok(['windows-player','linux-functional'].includes(name),'Unknown Last Stand qualification profile');
@@ -2891,6 +2882,7 @@ export function lastStandQualificationProfile(name='windows-player',host=process
 
 export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
+  const matrix=lastStandViewportPartition(process.env.LAST_STAND_JOURNEY_SHARD,{profile:qualification.name});
   const base = admitJourneyBase(baseURL);
   if(player){runTool('ffmpeg', ['-version']); runTool('ffprobe', ['-version']);}
   const parent = admitEvidenceParent(process.env.LAST_STAND_EVIDENCE_PARENT);
@@ -2904,6 +2896,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     focus_scope:player?'separate native visible-window blur and hidden tab':'hidden tab; native blur separately required from Windows', device_performance_claim:false, url_origin:base.origin,
     visual_measurements:{controls:'actual HUD bounds converted once to CSS pixels',panels:'unmeasured in browser telemetry',
       fonts:'unmeasured in browser telemetry',contrast:'unmeasured in browser telemetry',focus_treatment:'matched screenshots awaiting rendered review'},
+    viewport_partition:{shard:matrix.shard,viewports:matrix.viewports.map(v=>v.name)},
     lifecycle:[],qualification:{profile:qualification.name,host:process.platform,release:release(),arch:arch(),
       functional:'pending',rendered_audio:player?'pending':'unexecuted-requires-windows',
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
@@ -3094,7 +3087,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     }
     rejoin=false;
     report.campaign_entry=[];
-    for(const viewport of VIEWPORTS.slice(0,3)) {
+    for(const viewport of matrix.entryViewports) {
       await page.setViewportSize({width:viewport.width,height:viewport.height});await setRouteState();
       await goto('');await dismissSplash();await openCampaigns();await selected('last-stand');
       const order=await page.locator('.command-center__library-items .command-center__item').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
@@ -3163,15 +3156,16 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await keyboardFocus(page.locator('#last-stand-return'));
       await screenshot(`layout-${viewport.name}-${states.at(-1).phase}-${report.screenshots.length}`);
     };
-    for(const viewport of VIEWPORTS)await resize(viewport);
-    const captureViewport=VIEWPORTS.find(item=>item.name==='standard');
+    for(const viewport of matrix.viewports)await resize(viewport);
+    const captureViewport=matrix.captureViewport;
     const phaseMatrix=async label=>{
       const phase=states.at(-1).phase,paused=states.at(-1).paused;
-      for(const viewport of VIEWPORTS.slice(0,5)) {
+      for(const viewport of matrix.phaseViewports) {
         await resize(viewport);check(states.at(-1).phase===phase && states.at(-1).paused===paused,`${label}: same actual phase across profiles`);
         await screenshot(`${label}-${viewport.name}`);
       }
-      await resize(captureViewport);
+      if(page.viewportSize().width!==captureViewport.width || page.viewportSize().height!==captureViewport.height)
+        await resize(captureViewport);
     };
     await resize(captureViewport);
     const armGameClick=async(name,action,predicate=()=>true)=>{
@@ -3308,7 +3302,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(after.loop.phase==='battle' && !after.paused,'Windows live layout remains active battle');
       elapsedTicks(before,after);validateModelObservation(before,reference(before));validateModelObservation(after,reference(after));
       report.lifecycle.push({kind:'live-battle-layout',scope:'existing unfinished reload run',
-        viewports:VIEWPORTS.slice(0,5).map(item=>item.name),before,after});
+        viewports:matrix.phaseViewports.map(item=>item.name),before,after});
     };
     const battleLayouts=async()=>{
       // Slow Linux inspection can exceed a whole battle. Windows retains its
@@ -3331,7 +3325,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       // hidden-Pause proof below; its final keyboard Resume uses the original
       // counter/time/model oracle. One matrix covers the same paused geometry.
       const record={kind:'paused-battle-layout',covers:['paused battle','explicit Pause'],
-        viewports:VIEWPORTS.slice(0,5).map(item=>item.name),before,paused,returned};
+        viewports:matrix.phaseViewports.map(item=>item.name),before,paused,returned};
       report.lifecycle.push(record);return record;
     };
     // Two unfinished exits exercise native Return and ordinary reload without an award.
@@ -3406,7 +3400,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'no Claim during actual settling');
     const settlingResumed=await gameClick('Pause','session',item=>!item.paused);await page.waitForTimeout(750);
     report.lifecycle.push({kind:'settling-interaction',scope:'native-pause-five-viewports-resume',
-      paused:settlingPaused,resumed:settlingResumed,viewports:VIEWPORTS.slice(0,5).map(item=>item.name)});
+      paused:settlingPaused,resumed:settlingResumed,viewports:matrix.phaseViewports.map(item=>item.name)});
     }else await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);
     const result=await until(states,defeatStart,item=>item.phase==='result',8);
     const transition=validateSettlingTransition({before:settlingBefore,result,states,layouts,encounters,oracle:reference(settlingBefore)});
@@ -3452,7 +3446,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(restored.phase==='result' && restored.pendingRunId===result.pendingRunId,'successful pending defeat survives reload',restored);
     const claimed=await gameClick('Claim','claim');check(claimed.phase==='workshop' && claimed.wallet===1 && claimed.level===0,'one Claim pays exactly one salvage',claimed);
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'Claim unavailable after one award');
-    for(const viewport of VIEWPORTS)await resize(viewport);await phaseMatrix('workshop');
+    for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('workshop');
     await resize(VIEWPORTS.find(item=>item.name==='compact'));const purchaseStart=await mark();
     const bought=await gameKey('Purchase','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
     await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
@@ -3517,7 +3511,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check((await page.locator('#status').innerText())==='Scene could not load',`${scope}: visible failure`);
       check(await page.locator('#last-stand-return').getAttribute('href')==='../#campaigns/last-stand',`${scope}: independent native return href`);
       await keyboardFocus(page.locator('#last-stand-return'));await screenshot(scope);
-      for(const viewport of VIEWPORTS.slice(0,5)) {
+      for(const viewport of matrix.phaseViewports) {
         await page.setViewportSize({width:viewport.width,height:viewport.height});
         const boxes=await page.evaluate(()=>({width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,
           targets:['#last-stand-return','#retry','#error','#status'].map(selector=>({selector,
@@ -3563,7 +3557,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!consoleErrors.length && !requestErrors.length && !unexpectedHTTP.length,
       'no unclassified browser/Unity/shader/request errors in any scope',{consoleErrors,requestErrors,httpErrors:unexpectedHTTP});
     throwObserverFailure();
-    report.qualification.functional='pass';
+    report.qualification.functional=matrix.shard?'viewport-shard-pass':'pass';
     if(player)for(const key of ['rendered_audio','native_blur','capture_cadence'])report.qualification[key]='pass';
     report.status='pass';return{resultPath,output,report};
   } catch(error) {
