@@ -26,6 +26,7 @@ function fixture(t) {
   mkdirSync(join(checkout, 'e2e/helpers'), { recursive: true });
   mkdirSync(join(checkout, 'scripts/ci'), { recursive: true });
   copyFileSync(join(root, 'e2e/helpers/lastStandJourney.mjs'), join(checkout, 'e2e/helpers/lastStandJourney.mjs'));
+  copyFileSync(join(root, 'e2e/helpers/lastStandMatrix.mjs'), join(checkout, 'e2e/helpers/lastStandMatrix.mjs'));
   if (existsSync(join(root, setupPath))) copyFileSync(join(root, setupPath), join(checkout, setupPath));
   const outside = join(owned, 'outside');
   mkdirSync(outside);
@@ -56,7 +57,7 @@ function setupBeforeConsumer(source, id, checkout) {
     if (step.index >= consumer || !step[0].includes(`run: node ${setupPath}`)) continue;
     assert.doesNotMatch(step[0], /continue-on-error:|working-directory:|env:|shell:/);
     if (id === 'scope') assert.doesNotMatch(step[0], /\n        if:/);
-    else assert.match(step[0], /\n        if: matrix\.lane == 'product'\n/);
+    else assert.match(step[0], /\n        if: matrix\.suite == 'campaigns' \|\| matrix\.suite == 'tier'\n/);
     const command = step[0].match(/\n        run: node ([^\n]+)\s*$/);
     assert.equal(command?.[1], setupPath, 'Execute only the fixed checked-in setup command');
     const result = execute(checkout, [join(checkout, command[1])]);
