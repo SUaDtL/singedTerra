@@ -3024,6 +3024,12 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       throw new Error('Expected real runtime observation absent');
     };
     const focused=async label=>{
+      // Linux functional verification needs the actual document's current
+      // focus/visibility. Avoid activating and polling an already focused tab.
+      // Windows still performs its separate native foreground proof below.
+      if(process.platform==='linux' && await page.evaluate('!document.hidden && document.hasFocus()')){
+        check(true,`${label}: document focus and visibility`);return;
+      }
       await page.bringToFront();
       if(process.platform==='win32')await ensureOwnedNativeForeground({native,page,report,kind:label,role:'original-precondition'});
       await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10_000});

@@ -9,6 +9,28 @@ assert.ok(begin>0 && end>begin,'Actual maintained focus caller is required');
 const run=new Function('process','page','native','report','ensureOwnedNativeForeground','check',
   source.slice(begin,end)+'return focused("inert caller-order fixture");');
 
+test('Linux already-visible focus needs one current DOM read without redundant activation',async()=>{
+  const calls=[];
+  await run({platform:'linux'},{
+    bringToFront:async()=>calls.push('activate'),waitForFunction:async()=>calls.push('wait'),
+    evaluate:async expression=>{assert.equal(expression,'!document.hidden && document.hasFocus()');calls.push('read');return true;},
+  },{},{},async()=>assert.fail('No Windows native qualification on Linux'),ok=>assert.ok(ok));
+  assert.deepEqual(calls,['read'],'An already focused Linux document needs no repeated renderer activation/wait roundtrips');
+});
+
+test('Linux missing focus still requires actual activation, a bounded wait and fresh confirmation',async()=>{
+  for(const returned of [true,false]){
+    const calls=[];let reads=0;
+    const action=run({platform:'linux'},{
+      bringToFront:async()=>calls.push('activate'),waitForFunction:async(_expr,_arg,options)=>{
+        calls.push('wait');assert.equal(options.timeout,10000);},
+      evaluate:async()=>{calls.push('read');return ++reads===1?false:returned;},
+    },{},{},async()=>assert.fail('No Windows native qualification on Linux'),ok=>assert.ok(ok));
+    if(returned)await action;else await assert.rejects(action);
+    assert.deepEqual(calls,['read','activate','wait','read']);
+  }
+});
+
 test('owned native foreground is established before waiting for document focus',async()=>{
   const calls=[];let established=false;
   await run({platform:'win32'}, {
@@ -17,6 +39,16 @@ test('owned native foreground is established before waiting for document focus',
     evaluate:async()=>established,
   },{}, {},async()=>{established=true;calls.push('native');},condition=>assert.ok(condition));
   assert.deepEqual(calls,['cdp','native','dom']);
+});
+
+test('Windows already-focused DOM still requires owned native foreground proof',async()=>{
+  const calls=[];let established=false;
+  await run({platform:'win32'},{
+    bringToFront:async()=>calls.push('activate'),
+    waitForFunction:async()=>{assert.ok(established);calls.push('wait');},
+    evaluate:async()=>{assert.ok(established,'A true DOM result cannot bypass native establishment');calls.push('read');return true;},
+  },{},{},async()=>{established=true;calls.push('native');},ok=>assert.ok(ok));
+  assert.deepEqual(calls,['activate','native','wait','read']);
 });
 
 test('native foreground refusal propagates before a DOM wait can proceed',async()=>{
