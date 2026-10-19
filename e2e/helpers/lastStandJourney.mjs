@@ -1179,7 +1179,7 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const SAVE_KEY = 'singedTerra.lastStand.prototype.v1';
 const SELECTION_KEY = 'singedterra.command-center.selection.v1';
 const TITLE = 'Last Stand Campaigns journey preserves no-award exit and a stronger redeploy';
-import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition, lastStandJourneySection} from './lastStandMatrix.mjs';
+import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition, lastStandJourneySection, LAST_STAND_ENTRY_ROUTES} from './lastStandMatrix.mjs';
 export {lastStandViewportPartition} from './lastStandMatrix.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const fileHash = path => hash(readFileSync(path));
@@ -2905,7 +2905,7 @@ export function lastStandQualificationProfile(name='windows-player',host=process
 export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
   const sectionName=process.env.LAST_STAND_JOURNEY_SECTION;
-  const shard=sectionName==='recovery' && process.env.LAST_STAND_JOURNEY_SHARD===''?undefined:process.env.LAST_STAND_JOURNEY_SHARD;
+  const shard=['entry','recovery'].includes(sectionName) && process.env.LAST_STAND_JOURNEY_SHARD===''?undefined:process.env.LAST_STAND_JOURNEY_SHARD;
   const section=lastStandJourneySection(sectionName,{profile:qualification.name,shard});
   const matrix=lastStandViewportPartition(shard,{profile:qualification.name});
   const base = admitJourneyBase(baseURL);
@@ -2922,7 +2922,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     visual_measurements:{controls:'actual HUD bounds converted once to CSS pixels',panels:'unmeasured in browser telemetry',
       fonts:'unmeasured in browser telemetry',contrast:'unmeasured in browser telemetry',focus_treatment:'matched screenshots awaiting rendered review'},
     viewport_partition:{shard:matrix.shard,section:section.name,viewports:section.lifecycle?matrix.viewports.map(v=>v.name):[],
-      phase_viewports:matrix.phaseViewports.map(v=>v.name),gameplay_viewport:section.lifecycle?matrix.captureViewport.name:null},
+      phase_viewports:section.name==='entry'?[]:matrix.phaseViewports.map(v=>v.name),
+      entry_viewports:section.entry?matrix.entryViewports.map(v=>v.name):[],gameplay_viewport:section.lifecycle?matrix.captureViewport.name:null},
     lifecycle:[],qualification:{profile:qualification.name,host:process.platform,release:release(),arch:arch(),
       functional:'pending',rendered_audio:player?'pending':'unexecuted-requires-windows',
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
@@ -3051,6 +3052,16 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     const keyboardFocus=async locator=>{
       await page.evaluate("window.__stInputArea='outer'");
       await focused('outer keyboard');
+      // The wrapper enters Unity's first HUD control on canvas focus, even
+      // after backwards browser navigation. From an already focused Return,
+      // enter forwards before testing the real previous-control escape; direct
+      // Shift+Tab would enter first and then walk the entire HUD forwards.
+      if(process.platform==='linux' && await locator.evaluate(element=>element.id==='last-stand-return' && element===document.activeElement) &&
+        await page.locator('#unity-canvas').count()){
+        await page.keyboard.press('Tab');
+        check(await page.locator('#unity-canvas').evaluate(element=>element===document.activeElement),
+          'native Tab enters actual Unity before Return escape');
+      }
       // Try the browser's previous-control path from the focused canvas first.
       // No DOM focus or pointer reset may hide a Unity keyboard trap.
       if(await page.locator('#unity-canvas').count())await page.keyboard.press('Shift+Tab');
@@ -3096,7 +3107,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       },{key:SELECTION_KEY,remembered,record,session});
     };
     let ashBytes,originalAsh,start;
-    if(section.lifecycle){
+    const ash={categoryId:'campaigns',itemId:'ash-road'},skirmish={categoryId:'skirmishes',itemId:'standard'};
+    if(section.entry || section.lifecycle){
     await goto(''); await dismissSplash();
     await selected('first-salvo');check(true,'global fresh startup remains Skirmishes');
     await openCampaigns(); await selected('last-stand');
@@ -3106,7 +3118,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     await outerPointer(page.locator('[data-command-item="ash-road"]')); await selected('ash-road');
     await goto('');await dismissSplash();await selected('ash-road');
     report.routes=[{name:'fresh Campaigns',selected:'last-stand'},{name:'remembered Ash Road',selected:'ash-road'}];
-    const ash={categoryId:'campaigns',itemId:'ash-road'},skirmish={categoryId:'skirmishes',itemId:'standard'};
+    }
+    if(section.entry){
     const routeCases=[
       {name:'compatible Ash Road resume',record:ashRoadRecord,suffix:'',expected:'ash-road'},
       {name:'remembered Skirmishes',remembered:skirmish,suffix:'',expected:'standard'},
@@ -3118,6 +3131,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       {name:'invalid mixed signals cannot override remembered Ash Road',remembered:ash,suffix:'?join=bad!#challenge=ST1-CW-17',expected:'ash-road'},
       {name:'invalid Return spelling cannot override remembered Ash Road',remembered:ash,suffix:'#campaigns/last-stand/invalid',expected:'ash-road'},
     ];
+    assert.deepEqual(routeCases.map(({name,expected})=>({name,selected:expected})),LAST_STAND_ENTRY_ROUTES,
+      'Exact original startup-routing inventory required');
     for(const fixture of routeCases){
       rejoin=Boolean(fixture.session);
       if(rejoin)rejoinBinding=await bindConfiguredRejoinFixture(base);
@@ -3141,6 +3156,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${viewport.name}: Campaigns has no horizontal overflow`);
       await screenshot(`entry-${viewport.name}`);report.campaign_entry.push({viewport,order,bounds});
     }
+    }
+    if(section.lifecycle){
     await page.setViewportSize({width:1280,height:720});
     await setRouteState({record:ashRoadRecord,remembered:ash});await goto('');await dismissSplash();await selected('ash-road');
     check(/resume ash road/i.test(await page.locator('[data-command-primary]').innerText()),'preserved compatible resume before Last Stand');

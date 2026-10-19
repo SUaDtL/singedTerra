@@ -9,6 +9,40 @@ assert.ok(begin>0 && end>begin,'Actual maintained focus caller is required');
 const run=new Function('process','page','native','report','ensureOwnedNativeForeground','check',
   source.slice(begin,end)+'return focused("inert caller-order fixture");');
 
+async function returnKeyboardFixture({host='linux',initial='return',entryFails=false,outline='solid'}={}){
+  const begin=source.indexOf('    const keyboardFocus=async locator=>{',source.indexOf('export async function runLastStandJourney('));
+  const end=source.indexOf('    const dismissSplash=',begin);
+  assert.ok(begin>0 && end>begin);
+  const target={id:'last-stand-return'},canvas={id:'unity-canvas'},keys=[];
+  const document={activeElement:initial==='return'?target:canvas};let index=0;
+  // Inert reduction of the maintained wrapper: either direction into the canvas
+  // invokes enter-first; previous from its first control exits to native Return.
+  const context={document,process:{platform:host},focused:async()=>{},check:(ok,name)=>assert.ok(ok,name),
+    getComputedStyle:()=>({outlineStyle:outline,outlineWidth:'2px'}),
+    page:{evaluate:async()=>{},locator:()=>({count:async()=>1,evaluate:async fn=>fn(canvas)}),
+      keyboard:{press:async key=>{keys.push(key);
+        if(document.activeElement===target){if(!entryFails){document.activeElement=canvas;index=0;}}
+        else if(key==='Shift+Tab' && index===0 || key==='Tab' && ++index===20)document.activeElement=target;
+      }}},
+  };
+  const locator={evaluate:async fn=>fn(target)};
+  const {runInNewContext}=await import('node:vm');
+  await runInNewContext('(async()=>{'+source.slice(begin,end)+'await keyboardFocus(locator);})()', {...context,locator});
+  return keys;
+}
+
+test('Linux repeated Return inspection enters first then escapes instead of traversing the whole HUD',async()=>{
+  assert.deepEqual(await returnKeyboardFixture(),['Tab','Shift+Tab']);
+  assert.deepEqual(await returnKeyboardFixture({initial:'canvas'}),['Shift+Tab']);
+});
+
+test('Return preparation preserves Windows navigation and rejects failed native entry or invisible focus',async()=>{
+  const keys=await returnKeyboardFixture({host:'win32'});
+  assert.equal(keys[0],'Shift+Tab');assert.equal(keys.length,21);
+  await assert.rejects(returnKeyboardFixture({entryFails:true}),/native Tab enters/);
+  await assert.rejects(returnKeyboardFixture({outline:'none'}),/visible keyboard focus/);
+});
+
 test('Linux already-visible focus needs one current DOM read without redundant activation',async()=>{
   const calls=[];
   await run({platform:'linux'},{

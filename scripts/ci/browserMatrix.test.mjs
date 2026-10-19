@@ -10,18 +10,27 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import * as partitionOwner from '../../e2e/helpers/lastStandMatrix.mjs';
 
+test('startup routing has an independent owner instead of repeating on every gameplay shard',()=>{
+  const {include:lanes}=browserMatrix();
+  assert.equal(lanes.length,18,'Startup routing and entry captures must leave the gameplay critical path');
+  assert.deepEqual(lanes.filter(l=>l.journey_section==='entry').map(l=>[l.lane,l.journey_shard]),[['last-stand-12','']]);
+  assert.deepEqual(partitionOwner.lastStandJourneySection('entry',{host:'linux',profile:'linux-functional'}),
+    {name:'entry',entry:true,lifecycle:false,recovery:false});
+  assert.throws(()=>partitionOwner.lastStandJourneySection('entry',{host:'linux',profile:'linux-functional',shard:'1/10'}));
+});
+
 test('independent recovery runs beside lifecycle while preserving every original viewport',()=>{
   const {include:lanes}=browserMatrix(),campaigns=lanes.filter(l=>l.suite==='campaigns');
-  assert.equal(campaigns.length,11,'Independent recovery cannot remain serial on the lifecycle critical path');
+  assert.equal(campaigns.length,12,'Independent recovery cannot remain serial on the lifecycle critical path');
   assert.deepEqual(campaigns.filter(l=>l.journey_section==='lifecycle').map(l=>l.journey_shard),
     Array.from({length:10},(_,i)=>`${i+1}/10`));
   assert.deepEqual(campaigns.filter(l=>l.journey_section==='recovery').map(l=>l.journey_shard),
     ['']);
   assert.equal(typeof partitionOwner.lastStandJourneySection,'function');
   const scope={host:'linux',profile:'linux-functional',shard:'1/10'};
-  assert.deepEqual(partitionOwner.lastStandJourneySection(undefined,scope),{name:'full',lifecycle:true,recovery:true});
-  assert.deepEqual(partitionOwner.lastStandJourneySection('lifecycle',scope),{name:'lifecycle',lifecycle:true,recovery:false});
-  assert.deepEqual(partitionOwner.lastStandJourneySection('recovery',{...scope,shard:undefined}),{name:'recovery',lifecycle:false,recovery:true});
+  assert.deepEqual(partitionOwner.lastStandJourneySection(undefined,scope),{name:'full',entry:true,lifecycle:true,recovery:true});
+  assert.deepEqual(partitionOwner.lastStandJourneySection('lifecycle',scope),{name:'lifecycle',entry:false,lifecycle:true,recovery:false});
+  assert.deepEqual(partitionOwner.lastStandJourneySection('recovery',{...scope,shard:undefined}),{name:'recovery',entry:false,lifecycle:false,recovery:true});
   for(const value of ['',null,'skip','full','recovery; skip'])
     assert.throws(()=>partitionOwner.lastStandJourneySection(value,scope));
   for(const changed of [{host:'win32'},{profile:'windows-player'},{shard:'1/10'}])
@@ -61,15 +70,24 @@ function matrixFixture() {
   const served=Object.fromEntries(Array.from({length:17},(_,i)=>[`unit-runtime-${i}`,{sha256:'c'.repeat(64),bytes:1}]));
   const recoveryNames=new Set(['.loader.js: real Retry recovered genuine scene','.wasm: real Retry recovered genuine scene',
     'corrupt bytes preserved by Retry','blocked writes recover through real Retry']);
-  const reports=Array.from({length:11},(_,i)=>{
-    const section=i<10?'lifecycle':'recovery',shard=i<10?`${i+1}/10`:null;
+  const entryRoutes=[['compatible Ash Road resume','ash-road'],['remembered Skirmishes','standard'],
+    ['Return before remembered Ash Road','last-stand'],['validated ST1 before remembered Ash Road','imported-challenge'],
+    ['invite before validated ST1','online'],['invite before explicit Return','online'],['rejoin before validated ST1','online'],
+    ['invalid mixed signals cannot override remembered Ash Road','ash-road'],['invalid Return spelling cannot override remembered Ash Road','ash-road']]
+    .map(([name,selected])=>({name,selected}));
+  const entryChecks=['global fresh startup remains Skirmishes','zero Unity runtime payload before ordinary launch',
+    'entry loss disclosure is rendered','entry disclosure names no-award unfinished loss',
+    'no unclassified browser/Unity/shader/request errors in any scope'];
+  const reports=Array.from({length:12},(_,i)=>{
+    const section=i<10?'lifecycle':i===10?'recovery':'entry',shard=i<10?`${i+1}/10`:null;
     const partition=journey.lastStandViewportPartition(shard??undefined,{host:'linux',profile:'linux-functional'});
-    const profiles=section==='recovery'?partition.phaseViewports:partition.viewports;
+    const profiles=section==='entry'?partition.entryViewports:section==='recovery'?partition.phaseViewports:partition.viewports;
     const screenshots=profiles.flatMap(selected=>{
       const viewport=selected.name;
-      const labels=section==='recovery'?['storage-corrupt','storage-blocked','loader-fault','wasm-fault']:
+      const labels=section==='entry'?['entry']:section==='recovery'?['storage-corrupt','storage-blocked','loader-fault','wasm-fault']:
         ['layout-garage','layout-workshop',...(i<5?['garage','battle','result','workshop','background-result']:[])];
-      return labels.map(label=>{const phase=label.replace('layout-','');return {file:label.startsWith('layout-')?`layout-${viewport}-${phase}-0.png`:`${phase}-${viewport}.png`,
+      return labels.map(label=>{const phase=label.replace('layout-','');return {file:label==='entry'?`entry-${viewport}.png`:
+        label.startsWith('layout-')?`layout-${viewport}-${phase}-0.png`:`${phase}-${viewport}.png`,
         viewport:{width:selected.width,height:selected.height},sha256:'e'.repeat(64),load:1,
         scope:phase.endsWith('-fault')?phase:'healthy',
         state:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase},
@@ -77,10 +95,13 @@ function matrixFixture() {
     });
     return {status:'pass',qualification:{host:'linux',profile:'linux-functional',functional:'viewport-section-pass'},
       viewport_partition:{shard,section,viewports:section==='lifecycle'?profiles.map(v=>v.name):[],
-        phase_viewports:partition.phaseViewports.map(v=>v.name),gameplay_viewport:section==='lifecycle'?'standard':null},
+        phase_viewports:section==='entry'?[]:partition.phaseViewports.map(v=>v.name),
+        entry_viewports:section==='entry'?profiles.map(v=>v.name):[],gameplay_viewport:section==='lifecycle'?'standard':null},
       binding:{current_head:head,portable_text_inputs:inputs,served,served_after:served},
-      checks:checks.filter(c=>c.name==='no unclassified browser/Unity/shader/request errors in any scope' ||
-        (section==='recovery'?recoveryNames.has(c.name):!recoveryNames.has(c.name))),screenshots};
+      checks:section==='entry'?entryChecks.map(name=>({name,pass:true})):checks.filter(c=>c.name==='no unclassified browser/Unity/shader/request errors in any scope' ||
+        (section==='recovery'?recoveryNames.has(c.name):!recoveryNames.has(c.name))),screenshots,
+      ...(section==='entry'?{routes:entryRoutes,campaign_entry:profiles.map(viewport=>({viewport,
+        order:['last-stand','ash-road'],bounds:{x:0,y:0,width:100,height:44}}))}:{})};
   });
   return {reports,expected:{head,inputs}};
 }
@@ -88,7 +109,7 @@ function matrixFixture() {
 test('matrix qualification requires all actual branches, profiles and exact source/runtime bindings', () => {
   const {reports,expected}=matrixFixture();
   const result=assertLastStandMatrix(reports,expected);
-  assert.equal(result.status,'pass');assert.equal(result.shards.length,11);
+  assert.equal(result.status,'pass');assert.equal(result.shards.length,12);
   assert.match(result.scope,/no Windows\/media qualification/);
   const faults=[
     reports=>reports.pop(),reports=>reports.push(reports[0]),reports=>{reports[9]=reports[0];},
@@ -121,44 +142,73 @@ test('matrix qualification requires all actual branches, profiles and exact sour
 });
 
 test('recovery qualification refuses every missing original fault profile and branch',()=>{
-  const baseline=matrixFixture(),recovery=baseline.reports.at(-1);
+  const baseline=matrixFixture(),recovery=baseline.reports[10];
   for(const capture of recovery.screenshots){
     const sample=structuredClone(baseline);
-    sample.reports.at(-1).screenshots=sample.reports.at(-1).screenshots.filter(s=>s.file!==capture.file);
+    sample.reports[10].screenshots=sample.reports[10].screenshots.filter(s=>s.file!==capture.file);
     assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),capture.file);
   }
   for(const check of recovery.checks){
     const sample=structuredClone(baseline);
-    sample.reports.at(-1).checks=sample.reports.at(-1).checks.filter(c=>c.name!==check.name);
+    sample.reports[10].checks=sample.reports[10].checks.filter(c=>c.name!==check.name);
     assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),check.name);
   }
 });
 
-test('actual journey section guards execute both Windows sections and keep Linux owners disjoint',async()=>{
+test('entry qualification requires every original routing case and actual reachable viewport capture',()=>{
+  const baseline=matrixFixture(),entry=baseline.reports[11];
+  const faults=[
+    r=>r.routes.push({...r.routes[0]}),r=>r.routes[0].selected='wrong',r=>r.campaign_entry.pop(),
+    r=>r.campaign_entry[0].viewport.width=1,r=>r.campaign_entry[0].order=['ash-road','last-stand'],
+    r=>r.campaign_entry[0].bounds.width=43,r=>r.campaign_entry[0].bounds.x=2000,
+    r=>r.campaign_entry[0].bounds.y=2000,r=>r.campaign_entry[0].bounds.width='100',
+    r=>r.screenshots[0].load=0,r=>r.screenshots[0].scope='loader-fault',
+    r=>r.viewport_partition.entry_viewports=[],r=>r.viewport_partition.phase_viewports=['approved-standard'],
+  ];
+  for(const expected of entry.routes)faults.push(r=>r.routes=r.routes.filter(v=>v.name!==expected.name));
+  for(const capture of entry.screenshots)faults.push(r=>r.screenshots=r.screenshots.filter(v=>v.file!==capture.file));
+  for(const check of entry.checks)faults.push(r=>r.checks=r.checks.filter(v=>v.name!==check.name));
+  for(const fault of faults){
+    const sample=structuredClone(baseline);fault(sample.reports[11]);
+    assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected));
+  }
+});
+
+test('actual journey section guards execute all Windows sections and keep Linux owners disjoint',async()=>{
   const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
-  const entryStart=source.indexOf('    if(section.lifecycle){'),entryEnd=source.indexOf('    const geometry=',entryStart);
+  const commonStart=source.indexOf('    if(section.entry || section.lifecycle){');
+  const entryStart=source.indexOf('    if(section.entry){',commonStart);
+  const preparationStart=source.indexOf('    if(section.lifecycle){',entryStart);
+  const entryEnd=source.indexOf('    const geometry=',preparationStart);
   const mainStart=source.indexOf('    if(section.lifecycle){',entryEnd),recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
   const recoveryEnd=source.indexOf("    scope='healthy';\n    report.input_trace=",recoveryStart);
-  const blocks=[['lifecycle',source.slice(entryStart,entryEnd)],['lifecycle',source.slice(mainStart,recoveryStart)],
+  const blocks=[['common',source.slice(commonStart,entryStart)],['entry',source.slice(entryStart,preparationStart)],
+    ['lifecycle',source.slice(preparationStart,entryEnd)],['lifecycle',source.slice(mainStart,recoveryStart)],
     ['recovery',source.slice(recoveryStart,recoveryEnd)]];
   const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
-  for(const section of [{name:'full',lifecycle:true,recovery:true},{name:'lifecycle',lifecycle:true,recovery:false},
-    {name:'recovery',lifecycle:false,recovery:true}])for(const [owner,block]of blocks){
-      assert.ok(block.startsWith(`    if(section.${owner}){`));
+  for(const name of [undefined,'entry','lifecycle','recovery']){
+    const section=partitionOwner.lastStandJourneySection(name,{host:'linux',profile:'linux-functional',
+      shard:name==='lifecycle'?'1/10':undefined});
+    for(const [owner,block]of blocks){
+      assert.ok(block.startsWith('    if(section.'));
       const reached=new Error('Explicit inert first-side-effect sentinel');
       const stop=()=>{throw reached;};
-      const run=new AsyncFunction('section','goto','gameClick','readFileSync','join','ROOT',
-        '"use strict";let scope;'+block);
-      const execution=run(section,stop,stop,stop,()=>'', '/inert');
-      if(section[owner])await assert.rejects(execution,error=>error===reached);
+      const run=new AsyncFunction('section','goto','gameClick','readFileSync','join','ROOT','assert','ash','skirmish',
+        'ashRoadRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page',
+        '"use strict";let scope,rejoin,rejoinBinding;'+block);
+      const execution=run(section,stop,stop,stop,()=>'', '/inert',assert,{},{},{},partitionOwner.LAST_STAND_ENTRY_ROUTES,
+        stop,{setViewportSize:stop});
+      if(owner==='common'?(section.entry || section.lifecycle):section[owner])
+        await assert.rejects(execution,error=>error===reached);
       else await execution;
     }
+  }
 });
 
 test('CI browser allocation contains every disjoint suite and exactly four general shards', () => {
   const {include:lanes}=browserMatrix();
-  assert.equal(lanes.length,17);
-  assert.equal(new Set(lanes.map(l=>l.lane)).size,17);
+  assert.equal(lanes.length,18);
+  assert.equal(new Set(lanes.map(l=>l.lane)).size,18);
   assert.deepEqual(lanes.filter(l=>l.suite==='core').map(l=>l.shard),[1,2,3,4]);
   assert.equal(lanes.filter(l=>l.suite==='product').length,1);
   assert.equal(lanes.filter(l=>l.suite==='tier').length,1);
