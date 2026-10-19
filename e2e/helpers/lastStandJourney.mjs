@@ -2896,7 +2896,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     focus_scope:player?'separate native visible-window blur and hidden tab':'hidden tab; native blur separately required from Windows', device_performance_claim:false, url_origin:base.origin,
     visual_measurements:{controls:'actual HUD bounds converted once to CSS pixels',panels:'unmeasured in browser telemetry',
       fonts:'unmeasured in browser telemetry',contrast:'unmeasured in browser telemetry',focus_treatment:'matched screenshots awaiting rendered review'},
-    viewport_partition:{shard:matrix.shard,viewports:matrix.viewports.map(v=>v.name)},
+    viewport_partition:{shard:matrix.shard,viewports:matrix.viewports.map(v=>v.name),
+      phase_viewports:matrix.phaseViewports.map(v=>v.name),gameplay_viewport:matrix.captureViewport.name},
     lifecycle:[],qualification:{profile:qualification.name,host:process.platform,release:release(),arch:arch(),
       functional:'pending',rendered_audio:player?'pending':'unexecuted-requires-windows',
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
@@ -3335,6 +3336,9 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
     check(await ashBytes()===originalAsh,'Ash Road record bytes preserved through native Last Stand Return');
     report.ash_road_preservation.native_return='observed unchanged';
+    // Ash Road's artillery HUD requires landscape even when this Unity shard
+    // owns a portrait observation. Keep gameplay at its canonical viewport.
+    await page.setViewportSize({width:1280,height:720});
     await selected('last-stand');await outerPointer(page.locator('.command-center__item[data-command-item="ash-road"]'));await selected('ash-road');
     const resume=page.locator('[data-command-primary]');check(/resume ash road/i.test(await resume.innerText()),'compatible Ash Road remains resumable after native Return');
     await outerPointer(resume);await page.locator('#app').waitFor({state:'visible'});check(!await page.locator('#lobby').isVisible(),'actual compatible Ash Road resume enters its game');
@@ -3349,6 +3353,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     let start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
     let restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished Return abandoned without award',restored);
+    await resize(captureViewport);
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);await liveBattleLayouts();
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);

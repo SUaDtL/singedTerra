@@ -41,10 +41,15 @@ export function assertLastStandMatrix(reports,{head,inputs}) {
       assert.ok(!report[key],'Failed execution cannot qualify: '+key);
     const selected=partition.viewports[0],viewport=selected.name;
     assert.deepEqual(report.viewport_partition.viewports,[viewport]);
-    for(const phase of ['garage','battle','result','workshop','background-result','storage-corrupt','storage-blocked',
-      'loader-fault','wasm-fault'])
+    assert.deepEqual(report.viewport_partition.phase_viewports,partition.phaseViewports.map(v=>v.name));
+    assert.equal(report.viewport_partition.gameplay_viewport,'standard','Original gameplay viewport required');
+    const required=[...['garage','workshop'].map(phase=>({phase,layoutOnly:true})),
+      ...(partition.phaseViewports.length?['garage','battle','result','workshop','background-result',
+        'storage-corrupt','storage-blocked','loader-fault','wasm-fault'].map(phase=>({phase,layoutOnly:false})):[])];
+    for(const {phase,layoutOnly} of required)
     {
-      const capture=report.screenshots?.find(s=>s.file===`${phase}-${viewport}.png`);
+      const capture=report.screenshots?.find(s=>layoutOnly?
+        s.file.startsWith(`layout-${viewport}-${phase}-`) && s.file.endsWith('.png'):s.file===`${phase}-${viewport}.png`);
       assert.ok(capture,'Missing actual phase/profile capture: '+phase+'/'+viewport);
       assert.deepEqual(capture.viewport,{width:selected.width,height:selected.height},'Wrong observed viewport');
       assert.match(capture.sha256??'',/^[a-f0-9]{64}$/,'Actual capture digest required');

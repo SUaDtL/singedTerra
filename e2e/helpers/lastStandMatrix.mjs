@@ -23,6 +23,6 @@ export function lastStandViewportPartition(shard, {host=process.platform, profil
   assert.ok(host==='linux' && profile==='linux-functional', 'Only Linux functional CI can partition viewport observations');
   assert.match(shard, /^(?:[1-9]|10)\/10$/, 'Expected one of the closed ten Campaigns shards');
   const viewport=LAST_STAND_VIEWPORTS[Number(shard.split('/')[0])-1];
-  return Object.freeze({shard,viewports:[viewport],phaseViewports:[viewport],
-    entryViewports:whole.entryViewports.includes(viewport)?[viewport]:[],captureViewport:viewport});
+  return Object.freeze({shard,viewports:[viewport],phaseViewports:whole.phaseViewports.includes(viewport)?[viewport]:[],
+    entryViewports:whole.entryViewports.includes(viewport)?[viewport]:[],captureViewport:whole.captureViewport});
 }

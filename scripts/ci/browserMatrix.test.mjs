@@ -6,6 +6,8 @@ import {assertLastStandMatrix,lastStandMatrixResultFiles} from './lastStandMatri
 import {mkdtempSync,mkdirSync,writeFileSync,unlinkSync,rmdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 
 test('Campaigns viewport partitions cover all ten profiles without a full-proof claim', () => {
   assert.equal(typeof journey.lastStandViewportPartition, 'function',
@@ -16,7 +18,10 @@ test('Campaigns viewport partitions cover all ten profiles without a full-proof 
   assert.equal(whole.shard, null);
   assert.deepEqual(pieces.flatMap(p=>p.viewports), whole.viewports);
   assert.deepEqual(pieces.flatMap(p=>p.entryViewports), whole.entryViewports);
-  assert.ok(pieces.every(p=>p.phaseViewports.length===1 && p.captureViewport===p.viewports[0]));
+  assert.deepEqual(pieces.flatMap(p=>p.phaseViewports),whole.phaseViewports,
+    'Partition exactly the original five-phase matrix, without expanding its scope');
+  assert.ok(pieces.every(p=>p.captureViewport===whole.captureViewport),
+    'Gameplay stays at its original standard viewport; only existing layout inspections are sharded');
   for(const value of ['', '0/10', '11/10', '1/9', '01/10', '1', '1/10; echo bad'])
     assert.throws(()=>journey.lastStandViewportPartition(value,{host:'linux',profile:'linux-functional'}));
   assert.throws(()=>journey.lastStandViewportPartition('1/10',{host:'win32',profile:'windows-player'}));
@@ -37,14 +42,14 @@ function matrixFixture() {
   const reports=Array.from({length:10},(_,i)=>{
     const shard=`${i+1}/10`,selected=journey.lastStandViewportPartition(shard,{host:'linux',profile:'linux-functional'}).viewports[0],viewport=selected.name;
     return {status:'pass',qualification:{host:'linux',profile:'linux-functional',functional:'viewport-shard-pass'},
-      viewport_partition:{shard,viewports:[viewport]},
+      viewport_partition:{shard,viewports:[viewport],phase_viewports:i<5?[viewport]:[],gameplay_viewport:'standard'},
       binding:{current_head:head,portable_text_inputs:inputs,served,served_after:served},checks,
-      screenshots:['garage','battle','result','workshop','background-result','storage-corrupt','storage-blocked',
-        'loader-fault','wasm-fault'].map(phase=>({file:`${phase}-${viewport}.png`,
+      screenshots:['layout-garage','layout-workshop',...(i<5?['garage','battle','result','workshop','background-result','storage-corrupt','storage-blocked',
+        'loader-fault','wasm-fault']:[])].map(label=>{const phase=label.replace('layout-','');return {file:label.startsWith('layout-')?`layout-${viewport}-${phase}-0.png`:`${phase}-${viewport}.png`,
           viewport:{width:selected.width,height:selected.height},sha256:'e'.repeat(64),load:1,
           scope:phase.endsWith('-fault')?phase:'healthy',
           state:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase},
-          layout:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase}}))};
+          layout:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase}};})};
   });
   return {reports,expected:{head,inputs}};
 }
@@ -74,6 +79,8 @@ test('matrix qualification requires all actual branches, profiles and exact sour
     reports=>{reports[0].screenshots[0].layout.timeOrigin=2000;},
     reports=>{reports[0].screenshots.at(-1).scope='healthy';},
     reports=>{reports[0].viewport_partition.viewports=['wrong'];},
+    reports=>{reports[0].viewport_partition.phase_viewports=[];},
+    reports=>{reports[0].viewport_partition.gameplay_viewport='wide';},
   ];
   for(const fault of faults){const sample=structuredClone(matrixFixture());fault(sample.reports);
     assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected));}
@@ -103,4 +110,24 @@ test('transport discovery counts journeys and retains failures without counting 
   for(const name of directories){mkdirSync(join(root,name));writeFileSync(join(root,name,'result.json'),
     JSON.stringify({status:name.endsWith('-b')?'failed':'pass'}));}
   assert.deepEqual(lastStandMatrixResultFiles(root).sort(),directories.slice(0,2).map(name=>join(root,name,'result.json')).sort());
+});
+
+test('portrait partitions resume Ash Road in landscape and restore canonical Unity gameplay', async () => {
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf("    report.ash_road_preservation.native_return='observed unchanged';");
+  const end=source.indexOf('    const briefing=',begin);
+  assert.ok(begin>0 && end>begin);
+  let viewport={width:390,height:844};
+  const resume={innerText:async()=> 'Resume Ash Road'},report={ash_road_preservation:{}};
+  await runInNewContext('(async()=>{'+source.slice(begin,end)+'})()',{
+    report,selected:async()=>{},check:(value,name)=>assert.ok(value,name),
+    outerPointer:async target=>{if(target===resume)assert.ok(viewport.width>viewport.height,'Ash Road cannot expose its HUD in portrait');},
+    page:{setViewportSize:async value=>{viewport=value;},locator:selector=>selector==='[data-command-primary]'?resume:
+      {waitFor:async()=>{},isVisible:async()=>false}},
+  });
+  assert.equal(viewport.width,1280);assert.equal(viewport.height,720);
+  const restored=source.indexOf("'unfinished Return abandoned without award'",end);
+  const nextDeploy=source.indexOf("await gameClick('Deploy','deploy')",restored);
+  assert.ok(source.slice(restored,nextDeploy).includes('await resize(captureViewport)'),
+    'The next Unity deployment must restore the canonical profile after the separate Ash Road check');
 });
