@@ -77,7 +77,13 @@ function matrixFixture() {
     .map(([name,selected])=>({name,selected}));
   const entryChecks=['global fresh startup remains Skirmishes','zero Unity runtime payload before ordinary launch',
     'entry loss disclosure is rendered','entry disclosure names no-award unfinished loss',
+    'unfinished Return abandoned without award','unfinished reload abandoned without award',
+    'Ash Road record bytes preserved through native Last Stand Return','actual compatible Ash Road resume enters its game',
     'no unclassified browser/Unity/shader/request errors in any scope'];
+  const unfinishedActions=[{name:'Deploy',action:'deploy',x:0,y:0},{name:'Deploy',action:'deploy',x:0,y:0}];
+  const unfinishedTrace=[...unfinishedActions.flatMap(a=>['pointerdown','pointerup'].map(kind=>({kind,area:'gameplay',
+    button:0,target:'unity-canvas',x:a.x,y:a.y,focused:true,hidden:false}))),
+    ...['keydown','keyup'].map(kind=>({kind,area:'outer',code:'Enter',target:'last-stand-return'}))];
   const reports=Array.from({length:12},(_,i)=>{
     const section=i<10?'lifecycle':i===10?'recovery':'entry',shard=i<10?`${i+1}/10`:null;
     const partition=journey.lastStandViewportPartition(shard??undefined,{host:'linux',profile:'linux-functional'});
@@ -96,11 +102,14 @@ function matrixFixture() {
     return {status:'pass',qualification:{host:'linux',profile:'linux-functional',functional:'viewport-section-pass'},
       viewport_partition:{shard,section,viewports:section==='lifecycle'?profiles.map(v=>v.name):[],
         phase_viewports:section==='entry'?[]:partition.phaseViewports.map(v=>v.name),
-        entry_viewports:section==='entry'?profiles.map(v=>v.name):[],gameplay_viewport:section==='lifecycle'?'standard':null},
+        entry_viewports:section==='entry'?profiles.map(v=>v.name):[],gameplay_viewport:section!=='recovery'?'standard':null},
       binding:{current_head:head,portable_text_inputs:inputs,served,served_after:served},
       checks:section==='entry'?entryChecks.map(name=>({name,pass:true})):checks.filter(c=>c.name==='no unclassified browser/Unity/shader/request errors in any scope' ||
-        (section==='recovery'?recoveryNames.has(c.name):!recoveryNames.has(c.name))),screenshots,
-      ...(section==='entry'?{routes:entryRoutes,campaign_entry:profiles.map(viewport=>({viewport,
+        (section==='recovery'?recoveryNames.has(c.name):!recoveryNames.has(c.name) && c.name!=='unfinished reload abandoned without award')),screenshots,
+      ...(section==='entry'?{routes:entryRoutes,input_trace:journey.validateGameplayInput(unfinishedTrace,unfinishedActions),
+        actions:unfinishedActions,
+        ash_road_preservation:{before_sha256:'f'.repeat(64),after_launch_sha256:'f'.repeat(64),
+          native_return:'observed unchanged',actual_resume:'observed via public Resume control'},campaign_entry:profiles.map(viewport=>({viewport,
         order:['last-stand','ash-road'],bounds:{x:0,y:0,width:100,height:44}}))}:{})};
   });
   return {reports,expected:{head,inputs}};
@@ -141,6 +150,13 @@ test('matrix qualification requires all actual branches, profiles and exact sour
     assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected));}
 });
 
+test('independent unfinished exits have one required entry owner instead of repeating every gameplay journey',()=>{
+  const {reports,expected}=matrixFixture();
+  assert.doesNotThrow(()=>assertLastStandMatrix(reports,expected));
+  assert.ok(reports.slice(0,10).every(r=>!r.checks.some(c=>c.name==='unfinished reload abandoned without award')));
+  assert.ok(reports[11].checks.some(c=>c.name==='unfinished reload abandoned without award'));
+});
+
 test('recovery qualification refuses every missing original fault profile and branch',()=>{
   const baseline=matrixFixture(),recovery=baseline.reports[10];
   for(const capture of recovery.screenshots){
@@ -162,6 +178,11 @@ test('entry qualification requires every original routing case and actual reacha
     r=>r.campaign_entry[0].viewport.width=1,r=>r.campaign_entry[0].order=['ash-road','last-stand'],
     r=>r.campaign_entry[0].bounds.width=43,r=>r.campaign_entry[0].bounds.x=2000,
     r=>r.campaign_entry[0].bounds.y=2000,r=>r.campaign_entry[0].bounds.width='100',
+    r=>r.input_trace.actions=1,r=>r.input_trace.observed_edges=2,r=>r.input_trace.matched=false,
+    r=>r.input_trace.outer_keyboard_edges=0,r=>r.actions.pop(),r=>r.actions[0].name='Seed',
+    r=>r.ash_road_preservation.native_return='unexecuted-in-lifecycle-section',
+    r=>r.ash_road_preservation.actual_resume='unexecuted-in-lifecycle-section',
+    r=>r.ash_road_preservation.after_launch_sha256='d'.repeat(64),
     r=>r.screenshots[0].load=0,r=>r.screenshots[0].scope='loader-fault',
     r=>r.viewport_partition.entry_viewports=[],r=>r.viewport_partition.phase_viewports=['approved-standard'],
   ];
@@ -178,12 +199,13 @@ test('actual journey section guards execute all Windows sections and keep Linux 
   const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
   const commonStart=source.indexOf('    if(section.entry || section.lifecycle){');
   const entryStart=source.indexOf('    if(section.entry){',commonStart);
-  const preparationStart=source.indexOf('    if(section.lifecycle){',entryStart);
+  const preparationStart=source.indexOf('    if(section.entry || section.lifecycle){',entryStart);
   const entryEnd=source.indexOf('    const geometry=',preparationStart);
-  const mainStart=source.indexOf('    if(section.lifecycle){',entryEnd),recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
+  const exitsStart=source.indexOf('    if(section.entry){',entryEnd);
+  const mainStart=source.indexOf('    if(section.lifecycle){',exitsStart),recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
   const recoveryEnd=source.indexOf("    scope='healthy';\n    report.input_trace=",recoveryStart);
   const blocks=[['common',source.slice(commonStart,entryStart)],['entry',source.slice(entryStart,preparationStart)],
-    ['lifecycle',source.slice(preparationStart,entryEnd)],['lifecycle',source.slice(mainStart,recoveryStart)],
+    ['common',source.slice(preparationStart,entryEnd)],['entry',source.slice(exitsStart,mainStart)],['lifecycle',source.slice(mainStart,recoveryStart)],
     ['recovery',source.slice(recoveryStart,recoveryEnd)]];
   const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
   for(const name of [undefined,'entry','lifecycle','recovery']){
@@ -194,10 +216,10 @@ test('actual journey section guards execute all Windows sections and keep Linux 
       const reached=new Error('Explicit inert first-side-effect sentinel');
       const stop=()=>{throw reached;};
       const run=new AsyncFunction('section','goto','gameClick','readFileSync','join','ROOT','assert','ash','skirmish',
-        'ashRoadRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page',
+        'ashRoadRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page','screenshot',
         '"use strict";let scope,rejoin,rejoinBinding;'+block);
       const execution=run(section,stop,stop,stop,()=>'', '/inert',assert,{},{},{},partitionOwner.LAST_STAND_ENTRY_ROUTES,
-        stop,{setViewportSize:stop});
+        stop,{setViewportSize:stop},stop);
       if(owner==='common'?(section.entry || section.lifecycle):section[owner])
         await assert.rejects(execution,error=>error===reached);
       else await execution;

@@ -21,6 +21,8 @@ const recoveryChecks=['.loader.js: real Retry recovered genuine scene','.wasm: r
   'corrupt bytes preserved by Retry','blocked writes recover through real Retry'];
 const entryChecks=['global fresh startup remains Skirmishes','zero Unity runtime payload before ordinary launch',
   'entry loss disclosure is rendered','entry disclosure names no-award unfinished loss',
+  'unfinished Return abandoned without award','unfinished reload abandoned without award',
+  'Ash Road record bytes preserved through native Last Stand Return','actual compatible Ash Road resume enters its game',
   'no unclassified browser/Unity/shader/request errors in any scope'];
 export function assertLastStandMatrix(reports,{head,inputs}) {
   assert.match(head,/^[a-f0-9]{40}$/,'Exact matrix checkout required');
@@ -45,7 +47,7 @@ export function assertLastStandMatrix(reports,{head,inputs}) {
     assert.deepEqual(report.binding.served_after,report.binding.served,'Served bytes changed');
     assert.ok(report.checks?.length && report.checks.every(c=>c.pass===true),'Every assertion must pass');
     const requiredChecks=section==='entry'?entryChecks:section==='recovery'?[...recoveryChecks,'no unclassified browser/Unity/shader/request errors in any scope']:
-      functionalChecks.filter(name=>!recoveryChecks.includes(name));
+      functionalChecks.filter(name=>!recoveryChecks.includes(name) && name!=='unfinished reload abandoned without award');
     for(const name of requiredChecks)assert.ok(report.checks.some(c=>c.name===name && c.pass===true),
       'Missing functional branch: '+name);
     for(const key of ['error','observer_failures','cleanup_error','persist_error','runtime_drift_error','motion_cleanup_error'])
@@ -53,8 +55,19 @@ export function assertLastStandMatrix(reports,{head,inputs}) {
     assert.deepEqual(report.viewport_partition.viewports,section==='lifecycle'?partition.viewports.map(v=>v.name):[]);
     assert.deepEqual(report.viewport_partition.phase_viewports,section==='entry'?[]:partition.phaseViewports.map(v=>v.name));
     assert.deepEqual(report.viewport_partition.entry_viewports,section==='entry'?partition.entryViewports.map(v=>v.name):[]);
-    assert.equal(report.viewport_partition.gameplay_viewport,section==='lifecycle'?'standard':null,'Original gameplay viewport required');
+    assert.equal(report.viewport_partition.gameplay_viewport,section!=='recovery'?'standard':null,'Original gameplay viewport required');
     if(section==='entry'){
+      const preserved=report.ash_road_preservation;
+      assert.match(preserved?.before_sha256??'',/^[a-f0-9]{64}$/,'Original compatible Ash Road bytes required');
+      assert.equal(preserved.after_launch_sha256,preserved.before_sha256,'Ash Road changed on ordinary launch');
+      assert.equal(preserved.native_return,'observed unchanged');
+      assert.equal(preserved.actual_resume,'observed via public Resume control');
+      assert.equal(report.input_trace?.matched,true,'Unfinished deployments require matched native input');
+      assert.equal(report.input_trace.actions,2);assert.equal(report.input_trace.observed_edges,4);
+      assert.ok(Number.isInteger(report.input_trace.outer_keyboard_edges) && report.input_trace.outer_keyboard_edges>=2,
+        'Unfinished Return requires actual native outer keyboard input');
+      assert.equal(report.actions?.length,2);
+      assert.ok(report.actions.every(a=>a.name==='Deploy' && a.action==='deploy'),'Both unfinished runs require ordinary Deploy');
       for(const expected of LAST_STAND_ENTRY_ROUTES){
         const observed=report.routes?.filter(r=>r.name===expected.name);
         assert.equal(observed?.length,1,'Every original startup-routing case is required exactly once');
