@@ -131,3 +131,78 @@ test('portrait partitions resume Ash Road in landscape and restore canonical Uni
   assert.ok(source.slice(restored,nextDeploy).includes('await resize(captureViewport)'),
     'The next Unity deployment must restore the canonical profile after the separate Ash Road check');
 });
+
+test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapshot', async () => {
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf('    const geometry=async(name)=>{'),end=source.indexOf('    const resize=async',begin);
+  assert.ok(begin>0 && end>begin);
+  for(const fault of [undefined,'hidden','collapsed','zero-area','backing-size']) {
+    let reads=0;
+    const box={x:0,y:0,width:fault==='zero-area'?0:1280,height:720},element={width:fault==='backing-size'?1290:1280,height:720,
+      getBoundingClientRect:()=>box};
+    const layout={coordinates:'top-left',width:1280,height:720,
+      controls:[{name:'ToggleMute',x:10,y:10,width:44,height:44,active:true,interactable:true}]};
+    const run=runInNewContext('(async()=>{'+source.slice(begin,end)+'return geometry("ToggleMute");})()',{
+      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],
+      getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'}),
+      page:{viewportSize:()=>({width:1280,height:720}),locator:()=>({
+        boundingBox:async()=>{reads++;return fault==='hidden'?null:box;},
+        evaluate:async fn=>{reads++;return fn(element);},
+      })},
+    });
+    if(fault)await assert.rejects(run);
+    else {const result=await run;assert.equal(result.item.name,'ToggleMute');assert.equal(result.canvas.width,1280);
+      assert.equal(reads,1,'Separate CSS/backing reads add a slow renderer roundtrip to every geometry check');}
+  }
+});
+
+test('actual phase inspection captures once while preserving geometry and focus checks',async()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf('    const resize=async'),phase=source.indexOf('    const phaseMatrix=',begin),
+    end=source.indexOf('    await resize(captureViewport);\n    const armGameClick=',phase);
+  assert.ok(begin>0 && phase>begin && end>phase);
+  const viewport={name:'standard',width:1280,height:720},captures=[];let geometry=0,focus=0;
+  await runInNewContext('(async()=>{'+source.slice(begin,end)+'await phaseMatrix("garage");})()',{
+    assert,check:(ok,name)=>assert.ok(ok,name),states:[{phase:'garage',paused:false}],
+    layouts:[{width:1280,height:720}],report:{screenshots:[]},
+    matrix:{viewports:[],phaseViewports:[viewport],captureViewport:viewport},
+    geometry:async()=>{geometry++;},keyboardFocus:async()=>{focus++;},screenshot:async name=>{captures.push(name);},
+    page:{setViewportSize:async()=>{},viewportSize:()=>viewport,waitForTimeout:async()=>{},
+      locator:()=>({evaluate:async()=>({width:1280,height:720})}),evaluate:async()=>({width:1280,height:720,
+        scrollWidth:1280,scrollHeight:720,nav:{bottom:80},link:{x:0,y:0,right:40,bottom:40},loss:{x:50,y:0,right:100,bottom:40}})},
+  });
+  assert.equal(geometry,1);assert.equal(focus,1);
+  assert.deepEqual(captures,['garage-standard'],'Phase metadata needs one fresh native capture, not a duplicate layout image');
+});
+
+test('actual journey check journals every observation without rewriting the growing report each time',()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf('  const check =',source.indexOf('export async function runLastStandJourney(')),
+    end=source.indexOf('  const write =',begin);
+  assert.ok(begin>0 && end>begin);
+  let clock=0,observerError;const snapshots=[],journal=[],report={status:'running',checks:[],inert_payload:'x'.repeat(5000)};
+  const check=runInNewContext(source.slice(begin,end)+'check;',{
+    assert,report,resultPath:'owned-result.json',lastResultWrite:-Infinity,Date:{now:()=>clock},
+    throwObserverFailure:()=>{if(observerError)throw observerError;},
+    writeFileSync:(_path,bytes)=>snapshots.push(JSON.parse(bytes)),
+    appendFileSync:(_path,bytes)=>journal.push(JSON.parse(bytes)),
+  });
+  for(let i=0;i<50;i++)check(true,'observed-'+i,{i});
+  assert.equal(snapshots.length,1,'Do not repeatedly serialize a growing multi-megabyte report inside one sampling interval');
+  assert.equal(journal.length,50);assert.equal(report.checks.length,50);
+  assert.deepEqual(journal.map(row=>row.name),Array.from({length:50},(_,i)=>'observed-'+i));
+  assert.throws(()=>check(false,'intentional failure'),/intentional failure/);
+  assert.equal(snapshots.length,2);assert.equal(snapshots.at(-1).checks.at(-1).pass,false);
+  assert.equal(journal.at(-1).pass,false,'A failed assertion must be durably retained before throwing');
+  clock=1000;check(true,'later observation');assert.equal(snapshots.length,3);
+  observerError=new Error('prior observer failure');
+  assert.throws(()=>check(true,'cannot admit observation'),error=>error===observerError);
+  assert.equal(journal.length,52);
+  const appendError=new Error('owned journal disk failure');
+  const failedCheck=runInNewContext(source.slice(begin,end)+'check;',{
+    assert,report:{status:'running',checks:[]},resultPath:'owned-result.json',lastResultWrite:-Infinity,
+    Date:{now:()=>0},throwObserverFailure:()=>{},appendFileSync:()=>{throw appendError;},
+    writeFileSync:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
+  });
+  assert.throws(()=>failedCheck(true,'must fail persistence'),error=>error===appendError);
+});

@@ -1170,7 +1170,7 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute, dirname } from 'node:path';
 import { tmpdir, release, arch } from 'node:os';
 import { gunzipSync } from 'node:zlib';
@@ -2910,10 +2910,17 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
   let native, page, motion, modelOracle, load=0, scope='healthy', fault, rejoin=false, rejoinBinding, originalError;
   const observerFailures=[];let observerError;
   const throwObserverFailure=()=>{if(observerError)throw observerError;};
+  let lastResultWrite=-Infinity;
   const check = (condition, name, detail) => {
     throwObserverFailure();
-    report.checks.push({name,pass:Boolean(condition),detail});
-    writeFileSync(resultPath,JSON.stringify(report,null,2));
+    const observation={name,pass:Boolean(condition),detail};
+    report.checks.push(observation);
+    // Keep every assertion durable without repeatedly rewriting accumulated
+    // screenshots/layouts. Failure and the existing finally retain full state.
+    appendFileSync(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
+    if(!condition || Date.now()-lastResultWrite>=1000) {
+      writeFileSync(resultPath,JSON.stringify(report,null,2));lastResultWrite=Date.now();
+    }
     assert.ok(condition,name);
   };
   const write = (name, data) => writeFileSync(join(output,name),JSON.stringify(data,null,2));
@@ -3127,9 +3134,13 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     report.renderer=await page.evaluate(()=>{const canvas=document.querySelector('#unity-canvas');const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');if(!gl)return{available:false};const info=gl.getExtension('WEBGL_debug_renderer_info');return{available:true,vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER),version:gl.getParameter(gl.VERSION),unmasked_renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null};});
     check(report.renderer.available,'actual WebGL renderer observed',report.renderer);
     const geometry=async(name)=>{
-      const canvas=await page.locator('#unity-canvas').boundingBox(); assert.ok(canvas);
+      const {canvas,pixels}=await page.locator('#unity-canvas').evaluate(element=>{
+        const box=element.getBoundingClientRect(),visible=getComputedStyle(element).visibility==='visible' && box.width>0 && box.height>0;
+        return {canvas:visible?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
+          pixels:{width:element.width,height:element.height}};
+      });
+      assert.ok(canvas);
       const layout=layouts.at(-1);check(layout?.coordinates==='top-left','real HUD top-left convention');
-      const pixels=await page.locator('#unity-canvas').evaluate(element=>({width:element.width,height:element.height}));
       check(Math.abs(layout.width-pixels.width)<=1 && Math.abs(layout.height-pixels.height)<=1,'HUD dimensions use actual canvas backing pixels',{canvas,pixels,layout});
       for(const item of layout.controls)if(item.active) {
         check(item.x>=-.5 && item.y>=-.5 && item.x+item.width<=layout.width+.5 && item.y+item.height<=layout.height+.5,`real HUD ${item.name} in canvas`);
@@ -3144,7 +3155,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       const control=layout.controls.filter(item=>item.name===name && item.active && item.interactable);
       check(control.length===1,`operable real HUD ${name}`);return{canvas,layout,item:control[0]};
     };
-    const resize=async viewport=>{
+    const resize=async(viewport,{capture=true}={})=>{
       const start=layouts.length;await page.setViewportSize({width:viewport.width,height:viewport.height});
       await page.waitForTimeout(400);
       const pixels=await page.locator('#unity-canvas').evaluate(element=>({width:element.width,height:element.height}));
@@ -3158,14 +3169,15 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(outer.scrollWidth<=outer.width && outer.scrollHeight<=outer.height,'wrapper has no overflow',outer);
       for(const box of [outer.link,outer.loss])check(box.x>=0 && box.right<=outer.width && box.y>=0 && box.bottom<=outer.nav.bottom,'Return and disclosure stay reachable',box);
       await keyboardFocus(page.locator('#last-stand-return'));
-      await screenshot(`layout-${viewport.name}-${states.at(-1).phase}-${report.screenshots.length}`);
+      if(capture)await screenshot(`layout-${viewport.name}-${states.at(-1).phase}-${report.screenshots.length}`);
     };
     for(const viewport of matrix.viewports)await resize(viewport);
     const captureViewport=matrix.captureViewport;
     const phaseMatrix=async label=>{
       const phase=states.at(-1).phase,paused=states.at(-1).paused;
       for(const viewport of matrix.phaseViewports) {
-        await resize(viewport);check(states.at(-1).phase===phase && states.at(-1).paused===paused,`${label}: same actual phase across profiles`);
+        // The named phase capture below also records this inspected layout.
+        await resize(viewport,{capture:false});check(states.at(-1).phase===phase && states.at(-1).paused===paused,`${label}: same actual phase across profiles`);
         await screenshot(`${label}-${viewport.name}`);
       }
       if(page.viewportSize().width!==captureViewport.width || page.viewportSize().height!==captureViewport.height)
