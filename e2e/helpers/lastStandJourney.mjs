@@ -1366,7 +1366,10 @@ export function validateExplicitPause({before,paused,returned,resumed,after,even
     assert.equal(returned[key],paused[key],'Explicit Pause changed '+key);
     assert.equal(resumed[key],paused[key],'Resume counted paused '+key);
   }
-  nativeIntervalEvents('hidden',paused,returned,events);
+  // Unity can acknowledge focus while the tab is still hidden. The frozen
+  // paused model sample need not follow visibility, but actual visible return
+  // must precede the user's measured Resume. Counters stay bound above.
+  nativeIntervalEvents('hidden',paused,resumed,events);
   elapsedTicks(resumed,after);
   validateModelObservation(paused,oracle);validateModelObservation(after,oracle);
   return {paused_ms:resumed.t-paused.t,resumed_ticks:after.tick-resumed.tick};

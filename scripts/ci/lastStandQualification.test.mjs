@@ -376,6 +376,31 @@ test('paused layout and Resume reject changed counters or document identity',asy
     await assert.rejects(battleLayoutFixture(false,fault),/changed|counted|origin|run/);
 });
 
+function earlyFocusPauseFixture() {
+  // Inert model rows reproduce the ordering retained in CI39181737284: Unity
+  // acknowledges focus while hidden, then the browser reports visible return.
+  const base={load:13,timeOrigin:10000,run:1,tick:173,hp:120,hull:120,kills:0,terminalElapsed:0,callbackSteps:1,catchingUp:false,
+    spawned:2,cannon:1,launcher:0,healed:0,closeHits:0,rangedHits:0,alive:1,status:'Running'};
+  const paused={...base,t:33000,paused:true,reason:'user'},returned={...paused,t:44460},
+    resumed={...base,t:44600,paused:false},after={...resumed,t:45600,tick:193};
+  return {before:{...base,t:32900,paused:false},paused,returned,resumed,after,
+    events:[{...base,kind:'visibilitychange',t:33909,hidden:true,focused:false},
+      {...base,kind:'focus',t:44459,hidden:true,focused:true},
+      {...base,kind:'visibilitychange',t:44473,hidden:false,focused:true}],
+    oracle:{173:paused,193:after}};
+}
+test('explicit Pause admits model focus acknowledgement before visible return but before Resume',()=>{
+  const evidence=journey.validateExplicitPause(earlyFocusPauseFixture());
+  assert.equal(evidence.resumed_ticks,20);
+  for(const fault of ['missing-visible','after-resume','advanced-paused-tick']) {
+    const value=earlyFocusPauseFixture();
+    if(fault==='missing-visible')value.events.pop();
+    if(fault==='after-resume')value.events.at(-1).t=value.resumed.t+1;
+    if(fault==='advanced-paused-tick')value.resumed.tick++;
+    assert.throws(()=>journey.validateExplicitPause(value),/foreground recovery|Resume counted/);
+  }
+});
+
 test('central workload budget separates web-server startup and bounds actual owners',()=>{
   assert.equal(typeof journey.lastStandJourneyTimeBudget,'function','Actual caller budget must be centralized');
   for(const [host,testMs]of [['win32',1_200_000],['linux',3_600_000]]){
