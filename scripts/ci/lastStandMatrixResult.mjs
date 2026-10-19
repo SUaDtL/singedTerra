@@ -17,35 +17,45 @@ const functionalChecks=[
   'corrupt bytes preserved by Retry','blocked writes recover through real Retry','pause stops combat ticks',
   'no unclassified browser/Unity/shader/request errors in any scope',
 ];
+const recoveryChecks=['.loader.js: real Retry recovered genuine scene','.wasm: real Retry recovered genuine scene',
+  'corrupt bytes preserved by Retry','blocked writes recover through real Retry'];
 export function assertLastStandMatrix(reports,{head,inputs}) {
   assert.match(head,/^[a-f0-9]{40}$/,'Exact matrix checkout required');
-  assert.equal(reports.length,10,'All ten successful viewport shards are required');
+  assert.equal(reports.length,11,'All ten lifecycle viewport shards and the complete recovery matrix are required');
   const seen=new Set();
   for(const report of reports) {
-    const {shard}=report.viewport_partition??{};
-    const partition=lastStandViewportPartition(shard,{host:'linux',profile:'linux-functional'});
-    assert.ok(shard && !seen.has(shard),'Missing or duplicate viewport shard');seen.add(shard);
+    const {shard,section}=report.viewport_partition??{};
+    assert.ok(['lifecycle','recovery'].includes(section),'Unknown matrix section');
+    if(section==='recovery')assert.equal(shard,null,'Recovery requires the complete original fault matrix');
+    else assert.ok(shard,'Lifecycle requires a viewport shard');
+    const partition=lastStandViewportPartition(shard??undefined,{host:'linux',profile:'linux-functional'});
+    const key=section==='recovery'?'recovery':shard;
+    assert.ok(!seen.has(key),'Missing or duplicate viewport/section shard');seen.add(key);
     assert.equal(report.status,'pass');
     assert.equal(report.qualification?.host,'linux');
     assert.equal(report.qualification.profile,'linux-functional');
-    assert.equal(report.qualification.functional,'viewport-shard-pass','A fragment cannot claim full qualification');
+    assert.equal(report.qualification.functional,'viewport-section-pass','A fragment cannot claim full qualification');
     assert.equal(report.binding?.current_head,head,'Stale matrix checkout');
     assert.deepEqual(report.binding.portable_text_inputs,inputs,'Changed matrix inputs');
     assert.deepEqual(report.binding,reports[0].binding,'All shards must observe the same source and runtime bytes');
     assert.equal(Object.keys(report.binding.served??{}).length,17,'Complete served runtime required');
     assert.deepEqual(report.binding.served_after,report.binding.served,'Served bytes changed');
     assert.ok(report.checks?.length && report.checks.every(c=>c.pass===true),'Every assertion must pass');
-    for(const name of functionalChecks)assert.ok(report.checks.some(c=>c.name===name && c.pass===true),
+    const requiredChecks=section==='recovery'?[...recoveryChecks,'no unclassified browser/Unity/shader/request errors in any scope']:
+      functionalChecks.filter(name=>!recoveryChecks.includes(name));
+    for(const name of requiredChecks)assert.ok(report.checks.some(c=>c.name===name && c.pass===true),
       'Missing functional branch: '+name);
     for(const key of ['error','observer_failures','cleanup_error','persist_error','runtime_drift_error','motion_cleanup_error'])
       assert.ok(!report[key],'Failed execution cannot qualify: '+key);
-    const selected=partition.viewports[0],viewport=selected.name;
-    assert.deepEqual(report.viewport_partition.viewports,[viewport]);
+    assert.deepEqual(report.viewport_partition.viewports,section==='lifecycle'?partition.viewports.map(v=>v.name):[]);
     assert.deepEqual(report.viewport_partition.phase_viewports,partition.phaseViewports.map(v=>v.name));
-    assert.equal(report.viewport_partition.gameplay_viewport,'standard','Original gameplay viewport required');
-    const required=[...['garage','workshop'].map(phase=>({phase,layoutOnly:true})),
-      ...(partition.phaseViewports.length?['garage','battle','result','workshop','background-result',
-        'storage-corrupt','storage-blocked','loader-fault','wasm-fault'].map(phase=>({phase,layoutOnly:false})):[])];
+    assert.equal(report.viewport_partition.gameplay_viewport,section==='lifecycle'?'standard':null,'Original gameplay viewport required');
+    const profiles=section==='recovery'?partition.phaseViewports:partition.viewports;
+    const required=section==='recovery'?['storage-corrupt','storage-blocked','loader-fault','wasm-fault'].map(phase=>({phase,layoutOnly:false})):
+      [...['garage','workshop'].map(phase=>({phase,layoutOnly:true})),
+        ...(partition.phaseViewports.length?['garage','battle','result','workshop','background-result'].map(phase=>({phase,layoutOnly:false})):[])];
+    for(const selected of profiles){
+    const viewport=selected.name;
     for(const {phase,layoutOnly} of required)
     {
       const capture=report.screenshots?.find(s=>layoutOnly?
@@ -65,8 +75,9 @@ export function assertLastStandMatrix(reports,{head,inputs}) {
         assert.equal(capture.state.timeOrigin,capture.layout.timeOrigin,'State/layout come from different documents');
       }
     }
+    }
   }
-  return {status:'pass',scope:'ten Linux functional viewport shards; no Windows/media qualification',
+  return {status:'pass',scope:'ten Linux lifecycle viewport shards and one five-profile recovery matrix; no Windows/media qualification',
     head,shards:[...seen].sort(),inputs};
 }
 export function lastStandMatrixResultFiles(root) {

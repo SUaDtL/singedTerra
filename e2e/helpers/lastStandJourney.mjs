@@ -1179,7 +1179,7 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const SAVE_KEY = 'singedTerra.lastStand.prototype.v1';
 const SELECTION_KEY = 'singedterra.command-center.selection.v1';
 const TITLE = 'Last Stand Campaigns journey preserves no-award exit and a stronger redeploy';
-import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition} from './lastStandMatrix.mjs';
+import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition, lastStandJourneySection} from './lastStandMatrix.mjs';
 export {lastStandViewportPartition} from './lastStandMatrix.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const fileHash = path => hash(readFileSync(path));
@@ -2904,7 +2904,10 @@ export function lastStandQualificationProfile(name='windows-player',host=process
 
 export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
-  const matrix=lastStandViewportPartition(process.env.LAST_STAND_JOURNEY_SHARD,{profile:qualification.name});
+  const sectionName=process.env.LAST_STAND_JOURNEY_SECTION;
+  const shard=sectionName==='recovery' && process.env.LAST_STAND_JOURNEY_SHARD===''?undefined:process.env.LAST_STAND_JOURNEY_SHARD;
+  const section=lastStandJourneySection(sectionName,{profile:qualification.name,shard});
+  const matrix=lastStandViewportPartition(shard,{profile:qualification.name});
   const base = admitJourneyBase(baseURL);
   if(player){runTool('ffmpeg', ['-version']); runTool('ffprobe', ['-version']);}
   const parent = admitEvidenceParent(process.env.LAST_STAND_EVIDENCE_PARENT);
@@ -2918,8 +2921,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     focus_scope:player?'separate native visible-window blur and hidden tab':'hidden tab; native blur separately required from Windows', device_performance_claim:false, url_origin:base.origin,
     visual_measurements:{controls:'actual HUD bounds converted once to CSS pixels',panels:'unmeasured in browser telemetry',
       fonts:'unmeasured in browser telemetry',contrast:'unmeasured in browser telemetry',focus_treatment:'matched screenshots awaiting rendered review'},
-    viewport_partition:{shard:matrix.shard,viewports:matrix.viewports.map(v=>v.name),
-      phase_viewports:matrix.phaseViewports.map(v=>v.name),gameplay_viewport:matrix.captureViewport.name},
+    viewport_partition:{shard:matrix.shard,section:section.name,viewports:section.lifecycle?matrix.viewports.map(v=>v.name):[],
+      phase_viewports:matrix.phaseViewports.map(v=>v.name),gameplay_viewport:section.lifecycle?matrix.captureViewport.name:null},
     lifecycle:[],qualification:{profile:qualification.name,host:process.platform,release:release(),arch:arch(),
       functional:'pending',rendered_audio:player?'pending':'unexecuted-requires-windows',
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
@@ -3092,6 +3095,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
             tx.oncomplete=()=>{db.close();done();};tx.onerror=()=>reject(tx.error);};});
       },{key:SELECTION_KEY,remembered,record,session});
     };
+    let ashBytes,originalAsh,start;
+    if(section.lifecycle){
     await goto(''); await dismissSplash();
     await selected('first-salvo');check(true,'global fresh startup remains Skirmishes');
     await openCampaigns(); await selected('last-stand');
@@ -3139,12 +3144,12 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     await page.setViewportSize({width:1280,height:720});
     await setRouteState({record:ashRoadRecord,remembered:ash});await goto('');await dismissSplash();await selected('ash-road');
     check(/resume ash road/i.test(await page.locator('[data-command-primary]').innerText()),'preserved compatible resume before Last Stand');
-    const ashBytes=async()=>page.evaluate(async()=>new Promise((done,reject)=>{
+    ashBytes=async()=>page.evaluate(async()=>new Promise((done,reject)=>{
       const request=indexedDB.open('singedterra-campaign',1);request.onerror=()=>reject(request.error);
       request.onsuccess=()=>{const db=request.result,read=db.transaction('campaign-runs').objectStore('campaign-runs').get('ash-road-local');
         read.onerror=()=>{db.close();reject(read.error);};read.onsuccess=()=>{db.close();done(JSON.stringify(read.result));};};
     }));
-    const originalAsh=await ashBytes();check(originalAsh===JSON.stringify(ashRoadRecord),'exact compatible Ash Road stored record before entry');
+    originalAsh=await ashBytes();check(originalAsh===JSON.stringify(ashRoadRecord),'exact compatible Ash Road stored record before entry');
     report.ash_road_preservation={before_sha256:hash(originalAsh),native_return:'MISSING until keyboard passes',actual_resume:'MISSING until keyboard passes'};
     await outerPointer(page.locator('.command-center__item[data-command-item="last-stand"]'));await selected('last-stand');
     const launch=page.getByRole('link',{name:'Launch Last Stand',exact:true});
@@ -3158,6 +3163,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(requests.some(r=>r.url.endsWith('.wasm')) && requests.some(r=>r.url.endsWith('.data')),'ordinary launch requests real Unity payload');
     report.renderer=await page.evaluate(()=>{const canvas=document.querySelector('#unity-canvas');const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');if(!gl)return{available:false};const info=gl.getExtension('WEBGL_debug_renderer_info');return{available:true,vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER),version:gl.getParameter(gl.VERSION),unmasked_renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null};});
     check(report.renderer.available,'actual WebGL renderer observed',report.renderer);
+    }
     const geometry=async(name)=>{
       const {canvas,pixels}=await page.locator('#unity-canvas').evaluate(element=>{
         const box=element.getBoundingClientRect(),visible=getComputedStyle(element).visibility==='visible' && box.width>0 && box.height>0;
@@ -3196,7 +3202,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await keyboardFocus(page.locator('#last-stand-return'));
       if(capture)await screenshot(`layout-${viewport.name}-${states.at(-1).phase}-${report.screenshots.length}`);
     };
-    for(const viewport of matrix.viewports)await resize(viewport);
+    if(section.lifecycle)for(const viewport of matrix.viewports)await resize(viewport);
     const captureViewport=matrix.captureViewport;
     const phaseMatrix=async label=>{
       const phase=states.at(-1).phase,paused=states.at(-1).paused;
@@ -3208,7 +3214,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       if(page.viewportSize().width!==captureViewport.width || page.viewportSize().height!==captureViewport.height)
         await resize(captureViewport);
     };
-    await resize(captureViewport);
+    if(section.lifecycle)await resize(captureViewport);
     const armGameClick=async(name,action,predicate=()=>true)=>{
       const {canvas,layout,item}=await geometry(name);await focused('gameplay pointer');
       await page.evaluate("window.__stInputArea='gameplay'");
@@ -3370,6 +3376,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       report.lifecycle.push(record);return record;
     };
     // Two unfinished exits exercise native Return and ordinary reload without an award.
+    if(section.lifecycle){
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
     await page.locator('[data-last-stand-command-view]').waitFor();
@@ -3390,7 +3397,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     await outerPointer(menu);await outerPointer(page.getByRole('dialog',{name:'Command Menu',exact:true}).getByRole('button',{name:'Return to Lobby',exact:true}));
     await page.locator('#lobby').waitFor({state:'visible'});await selected('ash-road');
     await outerPointer(page.locator('.command-center__item[data-command-item="last-stand"]'));
-    let start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
+    start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
     let restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished Return abandoned without award',restored);
     await resize(captureViewport);
@@ -3541,6 +3548,13 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       report.qualification.procedural_cues='pass';
     }
 
+    }
+    if(section.recovery){
+    if(!section.lifecycle){
+      await goto('');await dismissSplash();await selected('first-salvo');
+      await openCampaigns();await selected('last-stand');
+      check(!requests.some(r=>r.url.includes('/last-stand/Build/')),'zero Unity runtime payload before ordinary launch');
+    }
     // Loader and wasm faults: real error UI, keyboard Return, and ordinary Retry.
     for(const extension of ['.loader.js','.wasm']){
       scope=extension==='.wasm'?'wasm-fault':'loader-fault';
@@ -3593,6 +3607,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
       await page.locator('[data-last-stand-command-view]').waitFor();check(await page.locator('#st-splash').count()===0,`${probe}: native Return independent of save`);
     }
+    }
     scope='healthy';
     report.input_trace=validateGameplayInput(trace,report.actions);
     report.keyboard_trace=validateKeyboardGameplayInput(trace,report.keyboard_actions);
@@ -3602,7 +3617,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!consoleErrors.length && !requestErrors.length && !unexpectedHTTP.length,
       'no unclassified browser/Unity/shader/request errors in any scope',{consoleErrors,requestErrors,httpErrors:unexpectedHTTP});
     throwObserverFailure();
-    report.qualification.functional=matrix.shard?'viewport-shard-pass':'pass';
+    report.qualification.functional=section.name!=='full'?'viewport-section-pass':matrix.shard?'viewport-shard-pass':'pass';
     if(player)for(const key of ['rendered_audio','native_blur','capture_cadence'])report.qualification[key]='pass';
     report.status='pass';return{resultPath,output,report};
   } catch(error) {

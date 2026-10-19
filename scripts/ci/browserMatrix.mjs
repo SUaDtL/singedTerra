@@ -7,7 +7,8 @@ export function browserMatrix() {
     {lane:'product',suite:'product',shard:0,journey_shard:''},
     {lane:'last-stand-tier',suite:'tier',shard:0,journey_shard:''},
     ...LAST_STAND_VIEWPORTS.map((_,i)=>({lane:`last-stand-${i+1}`,suite:'campaigns',shard:0,
-      journey_shard:`${i+1}/${LAST_STAND_VIEWPORTS.length}`})),
+      journey_shard:`${i+1}/${LAST_STAND_VIEWPORTS.length}`,journey_section:'lifecycle'})),
+    {lane:'last-stand-11',suite:'campaigns',shard:0,journey_shard:'',journey_section:'recovery'},
   ]};
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href)

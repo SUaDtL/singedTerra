@@ -37,7 +37,7 @@ test('owned Chrome port readiness preserves strict bounds, child liveness and or
 });
 
 function proceduralCueCheck(player,names){
-  const begin=source.indexOf('    const cueNames=messages.filter'),end=source.indexOf('    // Loader and wasm faults',begin);
+  const begin=source.indexOf('    const cueNames=messages.filter'),end=source.indexOf('    }\n    if(section.recovery){',begin);
   assert.ok(begin>0 && end>begin);
   const checks=[],report={qualification:{procedural_cues:player?'pending':'unexecuted-requires-windows'}};
   const check=(pass,name,detail)=>{checks.push({pass,name,detail});assert.ok(pass,name);};

@@ -8,6 +8,26 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import * as partitionOwner from '../../e2e/helpers/lastStandMatrix.mjs';
+
+test('independent recovery runs beside lifecycle while preserving every original viewport',()=>{
+  const {include:lanes}=browserMatrix(),campaigns=lanes.filter(l=>l.suite==='campaigns');
+  assert.equal(campaigns.length,11,'Independent recovery cannot remain serial on the lifecycle critical path');
+  assert.deepEqual(campaigns.filter(l=>l.journey_section==='lifecycle').map(l=>l.journey_shard),
+    Array.from({length:10},(_,i)=>`${i+1}/10`));
+  assert.deepEqual(campaigns.filter(l=>l.journey_section==='recovery').map(l=>l.journey_shard),
+    ['']);
+  assert.equal(typeof partitionOwner.lastStandJourneySection,'function');
+  const scope={host:'linux',profile:'linux-functional',shard:'1/10'};
+  assert.deepEqual(partitionOwner.lastStandJourneySection(undefined,scope),{name:'full',lifecycle:true,recovery:true});
+  assert.deepEqual(partitionOwner.lastStandJourneySection('lifecycle',scope),{name:'lifecycle',lifecycle:true,recovery:false});
+  assert.deepEqual(partitionOwner.lastStandJourneySection('recovery',{...scope,shard:undefined}),{name:'recovery',lifecycle:false,recovery:true});
+  for(const value of ['',null,'skip','full','recovery; skip'])
+    assert.throws(()=>partitionOwner.lastStandJourneySection(value,scope));
+  for(const changed of [{host:'win32'},{profile:'windows-player'},{shard:'1/10'}])
+    assert.throws(()=>partitionOwner.lastStandJourneySection('recovery',{...scope,shard:undefined,...changed}));
+  assert.throws(()=>partitionOwner.lastStandJourneySection('lifecycle',{...scope,shard:undefined}));
+});
 
 test('Campaigns viewport partitions cover all ten profiles without a full-proof claim', () => {
   assert.equal(typeof journey.lastStandViewportPartition, 'function',
@@ -39,17 +59,28 @@ function matrixFixture() {
     'corrupt bytes preserved by Retry','blocked writes recover through real Retry','pause stops combat ticks',
     'no unclassified browser/Unity/shader/request errors in any scope'].map(name=>({name,pass:true}));
   const served=Object.fromEntries(Array.from({length:17},(_,i)=>[`unit-runtime-${i}`,{sha256:'c'.repeat(64),bytes:1}]));
-  const reports=Array.from({length:10},(_,i)=>{
-    const shard=`${i+1}/10`,selected=journey.lastStandViewportPartition(shard,{host:'linux',profile:'linux-functional'}).viewports[0],viewport=selected.name;
-    return {status:'pass',qualification:{host:'linux',profile:'linux-functional',functional:'viewport-shard-pass'},
-      viewport_partition:{shard,viewports:[viewport],phase_viewports:i<5?[viewport]:[],gameplay_viewport:'standard'},
-      binding:{current_head:head,portable_text_inputs:inputs,served,served_after:served},checks,
-      screenshots:['layout-garage','layout-workshop',...(i<5?['garage','battle','result','workshop','background-result','storage-corrupt','storage-blocked',
-        'loader-fault','wasm-fault']:[])].map(label=>{const phase=label.replace('layout-','');return {file:label.startsWith('layout-')?`layout-${viewport}-${phase}-0.png`:`${phase}-${viewport}.png`,
-          viewport:{width:selected.width,height:selected.height},sha256:'e'.repeat(64),load:1,
-          scope:phase.endsWith('-fault')?phase:'healthy',
-          state:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase},
-          layout:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase}};})};
+  const recoveryNames=new Set(['.loader.js: real Retry recovered genuine scene','.wasm: real Retry recovered genuine scene',
+    'corrupt bytes preserved by Retry','blocked writes recover through real Retry']);
+  const reports=Array.from({length:11},(_,i)=>{
+    const section=i<10?'lifecycle':'recovery',shard=i<10?`${i+1}/10`:null;
+    const partition=journey.lastStandViewportPartition(shard??undefined,{host:'linux',profile:'linux-functional'});
+    const profiles=section==='recovery'?partition.phaseViewports:partition.viewports;
+    const screenshots=profiles.flatMap(selected=>{
+      const viewport=selected.name;
+      const labels=section==='recovery'?['storage-corrupt','storage-blocked','loader-fault','wasm-fault']:
+        ['layout-garage','layout-workshop',...(i<5?['garage','battle','result','workshop','background-result']:[])];
+      return labels.map(label=>{const phase=label.replace('layout-','');return {file:label.startsWith('layout-')?`layout-${viewport}-${phase}-0.png`:`${phase}-${viewport}.png`,
+        viewport:{width:selected.width,height:selected.height},sha256:'e'.repeat(64),load:1,
+        scope:phase.endsWith('-fault')?phase:'healthy',
+        state:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase},
+        layout:{load:1,timeOrigin:1000,phase:phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase}};});
+    });
+    return {status:'pass',qualification:{host:'linux',profile:'linux-functional',functional:'viewport-section-pass'},
+      viewport_partition:{shard,section,viewports:section==='lifecycle'?profiles.map(v=>v.name):[],
+        phase_viewports:partition.phaseViewports.map(v=>v.name),gameplay_viewport:section==='lifecycle'?'standard':null},
+      binding:{current_head:head,portable_text_inputs:inputs,served,served_after:served},
+      checks:checks.filter(c=>c.name==='no unclassified browser/Unity/shader/request errors in any scope' ||
+        (section==='recovery'?recoveryNames.has(c.name):!recoveryNames.has(c.name))),screenshots};
   });
   return {reports,expected:{head,inputs}};
 }
@@ -57,7 +88,7 @@ function matrixFixture() {
 test('matrix qualification requires all actual branches, profiles and exact source/runtime bindings', () => {
   const {reports,expected}=matrixFixture();
   const result=assertLastStandMatrix(reports,expected);
-  assert.equal(result.status,'pass');assert.equal(result.shards.length,10);
+  assert.equal(result.status,'pass');assert.equal(result.shards.length,11);
   assert.match(result.scope,/no Windows\/media qualification/);
   const faults=[
     reports=>reports.pop(),reports=>reports.push(reports[0]),reports=>{reports[9]=reports[0];},
@@ -77,7 +108,10 @@ test('matrix qualification requires all actual branches, profiles and exact sour
     reports=>{reports[0].screenshots[0].layout.load=2;},
     reports=>{const c=reports[0].screenshots[0];delete c.load;delete c.state.load;delete c.layout.load;},
     reports=>{reports[0].screenshots[0].layout.timeOrigin=2000;},
-    reports=>{reports[0].screenshots.at(-1).scope='healthy';},
+    reports=>{reports[10].screenshots.at(-1).scope='healthy';},
+    reports=>{reports[10].viewport_partition.section='lifecycle';},
+    reports=>{reports[10].viewport_partition.shard='6/10';},
+    reports=>{reports[0].viewport_partition.section='full';},
     reports=>{reports[0].viewport_partition.viewports=['wrong'];},
     reports=>{reports[0].viewport_partition.phase_viewports=[];},
     reports=>{reports[0].viewport_partition.gameplay_viewport='wide';},
@@ -86,14 +120,49 @@ test('matrix qualification requires all actual branches, profiles and exact sour
     assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected));}
 });
 
+test('recovery qualification refuses every missing original fault profile and branch',()=>{
+  const baseline=matrixFixture(),recovery=baseline.reports.at(-1);
+  for(const capture of recovery.screenshots){
+    const sample=structuredClone(baseline);
+    sample.reports.at(-1).screenshots=sample.reports.at(-1).screenshots.filter(s=>s.file!==capture.file);
+    assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),capture.file);
+  }
+  for(const check of recovery.checks){
+    const sample=structuredClone(baseline);
+    sample.reports.at(-1).checks=sample.reports.at(-1).checks.filter(c=>c.name!==check.name);
+    assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),check.name);
+  }
+});
+
+test('actual journey section guards execute both Windows sections and keep Linux owners disjoint',async()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const entryStart=source.indexOf('    if(section.lifecycle){'),entryEnd=source.indexOf('    const geometry=',entryStart);
+  const mainStart=source.indexOf('    if(section.lifecycle){',entryEnd),recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
+  const recoveryEnd=source.indexOf("    scope='healthy';\n    report.input_trace=",recoveryStart);
+  const blocks=[['lifecycle',source.slice(entryStart,entryEnd)],['lifecycle',source.slice(mainStart,recoveryStart)],
+    ['recovery',source.slice(recoveryStart,recoveryEnd)]];
+  const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
+  for(const section of [{name:'full',lifecycle:true,recovery:true},{name:'lifecycle',lifecycle:true,recovery:false},
+    {name:'recovery',lifecycle:false,recovery:true}])for(const [owner,block]of blocks){
+      assert.ok(block.startsWith(`    if(section.${owner}){`));
+      const reached=new Error('Explicit inert first-side-effect sentinel');
+      const stop=()=>{throw reached;};
+      const run=new AsyncFunction('section','goto','gameClick','readFileSync','join','ROOT',
+        '"use strict";let scope;'+block);
+      const execution=run(section,stop,stop,stop,()=>'', '/inert');
+      if(section[owner])await assert.rejects(execution,error=>error===reached);
+      else await execution;
+    }
+});
+
 test('CI browser allocation contains every disjoint suite and exactly four general shards', () => {
   const {include:lanes}=browserMatrix();
-  assert.equal(lanes.length,16);
-  assert.equal(new Set(lanes.map(l=>l.lane)).size,16);
+  assert.equal(lanes.length,17);
+  assert.equal(new Set(lanes.map(l=>l.lane)).size,17);
   assert.deepEqual(lanes.filter(l=>l.suite==='core').map(l=>l.shard),[1,2,3,4]);
   assert.equal(lanes.filter(l=>l.suite==='product').length,1);
   assert.equal(lanes.filter(l=>l.suite==='tier').length,1);
-  assert.deepEqual(lanes.filter(l=>l.suite==='campaigns').map(l=>l.journey_shard),
+  assert.deepEqual(lanes.filter(l=>l.suite==='campaigns' && l.journey_section==='lifecycle').map(l=>l.journey_shard),
     Array.from({length:10},(_,i)=>`${i+1}/10`));
   const whole=journey.lastStandViewportPartition();
   assert.deepEqual(whole.viewports.map(v=>[v.name,v.width,v.height]),[
@@ -159,13 +228,13 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
 test('actual phase inspection captures once while preserving geometry and focus checks',async()=>{
   const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
   const begin=source.indexOf('    const resize=async'),phase=source.indexOf('    const phaseMatrix=',begin),
-    end=source.indexOf('    await resize(captureViewport);\n    const armGameClick=',phase);
+    end=source.indexOf('    if(section.lifecycle)await resize(captureViewport);\n    const armGameClick=',phase);
   assert.ok(begin>0 && phase>begin && end>phase);
   const viewport={name:'standard',width:1280,height:720},captures=[];let geometry=0,focus=0;
   await runInNewContext('(async()=>{'+source.slice(begin,end)+'await phaseMatrix("garage");})()',{
     assert,check:(ok,name)=>assert.ok(ok,name),states:[{phase:'garage',paused:false}],
     layouts:[{width:1280,height:720}],report:{screenshots:[]},
-    matrix:{viewports:[],phaseViewports:[viewport],captureViewport:viewport},
+    section:{lifecycle:true},matrix:{viewports:[],phaseViewports:[viewport],captureViewport:viewport},
     geometry:async()=>{geometry++;},keyboardFocus:async()=>{focus++;},screenshot:async name=>{captures.push(name);},
     page:{setViewportSize:async()=>{},viewportSize:()=>viewport,waitForTimeout:async()=>{},
       locator:()=>({evaluate:async()=>({width:1280,height:720})}),evaluate:async()=>({width:1280,height:720,

@@ -209,6 +209,7 @@ jobs:
           E2E_DENY_EXTERNAL_NETWORK: '1'
           LAST_STAND_QUALIFICATION_PROFILE: linux-functional
           LAST_STAND_JOURNEY_SHARD: ${{ matrix.journey_shard }}
+          LAST_STAND_JOURNEY_SECTION: ${{ matrix.journey_section }}
         run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand Campaigns journey"
       - name: Upload Playwright artifacts
         if: always()
