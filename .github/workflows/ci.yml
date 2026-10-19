@@ -186,6 +186,9 @@ jobs:
       - name: Prepare Last Stand browser sandbox
         if: matrix.suite == 'campaigns' || matrix.suite == 'tier'
         run: node scripts/ci/prepareLastStandBrowser.mjs
+      - name: Verify exact Last Stand test selection
+        if: matrix.suite == 'tier'
+        run: node --test scripts/ci/browserSelection.test.mjs
       - name: General browser shard
         if: matrix.suite == 'core'
         run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --workers=2 --grep-invert "@live|@last-stand"
@@ -198,7 +201,7 @@ jobs:
           VITE_BASE: /singedTerra/
           E2E_DENY_EXTERNAL_NETWORK: '1'
           LAST_STAND_QUALIFICATION_PROFILE: linux-functional
-        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "^Last Stand tier goals"
+        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand tier goals"
       - name: Last Stand shared Campaigns journey
         if: matrix.suite == 'campaigns'
         env:
@@ -206,7 +209,7 @@ jobs:
           E2E_DENY_EXTERNAL_NETWORK: '1'
           LAST_STAND_QUALIFICATION_PROFILE: linux-functional
           LAST_STAND_JOURNEY_SHARD: ${{ matrix.journey_shard }}
-        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "^Last Stand Campaigns journey"
+        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand Campaigns journey"
       - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -40,13 +40,14 @@ function job(source, id) {
 
 function assertLatencyAllocation(source) {
   const browser = job(source, 'browser');
+  assert.match(browser,/name: Verify exact Last Stand test selection\n        if: matrix\.suite == 'tier'\n        run: node --test scripts\/ci\/browserSelection\.test\.mjs/);
   assert.match(browser, /matrix: \$\{\{ fromJSON\(needs\.scope\.outputs\.browser_matrix\) \}\}/,
     'A single serial product lane leaves the measured 41-minute journey on the critical path');
   assert.match(browser, /--shard=\$\{\{ matrix\.shard \}\}\/4/);
   assert.match(browser, /LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}/);
-  assert.match(browser, /--grep "\^Last Stand tier goals"/);
-  assert.match(browser, /--grep "\^Last Stand Campaigns journey"/);
-  assert.match(browser,/name: Last Stand tier progression journey\n        if: matrix\.suite == 'tier'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "\^Last Stand tier goals"/);
+  assert.match(browser, /--grep "Last Stand tier goals"/);
+  assert.match(browser, /--grep "Last Stand Campaigns journey"/);
+  assert.match(browser,/name: Last Stand tier progression journey\n        if: matrix\.suite == 'tier'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand tier goals"/);
   const aggregate=job(source,'e2e');
   assert.match(aggregate,/pattern: playwright-last-stand-\[0-9\]\*-\$\{\{ github\.run_attempt \}\}/);
   assert.match(aggregate,/node scripts\/ci\/lastStandMatrixResult\.mjs "\$MATRIX_ROOT"/);
@@ -99,7 +100,7 @@ function assertWorkflow(source) {
   assert.ok(browser.includes(`if: matrix.suite == 'core'\n        run: npm run test:e2e -- --shard=\u0024{{ matrix.shard }}/4 --workers=2 --grep-invert "@live|@last-stand"`));
   assert.match(browser, /if: matrix\.suite == 'product'\n        run: npx playwright test -c playwright\.product-completion\.config\.ts/);
   assert.match(browser,/name: Last Stand tier progression journey\n        if: matrix\.suite == 'tier'/);
-  assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.suite == 'campaigns'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n          LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "\^Last Stand Campaigns journey"/);
+  assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.suite == 'campaigns'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n          LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand Campaigns journey"/);
   assert.match(browser,/name: Upload Playwright artifacts\n        if: always\(\)/,'Successful Linux qualification evidence must survive the ephemeral runner');
   assert.match(browser, /name: playwright-\$\{\{ matrix\.lane \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.equal(source.match(/uses: actions\/checkout@/g)?.length, source.match(/persist-credentials: false/g)?.length);
