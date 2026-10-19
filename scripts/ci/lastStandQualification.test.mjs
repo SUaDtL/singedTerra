@@ -258,6 +258,37 @@ test('hidden return admits the current model focus acknowledgement before cohere
   assert.equal(result.cues.length,0);
 });
 
+function focusRefreshFixture(){
+  // Inert reduction of CI shard 5: visibility republishes an unchanged tick
+  // before AdvanceAt processes the elapsed time since the last model callback.
+  const x=focusAckFixture(),state=x.states[0],model=x.oracle[20];
+  x.states=[{...state,t:6750,tick:19},{...state,t:6800,tick:20},
+    {...state,t:7004,tick:20},{...state,t:7040,tick:25}];
+  x.cues=x.cues.map(c=>({...c,t:c.t-44}));
+  for(let tick=21;tick<=25;tick++)x.oracle[tick]={...model,tick,cannon:tick>=23?1:0};
+  return x;
+}
+
+test('focus-only session refresh does not replace the actual advancing callback clock',()=>{
+  const result=journey.validateAwayAudioReturn(focusRefreshFixture());
+  assert.deepEqual(result.boundary.callbacks.map(c=>[c.from,c.to]),[[20,25]]);
+  assert.equal(result.cues.length,0);
+});
+
+test('focus refresh retains the short callback budget, exact model cues and clock identity',()=>{
+  const mutations=[x=>x.states[1].t=6400,x=>x.states[1].tick=19,
+    x=>x.states[1].load++,x=>x.states[1].timeOrigin++,x=>x.states[1].scope='stale',
+    x=>x.states[1].sessionRun++,x=>x.states[1].runId++,x=>x.states.shift(),
+    x=>x.states[3].tick=30,x=>x.states[3].muted=true,x=>x.states[3].paused=true,
+    x=>x.states[3].saveState='blocked',x=>x.states[3].cannonDamage++,
+    x=>x.encounters[0].catchingUp=true,
+    x=>x.cues.push({...x.cues[0]}),x=>x.cues[0].text='ST_LS_AUDIO event=destruction\n'];
+  for(const [i,mutate]of mutations.entries()){
+    const x=focusRefreshFixture();mutate(x);
+    assert.throws(()=>journey.validateAwayAudioReturn(x),'Invalid inert callback clock '+i+' must fail');
+  }
+});
+
 test('focus acknowledgement anchor preserves identity, latest focus and silent hidden boundaries',()=>{
   const mutations=[x=>x.encounters[0].t=6999,x=>x.encounters[0].load++,
     x=>x.encounters[0].timeOrigin++,x=>x.encounters[0].scope='stale',x=>x.encounters[0].run++,

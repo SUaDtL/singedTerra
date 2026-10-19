@@ -1444,19 +1444,38 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     assert.ok(resumed && !resumed.paused && !resumed.failed && !resumed.catchingUp,
       'Current reconciled foreground model boundary absent');
     validateModelObservation(resumed,oracle);
-    const loops=states.filter(s=>current(s) && s.sessionRun===before.run &&
-      (s.runId || s.pendingRunId)===before.loop.runId && s.t>=resumed.t && s.t<=recovered &&
+    const runLoops=states.filter(s=>current(s) && s.sessionRun===before.run &&
+      (s.runId || s.pendingRunId)===before.loop.runId && s.t<=recovered &&
       ['session','defeat-staged'].includes(s.action));
+    const loops=runLoops.filter(s=>s.t>=resumed.t);
     const groups=new Map();
     for(const cue of returnCues) {
       const next=loops.find(s=>s.t>=cue.t),previous=next && loops.findLast(s=>s.t<cue.t);
       const terminals=next?.action==='defeat-staged' && previous?encounters.filter(e=>current(e) &&
         e.run===before.run && e.action==='terminal' && e.tick===next.tick && e.t>previous.t && e.t<=next.t):[];
       const terminal=terminals[0];
+      // OnApplicationFocus emits Changed without advancing RunClock. A duplicate
+      // tick refresh cannot replace the preceding advancing callback's clock.
+      // Admit that earlier anchor only with current-run tick advancement proof.
+      let clockPrevious=previous;
+      if(previous){
+        let index=runLoops.indexOf(previous);
+        while(index>0 && runLoops[index-1].tick===previous.tick)index--;
+        clockPrevious=runLoops[index];
+        if(clockPrevious!==previous){
+          const prior=runLoops[index-1];
+          assert.ok(prior && prior.t<clockPrevious.t && prior.tick<clockPrevious.tick &&
+            clockPrevious.tick===resumed.tick && clockPrevious.t<resumed.t &&
+            clockPrevious.phase==='battle' && !clockPrevious.paused && !clockPrevious.muted &&
+            clockPrevious.saveState==='ready' && clockPrevious.cannonDamage===before.loop.cannonDamage &&
+            clockPrevious.hull===oracle[clockPrevious.tick]?.hp && clockPrevious.kills===oracle[clockPrevious.tick]?.kills,
+            'Return callback lacks an advancing current-run clock anchor');
+        }
+      }
       assert.ok(next && previous && next.tick>previous.tick && previous.tick>=resumed.tick &&
         (next.phase==='battle' || terminal && next.phase==='settling') && !next.paused && !next.muted && next.saveState==='ready' &&
-        next.cannonDamage===before.loop.cannonDamage && next.t-previous.t<=500 &&
-        Math.abs((next.t-previous.t-(terminal?terminal.terminalElapsed*1000:0))/50-(next.tick-previous.tick))<=1.01,
+        next.cannonDamage===before.loop.cannonDamage && next.t-clockPrevious.t<=500 &&
+        Math.abs((next.t-clockPrevious.t-(terminal?terminal.terminalElapsed*1000:0))/50-(next.tick-previous.tick))<=1.01,
         'Return cue lacks a fresh eligible foreground model callback');
       if(terminal) {
         // AdvanceAt retains elapsed after the final combat step; staging moves
