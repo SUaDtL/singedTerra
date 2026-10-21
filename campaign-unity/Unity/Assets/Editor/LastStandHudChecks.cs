@@ -350,7 +350,7 @@ public static class LastStandHudChecks
     static void RequireGarageVisible(Fixture f)
     {
         foreach (string id in new[] { "PhaseHeading", "PhaseDetail", "SaveStatus" }) RequireVisible(f.Text(id), "required garage " + id);
-        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" })
+        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects" })
         {
             var button = f.Button(id);
             bool expected = id == "ToggleFitting" || id == "Deploy" || id == "ToggleMute" || (id == "ToggleTier" && f.Loop.Progression.SaveState == "ready") ||
@@ -490,9 +490,9 @@ public static class LastStandHudChecks
     static void RequireBattleInventory(Fixture f)
     {
         RequireVisible(f.Text("PhaseHeading"), "required battle PhaseHeading");
-        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" })
+        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects" })
         {
-            var button = f.Button(id); bool active = id == "Pause" || id == "ToggleMute";
+            var button = f.Button(id); bool active = id == "Pause" || id == "ToggleMute" || id == "Effects";
             Require(button.gameObject.activeInHierarchy == active, "actual battle stable control inventory " + id);
             if (!active) continue;
             Require(button.enabled, "actual battle Button enabled " + id);
@@ -738,8 +738,8 @@ public static class LastStandHudChecks
         Require(report.phase == runtimeLoop.Phase && report.coordinates == "top-left", "runtime current phase and top-left coordinate contract " + state);
         Require(report.width == Screen.width && report.height == Screen.height && report.width > 0 && report.height > 0,
             "runtime actual Screen dimensions " + state);
-        string[] ids = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
-        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exactly nine stable control identities " + state);
+        string[] ids = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects" };
+        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exactly ten stable control identities " + state);
         var seen = new HashSet<string>(); var corners = new Vector3[4];
         for (int i = 0; i < ids.Length; i++)
         {
@@ -771,11 +771,11 @@ public static class LastStandHudChecks
                 Math.Abs(control.width-(hi.x-lo.x)) < .2f && Math.Abs(control.height-(hi.y-lo.y)) < .2f,
                 "runtime actual shop top-left bounds " + control.name);
         }
-        Require(seen.Count == 20,"runtime exact unique core9/shop11 union");
+        Require(seen.Count == 21,"runtime exact unique core10/shop11 union");
         int count = runtimeReports.Count;
         runtimeHud.Refresh(); runtimeHud.Layout(); runtimeHud.Layout();
         Require(runtimeReports.Count == count, "runtime duplicate current layout payload suppressed " + state);
-        Debug.Log("ST_LS_HUD_RUNTIME_STATE " + state + " phase=" + report.phase + " screen=" + report.width + "x" + report.height + " nine-current-controls duplicate-suppressed");
+        Debug.Log("ST_LS_HUD_RUNTIME_STATE " + state + " phase=" + report.phase + " screen=" + report.width + "x" + report.height + " ten-current-controls duplicate-suppressed");
     }
     static void RuntimeUpdate()
     {
@@ -933,11 +933,11 @@ public static class LastStandHudChecks
     static void OutcomeInventory(OutcomeFixture f)
     {
         string phase=f.Loop.Phase; bool ready=f.Loop.Progression.SaveState=="ready";
-        string[] ids={"ToggleFitting","Deploy","Claim","Purchase","Redeploy","RetrySave","Pause","ToggleMute","ToggleTier"};
+        string[] ids={"ToggleFitting","Deploy","Claim","Purchase","Redeploy","RetrySave","Pause","ToggleMute","ToggleTier","Effects"};
         AssertOrdinaryInventory(f.Root,"outcome " + phase);
         foreach(string id in ids)
         {
-            bool active=id=="ToggleMute" || id=="RetrySave"&&!ready || id=="Pause"&&(phase=="battle"||phase=="settling") ||
+            bool active=id=="ToggleMute" || id=="RetrySave"&&!ready || (id=="Pause"||id=="Effects")&&(phase=="battle"||phase=="settling") ||
                 id=="Claim"&&phase=="result" || (id=="Purchase"||id=="Redeploy"||id=="ToggleFitting")&&phase=="workshop" ||
                 (id=="Deploy"||id=="ToggleFitting")&&phase=="garage" || id=="ToggleTier"&&ready&&(phase=="garage"||phase=="workshop");
             var b=f.Button(id); Require(b.gameObject.activeInHierarchy==active,"outcome exact active inventory "+id+" "+phase);
@@ -1140,7 +1140,7 @@ public static class LastStandHudChecks
 
     // T-08 adds input assertions to the same imported scene and owner fixtures.
     // Earlier assertions, fixtures, selectors and geometry remain unchanged.
-    static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
+    static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects" };
     static readonly string[] ShopControlIds = { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
         "ShopCard_cannonAttackBuy", "ShopCard_launcherAttackBuy", "ShopCard_hullCapacityBuy", "ShopCard_armorBuy",
         "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy" };
@@ -1153,14 +1153,14 @@ public static class LastStandHudChecks
     static void AssertOrdinaryInventory(RectTransform root, string state)
     {
         var core = new HashSet<string>(InputIds); var shop = new HashSet<string>(ShopControlIds);
-        Require(core.Count == 9 && shop.Count == 11,"exact stable core9 and shop11 sets " + state);
+        Require(core.Count == 10 && shop.Count == 11,"exact stable core10 and shop11 sets " + state);
         foreach (string id in InputIds)
             Require(root.Find("LastStandDock/" + id).GetComponent<Button>() == FindOrdinaryButton(root,id),
                 "unchanged exact core control path " + id + " " + state);
-        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length == 20,"exact twenty ordinary Buttons " + state);
+        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length == 21,"exact twenty-one ordinary Buttons " + state);
         foreach (var button in all)
             Require(core.Remove(button.name) || shop.Remove(button.name),"unique complete ordinary Button union " + button.name + " " + state);
-        Require(core.Count == 0 && shop.Count == 0,"complete exact core9/shop11 sets " + state);
+        Require(core.Count == 0 && shop.Count == 0,"complete exact core10/shop11 sets " + state);
     }
     static readonly string[] InputStates = { "garage", "battle", "paused", "settling", "result", "workshop", "capped", "blocked", "save-error" };
     public static void RunInput()
@@ -1171,9 +1171,70 @@ public static class LastStandHudChecks
             Case("test_visible_enabled_navigation_order", InputNavigation, ref failures);
             Case("test_keyboard_activation_and_focus_style", InputActivation, ref failures);
             Case("test_pointer_targets_match_visual_bounds", InputBounds, ref failures);
+            Case("test_effects_control_preserves_run_and_setting_state", EffectsControl, ref failures);
         }
         finally { LastStandLoopController.StorageFactory = factory; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }
         if (failures != 0) throw new InvalidOperationException("Actual input HUD assertion failures: " + failures);
+    }
+    public static void RunEffects()
+    {
+        var factory = LastStandLoopController.StorageFactory; int failures = 0;
+        try { Case("test_effects_control_preserves_run_and_setting_state", EffectsControl, ref failures); }
+        finally { LastStandLoopController.StorageFactory = factory; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }
+        if (failures != 0) throw new InvalidOperationException("Actual effects HUD assertion failures: " + failures);
+    }
+    static void EffectsControl()
+    {
+        foreach (var profile in OutcomeProfiles) foreach (string state in new[] { "battle", "paused", "settling" })
+        using (var f = InputFixture(profile,state))
+        {
+            var button = FindOrdinaryButton(f.Root,"Effects");
+            Require(button.IsActive() && button.IsInteractable(),"effects setting available in " + state);
+            var label = button.GetComponentInChildren<Text>();
+            var model = f.Loop.Session.Model; string snapshot = model.Snapshot(), save = f.Storage.Value, phase = f.Loop.Phase;
+            bool muted = f.Loop.Muted, paused = f.Loop.Session.Paused;
+            int clicks = 0; button.onClick.AddListener(() => clicks++);
+            foreach (bool submit in new[] { false, true })
+            {
+                bool previous = f.Loop.Session.View.FullEffects;
+                Require(label.text == (previous ? "EFFECTS FULL" : "EFFECTS REDUCED"),"effects label reads actual View state");
+                var bounds = f.Bounds((RectTransform)button.transform);
+                Require(bounds.width >= 43.99f && bounds.height >= 43.99f,"effects actual 44px target");
+                Require(label.preferredHeight <= label.rectTransform.rect.height + .2f,"effects label fits " + profile);
+                if (submit)
+                {
+                    KeyboardCommand(f,"enter-first");
+                    int remaining = VisibleEnabledInput(f).Count;
+                    while (EventSystem.current.currentSelectedGameObject != button.gameObject && remaining-- > 0) KeyboardCommand(f,"next");
+                    SelectedInput(button,"effects reached by ordinary Tab navigation"); SubmitInput(button);
+                }
+                else Click(button);
+                Require(clicks == (submit ? 2 : 1) && f.Loop.Session.View.FullEffects != previous,"one effects activation uses actual View owner");
+                Require(label.text == (f.Loop.Session.View.FullEffects ? "EFFECTS FULL" : "EFFECTS REDUCED"),"effects label immediately synchronizes");
+                Require(f.Loop.Session.Model == model && model.Snapshot() == snapshot && f.Storage.Value == save && f.Loop.Phase == phase &&
+                    f.Loop.Muted == muted && f.Loop.Session.Paused == paused,"effects change preserves model save phase audio and pause");
+            }
+            f.Loop.Session.ToggleEffects();
+            Require(label.text == (f.Loop.Session.View.FullEffects ? "EFFECTS FULL" : "EFFECTS REDUCED"),"external ordinary setting change refreshes label");
+        }
+        foreach (string state in new[] { "garage", "result", "workshop", "blocked", "catch-up", "failure" })
+        using (var f = InputFixture(OutcomeProfiles[0],state == "catch-up" || state == "failure" ? "battle" : state))
+        {
+            if (state == "catch-up")
+            {
+                var clock = (LastStandRunClock)typeof(EncounterSession).GetField("runClock",Private).GetValue(f.Loop.Session);
+                f.Loop.Session.AdvanceAt(clock.LastTimestamp + 10);
+                Require(f.Loop.Session.CatchingUp,"actual catch-up disables effects setting");
+            }
+            if (state == "failure") typeof(EncounterSession).GetMethod("Fail",Private).Invoke(f.Loop.Session,new object[] { "EffectsCheck" });
+            f.Refresh(); var button = FindOrdinaryButton(f.Root,"Effects");
+            Require(!button.IsActive() || !button.IsInteractable(),"effects unavailable in " + state);
+            bool effects = f.Loop.Session.View.FullEffects, muted = f.Loop.Muted;
+            string save = f.Storage.Value, phase = f.Loop.Phase, snapshot = f.Loop.Session.Model?.Snapshot();
+            int calls = 0; button.onClick.AddListener(() => calls++); Click(button); SubmitInput(button);
+            Require(calls == 0 && f.Loop.Session.View.FullEffects == effects && f.Loop.Muted == muted && f.Storage.Value == save &&
+                f.Loop.Phase == phase && f.Loop.Session.Model?.Snapshot() == snapshot,"unavailable effects input cannot change any owner " + state);
+        }
     }
     static OutcomeFixture InputFixture(Vector2Int profile, string state)
     {
@@ -1292,7 +1353,7 @@ public static class LastStandHudChecks
             }
         }
         foreach (string id in InputIds)
-        using (var f = InputFixture(OutcomeProfiles[0],id == "Claim" ? "result" : id == "Purchase" || id == "Redeploy" ? "workshop" : id == "RetrySave" ? "blocked" : id == "Pause" ? "battle" : "garage"))
+        using (var f = InputFixture(OutcomeProfiles[0],id == "Claim" ? "result" : id == "Purchase" || id == "Redeploy" ? "workshop" : id == "RetrySave" ? "blocked" : id == "Pause" || id == "Effects" ? "battle" : "garage"))
         {
             if (id == "ToggleTier") { f.Deploy(); f.Defeat(); f.FinishSettling(); f.Loop.Claim(); f.Refresh(); }
             var b = f.Button(id); Require(b.IsActive() && b.IsInteractable(),"actual eligible action "+id);

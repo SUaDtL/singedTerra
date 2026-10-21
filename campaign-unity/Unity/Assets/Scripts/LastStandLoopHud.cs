@@ -15,7 +15,7 @@ namespace SingedTerra.LastStand
         readonly RectTransform root, card, dock;
         readonly RectTransform hullFill;
         readonly Text heading, detail, status;
-        readonly Button deploy, claim, purchase, redeploy, retry, fitting, pause, mute, tier;
+        readonly Button deploy, claim, purchase, redeploy, retry, fitting, pause, mute, tier, effects;
         readonly Button[] actions;
         readonly Button shopEntry, shopClose;
         readonly Button[] shopTabs, shopActions, allActions;
@@ -195,7 +195,8 @@ namespace SingedTerra.LastStand
             pause = Action("Pause","PAUSE",dock,loop.TogglePause);
             mute = Action("ToggleMute","SOUND ON",dock,loop.ToggleMute);
             tier = Action("ToggleTier","",dock,() => loop.SelectTier(loop.Progression.SelectedTier == 1 ? 2 : 1));
-            actions = new[] { fitting, deploy, claim, purchase, redeploy, retry, pause, mute, tier };
+            effects = Action("Effects","",dock,ToggleEffects);
+            actions = new[] { fitting, deploy, claim, purchase, redeploy, retry, pause, mute, tier, effects };
             shopEntry = Action("ShopEntry","MECHANICS SHOP",dock,OpenShop);
             shopPanel = Panel("ShopPanel",root,true);
             shopHeading = Label("ShopHeading",shopPanel,16); shopHeading.text = "MECHANICS SHOP";
@@ -235,6 +236,9 @@ namespace SingedTerra.LastStand
             observedSession.Stepped += ObserveCombat;
         }
         void ToggleFitting() { loop.GetComponent<SingedTerra.Art.TankPresentation>().ToggleAttachment(); Refresh(); }
+        bool CanChangeEffects()
+        { return (loop.Phase == "battle" || loop.Phase == "settling") && loop.Session.Model != null && loop.Session.Failure == "" && !loop.Session.CatchingUp; }
+        void ToggleEffects() { if (CanChangeEffects()) loop.Session.ToggleEffects(); }
         // A transient presentation snapshot, read once per refresh. No copied
         // progression, save, simulation, reservation or award state is owned here.
         sealed class Presentation
@@ -260,16 +264,17 @@ namespace SingedTerra.LastStand
             bool canPause = (battle || settling) && model != null && loop.Session.Failure == "" &&
                 !loop.Session.CatchingUp && (!loop.Session.Paused || loop.Session.CanRun);
             var state = new Presentation { Phase = phase, Primary = garage ? "Deploy" : battle || settling ? "Pause" : result ? "Claim" : workshop ? "Redeploy" : "RetrySave",
-                Active = new[] { garage || workshop, garage, result, workshop, workshop, !ready, battle || settling, true, (garage || workshop) && ready },
+                Active = new[] { garage || workshop, garage, result, workshop, workshop, !ready, battle || settling, true, (garage || workshop) && ready, battle || settling },
                 Available = new[] { model == null, canDeploy, ready && progress.PendingDefeat != null &&
                     progress.ActiveRunId == 0 && (progress.PendingDefeat.Reward == 0 || progress.Wallet != int.MaxValue),
                     ready && progress.ActiveRunId == 0 && progress.PendingDefeat == null &&
                     progress.NextCost != 0 && progress.Wallet >= progress.NextCost, canDeploy, true,
-                    canPause, true, ready && model == null && progress.ActiveRunId == 0 && progress.PendingDefeat == null && progress.TierTwoUnlocked },
+                    canPause, true, ready && model == null && progress.ActiveRunId == 0 && progress.PendingDefeat == null && progress.TierTwoUnlocked, CanChangeEffects() },
                 Labels = new[] { launcher ? "FIT REPAIR" : "FIT LAUNCHER", canDeploy ? "DEPLOY" : "DEPLOY UNAVAILABLE",
                     "CLAIM 1 SALVAGE", "BUY CANNON ATTACK", "REDEPLOY", "RETRY SAVE",
                     (loop.Session.Paused ? "RESUME" : "PAUSE") + (canPause ? "" : " UNAVAILABLE"), loop.Muted ? "SOUND OFF" : "SOUND ON",
-                    progress.TierTwoUnlocked ? "SELECT TIER " + (progress.SelectedTier == 1 ? "2" : "1") : "TIER 2 LOCKED" } };
+                    progress.TierTwoUnlocked ? "SELECT TIER " + (progress.SelectedTier == 1 ? "2" : "1") : "TIER 2 LOCKED",
+                    loop.Session.View.FullEffects ? "EFFECTS FULL" : "EFFECTS REDUCED" } };
             if (garage)
             {
                 state.Heading = "LAST STAND";
@@ -412,7 +417,7 @@ namespace SingedTerra.LastStand
             shopView = run ? LastStandShopPresentation.ProjectRun(owner) : permanent ?
                 LastStandShopPresentation.ProjectPermanent(loop.Progression,fitting) : null;
             shopEntry.gameObject.SetActive(active); StyleAction(shopEntry,false,active);
-            shopEntry.GetComponentInChildren<Text>(true).text = shopOpen ? "CLOSE SHOP" : "MECHANICS SHOP";
+            shopEntry.GetComponentInChildren<Text>(true).text = shopOpen ? "CLOSE SHOP" : run ? "SHOP" : "MECHANICS SHOP";
             StyleAction(shopClose,false,shopOpen);
             shopHeading.text = run ? "SHOP / THIS RUN" : "SHOP / PERMANENT";
             shopCurrency.text = (run ? "SCRAP  " : "SALVAGE  ") + (shopView?.Balance ?? 0);

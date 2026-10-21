@@ -95,8 +95,9 @@ The timeout and input protections remain unchanged. A fresh native run needs a
 suitable idle desktop window. Hosted CI, merge and deployment are not
 established by the local results above.
 
-The owner approved sprint execution in ordinary language. The combat-treatment
-choice remains open, as do human visual, motion and listening acceptance. No
-code, receipt or scripted browser observation substitutes for those decisions.
-The sprint's combat task remains pending; this candidate is the independently
-reviewed clarity, measurement and dependency portion of the sprint.
+The owner approved sprint execution in ordinary language and then selected
+Option 1: retain the current art and camera and improve combat feedback in the
+same PR #541. The [combat continuation](FIRST-SESSION-COMBAT.md) records the
+selected corrections and their checks. Human visual, motion and listening
+acceptance remain open. No code, receipt or scripted browser observation
+substitutes for that acceptance.

@@ -4975,3 +4975,18 @@ The fresh R07 review found no remaining CPU defect but identified a supported sa
 - Use the existing simulation step definition when formatting seconds and existing HUD text/layout owners for lifetime and pending-save copy. Expand only the affected pure compiler source lists and Editor expectations. Do not change combat, economy, save schema, goals, art or camera.
 - Keep the tuning result as one proposed optional same-tier redeploy cue. Measurements show the first upgrade's benefit is obscured by immediately moving to Tier 2; automated observations do not prove human confusion. No numeric tuning or new cue is authorized by this assessment alone.
 - Combat treatment remains open pending the owner's actual keep/change choice from the matched captures. Continue independent clarity and qualification work; do not invent that decision, visual acceptance, listening acceptance, merge authority or a deployment result.
+
+## 2026-10-21 Last Stand combat feedback continuation - confidence: high - intent: owner's Option 1 in PR #541
+
+- The owner selected Option 1: retain the current art and camera while improving combat feedback and readability, then explicitly requested the same PR. Record this as the implementation direction; finished visual, motion and listening acceptance remain separate.
+- Select two source-confirmed presentation defects: final foe state can attribute a later launcher kill to an earlier cannon hit, and reduced effects leave muzzle/hull flashes active. Use event-time outcomes and compact reduced-mode hit/destruction cues, retaining aim, recoil, model rules and rewards.
+- Expose the existing effects setting in the playable HUD. Its older encounter HUD is disabled by the dedicated Last Stand controller, so the setting currently has no player control. Reuse the existing action/layout/keyboard owners, and check actual labels, targets and paused toggling across five profiles.
+- Continue from the existing branch and PR #541. Head 60f6e19503b09f526e712aa24b3d9a0a0eb0b259 passed hosted CI before this continuation; that result does not qualify the new edits. Preserve prior captures, failed attempts, native artifacts and all unrelated work.
+
+## 2026-10-21 Last Stand combat verification - confidence: high - intent: Option 1 in PR #541
+
+- Fixed event-time destruction attribution and reduced-effects flashes; added the ordinary Full/Reduced Effects control. Art, camera, simulation, economy and saves are unchanged.
+- Actual imported-scene presentation checks passed 5/5 after the regression RED. HUD input and Battle checks each passed 4/4; shop-open mode round trips passed for both fittings across five derived profiles. Existing 44px and 25% chrome limits remain intact.
+- Final fresh Unity export Web-20261021T091010Z-594a77 and production build passed. Both fittings in full/reduced modes passed normal-speed captures and five paused viewport round trips per run. Native Windows and human visual/motion/listening acceptance remain pending.
+- Independent reviews found no remaining blocking issue in presentation, HUD, capture cleanup or strict control inventories. Final progression journey and exact-head hosted CI are recorded separately when available.
+- Final progression: repair and launcher fresh-storage journeys both passed against the new export, including manual Claim, purchase/reload, tier unlock and stronger redeploy across five viewports. T-COMBAT is REVIEW; no native or owner acceptance is claimed.

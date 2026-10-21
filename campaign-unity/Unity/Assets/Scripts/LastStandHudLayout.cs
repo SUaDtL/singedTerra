@@ -30,6 +30,7 @@ namespace SingedTerra.LastStand
         public const float MinimumTargetSize = 44;
         public const float MinimumActionWidth = 148;
         public const float CompactBattleActionWidth = 108;
+        public const float CompactFourActionWidth = 88;
         public const float MaximumCardWidth = 440;
         public const float MaximumDockWidth = 900;
         public const float BattleCardWidth = 660;
@@ -174,11 +175,11 @@ namespace SingedTerra.LastStand
                 dockWidth >= actionCount * MinimumActionWidth + (actionCount - 1) * Gap + 2 * padding &&
                 width - 2 * edge - dockWidth - Gap >= BattleFittingWidth + 2 * Gap + 2 * padding + 2 * MinimumTargetSize &&
                 edge + InstrumentCardHeight <= height * .2f;
-            // Three ordinary battle actions fit one compact row. Open shop and
-            // the original two-action projection retain their existing dock.
+            // Three or four ordinary battle actions fit one compact row. The
+            // original two-action projection retains its existing dock.
             var dock = new List<Slot>();
             Dock(dock, width, height, activeControls, edge, padding, commandConsole,
-                battle && actionCount == 3 && !commandConsole,shortRecovery);
+                battle && (actionCount == 3 || actionCount == 4) && !commandConsole,shortRecovery);
             if (battle) Battle(slots, width, height, edge, padding, commandConsole, actionCount);
             else Card(slots, width, height, dock.Count == 0 ? height - 2 * Edge : dock[0].Bounds.Y - Edge - Gap);
             slots.AddRange(dock);
@@ -187,7 +188,10 @@ namespace SingedTerra.LastStand
 
         static float DockWidth(float width, int actionCount, float edge, float padding, bool compactBattle = false)
         {
-            float desired = (compactBattle ? MinimumActionWidth + 2 * CompactBattleActionWidth : actionCount * MinimumActionWidth)
+            // The fourth action uses a concise Shop label, so the shorter row
+            // also preserves battlefield clearance on a short landscape Canvas.
+            float secondaryWidth = actionCount == 4 ? CompactFourActionWidth : CompactBattleActionWidth;
+            float desired = (compactBattle ? MinimumActionWidth + (actionCount - 1) * secondaryWidth : actionCount * MinimumActionWidth)
                 + (actionCount - 1) * Gap + 2 * padding;
             return Math.Min(width - 2 * edge, Math.Min(desired, MaximumDockWidth));
         }
@@ -211,7 +215,7 @@ namespace SingedTerra.LastStand
             var core = new List<Slot>();
             if (battle) Battle(core, regionWidth, height, edge, padding, false, actionCount);
             else OpenCard(core, regionWidth, edge, shop.NoticeHeight);
-            Dock(core, regionWidth, height, controls, edge, padding, false,battle && actionCount == 3);
+            Dock(core, regionWidth, height, controls, edge, padding, false,battle && (actionCount == 3 || actionCount == 4));
             var slots = new List<Slot>();
             foreach (var slot in core)
             {
@@ -463,11 +467,15 @@ namespace SingedTerra.LastStand
                 // retains a two-line label at the same 44px target height.
                 float controlWidth = compactBattle ? (i == 0 ? MinimumActionWidth : i == 2 ? CompactBattleActionWidth :
                     dockWidth - 2 * padding - 2 * Gap - MinimumActionWidth - CompactBattleActionWidth) : actionWidth;
+                // Pause retains room for UNAVAILABLE; Effects needs two words.
+                // Sound and the concise Shop label share the smaller spans.
+                bool fourBattleActions = compactBattle && controls.Length == 4;
+                if (fourBattleActions) controlWidth = (dockWidth - 2 * padding - 3 * Gap) * (i == 0 ? .35f : i == 2 ? .25f : .20f);
                 float x = compactBattle ? compactX : left + padding + (i % columns) * (actionWidth + Gap);
                 float targetHeight = commandConsole ? 52 : rowHeight;
                 float y = commandConsole ? top + dockHeight - padding - targetHeight : top + padding + (i / columns) * (rowHeight + Gap);
                 Add(slots, controls[i], "LastStandDock", "control", x, y, controlWidth, targetHeight);
-                float horizontalPadding = singleRow ? ActionVerticalPadding : ActionHorizontalPadding;
+                float horizontalPadding = fourBattleActions ? 4 : singleRow ? ActionVerticalPadding : ActionHorizontalPadding;
                 Text(slots, controls[i] + "Text", controls[i], x + horizontalPadding, y + ActionVerticalPadding,
                     controlWidth - 2 * horizontalPadding, targetHeight - 2 * ActionVerticalPadding);
                 compactX += controlWidth + Gap;

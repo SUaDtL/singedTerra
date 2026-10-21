@@ -850,11 +850,11 @@ public static class LastStandShopChecks
     }
     static void ShopInventory(ShopUiFixture f)
     {
-        string[] core = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
+        string[] core = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects" };
         var expected = new HashSet<string>(core); foreach (string id in ShopIds) Require(expected.Add(id), "distinct core/shop identity");
-        var actual = f.Root.GetComponentsInChildren<Button>(true); Require(actual.Length == 20, "exact ordinary union twenty");
+        var actual = f.Root.GetComponentsInChildren<Button>(true); Require(actual.Length == 21, "exact ordinary union twenty-one");
         foreach (var button in actual) Require(expected.Remove(button.name), "unique complete real control " + button.name);
-        Require(expected.Count == 0, "complete core9 plus shop11 inventory");
+        Require(expected.Count == 0, "complete core10 plus shop11 inventory");
         foreach (string id in core) Require(f.Root.Find("LastStandDock/" + id).GetComponent<Button>() == f.Button(id), "unchanged core path " + id);
         Require(f.Root.Find("LastStandDock/ShopEntry").GetComponent<Button>() == f.Button("ShopEntry"), "shop entry in persistent dock");
         foreach (var definition in LastStandUpgradeCatalog.Tracks)
@@ -906,7 +906,7 @@ public static class LastStandShopChecks
             "actual opaque console and native vertical mask/content ScrollRect");
         var panelBounds = f.Bounds(panel); var screen = CanvasBounds(f);
         Require(screen.Contains(panelBounds.min) && screen.Contains(panelBounds.max), "panel lies in actual available Canvas");
-        foreach (string id in new[] { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility", "Pause", "ToggleMute" })
+        foreach (string id in new[] { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility", "Pause", "ToggleMute", "Effects" })
         {
             var bounds = f.Bounds((RectTransform)f.Button(id).transform);
             Require(bounds.width >= 43.99f && bounds.height >= 43.99f && screen.Contains(bounds.min) && screen.Contains(bounds.max),
@@ -1138,6 +1138,27 @@ public static class LastStandShopChecks
                 "temporary title explains lifetime beside the exact run balance");
             Require(f.Text("ShopHeading").preferredHeight <= f.Text("ShopHeading").rectTransform.rect.height + 1,
                 "temporary lifetime heading fits the existing slot");
+            var scroll = f.Root.Find("ShopPanel").GetComponent<ScrollRect>();
+            scroll.verticalNormalizedPosition = .5f; scroll.onValueChanged.Invoke(new Vector2(0,.5f)); f.Refresh();
+            var model = f.Game.Session.Model; string snapshot = model.Snapshot(), save = f.Game.Storage.Value;
+            var scrollPosition = scroll.content.anchoredPosition;
+            bool original = f.Game.Session.View.FullEffects, muted = f.Game.Loop.Muted;
+            string phase = f.Game.Loop.Phase;
+            for (int toggle = 0; toggle < 2; toggle++)
+            {
+                f.Click("Effects");
+                Require(f.Game.Session.View.FullEffects == (toggle == 0 ? !original : original),"open Shop effects round trip uses actual setting");
+                var effects = f.Button("Effects"); var label = effects.GetComponentInChildren<Text>();
+                var bounds = f.Bounds((RectTransform)effects.transform);
+                Require(label.text == (f.Game.Session.View.FullEffects ? "EFFECTS FULL" : "EFFECTS REDUCED") &&
+                    label.preferredHeight <= label.rectTransform.rect.height + .2f,"open Shop full/reduced label fits " + profile);
+                Require(bounds.width >= 43.99f && bounds.height >= 43.99f && CanvasBounds(f).Contains(bounds.min) &&
+                    CanvasBounds(f).Contains(bounds.max),"open Shop effects retains reachable44px target " + profile);
+                Require(f.Game.Session.Model == model && model.Snapshot() == snapshot && f.Game.Storage.Value == save &&
+                    f.Game.Storage.Writes == writes && f.Game.Loop.Muted == muted && f.Game.Loop.Phase == phase &&
+                    f.Root.Find("ShopPanel").gameObject.activeInHierarchy && scroll.content.anchoredPosition == scrollPosition,
+                    "open Shop effects preserves model save audio phase and scroll position");
+            }
         }
     }
     public static void RunFirstSessionClarity()

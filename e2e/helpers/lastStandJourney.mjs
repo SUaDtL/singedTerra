@@ -54,7 +54,7 @@ export function readShopControlObservation(raw) {
   for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset'])
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
-  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier']],
+  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects']],
     ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
       'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
       'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']]];

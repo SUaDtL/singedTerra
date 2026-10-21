@@ -20,12 +20,15 @@ static class HudLayoutChecks
         public bool SaveError;
         public string[] Controls;
     }
-    static readonly int[,] Profiles = { {1366,768}, {1920,1080}, {390,844}, {844,390}, {720,640} };
+    static readonly int[,] Profiles = { {1366,768}, {1920,1080}, {390,844}, {844,390}, {720,640},
+        {1366,664}, {1920,976}, {390,688}, {844,266}, {720,516} };
     static readonly Scenario[] Scenarios = {
         new Scenario { Phase="garage", Controls=new[] {"ToggleFitting","Deploy","ToggleMute"} },
         new Scenario { Phase="garage", SaveError=true, Controls=new[] {"ToggleFitting","Deploy","RetrySave","ToggleMute"} },
         new Scenario { Phase="battle", Controls=new[] {"Pause","ToggleMute"} },
         new Scenario { Phase="settling", Controls=new[] {"Pause","ToggleMute"} },
+        new Scenario { Phase="battle", Controls=new[] {"Pause","ToggleMute","Effects","ShopEntry"} },
+        new Scenario { Phase="settling", Controls=new[] {"Pause","ToggleMute","Effects"} },
         new Scenario { Phase="result", Controls=new[] {"Claim","ToggleMute"} },
         new Scenario { Phase="result", SaveError=true, Controls=new[] {"Claim","RetrySave","ToggleMute"} },
         new Scenario { Phase="workshop", Controls=new[] {"ToggleFitting","Purchase","Redeploy","ToggleMute"} },
@@ -151,6 +154,7 @@ static class HudLayoutChecks
     {
         for(int p=0;p<Profiles.GetLength(0);p++) foreach(var scenario in Scenarios)
         {
+            if (p >= 5 && scenario.Phase != "battle" && scenario.Phase != "settling") continue;
             int width=Profiles[p,0],height=Profiles[p,1];
             string context=width+"x"+height+" "+scenario.Phase+(scenario.SaveError ? " blocked" : " ready");
             var boxes=Observe(width,height,scenario);

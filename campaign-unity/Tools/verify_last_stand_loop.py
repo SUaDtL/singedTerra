@@ -620,7 +620,7 @@ def verify_shop_vertical(report):
         require(all(type(fields[key]) in (int, float) and math.isfinite(fields[key]) and fields[key] >= 0
                     for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset'))
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
-        expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier'},
+        expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects'},
                     'shopControls': {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}}
@@ -1249,12 +1249,12 @@ def verify_shop_recovery(report, require_native=False):
             if key == 'controlsOnly':
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
-                expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier'}
+                expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects'}
                 expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}
                 need(value['coordinates'] == 'top-left' and value['width'] > 0 and value['height'] > 0
-                     and len(value['controls']) == 9 and len(value['shopControls']) == 11
+                     and len(value['controls']) == 10 and len(value['shopControls']) == 11
                      and {control['name'] for control in value['controls']} == expected_controls
                      and {control['name'] for control in value['shopControls']} == expected_shop_controls, 'Incomplete recovery controls')
             value.update({field: observation[field] for field in ('seq', 'load', 't', 'timeOrigin', 'order', 'documentHidden', 'documentFocused')})

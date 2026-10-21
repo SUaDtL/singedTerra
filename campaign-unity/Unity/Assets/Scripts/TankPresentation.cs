@@ -20,6 +20,7 @@ namespace SingedTerra.Art
         public float InspectionYaw { get; private set; }
         public bool ShowPartCallouts { get; private set; }=true;
         bool focused=true, recoilDiagnostic=true, encounterWasWide, encounterWasAnimating;
+        bool encounterFullEffects=true;
         Quaternion turretHomeWorld;
         public bool EncounterActive { get; private set; }
         public bool EncounterPaused { get; private set; }
@@ -120,6 +121,11 @@ namespace SingedTerra.Art
             SetView(encounterWasWide,true);
         }
         public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
+        public void SetEncounterEffects(bool full)
+        {
+            encounterFullEffects=full;
+            if(EncounterActive&&!full){flashTime=0;flash.SetActive(false);}
+        }
         public void ClearEncounterFeedback()
         {
             if(!EncounterActive)return;
@@ -138,7 +144,7 @@ namespace SingedTerra.Art
             if(direction.sqrMagnitude<.5f)return;
             Quaternion world=EncounterWorldYaw(turretHomeWorld,inspectionForward,direction);
             turret.localRotation=Quaternion.Inverse(turret.parent.rotation)*world;
-            recoilDiagnostic=false;peakRecoilWorld=0;recoilTime=.7f;flashTime=.09f;
+            recoilDiagnostic=false;peakRecoilWorld=0;recoilTime=.7f;flashTime=encounterFullEffects?.09f:0;
         }
         public static Quaternion EncounterWorldYaw(Quaternion worldHome,Vector3 restForward,Vector3 direction)
         {

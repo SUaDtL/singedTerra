@@ -2,11 +2,11 @@
   "schema": "singedterra-last-stand-export/v2",
   "complete": true,
   "status": "pass",
-  "build": "Web-20261021T060151Z-510800",
+  "build": "Web-20261021T091010Z-594a77",
   "scene": "Assets/Scenes/LastStandPrototype.unity",
-  "sourceHead": "62010d61afe24bf120e34730d5eed751dbe397d7",
-  "sourceBeforeSha256": "f8b39a40a17e7e519af2eacb76ce765412b1a14f61c3bb957a255b3cb839438f",
-  "sourceAfterSha256": "f8b39a40a17e7e519af2eacb76ce765412b1a14f61c3bb957a255b3cb839438f",
+  "sourceHead": "60f6e19503b09f526e712aa24b3d9a0a0eb0b259",
+  "sourceBeforeSha256": "0ad39f977c291e7426302903b60ca02ffb3d5fc285cc98a58381497e70721a29",
+  "sourceAfterSha256": "0ad39f977c291e7426302903b60ca02ffb3d5fc285cc98a58381497e70721a29",
   "sourceFiles": {
     "Tools/build_web.py": {
       "mode": "lf-text",
@@ -316,9 +316,17 @@
       "mode": "lf-text",
       "sha256": "c3ce32dbec58caf552d21527e9c887142cb521aa44679b45ad4221024c600258"
     },
+    "Unity/Assets/Editor/LastStandCombatFeedbackChecks.cs": {
+      "mode": "lf-text",
+      "sha256": "b9624d9bbaffd75a8a65380720332989a21a596f87b6092f4e131d5e50bc476f"
+    },
+    "Unity/Assets/Editor/LastStandCombatFeedbackChecks.cs.meta": {
+      "mode": "lf-text",
+      "sha256": "4331637c79f47fc88799777a6606f4e8f0847c6ebc148d217315a09b65e4e1b0"
+    },
     "Unity/Assets/Editor/LastStandHudChecks.cs": {
       "mode": "lf-text",
-      "sha256": "72a121fe230388db862e386c5da31e4f67a17219117582f2e8d1af007b748d43"
+      "sha256": "6abf3ccdcb6d1047d0ea5e381cbb619597ca01a6c7b96de5582b281527444177"
     },
     "Unity/Assets/Editor/LastStandHudChecks.cs.meta": {
       "mode": "lf-text",
@@ -342,7 +350,7 @@
     },
     "Unity/Assets/Editor/LastStandShopChecks.cs": {
       "mode": "lf-text",
-      "sha256": "9f92b337670a0815f482af91985b4769f3c9461d9162c6fe880575c147462b68"
+      "sha256": "92eb975487f05f886bc58daf34de05846dbf6108fae8fe0615100584ec7edd0b"
     },
     "Unity/Assets/Editor/LastStandShopChecks.cs.meta": {
       "mode": "lf-text",
@@ -938,7 +946,7 @@
     },
     "Unity/Assets/Scripts/EncounterView.cs": {
       "mode": "lf-text",
-      "sha256": "689fb9853c2ab5622c1e50dd8bf92c9199d5c6dfcb1d796d719f3107be97a1b6"
+      "sha256": "83c9c2790702c6c16bd3d01a3d78f8270990f1f8e9353a384ba11ff18b103001"
     },
     "Unity/Assets/Scripts/EncounterView.cs.meta": {
       "mode": "lf-text",
@@ -954,7 +962,7 @@
     },
     "Unity/Assets/Scripts/LastStandHudLayout.cs": {
       "mode": "lf-text",
-      "sha256": "d63fa575e86cc8d91eaed0c67157109e1c08da321f60d87572a32cf8eb28b03e"
+      "sha256": "0a4d1d60baa05153fce4e4099182b2572cc8adf7b2e4aed787391a8d5ce73eed"
     },
     "Unity/Assets/Scripts/LastStandHudLayout.cs.meta": {
       "mode": "lf-text",
@@ -970,7 +978,7 @@
     },
     "Unity/Assets/Scripts/LastStandLoopHud.cs": {
       "mode": "lf-text",
-      "sha256": "6c14cba0f42d2698106c55338cb2a1f8923a88a582cfebebe9dc51ffda3d7018"
+      "sha256": "9432a0903c5188334c6020ed40292cb9e110b1279890a427068633311d633f2b"
     },
     "Unity/Assets/Scripts/LastStandLoopHud.cs.meta": {
       "mode": "lf-text",
@@ -1066,7 +1074,7 @@
     },
     "Unity/Assets/Scripts/ReviewCombatVisuals.cs": {
       "mode": "lf-text",
-      "sha256": "a2e6eae97255fa935d60a80dc6dc4401cf69bd956614e24426a60c1d19bcb8c1"
+      "sha256": "08089a01b48856620c112636977bc9a51e9ebcfd492a1827f08c4c7ccd94089e"
     },
     "Unity/Assets/Scripts/ReviewCombatVisuals.cs.meta": {
       "mode": "lf-text",
@@ -1082,7 +1090,7 @@
     },
     "Unity/Assets/Scripts/TankPresentation.cs": {
       "mode": "lf-text",
-      "sha256": "608dd27c34c11f46f02dad7d88fbba34e3ce64e4a42e29943c2f949f62c3e1dd"
+      "sha256": "d7732d2d1395a939b89b4309dd6b7189e7d6524aa7ef07e84929ef3fe984628d"
     },
     "Unity/Assets/Scripts/TankPresentation.cs.meta": {
       "mode": "lf-text",
@@ -82883,10 +82891,10 @@
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
   "artifacts": {
-    "Build/Web-20261021T060151Z-510800.data": "3d45ca80a5964abf5f69c5ca59a31e9123c25290374453ca3b1bae66b1a19a2d",
-    "Build/Web-20261021T060151Z-510800.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
-    "Build/Web-20261021T060151Z-510800.loader.js": "69cb32e457d52055fccb4fe0d403490964e01d7ddc8658b12f7a95d345cdadd4",
-    "Build/Web-20261021T060151Z-510800.wasm": "509ea4cc4fa668a57f87e0f9eb8022a243d3c9ca55b47d396315c65bbf69aaef",
+    "Build/Web-20261021T091010Z-594a77.data": "d74e9e1a6d2bf7aae9f43251901094e35fd8a3a05dcdeed29aea6c570a8a2af3",
+    "Build/Web-20261021T091010Z-594a77.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
+    "Build/Web-20261021T091010Z-594a77.loader.js": "38ffcc4e122748e353709675c103b2bf0f1e1dd753cc3d4ee7aec8f1e5ef22e0",
+    "Build/Web-20261021T091010Z-594a77.wasm": "5b1a9889bbf01a497921ff9b3f24150a48a190c48c89fa83a1959a46f6d4a3c2",
     "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
     "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
     "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
@@ -82899,11 +82907,11 @@
     "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
     "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
     "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
-    "index.html": "d9a5334289c7fc4ff2e2ce3d40dfe839d23cdaab951650e1297cb34a9d012f80"
+    "index.html": "5d81821f70f4eb118a3f988fea057d6741152ec10d1d77a71bbe8f95627a73c9"
   },
-  "wrapperSha256": "226bce8f317839aa5017e4855dace876246ec607a1cdb2c9746c705a09a15a25",
-  "rawReceiptSha256": "c5b7176027e5eee72b3787753258f75379a6e5e6bfc029acd5ac36a453e7db01",
-  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261021T060151Z-510800/result.json",
+  "wrapperSha256": "f6b1b3d328684d9fbacabe384bb2340fe5aaa5a109f6f25e14f0725d27e2c822",
+  "rawReceiptSha256": "56558bbf5784ace504e0ea5687b85da872cf1f8f0dc2d5468e61643447f1ebe9",
+  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261021T091010Z-594a77/result.json",
   "approvedArtifacts": {
     "ST-LS-LOOP-SPEC": {
       "revision": 9,

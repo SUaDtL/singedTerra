@@ -25,7 +25,7 @@ spec.loader.exec_module(verifier)
 
 def _current_control_fixture():
     """Invented current control inventory for parser tests, never runtime evidence."""
-    core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier')
+    core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects')
     shop = ('ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
             'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
             'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy')
@@ -1197,8 +1197,8 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,true);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,9);assert.equal(controls.shopControls.length,11);
-assert.equal(new Set([...controls.controls,...controls.shopControls].map(c=>c.name)).size,20);
+assert.equal(controls.controls.length,10);assert.equal(controls.shopControls.length,11);
+assert.equal(new Set([...controls.controls,...controls.shopControls].map(c=>c.name)).size,21);
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
 const complete=fields=>'ST_LS_HUD_LAYOUT '+JSON.stringify({...fields,graphics:[]});
@@ -1209,6 +1209,7 @@ const cases={
   'corrupt-graphics-tail':raw.slice(0,raw.indexOf(',"graphics":')+12)+'@'.repeat(8190-(raw.indexOf(',"graphics":')+12)),
   'duplicate-controls':complete({...value,controls:value.controls.map((v,i)=>i===0?value.controls[1]:v)}),
   'missing-tier-control':complete({...value,controls:value.controls.filter(v=>v.name!=='ToggleTier')}),
+  'missing-effects-control':complete({...value,controls:value.controls.filter(v=>v.name!=='Effects')}),
   'unexpected-core-control':complete({...value,controls:value.controls.map(v=>v.name==='ToggleTier'?{...v,name:'Unexpected'}:v)}),
   'duplicate-shop-control':complete({...value,shopControls:value.shopControls.map((v,i)=>i===0?value.shopControls[1]:v)}),
   'unexpected-shop-control':complete({...value,shopControls:value.shopControls.map((v,i)=>i===0?{...v,name:'Unexpected'}:v)}),
