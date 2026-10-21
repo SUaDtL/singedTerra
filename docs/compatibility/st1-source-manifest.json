@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged; Lobby verified storage acquisition made lazy; Last Stand Campaigns entry and exact return fragment affect menu selection only; explicit invite/rejoin and validated imported ST1 challenge retain priority; package prebuild verifies the receipt-bound Unity Web payload; ST1 token parsing, launch configuration, medium CPU policy and deterministic replay unchanged",
+  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged; Lobby verified storage acquisition made lazy; Last Stand Campaigns entry and exact return fragment affect menu selection only; explicit invite/rejoin and validated imported ST1 challenge retain priority; package prebuild verifies the receipt-bound Unity Web payload; ST1 token parsing, launch configuration, medium CPU policy and deterministic replay unchanged; Vite 8.3.4 security repair advances the reviewed exact Nano ID override to 3.3.20 for PostCSS compatibility, with no package script or ST1 source change",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -84,7 +84,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "0307365d4f356f24bc9f97040c4919cc2160b3ca56964c762964cb914c25bc92"
+      "sha256": "aacf826f5f8a41407cc762749bef391a9a4bc6dea46e5f0830158640d8be2fa5"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",
