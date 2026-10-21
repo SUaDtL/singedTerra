@@ -37,6 +37,11 @@ tier goals, art and camera are unchanged.
   geometry regressions and the focused re-review passed. The both-fitting
   record retains its earlier helper hash; it is not relabeled as a run of the
   final helper.
+- The geometry regressions are included in the explicit `npm run check` chain,
+  as required by CONTRIBUTING. The seven cases passed again after integration,
+  and the ST1 manifest passed with all 32 members retained. Its only new source
+  hash is the root package script; deterministic simulation sources are
+  unchanged. The dependency report retains its earlier candidate hash.
 - [The tuning rerun](FIRST-SESSION-TUNING.md#check-after-the-clarity-changes)
   reproduced all 16 baseline measurements and both earned-purchase proofs
   exactly. The optional same-tier comparison cue remains a proposal.
