@@ -37,7 +37,7 @@ test('owned Chrome port readiness preserves strict bounds, child liveness and or
 });
 
 function proceduralCueCheck(player,names){
-  const begin=source.indexOf('    const cueNames=messages.filter'),end=source.indexOf('    // Loader and wasm faults',begin);
+  const begin=source.indexOf('    const cueNames=messages.filter'),end=source.indexOf('    }\n    if(section.recovery){',begin);
   assert.ok(begin>0 && end>begin);
   const checks=[],report={qualification:{procedural_cues:player?'pending':'unexecuted-requires-windows'}};
   const check=(pass,name,detail)=>{checks.push({pass,name,detail});assert.ok(pass,name);};
@@ -258,6 +258,37 @@ test('hidden return admits the current model focus acknowledgement before cohere
   assert.equal(result.cues.length,0);
 });
 
+function focusRefreshFixture(){
+  // Inert reduction of CI shard 5: visibility republishes an unchanged tick
+  // before AdvanceAt processes the elapsed time since the last model callback.
+  const x=focusAckFixture(),state=x.states[0],model=x.oracle[20];
+  x.states=[{...state,t:6750,tick:19},{...state,t:6800,tick:20},
+    {...state,t:7004,tick:20},{...state,t:7040,tick:25}];
+  x.cues=x.cues.map(c=>({...c,t:c.t-44}));
+  for(let tick=21;tick<=25;tick++)x.oracle[tick]={...model,tick,cannon:tick>=23?1:0};
+  return x;
+}
+
+test('focus-only session refresh does not replace the actual advancing callback clock',()=>{
+  const result=journey.validateAwayAudioReturn(focusRefreshFixture());
+  assert.deepEqual(result.boundary.callbacks.map(c=>[c.from,c.to]),[[20,25]]);
+  assert.equal(result.cues.length,0);
+});
+
+test('focus refresh retains the short callback budget, exact model cues and clock identity',()=>{
+  const mutations=[x=>x.states[1].t=6400,x=>x.states[1].tick=19,
+    x=>x.states[1].load++,x=>x.states[1].timeOrigin++,x=>x.states[1].scope='stale',
+    x=>x.states[1].sessionRun++,x=>x.states[1].runId++,x=>x.states.shift(),
+    x=>x.states[3].tick=30,x=>x.states[3].muted=true,x=>x.states[3].paused=true,
+    x=>x.states[3].saveState='blocked',x=>x.states[3].cannonDamage++,
+    x=>x.encounters[0].catchingUp=true,
+    x=>x.cues.push({...x.cues[0]}),x=>x.cues[0].text='ST_LS_AUDIO event=destruction\n'];
+  for(const [i,mutate]of mutations.entries()){
+    const x=focusRefreshFixture();mutate(x);
+    assert.throws(()=>journey.validateAwayAudioReturn(x),'Invalid inert callback clock '+i+' must fail');
+  }
+});
+
 test('focus acknowledgement anchor preserves identity, latest focus and silent hidden boundaries',()=>{
   const mutations=[x=>x.encounters[0].t=6999,x=>x.encounters[0].load++,
     x=>x.encounters[0].timeOrigin++,x=>x.encounters[0].scope='stale',x=>x.encounters[0].run++,
@@ -294,7 +325,7 @@ async function battleLayoutFixture(player=false,fault,withMute=false){
     resumed:{...base,t:11300,tick:11},after:{...base,t:12100,tick:26},events:[],oracle:{}});
   let paused=false,muted=false;const calls=[],report={lifecycle:[]};
   const run=new Function('player','check','sound','screenshot','phaseMatrix','observation','gameClick','mark',
-    'reference','validateModelObservation','sameDocument','elapsedTicks','report','VIEWPORTS','assert','page','energy','gameKey',
+    'reference','validateModelObservation','sameDocument','elapsedTicks','report','matrix','assert','page','energy','gameKey',
     'return (async()=>{'+(begin<0?'':source.slice(begin,end))+source.slice(callBegin,callEnd)+'})()');
   await run(player,(ok,name)=>assert.ok(ok,name),{maximum_rms:1},async()=>{
     assert.equal(paused,!player,'Linux battle screenshot must be publicly paused; Windows stays live');calls.push('screenshot');
@@ -309,7 +340,7 @@ async function battleLayoutFixture(player=false,fault,withMute=false){
   },async()=>950,()=>({}),()=>{},(a,b)=>{
     assert.equal(a.timeOrigin,b.timeOrigin,'same document origin');assert.equal(a.run,b.run,'same run');
   },(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),report,
-    ['standard','wide','portrait','compact','small'].map(name=>({name})),assert,
+    {phaseViewports:['standard','wide','portrait','compact','small'].map(name=>({name}))},assert,
     {waitForTimeout:async()=>{}},async()=>null,async()=>assert.fail('Linux must not toggle a second Pause during its paused inspection'));
   return {calls,report};
 }
@@ -339,11 +370,11 @@ test('actual Windows live layout inspection uses the existing unfinished run bef
   for(const player of [false,true]){
     const base={t:50,load:1,timeOrigin:10000,run:1,tick:1,paused:false,loop:{phase:'battle'}},
       after={...base,t:1050,tick:21},states=[{phase:'battle',paused:false}],report={lifecycle:[]},calls=[];
-    const run=new Function('player','observation','check','phaseMatrix','states','report','VIEWPORTS',
+    const run=new Function('player','observation','check','phaseMatrix','states','report','matrix',
       'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
     let next=base;
     await run(player,async()=>{const value=next;next=after;return value;},(ok,name)=>assert.ok(ok,name),
-      async label=>calls.push(label),states,report,['standard','wide','portrait','compact','small'].map(name=>({name})),
+      async label=>calls.push(label),states,report,{phaseViewports:['standard','wide','portrait','compact','small'].map(name=>({name}))},
       ()=>{},()=>({}),(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),async()=>0);
     assert.deepEqual(calls,player?['battle']:[]);
     if(player)assert.equal(report.lifecycle[0].viewports.length,5);
@@ -354,7 +385,7 @@ test('live layout elapsed endpoints require fresh post-advance tick observations
   const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
   const clockBegin=source.indexOf('function sameDocument('),clockEnd=source.indexOf('const MODEL_FIELDS=',clockBegin);
   const elapsed=runInNewContext(source.slice(clockBegin,clockEnd)+';elapsedTicks',{assert});
-  const run=new Function('player','observation','check','phaseMatrix','report','VIEWPORTS',
+  const run=new Function('player','observation','check','phaseMatrix','report','matrix',
     'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
   const id={load:15,timeOrigin:100000,run:1,paused:false,catchingUp:false,callbackSteps:1,loop:{phase:'battle'}};
   // Explicit inert model/visibility rows use the retained failure's clock values.
@@ -364,7 +395,7 @@ test('live layout elapsed endpoints require fresh post-advance tick observations
   const observation=async options=>!swept?before:
     options?.action==='tick' && options.minT>=27395.5?advanced:visibility;
   const report={lifecycle:[]};
-  await run(true,observation,(ok,name)=>assert.ok(ok,name),async()=>{swept=true;},report,[],
+  await run(true,observation,(ok,name)=>assert.ok(ok,name),async()=>{swept=true;},report,{phaseViewports:[]},
     ()=>{},()=>({}),elapsed,async()=>swept?27395.5:6530);
   assert.equal(report.lifecycle[0].before.tick,20);assert.equal(report.lifecycle[0].after.tick,440);
   assert.throws(()=>elapsed(before,visibility),/elapsed tick reconciliation differs/,
@@ -374,6 +405,31 @@ test('live layout elapsed endpoints require fresh post-advance tick observations
 test('paused layout and Resume reject changed counters or document identity',async()=>{
   for(const fault of ['tick','hull','kills','terminalElapsed','resume-tick','origin','run'])
     await assert.rejects(battleLayoutFixture(false,fault),/changed|counted|origin|run/);
+});
+
+function earlyFocusPauseFixture() {
+  // Inert model rows reproduce the ordering retained in CI39181737284: Unity
+  // acknowledges focus while hidden, then the browser reports visible return.
+  const base={load:13,timeOrigin:10000,run:1,tick:173,hp:120,hull:120,kills:0,terminalElapsed:0,callbackSteps:1,catchingUp:false,
+    spawned:2,cannon:1,launcher:0,healed:0,closeHits:0,rangedHits:0,alive:1,status:'Running'};
+  const paused={...base,t:33000,paused:true,reason:'user'},returned={...paused,t:44460},
+    resumed={...base,t:44600,paused:false},after={...resumed,t:45600,tick:193};
+  return {before:{...base,t:32900,paused:false},paused,returned,resumed,after,
+    events:[{...base,kind:'visibilitychange',t:33909,hidden:true,focused:false},
+      {...base,kind:'focus',t:44459,hidden:true,focused:true},
+      {...base,kind:'visibilitychange',t:44473,hidden:false,focused:true}],
+    oracle:{173:paused,193:after}};
+}
+test('explicit Pause admits model focus acknowledgement before visible return but before Resume',()=>{
+  const evidence=journey.validateExplicitPause(earlyFocusPauseFixture());
+  assert.equal(evidence.resumed_ticks,20);
+  for(const fault of ['missing-visible','after-resume','advanced-paused-tick']) {
+    const value=earlyFocusPauseFixture();
+    if(fault==='missing-visible')value.events.pop();
+    if(fault==='after-resume')value.events.at(-1).t=value.resumed.t+1;
+    if(fault==='advanced-paused-tick')value.resumed.tick++;
+    assert.throws(()=>journey.validateExplicitPause(value),/foreground recovery|Resume counted/);
+  }
 });
 
 test('central workload budget separates web-server startup and bounds actual owners',()=>{
@@ -403,6 +459,41 @@ test('central workload budget separates web-server startup and bounds actual own
   const config=readFileSync(new URL('../../playwright.config.ts',import.meta.url),'utf8');
   assert.ok(config.includes('timeout: 180_000'),'Budget agrees with actual webServer startup allowance');
 });
+test('tier wrapper admits the host capture budget before starting its real journey',async()=>{
+  const spec=readFileSync(new URL('../../e2e/last-stand-playable-loop.spec.ts',import.meta.url),'utf8');
+  const begin=spec.indexOf("test('Last Stand tier goals unlock and survive reload'");
+  const end=spec.indexOf("\ntest('Last Stand Campaigns journey",begin);
+  assert.ok(begin>=0 && end>begin,'Actual tier wrapper required');
+  for(const host of ['linux','win32']) {
+    const calls=[];let callback;
+    const test=Object.assign((_name,_options,body)=>{callback=body;},{
+      skip:condition=>assert.equal(condition,false),setTimeout:ms=>calls.push(['test',ms])});
+    runInNewContext(spec.slice(begin,end),{test,
+      lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget(host),
+      runLastStandTierJourney:async()=>{calls.push(['journey']);}});
+    await callback({page:{setDefaultTimeout:ms=>calls.push(['action',ms])},baseURL:'http://127.0.0.1:4173/singedTerra/'},
+      {project:{name:'desktop-fine'}});
+    assert.deepEqual(calls,[['test',journey.lastStandJourneyTimeBudget(host).testMs],
+      ['action',host==='linux'?60_000:10_000],['journey']],host+' owns capture and DOM allowances');
+  }
+});
+
+test('actual maintained journey uses a finite host DOM allowance without changing game clocks',()=>{
+  const body=source.slice(source.indexOf('export async function runLastStandJourney('));
+  const statement=body.match(/page\.setDefaultTimeout\([^;]+\);/)?.[0];
+  assert.ok(statement,'Actual maintained DOM admission required');
+  for(const [host,expected] of [['linux',60_000],['win32',10_000]]) {
+    let observed;
+    runInNewContext(statement,{page:{setDefaultTimeout:ms=>{observed=ms;}},
+      lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget(host)});
+    assert.equal(observed,expected,host+' admits software-renderer main-thread latency');
+    const budget=journey.lastStandJourneyTimeBudget(host);
+    assert.equal(budget.actionMs,observed);
+    assert.ok(Number.isFinite(observed) && observed>0 && observed<budget.testMs);
+    assert.equal(budget.testMs,host==='linux'?3_600_000:1_200_000);
+  }
+});
+
 test('offline reader refuses an intact older oracle with stale current-source binding',()=>{
   const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
   const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('\nif(process.argv[1]',begin);

@@ -56,7 +56,7 @@ namespace SingedTerra.Encounter
             if (model != null || !focused || applicationPaused) return;
             bool launcher = art.showingLauncher;
             if (!art.BeginEncounter()) return;
-            model = new EncounterModel(launcher, loop ? EncounterProfile.PlayablePrototype : review ? EncounterProfile.VisualReview : EncounterProfile.Legacy,
+            model = new EncounterModel(launcher, loop ? EncounterProfile.ForTier(loop.Progression.ActiveTier) : review ? EncounterProfile.VisualReview : EncounterProfile.Legacy,
                 loop ? loop.Progression.CannonDamage : EncounterModel.CannonDamage); run++; accumulated = 0;
             Shop = shop;
             if (Shop != null) ApplyShopProjection();

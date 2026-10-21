@@ -22,6 +22,7 @@ jobs:
     outputs:
       docs_only: ${{ steps.changes.outputs.docs_only }}
       base_sha: ${{ steps.changes.outputs.base_sha }}
+      browser_matrix: ${{ steps.browser-matrix.outputs.browser_matrix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -76,6 +77,11 @@ jobs:
         run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Scope and required-result regressions
         run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs
+      - name: Verify and select the complete browser matrix
+        id: browser-matrix
+        run: |
+          node --test scripts/ci/browserMatrix.test.mjs
+          node scripts/ci/browserMatrix.mjs >> "$GITHUB_OUTPUT"
 
   check-work:
     name: engine, database, client and build
@@ -136,8 +142,7 @@ jobs:
     if: needs.scope.outputs.docs_only == 'false'
     strategy:
       fail-fast: false
-      matrix:
-        lane: [core-1, core-2, product]
+      matrix: ${{ fromJSON(needs.scope.outputs.browser_matrix) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -167,7 +172,7 @@ jobs:
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
       - name: Install Last Stand media tools
-        if: matrix.lane == 'product'
+        if: matrix.suite == 'campaigns' || matrix.suite == 'tier'
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends ffmpeg mono-mcs
@@ -176,27 +181,36 @@ jobs:
           /usr/bin/mono --version
           /usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version
       - name: Initialize Last Stand evidence root
-        if: matrix.lane == 'product'
+        if: matrix.suite == 'campaigns' || matrix.suite == 'tier'
         run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Prepare Last Stand browser sandbox
-        if: matrix.lane == 'product'
+        if: matrix.suite == 'campaigns' || matrix.suite == 'tier'
         run: node scripts/ci/prepareLastStandBrowser.mjs
-      - name: General browser shard 1
-        if: matrix.lane == 'core-1'
-        run: npm run test:e2e -- --shard=1/2 --workers=2 --grep-invert "@live|@last-stand"
-      - name: General browser shard 2
-        if: matrix.lane == 'core-2'
-        run: npm run test:e2e -- --shard=2/2 --workers=2 --grep-invert "@live|@last-stand"
+      - name: Verify exact Last Stand test selection
+        if: matrix.suite == 'tier'
+        run: node --test scripts/ci/browserSelection.test.mjs
+      - name: General browser shard
+        if: matrix.suite == 'core'
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --workers=2 --grep-invert "@live|@last-stand"
       - name: Battle console responsive and interaction checks
-        if: matrix.lane == 'product'
+        if: matrix.suite == 'product'
         run: npx playwright test -c playwright.product-completion.config.ts
-      - name: Last Stand shared Campaigns journey
-        if: matrix.lane == 'product'
+      - name: Last Stand tier progression journey
+        if: matrix.suite == 'tier'
         env:
           VITE_BASE: /singedTerra/
           E2E_DENY_EXTERNAL_NETWORK: '1'
           LAST_STAND_QUALIFICATION_PROFILE: linux-functional
-        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0
+        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand tier goals"
+      - name: Last Stand shared Campaigns journey
+        if: matrix.suite == 'campaigns'
+        env:
+          VITE_BASE: /singedTerra/
+          E2E_DENY_EXTERNAL_NETWORK: '1'
+          LAST_STAND_QUALIFICATION_PROFILE: linux-functional
+          LAST_STAND_JOURNEY_SHARD: ${{ matrix.journey_shard }}
+          LAST_STAND_JOURNEY_SECTION: ${{ matrix.journey_section }}
+        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand Campaigns journey"
       - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -255,3 +269,18 @@ jobs:
           SCOPE_RESULT: ${{ needs.scope.result }}
           DOCS_ONLY: ${{ needs.scope.outputs.docs_only }}
           WORK_RESULT: ${{ needs.browser.result }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: needs.scope.outputs.docs_only == 'false'
+        with:
+          node-version-file: .nvmrc
+      - name: Download all Campaigns viewport observations
+        if: needs.scope.outputs.docs_only == 'false'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: playwright-last-stand-[0-9]*-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/last-stand-matrix
+      - name: Verify complete source-bound Campaigns matrix
+        if: needs.scope.outputs.docs_only == 'false'
+        run: node scripts/ci/lastStandMatrixResult.mjs "$MATRIX_ROOT"
+        env:
+          MATRIX_ROOT: ${{ runner.temp }}/last-stand-matrix

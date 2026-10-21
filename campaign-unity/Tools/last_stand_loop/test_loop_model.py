@@ -40,7 +40,8 @@ class LastStandModelTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "LastStandModelTests.exe"
         build = subprocess.run(
             [str(MONO), str(CSC), "-nologo", f"-out:{cls.executable}",
-             str(MODEL), str(STORE), str(CATALOG), str(TRACK), str(DRIVER)],
+             str(MODEL), str(STORE), str(CATALOG), str(TRACK),
+             str(MODEL.with_name("LastStandTierCatalog.cs")), str(DRIVER)],
             capture_output=True, text=True, encoding="utf-8-sig", timeout=60,
         )
         if build.returncode:

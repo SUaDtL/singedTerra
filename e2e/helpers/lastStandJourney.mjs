@@ -54,7 +54,7 @@ export function readShopControlObservation(raw) {
   for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset'])
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
-  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute']],
+  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier']],
     ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
       'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
       'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']]];
@@ -1170,7 +1170,7 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute, dirname } from 'node:path';
 import { tmpdir, release, arch } from 'node:os';
 import { gunzipSync } from 'node:zlib';
@@ -1179,18 +1179,8 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const SAVE_KEY = 'singedTerra.lastStand.prototype.v1';
 const SELECTION_KEY = 'singedterra.command-center.selection.v1';
 const TITLE = 'Last Stand Campaigns journey preserves no-award exit and a stronger redeploy';
-const VIEWPORTS = [
-  { name: 'approved-standard', width: 1366, height: 768 },
-  { name: 'approved-wide', width: 1920, height: 1080 },
-  { name: 'approved-portrait', width: 390, height: 844 },
-  { name: 'approved-landscape', width: 844, height: 390 },
-  { name: 'approved-compact', width: 720, height: 640 },
-  { name: 'wide', width: 1600, height: 900 },
-  { name: 'standard', width: 1280, height: 720 },
-  { name: 'compact', width: 800, height: 600 },
-  { name: 'narrow-landscape', width: 568, height: 320 },
-  { name: 'portrait', width: 390, height: 844 },
-];
+import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition, lastStandJourneySection, LAST_STAND_ENTRY_ROUTES} from './lastStandMatrix.mjs';
+export {lastStandViewportPartition} from './lastStandMatrix.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const fileHash = path => hash(readFileSync(path));
 const delay = ms => new Promise(done => setTimeout(done, ms));
@@ -1376,7 +1366,10 @@ export function validateExplicitPause({before,paused,returned,resumed,after,even
     assert.equal(returned[key],paused[key],'Explicit Pause changed '+key);
     assert.equal(resumed[key],paused[key],'Resume counted paused '+key);
   }
-  nativeIntervalEvents('hidden',paused,returned,events);
+  // Unity can acknowledge focus while the tab is still hidden. The frozen
+  // paused model sample need not follow visibility, but actual visible return
+  // must precede the user's measured Resume. Counters stay bound above.
+  nativeIntervalEvents('hidden',paused,resumed,events);
   elapsedTicks(resumed,after);
   validateModelObservation(paused,oracle);validateModelObservation(after,oracle);
   return {paused_ms:resumed.t-paused.t,resumed_ticks:after.tick-resumed.tick};
@@ -1451,19 +1444,38 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     assert.ok(resumed && !resumed.paused && !resumed.failed && !resumed.catchingUp,
       'Current reconciled foreground model boundary absent');
     validateModelObservation(resumed,oracle);
-    const loops=states.filter(s=>current(s) && s.sessionRun===before.run &&
-      (s.runId || s.pendingRunId)===before.loop.runId && s.t>=resumed.t && s.t<=recovered &&
+    const runLoops=states.filter(s=>current(s) && s.sessionRun===before.run &&
+      (s.runId || s.pendingRunId)===before.loop.runId && s.t<=recovered &&
       ['session','defeat-staged'].includes(s.action));
+    const loops=runLoops.filter(s=>s.t>=resumed.t);
     const groups=new Map();
     for(const cue of returnCues) {
       const next=loops.find(s=>s.t>=cue.t),previous=next && loops.findLast(s=>s.t<cue.t);
       const terminals=next?.action==='defeat-staged' && previous?encounters.filter(e=>current(e) &&
         e.run===before.run && e.action==='terminal' && e.tick===next.tick && e.t>previous.t && e.t<=next.t):[];
       const terminal=terminals[0];
+      // OnApplicationFocus emits Changed without advancing RunClock. A duplicate
+      // tick refresh cannot replace the preceding advancing callback's clock.
+      // Admit that earlier anchor only with current-run tick advancement proof.
+      let clockPrevious=previous;
+      if(previous){
+        let index=runLoops.indexOf(previous);
+        while(index>0 && runLoops[index-1].tick===previous.tick)index--;
+        clockPrevious=runLoops[index];
+        if(clockPrevious!==previous){
+          const prior=runLoops[index-1];
+          assert.ok(prior && prior.t<clockPrevious.t && prior.tick<clockPrevious.tick &&
+            clockPrevious.tick===resumed.tick && clockPrevious.t<resumed.t &&
+            clockPrevious.phase==='battle' && !clockPrevious.paused && !clockPrevious.muted &&
+            clockPrevious.saveState==='ready' && clockPrevious.cannonDamage===before.loop.cannonDamage &&
+            clockPrevious.hull===oracle[clockPrevious.tick]?.hp && clockPrevious.kills===oracle[clockPrevious.tick]?.kills,
+            'Return callback lacks an advancing current-run clock anchor');
+        }
+      }
       assert.ok(next && previous && next.tick>previous.tick && previous.tick>=resumed.tick &&
         (next.phase==='battle' || terminal && next.phase==='settling') && !next.paused && !next.muted && next.saveState==='ready' &&
-        next.cannonDamage===before.loop.cannonDamage && next.t-previous.t<=500 &&
-        Math.abs((next.t-previous.t-(terminal?terminal.terminalElapsed*1000:0))/50-(next.tick-previous.tick))<=1.01,
+        next.cannonDamage===before.loop.cannonDamage && next.t-clockPrevious.t<=500 &&
+        Math.abs((next.t-clockPrevious.t-(terminal?terminal.terminalElapsed*1000:0))/50-(next.tick-previous.tick))<=1.01,
         'Return cue lacks a fresh eligible foreground model callback');
       if(terminal) {
         // AdvanceAt retains elapsed after the final combat step; staging moves
@@ -1613,7 +1625,7 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
 export function encounterCompilationSourceBinding() {
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
-  return {source_lf_sha256:Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs'].map(name=>[name,
+  return {source_lf_sha256:Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>[name,
     hash(readFileSync(join(ROOT,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n'))])),
     export_binding:{manifest_sha256:fileHash(manifestPath),receipt_sha256:manifest.source.receiptSha256,
       source_lock_sha256:manifest.source.sourceLockSha256,source_inventory_sha256:manifest.source.sourceInventorySha256,
@@ -1622,7 +1634,7 @@ export function encounterCompilationSourceBinding() {
 export function buildEncounterOracle(output) {
   const bound=readBoundEncounterOracle();
   const {mono,csc}=encounterOracleToolchain();
-  const sources=['EncounterModel.cs','EncounterProfile.cs'].map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
+  const sources=['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
   for(const path of [mono,csc,...sources])assert.ok(existsSync(path),'Actual model oracle prerequisite absent: '+path);
   const directory=join(output,'model-oracle');mkdirSync(directory);
   const driver=join(directory,'Program.cs'),exe=join(directory,'EncounterOracle.exe');
@@ -1768,7 +1780,9 @@ export function lastStandJourneyTimeBudget(host=process.platform,{served=false}=
   const testMs=host==='win32'?1_200_000:3_600_000,startupMs=served?0:180_000;
   // Test/browser clocks start after webServer setup; the standalone owner
   // starts before it and must also admit owned-tree cleanup.
-  return Object.freeze({testMs,startupMs,browserMs:testMs+40_000,
+  // Software-rendered Linux Unity frames can occupy the page thread beyond
+  // the Windows DOM allowance. Keep each read/capture bounded independently.
+  return Object.freeze({testMs,startupMs,actionMs:host==='linux'?60_000:10_000,browserMs:testMs+40_000,
     runnerMs:testMs+startupMs+5_000,supervisorMs:testMs+startupMs+50_000,
     pythonMs:testMs+180_000+100_000});
 }
@@ -2879,7 +2893,8 @@ export async function retainJourneyOutcome(report, cleanup, persist, originalErr
 
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
-  '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs']);
+  '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
+  'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs']);
 
 export function lastStandQualificationProfile(name='windows-player',host=process.platform) {
   assert.ok(['windows-player','linux-functional'].includes(name),'Unknown Last Stand qualification profile');
@@ -2889,6 +2904,10 @@ export function lastStandQualificationProfile(name='windows-player',host=process
 
 export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
+  const sectionName=process.env.LAST_STAND_JOURNEY_SECTION;
+  const shard=['entry','recovery'].includes(sectionName) && process.env.LAST_STAND_JOURNEY_SHARD===''?undefined:process.env.LAST_STAND_JOURNEY_SHARD;
+  const section=lastStandJourneySection(sectionName,{profile:qualification.name,shard});
+  const matrix=lastStandViewportPartition(shard,{profile:qualification.name});
   const base = admitJourneyBase(baseURL);
   if(player){runTool('ffmpeg', ['-version']); runTool('ffprobe', ['-version']);}
   const parent = admitEvidenceParent(process.env.LAST_STAND_EVIDENCE_PARENT);
@@ -2902,6 +2921,9 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     focus_scope:player?'separate native visible-window blur and hidden tab':'hidden tab; native blur separately required from Windows', device_performance_claim:false, url_origin:base.origin,
     visual_measurements:{controls:'actual HUD bounds converted once to CSS pixels',panels:'unmeasured in browser telemetry',
       fonts:'unmeasured in browser telemetry',contrast:'unmeasured in browser telemetry',focus_treatment:'matched screenshots awaiting rendered review'},
+    viewport_partition:{shard:matrix.shard,section:section.name,viewports:section.lifecycle?matrix.viewports.map(v=>v.name):[],
+      phase_viewports:section.name==='entry'?[]:matrix.phaseViewports.map(v=>v.name),
+      entry_viewports:section.entry?matrix.entryViewports.map(v=>v.name):[],gameplay_viewport:section.entry || section.lifecycle?matrix.captureViewport.name:null},
     lifecycle:[],qualification:{profile:qualification.name,host:process.platform,release:release(),arch:arch(),
       functional:'pending',rendered_audio:player?'pending':'unexecuted-requires-windows',
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
@@ -2911,10 +2933,17 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
   let native, page, motion, modelOracle, load=0, scope='healthy', fault, rejoin=false, rejoinBinding, originalError;
   const observerFailures=[];let observerError;
   const throwObserverFailure=()=>{if(observerError)throw observerError;};
+  let lastResultWrite=-Infinity;
   const check = (condition, name, detail) => {
     throwObserverFailure();
-    report.checks.push({name,pass:Boolean(condition),detail});
-    writeFileSync(resultPath,JSON.stringify(report,null,2));
+    const observation={name,pass:Boolean(condition),detail};
+    report.checks.push(observation);
+    // Keep every assertion durable without repeatedly rewriting accumulated
+    // screenshots/layouts. Failure and the existing finally retain full state.
+    appendFileSync(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
+    if(!condition || Date.now()-lastResultWrite>=1000) {
+      writeFileSync(resultPath,JSON.stringify(report,null,2));lastResultWrite=Date.now();
+    }
     assert.ok(condition,name);
   };
   const write = (name, data) => writeFileSync(join(output,name),JSON.stringify(data,null,2));
@@ -2961,7 +2990,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       report.binding.served[path]={sha256:hash(bytes),bytes:bytes.length};
     }
     native=await ownedChrome(chromium,output,'native',lastStandJourneyTimeBudget().browserMs); page=native.context.pages()[0];
-    page.setDefaultTimeout(10_000);
+    page.setDefaultTimeout(lastStandJourneyTimeBudget().actionMs);
     if(process.env.LAST_STAND_INDUCE_CLEANUP_FAILURE==='1')check(false,'bounded induced failure after owned browser startup');
     report.browser_version=native.browser.version();
     await page.setViewportSize({width:1280,height:720});
@@ -2999,6 +3028,12 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       throw new Error('Expected real runtime observation absent');
     };
     const focused=async label=>{
+      // Linux functional verification needs the actual document's current
+      // focus/visibility. Avoid activating and polling an already focused tab.
+      // Windows still performs its separate native foreground proof below.
+      if(process.platform==='linux' && await page.evaluate('!document.hidden && document.hasFocus()')){
+        check(true,`${label}: document focus and visibility`);return;
+      }
       await page.bringToFront();
       if(process.platform==='win32')await ensureOwnedNativeForeground({native,page,report,kind:label,role:'original-precondition'});
       await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10_000});
@@ -3015,6 +3050,31 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await page.mouse.move(box.x+box.width/2,box.y+box.height/2); await page.mouse.down();await page.waitForTimeout(150);await page.mouse.up();
     };
     const keyboardFocus=async locator=>{
+      if(process.platform==='linux'){
+        // Read one current document snapshot per keyboard boundary. Separate
+        // locator calls each wait on the software-rendered Unity document.
+        const inspect=()=>locator.evaluate(element=>{
+          window.__stInputArea='outer';
+          const style=getComputedStyle(element);
+          return {focused:!document.hidden && document.hasFocus(),active:element===document.activeElement,
+            isReturn:element.id==='last-stand-return',canvas:!!document.getElementById('unity-canvas'),
+            outline:style.outlineStyle,width:parseFloat(style.outlineWidth)};
+        });
+        let before=await inspect();
+        if(!before.focused){await focused('outer keyboard');before=await inspect();}
+        check(before.focused,'outer keyboard: document focus and visibility');
+        if(before.isReturn && before.active && before.canvas){
+          await page.keyboard.press('Tab');
+          check(await page.locator('#unity-canvas').evaluate(element=>element===document.activeElement),
+            'native Tab enters actual Unity before Return escape');
+        }
+        if(before.canvas)await page.keyboard.press('Shift+Tab');
+        let current=await inspect();
+        for(let i=0;i<50 && !current.active;i++){await page.keyboard.press('Tab');current=await inspect();}
+        check(current.focused && current.active,'outer control reachable by native Tab');
+        check(current.outline!=='none' && current.width>=2,'visible keyboard focus indicator',current);
+        return;
+      }
       await page.evaluate("window.__stInputArea='outer'");
       await focused('outer keyboard');
       // Try the browser's previous-control path from the focused canvas first.
@@ -3061,6 +3121,9 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
             tx.oncomplete=()=>{db.close();done();};tx.onerror=()=>reject(tx.error);};});
       },{key:SELECTION_KEY,remembered,record,session});
     };
+    let ashBytes,originalAsh,start,restored;
+    const ash={categoryId:'campaigns',itemId:'ash-road'},skirmish={categoryId:'skirmishes',itemId:'standard'};
+    if(section.entry || section.lifecycle){
     await goto(''); await dismissSplash();
     await selected('first-salvo');check(true,'global fresh startup remains Skirmishes');
     await openCampaigns(); await selected('last-stand');
@@ -3070,7 +3133,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     await outerPointer(page.locator('[data-command-item="ash-road"]')); await selected('ash-road');
     await goto('');await dismissSplash();await selected('ash-road');
     report.routes=[{name:'fresh Campaigns',selected:'last-stand'},{name:'remembered Ash Road',selected:'ash-road'}];
-    const ash={categoryId:'campaigns',itemId:'ash-road'},skirmish={categoryId:'skirmishes',itemId:'standard'};
+    }
+    if(section.entry){
     const routeCases=[
       {name:'compatible Ash Road resume',record:ashRoadRecord,suffix:'',expected:'ash-road'},
       {name:'remembered Skirmishes',remembered:skirmish,suffix:'',expected:'standard'},
@@ -3082,6 +3146,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       {name:'invalid mixed signals cannot override remembered Ash Road',remembered:ash,suffix:'?join=bad!#challenge=ST1-CW-17',expected:'ash-road'},
       {name:'invalid Return spelling cannot override remembered Ash Road',remembered:ash,suffix:'#campaigns/last-stand/invalid',expected:'ash-road'},
     ];
+    assert.deepEqual(routeCases.map(({name,expected})=>({name,selected:expected})),LAST_STAND_ENTRY_ROUTES,
+      'Exact original startup-routing inventory required');
     for(const fixture of routeCases){
       rejoin=Boolean(fixture.session);
       if(rejoin)rejoinBinding=await bindConfiguredRejoinFixture(base);
@@ -3092,7 +3158,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     }
     rejoin=false;
     report.campaign_entry=[];
-    for(const viewport of VIEWPORTS.slice(0,3)) {
+    for(const viewport of matrix.entryViewports) {
       await page.setViewportSize({width:viewport.width,height:viewport.height});await setRouteState();
       await goto('');await dismissSplash();await openCampaigns();await selected('last-stand');
       const order=await page.locator('.command-center__library-items .command-center__item').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
@@ -3105,16 +3171,20 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${viewport.name}: Campaigns has no horizontal overflow`);
       await screenshot(`entry-${viewport.name}`);report.campaign_entry.push({viewport,order,bounds});
     }
+    }
+    if(section.entry || section.lifecycle){
     await page.setViewportSize({width:1280,height:720});
     await setRouteState({record:ashRoadRecord,remembered:ash});await goto('');await dismissSplash();await selected('ash-road');
     check(/resume ash road/i.test(await page.locator('[data-command-primary]').innerText()),'preserved compatible resume before Last Stand');
-    const ashBytes=async()=>page.evaluate(async()=>new Promise((done,reject)=>{
+    ashBytes=async()=>page.evaluate(async()=>new Promise((done,reject)=>{
       const request=indexedDB.open('singedterra-campaign',1);request.onerror=()=>reject(request.error);
       request.onsuccess=()=>{const db=request.result,read=db.transaction('campaign-runs').objectStore('campaign-runs').get('ash-road-local');
         read.onerror=()=>{db.close();reject(read.error);};read.onsuccess=()=>{db.close();done(JSON.stringify(read.result));};};
     }));
-    const originalAsh=await ashBytes();check(originalAsh===JSON.stringify(ashRoadRecord),'exact compatible Ash Road stored record before entry');
+    originalAsh=await ashBytes();check(originalAsh===JSON.stringify(ashRoadRecord),'exact compatible Ash Road stored record before entry');
     report.ash_road_preservation={before_sha256:hash(originalAsh),native_return:'MISSING until keyboard passes',actual_resume:'MISSING until keyboard passes'};
+    if(!section.entry)Object.assign(report.ash_road_preservation,{native_return:'unexecuted-in-lifecycle-section',
+      actual_resume:'unexecuted-in-lifecycle-section'});
     await outerPointer(page.locator('.command-center__item[data-command-item="last-stand"]'));await selected('last-stand');
     const launch=page.getByRole('link',{name:'Launch Last Stand',exact:true});
     await keyboardFocus(launch); const before=states.length;
@@ -3127,10 +3197,15 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(requests.some(r=>r.url.endsWith('.wasm')) && requests.some(r=>r.url.endsWith('.data')),'ordinary launch requests real Unity payload');
     report.renderer=await page.evaluate(()=>{const canvas=document.querySelector('#unity-canvas');const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');if(!gl)return{available:false};const info=gl.getExtension('WEBGL_debug_renderer_info');return{available:true,vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER),version:gl.getParameter(gl.VERSION),unmasked_renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null};});
     check(report.renderer.available,'actual WebGL renderer observed',report.renderer);
+    }
     const geometry=async(name)=>{
-      const canvas=await page.locator('#unity-canvas').boundingBox(); assert.ok(canvas);
+      const {canvas,pixels}=await page.locator('#unity-canvas').evaluate(element=>{
+        const box=element.getBoundingClientRect(),visible=getComputedStyle(element).visibility==='visible' && box.width>0 && box.height>0;
+        return {canvas:visible?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
+          pixels:{width:element.width,height:element.height}};
+      });
+      assert.ok(canvas);
       const layout=layouts.at(-1);check(layout?.coordinates==='top-left','real HUD top-left convention');
-      const pixels=await page.locator('#unity-canvas').evaluate(element=>({width:element.width,height:element.height}));
       check(Math.abs(layout.width-pixels.width)<=1 && Math.abs(layout.height-pixels.height)<=1,'HUD dimensions use actual canvas backing pixels',{canvas,pixels,layout});
       for(const item of layout.controls)if(item.active) {
         check(item.x>=-.5 && item.y>=-.5 && item.x+item.width<=layout.width+.5 && item.y+item.height<=layout.height+.5,`real HUD ${item.name} in canvas`);
@@ -3145,7 +3220,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       const control=layout.controls.filter(item=>item.name===name && item.active && item.interactable);
       check(control.length===1,`operable real HUD ${name}`);return{canvas,layout,item:control[0]};
     };
-    const resize=async viewport=>{
+    const resize=async(viewport,{capture=true}={})=>{
       const start=layouts.length;await page.setViewportSize({width:viewport.width,height:viewport.height});
       await page.waitForTimeout(400);
       const pixels=await page.locator('#unity-canvas').evaluate(element=>({width:element.width,height:element.height}));
@@ -3159,19 +3234,21 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(outer.scrollWidth<=outer.width && outer.scrollHeight<=outer.height,'wrapper has no overflow',outer);
       for(const box of [outer.link,outer.loss])check(box.x>=0 && box.right<=outer.width && box.y>=0 && box.bottom<=outer.nav.bottom,'Return and disclosure stay reachable',box);
       await keyboardFocus(page.locator('#last-stand-return'));
-      await screenshot(`layout-${viewport.name}-${states.at(-1).phase}-${report.screenshots.length}`);
+      if(capture)await screenshot(`layout-${viewport.name}-${states.at(-1).phase}-${report.screenshots.length}`);
     };
-    for(const viewport of VIEWPORTS)await resize(viewport);
-    const captureViewport=VIEWPORTS.find(item=>item.name==='standard');
+    if(section.lifecycle)for(const viewport of matrix.viewports)await resize(viewport);
+    const captureViewport=matrix.captureViewport;
     const phaseMatrix=async label=>{
       const phase=states.at(-1).phase,paused=states.at(-1).paused;
-      for(const viewport of VIEWPORTS.slice(0,5)) {
-        await resize(viewport);check(states.at(-1).phase===phase && states.at(-1).paused===paused,`${label}: same actual phase across profiles`);
+      for(const viewport of matrix.phaseViewports) {
+        // The named phase capture below also records this inspected layout.
+        await resize(viewport,{capture:false});check(states.at(-1).phase===phase && states.at(-1).paused===paused,`${label}: same actual phase across profiles`);
         await screenshot(`${label}-${viewport.name}`);
       }
-      await resize(captureViewport);
+      if(page.viewportSize().width!==captureViewport.width || page.viewportSize().height!==captureViewport.height)
+        await resize(captureViewport);
     };
-    await resize(captureViewport);
+    if(section.lifecycle)await resize(captureViewport);
     const armGameClick=async(name,action,predicate=()=>true)=>{
       const {canvas,layout,item}=await geometry(name);await focused('gameplay pointer');
       await page.evaluate("window.__stInputArea='gameplay'");
@@ -3306,7 +3383,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check(after.loop.phase==='battle' && !after.paused,'Windows live layout remains active battle');
       elapsedTicks(before,after);validateModelObservation(before,reference(before));validateModelObservation(after,reference(after));
       report.lifecycle.push({kind:'live-battle-layout',scope:'existing unfinished reload run',
-        viewports:VIEWPORTS.slice(0,5).map(item=>item.name),before,after});
+        viewports:matrix.phaseViewports.map(item=>item.name),before,after});
     };
     const battleLayouts=async()=>{
       // Slow Linux inspection can exceed a whole battle. Windows retains its
@@ -3329,16 +3406,20 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       // hidden-Pause proof below; its final keyboard Resume uses the original
       // counter/time/model oracle. One matrix covers the same paused geometry.
       const record={kind:'paused-battle-layout',covers:['paused battle','explicit Pause'],
-        viewports:VIEWPORTS.slice(0,5).map(item=>item.name),before,paused,returned};
+        viewports:matrix.phaseViewports.map(item=>item.name),before,paused,returned};
       report.lifecycle.push(record);return record;
     };
     // Two unfinished exits exercise native Return and ordinary reload without an award.
+    if(section.entry){
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
     await page.locator('[data-last-stand-command-view]').waitFor();
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
     check(await ashBytes()===originalAsh,'Ash Road record bytes preserved through native Last Stand Return');
     report.ash_road_preservation.native_return='observed unchanged';
+    // Ash Road's artillery HUD requires landscape even when this Unity shard
+    // owns a portrait observation. Keep gameplay at its canonical viewport.
+    await page.setViewportSize({width:1280,height:720});
     await selected('last-stand');await outerPointer(page.locator('.command-center__item[data-command-item="ash-road"]'));await selected('ash-road');
     const resume=page.locator('[data-command-primary]');check(/resume ash road/i.test(await resume.innerText()),'compatible Ash Road remains resumable after native Return');
     await outerPointer(resume);await page.locator('#app').waitFor({state:'visible'});check(!await page.locator('#lobby').isVisible(),'actual compatible Ash Road resume enters its game');
@@ -3350,15 +3431,18 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     await outerPointer(menu);await outerPointer(page.getByRole('dialog',{name:'Command Menu',exact:true}).getByRole('button',{name:'Return to Lobby',exact:true}));
     await page.locator('#lobby').waitFor({state:'visible'});await selected('ash-road');
     await outerPointer(page.locator('.command-center__item[data-command-item="last-stand"]'));
-    let start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
-    let restored=await until(states,start,item=>item.action==='ready',60);
+    start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
+    restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished Return abandoned without award',restored);
+    await resize(captureViewport);
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);await liveBattleLayouts();
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished reload abandoned without award',restored);
     if(player)report.lifecycle.push({kind:'live-battle-layout-abandonment',ready:restored});
     check(layouts.at(-1).controls.find(item=>item.name==='ToggleFitting').label.trim().toUpperCase()==='FIT LAUNCHER','baseline repair fitting retained');
+    }
+    if(section.lifecycle){
     await screenshot('00-garage');await phaseMatrix('garage');
     const baselineHitStart=hits.length;
     const startAudio=await mark();const deployed=await gameClick('Deploy','deploy');
@@ -3404,7 +3488,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'no Claim during actual settling');
     const settlingResumed=await gameClick('Pause','session',item=>!item.paused);await page.waitForTimeout(750);
     report.lifecycle.push({kind:'settling-interaction',scope:'native-pause-five-viewports-resume',
-      paused:settlingPaused,resumed:settlingResumed,viewports:VIEWPORTS.slice(0,5).map(item=>item.name)});
+      paused:settlingPaused,resumed:settlingResumed,viewports:matrix.phaseViewports.map(item=>item.name)});
     }else await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);
     const result=await until(states,defeatStart,item=>item.phase==='result',8);
     const transition=validateSettlingTransition({before:settlingBefore,result,states,layouts,encounters,oracle:reference(settlingBefore)});
@@ -3450,7 +3534,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(restored.phase==='result' && restored.pendingRunId===result.pendingRunId,'successful pending defeat survives reload',restored);
     const claimed=await gameClick('Claim','claim');check(claimed.phase==='workshop' && claimed.wallet===1 && claimed.level===0,'one Claim pays exactly one salvage',claimed);
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'Claim unavailable after one award');
-    for(const viewport of VIEWPORTS)await resize(viewport);await phaseMatrix('workshop');
+    for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('workshop');
     await resize(VIEWPORTS.find(item=>item.name==='compact'));const purchaseStart=await mark();
     const bought=await gameKey('Purchase','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
     await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
@@ -3500,6 +3584,13 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       report.qualification.procedural_cues='pass';
     }
 
+    }
+    if(section.recovery){
+    if(!section.lifecycle){
+      await goto('');await dismissSplash();await selected('first-salvo');
+      await openCampaigns();await selected('last-stand');
+      check(!requests.some(r=>r.url.includes('/last-stand/Build/')),'zero Unity runtime payload before ordinary launch');
+    }
     // Loader and wasm faults: real error UI, keyboard Return, and ordinary Retry.
     for(const extension of ['.loader.js','.wasm']){
       scope=extension==='.wasm'?'wasm-fault':'loader-fault';
@@ -3515,7 +3606,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       check((await page.locator('#status').innerText())==='Scene could not load',`${scope}: visible failure`);
       check(await page.locator('#last-stand-return').getAttribute('href')==='../#campaigns/last-stand',`${scope}: independent native return href`);
       await keyboardFocus(page.locator('#last-stand-return'));await screenshot(scope);
-      for(const viewport of VIEWPORTS.slice(0,5)) {
+      for(const viewport of matrix.phaseViewports) {
         await page.setViewportSize({width:viewport.width,height:viewport.height});
         const boxes=await page.evaluate(()=>({width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,
           targets:['#last-stand-return','#retry','#error','#status'].map(selector=>({selector,
@@ -3552,6 +3643,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
       await page.locator('[data-last-stand-command-view]').waitFor();check(await page.locator('#st-splash').count()===0,`${probe}: native Return independent of save`);
     }
+    }
     scope='healthy';
     report.input_trace=validateGameplayInput(trace,report.actions);
     report.keyboard_trace=validateKeyboardGameplayInput(trace,report.keyboard_actions);
@@ -3561,7 +3653,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!consoleErrors.length && !requestErrors.length && !unexpectedHTTP.length,
       'no unclassified browser/Unity/shader/request errors in any scope',{consoleErrors,requestErrors,httpErrors:unexpectedHTTP});
     throwObserverFailure();
-    report.qualification.functional='pass';
+    report.qualification.functional=section.name!=='full'?'viewport-section-pass':matrix.shard?'viewport-shard-pass':'pass';
     if(player)for(const key of ['rendered_audio','native_blur','capture_cadence'])report.qualification[key]='pass';
     report.status='pass';return{resultPath,output,report};
   } catch(error) {

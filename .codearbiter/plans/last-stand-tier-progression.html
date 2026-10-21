@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: Tier Goals and Personal Bests implementation · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-TIER-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-tier-progression.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: Tier Goals and Personal Bests implementation</h1><p class="deck">Calibrate, bind tier rules, evolve saves, integrate UI and prove the real Unity journey.</p><div class="meta"><span>ST-LS-TIER-PLAN</span><span>Revision 32 · schema 0.3.2</span><span>8 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-TIER-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2><span class="missing">None recorded</span></section><section class="group" id="group-tasks"><a class="back" href="#main-content">Top</a><h2>Tasks</h2>
+<!-- CA:BEGIN:T-CALIBRATE -->
+<article class="record" id="T-CALIBRATE" data-ca-symbol="T-CALIBRATE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-CALIBRATE">T-CALIBRATE</a><h3>Calibrate approved goals and hull scaling</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-TIER-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-tier-progression.html#CR-TIER">ST-LS-TIER-SPEC#CR-TIER</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-DELIVERY">ST-LS-TIER-SPEC#CR-DELIVERY</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-TIER-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_tiers</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve supported saves, unrelated work and evidence.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Measure real starter, permanent-cap and total-cap builds for both fittings and both production tier profiles. The initial isolated hull-scale calibration passed; production profiles now supply the measurements.</li><li>Confirm goal attainability at existing caps and matched-build difficulty; surface a consequential tuning failure to the user.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_calibration.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Actual C# behavior satisfies the referenced criteria, including negative cases.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_goals_attainable_at_current_caps</li><li>test_tier_two_harder_for_matched_builds</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_calibration.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Command index</span>0</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>true</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:30:12Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>e4fee9be6c0bd511508839476c2143942b4a32f3465a9115095022b851ab15ed</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>Current session tools.exec_command observed output</div><div class="field"><span class="label">Summary</span>Both production tier profiles measured: goals attainable at caps, all matched builds have lower survival or disabled count on Tier2; numerical bounds not earned-player proof.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-CALIBRATE -->
+
+<!-- CA:BEGIN:T-RULES -->
+<article class="record" id="T-RULES" data-ca-symbol="T-RULES" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-RULES">T-RULES</a><h3>Bind immutable tier profiles at deployment</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-TIER-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-tier-progression.html#CR-TIER">ST-LS-TIER-SPEC#CR-TIER</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-CLOCK">ST-LS-TIER-SPEC#CR-CLOCK</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-CALIBRATE">T-CALIBRATE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-TIER-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_tiers</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve supported saves, unrelated work and evidence.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Add two-tier profile identity, exact enemy hull ceiling scale and goal ticks.</li><li>Preserve legacy/review behavior, fixed ticks, spawn/attack rules, pause/background clock and horizon.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_rules.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Actual C# behavior satisfies the referenced criteria, including negative cases.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_exact_tier_hull_scaling_and_legacy_parity</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_rules.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Command index</span>0</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>true</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:30:13Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>8b71f320bb81ba0794e3863c5e32faba72cb80e4dc4d4785cd9a9906ba62e44f</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>Current session tools.exec_command observed output</div><div class="field"><span class="label">Summary</span>RED missing immutable profile selection observed; GREEN exact hull ceiling, initial/max spawn hull, immutable profile identity, invalid tier refusal and legacy/review parity.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-RULES -->
+
+<!-- CA:BEGIN:T-SAVE -->
+<article class="record" id="T-SAVE" data-ca-symbol="T-SAVE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-SAVE">T-SAVE</a><h3>Persist terminal records and unlocks transactionally</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-TIER-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-tier-progression.html#CR-TIER">ST-LS-TIER-SPEC#CR-TIER</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-RECORDS">ST-LS-TIER-SPEC#CR-RECORDS</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-OUTCOME">ST-LS-TIER-SPEC#CR-OUTCOME</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-SAVE">ST-LS-TIER-SPEC#CR-SAVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-TIER-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_tiers</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_loop</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_shop/ShopPersistenceChecks.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve supported saves, unrelated work and evidence.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Evolve strict save schema; preserve wallets, six tracks, run counters and v1/v2 pending rewards without invented history.</li><li>Bind admitted tier/profile; atomically save defeat/limit records and unlocks with exact threshold, independent maxima and tied-result semantics.</li><li>Keep manual exactly-once Claim, zero horizon reward, abandon exclusion, conflict/readback recovery and immutable retries.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_progression.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Actual C# behavior satisfies the referenced criteria, including negative cases.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_terminal_records_unlock_and_recovery</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_loop&#34;,&#34;-p&#34;,&#34;test_loop_model.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Existing progression contracts remain intact with deliberate supported-schema updates.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_defeat_reward_idempotence</li><li>test_non_defeat_no_reward</li><li>test_save_shape_and_reload</li><li>test_storage_failure_retry</li><li>test_uncertain_write_reconciliation</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_progression.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:43:33Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>83f90b2a1ae77a1c1fd8bfa3b2262b798cb3705bdd4be38c95315db84854d2cc</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>Current session actual source compilation and regression output</div><div class="field"><span class="label">Summary</span>2 C# progression checks pass: terminal records/unlock/recovery and strict v3 migration. Independent reviewer also reran19 checks and killed6 safeguard mutants.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-SAVE -->
+
+<!-- CA:BEGIN:T-UI -->
+<article class="record" id="T-UI" data-ca-symbol="T-UI" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-UI">T-UI</a><h3>Integrate tier selection, goal progress and saved results</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-TIER-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-tier-progression.html#CR-TIER">ST-LS-TIER-SPEC#CR-TIER</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-CLOCK">ST-LS-TIER-SPEC#CR-CLOCK</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-RECORDS">ST-LS-TIER-SPEC#CR-RECORDS</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-OUTCOME">ST-LS-TIER-SPEC#CR-OUTCOME</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-SAVE">ST-LS-TIER-SPEC#CR-SAVE</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-UI">ST-LS-TIER-SPEC#CR-UI</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-SAVE">T-SAVE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-TIER-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_tiers</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandTierChecks.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandHudChecks.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve supported saves, unrelated work and evidence.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Wire selection, run binding and saved terminal notices through existing controller ownership.</li><li>Expose lock reason, goals and bests; acknowledge thresholds without blocking combat; preserve explicit save retry, manual Claim and background-summary behavior.</li><li>Verify keyboard/touch, 44px targets, all five approved profiles, reduced motion, mute and navigation.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_ui.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Actual C# behavior satisfies the referenced criteria, including negative cases.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_tier_targets_and_summaries_fit_profiles</li><li>test_tier_text_reports_saved_and_unsaved_outcomes</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_controller.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Imported scene/controller proves fixed-clock goal, failed save/retry, reload/unlock/admission, exact-goal defeat and zero-reward horizon acknowledgement.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_tier_goal_result_controller_and_layout</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_ui.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:43:34Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>202a579360b92722f9202b138151922df0ab85d6023ebbe8f848a49b583ab30c</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>Current session actual source compilation output</div><div class="field"><span class="label">Summary</span>2 pure HUD format/geometry checks pass. Actual imported garage4 and outcomes3 checks also passed; other integration checks remain separate.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_controller.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:46:23Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>202a579360b92722f9202b138151922df0ab85d6023ebbe8f848a49b583ab30c</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/20261017T224324Z-f5c994e8/unity-controller.log</div><div class="field"><span class="label">Summary</span>Imported scene proves live goal/pause, terminal save retry, reload/unlock, Tier2 deployment, zero-reward limit recovery and acknowledgement at saturated wallet, exact-goal defeat. Independent review has no outstanding findings.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-UI -->
+
+<!-- CA:BEGIN:T-DELIVER -->
+<article class="record" id="T-DELIVER" data-ca-symbol="T-DELIVER" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-DELIVER">T-DELIVER</a><h3>Prove matching Unity export and real Tier 2 journey</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-TIER-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-tier-progression.html#CR-CLOCK">ST-LS-TIER-SPEC#CR-CLOCK</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-UI">ST-LS-TIER-SPEC#CR-UI</a></li><li><a href="../specs/last-stand-tier-progression.html#CR-DELIVERY">ST-LS-TIER-SPEC#CR-DELIVERY</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-UI">T-UI</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-TIER-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>e2e/helpers/lastStandJourney.mjs</code></td></tr><tr><td>modify</td><td><code>e2e/last-stand-playable-loop.spec.ts</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools</code></td></tr><tr><td>modify</td><td><code>client/public/last-stand</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs/LAST-STAND-ROADMAP.md</code></td></tr><tr><td>create</td><td><code>e2e/helpers/lastStandTierJourney.mjs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve supported saves, unrelated work and evidence.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Build the saved Last Stand scene with pinned Unity 6000.3.24f1; package through existing source/runtime inventory tools. Preserve unrelated scenes and art.</li><li>Exercise goal, terminal save, unlock, reload and Tier 2 deployment using real input and normal speed. Keep synthetic save tests separate from player proof.</li><li>Run affected model/shop/clock/navigation regressions and five-profile checks. Independently review save/contract risks; distinguish local evidence, hosted CI and release.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;Tools/build_web.py&#34;,&#34;--editor&#34;,&#34;C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe&#34;,&#34;--scene&#34;,&#34;last-stand&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Build receipt and source closure match.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>campaign-unity</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand-source.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Source inventory matches packaged export.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Runtime inventory is intact.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Real player progression and retained journeys pass on the declared host.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>Last Stand Campaigns journey preserves no-award exit and a stronger redeploy</li><li>Last Stand tier goals unlock and survive reload</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand-source.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:59:47Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>Current session package/export verification output</div><div class="field"><span class="label">Summary</span>3318 current source inputs match the packaged export. Genuine Unity build Web-20261017T224624Z-9b06ac passed exact before/after source and toolchain inventories; protected scenes unchanged. Production npm run build also passed typecheck and source/payload prebuild checks.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:59:47Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>Current session package/export verification output</div><div class="field"><span class="label">Summary</span>Complete sixteen-leaf runtime inventory passed.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--grep&#34;,&#34;tier goals unlock&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:59:48Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/browser-initial-layout-20261017T225450Z/error-context.md</div><div class="field"><span class="label">Summary</span>Goal, saved result and unlock succeeded; first pending reload consumed the initial Canvas report before current dimensions, failing the unchanged44px target assertion. Browser driver now waits for matching actual backing dimensions. Failure preserved; later real run passed and the durable-report run is active.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--grep&#34;,&#34;tier goals unlock&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T22:59:48Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>.git/tier-browser-current.log</div><div class="field"><span class="label">Summary</span>Actual normal-speed fresh-profile journey passed in2minutes at E2E_LIVE_URL=http://127.0.0.1:5187/singedTerra/: goal, terminal save/unlock, reload, manualClaim, earned upgrade, Tier2 deploy, unfinished reload and Campaigns return. Five viewport matrices and no console/page errors. Re-running to persist full observations as a file.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--grep&#34;,&#34;tier goals unlock&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T23:02:20Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/browser-pass-20261017T230100Z/tier-observations.json</div><div class="field"><span class="label">Summary</span>Fresh unseeded normal-speed journey passed:15 viewport/profile observations; real Deploy/Pause/Resume/Claim/Purchase/SelectTier2/Deploy; saved goal/unlock and pending reload; interruptedTier2 no record/reward; Campaigns return; no console/page errors; servedsource/runtime and driverinput hashes unchanged. Full hostedCI for this uncommitted slice remains unrun.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npx&#34;,&#34;playwright&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--grep&#34;,&#34;tier goals unlock&#34;,&#34;--workers=1&#34;,&#34;--output=campaign-unity/Evidence/last-stand-tier-progression/browser-pages-integration-20261017T232100Z&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T23:16:40Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/browser-pages-integration-3ee9f5c/last-stand-playable-loop-L-1d09a-s-unlock-and-survive-reload-desktop-fine/tier-observations.json</div><div class="field"><span class="label">Summary</span>After integrating exact Pages follow-up3ee9f5c, fresh unseeded normal-speed tier journey passed in2minutes:15profile observations, goal/save/unlock/reload/manualClaim/earnedupgrade/Tier2deploy/unfinishedreload/Campaignsreturn and no console/page errors. Output directory subsequently renamed to commit-based evidence name. Tier slice remains uncommitted; Pages PR539 hostedCI and publication pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;scripts/ci/lastStandBackground.test.mjs&#34;,&#34;scripts/ci/ciWorkflow.test.mjs&#34;,&#34;scripts/ci/lastStandQualification.test.mjs&#34;,&#34;scripts/ci/lastStandLegacyKey.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T23:22:25Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/verification-pages-integration/tier-integrated-focused.log</div><div class="field"><span class="label">Summary</span>215 focused tests:214passed, one Windows literal-source seam refused CRLF after Git patch application. This is the retained actual failed attempt, not a product or hostedCI pass. Helper restored to canonical LF without changing normalized source; affected check rerun separately.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;--test-name-pattern=background guards reject frozen ticks&#34;,&#34;scripts/ci/lastStandBackground.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-17T23:22:25Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/verification-pages-integration/tier-integrated-background-recheck.log</div><div class="field"><span class="label">Summary</span>Affected Windows background/native ownership guard passed on canonical LF helper bytes in105seconds. Combined with unchanged214passing focused cases, no focused failure remains. This runs actual guarded inert native seams, not a full player/media qualification; feature hostedCI remains unrun.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-18T22:59:58Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/ci-failure-39084124543/ci-failure.log</div><div class="field"><span class="label">Summary</span>Actual Linux CI39084124543: tier test exhausted its240second outerbudget at Tier2 screenshot after15profiles and savedunlock/Claim/earnedupgrade/selection; no game errors. Existing full Campaigns journey passed41minutes on the same head. Separate Pages39084712739 timed out a visible DOM read after10seconds. Both actual failures retained.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;--test-name-pattern=tier wrapper admits|actual maintained journey uses a finite host DOM&#34;,&#34;scripts/ci/lastStandQualification.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-18T22:59:59Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018/pr540-budget-red.log</div><div class="field"><span class="label">Summary</span>Before driver repair, both actual-wrapper/admission regressions failed for the intended limits:240000vs3600000 outerbudget and10000vs60000 Linux DOM allowance. No application behavior was altered to manufacture this RED.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;scripts/ci/lastStandQualification.test.mjs&#34;,&#34;scripts/ci/ciWorkflow.test.mjs&#34;,&#34;scripts/ci/lastStandLegacyKey.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-18T23:00:01Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018/pr540-budget-green.log</div><div class="field"><span class="label">Summary</span>212focused guards pass after reusing the existing finite host outerbudget and admitting Linux DOM/capture60seconds while retaining Windows10seconds. Normal gameplay clocks, geometry, source/storage/progression assertions and all other bounds unchanged. Actual Linux rerun remains pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npx&#34;,&#34;playwright&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--grep&#34;,&#34;tier goals unlock&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--output=campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-18T23:00:03Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018/last-stand-playable-loop-L-1d09a-s-unlock-and-survive-reload-desktop-fine/tier-observations.json</div><div class="field"><span class="label">Summary</span>Actual Windows fresh, unseeded normal-speed tier journey passed in2.1minutes with the changed driver.15profiles, no page/console errors, goal/save/unlock/reload/Claim/purchase/Tier2deploy/unfinishedreload/return assertions preserved. This proves current local behavior, not a Linux or hostedCI pass.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-DELIVER -->
+</section><section class="group" id="group-checkpoints"><a class="back" href="#main-content">Top</a><h2>Checkpoints</h2>
+<!-- CA:BEGIN:CP-TIER-LOOP -->
+<article class="record" id="CP-TIER-LOOP" data-ca-symbol="CP-TIER-LOOP" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-TIER-LOOP">CP-TIER-LOOP</a><h3>Complete two-tier progression loop</h3></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Exit</span>All seven criteria have applicable proof; outstanding hosted/platform checks and owner visual acceptance are identified separately.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-CALIBRATE">T-CALIBRATE</a></li><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-SAVE">T-SAVE</a></li><li><a href="#T-UI">T-UI</a></li><li><a href="#T-DELIVER">T-DELIVER</a></li></ul></div></article>
+<!-- CA:END:CP-TIER-LOOP -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-EXECUTION -->
+<article class="record" id="SEC-EXECUTION" data-ca-symbol="SEC-EXECUTION" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-EXECUTION">SEC-EXECUTION</a><h3>Authorization and delivery</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The user approved the specification in this session. Draft-preview source binding is not a second user approval gate. Checks are planned until run; commit, PR, merge and publication remain separate.</p><div class="refs">References: <a href="#T-DELIVER">T-DELIVER</a> </div></div></div></article>
+<!-- CA:END:SEC-EXECUTION -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-SPEC -->
+<article class="record" id="SRC-SPEC" data-ca-symbol="SRC-SPEC" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-SPEC">SRC-SPEC</a><h3>Approved Tier Goals and Personal Bests spec</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/specs/last-stand-tier-progression.html</div><div class="field"><span class="label">Note</span>Exact normative digest bound as draft_preview; conversation approval recorded in specification.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-SPEC -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>7730283bc6229cf201a353fa1f19e8c9789d82c5</div><div class="field"><span class="label">Observed date</span>2026-10-17</div><div class="field"><span class="label">Repository</span>https://github.com/SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 3dc2df547312fbf7bedc9139e4c6dd3831ccc82d3d2963519db3e3b86b9bef25<br>Model SHA-256: c1cf3c071d07b0d57dc00dc500b22c26c6ae3d0f13101fb9afda5f609e2531cb</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-TIER-PLAN",
+  "execution": {
+    "prerequisite_evidence": {},
+    "prerequisites": {},
+    "scopes": {},
+    "task_check_observations": {
+      "T-CALIBRATE": [
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_tiers",
+            "-p",
+            "test_tier_calibration.py",
+            "-v"
+          ],
+          "command_index": 0,
+          "criterion_subject_sha256": "0576d8d4a7e9b92092dc4396e02709a02f9f3f331a1953b93901347da187ecde",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:30:12Z",
+          "recording_operation_id": "ls-t-calibrate-check-b4",
+          "scoped_inputs_sha256": "e4fee9be6c0bd511508839476c2143942b4a32f3465a9115095022b851ab15ed",
+          "source": "Current session tools.exec_command observed output",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Both production tier profiles measured: goals attainable at caps, all matched builds have lower survival or disabled count on Tier2; numerical bounds not earned-player proof.",
+          "task_subject_sha256": "d11011d4fc66b13e6c0fee0242dda6aa5802dc895c79db7f0d1fb2afe53a564f"
+        }
+      ],
+      "T-DELIVER": [
+        {
+          "argv": [
+            "node",
+            "scripts/assets/verify-last-stand-source.mjs"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:59:47Z",
+          "recording_operation_id": "ls-tier-source-export-check-d1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "Current session package/export verification output",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "3318 current source inputs match the packaged export. Genuine Unity build Web-20261017T224624Z-9b06ac passed exact before/after source and toolchain inventories; protected scenes unchanged. Production npm run build also passed typecheck and source/payload prebuild checks.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/assets/verify-last-stand.mjs"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:59:47Z",
+          "recording_operation_id": "ls-tier-payload-check-d1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "Current session package/export verification output",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Complete sixteen-leaf runtime inventory passed.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--grep",
+            "tier goals unlock"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:59:48Z",
+          "recording_operation_id": "ls-tier-browser-initial-fail-d1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/browser-initial-layout-20261017T225450Z/error-context.md",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Goal, saved result and unlock succeeded; first pending reload consumed the initial Canvas report before current dimensions, failing the unchanged44px target assertion. Browser driver now waits for matching actual backing dimensions. Failure preserved; later real run passed and the durable-report run is active.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--grep",
+            "tier goals unlock"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:59:48Z",
+          "recording_operation_id": "ls-tier-browser-green-d1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": ".git/tier-browser-current.log",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Actual normal-speed fresh-profile journey passed in2minutes at E2E_LIVE_URL=http://127.0.0.1:5187/singedTerra/: goal, terminal save/unlock, reload, manualClaim, earned upgrade, Tier2 deploy, unfinished reload and Campaigns return. Five viewport matrices and no console/page errors. Re-running to persist full observations as a file.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--grep",
+            "tier goals unlock"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T23:02:20Z",
+          "recording_operation_id": "ls-tier-browser-durable-green-d2",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/browser-pass-20261017T230100Z/tier-observations.json",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Fresh unseeded normal-speed journey passed:15 viewport/profile observations; real Deploy/Pause/Resume/Claim/Purchase/SelectTier2/Deploy; saved goal/unlock and pending reload; interruptedTier2 no record/reward; Campaigns return; no console/page errors; servedsource/runtime and driverinput hashes unchanged. Full hostedCI for this uncommitted slice remains unrun.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "npx",
+            "playwright",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--project=desktop-fine",
+            "--grep",
+            "tier goals unlock",
+            "--workers=1",
+            "--output=campaign-unity/Evidence/last-stand-tier-progression/browser-pages-integration-20261017T232100Z"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T23:16:40Z",
+          "recording_operation_id": "pages-integration-ca9fb9eadbc54fb49aad52f56d849d27",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/browser-pages-integration-3ee9f5c/last-stand-playable-loop-L-1d09a-s-unlock-and-survive-reload-desktop-fine/tier-observations.json",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "After integrating exact Pages follow-up3ee9f5c, fresh unseeded normal-speed tier journey passed in2minutes:15profile observations, goal/save/unlock/reload/manualClaim/earnedupgrade/Tier2deploy/unfinishedreload/Campaignsreturn and no console/page errors. Output directory subsequently renamed to commit-based evidence name. Tier slice remains uncommitted; Pages PR539 hostedCI and publication pending.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "--test",
+            "scripts/ci/lastStandBackground.test.mjs",
+            "scripts/ci/ciWorkflow.test.mjs",
+            "scripts/ci/lastStandQualification.test.mjs",
+            "scripts/ci/lastStandLegacyKey.test.mjs"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T23:22:25Z",
+          "recording_operation_id": "pages-integrated-check-5a29eaf117b148ffbccb26034245ba84",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/verification-pages-integration/tier-integrated-focused.log",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "215 focused tests:214passed, one Windows literal-source seam refused CRLF after Git patch application. This is the retained actual failed attempt, not a product or hostedCI pass. Helper restored to canonical LF without changing normalized source; affected check rerun separately.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "--test",
+            "--test-name-pattern=background guards reject frozen ticks",
+            "scripts/ci/lastStandBackground.test.mjs"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T23:22:25Z",
+          "recording_operation_id": "pages-integrated-check-a2dea93b3fdb40aaba569b4286bba8a6",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/verification-pages-integration/tier-integrated-background-recheck.log",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Affected Windows background/native ownership guard passed on canonical LF helper bytes in105seconds. Combined with unchanged214passing focused cases, no focused failure remains. This runs actual guarded inert native seams, not a full player/media qualification; feature hostedCI remains unrun.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-18T22:59:58Z",
+          "recording_operation_id": "ci-budget-01c64281f6974546ab0cfdfbf1d58c96",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/ci-failure-39084124543/ci-failure.log",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Actual Linux CI39084124543: tier test exhausted its240second outerbudget at Tier2 screenshot after15profiles and savedunlock/Claim/earnedupgrade/selection; no game errors. Existing full Campaigns journey passed41minutes on the same head. Separate Pages39084712739 timed out a visible DOM read after10seconds. Both actual failures retained.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "--test",
+            "--test-name-pattern=tier wrapper admits|actual maintained journey uses a finite host DOM",
+            "scripts/ci/lastStandQualification.test.mjs"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-18T22:59:59Z",
+          "recording_operation_id": "ci-budget-f00f620349114cb5bf32d8f5aff8f439",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018/pr540-budget-red.log",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Before driver repair, both actual-wrapper/admission regressions failed for the intended limits:240000vs3600000 outerbudget and10000vs60000 Linux DOM allowance. No application behavior was altered to manufacture this RED.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "node",
+            "--test",
+            "scripts/ci/lastStandQualification.test.mjs",
+            "scripts/ci/ciWorkflow.test.mjs",
+            "scripts/ci/lastStandLegacyKey.test.mjs"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-18T23:00:01Z",
+          "recording_operation_id": "ci-budget-62ee47eb45734129a10da8730745c4e3",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018/pr540-budget-green.log",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "212focused guards pass after reusing the existing finite host outerbudget and admitting Linux DOM/capture60seconds while retaining Windows10seconds. Normal gameplay clocks, geometry, source/storage/progression assertions and all other bounds unchanged. Actual Linux rerun remains pending.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        },
+        {
+          "argv": [
+            "npx",
+            "playwright",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--project=desktop-fine",
+            "--grep",
+            "tier goals unlock",
+            "--workers=1",
+            "--retries=0",
+            "--output=campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018"
+          ],
+          "criterion_subject_sha256": "793fca9ca53cc914fe15fb39dd645f0f4b4d9f005fd1223871f879b939a5d691",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-18T23:00:03Z",
+          "recording_operation_id": "ci-budget-934c647e2a344674bf8572dba3923eb3",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/ci-budget-fix-20261018/last-stand-playable-loop-L-1d09a-s-unlock-and-survive-reload-desktop-fine/tier-observations.json",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Actual Windows fresh, unseeded normal-speed tier journey passed in2.1minutes with the changed driver.15profiles, no page/console errors, goal/save/unlock/reload/Claim/purchase/Tier2deploy/unfinishedreload/return assertions preserved. This proves current local behavior, not a Linux or hostedCI pass.",
+          "task_subject_sha256": "03afd96ed756fdecc861f1deb2d181d0c52d355073a32e196c5e88564d1431ff"
+        }
+      ],
+      "T-RULES": [
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_tiers",
+            "-p",
+            "test_tier_rules.py",
+            "-v"
+          ],
+          "command_index": 0,
+          "criterion_subject_sha256": "5d58b050b85f467a18168a3b64c16afbfdcb0fd297992ae2f7454069a0dbaa4f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:30:13Z",
+          "recording_operation_id": "ls-t-rules-check-b4",
+          "scoped_inputs_sha256": "8b71f320bb81ba0794e3863c5e32faba72cb80e4dc4d4785cd9a9906ba62e44f",
+          "source": "Current session tools.exec_command observed output",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "RED missing immutable profile selection observed; GREEN exact hull ceiling, initial/max spawn hull, immutable profile identity, invalid tier refusal and legacy/review parity.",
+          "task_subject_sha256": "a1b94cb3c99190507a3395bc61f20d7c478115bbdaf338310e9d4ef1106184b4"
+        }
+      ],
+      "T-SAVE": [
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_tiers",
+            "-p",
+            "test_tier_progression.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "8008630ff9327a93c226a2b26ae4bf155d7e79676f4ae7055b5aa500ee516a8d",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:43:33Z",
+          "recording_operation_id": "ls-tier-save-check-c1",
+          "scoped_inputs_sha256": "83f90b2a1ae77a1c1fd8bfa3b2262b798cb3705bdd4be38c95315db84854d2cc",
+          "source": "Current session actual source compilation and regression output",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "2 C# progression checks pass: terminal records/unlock/recovery and strict v3 migration. Independent reviewer also reran19 checks and killed6 safeguard mutants.",
+          "task_subject_sha256": "595d91f9a8c5d914c07bfe6f582661dd428a70c6ea80c2a61ebdda7bec32d339"
+        }
+      ],
+      "T-UI": [
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_tiers",
+            "-p",
+            "test_tier_ui.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "ffb16002aaff6973ef5cbfd39ac1d6954efc5a9d91c1094ad2d5da7a13a7bf96",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:43:34Z",
+          "recording_operation_id": "ls-tier-ui-pure-check-c1",
+          "scoped_inputs_sha256": "202a579360b92722f9202b138151922df0ab85d6023ebbe8f848a49b583ab30c",
+          "source": "Current session actual source compilation output",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "2 pure HUD format/geometry checks pass. Actual imported garage4 and outcomes3 checks also passed; other integration checks remain separate.",
+          "task_subject_sha256": "dfdc5f90f6025f3a94e807bb6bd821276a7f9243c75061c0fb9a6aaecdbb4d69"
+        },
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_tiers",
+            "-p",
+            "test_tier_controller.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "ffb16002aaff6973ef5cbfd39ac1d6954efc5a9d91c1094ad2d5da7a13a7bf96",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-17T22:46:23Z",
+          "recording_operation_id": "ls-tier-ui-controller-check-c2",
+          "scoped_inputs_sha256": "202a579360b92722f9202b138151922df0ab85d6023ebbe8f848a49b583ab30c",
+          "source": "campaign-unity/Evidence/last-stand-tier-progression/20261017T224324Z-f5c994e8/unity-controller.log",
+          "source_normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2",
+          "summary": "Imported scene proves live goal/pause, terminal save retry, reload/unlock, Tier2 deployment, zero-reward limit recovery and acknowledgement at saturated wallet, exact-goal defeat. Independent review has no outstanding findings.",
+          "task_subject_sha256": "dfdc5f90f6025f3a94e807bb6bd821276a7f9243c75061c0fb9a6aaecdbb4d69"
+        }
+      ]
+    },
+    "tasks": {
+      "T-CALIBRATE": {
+        "evidence_refs": [],
+        "reason": "All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-DELIVER": {
+        "evidence_refs": [],
+        "reason": "All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-RULES": {
+        "evidence_refs": [],
+        "reason": "All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-SAVE": {
+        "evidence_refs": [],
+        "reason": "All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-UI": {
+        "evidence_refs": [],
+        "reason": "All five implementation tasks complete with focused model/storage, imported Unity HUD/input/controller, exact matching export and real normal-speed browser proof. Independent contract review has zero outstanding findings. This records implementation DONE, not native owner visual/audio acceptance, exact-head hostedCI, commit/PR, merge or publication. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      }
+    }
+  },
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "c1cf3c071d07b0d57dc00dc500b22c26c6ae3d0f13101fb9afda5f609e2531cb",
+    "normative_sha256": "3dc2df547312fbf7bedc9139e4c6dd3831ccc82d3d2963519db3e3b86b9bef25",
+    "symbol_count": 8
+  },
+  "kind": "plan",
+  "normative": {
+    "baseline": {
+      "commit": "7730283bc6229cf201a353fa1f19e8c9789d82c5",
+      "observed_date": "2026-10-17",
+      "repository": "https://github.com/SUaDtL/singedTerra"
+    },
+    "checkpoints": [
+      {
+        "depends_on": [],
+        "exit": "All seven criteria have applicable proof; outstanding hosted/platform checks and owner visual acceptance are identified separately.",
+        "id": "CP-TIER-LOOP",
+        "tasks": [
+          "T-CALIBRATE",
+          "T-RULES",
+          "T-SAVE",
+          "T-UI",
+          "T-DELIVER"
+        ],
+        "title": "Complete two-tier progression loop"
+      }
+    ],
+    "criterion_dispositions": [],
+    "prerequisites": [],
+    "retired_symbols": [],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [
+              "T-DELIVER"
+            ],
+            "text": "The user approved the specification in this session. Draft-preview source binding is not a second user approval gate. Checks are planned until run; commit, PR, merge and publication remain separate.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-EXECUTION",
+        "title": "Authorization and delivery"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-SPEC",
+        "locator": ".codearbiter/specs/last-stand-tier-progression.html",
+        "note": "Exact normative digest bound as draft_preview; conversation approval recorded in specification.",
+        "title": "Approved Tier Goals and Personal Bests spec",
+        "type": "local_document",
+        "url": null
+      }
+    ],
+    "spec_ref": {
+      "artifact_id": "ST-LS-TIER-SPEC",
+      "binding_mode": "draft_preview",
+      "normative_sha256": "4944c7c126585a733d35a05bbb8476ed02075bb3df1e2246587f9bb34b5aa6c2"
+    },
+    "summary": "Calibrate, bind tier rules, evolve saves, integrate UI and prove the real Unity journey.",
+    "tasks": [
+      {
+        "checkpoint": "CP-TIER-LOOP",
+        "criterion_refs": [
+          "ST-LS-TIER-SPEC#CR-TIER",
+          "ST-LS-TIER-SPEC#CR-DELIVERY"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible."
+        ],
+        "execution_scope": "CP-TIER-LOOP",
+        "id": "T-CALIBRATE",
+        "paths": [
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_tiers"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve supported saves, unrelated work and evidence.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs"
+        ],
+        "steps": [
+          "Measure real starter, permanent-cap and total-cap builds for both fittings and both production tier profiles. The initial isolated hull-scale calibration passed; production profiles now supply the measurements.",
+          "Confirm goal attainability at existing caps and matched-build difficulty; surface a consequential tuning failure to the user."
+        ],
+        "title": "Calibrate approved goals and hull scaling",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_tiers",
+              "-p",
+              "test_tier_calibration.py",
+              "-v"
+            ],
+            "assertion": "Actual C# behavior satisfies the referenced criteria, including negative cases.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_goals_attainable_at_current_caps",
+              "test_tier_two_harder_for_matched_builds"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-TIER-LOOP",
+        "criterion_refs": [
+          "ST-LS-TIER-SPEC#CR-TIER",
+          "ST-LS-TIER-SPEC#CR-CLOCK"
+        ],
+        "depends_on": [
+          "T-CALIBRATE"
+        ],
+        "done_when": [
+          "Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible."
+        ],
+        "execution_scope": "CP-TIER-LOOP",
+        "id": "T-RULES",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_tiers"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve supported saves, unrelated work and evidence.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs"
+        ],
+        "steps": [
+          "Add two-tier profile identity, exact enemy hull ceiling scale and goal ticks.",
+          "Preserve legacy/review behavior, fixed ticks, spawn/attack rules, pause/background clock and horizon."
+        ],
+        "title": "Bind immutable tier profiles at deployment",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_tiers",
+              "-p",
+              "test_tier_rules.py",
+              "-v"
+            ],
+            "assertion": "Actual C# behavior satisfies the referenced criteria, including negative cases.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_exact_tier_hull_scaling_and_legacy_parity"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-TIER-LOOP",
+        "criterion_refs": [
+          "ST-LS-TIER-SPEC#CR-TIER",
+          "ST-LS-TIER-SPEC#CR-RECORDS",
+          "ST-LS-TIER-SPEC#CR-OUTCOME",
+          "ST-LS-TIER-SPEC#CR-SAVE"
+        ],
+        "depends_on": [
+          "T-RULES"
+        ],
+        "done_when": [
+          "Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible."
+        ],
+        "execution_scope": "CP-TIER-LOOP",
+        "id": "T-SAVE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_tiers"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_loop"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_shop/ShopPersistenceChecks.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve supported saves, unrelated work and evidence.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs"
+        ],
+        "steps": [
+          "Evolve strict save schema; preserve wallets, six tracks, run counters and v1/v2 pending rewards without invented history.",
+          "Bind admitted tier/profile; atomically save defeat/limit records and unlocks with exact threshold, independent maxima and tied-result semantics.",
+          "Keep manual exactly-once Claim, zero horizon reward, abandon exclusion, conflict/readback recovery and immutable retries."
+        ],
+        "title": "Persist terminal records and unlocks transactionally",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_tiers",
+              "-p",
+              "test_tier_progression.py",
+              "-v"
+            ],
+            "assertion": "Actual C# behavior satisfies the referenced criteria, including negative cases.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_terminal_records_unlock_and_recovery"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_loop",
+              "-p",
+              "test_loop_model.py",
+              "-v"
+            ],
+            "assertion": "Existing progression contracts remain intact with deliberate supported-schema updates.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_defeat_reward_idempotence",
+              "test_non_defeat_no_reward",
+              "test_save_shape_and_reload",
+              "test_storage_failure_retry",
+              "test_uncertain_write_reconciliation"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-TIER-LOOP",
+        "criterion_refs": [
+          "ST-LS-TIER-SPEC#CR-TIER",
+          "ST-LS-TIER-SPEC#CR-CLOCK",
+          "ST-LS-TIER-SPEC#CR-RECORDS",
+          "ST-LS-TIER-SPEC#CR-OUTCOME",
+          "ST-LS-TIER-SPEC#CR-SAVE",
+          "ST-LS-TIER-SPEC#CR-UI"
+        ],
+        "depends_on": [
+          "T-SAVE"
+        ],
+        "done_when": [
+          "Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible."
+        ],
+        "execution_scope": "CP-TIER-LOOP",
+        "id": "T-UI",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_tiers"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandTierChecks.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandHudChecks.cs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve supported saves, unrelated work and evidence.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs"
+        ],
+        "steps": [
+          "Wire selection, run binding and saved terminal notices through existing controller ownership.",
+          "Expose lock reason, goals and bests; acknowledge thresholds without blocking combat; preserve explicit save retry, manual Claim and background-summary behavior.",
+          "Verify keyboard/touch, 44px targets, all five approved profiles, reduced motion, mute and navigation."
+        ],
+        "title": "Integrate tier selection, goal progress and saved results",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_tiers",
+              "-p",
+              "test_tier_ui.py",
+              "-v"
+            ],
+            "assertion": "Actual C# behavior satisfies the referenced criteria, including negative cases.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_tier_targets_and_summaries_fit_profiles",
+              "test_tier_text_reports_saved_and_unsaved_outcomes"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_tiers",
+              "-p",
+              "test_tier_controller.py",
+              "-v"
+            ],
+            "assertion": "Imported scene/controller proves fixed-clock goal, failed save/retry, reload/unlock/admission, exact-goal defeat and zero-reward horizon acknowledgement.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_tier_goal_result_controller_and_layout"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-TIER-LOOP",
+        "criterion_refs": [
+          "ST-LS-TIER-SPEC#CR-CLOCK",
+          "ST-LS-TIER-SPEC#CR-UI",
+          "ST-LS-TIER-SPEC#CR-DELIVERY"
+        ],
+        "depends_on": [
+          "T-UI"
+        ],
+        "done_when": [
+          "Intended behavior is implemented with actual checks reported; unrun delivery requirements stay visible."
+        ],
+        "execution_scope": "CP-TIER-LOOP",
+        "id": "T-DELIVER",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandJourney.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "e2e/last-stand-playable-loop.spec.ts"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools"
+          },
+          {
+            "action": "modify",
+            "path": "client/public/last-stand"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs/LAST-STAND-ROADMAP.md"
+          },
+          {
+            "action": "create",
+            "path": "e2e/helpers/lastStandTierJourney.mjs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve supported saves, unrelated work and evidence.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs"
+        ],
+        "steps": [
+          "Build the saved Last Stand scene with pinned Unity 6000.3.24f1; package through existing source/runtime inventory tools. Preserve unrelated scenes and art.",
+          "Exercise goal, terminal save, unlock, reload and Tier 2 deployment using real input and normal speed. Keep synthetic save tests separate from player proof.",
+          "Run affected model/shop/clock/navigation regressions and five-profile checks. Independently review save/contract risks; distinguish local evidence, hosted CI and release."
+        ],
+        "title": "Prove matching Unity export and real Tier 2 journey",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "Tools/build_web.py",
+              "--editor",
+              "C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe",
+              "--scene",
+              "last-stand"
+            ],
+            "assertion": "Build receipt and source closure match.",
+            "availability": "existing",
+            "cwd": "campaign-unity",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "node",
+              "scripts/assets/verify-last-stand-source.mjs"
+            ],
+            "assertion": "Source inventory matches packaged export.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "node",
+              "scripts/assets/verify-last-stand.mjs"
+            ],
+            "assertion": "Runtime inventory is intact.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "node",
+              "node_modules/@playwright/test/cli.js",
+              "test",
+              "e2e/last-stand-playable-loop.spec.ts",
+              "--config=playwright.config.ts",
+              "--project=desktop-fine",
+              "--workers=1",
+              "--retries=0"
+            ],
+            "assertion": "Real player progression and retained journeys pass on the declared host.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "Last Stand Campaigns journey preserves no-award exit and a stronger redeploy",
+              "Last Stand tier goals unlock and survive reload"
+            ]
+          }
+        ]
+      }
+    ],
+    "title": "Last Stand: Tier Goals and Personal Bests implementation"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../specs/last-stand-tier-progression.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 32,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-tier-progression"
+}
+</script>
+</body></html>

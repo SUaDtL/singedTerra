@@ -15,7 +15,7 @@ namespace SingedTerra.LastStand
         readonly RectTransform root, card, dock;
         readonly RectTransform hullFill;
         readonly Text heading, detail, status;
-        readonly Button deploy, claim, purchase, redeploy, retry, fitting, pause, mute;
+        readonly Button deploy, claim, purchase, redeploy, retry, fitting, pause, mute, tier;
         readonly Button[] actions;
         readonly Button shopEntry, shopClose;
         readonly Button[] shopTabs, shopActions, allActions;
@@ -194,7 +194,8 @@ namespace SingedTerra.LastStand
             retry = Action("RetrySave","RETRY SAVE",dock,loop.RetrySave);
             pause = Action("Pause","PAUSE",dock,loop.TogglePause);
             mute = Action("ToggleMute","SOUND ON",dock,loop.ToggleMute);
-            actions = new[] { fitting, deploy, claim, purchase, redeploy, retry, pause, mute };
+            tier = Action("ToggleTier","",dock,() => loop.SelectTier(loop.Progression.SelectedTier == 1 ? 2 : 1));
+            actions = new[] { fitting, deploy, claim, purchase, redeploy, retry, pause, mute, tier };
             shopEntry = Action("ShopEntry","MECHANICS SHOP",dock,OpenShop);
             shopPanel = Panel("ShopPanel",root,true);
             shopHeading = Label("ShopHeading",shopPanel,16); shopHeading.text = "MECHANICS SHOP";
@@ -249,6 +250,8 @@ namespace SingedTerra.LastStand
             string phase = loop.Phase;
             var progress = loop.Progression;
             var model = loop.Session.Model;
+            int runTier = LastStandTierCatalog.IsValid(progress.ActiveTier) ? progress.ActiveTier :
+                progress.PendingDefeat != null && LastStandTierCatalog.IsValid(progress.PendingDefeat.Tier) ? progress.PendingDefeat.Tier : progress.SelectedTier;
             bool ready = progress.SaveState == "ready";
             bool garage = phase == "garage", battle = phase == "battle", settling = phase == "settling", result = phase == "result", workshop = phase == "workshop";
             bool launcher = loop.GetComponent<SingedTerra.Art.TankPresentation>().showingLauncher;
@@ -257,42 +260,44 @@ namespace SingedTerra.LastStand
             bool canPause = (battle || settling) && model != null && loop.Session.Failure == "" &&
                 !loop.Session.CatchingUp && (!loop.Session.Paused || loop.Session.CanRun);
             var state = new Presentation { Phase = phase, Primary = garage ? "Deploy" : battle || settling ? "Pause" : result ? "Claim" : workshop ? "Redeploy" : "RetrySave",
-                Active = new[] { garage || workshop, garage, result, workshop, workshop, !ready, battle || settling, true },
+                Active = new[] { garage || workshop, garage, result, workshop, workshop, !ready, battle || settling, true, (garage || workshop) && ready },
                 Available = new[] { model == null, canDeploy, ready && progress.PendingDefeat != null &&
-                    progress.ActiveRunId == 0 && progress.Wallet != int.MaxValue,
+                    progress.ActiveRunId == 0 && (progress.PendingDefeat.Reward == 0 || progress.Wallet != int.MaxValue),
                     ready && progress.ActiveRunId == 0 && progress.PendingDefeat == null &&
                     progress.NextCost != 0 && progress.Wallet >= progress.NextCost, canDeploy, true,
-                    canPause, true },
+                    canPause, true, ready && model == null && progress.ActiveRunId == 0 && progress.PendingDefeat == null && progress.TierTwoUnlocked },
                 Labels = new[] { launcher ? "FIT REPAIR" : "FIT LAUNCHER", canDeploy ? "DEPLOY" : "DEPLOY UNAVAILABLE",
                     "CLAIM 1 SALVAGE", "BUY CANNON ATTACK", "REDEPLOY", "RETRY SAVE",
-                    (loop.Session.Paused ? "RESUME" : "PAUSE") + (canPause ? "" : " UNAVAILABLE"), loop.Muted ? "SOUND OFF" : "SOUND ON" } };
+                    (loop.Session.Paused ? "RESUME" : "PAUSE") + (canPause ? "" : " UNAVAILABLE"), loop.Muted ? "SOUND OFF" : "SOUND ON",
+                    progress.TierTwoUnlocked ? "SELECT TIER " + (progress.SelectedTier == 1 ? "2" : "1") : "TIER 2 LOCKED" } };
             if (garage)
             {
                 state.Heading = "LAST STAND";
-                state.Detail = "Fitting: " + (launcher ? "Auxiliary launcher" : "Field repair") +
-                    "\nCannon Attack  " + progress.CannonAttackLevel + " / 3" + "\nDamage  " + progress.CannonDamage +
-                    "\nSalvage  " + progress.Wallet + "  /  Next upgrade " + (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString());
+                state.Detail = TierSummary(progress) + "\nFitting: " + (launcher ? "Auxiliary launcher" : "Field repair") +
+                    "\nCannon Attack " + progress.CannonAttackLevel + "/3 / Damage " + progress.CannonDamage +
+                    "\nSalvage " + progress.Wallet + " / Next " + (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString());
             }
             else if (battle && model != null)
             {
-                state.Heading = loop.Session.CatchingUp ? "CATCHING UP" : loop.Session.Paused ? "BATTLE PAUSED" : "HOLD THE POSITION";
+                state.Heading = loop.Session.CatchingUp ? "CATCHING UP" : loop.Session.Paused ? "BATTLE PAUSED" :
+                    LastStandTierHudText.GoalMet(runTier,model.Tick) ? "GOAL MET: TIER " + runTier : "HOLD THE POSITION";
                 state.Detail = "HULL  " + model.Hull + " / " + model.CurrentMaximumHull + "      TIME  " + (model.Tick / 20f).ToString("F1") + "s" +
                     "\nDISABLED  " + model.Kills + "      CANNON  " + model.CurrentCannonDamage + " DAMAGE" +
                     "\nFITTING  " + (model.HasLauncher ? "AUXILIARY LAUNCHER" : "FIELD REPAIR");
             }
             else if (result && progress.PendingDefeat != null)
             {
-                state.Heading = "LAST STAND ENDED";
-                state.Detail = "Time  " + (progress.PendingDefeat.ElapsedTicks / (float)EncounterModel.TicksPerSecond).ToString("F1") +
-                    "s  /  Disabled  " + progress.PendingDefeat.Kills + "\nEarned salvage  " + progress.PendingDefeat.Reward +
-                    "\nWallet  " + progress.Wallet + " salvage\nClaim to continue to the workshop.";
+                var pending = progress.PendingDefeat;
+                state.Heading = pending.IsLimit ? "RUN LIMIT REACHED" : "LAST STAND ENDED";
+                state.Detail = LastStandTierHudText.Result(pending.Tier,pending.IsLimit,pending.ElapsedTicks,pending.Kills,
+                    pending.Reward,progress.Wallet,true,pending.NewBestTime,pending.NewBestKills,pending.UnlockedTierTwo);
             }
             else if (workshop)
             {
                 state.Heading = "WORKSHOP  /  CANNON ATTACK";
-                state.Detail = "Cannon Attack  " + progress.CannonAttackLevel + " / 3\nDamage  " + progress.CannonDamage +
-                    (progress.NextCost == 0 ? "  /  MAX" : " to " + (progress.CannonDamage + 10) + "  /  Cost  " + progress.NextCost + " salvage") +
-                    "\nWallet  " + progress.Wallet + " salvage\nFitting: " + (launcher ? "Auxiliary launcher" : "Field repair");
+                state.Detail = TierSummary(progress) + "\nCannon Attack " + progress.CannonAttackLevel + "/3 / Damage " + progress.CannonDamage +
+                    "\nSalvage " + progress.Wallet + " / Cost " + (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString()) +
+                    "\nFitting: " + (launcher ? "Auxiliary launcher" : "Field repair");
             }
             else
             {
@@ -301,21 +306,26 @@ namespace SingedTerra.LastStand
                 state.Detail = settling ? "The final impact is settling…" : phase == "loading" ? "Waiting for local storage." :
                     "Storage has not confirmed this change.\nRetry Save to check the existing record.";
             }
-            state.Labels[2] = state.Available[2] ? "CLAIM 1 SALVAGE" : "CLAIM UNAVAILABLE";
+            bool limitResult = progress.PendingDefeat != null && progress.PendingDefeat.Reward == 0;
+            state.Labels[2] = state.Available[2] ? limitResult ? "CONTINUE" : "CLAIM 1 SALVAGE" : "CLAIM UNAVAILABLE";
             state.Labels[3] = progress.NextCost == 0 ? "CANNON ATTACK MAX" : state.Available[3] ? "BUY CANNON ATTACK" : "PURCHASE UNAVAILABLE";
             state.Labels[4] = canDeploy ? "REDEPLOY" : "REDEPLOY UNAVAILABLE";
             state.Status = ready ? "LOCAL SAVE READY\n" + (loop.Notice == "" ? "Unfinished runs earn no reward." : loop.Notice) : progress.SaveError;
+            if (ready && (garage || workshop) && !progress.TierTwoUnlocked && loop.Notice == "")
+                state.Status = "LOCAL SAVE READY\n" + LastStandTierHudText.LockReason;
             if (model != null)
             {
                 state.HullFraction = Mathf.Clamp01(model.Hull / (float)model.CurrentMaximumHull);
                 state.Readouts.Add("HullValue","HULL  " + model.Hull + " / " + model.CurrentMaximumHull);
-                state.Readouts.Add("ElapsedTime","TIME  " + (model.Tick / (float)EncounterModel.TicksPerSecond).ToString("F1") + "s");
+                state.Readouts.Add("ElapsedTime",LastStandTierHudText.Progress(runTier,model.Tick));
                 state.Readouts.Add("DisabledCount","DISABLED  " + model.Kills);
                 state.Readouts.Add("CannonDamage","CANNON  " + model.CurrentCannonDamage + " DAMAGE");
                 state.Readouts.Add("Fitting","FITTING  " + (model.HasLauncher ? "AUXILIARY LAUNCHER" : "FIELD REPAIR"));
             }
             return state;
         }
+        static string TierSummary(LastStandProgression progress) => LastStandTierHudText.Goal(progress.SelectedTier) + "\n" +
+            LastStandTierHudText.Best(progress.GetBestTicks(progress.SelectedTier),progress.GetBestKills(progress.SelectedTier));
         bool CanOpenRunShop()
         {
             var model = loop.Session?.Model; var shop = loop.Shop;
@@ -407,8 +417,9 @@ namespace SingedTerra.LastStand
             shopCurrency.text = (run ? "SCRAP  " : "SALVAGE  ") + (shopView?.Balance ?? 0);
             if (shopOpen && permanent)
             {
-                heading.text = fitting == LastStandFitting.Launcher ? "AUXILIARY LAUNCHER" : "FIELD REPAIR";
-                detail.text = "Permanent upgrades";
+                heading.text = "TIER " + loop.Progression.SelectedTier + " / GOAL " +
+                    LastStandTierCatalog.Get(loop.Progression.SelectedTier).GoalTicks / EncounterModel.TicksPerSecond + "s";
+                detail.text = LastStandTierHudText.Best(loop.Progression.GetBestTicks(loop.Progression.SelectedTier),loop.Progression.GetBestKills(loop.Progression.SelectedTier));
             }
             for (int i = 0; i < shopTabs.Length; i++) StyleAction(shopTabs[i],i == (int)shopCategory,shopOpen);
             foreach (var controls in shopCards)

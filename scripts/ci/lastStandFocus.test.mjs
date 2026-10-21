@@ -9,6 +9,83 @@ assert.ok(begin>0 && end>begin,'Actual maintained focus caller is required');
 const run=new Function('process','page','native','report','ensureOwnedNativeForeground','check',
   source.slice(begin,end)+'return focused("inert caller-order fixture");');
 
+async function returnKeyboardFixture({host='linux',initial='return',entryFails=false,outline='solid',measure=false,trap=false,loseFocus=false,
+  initiallyUnfocused=false,restoreFocus=true}={}){
+  const begin=source.indexOf('    const keyboardFocus=async locator=>{',source.indexOf('export async function runLastStandJourney('));
+  const end=source.indexOf('    const dismissSplash=',begin);
+  assert.ok(begin>0 && end>begin);
+  const target={id:'last-stand-return'},canvas={id:'unity-canvas'},keys=[];
+  let lost=initiallyUnfocused,focusCalls=0;
+  const document={activeElement:initial==='return'?target:canvas,hidden:false,hasFocus:()=>!lost,
+    getElementById:id=>id==='unity-canvas'?canvas:null};let index=0,reads=0;
+  const read=(fn,element)=>{reads++;return fn(element);};
+  // Inert reduction of the maintained wrapper: either direction into the canvas
+  // invokes enter-first; previous from its first control exits to native Return.
+  const context={document,window:{},process:{platform:host},focused:async()=>{focusCalls++;if(restoreFocus)lost=false;},check:(ok,name)=>assert.ok(ok,name),
+    getComputedStyle:()=>({outlineStyle:outline,outlineWidth:'2px'}),
+    page:{evaluate:async()=>{reads++;},locator:()=>({count:async()=>{reads++;return 1;},evaluate:async fn=>read(fn,canvas)}),
+      keyboard:{press:async key=>{keys.push(key);
+        if(document.activeElement===target){if(!entryFails){document.activeElement=canvas;index=0;}}
+        else if(!trap && (key==='Shift+Tab' && index===0 || key==='Tab' && ++index===20))document.activeElement=target;
+        lost=loseFocus;
+      }}},
+  };
+  const locator={evaluate:async fn=>read(fn,target)};
+  const {runInNewContext}=await import('node:vm');
+  await runInNewContext('(async()=>{'+source.slice(begin,end)+'await keyboardFocus(locator);})()', {...context,locator});
+  return measure?{keys,reads,focusCalls}:keys;
+}
+
+test('Linux Return inspection batches current DOM proof without redundant renderer roundtrips',async()=>{
+  for(const initial of ['return','canvas']){
+    const result=await returnKeyboardFixture({initial,measure:true});
+    assert.ok(result.reads<=3,`Current focus, native entry and final outline need at most three reads, observed ${result.reads}`);
+  }
+});
+
+test('batched Return inspection activates missing focus and rechecks the actual document',async()=>{
+  const restored=await returnKeyboardFixture({initiallyUnfocused:true,measure:true});
+  assert.equal(restored.focusCalls,1);
+  assert.deepEqual(restored.keys,['Tab','Shift+Tab']);
+  await assert.rejects(returnKeyboardFixture({initiallyUnfocused:true,restoreFocus:false}),/document focus and visibility/);
+});
+
+test('Linux repeated Return inspection enters first then escapes instead of traversing the whole HUD',async()=>{
+  assert.deepEqual(await returnKeyboardFixture(),['Tab','Shift+Tab']);
+  assert.deepEqual(await returnKeyboardFixture({initial:'canvas'}),['Shift+Tab']);
+});
+
+test('Return preparation preserves Windows navigation and rejects failed native entry or invisible focus',async()=>{
+  const keys=await returnKeyboardFixture({host:'win32'});
+  assert.equal(keys[0],'Shift+Tab');assert.equal(keys.length,21);
+  await assert.rejects(returnKeyboardFixture({entryFails:true}),/native Tab enters/);
+  await assert.rejects(returnKeyboardFixture({outline:'none'}),/visible keyboard focus/);
+  await assert.rejects(returnKeyboardFixture({trap:true}),/outer control reachable/);
+  await assert.rejects(returnKeyboardFixture({loseFocus:true}),/outer control reachable/);
+});
+
+test('Linux already-visible focus needs one current DOM read without redundant activation',async()=>{
+  const calls=[];
+  await run({platform:'linux'},{
+    bringToFront:async()=>calls.push('activate'),waitForFunction:async()=>calls.push('wait'),
+    evaluate:async expression=>{assert.equal(expression,'!document.hidden && document.hasFocus()');calls.push('read');return true;},
+  },{},{},async()=>assert.fail('No Windows native qualification on Linux'),ok=>assert.ok(ok));
+  assert.deepEqual(calls,['read'],'An already focused Linux document needs no repeated renderer activation/wait roundtrips');
+});
+
+test('Linux missing focus still requires actual activation, a bounded wait and fresh confirmation',async()=>{
+  for(const returned of [true,false]){
+    const calls=[];let reads=0;
+    const action=run({platform:'linux'},{
+      bringToFront:async()=>calls.push('activate'),waitForFunction:async(_expr,_arg,options)=>{
+        calls.push('wait');assert.equal(options.timeout,10000);},
+      evaluate:async()=>{calls.push('read');return ++reads===1?false:returned;},
+    },{},{},async()=>assert.fail('No Windows native qualification on Linux'),ok=>assert.ok(ok));
+    if(returned)await action;else await assert.rejects(action);
+    assert.deepEqual(calls,['read','activate','wait','read']);
+  }
+});
+
 test('owned native foreground is established before waiting for document focus',async()=>{
   const calls=[];let established=false;
   await run({platform:'win32'}, {
@@ -17,6 +94,16 @@ test('owned native foreground is established before waiting for document focus',
     evaluate:async()=>established,
   },{}, {},async()=>{established=true;calls.push('native');},condition=>assert.ok(condition));
   assert.deepEqual(calls,['cdp','native','dom']);
+});
+
+test('Windows already-focused DOM still requires owned native foreground proof',async()=>{
+  const calls=[];let established=false;
+  await run({platform:'win32'},{
+    bringToFront:async()=>calls.push('activate'),
+    waitForFunction:async()=>{assert.ok(established);calls.push('wait');},
+    evaluate:async()=>{assert.ok(established,'A true DOM result cannot bypass native establishment');calls.push('read');return true;},
+  },{},{},async()=>{established=true;calls.push('native');},ok=>assert.ok(ok));
+  assert.deepEqual(calls,['activate','native','wait','read']);
 });
 
 test('native foreground refusal propagates before a DOM wait can proceed',async()=>{
