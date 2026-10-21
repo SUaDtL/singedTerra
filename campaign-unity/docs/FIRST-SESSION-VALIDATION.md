@@ -53,6 +53,33 @@ Full raw browser captures, Editor archives and failed attempts remain local.
 Committed summaries retain the raw hashes and selected observations, not native
 acceptance receipts.
 
+## Hosted regression and repair
+
+The [CI run for `4bbedc0`](https://github.com/SUaDtL/singedTerra/actions/runs/39558068741)
+passed the build, audit, client and other browser lanes, but the
+`last-stand-10` audio-return validator failed. The rendering aggregate failed
+because that browser lane failed. The recorded cue arrived 485.6 ms after the
+last advancing callback; its state report arrived at 518.4 ms. The validator
+incorrectly applied the 500 ms cue-admission limit to that later report.
+
+The corrected validator retains the 500 ms emission limit, requires the state
+report within 50 ms of the cue, and admits at most ten model steps. Current-run
+identity, advancing-clock provenance, foreground admission and exact model/cue
+checks remain in place. A reduced fixture of the failed trace reproduced the
+failure before the repair. All 39 qualification tests then passed, including
+15 mutations covering timing, step count, identity, admission and wrong cues.
+The fixture's enclosing bounds are explicitly synthetic; it is regression
+evidence, not a native acceptance receipt. No game or exported runtime changed.
+
+The existing background test reader also selected an unrelated logging object
+named `observation`, preventing the module from loading. It now requires the
+unique async observation declaration while retaining the frozen-source test
+adapter. The four noninteractive top-level tests passed through the maintained
+module, including the actual observation caller and 44 audio-boundary plus 52
+terminal-return cases. The full background run was interrupted and is not a
+pass; its owned inert browser fixture had completed cleanup, and a subsequent
+process/profile check found no remaining owned resources.
+
 ## Remaining boundaries
 
 The maintained tier journey passed against the final helper and packaged

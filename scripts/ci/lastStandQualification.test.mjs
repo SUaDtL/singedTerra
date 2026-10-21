@@ -275,6 +275,67 @@ test('focus-only session refresh does not replace the actual advancing callback 
   assert.equal(result.cues.length,0);
 });
 
+function reportedCallbackTailFixture(){
+  // Reduced recorded rows from CI39558068741 / last-stand-10, artifact12327300165.
+  // Exact emission times, run identity and oracle outputs are retained. The
+  // enclosing begin/recovered marks are inert bounds, not captured host proof.
+  const id={load:3,timeOrigin:1792565620753.3,scope:'healthy'};
+  const event=(kind,t,focused,hidden)=>({...id,kind,t,focused,hidden,globalTarget:true});
+  const model={hp:120,spawned:9,launcher:0,healed:0,closeHits:0,rangedHits:0,status:'Running'};
+  const oracle=Object.fromEntries([
+    [469,7,15,2],[470,7,15,2],[471,7,15,2],[472,8,16,1],[473,8,16,1],
+    [474,8,16,1],[475,8,16,1],[476,8,16,1],[477,8,16,1],[478,8,16,1],[479,8,16,1],
+  ].map(([tick,kills,cannon,alive])=>[tick,{...model,tick,kills,cannon,alive}]));
+  const state={...id,sessionRun:1,runId:1,pendingRunId:0,cannonDamage:20,action:'session',
+    phase:'battle',paused:false,muted:false,saveState:'ready',hull:120};
+  return {kind:'hidden',before:{...id,t:112320.30000000002,run:1,loop:{runId:1,cannonDamage:20}},
+    begin:113957,recovered:120012,ms:6000,
+    events:[event('blur',113938.19999999998,false,false),
+      event('visibilitychange',113956.30000000002,false,true),
+      event('focus',119969.9,true,true),event('visibilitychange',119976.6,true,false)],
+    encounters:[{...id,...oracle[469],t:119970.6,run:1,action:'visibility',focused:true,
+      applicationPaused:false,paused:false,failed:false,catchingUp:false}],
+    states:[{...state,t:118491.80000000002,tick:449,kills:7},
+      {...state,t:119492.80000000002,tick:469,kills:7},
+      {...state,t:119975.19999999998,tick:469,kills:7},
+      {...state,t:120011.19999999998,tick:479,kills:8}],
+    cues:[{...id,t:119978.4,text:'ST_LS_AUDIO event=cannon\n'},
+      {...id,t:119979.19999999998,text:'ST_LS_AUDIO event=destruction\n'}],oracle};
+}
+
+test('recorded shard10 return cues remain eligible before bounded state reporting completes',()=>{
+  const x=reportedCallbackTailFixture();
+  assert.ok(x.states[3].t-x.states[1].t>500,'Recorded post-callback log crosses the admission boundary');
+  assert.ok(x.cues.every(c=>c.t-x.states[1].t<500),'Recorded cue emissions precede the unchanged boundary');
+  const result=journey.validateAwayAudioReturn(x);
+  assert.deepEqual(result.boundary.callbacks.map(c=>[c.from,c.to]),[[469,479]]);
+  assert.equal(result.cues.length,0);
+});
+
+test('callback reporting tail preserves admission, step, provenance and exact cue bounds',()=>{
+  const faults=[
+    ['late cue',x=>{x.cues[0].t=x.states[1].t+500.1;x.cues[1].t=x.cues[0].t+.1;}],
+    ['delayed state',x=>{x.states[3].t=x.cues[0].t+50.1;x.recovered=x.states[3].t+1;}],
+    ['eleven steps',x=>{x.states[3].tick=480;x.oracle[480]={...x.oracle[479],tick:480};}],
+    ['foreign anchor load',x=>x.states[1].load++],
+    ['foreign anchor origin',x=>x.states[1].timeOrigin++],
+    ['foreign anchor run',x=>x.states[1].runId++],
+    ['inert anchor',x=>x.states[0].tick=x.states[1].tick],
+    ['missing anchor',x=>x.states.splice(1,1)],
+    ['stale anchor',x=>x.states[1].t-=1000],
+    ['background admission',x=>x.encounters[0].focused=false],
+    ['catch-up admission',x=>x.encounters[0].catchingUp=true],
+    ['muted callback',x=>x.states[3].muted=true],
+    ['wrong final model',x=>x.states[3].hull--],
+    ['duplicate cue',x=>x.cues.push({...x.cues[1]})],
+    ['wrong cue',x=>x.cues[1].text='ST_LS_AUDIO event=impact\n'],
+  ];
+  for(const [name,mutate]of faults){
+    const x=reportedCallbackTailFixture();mutate(x);
+    assert.throws(()=>journey.validateAwayAudioReturn(x),'Invalid '+name+' must fail');
+  }
+});
+
 test('focus refresh retains the short callback budget, exact model cues and clock identity',()=>{
   const mutations=[x=>x.states[1].t=6400,x=>x.states[1].tick=19,
     x=>x.states[1].load++,x=>x.states[1].timeOrigin++,x=>x.states[1].scope='stale',

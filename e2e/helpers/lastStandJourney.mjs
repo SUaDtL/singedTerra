@@ -1474,7 +1474,10 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
       }
       assert.ok(next && previous && next.tick>previous.tick && previous.tick>=resumed.tick &&
         (next.phase==='battle' || terminal && next.phase==='settling') && !next.paused && !next.muted && next.saveState==='ready' &&
-        next.cannonDamage===before.loop.cannonDamage && next.t-clockPrevious.t<=500 &&
+        // Cues precede the callback's state log. Keep the 500ms admission bound
+        // at emission, with an independent ten-step cap and one-step log tail.
+        next.cannonDamage===before.loop.cannonDamage && cue.t-clockPrevious.t<=500 &&
+        next.t-cue.t<=50 && (next.tick-previous.tick)*50<=500 &&
         Math.abs((next.t-clockPrevious.t-(terminal?terminal.terminalElapsed*1000:0))/50-(next.tick-previous.tick))<=1.01,
         'Return cue lacks a fresh eligible foreground model callback');
       if(terminal) {
