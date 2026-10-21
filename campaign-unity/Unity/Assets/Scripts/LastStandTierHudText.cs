@@ -14,6 +14,8 @@ namespace SingedTerra.LastStand
         public static string Progress(int tier, int ticks) => "T" + tier + " " + ticks / TicksPerSecond + "/" +
             LastStandTierCatalog.Get(tier).GoalTicks / TicksPerSecond + "s";
         public static bool GoalMet(int tier, int ticks) => ticks >= LastStandTierCatalog.Get(tier).GoalTicks;
+        public static string BattleHeading(int tier, int ticks) => GoalMet(tier, ticks)
+            ? "Goal met; saves at end" : "HOLD THE POSITION";
         public static string LockReason => "T2 locked: save a finished 60s T1 run.";
         public static string Improvements(bool time, bool kills) => time && kills ? "New best: time + disabled" :
             time ? "New best survival time" : kills ? "New best disabled count" : "No new personal best";

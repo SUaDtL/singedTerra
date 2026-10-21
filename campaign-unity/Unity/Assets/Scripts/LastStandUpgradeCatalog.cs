@@ -118,12 +118,16 @@ namespace SingedTerra.LastStand
                 case LastStandUpgradeTrackId.HullCapacity: return effect + " maximum hull";
                 case LastStandUpgradeTrackId.Armor:
                     return "reduce hits by " + totalLevel.ToString(CultureInfo.InvariantCulture) + " (minimum 1 damage)";
-                case LastStandUpgradeTrackId.CannonCycle: return effect + " ticks between cannon shots";
-                case LastStandUpgradeTrackId.FieldRepair: return effect + " hull per " +
-                    LastStandUpgradeCatalog.RepairPeriod.ToString(CultureInfo.InvariantCulture) + " ticks";
+                case LastStandUpgradeTrackId.CannonCycle:
+                    return Seconds(EffectAt(totalLevel, 1)) + "s between cannon shots";
+                case LastStandUpgradeTrackId.FieldRepair: return effect + " hull every " +
+                    Seconds(LastStandUpgradeCatalog.RepairPeriod) + "s";
                 default: throw new ArgumentOutOfRangeException(nameof(Id));
             }
         }
+
+        static string Seconds(int ticks) =>
+            (ticks * LastStandRunClock.StepSeconds).ToString("0.##", CultureInfo.InvariantCulture);
 
         public LastStandUpgradeProjection Project(int persistentLevel, int runPurchases, LastStandFitting fitting)
         {

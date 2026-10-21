@@ -158,6 +158,13 @@ class ShopUiTests(unittest.TestCase):
         self.assertNotIn("ST_LS_SHOP_FAIL " + name, self.log)
         self.assertEqual(self.exit_code, 0, self.log[-10000:])
 
+    def test_first_session_clarity_live_goal_and_purchase_lifetimes(self):
+        self.exit_code, self.log = self.run_checks("RunFirstSessionClarity")
+        name = self._testMethodName
+        self.assertIn("ST_LS_SHOP_PASS " + name, self.log, self.log[-14000:])
+        self.assertNotIn("ST_LS_SHOP_FAIL " + name, self.log)
+        self.assertEqual(self.exit_code, 0, self.log[-10000:])
+
     def test_workshop_garage_post_claim_prices_and_save_error(self):
         self.exit_code, self.log = self.run_checks("RunWorkshop")
         name = self._testMethodName

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using SingedTerra.Encounter;
 using SingedTerra.LastStand;
@@ -22,7 +23,8 @@ internal static class ShopVerticalChecks
         new[] { 20, 19, 18, 17, 16, 15, 14, 13, 12 },
         new[] { 3, 4, 5, 6, 7, 8, 9, 10, 11 },
     };
-    static readonly string[] Units = { " damage", " damage", " maximum hull", "", " ticks between cannon shots", " hull per 20 ticks" };
+    static readonly string[] Units = { " damage", " damage", " maximum hull", "", "", " hull every 1s" };
+    static readonly string[] CycleSeconds = { "1", "0.95", "0.9", "0.85", "0.8", "0.75", "0.7", "0.65", "0.6" };
 
     static int Main(string[] args)
     {
@@ -32,6 +34,7 @@ internal static class ShopVerticalChecks
             switch (args[0])
             {
                 case "catalog_exact_tracks_and_effects": ExactTracksAndEffects(); break;
+                case "catalog_intervals_use_seconds_without_rounding_levels": IntervalsUseSeconds(); break;
                 case "catalog_caps_prices_and_fitting": CapsPricesAndFitting(); break;
                 case "ledger_independent_prices_and_caps": LedgerIndependentPricesAndCaps(); break;
                 case "ledger_unique_kill_income": LedgerUniqueKillIncome(); break;
@@ -96,6 +99,7 @@ internal static class ShopVerticalChecks
                 Equal(Call(definition, "EffectAt", level, 20), Effects[i][level], Keys[i] + " exact effect L=" + level);
                 var expectedDescription = i == 3
                     ? "reduce hits by " + level + " (minimum 1 damage)"
+                    : i == 4 ? CycleSeconds[level] + "s between cannon shots"
                     : Effects[i][level] + Units[i];
                 Equal(Call(definition, "DescribeEffect", level), expectedDescription, Keys[i] + " authoritative description");
                 if (i == 3)
@@ -129,6 +133,31 @@ internal static class ShopVerticalChecks
         }
         Equal(legacy.Snapshot(), legacyBefore, "Pure catalog never mutates Legacy");
         Equal(review.Snapshot(), reviewBefore, "Pure catalog never mutates VisualReview");
+    }
+
+    static void IntervalsUseSeconds()
+    {
+        var culture = CultureInfo.CurrentCulture;
+        try
+        {
+            // Adjacent 0.05-second upgrades must remain distinguishable even
+            // under a locale that normally uses a decimal comma.
+            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            var cycle = LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonCycle);
+            var repair = LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair);
+            for (int level = 0; level <= 8; level++)
+            {
+                Equal(cycle.DescribeEffect(level), CycleSeconds[level] + "s between cannon shots", "Exact readable cycle L=" + level);
+                Equal(repair.DescribeEffect(level), (3 + level) + " hull every 1s", "Same repair schedule L=" + level);
+                Equal(cycle.EffectAt(level, 1), 20 - level, "Formatting never changes tick scheduling");
+                Equal(repair.EffectAt(level, 1), 3 + level, "Formatting never changes repair amount");
+            }
+            var next = cycle.Project(1, 0, LastStandFitting.Repair);
+            Equal(next.CurrentEffectDescription, "0.95s between cannon shots", "Current fractional seconds");
+            Equal(next.NextEffectDescription, "0.9s between cannon shots", "Next fractional seconds");
+            Equal(cycle.Project(3, 5, LastStandFitting.Repair).NextEffectDescription, "MAX", "Capped interval still has no next effect");
+        }
+        finally { CultureInfo.CurrentCulture = culture; }
     }
 
     static void CapsPricesAndFitting()
@@ -587,6 +616,7 @@ internal static class ShopVerticalChecks
                     Equal(Get(applied, "RunPurchases"), n + 1, "Accepted effect increments only one n");
                     Equal(Get(applied, "CurrentLevel"), permanent + n + 1, "Accepted level is P+n");
                     string expectedEffect = i == 3 ? "reduce hits by " + (permanent + n + 1) + " (minimum 1 damage)"
+                        : i == 4 ? CycleSeconds[permanent + n + 1] + "s between cannon shots"
                         : Effects[i][permanent + n + 1] + Units[i];
                     Equal(Get(applied, "CurrentEffectDescription"), expectedEffect, "Exact catalog stat effect matches the charged level");
                     Equal(Get(applied, "CurrentEffectDescription"), Get(LedgerTrack(ledger, i), "CurrentEffectDescription"), "Result and authoritative ledger share one catalog projection");
@@ -1682,8 +1712,10 @@ internal static class ShopVerticalChecks
         int? price = capped ? (int?)null : permanentMode ? permanent + 1 : 5 * (purchases + 1);
         Equal(Get(card, "NextPrice"), price, "Card has the exact context price");
         Equal(Get(card, "PriceDescription"), capped ? "MAX" : price + (permanentMode ? " Salvage" : " Scrap"), "Card names the correct currency");
-        string effect = index == 3 ? "reduce hits by " + level + " (minimum 1 damage)" : Effects[index][level] + Units[index];
-        string next = capped ? "MAX" : index == 3 ? "reduce hits by " + (level + 1) + " (minimum 1 damage)" : Effects[index][level + 1] + Units[index];
+        string effect = index == 3 ? "reduce hits by " + level + " (minimum 1 damage)" :
+            index == 4 ? CycleSeconds[level] + "s between cannon shots" : Effects[index][level] + Units[index];
+        string next = capped ? "MAX" : index == 3 ? "reduce hits by " + (level + 1) + " (minimum 1 damage)" :
+            index == 4 ? CycleSeconds[level + 1] + "s between cannon shots" : Effects[index][level + 1] + Units[index];
         Equal(Get(card, "CurrentEffectDescription"), effect, "Card current effect is exact");
         Equal(Get(card, "NextEffectDescription"), next, "Card never invents an effect above its context cap");
         Equal(Get(card, "CurrentEffectDescription"), LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)index).DescribeEffect(level), "Card shares catalog descriptions");

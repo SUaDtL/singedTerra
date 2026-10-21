@@ -71,8 +71,12 @@ public static class LastStandShopChecks
         var fields = new List<string>();
         for (int i = 0; i < LastStandUpgradeCatalog.Tracks.Count; i++)
             fields.Add("\"" + LastStandUpgradeCatalog.Tracks[i].Key + "\":" + levels[i]);
-        return "{\"version\":2,\"credits\":" + wallet + ",\"permanentLevels\":{" + String.Join(",", fields) +
-            "},\"nextRunId\":" + nextRunId + ",\"lastFinalizedRunId\":0,\"pendingDefeat\":null}";
+        // Ordinary shop scenarios start with current-schema data. Historical
+        // migration scenarios supply their explicit versioned fixtures below.
+        return "{\"version\":3,\"credits\":" + wallet + ",\"permanentLevels\":{" + String.Join(",", fields) +
+            "},\"nextRunId\":" + nextRunId + ",\"lastFinalizedRunId\":0,\"selectedTier\":1," +
+            "\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0," +
+            "\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}";
     }
     static void Require(bool value, string label)
     { if (!value) throw new InvalidOperationException("Last Stand shop deployment check failed: " + label); }
@@ -846,11 +850,11 @@ public static class LastStandShopChecks
     }
     static void ShopInventory(ShopUiFixture f)
     {
-        string[] core = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute" };
+        string[] core = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
         var expected = new HashSet<string>(core); foreach (string id in ShopIds) Require(expected.Add(id), "distinct core/shop identity");
-        var actual = f.Root.GetComponentsInChildren<Button>(true); Require(actual.Length == 19, "exact ordinary union nineteen");
+        var actual = f.Root.GetComponentsInChildren<Button>(true); Require(actual.Length == 20, "exact ordinary union twenty");
         foreach (var button in actual) Require(expected.Remove(button.name), "unique complete real control " + button.name);
-        Require(expected.Count == 0, "complete core8 plus shop11 inventory");
+        Require(expected.Count == 0, "complete core9 plus shop11 inventory");
         foreach (string id in core) Require(f.Root.Find("LastStandDock/" + id).GetComponent<Button>() == f.Button(id), "unchanged core path " + id);
         Require(f.Root.Find("LastStandDock/ShopEntry").GetComponent<Button>() == f.Button("ShopEntry"), "shop entry in persistent dock");
         foreach (var definition in LastStandUpgradeCatalog.Tracks)
@@ -863,8 +867,8 @@ public static class LastStandShopChecks
     static void ShopCards(ShopUiFixture f, LastStandUpgradeCategory category)
     {
         var view = LastStandShopPresentation.ProjectRun(Shop(f.Game.Session));
-        Require(f.Text("ShopHeading").text == "MECHANICS SHOP" && f.Text("ShopCurrency").text == "SCRAP  " + view.Balance,
-            "named live Scrap balance from actual run");
+        Require(f.Text("ShopHeading").text == "SHOP / THIS RUN" && f.Text("ShopCurrency").text == "SCRAP  " + view.Balance,
+            "Scrap purchase lifetime and balance from actual run");
         int visible = 0;
         foreach (var card in view.Cards)
         {
@@ -1104,6 +1108,47 @@ public static class LastStandShopChecks
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
         if (failed) EditorApplication.Exit(1);
     }
+    static void FirstSessionClarity()
+    {
+        foreach (var profile in new[] { new Vector2Int(1920,976),new Vector2Int(1366,664),new Vector2Int(720,516),
+            new Vector2Int(390,688),new Vector2Int(844,266) })
+        foreach (bool launcher in new[] { false,true })
+        using (var f = new ShopUiFixture(launcher,profile,new MemoryStorage { Value = Save(new int[6],wallet: 0) }))
+        {
+            f.Click("ShopEntry");
+            Require(f.Text("ShopHeading").text == "SHOP / PERMANENT" && f.Text("ShopCurrency").text == "SALVAGE  0",
+                "permanent title explains lifetime beside the exact committed wallet");
+            Require(f.Text("ShopHeading").preferredHeight <= f.Text("ShopHeading").rectTransform.rect.height + 1,
+                "permanent lifetime heading fits the existing slot");
+            f.Click("ShopClose"); f.Click("Deploy");
+            f.Game.AdvanceTicks(1199); f.Refresh();
+            Require(f.Text("PhaseHeading").text == "HOLD THE POSITION","live banner does not grant an early goal");
+            int writes = f.Game.Storage.Writes;
+            f.Game.AdvanceTicks(1); f.Refresh();
+            var heading = f.Text("PhaseHeading");
+            Require(f.Game.Loop.Phase == "battle" && heading.text == "Goal met; saves at end",
+                "actual live goal banner explains future persistence");
+            Require(heading.preferredHeight <= heading.rectTransform.rect.height + 1,
+                "live goal save boundary fits the existing one-line slot at " + profile);
+            Require(f.Game.Storage.Writes == writes && f.Game.Loop.Progression.GetBestTicks(1) == 0 &&
+                !f.Game.Loop.Progression.TierTwoUnlocked,"live goal writes no record or unlock");
+            f.Click("ShopEntry");
+            Require(f.Text("ShopHeading").text == "SHOP / THIS RUN" &&
+                f.Text("ShopCurrency").text == "SCRAP  " + Shop(f.Game.Session).Scrap,
+                "temporary title explains lifetime beside the exact run balance");
+            Require(f.Text("ShopHeading").preferredHeight <= f.Text("ShopHeading").rectTransform.rect.height + 1,
+                "temporary lifetime heading fits the existing slot");
+        }
+    }
+    public static void RunFirstSessionClarity()
+    {
+        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+        bool background = Application.runInBackground, failed = false;
+        try { NamedIncome("test_first_session_clarity_live_goal_and_purchase_lifetimes",FirstSessionClarity,ref failed); }
+        finally { LastStandLoopController.StorageFactory = factory;
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
+        if (failed) EditorApplication.Exit(1);
+    }
     public static void RunT16Affected()
     {
         // Execute existing assertions in one exclusively owned imported Editor.
@@ -1125,7 +1170,8 @@ public static class LastStandShopChecks
         var progress = f.Game.Loop.Progression;
         var view = LastStandShopPresentation.ProjectPermanent(progress,
             f.Game.Art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair);
-        Require(f.Text("ShopCurrency").text == "SALVAGE  " + progress.Wallet, "permanent cards show only committed Salvage");
+        Require(f.Text("ShopHeading").text == "SHOP / PERMANENT" && f.Text("ShopCurrency").text == "SALVAGE  " + progress.Wallet,
+            "Salvage purchase lifetime and only committed balance");
         int visible = 0;
         foreach (var card in view.Cards)
         {
@@ -2089,7 +2135,7 @@ public static class LastStandShopChecks
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664), storage))
         {
             var p = f.Game.Loop.Progression;
-            Require(storage.SuccessfulWrites == 1 && storage.Value.Contains("\"version\":2") && p.Wallet == 8 && p.NextRunId == 7 &&
+            Require(storage.SuccessfulWrites == 1 && storage.Value.Contains("\"version\":3") && p.Wallet == 8 && p.NextRunId == 7 &&
                 p.FinalizedRunId == 5 && p.PendingDefeat.RunId == 6 && p.PendingDefeat.ElapsedTicks == 33 && p.PendingDefeat.Kills == 4 &&
                 p.CannonAttackLevel == 2 && f.Game.Session.Model == null && !f.Button("ShopEntry").IsActive(),
                 "integration imported old-save migration preserves exact pending entitlements without auto-Claim or deploy");

@@ -1,0 +1,51 @@
+test_live_goal_explains_run_end_save_without_claiming_credit (test_tier_ui.TierHudTests.test_live_goal_explains_run_end_save_without_claiming_credit) ... ok
+test_tier_targets_and_summaries_fit_profiles (test_tier_ui.TierHudTests.test_tier_targets_and_summaries_fit_profiles) ... ok
+test_tier_text_reports_saved_and_unsaved_outcomes (test_tier_ui.TierHudTests.test_tier_text_reports_saved_and_unsaved_outcomes) ... ok
+test_goals_attainable_at_current_caps (test_tier_calibration.TierCalibrationTests.test_goals_attainable_at_current_caps) ... ok
+test_tier_two_harder_for_matched_builds (test_tier_calibration.TierCalibrationTests.test_tier_two_harder_for_matched_builds) ... ok
+CALIBRATION [{"fitting": "repair", "hull": 0, "kills": 28, "level": 0, "seconds": 77.85, "status": "Defeated", "ticks": 1557, "tier": 1}, {"fitting": "repair", "hull": 0, "kills": 49, "level": 3, "seconds": 98.85, "status": "Defeated", "ticks": 1977, "tier": 1}, {"fitting": "repair", "hull": 0, "kills": 129, "level": 8, "seconds": 175.35, "status": "Defeated", "ticks": 3507, "tier": 1}, {"fitting": "launcher", "hull": 0, "kills": 33, "level": 0, "seconds": 82.35, "status": "Defeated", "ticks": 1647, "tier": 1}, {"fitting": "launcher", "hull": 0, "kills": 64, "level": 3, "seconds": 112.35, "status": "Defeated", "ticks": 2247, "tier": 1}, {"fitting": "launcher", "hull": 240, "kills": 143, "level": 8, "seconds": 180.0, "status": "Limit", "ticks": 3600, "tier": 1}, {"fitting": "repair", "hull": 0, "kills": 21, "level": 0, "seconds": 70.55, "status": "Defeated", "ticks": 1411, "tier": 2}, {"fitting": "repair", "hull": 0, "kills": 47, "level": 3, "seconds": 98.85, "status": "Defeated", "ticks": 1977, "tier": 2}, {"fitting": "repair", "hull": 0, "kills": 113, "level": 8, "seconds": 161.85, "status": "Defeated", "ticks": 3237, "tier": 2}, {"fitting": "launcher", "hull": 0, "kills": 30, "level": 0, "seconds": 79.35, "status": "Defeated", "ticks": 1587, "tier": 2}, {"fitting": "launcher", "hull": 0, "kills": 51, "level": 3, "seconds": 98.85, "status": "Defeated", "ticks": 1977, "tier": 2}, {"fitting": "launcher", "hull": 0, "kills": 129, "level": 8, "seconds": 175.35, "status": "Defeated", "ticks": 3507, "tier": 2}]
+test_terminal_records_unlock_and_recovery (test_tier_progression.TierProgressionTests.test_terminal_records_unlock_and_recovery) ... ok
+test_tier_migration_strict_schema_and_failure_recovery (test_tier_progression.TierProgressionTests.test_tier_migration_strict_schema_and_failure_recovery) ... ok
+test_exact_tier_hull_scaling_and_legacy_parity (test_tier_rules.TierRulesTests.test_exact_tier_hull_scaling_and_legacy_parity) ... ok
+Actual-source C# compilation exit=0
+test_attack_cannon_exact_damage (test_shop_vertical.ShopVerticalTests) ... ok
+test_attack_launcher_fitting_isolation (test_shop_vertical.ShopVerticalTests) ... ok
+test_catalog_caps_prices_and_fitting (test_shop_vertical.ShopVerticalTests) ... ok
+test_catalog_exact_tracks_and_effects (test_shop_vertical.ShopVerticalTests) ... ok
+test_catalog_intervals_use_seconds_without_rounding_levels (test_shop_vertical.ShopVerticalTests) ... ok
+test_cycle_future_schedule_and_next_tick (test_shop_vertical.ShopVerticalTests) ... ok
+test_cycle_partition_and_legacy_parity (test_shop_vertical.ShopVerticalTests) ... ok
+test_defense_armor_close_and_ranged_hits (test_shop_vertical.ShopVerticalTests) ... ok
+test_defense_hull_purchase_and_clamp (test_shop_vertical.ShopVerticalTests) ... ok
+test_ledger_independent_prices_and_caps (test_shop_vertical.ShopVerticalTests) ... ok
+test_ledger_unique_kill_income (test_shop_vertical.ShopVerticalTests) ... ok
+test_presentation_levels_effects_prices_and_reasons (test_shop_vertical.ShopVerticalTests) ... ok
+test_repair_amount_and_maximum (test_shop_vertical.ShopVerticalTests) ... ok
+test_repair_fitting_and_terminal_refusal (test_shop_vertical.ShopVerticalTests) ... ok
+test_transaction_atomic_charge_and_level (test_shop_vertical.ShopVerticalTests) ... ok
+test_transaction_stale_replay_and_refusal (test_shop_vertical.ShopVerticalTests) ... ok
+Actual-source C# compilation exit=0
+test_migration_exact_v1_wallet_run_and_pending (test_shop_persistence.ShopPersistenceTests) ... ok
+test_migration_strict_v2_and_invalid_records (test_shop_persistence.ShopPersistenceTests) ... ok
+test_permanent_all_tracks_prices_caps_and_reload (test_shop_persistence.ShopPersistenceTests) ... ok
+test_permanent_run_pending_and_fitting_boundaries (test_shop_persistence.ShopPersistenceTests) ... ok
+test_storage_denied_and_uncertain_write_retry (test_shop_persistence.ShopPersistenceTests) ... ok
+test_storage_external_conflict_preserves_original (test_shop_persistence.ShopPersistenceTests) ... ok
+test_storage_reward_claim_idempotence (test_shop_persistence.ShopPersistenceTests) ... ok
+Actual-source C# compilation exit=0
+test_shop_compact_meaningful_summary (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_five_profiles_scroll_and_required_controls (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_measured_long_notice (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_short_landscape_closed_recovery (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_text_contrast_targets_and_refusal_bounds (test_shop_layout.ShopLayoutTests) ... ok
+test_defeat_reward_idempotence (test_loop_model.LastStandModelTests) ... ok
+test_non_defeat_no_reward (test_loop_model.LastStandModelTests) ... ok
+test_save_shape_and_reload (test_loop_model.LastStandModelTests) ... ok
+test_storage_failure_retry (test_loop_model.LastStandModelTests) ... ok
+test_uncertain_write_reconciliation (test_loop_model.LastStandModelTests) ... ok
+test_upgrade_prices_cap_and_next_run (test_loop_model.LastStandModelTests) ... ok
+
+----------------------------------------------------------------------
+Ran 42 tests in 15.319s
+
+OK

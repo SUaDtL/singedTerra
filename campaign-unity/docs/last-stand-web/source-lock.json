@@ -346,7 +346,7 @@
       },
       "Unity/Assets/Editor/LastStandShopChecks.cs": {
         "mode": "lf-text",
-        "sha256": "391dc5b1934527c9bcf7ba21afebbc52fb2c3533f36d06ec769e50b8f14e798e"
+        "sha256": "9f92b337670a0815f482af91985b4769f3c9461d9162c6fe880575c147462b68"
       },
       "Unity/Assets/Editor/LastStandShopChecks.cs.meta": {
         "mode": "lf-text",
@@ -974,7 +974,7 @@
       },
       "Unity/Assets/Scripts/LastStandLoopHud.cs": {
         "mode": "lf-text",
-        "sha256": "80dc3a77a20fe8da98aebc293fa2c088254c43bf5d80a7b4665430e7eadd3e14"
+        "sha256": "6c14cba0f42d2698106c55338cb2a1f8923a88a582cfebebe9dc51ffda3d7018"
       },
       "Unity/Assets/Scripts/LastStandLoopHud.cs.meta": {
         "mode": "lf-text",
@@ -1030,7 +1030,7 @@
       },
       "Unity/Assets/Scripts/LastStandTierHudText.cs": {
         "mode": "lf-text",
-        "sha256": "aeadd982e9b57680fb0856d966520563d990298e58b65c4b64d7c7ef9701bd00"
+        "sha256": "e1a8c8de4d7fa4830a52fae5f2a7b92ef776e5e8b149b1ecc85f11dbc7367874"
       },
       "Unity/Assets/Scripts/LastStandTierHudText.cs.meta": {
         "mode": "lf-text",
@@ -1038,7 +1038,7 @@
       },
       "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": {
         "mode": "lf-text",
-        "sha256": "eb1f330d6de519976d748176f2b43533965f933befe84de8101ca46e8c9382c6"
+        "sha256": "ea761c4dcbfc968d8c6fbc4296f3d2df195618ae03020689233321d6276c3df2"
       },
       "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs.meta": {
         "mode": "lf-text",
@@ -13285,7 +13285,7 @@
         "sha256": "2973a6af930e142f62cde00076beda8a3cc3a66d9bfcde7a58ba7d4be2251c26"
       }
     },
-    "sha256": "d64b22ac11d507e6ff59b35c89a98c3f33597e44585e068ad54dd51a7c7a1c01"
+    "sha256": "f8b39a40a17e7e519af2eacb76ce765412b1a14f61c3bb957a255b3cb839438f"
   },
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
@@ -82888,7 +82888,7 @@
     },
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
-  "receiptSha256": "ff8b14a831c07da91b17d32165b0382929b2ccb021dafd0699827fda356eef49",
+  "receiptSha256": "5e1b829b939403ec70035900917b3be7f4d8010bf5560b82a0a67281a3bb3564",
   "vendor": {
     "path": "Unity/Packages/com.unity.render-pipelines.universal",
     "version": "17.3.0",

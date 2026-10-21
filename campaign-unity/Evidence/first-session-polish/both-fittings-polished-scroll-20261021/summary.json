@@ -1,0 +1,1081 @@
+{
+  "scope": "Derived summary of actual scripted browser observations; raw captures remain local; not owner acceptance",
+  "raw_result_sha256": "04e26ab4c3e4621c07cac86873210d131b30a6fada782f25b70cb4f6ebbde8e0",
+  "helper_revision_note": "Both fittings passed before the later DPR normalization fix. The final helper is checked separately by seven geometry regressions and the maintained player suite.",
+  "fittings": [
+    {
+      "fitting": "repair",
+      "status": "pass",
+      "normalSpeed": true,
+      "seeded": false,
+      "errors": [],
+      "profiles": [
+        {
+          "label": "garage",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "garage",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "garage",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "garage",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "garage",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "combat",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "combat",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "combat",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "combat",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "combat",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "goal-met-live",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "goal-met-live",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "goal-met-live",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "saved-result",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "saved-result",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "saved-result",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "saved-result",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "saved-result",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "inputs": {
+        "e2e/helpers/lastStandTierJourney.mjs": "b2f6ac368a8a65e77e1e3dafa448bf7bbfb959d1b93923b797b3d51fa0eac0d6",
+        "e2e/last-stand-playable-loop.spec.ts": "0a9a66cbcf73ad801bd562589e46ad9b91a35acb43e036d4c3da73814ebd89ec",
+        "scripts/last-stand-first-session.mjs": "8cce8d3d745d4c6c3c82ea121b70959c115ef24140f933af66e6649e412aff7c"
+      },
+      "manifest": {
+        "client/public/last-stand/asset-manifest.json": "f7c681119456cea430ce98349856495eb8ff04971befa49db800cf171e04e1d4",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "5e1b829b939403ec70035900917b3be7f4d8010bf5560b82a0a67281a3bb3564",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "1d7b388431c5712593265b546352334d5725beb46d88140ef95dac69cd4fdccb",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.data": "3d45ca80a5964abf5f69c5ca59a31e9123c25290374453ca3b1bae66b1a19a2d",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.loader.js": "69cb32e457d52055fccb4fe0d403490964e01d7ddc8658b12f7a95d345cdadd4",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.wasm": "509ea4cc4fa668a57f87e0f9eb8022a243d3c9ca55b47d396315c65bbf69aaef",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "226bce8f317839aa5017e4855dace876246ec607a1cdb2c9746c705a09a15a25",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "raw_path": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/repair/tier-observations.json",
+      "raw_sha256": "b80fe7e87c4c8e76399380bf9c67362db051893e66b1b933b7a0e10171695b8f",
+      "profile_count": 30,
+      "screenshot_count": 47,
+      "observations": {
+        "result": [
+          {
+            "phase": "result",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 1,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 1
+          }
+        ],
+        "claim": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 1,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 2
+          }
+        ],
+        "purchase": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 2
+          }
+        ],
+        "deploy": [
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestKills1": 0,
+            "pendingReward": 0,
+            "tierTwoUnlocked": false,
+            "goalMet": false,
+            "tick": 0,
+            "load": 1
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 3
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 2,
+            "activeTier": 2,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 4
+          }
+        ]
+      },
+      "selected_captures": [
+        {
+          "path": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/repair/permanent-shop-utility-390x844.png",
+          "sha256": "fbe48e592de138720c49918c592d008bcf2db2ce4a8a4b5c153e6c0e1628e16a"
+        },
+        {
+          "path": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/repair/goal-met-live-390x844.png",
+          "sha256": "a266112f4943158793a01e65e99e5ebc28582f11178cbe9eaf54c1184f26f711"
+        },
+        {
+          "path": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/repair/permanent-shop-utility-844x390-ShopCard_fieldRepairBuy.png",
+          "sha256": "a6d26b6114352b4705fac1638000e94de2e2587fd2af62d6ce0dc5575a0e71d6"
+        }
+      ],
+      "live_goal_profiles": [
+        {
+          "label": "goal-met-live",
+          "viewport": {
+            "width": 1366,
+            "height": 768
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1216,
+            "hull": 120,
+            "kills": 22,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563487439
+          }
+        },
+        {
+          "label": "goal-met-live-1920x1080",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1302,
+            "hull": 120,
+            "kills": 23,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563491834
+          }
+        },
+        {
+          "label": "goal-met-live-1366x768",
+          "viewport": {
+            "width": 1366,
+            "height": 768
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1373,
+            "hull": 110,
+            "kills": 24,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563495284
+          }
+        },
+        {
+          "label": "goal-met-live-720x640",
+          "viewport": {
+            "width": 720,
+            "height": 640
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1433,
+            "hull": 93,
+            "kills": 25,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563498207
+          }
+        },
+        {
+          "label": "goal-met-live-390x844",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1492,
+            "hull": 56,
+            "kills": 26,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563501194
+          }
+        },
+        {
+          "label": "goal-met-live-844x390",
+          "viewport": {
+            "width": 844,
+            "height": 390
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1539,
+            "hull": 24,
+            "kills": 27,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563503530
+          }
+        }
+      ]
+    },
+    {
+      "fitting": "launcher",
+      "status": "pass",
+      "normalSpeed": true,
+      "seeded": false,
+      "errors": [],
+      "profiles": [
+        {
+          "label": "garage",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "garage",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "garage",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "garage",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "garage",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "combat",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "combat",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "combat",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "combat",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "combat",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "goal-met-live",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "goal-met-live",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "goal-met-live",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "saved-result",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "saved-result",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "saved-result",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "saved-result",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "saved-result",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "inputs": {
+        "e2e/helpers/lastStandTierJourney.mjs": "b2f6ac368a8a65e77e1e3dafa448bf7bbfb959d1b93923b797b3d51fa0eac0d6",
+        "e2e/last-stand-playable-loop.spec.ts": "0a9a66cbcf73ad801bd562589e46ad9b91a35acb43e036d4c3da73814ebd89ec",
+        "scripts/last-stand-first-session.mjs": "8cce8d3d745d4c6c3c82ea121b70959c115ef24140f933af66e6649e412aff7c"
+      },
+      "manifest": {
+        "client/public/last-stand/asset-manifest.json": "f7c681119456cea430ce98349856495eb8ff04971befa49db800cf171e04e1d4",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "5e1b829b939403ec70035900917b3be7f4d8010bf5560b82a0a67281a3bb3564",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "1d7b388431c5712593265b546352334d5725beb46d88140ef95dac69cd4fdccb",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.data": "3d45ca80a5964abf5f69c5ca59a31e9123c25290374453ca3b1bae66b1a19a2d",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.loader.js": "69cb32e457d52055fccb4fe0d403490964e01d7ddc8658b12f7a95d345cdadd4",
+        "client/public/last-stand/Build/Web-20261021T060151Z-510800.wasm": "509ea4cc4fa668a57f87e0f9eb8022a243d3c9ca55b47d396315c65bbf69aaef",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "226bce8f317839aa5017e4855dace876246ec607a1cdb2c9746c705a09a15a25",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "raw_path": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/launcher/tier-observations.json",
+      "raw_sha256": "86a19fb91dec19a00fe8f7bd82e0d23d998e5c90c809805fc26f42b017c13adc",
+      "profile_count": 30,
+      "screenshot_count": 42,
+      "observations": {
+        "result": [
+          {
+            "phase": "result",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 1,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 1
+          }
+        ],
+        "claim": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 1,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 2
+          }
+        ],
+        "purchase": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 2
+          }
+        ],
+        "deploy": [
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestKills1": 0,
+            "pendingReward": 0,
+            "tierTwoUnlocked": false,
+            "goalMet": false,
+            "tick": 0,
+            "load": 1
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 3
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 2,
+            "activeTier": 2,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "goalMet": false,
+            "tick": 0,
+            "load": 4
+          }
+        ]
+      },
+      "selected_captures": [
+        {
+          "path": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/launcher/goal-met-live-390x844.png",
+          "sha256": "639d927628476cc1a540d1230b952d1e02f73c20fb651e8b3aef69bd31c598cc"
+        }
+      ],
+      "live_goal_profiles": [
+        {
+          "label": "goal-met-live",
+          "viewport": {
+            "width": 1366,
+            "height": 768
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1216,
+            "hull": 120,
+            "kills": 25,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563667992
+          }
+        },
+        {
+          "label": "goal-met-live-1920x1080",
+          "viewport": {
+            "width": 1920,
+            "height": 1080
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1291,
+            "hull": 120,
+            "kills": 27,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563671800
+          }
+        },
+        {
+          "label": "goal-met-live-1366x768",
+          "viewport": {
+            "width": 1366,
+            "height": 768
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1352,
+            "hull": 120,
+            "kills": 27,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563674844
+          }
+        },
+        {
+          "label": "goal-met-live-720x640",
+          "viewport": {
+            "width": 720,
+            "height": 640
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1402,
+            "hull": 120,
+            "kills": 29,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563677295
+          }
+        },
+        {
+          "label": "goal-met-live-390x844",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1450,
+            "hull": 120,
+            "kills": 30,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563679736
+          }
+        },
+        {
+          "label": "goal-met-live-844x390",
+          "viewport": {
+            "width": 844,
+            "height": 390
+          },
+          "state": {
+            "action": "session",
+            "phase": "battle",
+            "saveState": "ready",
+            "saveError": "",
+            "notice": "Goal reached. Finish this run to save your progress.",
+            "profileVersion": "tier-goals-v1",
+            "wallet": 0,
+            "level": 0,
+            "nextCost": 1,
+            "cannonDamage": 20,
+            "runId": 1,
+            "pendingRunId": 0,
+            "tick": 1493,
+            "hull": 110,
+            "kills": 31,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestTicks2": 0,
+            "bestKills1": 0,
+            "bestKills2": 0,
+            "pendingTier": 0,
+            "pendingReward": 0,
+            "paused": false,
+            "muted": false,
+            "tierTwoUnlocked": false,
+            "goalMet": true,
+            "load": 1,
+            "observedAt": 1792563681811
+          }
+        }
+      ]
+    }
+  ]
+}

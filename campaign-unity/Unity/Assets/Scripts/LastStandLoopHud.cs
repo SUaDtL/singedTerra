@@ -280,7 +280,7 @@ namespace SingedTerra.LastStand
             else if (battle && model != null)
             {
                 state.Heading = loop.Session.CatchingUp ? "CATCHING UP" : loop.Session.Paused ? "BATTLE PAUSED" :
-                    LastStandTierHudText.GoalMet(runTier,model.Tick) ? "GOAL MET: TIER " + runTier : "HOLD THE POSITION";
+                    LastStandTierHudText.BattleHeading(runTier,model.Tick);
                 state.Detail = "HULL  " + model.Hull + " / " + model.CurrentMaximumHull + "      TIME  " + (model.Tick / 20f).ToString("F1") + "s" +
                     "\nDISABLED  " + model.Kills + "      CANNON  " + model.CurrentCannonDamage + " DAMAGE" +
                     "\nFITTING  " + (model.HasLauncher ? "AUXILIARY LAUNCHER" : "FIELD REPAIR");
@@ -414,6 +414,7 @@ namespace SingedTerra.LastStand
             shopEntry.gameObject.SetActive(active); StyleAction(shopEntry,false,active);
             shopEntry.GetComponentInChildren<Text>(true).text = shopOpen ? "CLOSE SHOP" : "MECHANICS SHOP";
             StyleAction(shopClose,false,shopOpen);
+            shopHeading.text = run ? "SHOP / THIS RUN" : "SHOP / PERMANENT";
             shopCurrency.text = (run ? "SCRAP  " : "SALVAGE  ") + (shopView?.Balance ?? 0);
             if (shopOpen && permanent)
             {

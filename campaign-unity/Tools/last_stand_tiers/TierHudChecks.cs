@@ -63,9 +63,27 @@ static class TierHudChecks
         }
         Check(LastStandTierHudText.LockReason.Length<=42,"locked tier reason exceeds narrow text budget");
     }
+    static void LiveGoal()
+    {
+        var heading = typeof(LastStandTierHudText).GetMethod("BattleHeading");
+        Check(heading != null,"live goal heading must explain the run-end save boundary");
+        string Read(int tier,int ticks) => (string)heading.Invoke(null,new object[]{tier,ticks});
+        foreach(var tier in new[]{1,2})
+        {
+            int threshold=LastStandTierCatalog.Get(tier).GoalTicks;
+            Check(Read(tier,threshold-1)=="HOLD THE POSITION","do not announce goal before its exact threshold");
+            foreach(var ticks in new[]{threshold,threshold+1,LastStandTierCatalog.HorizonTicks})
+            {
+                var text=Read(tier,ticks);
+                Check(text=="Goal met; saves at end","live goal explains future persistence");
+                Check(!text.Contains("saved") && !text.Contains("unlocked") && !text.Contains("best"),"live progress is not saved credit");
+                Check(text.Split('\n').Length==1 && text.Length<=25,"keep the live banner in one compact line");
+            }
+        }
+    }
     public static int Main(string[] args)
     {
-        try { if(args[0]=="geometry")Geometry(); else if(args[0]=="text")Text(); else throw new Exception("unknown case");
+        try { if(args[0]=="geometry")Geometry(); else if(args[0]=="text")Text(); else if(args[0]=="live-goal")LiveGoal(); else throw new Exception("unknown case");
             Console.WriteLine("PASS "+args[0]);return 0; }
         catch(Exception e){Console.Error.WriteLine(e.Message);return 1;}
     }
