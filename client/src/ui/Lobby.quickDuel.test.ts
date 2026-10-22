@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import { FIRST_SALVO_PREFERENCE_KEY } from './firstSalvoCoach';
-import { FUEL_STOP_FIXTURE } from '../campaign/content/fuel-stop';
-import type { CampaignStorage } from '../campaign/storage';
-import type { CampaignSavePresentationOwner } from './commandCenter/CampaignSavePresentation';
 import { Lobby, type LobbyConfig } from './Lobby';
 
 interface LobbyInternals {
@@ -13,7 +10,6 @@ interface LobbyInternals {
     ai?: 'easy' | 'medium' | 'hard';
     loadout: TankLoadout;
   }>;
-  readonly campaignSavePresentation: CampaignSavePresentationOwner;
 }
 
 function internals(lobby: Lobby): LobbyInternals {
@@ -30,14 +26,7 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
   }
   let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text);
-  if (!match && text.includes('Ash Road')) {
-    root.querySelector<HTMLButtonElement>(
-      '[data-command-surface="rail"][data-command-category="campaigns"]',
-    )?.click();
-    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')?.click();
-    match = [...root.querySelectorAll('button')]
-      .find((candidate) => candidate.textContent === text);
-  }
+
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`);
   return match;
 }
@@ -47,19 +36,6 @@ function selectOperation(root: HTMLElement, operationId: string): void {
     '[data-command-surface="rail"][data-command-category="skirmishes"]',
   )?.click();
   root.querySelector<HTMLButtonElement>(`[data-command-item="${operationId}"]`)?.click();
-}
-
-function emptyCampaignStorage(): CampaignStorage {
-  return {
-    load: vi.fn(async () => null),
-    compareAndSwap: vi.fn(),
-  };
-}
-
-async function waitForEmptyCampaignSave(lobby: Lobby): Promise<void> {
-  await vi.waitFor(() => {
-    expect(internals(lobby).campaignSavePresentation.presentation).toEqual({ status: 'empty' });
-  });
 }
 
 describe('Lobby Quick Duel', () => {
@@ -171,78 +147,6 @@ describe('Lobby Quick Duel', () => {
     });
     expect(generateQuickDuelSeed).toHaveBeenCalledOnce();
     expect(emitted.players[0]).not.toHaveProperty('ai');
-  });
-
-  it('starts Ash Road from the canonical Fuel Stop checkpoint with two supplies', async () => {
-    const lobby = new Lobby(
-      root, onReady, undefined, undefined, undefined, undefined, emptyCampaignStorage(),
-    );
-    lobby.show();
-    await waitForEmptyCampaignSave(lobby);
-
-    button(root, 'Start Ash Road').click();
-    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
-
-    const config = onReady.mock.calls[0]![0];
-    expect(config).toMatchObject({
-      mode: 'hotseat',
-      experience: 'campaign',
-      campaign: {
-        encounter: FUEL_STOP_FIXTURE.encounter,
-        combatProfile: FUEL_STOP_FIXTURE.combatProfile,
-      },
-      campaignRunState: {
-        kind: 'campaign-run-state',
-        attempt: 1,
-        supplies: 2,
-        appliedResults: [],
-        retryFromAttempts: [],
-        checkpoint: {
-          encounter: FUEL_STOP_FIXTURE.encounter,
-          attempt: 1,
-          supplies: 2,
-        },
-      },
-      players: [
-        { name: 'Ranger' },
-        { name: 'Defender', ai: 'hard' },
-      ],
-    });
-    expect(Object.isFrozen(config.campaignRunState)).toBe(true);
-  });
-
-  it('acquires the public breach kit with Sandhog as granted carried ammunition', async () => {
-    const lobby = new Lobby(
-      root, onReady, undefined, undefined, undefined, undefined, emptyCampaignStorage(),
-    );
-    lobby.show();
-    await waitForEmptyCampaignSave(lobby);
-    button(root, 'Start Ash Road');
-    const kit = root.querySelector<HTMLSelectElement>('[aria-label="New run kit"]')!;
-    kit.value = 'breach';
-    kit.dispatchEvent(new Event('change'));
-
-    button(root, 'Start Ash Road').click();
-    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
-
-    expect(onReady.mock.calls[0]![0].campaignRunState?.loadout).toMatchObject({
-      carried: {
-        basicWeaponId: 'baby_missile',
-        offensiveWeaponIds: ['missile', 'sandhog'],
-        defensiveWeaponId: 'shield',
-        ammunition: [
-          { weaponId: 'baby_missile', quantity: null },
-          { weaponId: 'missile', quantity: 3 },
-          { weaponId: 'sandhog', quantity: 2 },
-          { weaponId: 'shield', quantity: 1 },
-        ],
-      },
-      owned: {
-        grantedWeaponIds: ['baby_missile', 'missile', 'sandhog', 'shield'],
-        purchasedWeaponIds: [],
-        rewardWeaponIds: [],
-      },
-    });
   });
 
   it("carries Crosswind's real wrap-wall rule and its proven seed through the existing local launch config", () => {

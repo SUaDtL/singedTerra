@@ -42,6 +42,7 @@ class BackgroundClockTests(unittest.TestCase):
         baseline = os.environ.get("ST_CLOCK_BASELINE") == "1"
         sources = [SCRIPTS / "EncounterModel.cs", SCRIPTS / "EncounterProfile.cs", SCRIPTS / "LastStandTierCatalog.cs", DRIVER]
         sources.append(SCRIPTS / ("EncounterSession.cs" if baseline else "LastStandRunClock.cs"))
+        sources.append(SCRIPTS / "LastStandSpeedPolicy.cs")
         command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
         if baseline:
             command.append("-define:ST_CLOCK_BASELINE")

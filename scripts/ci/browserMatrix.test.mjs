@@ -9,6 +9,7 @@ import {join} from 'node:path';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import * as partitionOwner from '../../e2e/helpers/lastStandMatrix.mjs';
+import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
 
 test('startup routing has an independent owner instead of repeating on every gameplay shard',()=>{
   const {include:lanes}=browserMatrix();
@@ -70,20 +71,24 @@ function matrixFixture() {
   const served=Object.fromEntries(Array.from({length:17},(_,i)=>[`unit-runtime-${i}`,{sha256:'c'.repeat(64),bytes:1}]));
   const recoveryNames=new Set(['.loader.js: real Retry recovered genuine scene','.wasm: real Retry recovered genuine scene',
     'corrupt bytes preserved by Retry','blocked writes recover through real Retry']);
-  const entryRoutes=[['compatible Ash Road resume','ash-road'],['remembered Skirmishes','standard'],
+  const entryRoutes=[['retired save cannot promote a removed campaign','first-salvo'],
+    ['remembered retired campaign selects Last Stand','last-stand'],
+    ['legacy Ash Road route selects Last Stand','last-stand'],['remembered Skirmishes','standard'],
     ['Return before remembered Ash Road','last-stand'],['validated ST1 before remembered Ash Road','imported-challenge'],
     ['invite before validated ST1','online'],['invite before explicit Return','online'],['rejoin before validated ST1','online'],
-    ['invalid mixed signals cannot override remembered Ash Road','ash-road'],['invalid Return spelling cannot override remembered Ash Road','ash-road']]
+    ['invalid mixed signals recover retired selection','last-stand'],['invalid Return spelling recovers retired selection','last-stand']]
     .map(([name,selected])=>({name,selected}));
   const entryChecks=['global fresh startup remains Skirmishes','zero Unity runtime payload before ordinary launch',
     'entry loss disclosure is rendered','entry disclosure names no-award unfinished loss',
     'unfinished Return abandoned without award','unfinished reload abandoned without award',
-    'Ash Road record bytes preserved through native Last Stand Return','actual compatible Ash Road resume enters its game',
+    'retired campaign has no library entry','retired campaign has no start or resume entry',
+    'retired campaign bytes preserved through native Last Stand Return','native Return offers only Last Stand',
     'no unclassified browser/Unity/shader/request errors in any scope'];
-  const unfinishedActions=[{name:'Deploy',action:'deploy',x:0,y:0},{name:'Deploy',action:'deploy',x:0,y:0}];
+  const unfinishedActions=[['Deploy','deploy'],['ConfirmCancel','confirmation-cancel'],['SettingsClose','menu-close'],
+    ['ConfirmProceed','abandon'],['Deploy','deploy']].map(([name,action])=>({name,action,x:0,y:0}));
   const unfinishedTrace=[...unfinishedActions.flatMap(a=>['pointerdown','pointerup'].map(kind=>({kind,area:'gameplay',
     button:0,target:'unity-canvas',x:a.x,y:a.y,focused:true,hidden:false}))),
-    ...['keydown','keyup'].map(kind=>({kind,area:'outer',code:'Enter',target:'last-stand-return'}))];
+    ...['keydown','keyup','keydown','keyup'].map(kind=>({kind,area:'outer',code:'Enter',target:'last-stand-return'}))];
   const reports=Array.from({length:12},(_,i)=>{
     const section=i<10?'lifecycle':i===10?'recovery':'entry',shard=i<10?`${i+1}/10`:null;
     const partition=journey.lastStandViewportPartition(shard??undefined,{host:'linux',profile:'linux-functional'});
@@ -108,12 +113,32 @@ function matrixFixture() {
         (section==='recovery'?recoveryNames.has(c.name):!recoveryNames.has(c.name) && c.name!=='unfinished reload abandoned without award')),screenshots,
       ...(section==='entry'?{routes:entryRoutes,input_trace:journey.validateGameplayInput(unfinishedTrace,unfinishedActions),
         actions:unfinishedActions,
-        ash_road_preservation:{before_sha256:'f'.repeat(64),after_launch_sha256:'f'.repeat(64),
-          native_return:'observed unchanged',actual_resume:'observed via public Resume control'},campaign_entry:profiles.map(viewport=>({viewport,
-        order:['last-stand','ash-road'],bounds:{x:0,y:0,width:100,height:44}}))}:{})};
+        retired_campaign_preservation:{before_sha256:'f'.repeat(64),after_launch_sha256:'f'.repeat(64),
+          native_return:'observed unchanged',retirement:'observed Last Stand only'},campaign_entry:profiles.map(viewport=>({viewport,
+        order:['last-stand'],bounds:{x:0,y:0,width:100,height:44}}))}:{})};
   });
   return {reports,expected:{head,inputs}};
 }
+
+test('actual upgrade purchase evidence satisfies the matrix and rejects incorrect wallet, level or damage',async()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf("    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');");
+  const end=source.indexOf('\n',begin);
+  assert.ok(begin>0 && end>begin,'Execute the maintained purchase observation');
+  const run=new Function('gameKey','check','return (async()=>{'+source.slice(begin,end)+'})();');
+  for(const fault of [null,{wallet:1},{level:0},{cannonDamage:20}]){
+    const sample=matrixFixture(),observations=[];
+    await run(async(name,action)=>{
+      assert.equal(name,'ShopCard_cannonAttackBuy');assert.equal(action,'purchase');
+      return {wallet:0,level:1,cannonDamage:30,...fault};
+    },(pass,name)=>observations.push({name,pass}));
+    assert.equal(observations.length,1);
+    for(const report of sample.reports.filter(r=>r.viewport_partition.section==='lifecycle'))
+      report.checks=report.checks.filter(c=>c.name!=='one salvage commits Cannon Attack level1').concat(observations);
+    if(fault)assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),/Every assertion must pass/);
+    else assert.doesNotThrow(()=>assertLastStandMatrix(sample.reports,sample.expected));
+  }
+});
 
 test('matrix qualification requires all actual branches, profiles and exact source/runtime bindings', () => {
   const {reports,expected}=matrixFixture();
@@ -171,6 +196,23 @@ test('recovery qualification refuses every missing original fault profile and br
   }
 });
 
+test('entry aggregate binds the maintained confirmed Return and reload action sequence',()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf("    if(section.entry){\n    await gameClick('Deploy','deploy');");
+  const end=source.indexOf('    if(section.lifecycle){',begin);
+  assert.ok(begin>0 && end>begin);
+  const actions=[...source.slice(begin,end).matchAll(/await gameClick\('([^']+)','([^']+)'/g)].map(([,name,action])=>[name,action]);
+  const baseline=matrixFixture();
+  assert.deepEqual(baseline.reports[11].actions.map(a=>[a.name,a.action]),actions);
+  assert.doesNotThrow(()=>assertLastStandMatrix(baseline.reports,baseline.expected));
+  for(const fault of [r=>r.actions.splice(1,1),r=>r.actions.push({...r.actions[0]}),
+    r=>r.actions.reverse(),r=>{r.actions[1].action='abandon';},
+    r=>{r.input_trace.actions=2;},r=>{r.input_trace.observed_edges=4;},r=>{r.input_trace.outer_keyboard_edges=2;}]){
+    const sample=structuredClone(baseline);fault(sample.reports[11]);
+    assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected));
+  }
+});
+
 test('entry qualification requires every original routing case and actual reachable viewport capture',()=>{
   const baseline=matrixFixture(),entry=baseline.reports[11];
   const faults=[
@@ -180,9 +222,10 @@ test('entry qualification requires every original routing case and actual reacha
     r=>r.campaign_entry[0].bounds.y=2000,r=>r.campaign_entry[0].bounds.width='100',
     r=>r.input_trace.actions=1,r=>r.input_trace.observed_edges=2,r=>r.input_trace.matched=false,
     r=>r.input_trace.outer_keyboard_edges=0,r=>r.actions.pop(),r=>r.actions[0].name='Seed',
-    r=>r.ash_road_preservation.native_return='unexecuted-in-lifecycle-section',
-    r=>r.ash_road_preservation.actual_resume='unexecuted-in-lifecycle-section',
-    r=>r.ash_road_preservation.after_launch_sha256='d'.repeat(64),
+    r=>r.retired_campaign_preservation.native_return='unexecuted-in-lifecycle-section',
+    r=>r.retired_campaign_preservation.retirement='unexecuted-in-lifecycle-section',
+    r=>r.retired_campaign_preservation.after_launch_sha256='d'.repeat(64),
+    r=>r.campaign_entry[0].order.push('ash-road'),
     r=>r.screenshots[0].load=0,r=>r.screenshots[0].scope='loader-fault',
     r=>r.viewport_partition.entry_viewports=[],r=>r.viewport_partition.phase_viewports=['approved-standard'],
   ];
@@ -200,7 +243,8 @@ test('actual journey section guards execute all Windows sections and keep Linux 
   const commonStart=source.indexOf('    if(section.entry || section.lifecycle){');
   const entryStart=source.indexOf('    if(section.entry){',commonStart);
   const preparationStart=source.indexOf('    if(section.entry || section.lifecycle){',entryStart);
-  const entryEnd=source.indexOf('    const geometry=',preparationStart);
+  const entryEnd=source.indexOf('    // Loaded after this module is initialized:',preparationStart);
+  assert.ok(entryEnd>preparationStart,'Section guard fixture ends before unconditional shared helper initialization');
   const exitsStart=source.indexOf('    if(section.entry){',entryEnd);
   const mainStart=source.indexOf('    if(section.lifecycle){',exitsStart),recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
   const recoveryEnd=source.indexOf("    scope='healthy';\n    report.input_trace=",recoveryStart);
@@ -216,10 +260,10 @@ test('actual journey section guards execute all Windows sections and keep Linux 
       const reached=new Error('Explicit inert first-side-effect sentinel');
       const stop=()=>{throw reached;};
       const run=new AsyncFunction('section','goto','gameClick','readFileSync','join','ROOT','assert','ash','skirmish',
-        'ashRoadRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page','screenshot',
+        'retiredCampaignRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page','screenshot','report','configureEffectsOnlyJourneyAudio','check',
         '"use strict";let scope,rejoin,rejoinBinding;'+block);
       const execution=run(section,stop,stop,stop,()=>'', '/inert',assert,{},{},{},partitionOwner.LAST_STAND_ENTRY_ROUTES,
-        stop,{setViewportSize:stop},stop);
+        stop,{setViewportSize:stop},stop,new Proxy({},{get:stop,set:stop}),stop,stop);
       if(owner==='common'?(section.entry || section.lifecycle):section[owner])
         await assert.rejects(execution,error=>error===reached);
       else await execution;
@@ -253,38 +297,40 @@ test('transport discovery counts journeys and retains failures without counting 
   assert.deepEqual(lastStandMatrixResultFiles(root).sort(),directories.slice(0,2).map(name=>join(root,name,'result.json')).sort());
 });
 
-test('portrait partitions resume Ash Road in landscape and restore canonical Unity gameplay', async () => {
+test('native Return inspects the Last Stand-only library without launching retired code', async () => {
   const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
-  const begin=source.indexOf("    report.ash_road_preservation.native_return='observed unchanged';");
-  const end=source.indexOf('    const briefing=',begin);
+  const begin=source.indexOf("    report.retired_campaign_preservation.native_return='observed unchanged';");
+  const end=source.indexOf('    start=states.length;',begin);
   assert.ok(begin>0 && end>begin);
-  let viewport={width:390,height:844};
-  const resume={innerText:async()=> 'Resume Ash Road'},report={ash_road_preservation:{}};
-  await runInNewContext('(async()=>{'+source.slice(begin,end)+'})()',{
-    report,selected:async()=>{},check:(value,name)=>assert.ok(value,name),
-    outerPointer:async target=>{if(target===resume)assert.ok(viewport.width>viewport.height,'Ash Road cannot expose its HUD in portrait');},
-    page:{setViewportSize:async value=>{viewport=value;},locator:selector=>selector==='[data-command-primary]'?resume:
-      {waitFor:async()=>{},isVisible:async()=>false}},
-  });
-  assert.equal(viewport.width,1280);assert.equal(viewport.height,720);
+  for(const items of [['last-stand'],['last-stand','ash-road'],[]]) {
+    const report={retired_campaign_preservation:{}};
+    const run=runInNewContext('(async()=>{'+source.slice(begin,end)+'})()',{
+      report,selected:async item=>assert.equal(item,'last-stand'),check:(value,name)=>assert.ok(value,name),
+      page:{locator:()=>({evaluateAll:async fn=>fn(items.map(item=>({dataset:{commandItem:item}})))})},
+    });
+    if(items.length!==1)await assert.rejects(run,/native Return offers only Last Stand/);
+    else {await run;assert.equal(report.retired_campaign_preservation.retirement,'observed Last Stand only');}
+  }
   const restored=source.indexOf("'unfinished Return abandoned without award'",end);
   const nextDeploy=source.indexOf("await gameClick('Deploy','deploy')",restored);
   assert.ok(source.slice(restored,nextDeploy).includes('await resize(captureViewport)'),
-    'The next Unity deployment must restore the canonical profile after the separate Ash Road check');
+    'The next Unity deployment restores the canonical profile after native Return');
 });
 
 test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapshot', async () => {
   const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
   const begin=source.indexOf('    const geometry=async(name)=>{'),end=source.indexOf('    const resize=async',begin);
+  const controlBegin=source.indexOf('    const hudControls=');
   assert.ok(begin>0 && end>begin);
+  assert.ok(controlBegin>0&&controlBegin<begin,'Maintained HUD collection and projection closures required');
   for(const fault of [undefined,'hidden','collapsed','zero-area','backing-size']) {
     let reads=0;
     const box={x:0,y:0,width:fault==='zero-area'?0:1280,height:720},element={width:fault==='backing-size'?1290:1280,height:720,
       getBoundingClientRect:()=>box};
     const layout={coordinates:'top-left',width:1280,height:720,
-      controls:[{name:'ToggleMute',x:10,y:10,width:44,height:44,active:true,interactable:true}]};
-    const run=runInNewContext('(async()=>{'+source.slice(begin,end)+'return geometry("ToggleMute");})()',{
-      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],
+      controls:[{name:'Menu',x:10,y:10,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
+    const run=runInNewContext('(async()=>{'+source.slice(controlBegin,begin)+source.slice(begin,end)+'return geometry("Menu");})()',{
+      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],tierJourneyControlGeometry,
       getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'}),
       page:{viewportSize:()=>({width:1280,height:720}),locator:()=>({
         boundingBox:async()=>{reads++;return fault==='hidden'?null:box;},
@@ -292,7 +338,7 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
       })},
     });
     if(fault)await assert.rejects(run);
-    else {const result=await run;assert.equal(result.item.name,'ToggleMute');assert.equal(result.canvas.width,1280);
+    else {const result=await run;assert.equal(result.item.name,'Menu');assert.equal(result.canvas.width,1280);
       assert.equal(reads,1,'Separate CSS/backing reads add a slow renderer roundtrip to every geometry check');}
   }
 });

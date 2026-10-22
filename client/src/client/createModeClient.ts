@@ -2,17 +2,14 @@ import { GameEngine } from '@shared/engine/GameEngine';
 import type { GameClient } from './GameClient';
 import { HotSeatClient } from './HotSeatClient';
 import { buildClientEngineOptions } from './gameEngineOptions';
-import { CampaignClient } from '../campaign/CampaignClient';
 import {
-  hasCampaignLaunchData,
-  requireCampaignModeSetup,
-  type CampaignModeSetup,
+  assertSupportedModeSetup,
   type HotSeatModeSetup,
   type ModeSetup,
 } from './modeConfig';
 
 /** Compatibility input for the existing exported main factory seam. */
-export type ClientConstructionSetup = CampaignModeSetup | HotSeatModeSetup | (ModeSetup & {
+export type ClientConstructionSetup = HotSeatModeSetup | (ModeSetup & {
   mode: 'network';
   roomId: string;
   playerId: string;
@@ -20,10 +17,7 @@ export type ClientConstructionSetup = CampaignModeSetup | HotSeatModeSetup | (Mo
 
 /** Construct and initialize the ordinary client selected by a normalized mode setup. */
 export async function createModeClient(setup: ClientConstructionSetup): Promise<GameClient> {
-  if (hasCampaignLaunchData(setup)) {
-    const campaignSetup = requireCampaignModeSetup(setup);
-    return new CampaignClient(campaignSetup.campaign);
-  }
+  assertSupportedModeSetup(setup);
 
   if (setup.mode === 'network') {
     const { NetworkClient } = await import('./NetworkClient');

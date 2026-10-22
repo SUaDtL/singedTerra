@@ -1,0 +1,432 @@
+{
+  "scope": "Derived summary of actual scripted browser observations; raw captures remain local; not owner acceptance",
+  "raw_result_sha256": "e20e36fc24855ba4774eb7c60f7e7c513af7b975ece417cd6583fb1565d95022",
+  "fittings": [
+    {
+      "fitting": "repair",
+      "status": "pass",
+      "normalSpeed": true,
+      "seeded": false,
+      "errors": [],
+      "profile_count": 15,
+      "profiles": [
+        {
+          "label": "garage",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "garage",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "garage",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "garage",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "garage",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "combat",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "combat",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "combat",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "combat",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "combat",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "saved-result",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "saved-result",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "saved-result",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "saved-result",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "saved-result",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "screenshot_count": 26,
+      "observations": {
+        "result": [
+          {
+            "phase": "result",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 1,
+            "tierTwoUnlocked": true,
+            "load": 1
+          }
+        ],
+        "claim": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 1,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 2
+          }
+        ],
+        "purchase": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 2
+          }
+        ],
+        "deploy": [
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestKills1": 0,
+            "pendingReward": 0,
+            "tierTwoUnlocked": false,
+            "load": 1
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 3
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 2,
+            "activeTier": 2,
+            "bestTicks1": 1557,
+            "bestKills1": 28,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 4
+          }
+        ]
+      },
+      "raw_path": "campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021/repair/tier-observations.json",
+      "raw_sha256": "692f6dfdd5ead68edc59a8dc6875ebf3c46409a6c1b0d458c132a653b593b901",
+      "inputs": {
+        "e2e/helpers/lastStandTierJourney.mjs": "4627636d9b1af214da05d49ca0578c653bc5ad528ef13beed9ccf03d2b5414d6",
+        "e2e/last-stand-playable-loop.spec.ts": "0a9a66cbcf73ad801bd562589e46ad9b91a35acb43e036d4c3da73814ebd89ec"
+      },
+      "packaged_runtime_sha256": {
+        "client/public/last-stand/asset-manifest.json": "18dbbe4b5bb227142e201d9c3e99083f94a0bce2028222e62d937900bdfee48a",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "ff8b14a831c07da91b17d32165b0382929b2ccb021dafd0699827fda356eef49",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "1d06edd560a4f269729498f6fc9cfb11bb72f8dd0fc882accc1b2d17fd54b824",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.data": "42e9ca74bfc7b5ee2e8208dbb84d2073d8dd7889275bd7d73e337924ebda59b4",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.loader.js": "2f95f454cf4f6f600400abe5ee3ebf4e34cc6e1e663d5b32f56a5db2f0c23104",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.wasm": "02d9a18d32c3465f34e736b165919c5c97c67fc643488e4dcf500632279e611f",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "c96befade00ce0910e748e93ed0f66c8980c9719abb9a64c217ebd1559f21fe3",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "selected_captures": {
+        "permanent-shop-utility.png": "7b87061bda48a78cf3107e749ffd2a1978e253cd4c5b7070d3be66a25d686bfc",
+        "goal-met-live.png": "1b7824c9406a6979718a7fcbcdbabcf394d16da2f1b50dd47887ca13590ca694"
+      }
+    },
+    {
+      "fitting": "launcher",
+      "status": "pass",
+      "normalSpeed": true,
+      "seeded": false,
+      "errors": [],
+      "profile_count": 15,
+      "profiles": [
+        {
+          "label": "garage",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "garage",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "garage",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "garage",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "garage",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "combat",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "combat",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "combat",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "combat",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "combat",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "saved-result",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "saved-result",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "saved-result",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "saved-result",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "saved-result",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "screenshot_count": 26,
+      "observations": {
+        "result": [
+          {
+            "phase": "result",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 1,
+            "tierTwoUnlocked": true,
+            "load": 1
+          }
+        ],
+        "claim": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 1,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 2
+          }
+        ],
+        "purchase": [
+          {
+            "phase": "workshop",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 0,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 2
+          }
+        ],
+        "deploy": [
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 0,
+            "cannonDamage": 20,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 0,
+            "bestKills1": 0,
+            "pendingReward": 0,
+            "tierTwoUnlocked": false,
+            "load": 1
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 1,
+            "activeTier": 1,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 3
+          },
+          {
+            "phase": "battle",
+            "saveState": "ready",
+            "wallet": 0,
+            "level": 1,
+            "cannonDamage": 30,
+            "selectedTier": 2,
+            "activeTier": 2,
+            "bestTicks1": 1647,
+            "bestKills1": 33,
+            "pendingReward": 0,
+            "tierTwoUnlocked": true,
+            "load": 4
+          }
+        ]
+      },
+      "raw_path": "campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021/launcher/tier-observations.json",
+      "raw_sha256": "acc125461c415a9146b2a21217db9d59d86ff69440aa37f36244e0ed99dad9ee",
+      "inputs": {
+        "e2e/helpers/lastStandTierJourney.mjs": "4627636d9b1af214da05d49ca0578c653bc5ad528ef13beed9ccf03d2b5414d6",
+        "e2e/last-stand-playable-loop.spec.ts": "0a9a66cbcf73ad801bd562589e46ad9b91a35acb43e036d4c3da73814ebd89ec"
+      },
+      "packaged_runtime_sha256": {
+        "client/public/last-stand/asset-manifest.json": "18dbbe4b5bb227142e201d9c3e99083f94a0bce2028222e62d937900bdfee48a",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "ff8b14a831c07da91b17d32165b0382929b2ccb021dafd0699827fda356eef49",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "1d06edd560a4f269729498f6fc9cfb11bb72f8dd0fc882accc1b2d17fd54b824",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.data": "42e9ca74bfc7b5ee2e8208dbb84d2073d8dd7889275bd7d73e337924ebda59b4",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.loader.js": "2f95f454cf4f6f600400abe5ee3ebf4e34cc6e1e663d5b32f56a5db2f0c23104",
+        "client/public/last-stand/Build/Web-20261017T224624Z-9b06ac.wasm": "02d9a18d32c3465f34e736b165919c5c97c67fc643488e4dcf500632279e611f",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "c96befade00ce0910e748e93ed0f66c8980c9719abb9a64c217ebd1559f21fe3",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "selected_captures": {
+        "permanent-shop-utility.png": "6d0cebc4f96468cea25fcf2111e42c92da001d87ebadb885b231e164ccb77417",
+        "goal-met-live.png": "2983db9f34f1cfeac6c9e452ac6af69bad3949c3574b72d3741071334bffa9ff"
+      }
+    }
+  ]
+}

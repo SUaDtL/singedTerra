@@ -1,0 +1,87 @@
+
+> singedterra@0.0.0 prebuild
+> npm run check:seed-challenge-compatibility && npm run check:verified-challenge:artifact && node scripts/assets/verify-last-stand-source.mjs && node scripts/assets/verify-last-stand.mjs
+
+
+> singedterra@0.0.0 check:seed-challenge-compatibility
+> node scripts/checks/seed_challenge_compatibility.mjs
+
+ST1 compatibility PASS (32 bound sources)
+
+> singedterra@0.0.0 check:verified-challenge:artifact
+> node scripts/assets/build-verified-challenge.mjs --verify
+
+retained cq1 --verify: PASS c9e3c55636a6cc2407cbc338e674ebfa0a3dd1285f3a95f72dd354fd3c348c81
+Last Stand source verified: 3318 available inputs; vendor inspected-present-bytes; retained local before/after pin; external toolchain bytes not inspected by this admission
+Last Stand payload verified: 16 export assets from Web-20261021T060151Z-510800
+
+> singedterra@0.0.0 build
+> npm run typecheck && npm -w @singedterra/client run build
+
+
+> singedterra@0.0.0 typecheck
+> npm -w @singedterra/shared run typecheck && npm -w @singedterra/client run typecheck
+
+
+> @singedterra/shared@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @singedterra/client@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @singedterra/client@0.0.0 build
+> vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 2816 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/sprite-GUbIMw9F.svg                                 2.88 kB │ gzip:   0.99 kB
+dist/index.html                                                 3.13 kB │ gzip:   1.39 kB
+dist/assets/button-disabled-frame-DFb18kRM.png                 12.00 kB
+dist/assets/iron-tile-BMptMx34.png                             13.24 kB
+dist/assets/button-pressed-frame-Ddd4rMcZ.png                  13.38 kB
+dist/assets/button-frame-DrpxvJnq.png                          15.07 kB
+dist/assets/button-hover-frame-DzDwnrFl.png                    16.41 kB
+dist/assets/panel-frame-DYN9YzCO.png                           18.16 kB
+dist/assets/gold-tile-DnCgdH3w.png                             22.56 kB
+dist/assets/button-selected-frame-bmCKekxN.png                 23.18 kB
+dist/assets/button-gold-frame-Doq9Ugps.png                     23.85 kB
+dist/assets/map-tile-GhkU-MXb.png                              70.30 kB
+dist/assets/battle-armory-frame-ultrawide-v3-IvCEorr5.webp     80.70 kB
+dist/assets/battle-match-frame-v2-C-Qd-51U.webp               390.53 kB
+dist/assets/battle-settings-frame-v2-DIgdIQZ-.webp          1,392.29 kB
+dist/assets/index-DhwUEsmn.css                                 62.05 kB │ gzip:  12.25 kB
+dist/assets/BitmapFont-CDPGffyn.js                              0.04 kB │ gzip:   0.06 kB
+dist/assets/WebGLRenderer-CQQHyND9.js                           0.04 kB │ gzip:   0.06 kB
+dist/assets/CanvasRenderer-3LJsuQqG.js                          0.04 kB │ gzip:   0.06 kB
+dist/assets/WebGPURenderer-DbPBEEmH.js                          0.04 kB │ gzip:   0.06 kB
+dist/assets/webworkerAll-CEpD0yVI.js                            0.05 kB │ gzip:   0.06 kB
+dist/assets/init-CWp1TCFA.js                                    0.15 kB │ gzip:   0.14 kB
+dist/assets/browserAll-B68zZXjv.js                              0.27 kB │ gzip:   0.20 kB
+dist/assets/getTextureBatchBindGroup-DvV1Qpdi.js                0.38 kB │ gzip:   0.28 kB
+dist/assets/CanvasPool-BLNJqsyC.js                              0.80 kB │ gzip:   0.45 kB
+dist/assets/Cache-Bc5ARRdL.js                                   1.10 kB │ gzip:   0.56 kB
+dist/assets/GpuStencilModesToPixi-BpOm0FZO.js                   3.26 kB │ gzip:   1.07 kB
+dist/assets/canvasUtils-sGmb_LoK.js                             6.02 kB │ gzip:   2.05 kB
+dist/assets/init-DWfW9Gku.js                                   10.00 kB │ gzip:   2.30 kB
+dist/assets/Filter-DSrDHzWq.js                                 11.00 kB │ gzip:   3.72 kB
+dist/assets/Shader-CWMqvjgv.js                                 11.92 kB │ gzip:   4.38 kB
+dist/assets/GCManagedHash-DkydXyoE.js                          18.48 kB │ gzip:   6.12 kB
+dist/assets/NetworkClient-qGj8UqPE.js                          47.24 kB │ gzip:  12.84 kB
+dist/assets/RenderTargetSystem-5FUDt-yO.js                     52.90 kB │ gzip:  14.81 kB
+dist/assets/GraphicsContext-BbodX-xt.js                        62.26 kB │ gzip:  20.88 kB
+dist/assets/ParticleBuffer-oP7XWNrX.js                        117.55 kB │ gzip:  33.63 kB
+dist/assets/supabase-CiOSy7wF.js                              214.56 kB │ gzip:  55.08 kB
+dist/assets/lib-BZMhWaSl.js                                   603.66 kB │ gzip: 170.57 kB
+dist/assets/index-BZ7ieO3Y.js                               1,297.87 kB │ gzip: 291.79 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 647ms

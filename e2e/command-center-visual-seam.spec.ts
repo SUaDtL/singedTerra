@@ -1,31 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
-import { assertLobbyControlReachable, assertLobbyFrame, gotoLobby } from './support';
+import { assertLobbyControlReachable, assertLobbyFrame, gotoLobby, openLastStandWorkspace } from './support';
 
 async function gotoCampaignCommandCenter(page: Page): Promise<void> {
   await gotoLobby(page);
   await expect(page.locator('#lobby .command-center')).toHaveCount(1);
   await expect(page.locator('#lobby .command-center__navigation')).toHaveCount(1);
-  if (!(await page.locator('#lobby [data-campaign-command-view]').isVisible())) {
-    const railCampaigns = page.locator('.command-center__category-rail')
-      .getByRole('button', { name: 'Campaigns', exact: true });
-    if (await railCampaigns.isVisible()) {
-      await railCampaigns.click();
-    } else {
-      await page.getByRole('button', { name: 'Modes', exact: true }).click();
-      await page.getByRole('navigation', { name: 'Modes', exact: true })
-        .getByRole('button', { name: 'Campaigns', exact: true })
-        .click();
-      await page.getByRole('button', { name: 'Close Modes', exact: true }).click();
-    }
-  }
-  await page.locator('.command-center__library-items [data-command-item="ash-road"]').click();
-  await expect(page.locator('#lobby [data-campaign-command-view]')).toBeVisible();
+  await openLastStandWorkspace(page);
   await expect(page.locator('#lobby [data-command-primary]')).toHaveCount(1);
 }
 
 async function assertRenderedTargetsArePhysicalSize(page: Page): Promise<void> {
   const targets = await page.locator(
-    '#lobby .command-center button, '
+    '#lobby .command-center button, #lobby .command-center a, '
       + '#lobby .command-center select, '
       + '#lobby .command-center summary, '
       + '#lobby .lobby-deployment__masthead .account-panel button',
@@ -89,11 +75,10 @@ test.describe('T11 command-center production visual seam', () => {
       await page.keyboard.press('Tab');
       await expect(launch).toBeFocused();
       await assertLobbyFrame(page);
-      const ashRoad = page.locator('.command-center__library-items [data-command-item="ash-road"]');
-      await expect(ashRoad).toBeInViewport({ ratio: 1 });
-      await ashRoad.click();
-      await expect(page.locator('[data-campaign-command-view]')).toBeVisible();
-      await expect(ashRoad).toHaveAttribute('aria-current', 'true');
+      await expect(page.locator('.command-center__library-items [data-command-item]')).toHaveCount(1);
+      await expect(page.locator('[data-command-item="ash-road"]')).toHaveCount(0);
+      await expect(page.locator('[data-last-stand-command-view]')).toBeVisible();
+
     }
     expect(unityRequests, 'Campaigns entry must not request Unity before launch').toEqual([]);
   });
@@ -125,16 +110,16 @@ test.describe('T11 command-center production visual seam', () => {
     expect(focus.style).not.toBe('none');
     expect(focus.width).toBeGreaterThanOrEqual(2);
 
-    const ashRoadLabel = page.locator('[data-command-item="ash-road"] .command-center__item-label');
-    const resilientText = await ashRoadLabel.evaluate((element) => ({
+    const campaignLabel = page.locator('[data-command-item="last-stand"] .command-center__item-label');
+    const resilientText = await campaignLabel.evaluate((element) => ({
       overflowWrap: getComputedStyle(element).overflowWrap,
       whiteSpace: getComputedStyle(element).whiteSpace,
     }));
     expect(resilientText.overflowWrap).toBe('anywhere');
     expect(resilientText.whiteSpace).toBe('normal');
 
-    const longLabel = await ashRoadLabel.evaluate((element) => {
-      element.textContent = 'Ash Road Expedition with an Improbably Long Campaign Designation and Extended Theater Command';
+    const longLabel = await campaignLabel.evaluate((element) => {
+      element.textContent = 'Last Stand Expedition with an Improbably Long Campaign Designation and Extended Theater Command';
       const item = element.closest<HTMLElement>('.command-center__item')!;
       const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
       return {
@@ -188,6 +173,9 @@ test.describe('T11 command-center production visual seam', () => {
       await assertRenderedTargetsArePhysicalSize(page);
       await assertLobbyControlReachable(page, '[data-command-primary]');
 
+      await page.locator('.last-stand-command__description').evaluate((element) => {
+        element.textContent = 'Extended field briefing: inspect your fitting and prepare the next deployment. '.repeat(12);
+      });
       const portrait = await page.locator('#lobby .lobby-card').evaluate((card) => {
         const title = card.querySelector<HTMLElement>('.lobby-deployment__masthead > h1')!;
         const account = card.querySelector<HTMLElement>('.lobby-deployment__masthead > .account-panel')!;
@@ -232,9 +220,9 @@ test.describe('T11 command-center production visual seam', () => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await gotoCampaignCommandCenter(page);
 
-    await expect(page.getByRole('button', { name: /^Ash Road/ })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Fuel Stop' })).toBeVisible();
-    await expect(page.getByText('Immediate objective', { exact: true })).toBeVisible();
+    await expect(page.locator('button[data-command-item="last-stand"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hold the line. Return stronger.', exact: true })).toBeVisible();
+    await expect(page.getByText('Assignment', { exact: true })).toBeVisible();
     await expect(page.locator('[data-command-primary]')).toBeVisible();
     await assertLobbyFrame(page);
     await assertRenderedTargetsArePhysicalSize(page);
@@ -245,7 +233,7 @@ test.describe('T11 command-center production visual seam', () => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await gotoCampaignCommandCenter(page);
 
-    const preferences = await page.locator('.command-center__item[data-command-item="ash-road"]').evaluate((element) => {
+    const preferences = await page.locator('.command-center__item[data-command-item="last-stand"]').evaluate((element) => {
       const style = getComputedStyle(element);
       return {
         animationDuration: style.animationDuration,

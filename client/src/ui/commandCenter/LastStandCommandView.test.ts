@@ -10,6 +10,8 @@ describe('Last Stand campaign entry', () => {
 
     expect(launch.getAttribute('href')).toBe(`${import.meta.env.BASE_URL}last-stand/`);
     expect(launch.textContent).toBe('Launch Last Stand');
+    expect(launch.hasAttribute('data-command-primary')).toBe(true);
+    expect(launch.hasAttribute('data-preparation-primary')).toBe(true);
     view.focusDefault();
     expect(document.activeElement).toBe(launch);
     view.update({});

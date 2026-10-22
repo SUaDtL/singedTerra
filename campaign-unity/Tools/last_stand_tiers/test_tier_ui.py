@@ -40,6 +40,9 @@ class TierHudTests(unittest.TestCase):
     def test_tier_text_reports_saved_and_unsaved_outcomes(self):
         self.case("text")
 
+    def test_live_goal_explains_run_end_save_without_claiming_credit(self):
+        self.case("live-goal")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,7 +9,59 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The current in-repo visual scope is
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
-## Current approved slice — Tier Goals and Personal Bests
+## Owner direction update — October 22, 2026
+
+The owner accepted the current player-controls sprint and garage/combat layout in
+PR #541 on October 22, with merge authorized once its required CI passes. Native
+background-media qualification remains separate from that rendered UI acceptance.
+The owner then extended the same PR to retire Ash Road **including its code**.
+Last Stand is the campaign. Remove the former campaign's content, runtime,
+launch/resume paths, dedicated presentation, assets and tests. Preserve generic
+Skirmish, Multiplayer, Challenge and deterministic engine behavior. Recover old
+campaign menu selections and exact legacy links to Last Stand; leave historical
+save bytes alone. Earlier Ash Road coexistence and resume observations below are
+historical evidence, superseded as current product direction by this decision.
+The owner now wants **waves within each tier** to become the progression backbone:
+advance tiers by reaching a wave target, and place resource rewards or armament
+unlocks at authored wave milestones. A run can continue beyond its advancement
+target; first-clear milestones and repeatable earnings need distinct rules.
+
+The next gameplay proposal must define wave completion and pacing, per-tier targets,
+milestone rewards, safe claims, and a save migration that preserves existing wallets,
+upgrades and unlocked tiers without fabricating historical wave completions. The owner
+chose to clear each wave by **defeating its defined enemy group**; waves do not advance
+on an overlapping timer. Exact numbers and reward cadence are not settled. The current time goals and safety
+horizon below describe the implemented provisional rules until that replacement is
+designed, approved and verified; no wave behavior is implemented by the UI correction.
+
+The owner also requires **resumable runs from the last completed wave**. Save hull,
+temporary upgrades, run resources, completed wave, loadout and relevant run state as
+one checkpoint, together with the cleared-wave rewards and milestone unlock ledger.
+Closing or reloading during a wave may roll back that unfinished wave only; resume
+at its start from the previous completed checkpoint. Create the initial checkpoint
+before wave 1. Roll back mid-wave purchases and their spending together, and preserve
+the explicit abandon action. The current implementation does not yet restore active
+runs after closing/reloading; background continuation while a tab remains open is a
+separate existing behavior.
+
+Include these presentation corrections with the wave conversion:
+
+- Carry the existing brass and graphite frame and button treatment through the
+  opened Menu, Settings tabs, Help, About and confirmation surfaces. The floating
+  Menu entry remains in its own corner. Preserve focus handling, scrolling,
+  readable text and 44 CSS-pixel targets at portrait and short landscape sizes.
+- Correct the shared panel and button corner composition. The current frame mesh
+  has clipped corners but sits on an opaque rectangular `Image`, leaving square
+  patches outside the bevel. Give the backing and visible frame the same outline;
+  check border, shadow and screw geometry as well. Apply the shared correction
+  across affected panels rather than covering individual corners. Verify rendered
+  edges against both tier environments at desktop, portrait and short landscape
+  sizes, including active, disabled, highlighted and pressed buttons.
+
+These visual follow-ups are scheduled with waves and do not block the owner's
+acceptance of the current layout. They are not implemented by this direction note.
+
+## Implemented provisional slice — Tier Goals and Personal Bests
 
 On October 17, 2026 the owner approved the
 [tier progression specification](../../.codearbiter/specs/last-stand-tier-progression.html).
@@ -92,7 +144,7 @@ The older TypeScript artillery game remains a separate product path.
 The site now presents Last Stand under Campaigns. Its native link opens the
 packaged Unity Web export on the same origin, and the export returns to the
 Last Stand campaign entry. The first playable loop keeps its own local save;
-Ash Road progress, account rewards and verified play are separate. This entry
+account rewards and verified play are separate. This entry
 does not settle the pending visual, motion or sound acceptance.
 
 The current `BattlefieldReview` scene offers two matched treatments. The owner

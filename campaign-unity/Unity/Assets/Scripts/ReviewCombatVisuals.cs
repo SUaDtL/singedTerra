@@ -107,26 +107,29 @@ namespace SingedTerra.VisualReview
                 var foe=model.Foes[e.Slot];Vector3 position=Position(foe)+Vector3.up*.7f;
                 if(outgoing)
                 {
-                    vehicles[e.Slot].flash=.12f;
-                    Emit(position,.18f,.25f,1.0f,new Color(1f,.66f,.25f),settings.flashMaterial,false,Vector3.zero);
-                    if(!foe.Alive&&!destructionPresented[e.Slot])
+                    vehicles[e.Slot].flash=full?.12f:0;
+                    Emit(position,full?.18f:.14f,full?.25f:.12f,full?1.0f:.4f,
+                        new Color(1f,.66f,.25f,full?1f:.6f),settings.flashMaterial,false,Vector3.zero);
+                    if(e.Killed&&!destructionPresented[e.Slot])
                     {
                         destructionPresented[e.Slot]=true;
                         Destruction(position);
                     }
-                    if(e.Kind==EncounterEventKind.Cannon)
+                    if(full&&e.Kind==EncounterEventKind.Cannon)
                         Emit(tank.muzzle.position,.10f,.25f,.85f,new Color(1f,.82f,.43f),settings.flashMaterial,false,Vector3.zero);
                 }
                 else
                 {
-                    Emit(position+Vector3.up*.35f,.10f,.18f,.55f,new Color(1f,.59f,.20f),settings.flashMaterial,false,Vector3.zero);
-                    Emit(tank.tank.position+Vector3.up,.18f,.25f,.80f,new Color(1f,.48f,.17f),settings.flashMaterial,false,Vector3.zero);
+                    if(full)Emit(position+Vector3.up*.35f,.10f,.18f,.55f,new Color(1f,.59f,.20f),settings.flashMaterial,false,Vector3.zero);
+                    Emit(tank.tank.position+Vector3.up,full?.18f:.14f,full?.25f:.12f,full?.80f:.4f,
+                        new Color(1f,.48f,.17f,full?1f:.6f),settings.flashMaterial,false,Vector3.zero);
                 }
             }
         }
         void Destruction(Vector3 position)
         {
-            Emit(position,.28f,.55f,2.0f,new Color(1f,.49f,.12f),settings.flashMaterial,false,Vector3.zero);
+            Emit(position,.28f,full?.55f:.2f,full?2.0f:.65f,
+                new Color(1f,.49f,.12f,full?1f:.65f),settings.flashMaterial,false,Vector3.zero);
             if(!full)return;
             for(int i=0;i<4;i++)
             {
@@ -194,6 +197,13 @@ namespace SingedTerra.VisualReview
         {
             full=value;
             foreach(var puff in puffs)puff.node.gameObject.SetActive(false);
+            // The player may change effects while paused, before Advance runs.
+            block.Clear();block.SetColor("_EmissionColor",Color.black);
+            foreach(var v in vehicles)
+            {
+                v.flash=0;
+                foreach(var renderer in v.paint)renderer.SetPropertyBlock(block);
+            }
         }
         public void Clear()
         {

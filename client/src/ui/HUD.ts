@@ -62,10 +62,8 @@ import {
 import type {
   BattleConsoleHostMode,
   BattleConsoleIntent,
-  CampaignBattleConsolePresentation,
   BattleConsolePresentationState,
 } from './battleConsole/types';
-import type { CampaignLoadoutDecision } from '../campaign/loadout';
 import {
   RoundOverView,
   type RoundOverPurchase,
@@ -76,7 +74,6 @@ import {
   VerifiedChallengeView,
   type HUDVerifiedChallengePresentation,
 } from './VerifiedChallengeView';
-import { CampaignMissionView } from './CampaignMissionView';
 
 export type { HUDVerifiedChallengePresentation } from './VerifiedChallengeView';
 
@@ -197,15 +194,6 @@ export class HUD {
   /** Local-only coach callbacks. Task 3 observes actions and owns progression/persistence. */
   private firstSalvoSkipCb: (() => void) | null = null;
   private firstSalvoReplayCb: (() => void) | null = null;
-  private campaignRetryCb: (() => void) | null = null;
-  private campaignRouteChoiceCb: ((routeId: string) => void) | null = null;
-  private campaignCheckpointChoiceCb: ((choice: CampaignLoadoutDecision) => void) | null = null;
-  private campaignEmergencyPatchCb: (() => void) | null = null;
-  private campaignContinueCb: (() => void) | null = null;
-  private campaignRunPresentation: Readonly<Pick<
-    CampaignBattleConsolePresentation,
-    'supplies' | 'retryable' | 'checkpoint'
-  >> | null = null;
   private firstSalvoStep: FirstSalvoStep | null = null;
   private progressionSignInCb: (() => void) | null = null;
   private verifiedRetryCb: (() => void) | null = null;
@@ -307,7 +295,6 @@ export class HUD {
   private matchTitleEl!: HTMLElement;
   private matchDrawerBtnEl!: HTMLButtonElement;
   private matchDrawerCloseEl!: HTMLButtonElement;
-  private campaignMissionView!: CampaignMissionView;
   private firstSalvoBriefingAcknowledged = false;
   // Networked liveness widgets (P1-6): a persistent connection banner (shown only
   // while reconnecting/connecting) and a transient toast for failed shots.
@@ -422,25 +409,6 @@ export class HUD {
   onVerifiedNextOrder(cb: () => void): void { this.verifiedNextOrderCb = cb; }
   onVerifiedChallengeRetry(cb: () => void): void { this.verifiedChallengeRetryCb = cb; }
   onVerifiedChallengeReturn(cb: () => void): void { this.verifiedChallengeReturnCb = cb; }
-  onCampaignRetry(cb: () => void): void { this.campaignRetryCb = cb; }
-  onCampaignRouteChoice(cb: (routeId: string) => void): void { this.campaignRouteChoiceCb = cb; }
-  onCampaignCheckpointChoice(cb: (choice: CampaignLoadoutDecision) => void): void {
-    this.campaignCheckpointChoiceCb = cb;
-  }
-  onCampaignContinue(cb: () => void): void { this.campaignContinueCb = cb; }
-  onCampaignEmergencyPatch(cb: () => void): void { this.campaignEmergencyPatchCb = cb; }
-
-  setCampaignRunPresentation(
-    presentation: Readonly<Pick<
-      CampaignBattleConsolePresentation,
-      'supplies' | 'retryable' | 'checkpoint'
-    >> | null,
-  ): void {
-    this.campaignRunPresentation = presentation === null
-      ? null
-      : Object.freeze({ ...presentation });
-    if (this.built) this.refreshBattleConsole();
-  }
 
   /** Accepts only a cue already admitted by the renderer's local-shot validity rules. */
   setImpactLearningCue(cue: BattleCommandImpactLearningCue | null): void {
@@ -647,10 +615,7 @@ export class HUD {
       presentedTurnKey !== this.lastPresentedTurnKey;
     this.syncRound(state);
     this.syncPlayers(state, isHandoff);
-    if (state.campaign) {
-      this.syncRoundOver(state);
-      if (this.overlayShown || this.terminalState !== null) this.hideVictoryReport(false);
-    } else if (this.verifiedChallengeState === null) {
+    if (this.verifiedChallengeState === null) {
       this.syncRoundOver(state);
       this.syncOverlay(state);
     } else {
@@ -901,36 +866,7 @@ export class HUD {
       },
       focusOwner,
     });
-    const campaign = state.campaign
-      ? {
-        encounterId: state.campaign.encounterId ?? 'campaign-encounter',
-        ...(state.campaign.objective ? { objective: {
-          ...state.campaign.objective,
-          protectedObjectIds: [...state.campaign.objective.protectedObjectIds],
-        } } : {}),
-        ...(state.campaign.warning ? { warning: {
-          status: state.campaign.warning.status,
-          sourceObjectId: state.campaign.warning.sourceObjectId,
-          dueHumanCommitment: state.campaign.warning.dueHumanCommitment,
-          targetX: state.campaign.warning.targetX,
-        } } : {}),
-        commitmentCount: state.campaign.commitmentCount,
-        supplies: this.campaignRunPresentation?.supplies ?? 0,
-        retryable: this.campaignRunPresentation?.retryable ?? false,
-        objects: (state.campaign.objects ?? []).map((object) => ({
-          id: object.id,
-          kind: object.kind,
-          health: object.health,
-          maxHealth: object.maxHealth,
-          alive: object.alive,
-        })),
-        result: state.campaign.result ? { ...state.campaign.result } : null,
-        ...(this.campaignRunPresentation?.checkpoint
-          ? { checkpoint: this.campaignRunPresentation.checkpoint }
-          : {}),
-      }
-      : null;
-    return { ...presentation, campaign };
+    return presentation;
   }
 
   private readonly battleConsoleControllerPort: BattleConsoleControllerPort = {
@@ -982,11 +918,6 @@ export class HUD {
       this.refreshBattleConsole();
     },
     fire: () => this.primaryActionCb?.(),
-    retryCampaign: () => this.campaignRetryCb?.(),
-    selectCampaignRoute: (routeId) => this.campaignRouteChoiceCb?.(routeId),
-    chooseCampaignCheckpoint: (choice) => this.campaignCheckpointChoiceCb?.(choice),
-    applyCampaignEmergencyPatch: () => this.campaignEmergencyPatchCb?.(),
-    continueCampaign: () => this.campaignContinueCb?.(),
     skipCoach: () => {
       this.setFirstSalvoStep(null);
       this.firstSalvoSkipCb?.();
@@ -1006,7 +937,6 @@ export class HUD {
     if (!this.built || this.destroyed) return;
     const state = this.projectLiveBattleConsole();
     if (!state) return;
-    this.syncCampaignMission(state.campaign ?? null);
     this.ensureBattleConsoleHosts();
     if (this.battleConsoleSurfaceHost) {
       this.battleConsoleSurfaceHost.dataset['activeCommander'] = state.commander.id ?? '';
@@ -1099,19 +1029,6 @@ export class HUD {
     this.lastSeenRound = state.round;
   }
 
-  private syncCampaignMission(campaign: CampaignBattleConsolePresentation | null): void {
-    const active = campaign !== null;
-    this.root.classList.toggle('st-hud--campaign', active);
-    this.root.setAttribute('aria-label', active ? 'Mission ledger' : 'Match ledger');
-    this.matchTitleEl.textContent = active ? 'Mission' : 'Match';
-    this.matchDrawerBtnEl.textContent = active ? 'Mission' : 'Match';
-    this.matchDrawerBtnEl.setAttribute('aria-label', active ? 'Open mission ledger' : 'Open match ledger');
-    this.matchDrawerCloseEl.setAttribute('aria-label', active ? 'Close mission ledger' : 'Close match ledger');
-    this.matchModeEl.hidden = active;
-    this.roundEl.hidden = active;
-    this.campaignMissionView.update(campaign);
-  }
-
   /** Build the static DOM scaffold + inject styles. Runs once (idempotent). */
   private build(): void {
     HUD.injectStyle();
@@ -1146,11 +1063,6 @@ export class HUD {
     this.matchTitleEl.className = 'st-hud__match-title';
     this.matchTitleEl.dataset['ui'] = 'match-title';
     this.matchTitleEl.textContent = 'Match';
-    const missionHost = document.createElement('div');
-    this.campaignMissionView = new CampaignMissionView({
-      host: missionHost,
-      onRetry: () => this.campaignRetryCb?.(),
-    });
     this.matchCardEl.append(
       this.matchTitleEl,
       this.matchDrawerCloseEl,
@@ -1158,7 +1070,6 @@ export class HUD {
       this.matchModeEl,
       this.quickOperationEl,
       this.roundEl,
-      missionHost,
       this.playersEl,
       this.connBannerEl,
     );

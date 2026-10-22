@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: first-session clarity and feedback (proposed sprint) · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-FIRST-SESSION-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-first-session-polish.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: first-session clarity and feedback (proposed sprint)</h1><p class="deck">Polish the existing deploy, survive, Claim, upgrade and redeploy loop. Planning only; implementation and checks remain pending.</p><div class="meta"><span>ST-LS-FIRST-SESSION-SPEC</span><span>Revision 3 · schema 0.3.2</span><span>34 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INTENT-FIRST-SESSION -->
+<article class="record" id="INTENT-FIRST-SESSION" data-ca-symbol="INTENT-FIRST-SESSION" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-FIRST-SESSION">INTENT-FIRST-SESSION</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>sprint planning</div><div class="field"><span class="label">Outcome</span>A bounded plan that improves observed player friction while preserving progression and existing owners.</div><div class="field"><span class="label">Problem</span>The two-tier loop exists, but technical success does not establish clear, satisfying play or owner visual/listening acceptance. The post-merge dependency audit also blocks release.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-REQUEST">SRC-REQUEST</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div></article>
+<!-- CA:END:INTENT-FIRST-SESSION -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:SCOPE-LOOP -->
+<article class="record" id="SCOPE-LOOP" data-ca-symbol="SCOPE-LOOP" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-LOOP">SCOPE-LOOP</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Existing Last Stand first-session loop, two tiers, six upgrade tracks and browser delivery.</div></article>
+<!-- CA:END:SCOPE-LOOP -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:NON-SYSTEMS -->
+<article class="record" id="NON-SYSTEMS" data-ca-symbol="NON-SYSTEMS" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-SYSTEMS">NON-SYSTEMS</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No equipment inventory, Skills, R&amp;D, offline income, extra tiers, account sync, monetization or Android delivery.</div></article>
+<!-- CA:END:NON-SYSTEMS -->
+
+<!-- CA:BEGIN:NON-REWRITE -->
+<article class="record" id="NON-REWRITE" data-ca-symbol="NON-REWRITE" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-REWRITE">NON-REWRITE</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No broad UI/art rewrite, bundled dependency refresh, save-schema change or implementation in this planning request.</div></article>
+<!-- CA:END:NON-REWRITE -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APPROACH-OBSERVE-FIX -->
+<article class="record" id="APPROACH-OBSERVE-FIX" data-ca-symbol="APPROACH-OBSERVE-FIX" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-OBSERVE-FIX">APPROACH-OBSERVE-FIX</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Choice</span>Observe the loop, select at most three friction points, improve existing presentation, then qualify the complete journey.</div><div class="field"><span class="label">Tradeoff</span>New systems wait while the core player experience is tested and improved.</div></article>
+<!-- CA:END:APPROACH-OBSERVE-FIX -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:CON-PRESERVE -->
+<article class="record" id="CON-PRESERVE" data-ca-symbol="CON-PRESERVE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-PRESERVE">CON-PRESERVE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-RELEASE</li><li>CR-BASELINE</li><li>CR-CLARITY</li><li>CR-COMBAT</li><li>CR-TUNING</li><li>CR-QUALIFY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve supported saves, six tracks, automatic deterministic combat, separate Scrap/Salvage, manual Claim, background/Pause behavior, unfinished-run no award, Ash Road isolation and unrelated dirty work.</div></article>
+<!-- CA:END:CON-PRESERVE -->
+
+<!-- CA:BEGIN:CON-PROPOSAL -->
+<article class="record" id="CON-PROPOSAL" data-ca-symbol="CON-PROPOSAL" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-PROPOSAL">CON-PROPOSAL</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-RELEASE</li><li>CR-BASELINE</li><li>CR-CLARITY</li><li>CR-COMBAT</li><li>CR-TUNING</li><li>CR-QUALIFY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-REQUEST">SRC-REQUEST</a></li></ul></div><div class="field"><span class="label">Statement</span>Owner authorized implementation of this sprint on 2026-10-21. Record checks only after execution. Separate visual acceptance, numeric tuning changes and future merge/publication require their actual decisions; ordinary task progress needs no artifact approval code.</div></article>
+<!-- CA:END:CON-PROPOSAL -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:CR-RELEASE -->
+<article class="record" id="CR-RELEASE" data-ca-symbol="CR-RELEASE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-RELEASE">CR-RELEASE</a><h3>Verified delivery</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-PROPOSAL">CON-PROPOSAL</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner selects this direction before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-1 -->
+<article class="record" id="SC-1" data-ca-symbol="SC-1" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-1">SC-1</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The source-matched two-tier game and supported save states.</div><div class="field"><span class="label">Then</span>Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.</div><div class="field"><span class="label">When</span>Run the task&#39;s observed checks.</div></article>
+<!-- CA:END:SC-1 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.</div><div class="field"><span class="label">Trigger</span>Observe or change the current loop within this task.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-1 -->
+<article class="record" id="VER-1" data-ca-symbol="VER-1" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-1">VER-1</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A high-severity audit or stale public source prevents a release claim.</div><div class="field"><span class="label">Oracle</span>Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.</div><div class="field"><span class="label">Planned target</span>Task-scoped existing tests and actual source-matched player observations.</div></article>
+<!-- CA:END:VER-1 -->
+</div></article>
+<!-- CA:END:CR-RELEASE -->
+
+<!-- CA:BEGIN:CR-BASELINE -->
+<article class="record" id="CR-BASELINE" data-ca-symbol="CR-BASELINE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-BASELINE">CR-BASELINE</a><h3>Observed first-session loop</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-PROPOSAL">CON-PROPOSAL</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner selects this direction before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-2 -->
+<article class="record" id="SC-2" data-ca-symbol="SC-2" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-2">SC-2</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The source-matched two-tier game and supported save states.</div><div class="field"><span class="label">Then</span>Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.</div><div class="field"><span class="label">When</span>Run the task&#39;s observed checks.</div></article>
+<!-- CA:END:SC-2 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.</div><div class="field"><span class="label">Trigger</span>Observe or change the current loop within this task.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-2 -->
+<article class="record" id="VER-2" data-ca-symbol="VER-2" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-2">VER-2</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Seeded progress or simulation results cannot substitute for earned player progression.</div><div class="field"><span class="label">Oracle</span>Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.</div><div class="field"><span class="label">Planned target</span>Task-scoped existing tests and actual source-matched player observations.</div></article>
+<!-- CA:END:VER-2 -->
+</div></article>
+<!-- CA:END:CR-BASELINE -->
+
+<!-- CA:BEGIN:CR-CLARITY -->
+<article class="record" id="CR-CLARITY" data-ca-symbol="CR-CLARITY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-CLARITY">CR-CLARITY</a><h3>Understandable upgrades and progress</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-PROPOSAL">CON-PROPOSAL</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner selects this direction before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-3 -->
+<article class="record" id="SC-3" data-ca-symbol="SC-3" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-3">SC-3</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The source-matched two-tier game and supported save states.</div><div class="field"><span class="label">Then</span>Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.</div><div class="field"><span class="label">When</span>Run the task&#39;s observed checks.</div></article>
+<!-- CA:END:SC-3 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.</div><div class="field"><span class="label">Trigger</span>Observe or change the current loop within this task.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-3 -->
+<article class="record" id="VER-3" data-ca-symbol="VER-3" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-3">VER-3</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Never label an unsaved goal as a saved record or an unavailable benefit as purchasable.</div><div class="field"><span class="label">Oracle</span>Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.</div><div class="field"><span class="label">Planned target</span>Task-scoped existing tests and actual source-matched player observations.</div></article>
+<!-- CA:END:VER-3 -->
+</div></article>
+<!-- CA:END:CR-CLARITY -->
+
+<!-- CA:BEGIN:CR-COMBAT -->
+<article class="record" id="CR-COMBAT" data-ca-symbol="CR-COMBAT" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-COMBAT">CR-COMBAT</a><h3>Readable combat feedback</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-PROPOSAL">CON-PROPOSAL</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner selects this direction before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-4 -->
+<article class="record" id="SC-4" data-ca-symbol="SC-4" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-4">SC-4</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The source-matched two-tier game and supported save states.</div><div class="field"><span class="label">Then</span>Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.</div><div class="field"><span class="label">When</span>Run the task&#39;s observed checks.</div></article>
+<!-- CA:END:SC-4 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.</div><div class="field"><span class="label">Trigger</span>Observe or change the current loop within this task.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-4 -->
+<article class="record" id="VER-4" data-ca-symbol="VER-4" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-4">VER-4</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Presentation must not change damage, targeting, simulation time or rewards.</div><div class="field"><span class="label">Oracle</span>Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.</div><div class="field"><span class="label">Planned target</span>Task-scoped existing tests and actual source-matched player observations.</div></article>
+<!-- CA:END:VER-4 -->
+</div></article>
+<!-- CA:END:CR-COMBAT -->
+
+<!-- CA:BEGIN:CR-TUNING -->
+<article class="record" id="CR-TUNING" data-ca-symbol="CR-TUNING" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-TUNING">CR-TUNING</a><h3>One evidence-based tuning recommendation</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-PROPOSAL">CON-PROPOSAL</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner selects this direction before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-5 -->
+<article class="record" id="SC-5" data-ca-symbol="SC-5" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-5">SC-5</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The source-matched two-tier game and supported save states.</div><div class="field"><span class="label">Then</span>Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.</div><div class="field"><span class="label">When</span>Run the task&#39;s observed checks.</div></article>
+<!-- CA:END:SC-5 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.</div><div class="field"><span class="label">Trigger</span>Observe or change the current loop within this task.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-5 -->
+<article class="record" id="VER-5" data-ca-symbol="VER-5" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-5">VER-5</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Numerical calibration is not earned progression; faster defeat is not automatically better play.</div><div class="field"><span class="label">Oracle</span>Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.</div><div class="field"><span class="label">Planned target</span>Task-scoped existing tests and actual source-matched player observations.</div></article>
+<!-- CA:END:VER-5 -->
+</div></article>
+<!-- CA:END:CR-TUNING -->
+
+<!-- CA:BEGIN:CR-QUALIFY -->
+<article class="record" id="CR-QUALIFY" data-ca-symbol="CR-QUALIFY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-QUALIFY">CR-QUALIFY</a><h3>Qualified player loop</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-PROPOSAL">CON-PROPOSAL</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>compatibility</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner selects this direction before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-6 -->
+<article class="record" id="SC-6" data-ca-symbol="SC-6" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-6">SC-6</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The source-matched two-tier game and supported save states.</div><div class="field"><span class="label">Then</span>If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.</div><div class="field"><span class="label">When</span>Run the task&#39;s observed checks.</div></article>
+<!-- CA:END:SC-6 -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.</div><div class="field"><span class="label">Trigger</span>Observe or change the current loop within this task.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-6 -->
+<article class="record" id="VER-6" data-ca-symbol="VER-6" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-6">VER-6</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Reject stale runtimes, save loss, duplicate rewards, hidden controls or unobserved owner-acceptance claims.</div><div class="field"><span class="label">Oracle</span>If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.</div><div class="field"><span class="label">Planned target</span>Task-scoped existing tests and actual source-matched player observations.</div></article>
+<!-- CA:END:VER-6 -->
+</div></article>
+<!-- CA:END:CR-QUALIFY -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2>
+<!-- CA:BEGIN:DEC-FOCUS -->
+<article class="record" id="DEC-FOCUS" data-ca-symbol="DEC-FOCUS" data-ca-kind="open_decisions"><div class="record-head"><a class="id" href="#DEC-FOCUS">DEC-FOCUS</a><h3>Open decisions</h3></div><div class="field"><span class="label">Affects</span><ul class="items"><li>CR-RELEASE</li><li>CR-BASELINE</li><li>CR-CLARITY</li><li>CR-COMBAT</li><li>CR-TUNING</li><li>CR-QUALIFY</li></ul></div><div class="field"><span class="label">Blocking</span>true</div><div class="field"><span class="label">Owner</span>User</div><div class="field"><span class="label">Question</span>Adopt the proposed polish sprint or prioritize deeper progression/new systems?</div><div class="field"><span class="label">Resolution</span>User approved the proposed first-session clarity and feedback sprint and explicitly requested execution on 2026-10-21.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-REQUEST">SRC-REQUEST</a></div><div class="field"><span class="label">Status</span>resolved</div></article>
+<!-- CA:END:DEC-FOCUS -->
+
+<!-- CA:BEGIN:DEC-VISUAL -->
+<article class="record" id="DEC-VISUAL" data-ca-symbol="DEC-VISUAL" data-ca-kind="open_decisions"><div class="record-head"><a class="id" href="#DEC-VISUAL">DEC-VISUAL</a><h3>Open decisions</h3></div><div class="field"><span class="label">Affects</span><ul class="items"><li>CR-COMBAT</li></ul></div><div class="field"><span class="label">Blocking</span>true</div><div class="field"><span class="label">Owner</span>User</div><div class="field"><span class="label">Question</span>Which elements of the current matched battlefield captures should be kept, changed or mixed?</div><div class="field"><span class="label">Resolution</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Source ref</span><a href="#SRC-ROADMAP">SRC-ROADMAP</a></div><div class="field"><span class="label">Status</span>open</div></article>
+<!-- CA:END:DEC-VISUAL -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-PROPOSAL -->
+<article class="record" id="SEC-PROPOSAL" data-ca-symbol="SEC-PROPOSAL" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-PROPOSAL">SEC-PROPOSAL</a><h3>Approved direction</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Polish the current two-tier loop before new systems. The owner approved this proposal and explicitly requested execution on 2026-10-21. Preserve the current art direction pending the separate visual-treatment choice.</p></div></div></article>
+<!-- CA:END:SEC-PROPOSAL -->
+
+<!-- CA:BEGIN:SEC-ORDER -->
+<article class="record" id="SEC-ORDER" data-ca-symbol="SEC-ORDER" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-ORDER">SEC-ORDER</a><h3>Work order</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Delivery repair and baseline observation are independent. Baseline findings select UI and combat changes; tuning assessment can run alongside them. Integrate and qualify last.</p></div></div></article>
+<!-- CA:END:SEC-ORDER -->
+
+<!-- CA:BEGIN:SEC-RATIONALE -->
+<article class="record" id="SEC-RATIONALE" data-ca-symbol="SEC-RATIONALE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-RATIONALE">SEC-RATIONALE</a><h3>Design rationale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Use the existing simulation, progression, presentation and build owners. No new architecture is needed for this bounded proposal. Preserve visual choices and numeric tuning as explicit owner decisions.</p></div></div></article>
+<!-- CA:END:SEC-RATIONALE -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-REQUEST -->
+<article class="record" id="SRC-REQUEST" data-ca-symbol="SRC-REQUEST" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-REQUEST">SRC-REQUEST</a><h3>Owner-approved first-session polish sprint</h3></div><div class="field"><span class="label">Locator</span>Current chat after merge authorization for PR540</div><div class="field"><span class="label">Note</span>Owner approved the proposed sprint, then explicitly requested approval and execution on 2026-10-21. Ordinary recorded authorization; no native attestation is claimed.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-REQUEST -->
+
+<!-- CA:BEGIN:SRC-ROADMAP -->
+<article class="record" id="SRC-ROADMAP" data-ca-symbol="SRC-ROADMAP" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ROADMAP">SRC-ROADMAP</a><h3>Maintained Last Stand direction</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-ROADMAP.md</div><div class="field"><span class="label">Note</span>The two-tier loop exists. Battlefield, motion and listening acceptance remain distinct from technical checks.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ROADMAP -->
+
+<!-- CA:BEGIN:SRC-MERGE -->
+<article class="record" id="SRC-MERGE" data-ca-symbol="SRC-MERGE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-MERGE">SRC-MERGE</a><h3>Merged tier goals and personal bests</h3></div><div class="field"><span class="label">Locator</span>62010d61afe24bf120e34730d5eed751dbe397d7</div><div class="field"><span class="label">Note</span>PR checks passed before merge; post-merge publication is not verified.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/pull/540</div></article>
+<!-- CA:END:SRC-MERGE -->
+
+<!-- CA:BEGIN:SRC-AUDIT -->
+<article class="record" id="SRC-AUDIT" data-ca-symbol="SRC-AUDIT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-AUDIT">SRC-AUDIT</a><h3>Observed dependency audit failure</h3></div><div class="field"><span class="label">Locator</span>npm run audit:deps</div><div class="field"><span class="label">Note</span>Vite8.3.0-8.3.2 is reported affected through launch-editor; audit offers8.3.4. PR537 includes this and11 other updates; assess a minimal patch separately.</div><div class="field"><span class="label">Type</span>test_reference</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/actions/runs/39538855851/job/119021851081</div></article>
+<!-- CA:END:SRC-AUDIT -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>62010d61afe24bf120e34730d5eed751dbe397d7</div><div class="field"><span class="label">Observed date</span>2026-10-21</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e<br>Model SHA-256: 4ebba896c9622408eabc76654960d87ed4c3bd235c6ffe6e9da9d53ac618b6a8</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-FIRST-SESSION-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "4ebba896c9622408eabc76654960d87ed4c3bd235c6ffe6e9da9d53ac618b6a8",
+    "normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+    "symbol_count": 34
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [],
+      "choice": "Observe the loop, select at most three friction points, improve existing presentation, then qualify the complete journey.",
+      "id": "APPROACH-OBSERVE-FIX",
+      "tradeoff": "New systems wait while the core player experience is tested and improved."
+    },
+    "baseline": {
+      "commit": "62010d61afe24bf120e34730d5eed751dbe397d7",
+      "observed_date": "2026-10-21",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "CR-RELEASE",
+          "CR-BASELINE",
+          "CR-CLARITY",
+          "CR-COMBAT",
+          "CR-TUNING",
+          "CR-QUALIFY"
+        ],
+        "id": "CON-PRESERVE",
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "statement": "Preserve supported saves, six tracks, automatic deterministic combat, separate Scrap/Salvage, manual Claim, background/Pause behavior, unfinished-run no award, Ash Road isolation and unrelated dirty work."
+      },
+      {
+        "applies_to": [
+          "CR-RELEASE",
+          "CR-BASELINE",
+          "CR-CLARITY",
+          "CR-COMBAT",
+          "CR-TUNING",
+          "CR-QUALIFY"
+        ],
+        "id": "CON-PROPOSAL",
+        "source_refs": [
+          "SRC-REQUEST"
+        ],
+        "statement": "Owner authorized implementation of this sprint on 2026-10-21. Record checks only after execution. Separate visual acceptance, numeric tuning changes and future merge/publication require their actual decisions; ordinary task progress needs no artifact approval code."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed sprint."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE",
+          "CON-PROPOSAL"
+        ],
+        "guarantees": [
+          "Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source."
+        ],
+        "id": "CR-RELEASE",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner selects this direction before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The source-matched two-tier game and supported save states.",
+            "id": "SC-1",
+            "then": "Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.",
+            "when": "Run the task's observed checks."
+          }
+        ],
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "statement": "Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.",
+        "title": "Verified delivery",
+        "trigger": "Observe or change the current loop within this task.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-1",
+          "method": "automated_and_review",
+          "negative_control": "A high-severity audit or stale public source prevents a release claim.",
+          "oracle": "Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.",
+          "planned_target": "Task-scoped existing tests and actual source-matched player observations."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed sprint."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE",
+          "CON-PROPOSAL"
+        ],
+        "guarantees": [
+          "Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback."
+        ],
+        "id": "CR-BASELINE",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner selects this direction before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The source-matched two-tier game and supported save states.",
+            "id": "SC-2",
+            "then": "Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.",
+            "when": "Run the task's observed checks."
+          }
+        ],
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "statement": "Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.",
+        "title": "Observed first-session loop",
+        "trigger": "Observe or change the current loop within this task.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-2",
+          "method": "automated_and_review",
+          "negative_control": "Seeded progress or simulation results cannot substitute for earned player progression.",
+          "oracle": "Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.",
+          "planned_target": "Task-scoped existing tests and actual source-matched player observations."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed sprint."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE",
+          "CON-PROPOSAL"
+        ],
+        "guarantees": [
+          "Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states."
+        ],
+        "id": "CR-CLARITY",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Owner selects this direction before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The source-matched two-tier game and supported save states.",
+            "id": "SC-3",
+            "then": "Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.",
+            "when": "Run the task's observed checks."
+          }
+        ],
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "statement": "Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.",
+        "title": "Understandable upgrades and progress",
+        "trigger": "Observe or change the current loop within this task.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-3",
+          "method": "automated_and_review",
+          "negative_control": "Never label an unsaved goal as a saved record or an unavailable benefit as purchasable.",
+          "oracle": "Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.",
+          "planned_target": "Task-scoped existing tests and actual source-matched player observations."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed sprint."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE",
+          "CON-PROPOSAL"
+        ],
+        "guarantees": [
+          "Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes."
+        ],
+        "id": "CR-COMBAT",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner selects this direction before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The source-matched two-tier game and supported save states.",
+            "id": "SC-4",
+            "then": "Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.",
+            "when": "Run the task's observed checks."
+          }
+        ],
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "statement": "Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.",
+        "title": "Readable combat feedback",
+        "trigger": "Observe or change the current loop within this task.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-4",
+          "method": "automated_and_review",
+          "negative_control": "Presentation must not change damage, targeting, simulation time or rewards.",
+          "oracle": "Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.",
+          "planned_target": "Task-scoped existing tests and actual source-matched player observations."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed sprint."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE",
+          "CON-PROPOSAL"
+        ],
+        "guarantees": [
+          "Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them."
+        ],
+        "id": "CR-TUNING",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner selects this direction before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The source-matched two-tier game and supported save states.",
+            "id": "SC-5",
+            "then": "Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.",
+            "when": "Run the task's observed checks."
+          }
+        ],
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "statement": "Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.",
+        "title": "One evidence-based tuning recommendation",
+        "trigger": "Observe or change the current loop within this task.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-5",
+          "method": "automated_and_review",
+          "negative_control": "Numerical calibration is not earned progression; faster defeat is not automatically better play.",
+          "oracle": "Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.",
+          "planned_target": "Task-scoped existing tests and actual source-matched player observations."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed sprint."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE",
+          "CON-PROPOSAL"
+        ],
+        "guarantees": [
+          "If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review."
+        ],
+        "id": "CR-QUALIFY",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "compatibility",
+        "obligation": "must",
+        "preconditions": [
+          "Owner selects this direction before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The source-matched two-tier game and supported save states.",
+            "id": "SC-6",
+            "then": "If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.",
+            "when": "Run the task's observed checks."
+          }
+        ],
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "statement": "If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.",
+        "title": "Qualified player loop",
+        "trigger": "Observe or change the current loop within this task.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-6",
+          "method": "automated_and_review",
+          "negative_control": "Reject stale runtimes, save loss, duplicate rewards, hidden controls or unobserved owner-acceptance claims.",
+          "oracle": "If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.",
+          "planned_target": "Task-scoped existing tests and actual source-matched player observations."
+        }
+      }
+    ],
+    "decisions": [],
+    "governs": [],
+    "intent": {
+      "caller": "sprint planning",
+      "id": "INTENT-FIRST-SESSION",
+      "outcome": "A bounded plan that improves observed player friction while preserving progression and existing owners.",
+      "problem": "The two-tier loop exists, but technical success does not establish clear, satisfying play or owner visual/listening acceptance. The post-merge dependency audit also blocks release.",
+      "source_refs": [
+        "SRC-REQUEST",
+        "SRC-ROADMAP"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "NON-SYSTEMS",
+        "statement": "No equipment inventory, Skills, R\u0026D, offline income, extra tiers, account sync, monetization or Android delivery."
+      },
+      {
+        "id": "NON-REWRITE",
+        "statement": "No broad UI/art rewrite, bundled dependency refresh, save-schema change or implementation in this planning request."
+      }
+    ],
+    "open_decisions": [
+      {
+        "affects": [
+          "CR-RELEASE",
+          "CR-BASELINE",
+          "CR-CLARITY",
+          "CR-COMBAT",
+          "CR-TUNING",
+          "CR-QUALIFY"
+        ],
+        "blocking": true,
+        "id": "DEC-FOCUS",
+        "owner": "User",
+        "question": "Adopt the proposed polish sprint or prioritize deeper progression/new systems?",
+        "resolution": "User approved the proposed first-session clarity and feedback sprint and explicitly requested execution on 2026-10-21.",
+        "source_ref": "SRC-REQUEST",
+        "status": "resolved"
+      },
+      {
+        "affects": [
+          "CR-COMBAT"
+        ],
+        "blocking": true,
+        "id": "DEC-VISUAL",
+        "owner": "User",
+        "question": "Which elements of the current matched battlefield captures should be kept, changed or mixed?",
+        "resolution": null,
+        "source_ref": "SRC-ROADMAP",
+        "status": "open"
+      }
+    ],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "SCOPE-LOOP",
+        "statement": "Existing Last Stand first-session loop, two tiers, six upgrade tracks and browser delivery."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Polish the current two-tier loop before new systems. The owner approved this proposal and explicitly requested execution on 2026-10-21. Preserve the current art direction pending the separate visual-treatment choice.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-PROPOSAL",
+        "title": "Approved direction"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Delivery repair and baseline observation are independent. Baseline findings select UI and combat changes; tuning assessment can run alongside them. Integrate and qualify last.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-ORDER",
+        "title": "Work order"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Use the existing simulation, progression, presentation and build owners. No new architecture is needed for this bounded proposal. Preserve visual choices and numeric tuning as explicit owner decisions.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-RATIONALE",
+        "title": "Design rationale"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-REQUEST",
+        "locator": "Current chat after merge authorization for PR540",
+        "note": "Owner approved the proposed sprint, then explicitly requested approval and execution on 2026-10-21. Ordinary recorded authorization; no native attestation is claimed.",
+        "title": "Owner-approved first-session polish sprint",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-ROADMAP",
+        "locator": "campaign-unity/docs/LAST-STAND-ROADMAP.md",
+        "note": "The two-tier loop exists. Battlefield, motion and listening acceptance remain distinct from technical checks.",
+        "title": "Maintained Last Stand direction",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-MERGE",
+        "locator": "62010d61afe24bf120e34730d5eed751dbe397d7",
+        "note": "PR checks passed before merge; post-merge publication is not verified.",
+        "title": "Merged tier goals and personal bests",
+        "type": "repository",
+        "url": "https://github.com/SUaDtL/singedTerra/pull/540"
+      },
+      {
+        "id": "SRC-AUDIT",
+        "locator": "npm run audit:deps",
+        "note": "Vite8.3.0-8.3.2 is reported affected through launch-editor; audit offers8.3.4. PR537 includes this and11 other updates; assess a minimal patch separately.",
+        "title": "Observed dependency audit failure",
+        "type": "test_reference",
+        "url": "https://github.com/SUaDtL/singedTerra/actions/runs/39538855851/job/119021851081"
+      }
+    ],
+    "summary": "Polish the existing deploy, survive, Claim, upgrade and redeploy loop. Planning only; implementation and checks remain pending.",
+    "title": "Last Stand: first-session clarity and feedback (proposed sprint)"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-first-session-polish.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 3,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-first-session-polish"
+}
+</script>
+</body></html>

@@ -1,4 +1,4 @@
-// Ash Road T-02 ordinary-mode compatibility oracle (AC-02 / AC-21).
+// Ordinary-mode compatibility oracle retained across the Ash Road retirement.
 //
 // Replays representative non-campaign histories through the production log adapter,
 // compares settled snapshots and clone futures with reviewed fixtures, and pins the

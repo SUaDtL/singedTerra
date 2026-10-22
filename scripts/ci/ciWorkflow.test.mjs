@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { tmpdir, networkInterfaces } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { createContext, runInContext } from 'node:vm';
+import { preferUbuntuArchive, prepareUbuntuMirror } from './prepareUbuntuMirror.mjs';
 
 // Exercise the imported production journey owner. Mutation qualification uses a
 // disposable module copy under ignored task evidence, never edited source.
@@ -37,6 +38,59 @@ function job(source, id) {
   assert.ok(found, `Missing job ${id}`);
   return found[1];
 }
+
+function assertUbuntuMirrorSetup(source,id) {
+  const selected=job(source,id);
+  const prepare=selected.indexOf('run: sudo node scripts/ci/prepareUbuntuMirror.mjs');
+  assert.ok(prepare>=0,'Prepare the official Ubuntu HTTPS archive before downloads can stall on the Azure mirror');
+  for(const installer of ['npx playwright install --with-deps chromium','npx playwright install-deps chromium','sudo apt-get update']) {
+    const position=selected.indexOf(installer);
+    if(position>=0)assert.ok(prepare<position,'Mirror preparation must precede every package installer');
+  }
+  const step=selected.slice(selected.lastIndexOf('      - ',prepare),selected.indexOf('\n      - ',prepare));
+  assert.doesNotMatch(step,/\n        if:|continue-on-error|\|\|\s*(true|:)/,'Mirror preparation is mandatory on cache hits and misses');
+}
+
+test('every CI and Pages browser installer prepares the official Ubuntu archive',()=>{
+  for(const [source,id] of [[ci,'browser'],[pages,'candidate-test'],[pages,'live-smoke']]) {
+    assertUbuntuMirrorSetup(source,id);
+    const block=job(source,id);
+    assert.throws(()=>assertUbuntuMirrorSetup(source.replace(block,block.replace(
+      'run: sudo node scripts/ci/prepareUbuntuMirror.mjs','run: echo skipped')),id));
+  }
+});
+
+test('Ubuntu mirror repair preserves priorities, unrelated feeds and line endings',()=>{
+  for(const protocol of ['http','https'])for(const slash of ['','/'])for(const newline of ['\n','\r\n']) {
+    const original=[`https://example.test/ubuntu priority:3`,`${protocol}://azure.archive.ubuntu.com/ubuntu${slash} priority:1`,
+      'https://archive.ubuntu.com/ubuntu/ priority:2','# retained runner metadata',''].join(newline);
+    const expected=original.replace(`${protocol}://azure.archive.ubuntu.com/ubuntu${slash}`,
+      `https://archive.ubuntu.com/ubuntu${slash}`);
+    assert.equal(preferUbuntuArchive(original),expected);
+    assert.equal(preferUbuntuArchive(expected),expected,'Preparation is idempotent');
+  }
+});
+
+test('Ubuntu mirror repair refuses unknown layouts and does not rewrite lookalike endpoints',()=>{
+  for(const source of ['','http://archive.ubuntu.com/ubuntu\n','https://azure.archive.ubuntu.com.example.test/ubuntu\n',
+    'http://azure.archive.ubuntu.com/ubuntu-unrelated\n','x'.repeat(4097)])assert.throws(()=>preferUbuntuArchive(source));
+  const unchanged='https://archive.ubuntu.com/ubuntu\n# http://azure.archive.ubuntu.com/ubuntu\nhttps://example.test/?mirror=http://azure.archive.ubuntu.com/ubuntu\n';
+  assert.equal(preferUbuntuArchive(unchanged),unchanged);
+});
+
+test('Ubuntu mirror file preparation changes only its admitted regular file',()=>{
+  const directory=mkdtempSync(resolve(tmpdir(),'st-ubuntu-mirror-')),path=resolve(directory,'mirrors.txt');
+  try {
+    writeFileSync(path,'http://azure.archive.ubuntu.com/ubuntu priority:1\n');
+    assert.equal(prepareUbuntuMirror(path),true);
+    assert.equal(readFileSync(path,'utf8'),'https://archive.ubuntu.com/ubuntu priority:1\n');
+    assert.equal(prepareUbuntuMirror(path),false);
+    writeFileSync(path,'unrecognized runner layout');
+    assert.throws(()=>prepareUbuntuMirror(path));
+    assert.equal(readFileSync(path,'utf8'),'unrecognized runner layout','Refusal must not overwrite the original');
+    assert.throws(()=>prepareUbuntuMirror(directory));
+  } finally {unlinkSync(path);rmdirSync(directory);}
+});
 
 function assertLatencyAllocation(source) {
   const browser = job(source, 'browser');

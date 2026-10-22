@@ -99,10 +99,6 @@ function priorities(overrides: Partial<Parameters<typeof resolveInitialCommandSe
       validated: true,
       selection: selection('skirmishes', 'imported-challenge'),
     },
-    campaign: {
-      compatible: true,
-      selection: selection('campaigns', 'ash-road'),
-    },
     firstSalvo: selection('skirmishes', 'first-salvo'),
     standardQuickDuel: selection('skirmishes', 'standard'),
     ...overrides,
@@ -265,22 +261,14 @@ describe('initial command selection', () => {
   it.each([
     {
       availableItems: ['ash-road', 'first-salvo', 'standard'],
-      campaignCompatible: true,
-      expectedSource: 'compatible-campaign' as const,
-    },
-    {
-      availableItems: ['ash-road', 'first-salvo', 'standard'],
-      campaignCompatible: false,
       expectedSource: 'first-salvo' as const,
     },
     {
       availableItems: ['standard'],
-      campaignCompatible: false,
       expectedSource: 'standard-quick-duel' as const,
     },
   ])('ignores unavailable memory and resolves $expectedSource', ({
     availableItems,
-    campaignCompatible,
     expectedSource,
   }) => {
     const noExplicitContext = priorities({
@@ -294,7 +282,6 @@ describe('initial command selection', () => {
 
     expect(resolveInitialCommandSelection(registry, {
       ...noExplicitContext,
-      campaign: { ...noExplicitContext.campaign!, compatible: campaignCompatible },
     }, rememberedStore(selection('campaigns', 'obsolete-campaign')))?.source).toBe(expectedSource);
   });
 
@@ -335,7 +322,7 @@ describe('session command selection store', () => {
     expect(resolveInitialCommandSelection(fullRegistry(), priorities({
       explicitInviteOrRejoin: undefined,
       importedChallenge: undefined,
-    }), store)?.source).toBe('compatible-campaign');
+    }), store)?.source).toBe('first-salvo');
     for (const method of [storageGet, storageSet, storageRemove, storageClear]) {
       expect(method.mock.contexts).not.toContain(window.localStorage);
     }

@@ -37,16 +37,10 @@ export interface ImportedChallengeEntry {
   readonly selection: CommandSelection;
 }
 
-export interface CampaignEntry {
-  readonly compatible: boolean;
-  readonly selection: CommandSelection;
-}
-
 export interface CommandEntryPriorities {
   readonly explicitInviteOrRejoin?: CommandSelection;
   readonly explicitCampaignReturn?: CommandSelection;
   readonly importedChallenge?: ImportedChallengeEntry;
-  readonly campaign?: CampaignEntry;
   readonly firstSalvo: CommandSelection;
   readonly standardQuickDuel: CommandSelection;
 }
@@ -56,7 +50,6 @@ export type CommandSelectionSource =
   | 'explicit-campaign-return'
   | 'imported-challenge'
   | 'remembered'
-  | 'compatible-campaign'
   | 'first-salvo'
   | 'standard-quick-duel';
 
@@ -234,15 +227,6 @@ export function resolveInitialCommandSelection<Context>(
 
   const remembered = resolveCandidate(registry, 'remembered', store?.read() ?? undefined);
   if (remembered) return remembered;
-
-  if (priorities.campaign?.compatible) {
-    const campaign = resolveCandidate(
-      registry,
-      'compatible-campaign',
-      priorities.campaign.selection,
-    );
-    if (campaign) return campaign;
-  }
 
   return resolveCandidate(registry, 'first-salvo', priorities.firstSalvo)
     ?? resolveCandidate(registry, 'standard-quick-duel', priorities.standardQuickDuel);

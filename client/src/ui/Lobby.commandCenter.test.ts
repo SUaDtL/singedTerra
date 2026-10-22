@@ -60,15 +60,52 @@ describe('Lobby command center navigation', () => {
     expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull();
     expect(root.querySelector('[data-command-item="last-stand"]')?.getAttribute('aria-current'))
       .toBe('true');
-    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!.click();
-    const campaignPrimary = root.querySelector<HTMLButtonElement>(
-      '[data-campaign-command-view] [data-command-primary]',
-    );
-    expect(campaignPrimary?.disabled).toBe(true);
-    expect(['Checking save', 'Save unavailable']).toContain(campaignPrimary?.textContent);
+    expect(root.querySelector('[data-command-item="ash-road"]')).toBeNull();
+    expect(root.querySelector<HTMLAnchorElement>('[data-command-primary]')?.textContent)
+      .toBe('Launch Last Stand');
     expect(root.querySelector('.lobby-start')).toBeNull();
     expect(root.querySelector('.lobby-name')).toBeNull();
     expect(root.querySelector('.lobby-preview')).toBeNull();
+  });
+
+  it('offers only Last Stand in Campaigns without opening historical storage', () => {
+    const storageOpen = vi.fn(() => { throw new Error('historical storage must stay untouched'); });
+    const storageDelete = vi.fn();
+    vi.stubGlobal('indexedDB', { open: storageOpen, deleteDatabase: storageDelete });
+    try {
+      sessionStorage.setItem('singedterra.command-center.selection.v1', JSON.stringify({
+        categoryId: 'campaigns', itemId: 'ash-road',
+      }));
+      const lobby = new Lobby(root, vi.fn());
+      lobby.show();
+      expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull();
+      expect([...root.querySelectorAll('.command-center__library-items [data-command-item]')]
+        .map((item) => item.getAttribute('data-command-item'))).toEqual(['last-stand']);
+      expect(root.textContent).not.toMatch(/Ash Road|Checking save|Resume campaign/i);
+      expect(storageOpen).not.toHaveBeenCalled();
+      expect(storageDelete).not.toHaveBeenCalled();
+      lobby.hide();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each([
+    ['/#campaigns/ash-road', 'last-stand'],
+    ['/?join=ab12#campaigns/ash-road', 'online'],
+    ['/#challenge=ST1-CW-16', 'imported-challenge'],
+    ['/?join=bad!#challenge=ST1-CW-17', 'last-stand'],
+  ])('recovers retired selection at %s without overriding valid entry priority', (url, expected) => {
+    sessionStorage.setItem('singedterra.command-center.selection.v1', JSON.stringify({
+      categoryId: 'campaigns', itemId: 'ash-road',
+    }));
+    history.replaceState(null, '', url);
+    const lobby = new Lobby(root, vi.fn());
+    lobby.show();
+    expect(root.querySelector(`[data-command-item="${expected}"]`)?.getAttribute('aria-current'))
+      .toBe('true');
+    expect(root.querySelector('[data-command-item="ash-road"]')).toBeNull();
+    lobby.hide();
   });
 
   it('does not construct listener-owning Multiplayer nodes while Skirmishes is active', () => {

@@ -25,16 +25,24 @@ spec.loader.exec_module(verifier)
 
 def _current_control_fixture():
     """Invented current control inventory for parser tests, never runtime evidence."""
-    core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier')
+    core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
+            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext')
     shop = ('ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
             'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
             'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy')
+    settings = ('SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
+                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
+                'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
+                'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
+                'ChoicePrevious', 'ChoiceNext')
     def controls(names):
         return [dict(name=name, label=name, accessibleLabel=name, mode='', trackKey='',
                      x=0, y=0, width=44, height=44, active=True, interactable=True) for name in names]
     return dict(phase='garage', coordinates='top-left', selection='Deploy', width=1366, height=768,
                 pixelRatio=1, scrollOffset=0, maximumScrollOffset=0,
-                controls=controls(core), shopControls=controls(shop))
+                settingsScrollOffset=0, settingsMaximumScrollOffset=0,
+                controls=controls(core), shopControls=controls(shop), settingsControls=controls(settings))
 
 
 def _replace_recovery_copies(value, old, new):
@@ -649,7 +657,7 @@ await test('failure_flush',async()=>{
 
 await test('native_history',async()=>{
   const count=12,events=[],report={actions:[],checks:[]};let failNext=false;
-  const layout={seq:0,timeOrigin:1,width:1366,height:768,controls:[{name:'Pause',x:5,y:5,width:100,height:50,active:true,interactable:true}],shopControls:[]};
+  const layout={seq:0,timeOrigin:1,width:1366,height:768,controls:[{name:'Pause',x:5,y:5,width:100,height:50,active:true,interactable:true}],shopControls:[],settingsControls:[]};
   const records={controlsOnly:[layout],input:[],geometry:[]};let time=0,pointer={x:0,y:0};
   const retain=runInNewContext('('+retained.trim()+')');
   const page={
@@ -1177,6 +1185,23 @@ class ShopJourneyGuardTests(unittest.TestCase):
         with self.assertRaises(AssertionError, msg='An empty report cannot satisfy a real Shop journey'):
             verifier.verify_shop_vertical({})
 
+    def test_current_control_fixture_matches_authored_hud_inventory(self):
+        """Keep parser fixtures bound to current authored control identities."""
+        scripts = TOOLS.parent / 'Unity/Assets/Scripts'
+        core_source = (scripts / 'LastStandLoopHud.cs').read_text(encoding='utf8')
+        settings_source = (scripts / 'LastStandSettingsHud.cs').read_text(encoding='utf8')
+        action_names = dict(re.findall(r'(\w+)\s*=\s*Action\("([^"]+)"', core_source))
+        action_fields = re.search(r'actions = new\[\] \{([^}]+)\}', core_source).group(1)
+        actual_core = [action_names[field.strip()] for field in action_fields.split(',')]
+        actual_settings = re.findall(r'Button\("([^"]+)",', settings_source)
+        self.assertIn('new Button[4]', settings_source)
+        actual_settings += ['SettingsTab' + str(index) for index in range(4)]
+        for channel in re.findall(r'Volume\("([^"]+)",', settings_source):
+            actual_settings += [channel + 'Minus', channel + 'Plus']
+        fixture = _current_control_fixture()
+        self.assertCountEqual(actual_core, [row['name'] for row in fixture['controls']])
+        self.assertCountEqual(actual_settings, [row['name'] for row in fixture['settingsControls']])
+
     def test_shop_controls_only_complete_prefix(self):
         """Synthetic current inventory and truncation, never browser qualification."""
         import subprocess
@@ -1189,16 +1214,18 @@ import {pathToFileURL} from 'node:url';
 const [source,fixture]=process.argv.slice(1);
 const actual=await import(pathToFileURL(source));
 const current=JSON.parse(fixture);
-const raw=('ST_LS_HUD_LAYOUT '+JSON.stringify({...current,graphics:[{text:'synthetic parser fixture '.repeat(1000)}]})).slice(0,8190);
-assert.equal(raw.length,8190,'Explicit synthetic current truncation fixture');
+const raw='ST_LS_HUD_LAYOUT '+JSON.stringify({...current,graphics:[{text:'synthetic parser fixture '.repeat(1000)}]});
+const truncated=raw.slice(0,8190);
+assert.equal(truncated.length,8190,'Explicit synthetic current truncation fixture');
 assert.equal(typeof actual.readShopControlObservation,'function','Shop controls-only reader is required');
 const controls=actual.readShopControlObservation(raw);
 assert.equal(controls.observationScope,'complete-controls-only');
-assert.equal(controls.graphicsTruncated,true);
+assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,9);assert.equal(controls.shopControls.length,11);
-assert.equal(new Set([...controls.controls,...controls.shopControls].map(c=>c.name)).size,20);
+assert.equal(controls.controls.length,18);assert.equal(controls.shopControls.length,11);assert.equal(controls.settingsControls.length,35);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls].map(c=>c.name)).size,64);
+assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
 const complete=fields=>'ST_LS_HUD_LAYOUT '+JSON.stringify({...fields,graphics:[]});
@@ -1206,9 +1233,19 @@ assert.equal(actual.readShopControlObservation(complete(value)).graphicsTruncate
 const cases={
   'incomplete-control-array':raw.slice(0,raw.indexOf('"shopControls"')+40),
   'unexpected-short-tail':raw.slice(0,-1),
-  'corrupt-graphics-tail':raw.slice(0,raw.indexOf(',"graphics":')+12)+'@'.repeat(8190-(raw.indexOf(',"graphics":')+12)),
+  'corrupt-graphics-tail':raw.slice(0,raw.indexOf(',"graphics":')+12)+'@',
   'duplicate-controls':complete({...value,controls:value.controls.map((v,i)=>i===0?value.controls[1]:v)}),
   'missing-tier-control':complete({...value,controls:value.controls.filter(v=>v.name!=='ToggleTier')}),
+  'missing-effects-control':complete({...value,controls:value.controls.filter(v=>v.name!=='Effects')}),
+  'missing-speed-control':complete({...value,controls:value.controls.filter(v=>v.name!=='SpeedRate')}),
+  'missing-inline-tier-previous':complete({...value,controls:value.controls.filter(v=>v.name!=='TierPrevious')}),
+  'missing-inline-tier-next':complete({...value,controls:value.controls.filter(v=>v.name!=='TierNext')}),
+  'missing-inline-fitting-previous':complete({...value,controls:value.controls.filter(v=>v.name!=='FittingPrevious')}),
+  'missing-inline-fitting-next':complete({...value,controls:value.controls.filter(v=>v.name!=='FittingNext')}),
+  'missing-settings-inventory':complete(Object.fromEntries(Object.entries(value).filter(([key])=>key!=='settingsControls'))),
+  'duplicate-settings-control':complete({...value,settingsControls:value.settingsControls.map((v,i)=>i===0?value.settingsControls[1]:v)}),
+  'missing-settings-control':complete({...value,settingsControls:value.settingsControls.slice(1)}),
+  'unexpected-settings-control':complete({...value,settingsControls:value.settingsControls.map((v,i)=>i===0?{...v,name:'Unexpected'}:v)}),
   'unexpected-core-control':complete({...value,controls:value.controls.map(v=>v.name==='ToggleTier'?{...v,name:'Unexpected'}:v)}),
   'duplicate-shop-control':complete({...value,shopControls:value.shopControls.map((v,i)=>i===0?value.shopControls[1]:v)}),
   'unexpected-shop-control':complete({...value,shopControls:value.shopControls.map((v,i)=>i===0?{...v,name:'Unexpected'}:v)}),
@@ -1219,7 +1256,7 @@ for(const [name,candidate]of Object.entries(cases)){
   assert.throws(()=>actual.readShopControlObservation(candidate),undefined,'Must reject '+name);
   console.log('PASS controls_only_rejects '+name);
 }
-assert.throws(()=>actual.retainRuntimeObservation({text:raw,t:1,timeOrigin:2},1,'inert',
+assert.throws(()=>actual.retainRuntimeObservation({text:truncated,t:1,timeOrigin:2},1,'inert',
   {states:[],encounters:[],hits:[],layouts:[],cues:[]}),SyntaxError,'Original full-layout parser stays strict');
 console.log('PASS controls_only_preserves_original_strict_parser');
 """
@@ -1247,8 +1284,9 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         expected = dict(value, observationScope='complete-controls-only', graphicsTruncated=False, raw=raw)
         self.assertEqual(namespace['read_controls'](raw), expected)
         truncated = ('ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[{'text': 'synthetic parser fixture ' * 1000}]), separators=(',', ':')))[:8190]
-        self.assertEqual(namespace['read_controls'](truncated), dict(value, observationScope='complete-controls-only', graphicsTruncated=True, raw=truncated))
-        for key in ('controls', 'shopControls'):
+        with self.assertRaisesRegex(AssertionError, 'Controls were not complete'):
+            namespace['read_controls'](truncated)
+        for key in ('controls', 'shopControls', 'settingsControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = deepcopy(value)
                 if fault == 'missing': candidate[key].pop()
@@ -1257,7 +1295,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
                 broken = 'ST_LS_HUD_LAYOUT ' + json.dumps(dict(candidate, graphics=[]), separators=(',', ':'))
                 with self.subTest(collection=key, fault=fault), self.assertRaisesRegex(AssertionError, 'Missing or repeated observed controls'):
                     namespace['read_controls'](broken)
-        print('PASS synthetic_current_controls_python_full_truncated_and_exact_union', flush=True)
+        print('PASS synthetic_current_controls_python_full_and_rejected_truncation_exact_union', flush=True)
 
     def test_recovery_current_control_inventory_is_exact(self):
         """Execute the actual recovery inventory block on synthetic current inputs."""
@@ -1272,7 +1310,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
                          'observation': {'text': 'synthetic current controls'}}
             exec(code, namespace)
         admit(_current_control_fixture())
-        for key in ('controls', 'shopControls'):
+        for key in ('controls', 'shopControls', 'settingsControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = _current_control_fixture()
                 if fault == 'missing': candidate[key].pop()

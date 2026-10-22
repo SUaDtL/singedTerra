@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand first-session polish: proposed sprint plan · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-FIRST-SESSION-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-first-session-polish.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand first-session polish: proposed sprint plan</h1><p class="deck">Six bounded work packages. Planning only; no task has started. Delivery security is a factual blocker; visual preference and future tuning remain owner decisions.</p><div class="meta"><span>ST-LS-FIRST-SESSION-PLAN</span><span>Revision 40 · schema 0.3.2</span><span>14 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-FIRST-SESSION-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2>
+<!-- CA:BEGIN:PRE-FOCUS -->
+<article class="record" id="PRE-FOCUS" data-ca-symbol="PRE-FOCUS" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-FOCUS">PRE-FOCUS</a><h3>Sprint direction selected</h3></div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Requirement</span>The owner selects the proposed first-session clarity and feedback direction before implementation.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-REQUEST">SRC-REQUEST</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-RELEASE">T-RELEASE</a></li><li><a href="#T-BASELINE">T-BASELINE</a></li><li><a href="#T-CLARITY">T-CLARITY</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-TUNING">T-TUNING</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>ba5229de5b26eea1f9faec0c02d5de46a3d7a8dfd262d5c9c6e3d66cf267dbb0</div><div class="field"><span class="label">Origin</span>user_statement</div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T05:23:21Z</div><div class="field"><span class="label">Source</span>Current conversation: Approve; then approve and execute the sprint (2026-10-21).</div><div class="field"><span class="label">Summary</span>Owner selected this proposed sprint and requested its execution. Separate visual treatment choices remain unresolved.</div></div></div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>The owner selects the proposed first-session clarity and feedback direction before implementation.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-RELEASE">T-RELEASE</a></li><li><a href="#T-BASELINE">T-BASELINE</a></li><li><a href="#T-CLARITY">T-CLARITY</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-TUNING">T-TUNING</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li></ul></div><div class="field"><span class="label">Title</span>Sprint direction selected</div></div></details></article>
+<!-- CA:END:PRE-FOCUS -->
+
+<!-- CA:BEGIN:PRE-VISUAL -->
+<article class="record" id="PRE-VISUAL" data-ca-symbol="PRE-VISUAL" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-VISUAL">PRE-VISUAL</a><h3>Actual visual choice</h3></div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Requirement</span>Owner chooses keep/change/mix from source-matched captures before changing the battlefield treatment. Mechanical readability diagnosis can proceed independently.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-COMBAT">T-COMBAT</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>f23ff3793379d15905fd1b3bc1743d7b92f3f7112a10af01f77b9d38ed2e8eaf</div><div class="field"><span class="label">Origin</span>user_statement</div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T08:25:31Z</div><div class="field"><span class="label">Source</span>Current conversation, 2026-10-21: user selected Option 1 and requested work in the same PR (#541).</div><div class="field"><span class="label">Summary</span>Keep current art and camera; improve combat feedback and readability. This selects implementation direction, not visual, motion or listening acceptance of a finished result.</div></div></div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>Owner chooses keep/change/mix from source-matched captures before changing the battlefield treatment. Mechanical readability diagnosis can proceed independently.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-COMBAT">T-COMBAT</a></li></ul></div><div class="field"><span class="label">Title</span>Actual visual choice</div></div></details></article>
+<!-- CA:END:PRE-VISUAL -->
+</section><section class="group" id="group-tasks"><a class="back" href="#main-content">Top</a><h2>Tasks</h2>
+<!-- CA:BEGIN:T-RELEASE -->
+<article class="record" id="T-RELEASE" data-ca-symbol="T-RELEASE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-RELEASE">T-RELEASE</a><h3>Restore secure delivery</h3><span class="badge">IN_PROGRESS</span></div><div class="field"><span class="label">Checkpoint</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-first-session-polish.html#CR-RELEASE">ST-LS-FIRST-SESSION-SPEC#CR-RELEASE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>package.json</code></td></tr><tr><td>modify</td><td><code>package-lock.json</code></td></tr><tr><td>modify</td><td><code>client/package.json</code></td></tr><tr><td>modify</td><td><code>docs/compatibility/st1-source-manifest.json</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Review Vite advisories and provenance; assess the narrow patch separately from PR537&#39;s grouped updates.</li><li>Apply the selected dependency repair only after execution is requested and dependency checks are satisfied.</li><li>Require audit/build checks, exact-head CI, then separately authorized promotion with matching public metadata.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;audit:deps&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>No high-severity dependency-audit failure.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;build&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Production build and its source/runtime checks pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>IN_PROGRESS</div></div></details></article>
+<!-- CA:END:T-RELEASE -->
+
+<!-- CA:BEGIN:T-BASELINE -->
+<article class="record" id="T-BASELINE" data-ca-symbol="T-BASELINE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-BASELINE">T-BASELINE</a><h3>Review one real first session</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-first-session-polish.html#CR-BASELINE">ST-LS-FIRST-SESSION-SPEC#CR-BASELINE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/docs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Evidence</code></td></tr><tr><td>modify</td><td><code>e2e/helpers/lastStandTierJourney.mjs</code></td></tr><tr><td>create</td><td><code>scripts/last-stand-first-session.mjs</code></td></tr><tr><td>create</td><td><code>scripts/checks/last_stand_tier_geometry.test.mjs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Use isolated fresh and supported returning-player saves; preserve actual player data.</li><li>Capture both fittings at normal speed through the first-upgrade loop plus a later busy moment.</li><li>Choose at most three concrete friction points; record actual owner keep/change/open feedback.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Source-matched real player journeys and profile observations pass. Owner visual/listening review is a separate observable check.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>Last Stand Campaigns journey preserves no-award exit and a stronger redeploy</li><li>Last Stand tier goals unlock and survive reload</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-first-session.mjs&#34;,&#34;campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Both fittings complete normal-speed unseeded defeat, manual Claim, saved purchase and stronger same-tier redeploy; source and served-runtime parity remain enforced. Human acceptance is separate. Use a new output directory for replay.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>FIRST_SESSION_PASS=repair</li><li>FIRST_SESSION_PASS=launcher</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--grep&#34;,&#34;Last Stand tier goals unlock and survive reload&#34;,&#34;--output=campaign-unity/Evidence/first-session-polish/baseline-tier-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T05:31:41Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/baseline-tier-20261021</div><div class="field"><span class="label">Summary</span>Setup failed before gameplay because VITE_BASE was omitted; the helper correctly required /singedTerra/.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--grep&#34;,&#34;Last Stand tier goals unlock and survive reload&#34;,&#34;--output=campaign-unity/Evidence/first-session-polish/baseline-tier-basepath-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T05:31:42Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/baseline-tier-basepath-20261021</div><div class="field"><span class="label">Summary</span>With VITE_BASE=/singedTerra/, fresh unseeded tier journey passed in 2.3 minutes: five viewport profiles, live goal, saved defeat/unlock, Claim, earned cannon upgrade, reload and Tier 2 no-award interruption. Functional observations only; no owner visual acceptance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-first-session.mjs&#34;,&#34;campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Output excerpt</span>FIRST_SESSION_PASS=repair; FIRST_SESSION_PASS=launcher</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T05:47:24Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>exec session 96764; campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021/result.json</div><div class="field"><span class="label">Summary</span>Both isolated normal-speed fitting journeys passed source/served byte parity, fresh defeat/manual Claim/purchase/reload, stronger same-tier redeploy and no-award interruption. Five viewport captures reviewed; three concrete text clarity observations selected. Owner combat visual choice remains open.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-BASELINE -->
+
+<!-- CA:BEGIN:T-CLARITY -->
+<article class="record" id="T-CLARITY" data-ca-symbol="T-CLARITY" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-CLARITY">T-CLARITY</a><h3>Clarify purchases, goals and results</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-first-session-polish.html#CR-CLARITY">ST-LS-FIRST-SESSION-SPEC#CR-CLARITY</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-BASELINE">T-BASELINE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_tiers</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_shop</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_loop/test_loop_model.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandShopChecks.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Tie every change to a selected observation and reuse existing effect projections and saved-state owners.</li><li>Express player-facing cycle/repair intervals in seconds; clarify temporary versus permanent value where observed confusion warrants it.</li><li>Check unavailable/capped/incompatible-fitting/failed-save cases plus keyboard and touch layouts.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_*.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected model/controller/HUD checks pass, with focused new cases for selected changes.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_tier_goal_result_controller_and_layout</li><li>test_terminal_records_unlock_and_recovery</li><li>test_tier_migration_strict_schema_and_failure_recovery</li><li>test_tier_targets_and_summaries_fit_profiles</li><li>test_tier_text_reports_saved_and_unsaved_outcomes</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe&#34;,&#34;-batchmode&#34;,&#34;-nographics&#34;,&#34;-quit&#34;,&#34;-projectPath&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity&#34;,&#34;-executeMethod&#34;,&#34;LastStandShopChecks.RunBattleShop&#34;,&#34;-logFile&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055848Z-b1e65d91\\unity-editor.log&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:19:27Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055848Z-b1e65d91/result.json</div><div class="field"><span class="label">Summary</span>Actual Editor check passed; -logFile</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe&#34;,&#34;-batchmode&#34;,&#34;-nographics&#34;,&#34;-quit&#34;,&#34;-projectPath&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity&#34;,&#34;-executeMethod&#34;,&#34;LastStandShopChecks.RunWorkshop&#34;,&#34;-logFile&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055902Z-f8f173ad\\unity-editor.log&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:19:27Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055902Z-f8f173ad/result.json</div><div class="field"><span class="label">Summary</span>Actual Editor check passed; -logFile</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe&#34;,&#34;-batchmode&#34;,&#34;-nographics&#34;,&#34;-quit&#34;,&#34;-projectPath&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity&#34;,&#34;-executeMethod&#34;,&#34;LastStandShopChecks.RunFirstSessionClarity&#34;,&#34;-logFile&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055914Z-627de38f\\unity-editor.log&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:19:28Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055914Z-627de38f/result.json</div><div class="field"><span class="label">Summary</span>New HUD check failed because funded fixture starts in workshop; preserved failure, corrected fixture then reran.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe&#34;,&#34;-batchmode&#34;,&#34;-nographics&#34;,&#34;-quit&#34;,&#34;-projectPath&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity&#34;,&#34;-executeMethod&#34;,&#34;LastStandShopChecks.RunFirstSessionClarity&#34;,&#34;-logFile&#34;,&#34;C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055959Z-6c6c8f1e\\unity-editor.log&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:19:28Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055959Z-6c6c8f1e/result.json</div><div class="field"><span class="label">Summary</span>Actual Editor check passed; -logFile</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;build&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:34:33Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/clarity-production-build.log</div><div class="field"><span class="label">Summary</span>VITE_BASE=/singedTerra/ production build passed source/runtime inventories, TypeScript and retained compatibility checks against the fresh Unity Web export.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-first-session.mjs&#34;,&#34;campaign-unity/Evidence/first-session-polish/both-fittings-polished-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:34:34Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/both-fittings-polished-20261021/result.json</div><div class="field"><span class="label">Summary</span>Expanded shop matrix rejected a correctly clipped scrollable Buy. Failure preserved; fixed helper reachability rather than game layout.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-first-session.mjs&#34;,&#34;campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:34:35Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/summary.json</div><div class="field"><span class="label">Summary</span>Both fittings passed normal-speed real-input journeys, earned manual Claim/purchase/reload, stronger redeploy, no-award interruption and five-viewport shop/live-goal matrix. This run preceded the final DPR normalization fix; exact helper hash retained.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;scripts/checks/last_stand_tier_geometry.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:34:35Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>Parent observed test output and independent terra_sprint_review re-review</div><div class="field"><span class="label">Summary</span>Seven geometry regressions passed after a reproduced DPR 2 CSS/backing-pixel mismatch was fixed. No remaining review finding. This is helper proof, not owner acceptance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-CLARITY -->
+
+<!-- CA:BEGIN:T-COMBAT -->
+<article class="record" id="T-COMBAT" data-ca-symbol="T-COMBAT" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-COMBAT">T-COMBAT</a><h3>Polish selected combat feedback</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-first-session-polish.html#CR-COMBAT">ST-LS-FIRST-SESSION-SPEC#CR-COMBAT</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-BASELINE">T-BASELINE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterView.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/ReviewCombatVisuals.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/TankPresentation.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_ui</code></td></tr><tr><td>create</td><td><code>scripts/last-stand-combat-feedback.mjs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs</code></td></tr><tr><td>modify</td><td><code>e2e/helpers/lastStandJourney.mjs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/verify_last_stand_loop.py</code></td></tr><tr><td>modify</td><td><code>client/public/last-stand</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Use each actual event outcome for destruction feedback so a later same-tick launcher kill cannot relabel an earlier cannon impact.</li><li>Keep current art, camera, materials, aim and recoil. Reduced effects retain compact hit/destruction cues while suppressing muzzle and hull flashes; switching modes clears stale transients.</li><li>Expose the existing full/reduced setting through the playable HUD using its current pointer and keyboard controls; check five profiles and paused use.</li><li>Run actual imported-scene regressions and matched normal-speed Web captures for both fittings, including muted/reduced feedback. Human visual/motion/listening acceptance stays separate.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Source-matched real player journeys and profile observations pass. Owner visual/listening review is a separate observable check.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>Last Stand Campaigns journey preserves no-award exit and a stronger redeploy</li><li>Last Stand tier goals unlock and survive reload</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;campaign-unity/Tools/last_stand_ui/test_combat_feedback.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T09:12:21Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/combat-editor-20261021T083858Z-f64f31c4</div><div class="field"><span class="label">Summary</span>Regression RED: four presentation failures reproduced before the correction; model/pool case passed. Pinned imported-scene run, no native or owner acceptance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Python314/python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_ui/test_combat_feedback.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T09:12:22Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/combat-editor-20261021T090937Z-527e5036</div><div class="field"><span class="label">Summary</span>Final combined source: five imported-scene cases passed; source, scene and ProjectSettings unchanged. Event-time destruction, reduced cues, paused clearing, aim/recoil and model/pool preservation. No native or human acceptance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;Unity.exe&#34;,&#34;-executeMethod&#34;,&#34;LastStandHudChecks.RunInput&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T09:12:24Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/effects-input-final-20261021/editor-input-ca70a2b8; effects-battle-final-20261021/editor-20261021T085742Z-ce31962d; effects-shop-review-20261021</div><div class="field"><span class="label">Summary</span>Actual HUD input 4/4 and Battle 4/4 passed. Shop-open Full/Reduced roundtrips passed for both fittings and five derived profiles, preserving model/save/audio/phase/scroll. Exact invocations and hashes retained in evidence; bounded independent source review passed.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-combat-feedback.mjs&#34;,&#34;campaign-unity/Evidence/first-session-polish/combat-after-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T09:21:32Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/combat-after-20261021/result.json</div><div class="field"><span class="label">Summary</span>All four normal-speed Web runs passed: both actual fittings, full/reduced effects, early/busy muted captures, five paused viewport roundtrips. Current source/export/served bytes and runner inputs reverified; no browser errors; saved currency unchanged. Human and native Windows acceptance remain separate.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-first-session.mjs&#34;,&#34;campaign-unity/Evidence/first-session-polish/both-fittings-combat-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T09:28:31Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/both-fittings-combat-20261021/summary.json</div><div class="field"><span class="label">Summary</span>Both actual fittings passed fresh-storage, normal-speed progression: five viewports, manual Claim, purchase/reload, tier unlock and stronger redeploy, no browser errors. Current export and final helper bound. Native Windows and owner acceptance remain pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Python314/python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_ui/test_combat_feedback.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T09:36:00Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/combat-editor-20261021T093408Z-661a1d80</div><div class="field"><span class="label">Summary</span>All five imported-scene checks passed after routing launcher provenance hashing through approved Node SHA-256. Source, scene and ProjectSettings unchanged. Current exported-source validator passed; the game/export and player captures are unaffected.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-COMBAT -->
+
+<!-- CA:BEGIN:T-TUNING -->
+<article class="record" id="T-TUNING" data-ca-symbol="T-TUNING" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-TUNING">T-TUNING</a><h3>Recommend one measured tuning experiment</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-first-session-polish.html#CR-TUNING">ST-LS-FIRST-SESSION-SPEC#CR-TUNING</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-BASELINE">T-BASELINE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_tiers</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Compare current starter, one-earned-upgrade and capped cases for both fittings and tiers.</li><li>Explain existing60s/90s goals and fixed defeat reward against actual play observations.</li><li>Recommend at most one experiment with expected benefit, tradeoff and rollback; do not alter numeric balance or record identity in this assessment task.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_tiers&#34;,&#34;-p&#34;,&#34;test_tier_calibration.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Existing calibration remains reproducible and distinct from earned progression.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_goals_attainable_at_current_caps</li><li>test_tier_two_harder_for_matched_builds</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Python314\\python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_tiers/run_first_session_measurements.py&#34;,&#34;--output&#34;,&#34;campaign-unity/Evidence/first-session-polish/tuning-after-clarity-20261021.json&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:19:29Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>exec chunk200205; tuning-after-clarity-20261021.json</div><div class="field"><span class="label">Summary</span>16 actual-model scenarios and both earned-upgrade proofs completed; exact parsed equality to baseline confirms unchanged numerical results after text edits. Not human/browser acceptance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-TUNING -->
+
+<!-- CA:BEGIN:T-QUALIFY -->
+<article class="record" id="T-QUALIFY" data-ca-symbol="T-QUALIFY" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-QUALIFY">T-QUALIFY</a><h3>Qualify and present the complete loop</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-first-session-polish.html#CR-QUALIFY">ST-LS-FIRST-SESSION-SPEC#CR-QUALIFY</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-RELEASE">T-RELEASE</a></li><li><a href="#T-CLARITY">T-CLARITY</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-TUNING">T-TUNING</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FIRST-SESSION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Tools</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs</code></td></tr><tr><td>modify</td><td><code>client/public/last-stand</code></td></tr><tr><td>modify</td><td><code>e2e/helpers/lastStandJourney.mjs</code></td></tr><tr><td>modify</td><td><code>e2e/helpers/lastStandTierJourney.mjs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>If Unity source changes, build with the pinned toolchain and verify a genuine matching export.</li><li>Run affected local checks and five-profile player journeys; require exact-head hosted CI and preserve failures.</li><li>Present matched normal-speed clips and listening review. Separate owner feedback from technical readiness and actual publication.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand-source.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Current Unity source matches the packaged export.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Runtime inventory is complete.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Maintained real player journeys pass for the declared host.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--output=campaign-unity/Evidence/first-session-polish/qualified-player-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:37:21Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-playable-loop/t06/first-session-polish-20261021/journey-2026-10-21T06-25-13-840Z-f1862add/result.json</div><div class="field"><span class="label">Summary</span>Final helper tier journey passed (2.0m); native Windows Campaigns journey stopped after9.3m at ownedNativeWindowSnapshot with a10-second powershell timeout.848 recorded checks passed, but the overall suite failed. Failure preserved; no completed native qualification claim.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--grep&#34;,&#34;Last Stand Campaigns journey preserves&#34;,&#34;--config=playwright.config.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--output=campaign-unity/Evidence/first-session-polish/qualified-player-retry-20261021&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T06:44:32Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/first-session-polish/windows-attempts-summary.json</div><div class="field"><span class="label">Summary</span>Unchanged affected-journey retry refused native foreground activation at capture-or-held-input-state after19.3s.22 recorded checks passed, but native player qualification remains pending. No timeout increase or held-input bypass. Waiting for a suitable idle desktop window.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-QUALIFY -->
+</section><section class="group" id="group-checkpoints"><a class="back" href="#main-content">Top</a><h2>Checkpoints</h2>
+<!-- CA:BEGIN:CP-FIRST-SESSION -->
+<article class="record" id="CP-FIRST-SESSION" data-ca-symbol="CP-FIRST-SESSION" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-FIRST-SESSION">CP-FIRST-SESSION</a><h3>A clearer, reviewed first-session loop</h3></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Exit</span>Selected improvements pass their actual checks; owner feedback and release state are reported separately.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-RELEASE">T-RELEASE</a></li><li><a href="#T-BASELINE">T-BASELINE</a></li><li><a href="#T-CLARITY">T-CLARITY</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-TUNING">T-TUNING</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li></ul></div></article>
+<!-- CA:END:CP-FIRST-SESSION -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-PLAN-ORDER -->
+<article class="record" id="SEC-PLAN-ORDER" data-ca-symbol="SEC-PLAN-ORDER" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-PLAN-ORDER">SEC-PLAN-ORDER</a><h3>Order and scope</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>T-RELEASE and T-BASELINE are independent. T-CLARITY, T-COMBAT and T-TUNING follow the baseline and can proceed independently where files do not overlap. T-QUALIFY integrates the results. Limit changes to at most three observed friction points; do not invent a calendar estimate.</p></div></div></article>
+<!-- CA:END:SEC-PLAN-ORDER -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-REQUEST -->
+<article class="record" id="SRC-REQUEST" data-ca-symbol="SRC-REQUEST" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-REQUEST">SRC-REQUEST</a><h3>Owner-approved first-session polish sprint</h3></div><div class="field"><span class="label">Locator</span>Current chat after merge authorization for PR540</div><div class="field"><span class="label">Note</span>Owner approved the proposed sprint, then explicitly requested approval and execution on 2026-10-21. Ordinary recorded authorization; no native attestation is claimed.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-REQUEST -->
+
+<!-- CA:BEGIN:SRC-ROADMAP -->
+<article class="record" id="SRC-ROADMAP" data-ca-symbol="SRC-ROADMAP" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ROADMAP">SRC-ROADMAP</a><h3>Maintained Last Stand direction</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-ROADMAP.md</div><div class="field"><span class="label">Note</span>The two-tier loop exists. Battlefield, motion and listening acceptance remain distinct from technical checks.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ROADMAP -->
+
+<!-- CA:BEGIN:SRC-MERGE -->
+<article class="record" id="SRC-MERGE" data-ca-symbol="SRC-MERGE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-MERGE">SRC-MERGE</a><h3>Merged tier goals and personal bests</h3></div><div class="field"><span class="label">Locator</span>62010d61afe24bf120e34730d5eed751dbe397d7</div><div class="field"><span class="label">Note</span>PR checks passed before merge; post-merge publication is not verified.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/pull/540</div></article>
+<!-- CA:END:SRC-MERGE -->
+
+<!-- CA:BEGIN:SRC-AUDIT -->
+<article class="record" id="SRC-AUDIT" data-ca-symbol="SRC-AUDIT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-AUDIT">SRC-AUDIT</a><h3>Observed dependency audit failure</h3></div><div class="field"><span class="label">Locator</span>npm run audit:deps</div><div class="field"><span class="label">Note</span>Vite8.3.0-8.3.2 is reported affected through launch-editor; audit offers8.3.4. PR537 includes this and11 other updates; assess a minimal patch separately.</div><div class="field"><span class="label">Type</span>test_reference</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/actions/runs/39538855851/job/119021851081</div></article>
+<!-- CA:END:SRC-AUDIT -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>62010d61afe24bf120e34730d5eed751dbe397d7</div><div class="field"><span class="label">Observed date</span>2026-10-21</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: c3ad46a8d6f8a91f3acbc00ab2d71386344d7021fa11e1c941f0ed772c467674<br>Model SHA-256: b2902f99de02e40226fee86bb59fbc9ab9e5999fa2378393020bd22498eda8ab</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-FIRST-SESSION-PLAN",
+  "execution": {
+    "prerequisite_evidence": {},
+    "prerequisite_observations": {
+      "PRE-FOCUS": {
+        "definition_sha256": "ba5229de5b26eea1f9faec0c02d5de46a3d7a8dfd262d5c9c6e3d66cf267dbb0",
+        "origin": "user_statement",
+        "outcome": "satisfied",
+        "provenance": "caller_reported",
+        "recorded_at": "2026-10-21T05:23:21Z",
+        "source": "Current conversation: Approve; then approve and execute the sprint (2026-10-21).",
+        "summary": "Owner selected this proposed sprint and requested its execution. Separate visual treatment choices remain unresolved."
+      },
+      "PRE-VISUAL": {
+        "definition_sha256": "f23ff3793379d15905fd1b3bc1743d7b92f3f7112a10af01f77b9d38ed2e8eaf",
+        "origin": "user_statement",
+        "outcome": "satisfied",
+        "provenance": "caller_reported",
+        "recorded_at": "2026-10-21T08:25:31Z",
+        "source": "Current conversation, 2026-10-21: user selected Option 1 and requested work in the same PR (#541).",
+        "summary": "Keep current art and camera; improve combat feedback and readability. This selects implementation direction, not visual, motion or listening acceptance of a finished result."
+      }
+    },
+    "prerequisites": {
+      "PRE-FOCUS": "not_satisfied",
+      "PRE-VISUAL": "not_satisfied"
+    },
+    "scopes": {},
+    "task_check_observations": {
+      "T-BASELINE": [
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--grep",
+            "Last Stand tier goals unlock and survive reload",
+            "--output=campaign-unity/Evidence/first-session-polish/baseline-tier-20261021"
+          ],
+          "criterion_subject_sha256": "fd6c592940fc0675ca4b6faa412d08425dd90dd92a5f3e734be27e1af670a4cd",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T05:31:41Z",
+          "recording_operation_id": "ls-polish-basepath-fail-20261021-v1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/baseline-tier-20261021",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Setup failed before gameplay because VITE_BASE was omitted; the helper correctly required /singedTerra/.",
+          "task_subject_sha256": "cc88a21e0f018f9bdb962c3569b5ba82f1ac3c4c510f63121f16ad88fcf40c39"
+        },
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--grep",
+            "Last Stand tier goals unlock and survive reload",
+            "--output=campaign-unity/Evidence/first-session-polish/baseline-tier-basepath-20261021"
+          ],
+          "criterion_subject_sha256": "fd6c592940fc0675ca4b6faa412d08425dd90dd92a5f3e734be27e1af670a4cd",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T05:31:42Z",
+          "recording_operation_id": "ls-polish-basepath-pass-20261021-v1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/baseline-tier-basepath-20261021",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "With VITE_BASE=/singedTerra/, fresh unseeded tier journey passed in 2.3 minutes: five viewport profiles, live goal, saved defeat/unlock, Claim, earned cannon upgrade, reload and Tier 2 no-award interruption. Functional observations only; no owner visual acceptance.",
+          "task_subject_sha256": "cc88a21e0f018f9bdb962c3569b5ba82f1ac3c4c510f63121f16ad88fcf40c39"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-first-session.mjs",
+            "campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021"
+          ],
+          "criterion_subject_sha256": "fd6c592940fc0675ca4b6faa412d08425dd90dd92a5f3e734be27e1af670a4cd",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "output_excerpt": "FIRST_SESSION_PASS=repair; FIRST_SESSION_PASS=launcher",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T05:47:24Z",
+          "recording_operation_id": "ls-polish-both-fitting-pass-20261021-v1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "exec session 96764; campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Both isolated normal-speed fitting journeys passed source/served byte parity, fresh defeat/manual Claim/purchase/reload, stronger same-tier redeploy and no-award interruption. Five viewport captures reviewed; three concrete text clarity observations selected. Owner combat visual choice remains open.",
+          "task_subject_sha256": "eb2d09cb0ef7419602a29242635c1a4dde1d9e306477ea869983a3d6ebd3a513"
+        }
+      ],
+      "T-CLARITY": [
+        {
+          "argv": [
+            "C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe",
+            "-batchmode",
+            "-nographics",
+            "-quit",
+            "-projectPath",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity",
+            "-executeMethod",
+            "LastStandShopChecks.RunBattleShop",
+            "-logFile",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055848Z-b1e65d91\\unity-editor.log"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:19:27Z",
+          "recording_operation_id": "ls-polish-editor-relative-20261021-0",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055848Z-b1e65d91/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Actual Editor check passed; -logFile",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        },
+        {
+          "argv": [
+            "C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe",
+            "-batchmode",
+            "-nographics",
+            "-quit",
+            "-projectPath",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity",
+            "-executeMethod",
+            "LastStandShopChecks.RunWorkshop",
+            "-logFile",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055902Z-f8f173ad\\unity-editor.log"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:19:27Z",
+          "recording_operation_id": "ls-polish-editor-relative-20261021-1",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055902Z-f8f173ad/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Actual Editor check passed; -logFile",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        },
+        {
+          "argv": [
+            "C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe",
+            "-batchmode",
+            "-nographics",
+            "-quit",
+            "-projectPath",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity",
+            "-executeMethod",
+            "LastStandShopChecks.RunFirstSessionClarity",
+            "-logFile",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055914Z-627de38f\\unity-editor.log"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:19:28Z",
+          "recording_operation_id": "ls-polish-editor-relative-20261021-2",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055914Z-627de38f/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "New HUD check failed because funded fixture starts in workshop; preserved failure, corrected fixture then reran.",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        },
+        {
+          "argv": [
+            "C:\\Users\\brenn\\singedTerra-engine-lab\\tools\\unity-6000.3.24f1\\Editor\\Unity.exe",
+            "-batchmode",
+            "-nographics",
+            "-quit",
+            "-projectPath",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Unity",
+            "-executeMethod",
+            "LastStandShopChecks.RunFirstSessionClarity",
+            "-logFile",
+            "C:\\Users\\brenn\\projects\\singedTerra\\campaign-unity\\Evidence\\first-session-polish\\clarity-final\\editor-20261021T055959Z-6c6c8f1e\\unity-editor.log"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:19:28Z",
+          "recording_operation_id": "ls-polish-editor-relative-20261021-3",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "campaign-unity/Evidence/first-session-polish/clarity-final/editor-20261021T055959Z-6c6c8f1e/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Actual Editor check passed; -logFile",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:34:33Z",
+          "recording_operation_id": "ls-polish-export-browser-check-20261021-0",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "campaign-unity/Evidence/first-session-polish/clarity-production-build.log",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "VITE_BASE=/singedTerra/ production build passed source/runtime inventories, TypeScript and retained compatibility checks against the fresh Unity Web export.",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-first-session.mjs",
+            "campaign-unity/Evidence/first-session-polish/both-fittings-polished-20261021"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:34:34Z",
+          "recording_operation_id": "ls-polish-export-browser-check-20261021-1",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-20261021/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Expanded shop matrix rejected a correctly clipped scrollable Buy. Failure preserved; fixed helper reachability rather than game layout.",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-first-session.mjs",
+            "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:34:35Z",
+          "recording_operation_id": "ls-polish-export-browser-check-20261021-2",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "campaign-unity/Evidence/first-session-polish/both-fittings-polished-scroll-20261021/summary.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Both fittings passed normal-speed real-input journeys, earned manual Claim/purchase/reload, stronger redeploy, no-award interruption and five-viewport shop/live-goal matrix. This run preceded the final DPR normalization fix; exact helper hash retained.",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        },
+        {
+          "argv": [
+            "node",
+            "--test",
+            "scripts/checks/last_stand_tier_geometry.test.mjs"
+          ],
+          "criterion_subject_sha256": "6c2524e9ded5ec77264c3474b1054fe50d62c84efd0da811bc8d0ad7820757d6",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:34:35Z",
+          "recording_operation_id": "ls-polish-export-browser-check-20261021-3",
+          "scoped_inputs_sha256": "7a091476c7e8d8d9334012b153428034cb5eb042bebd17bec3bfe5fdfee5008e",
+          "source": "Parent observed test output and independent terra_sprint_review re-review",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Seven geometry regressions passed after a reproduced DPR 2 CSS/backing-pixel mismatch was fixed. No remaining review finding. This is helper proof, not owner acceptance.",
+          "task_subject_sha256": "11e938359d9c97b745e78dd066dd031faffc294797246560bc7882d51b1fc005"
+        }
+      ],
+      "T-COMBAT": [
+        {
+          "argv": [
+            "python",
+            "campaign-unity/Tools/last_stand_ui/test_combat_feedback.py"
+          ],
+          "criterion_subject_sha256": "8df163384d2b6e45cb6990f0e099a4daa03fe8582053f07193c8542c145a5ceb",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T09:12:21Z",
+          "recording_operation_id": "ls-option1-combat-red-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/combat-editor-20261021T083858Z-f64f31c4",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Regression RED: four presentation failures reproduced before the correction; model/pool case passed. Pinned imported-scene run, no native or owner acceptance.",
+          "task_subject_sha256": "d9c29f6979e7e246dab3db43092df1fe5121248242ec25e38859bcac6829408e"
+        },
+        {
+          "argv": [
+            "C:/Python314/python.exe",
+            "-B",
+            "campaign-unity/Tools/last_stand_ui/test_combat_feedback.py"
+          ],
+          "criterion_subject_sha256": "8df163384d2b6e45cb6990f0e099a4daa03fe8582053f07193c8542c145a5ceb",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T09:12:22Z",
+          "recording_operation_id": "ls-option1-combat-green-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/combat-editor-20261021T090937Z-527e5036",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Final combined source: five imported-scene cases passed; source, scene and ProjectSettings unchanged. Event-time destruction, reduced cues, paused clearing, aim/recoil and model/pool preservation. No native or human acceptance.",
+          "task_subject_sha256": "d9c29f6979e7e246dab3db43092df1fe5121248242ec25e38859bcac6829408e"
+        },
+        {
+          "argv": [
+            "Unity.exe",
+            "-executeMethod",
+            "LastStandHudChecks.RunInput"
+          ],
+          "criterion_subject_sha256": "8df163384d2b6e45cb6990f0e099a4daa03fe8582053f07193c8542c145a5ceb",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T09:12:24Z",
+          "recording_operation_id": "ls-option1-hud-checks-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/effects-input-final-20261021/editor-input-ca70a2b8; effects-battle-final-20261021/editor-20261021T085742Z-ce31962d; effects-shop-review-20261021",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Actual HUD input 4/4 and Battle 4/4 passed. Shop-open Full/Reduced roundtrips passed for both fittings and five derived profiles, preserving model/save/audio/phase/scroll. Exact invocations and hashes retained in evidence; bounded independent source review passed.",
+          "task_subject_sha256": "d9c29f6979e7e246dab3db43092df1fe5121248242ec25e38859bcac6829408e"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-combat-feedback.mjs",
+            "campaign-unity/Evidence/first-session-polish/combat-after-20261021"
+          ],
+          "criterion_subject_sha256": "8df163384d2b6e45cb6990f0e099a4daa03fe8582053f07193c8542c145a5ceb",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T09:21:32Z",
+          "recording_operation_id": "ls-option1-player-captures-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/combat-after-20261021/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "All four normal-speed Web runs passed: both actual fittings, full/reduced effects, early/busy muted captures, five paused viewport roundtrips. Current source/export/served bytes and runner inputs reverified; no browser errors; saved currency unchanged. Human and native Windows acceptance remain separate.",
+          "task_subject_sha256": "d9c29f6979e7e246dab3db43092df1fe5121248242ec25e38859bcac6829408e"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-first-session.mjs",
+            "campaign-unity/Evidence/first-session-polish/both-fittings-combat-20261021"
+          ],
+          "criterion_subject_sha256": "8df163384d2b6e45cb6990f0e099a4daa03fe8582053f07193c8542c145a5ceb",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T09:28:31Z",
+          "recording_operation_id": "ls-option1-progression-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/both-fittings-combat-20261021/summary.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Both actual fittings passed fresh-storage, normal-speed progression: five viewports, manual Claim, purchase/reload, tier unlock and stronger redeploy, no browser errors. Current export and final helper bound. Native Windows and owner acceptance remain pending.",
+          "task_subject_sha256": "d9c29f6979e7e246dab3db43092df1fe5121248242ec25e38859bcac6829408e"
+        },
+        {
+          "argv": [
+            "C:/Python314/python.exe",
+            "-B",
+            "campaign-unity/Tools/last_stand_ui/test_combat_feedback.py"
+          ],
+          "criterion_subject_sha256": "8df163384d2b6e45cb6990f0e099a4daa03fe8582053f07193c8542c145a5ceb",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T09:36:00Z",
+          "recording_operation_id": "ls-option1-integrity-rerun-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/combat-editor-20261021T093408Z-661a1d80",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "All five imported-scene checks passed after routing launcher provenance hashing through approved Node SHA-256. Source, scene and ProjectSettings unchanged. Current exported-source validator passed; the game/export and player captures are unaffected.",
+          "task_subject_sha256": "d9c29f6979e7e246dab3db43092df1fe5121248242ec25e38859bcac6829408e"
+        }
+      ],
+      "T-QUALIFY": [
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--output=campaign-unity/Evidence/first-session-polish/qualified-player-20261021"
+          ],
+          "criterion_subject_sha256": "c48250e17fd59fcd3836857ed63789d3bb79239c85e79b7f1b951e3beaa821e6",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:37:21Z",
+          "recording_operation_id": "ls-polish-windows-player-attempt1-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-playable-loop/t06/first-session-polish-20261021/journey-2026-10-21T06-25-13-840Z-f1862add/result.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Final helper tier journey passed (2.0m); native Windows Campaigns journey stopped after9.3m at ownedNativeWindowSnapshot with a10-second powershell timeout.848 recorded checks passed, but the overall suite failed. Failure preserved; no completed native qualification claim.",
+          "task_subject_sha256": "e539a0d1dbb19a2410a0dbf8a79bdc029430ad179ee571fd4440054073b29caa"
+        },
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--grep",
+            "Last Stand Campaigns journey preserves",
+            "--config=playwright.config.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--output=campaign-unity/Evidence/first-session-polish/qualified-player-retry-20261021"
+          ],
+          "criterion_subject_sha256": "c48250e17fd59fcd3836857ed63789d3bb79239c85e79b7f1b951e3beaa821e6",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:44:32Z",
+          "recording_operation_id": "ls-polish-windows-player-attempt2-20261021",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/first-session-polish/windows-attempts-summary.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "Unchanged affected-journey retry refused native foreground activation at capture-or-held-input-state after19.3s.22 recorded checks passed, but native player qualification remains pending. No timeout increase or held-input bypass. Waiting for a suitable idle desktop window.",
+          "task_subject_sha256": "e539a0d1dbb19a2410a0dbf8a79bdc029430ad179ee571fd4440054073b29caa"
+        }
+      ],
+      "T-TUNING": [
+        {
+          "argv": [
+            "C:\\Python314\\python.exe",
+            "-B",
+            "campaign-unity/Tools/last_stand_tiers/run_first_session_measurements.py",
+            "--output",
+            "campaign-unity/Evidence/first-session-polish/tuning-after-clarity-20261021.json"
+          ],
+          "criterion_subject_sha256": "06cda2b476755e755338ab78d60e59ad4903a605442036c3bd340e3dfb5c4d22",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-21T06:19:29Z",
+          "recording_operation_id": "ls-polish-tuning-parity-20261021-v1",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "exec chunk200205; tuning-after-clarity-20261021.json",
+          "source_normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e",
+          "summary": "16 actual-model scenarios and both earned-upgrade proofs completed; exact parsed equality to baseline confirms unchanged numerical results after text edits. Not human/browser acceptance.",
+          "task_subject_sha256": "4a6468b6f28561e63862cc9f1725c9b7b8ab767e9f086eb3bf44c1626b8fbd67"
+        }
+      ]
+    },
+    "tasks": {
+      "T-BASELINE": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-CLARITY": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-COMBAT": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-QUALIFY": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-RELEASE": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "IN_PROGRESS"
+      },
+      "T-TUNING": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      }
+    }
+  },
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "b2902f99de02e40226fee86bb59fbc9ab9e5999fa2378393020bd22498eda8ab",
+    "normative_sha256": "c3ad46a8d6f8a91f3acbc00ab2d71386344d7021fa11e1c941f0ed772c467674",
+    "symbol_count": 14
+  },
+  "kind": "plan",
+  "normative": {
+    "baseline": {
+      "commit": "62010d61afe24bf120e34730d5eed751dbe397d7",
+      "observed_date": "2026-10-21",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "checkpoints": [
+      {
+        "depends_on": [],
+        "exit": "Selected improvements pass their actual checks; owner feedback and release state are reported separately.",
+        "id": "CP-FIRST-SESSION",
+        "tasks": [
+          "T-RELEASE",
+          "T-BASELINE",
+          "T-CLARITY",
+          "T-COMBAT",
+          "T-TUNING",
+          "T-QUALIFY"
+        ],
+        "title": "A clearer, reviewed first-session loop"
+      }
+    ],
+    "criterion_dispositions": [],
+    "prerequisites": [
+      {
+        "id": "PRE-FOCUS",
+        "kind": "decision",
+        "requirement": "The owner selects the proposed first-session clarity and feedback direction before implementation.",
+        "source_refs": [
+          "SRC-REQUEST"
+        ],
+        "task_refs": [
+          "T-RELEASE",
+          "T-BASELINE",
+          "T-CLARITY",
+          "T-COMBAT",
+          "T-TUNING",
+          "T-QUALIFY"
+        ],
+        "title": "Sprint direction selected"
+      },
+      {
+        "id": "PRE-VISUAL",
+        "kind": "decision",
+        "requirement": "Owner chooses keep/change/mix from source-matched captures before changing the battlefield treatment. Mechanical readability diagnosis can proceed independently.",
+        "source_refs": [
+          "SRC-ROADMAP"
+        ],
+        "task_refs": [
+          "T-COMBAT"
+        ],
+        "title": "Actual visual choice"
+      }
+    ],
+    "retired_symbols": [],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "T-RELEASE and T-BASELINE are independent. T-CLARITY, T-COMBAT and T-TUNING follow the baseline and can proceed independently where files do not overlap. T-QUALIFY integrates the results. Limit changes to at most three observed friction points; do not invent a calendar estimate.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-PLAN-ORDER",
+        "title": "Order and scope"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-REQUEST",
+        "locator": "Current chat after merge authorization for PR540",
+        "note": "Owner approved the proposed sprint, then explicitly requested approval and execution on 2026-10-21. Ordinary recorded authorization; no native attestation is claimed.",
+        "title": "Owner-approved first-session polish sprint",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-ROADMAP",
+        "locator": "campaign-unity/docs/LAST-STAND-ROADMAP.md",
+        "note": "The two-tier loop exists. Battlefield, motion and listening acceptance remain distinct from technical checks.",
+        "title": "Maintained Last Stand direction",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-MERGE",
+        "locator": "62010d61afe24bf120e34730d5eed751dbe397d7",
+        "note": "PR checks passed before merge; post-merge publication is not verified.",
+        "title": "Merged tier goals and personal bests",
+        "type": "repository",
+        "url": "https://github.com/SUaDtL/singedTerra/pull/540"
+      },
+      {
+        "id": "SRC-AUDIT",
+        "locator": "npm run audit:deps",
+        "note": "Vite8.3.0-8.3.2 is reported affected through launch-editor; audit offers8.3.4. PR537 includes this and11 other updates; assess a minimal patch separately.",
+        "title": "Observed dependency audit failure",
+        "type": "test_reference",
+        "url": "https://github.com/SUaDtL/singedTerra/actions/runs/39538855851/job/119021851081"
+      }
+    ],
+    "spec_ref": {
+      "artifact_id": "ST-LS-FIRST-SESSION-SPEC",
+      "binding_mode": "draft_preview",
+      "normative_sha256": "505f08d0b28d707fb306d673a71a42ee560582da11bff06fb49ff17afafbf56e"
+    },
+    "summary": "Six bounded work packages. Planning only; no task has started. Delivery security is a factual blocker; visual preference and future tuning remain owner decisions.",
+    "tasks": [
+      {
+        "checkpoint": "CP-FIRST-SESSION",
+        "criterion_refs": [
+          "ST-LS-FIRST-SESSION-SPEC#CR-RELEASE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Resolve the dependency audit with a scoped reviewed update; pass audit, exact-commit CI/CodeQL and candidate checks, then verify public metadata matches the promoted source."
+        ],
+        "execution_scope": "CP-FIRST-SESSION",
+        "id": "T-RELEASE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "package.json"
+          },
+          {
+            "action": "modify",
+            "path": "package-lock.json"
+          },
+          {
+            "action": "modify",
+            "path": "client/package.json"
+          },
+          {
+            "action": "modify",
+            "path": "docs/compatibility/st1-source-manifest.json"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.",
+        "steps": [
+          "Review Vite advisories and provenance; assess the narrow patch separately from PR537's grouped updates.",
+          "Apply the selected dependency repair only after execution is requested and dependency checks are satisfied.",
+          "Require audit/build checks, exact-head CI, then separately authorized promotion with matching public metadata."
+        ],
+        "title": "Restore secure delivery",
+        "verification": [
+          {
+            "argv": [
+              "npm",
+              "run",
+              "audit:deps"
+            ],
+            "assertion": "No high-severity dependency-audit failure.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "npm",
+              "run",
+              "build"
+            ],
+            "assertion": "Production build and its source/runtime checks pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-FIRST-SESSION",
+        "criterion_refs": [
+          "ST-LS-FIRST-SESSION-SPEC#CR-BASELINE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Capture normal-speed fresh-player and returning-player runs for both fittings through defeat, Claim, purchase and stronger redeploy. Select at most three observed friction points; record actual owner keep/change/open feedback."
+        ],
+        "execution_scope": "CP-FIRST-SESSION",
+        "id": "T-BASELINE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Evidence"
+          },
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandTierJourney.mjs"
+          },
+          {
+            "action": "create",
+            "path": "scripts/last-stand-first-session.mjs"
+          },
+          {
+            "action": "create",
+            "path": "scripts/checks/last_stand_tier_geometry.test.mjs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.",
+        "steps": [
+          "Use isolated fresh and supported returning-player saves; preserve actual player data.",
+          "Capture both fittings at normal speed through the first-upgrade loop plus a later busy moment.",
+          "Choose at most three concrete friction points; record actual owner keep/change/open feedback."
+        ],
+        "title": "Review one real first session",
+        "verification": [
+          {
+            "argv": [
+              "node",
+              "node_modules/@playwright/test/cli.js",
+              "test",
+              "e2e/last-stand-playable-loop.spec.ts",
+              "--config=playwright.config.ts",
+              "--project=desktop-fine",
+              "--workers=1",
+              "--retries=0"
+            ],
+            "assertion": "Source-matched real player journeys and profile observations pass. Owner visual/listening review is a separate observable check.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "Last Stand Campaigns journey preserves no-award exit and a stronger redeploy",
+              "Last Stand tier goals unlock and survive reload"
+            ]
+          },
+          {
+            "argv": [
+              "node",
+              "scripts/last-stand-first-session.mjs",
+              "campaign-unity/Evidence/first-session-polish/both-fittings-basepath-20261021"
+            ],
+            "assertion": "Both fittings complete normal-speed unseeded defeat, manual Claim, saved purchase and stronger same-tier redeploy; source and served-runtime parity remain enforced. Human acceptance is separate. Use a new output directory for replay.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "FIRST_SESSION_PASS=repair",
+              "FIRST_SESSION_PASS=launcher"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-FIRST-SESSION",
+        "criterion_refs": [
+          "ST-LS-FIRST-SESSION-SPEC#CR-CLARITY"
+        ],
+        "depends_on": [
+          "T-BASELINE"
+        ],
+        "done_when": [
+          "Address selected confusion using existing HUD owners: distinguish temporary Scrap from permanent Salvage, express cycle/repair intervals in seconds, and show actual current/next effects and live versus saved goals. Preserve capped, unavailable, incompatible-fitting and failed-save states."
+        ],
+        "execution_scope": "CP-FIRST-SESSION",
+        "id": "T-CLARITY",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_tiers"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_shop"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_loop/test_loop_model.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandShopChecks.cs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.",
+        "steps": [
+          "Tie every change to a selected observation and reuse existing effect projections and saved-state owners.",
+          "Express player-facing cycle/repair intervals in seconds; clarify temporary versus permanent value where observed confusion warrants it.",
+          "Check unavailable/capped/incompatible-fitting/failed-save cases plus keyboard and touch layouts."
+        ],
+        "title": "Clarify purchases, goals and results",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_tiers",
+              "-p",
+              "test_tier_*.py"
+            ],
+            "assertion": "Affected model/controller/HUD checks pass, with focused new cases for selected changes.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_tier_goal_result_controller_and_layout",
+              "test_terminal_records_unlock_and_recovery",
+              "test_tier_migration_strict_schema_and_failure_recovery",
+              "test_tier_targets_and_summaries_fit_profiles",
+              "test_tier_text_reports_saved_and_unsaved_outcomes"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-FIRST-SESSION",
+        "criterion_refs": [
+          "ST-LS-FIRST-SESSION-SPEC#CR-COMBAT"
+        ],
+        "depends_on": [
+          "T-BASELINE"
+        ],
+        "done_when": [
+          "Fix only selected threat, ground-contact, firing, impact or destruction readability defects. Retain liked tank/material/console elements; compare matched early and busy moments at normal speed, including muted/reduced effects. The owner chooses any visual treatment changes."
+        ],
+        "execution_scope": "CP-FIRST-SESSION",
+        "id": "T-COMBAT",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterView.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/ReviewCombatVisuals.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/TankPresentation.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_ui"
+          },
+          {
+            "action": "create",
+            "path": "scripts/last-stand-combat-feedback.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs"
+          },
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandJourney.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/verify_last_stand_loop.py"
+          },
+          {
+            "action": "modify",
+            "path": "client/public/last-stand"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.",
+        "steps": [
+          "Use each actual event outcome for destruction feedback so a later same-tick launcher kill cannot relabel an earlier cannon impact.",
+          "Keep current art, camera, materials, aim and recoil. Reduced effects retain compact hit/destruction cues while suppressing muzzle and hull flashes; switching modes clears stale transients.",
+          "Expose the existing full/reduced setting through the playable HUD using its current pointer and keyboard controls; check five profiles and paused use.",
+          "Run actual imported-scene regressions and matched normal-speed Web captures for both fittings, including muted/reduced feedback. Human visual/motion/listening acceptance stays separate."
+        ],
+        "title": "Polish selected combat feedback",
+        "verification": [
+          {
+            "argv": [
+              "node",
+              "node_modules/@playwright/test/cli.js",
+              "test",
+              "e2e/last-stand-playable-loop.spec.ts",
+              "--config=playwright.config.ts",
+              "--project=desktop-fine",
+              "--workers=1",
+              "--retries=0"
+            ],
+            "assertion": "Source-matched real player journeys and profile observations pass. Owner visual/listening review is a separate observable check.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "Last Stand Campaigns journey preserves no-award exit and a stronger redeploy",
+              "Last Stand tier goals unlock and survive reload"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-FIRST-SESSION",
+        "criterion_refs": [
+          "ST-LS-FIRST-SESSION-SPEC#CR-TUNING"
+        ],
+        "depends_on": [
+          "T-BASELINE"
+        ],
+        "done_when": [
+          "Compare existing starter, one-earned-upgrade and capped cases across both tiers and fittings. Recommend at most one experiment with expected effect and rollback. Retain60s/90s goals, prices, rewards, caps and record identity unless a concrete owner decision changes them."
+        ],
+        "execution_scope": "CP-FIRST-SESSION",
+        "id": "T-TUNING",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_tiers"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.",
+        "steps": [
+          "Compare current starter, one-earned-upgrade and capped cases for both fittings and tiers.",
+          "Explain existing60s/90s goals and fixed defeat reward against actual play observations.",
+          "Recommend at most one experiment with expected benefit, tradeoff and rollback; do not alter numeric balance or record identity in this assessment task."
+        ],
+        "title": "Recommend one measured tuning experiment",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_tiers",
+              "-p",
+              "test_tier_calibration.py"
+            ],
+            "assertion": "Existing calibration remains reproducible and distinct from earned progression.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_goals_attainable_at_current_caps",
+              "test_tier_two_harder_for_matched_builds"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-FIRST-SESSION",
+        "criterion_refs": [
+          "ST-LS-FIRST-SESSION-SPEC#CR-QUALIFY"
+        ],
+        "depends_on": [
+          "T-RELEASE",
+          "T-CLARITY",
+          "T-COMBAT",
+          "T-TUNING"
+        ],
+        "done_when": [
+          "If Unity source changes, export with the pinned toolchain and verify source/runtime binding. Pass affected tests, all five tier viewports and real player journeys, savev3/manual-Claim/background/Pause/no-award-exit/Ash-Road checks and exact-head CI. Present motion and listening for separate owner review."
+        ],
+        "execution_scope": "CP-FIRST-SESSION",
+        "id": "T-QUALIFY",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs"
+          },
+          {
+            "action": "modify",
+            "path": "client/public/last-stand"
+          },
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandJourney.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandTierJourney.mjs"
+          }
+        ],
+        "rollback": "Revert only selected task changes; preserve player saves, original art, unrelated dirty work and failed evidence.",
+        "steps": [
+          "If Unity source changes, build with the pinned toolchain and verify a genuine matching export.",
+          "Run affected local checks and five-profile player journeys; require exact-head hosted CI and preserve failures.",
+          "Present matched normal-speed clips and listening review. Separate owner feedback from technical readiness and actual publication."
+        ],
+        "title": "Qualify and present the complete loop",
+        "verification": [
+          {
+            "argv": [
+              "node",
+              "scripts/assets/verify-last-stand-source.mjs"
+            ],
+            "assertion": "Current Unity source matches the packaged export.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "node",
+              "scripts/assets/verify-last-stand.mjs"
+            ],
+            "assertion": "Runtime inventory is complete.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "node",
+              "node_modules/@playwright/test/cli.js",
+              "test",
+              "e2e/last-stand-playable-loop.spec.ts",
+              "--config=playwright.config.ts",
+              "--project=desktop-fine",
+              "--workers=1",
+              "--retries=0"
+            ],
+            "assertion": "Maintained real player journeys pass for the declared host.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      }
+    ],
+    "title": "Last Stand first-session polish: proposed sprint plan"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../specs/last-stand-first-session-polish.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 40,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-first-session-polish"
+}
+</script>
+</body></html>

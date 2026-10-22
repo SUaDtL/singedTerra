@@ -19,18 +19,21 @@ static class HudLayoutChecks
         public string Phase;
         public bool SaveError;
         public string[] Controls;
+        public bool InlineGarage { get { return Controls.Contains("TierNext"); } }
     }
-    static readonly int[,] Profiles = { {1366,768}, {1920,1080}, {390,844}, {844,390}, {720,640} };
+    static readonly int[,] Profiles = { {1366,768}, {1920,1080}, {390,844}, {844,390}, {720,640},
+        {1366,664}, {1920,976}, {390,688}, {844,266}, {720,516} };
     static readonly Scenario[] Scenarios = {
-        new Scenario { Phase="garage", Controls=new[] {"ToggleFitting","Deploy","ToggleMute"} },
-        new Scenario { Phase="garage", SaveError=true, Controls=new[] {"ToggleFitting","Deploy","RetrySave","ToggleMute"} },
-        new Scenario { Phase="battle", Controls=new[] {"Pause","ToggleMute"} },
-        new Scenario { Phase="settling", Controls=new[] {"Pause","ToggleMute"} },
-        new Scenario { Phase="result", Controls=new[] {"Claim","ToggleMute"} },
-        new Scenario { Phase="result", SaveError=true, Controls=new[] {"Claim","RetrySave","ToggleMute"} },
-        new Scenario { Phase="workshop", Controls=new[] {"ToggleFitting","Purchase","Redeploy","ToggleMute"} },
-        new Scenario { Phase="workshop", SaveError=true, Controls=new[] {"ToggleFitting","Purchase","Redeploy","RetrySave","ToggleMute"} },
-        new Scenario { Phase="save-error", SaveError=true, Controls=new[] {"RetrySave","ToggleMute"} }
+        new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry"} },
+        new Scenario { Phase="garage", SaveError=true, Controls=new[] {"Deploy","RetrySave","Menu"} },
+        new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu"} }, // unresolved reserved run: recovery hierarchy
+        new Scenario { Phase="battle", Controls=new[] {"Menu","SpeedMinus","SpeedRate","SpeedPlus","ShopEntry"} },
+        new Scenario { Phase="settling", Controls=new[] {"Menu","SpeedMinus","SpeedRate","SpeedPlus"} },
+        new Scenario { Phase="result", Controls=new[] {"Claim","Menu"} },
+        new Scenario { Phase="result", SaveError=true, Controls=new[] {"Claim","RetrySave","Menu"} },
+        new Scenario { Phase="workshop", Controls=new[] {"Redeploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry"} },
+        new Scenario { Phase="workshop", SaveError=true, Controls=new[] {"Purchase","Redeploy","RetrySave","Menu"} },
+        new Scenario { Phase="save-error", SaveError=true, Controls=new[] {"RetrySave","Menu"} }
     };
     static void Require(bool condition, string reason)
     { if (!condition) throw new InvalidOperationException(reason); }
@@ -90,7 +93,7 @@ static class HudLayoutChecks
                 Width=slot.Bounds.Width, Height=slot.Bounds.Height, FontSize=slot.FontSize }).ToList();
 #endif
     }
-    static void Fit(List<Box> boxes, int width, int height, string context)
+    static void Fit(List<Box> boxes, int width, int height, Scenario scenario, string context)
     {
         Require(boxes.Count > 0, context+": emitted no bounds");
         Require(boxes.Select(b => b.Id).Distinct().Count() == boxes.Count,context+": duplicate identity");
@@ -105,9 +108,15 @@ static class HudLayoutChecks
                 Require(parent != null && Contains(parent,box),context+": clipped child "+box.Id);
             }
         }
-        for(int i=0;i<boxes.Count;i++) for(int j=i+1;j<boxes.Count;j++)
-            Require(!Intersects(boxes[i],boxes[j]) || Ancestor(boxes[i],boxes[j],boxes) || Ancestor(boxes[j],boxes[i],boxes),
-                context+": overlap "+boxes[i].Id+" / "+boxes[j].Id);
+        // The ready garage footer is a transparent structural region, while
+        // Upgrades is intentionally a root sibling. Its geometry and children
+        // still pass the containment checks above; compare all visible cards,
+        // controls and text for overlap rather than treating empty footer area
+        // as opaque chrome. Recovery and combat panels remain fully checked.
+        var visible=boxes.Where(b=>!(scenario.InlineGarage&&b.Id=="LastStandDock")).ToList();
+        for(int i=0;i<visible.Count;i++) for(int j=i+1;j<visible.Count;j++)
+            Require(!Intersects(visible[i],visible[j]) || Ancestor(visible[i],visible[j],boxes) || Ancestor(visible[j],visible[i],boxes),
+                context+": overlap "+visible[i].Id+" / "+visible[j].Id);
     }
     static double UnionArea(List<Box> boxes)
     {
@@ -130,18 +139,24 @@ static class HudLayoutChecks
     static void Battle(List<Box> boxes, int width, int height, string context)
     {
         var center=new Box { X=width*.2,Y=height*.2,Width=width*.6,Height=height*.6 };
-        foreach(var panel in boxes.Where(b => b.Kind == "panel"))
+        foreach(var panel in boxes.Where(b => b.Kind == "panel" || b.Kind == "control" || b.Kind == "text"))
             Require(!Intersects(panel,center),context+": central battle occlusion by "+panel.Id);
         double area=UnionArea(boxes);
         Require(area <= width*height*.25+.001,context+": chrome area "+area+" exceeds 25 percent");
     }
-    static void Sizes(List<Box> boxes, string phase, string context)
+    static void Sizes(List<Box> boxes, Scenario scenario, string context)
     {
         foreach(var text in boxes.Where(b => b.Kind == "text"))
             Require(text.FontSize >= 14-.001 && text.Height >= text.FontSize,context+": text smaller than 14 pixels "+text.Id+" at "+text.FontSize);
         foreach(var control in boxes.Where(b => b.Kind == "control"))
             Require(control.Width >= 44-.001 && control.Height >= 44-.001,context+": target smaller than 44x44 "+control.Id);
-        if(phase != "battle" && phase != "settling")
+        if(scenario.InlineGarage)
+        {
+            foreach(string id in new[]{"GarageTierName","GarageTierDetail","GarageFittingName","GarageFittingDescription","GarageSave"})
+                Require(boxes.Any(b=>b.Kind=="text"&&b.Id==id),context+": missing inline garage field "+id);
+            Require(!boxes.Any(b=>b.Id=="PhaseDetail"||b.Id=="SaveStatus"),context+": ready garage must use its inline reading hierarchy");
+        }
+        else if(scenario.Phase != "battle" && scenario.Phase != "settling")
         {
             var notice=boxes.Find(b => b.Id == "SaveStatus");
             Require(notice != null && notice.Height >= 5*20 && notice.Width >= 300,context+": long storage notice lacks five full lines");
@@ -151,15 +166,19 @@ static class HudLayoutChecks
     {
         for(int p=0;p<Profiles.GetLength(0);p++) foreach(var scenario in Scenarios)
         {
+            if (p >= 5 && scenario.Phase != "battle" && scenario.Phase != "settling") continue;
             int width=Profiles[p,0],height=Profiles[p,1];
             string context=width+"x"+height+" "+scenario.Phase+(scenario.SaveError ? " blocked" : " ready");
             var boxes=Observe(width,height,scenario);
             if(name == "profiles_fit_without_overlap")
             {
-                Fit(boxes,width,height,context);
+                Fit(boxes,width,height,scenario,context);
                 foreach(string id in scenario.Controls) Require(boxes.Any(b => b.Kind == "control" && b.Id == id),context+": missing stable control "+id);
+                Require(boxes.Count(b=>b.Kind=="control")==scenario.Controls.Length,context+": unexpected visible control");
+                foreach(string id in new[]{"Menu","ShopEntry"})
+                    if(scenario.Controls.Contains(id))Require(boxes.Single(b=>b.Id==id).Parent==null,context+": standalone action must remain a root child "+id);
                 Require(boxes.Any(b => b.Id == "PhaseHeading"),context+": missing phase heading");
-                if(scenario.Phase != "battle" && scenario.Phase != "settling")
+                if(scenario.Phase != "battle" && scenario.Phase != "settling"&&!scenario.InlineGarage)
                     Require(boxes.Any(b => b.Kind == "text" && b.Id == "PhaseDetail"),context+": missing required noncombat detail slot PhaseDetail");
             }
             else if(name == "battle_center_and_area_limits")
@@ -169,7 +188,7 @@ static class HudLayoutChecks
                 foreach(string id in new[] {"HullValue","HullBar","ElapsedTime","DisabledCount","CannonDamage","Fitting"})
                     Require(boxes.Any(b => b.Id == id),context+": missing live instrument slot "+id);
             }
-            else if(name == "text_targets_and_long_notice_bounds") Sizes(boxes,scenario.Phase,context);
+            else if(name == "text_targets_and_long_notice_bounds") Sizes(boxes,scenario,context);
             else throw new ArgumentException("Unknown check "+name);
         }
     }

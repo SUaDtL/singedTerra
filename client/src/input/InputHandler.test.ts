@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WEAPONS, type WeaponType } from '@shared/engine/WeaponSystem';
-import {
-  ASH_ROAD_COMBAT_PROFILE_REFERENCE,
-  resolveCampaignCombatProfile,
-} from '@shared/campaign/combatProfiles';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import type { GameInputCapabilities } from '../client/GameClient';
@@ -12,14 +8,12 @@ import { InputHandler, type InputHandlerOptions } from './InputHandler';
 
 const implementedWeapons = (Object.keys(WEAPONS) as WeaponType[])
   .filter((weapon) => WEAPONS[weapon].implemented);
-const campaignWeapons = resolveCampaignCombatProfile(
-  ASH_ROAD_COMBAT_PROFILE_REFERENCE,
-).choices;
+const narrowedWeapons = ['baby_missile', 'missile', 'cluster_bomb', 'sandhog', 'napalm', 'shield'] as const;
 
-const campaignCapabilities = {
+const narrowedCapabilities = {
   ...FULL_GAME_INPUT_CAPABILITIES,
   buying: false,
-  weaponRoster: campaignWeapons,
+  weaponRoster: narrowedWeapons,
 } satisfies GameInputCapabilities;
 
 describe('InputHandler public contract', () => {
@@ -306,10 +300,10 @@ describe('InputHandler public contract', () => {
     expect(FULL_GAME_INPUT_CAPABILITIES.weaponRoster).toEqual(implementedWeapons);
   });
 
-  it('cycles only the resolved campaign roster in profile order', () => {
-    createHandler({ capabilities: campaignCapabilities });
+  it('cycles only the resolved narrowed roster in profile order', () => {
+    createHandler({ capabilities: narrowedCapabilities });
 
-    for (let index = 0; index < campaignWeapons.length; index += 1) handler.nextWeapon();
+    for (let index = 0; index < narrowedWeapons.length; index += 1) handler.nextWeapon();
 
     expect(emitted()).toEqual([
       { type: 'select_weapon', weapon: 'missile' },
@@ -321,12 +315,12 @@ describe('InputHandler public contract', () => {
     ]);
   });
 
-  it('skips unavailable campaign weapons and keeps the authoritative cursor', () => {
+  it('skips unavailable narrowed weapons and keeps the authoritative cursor', () => {
     const attempts: PlayerAction[] = [];
     handler = new InputHandler(target, (action) => {
       attempts.push(action);
       return action.type === 'select_weapon' && action.weapon !== 'napalm' ? false : undefined;
-    }, { capabilities: campaignCapabilities });
+    }, { capabilities: narrowedCapabilities });
     handler.setWeapon('missile');
 
     handler.triggerFire();

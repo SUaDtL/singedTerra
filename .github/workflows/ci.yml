@@ -165,6 +165,8 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}
       # On a cache miss download the browser + its OS deps; on a hit just ensure the
       # OS deps are present (the cached binary needs them but they aren't cached).
+      - name: Prepare Ubuntu archive mirror
+        run: sudo node scripts/ci/prepareUbuntuMirror.mjs
       - name: Install Playwright browser (+ deps)
         if: steps.pw-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium

@@ -10,16 +10,22 @@ namespace SingedTerra.LastStand
         const int Voices = 4;
         readonly AudioSource[] sources = new AudioSource[Voices];
         AudioClip cannon, impact, destruction, defeat, purchase;
+        LastStandMusic music;
         int cursor;
-        bool unlocked, suspended;
+        bool initialized, unlocked, suspended, musicSuspended;
         bool focused, applicationPaused;
+        float masterGain=1, effectsGain=1, musicGain=.2f;
         public bool Unlocked => unlocked;
         public bool Suspended => suspended;
         public bool Muted { get; private set; }
-        public bool CanPlay => unlocked && !Muted && !suspended && focused && !applicationPaused;
+        public bool MusicEnabled { get; private set; } = true;
+        bool ForegroundAudio => initialized && unlocked && !Muted && focused && !applicationPaused && masterGain>0;
+        public bool CanPlay => ForegroundAudio && !suspended && effectsGain>0;
+        public bool MusicCanPlay => ForegroundAudio && !musicSuspended && MusicEnabled && musicGain>0;
 
         public void Initialize()
         {
+            if(initialized)return;
             focused = Application.isFocused;
             var listeners=FindObjectsByType<AudioListener>(FindObjectsInactive.Include,FindObjectsSortMode.None);
             if(listeners.Length==0)
@@ -33,7 +39,11 @@ namespace SingedTerra.LastStand
             {
                 sources[i]=gameObject.AddComponent<AudioSource>();
                 sources[i].playOnAwake=false; sources[i].spatialBlend=0;
+                sources[i].pitch=1;
             }
+            music=gameObject.AddComponent<LastStandMusic>(); music.Initialize();
+            initialized=true;
+            ApplyGains();
         }
         static AudioClip Tone(string name, float frequency, float duration, float amplitude, int character)
         {
@@ -50,23 +60,61 @@ namespace SingedTerra.LastStand
             }
             var clip=AudioClip.Create("LastStand_"+name,count,1,rate,false); clip.SetData(samples,0); return clip;
         }
-        public void UnlockFromGesture(string action) { unlocked=true; AudioListener.pause=false; Debug.Log("ST_LS_AUDIO unlock="+action); }
+        // Only real pointer/keyboard action owners call this. Applying loaded
+        // settings, focus changes and ticking never unlock browser audio.
+        public void UnlockFromGesture(string action)
+        {
+            unlocked=true; AudioListener.pause=false; SyncMusic();
+            Debug.Log("ST_LS_AUDIO unlock="+action);
+        }
+        public void ApplySettings(LastStandPreferenceValues values)
+        {
+            if(values==null)throw new ArgumentNullException(nameof(values));
+            Muted=values.Muted;
+            masterGain=Mathf.Clamp01(values.MasterVolume/100f);
+            effectsGain=Mathf.Clamp01(values.EffectsVolume/100f);
+            musicGain=Mathf.Clamp01(values.MusicVolume/100f);
+            MusicEnabled=values.MusicEnabled;
+            ApplyGains();
+        }
         public void ToggleMute()
         {
-            Muted=!Muted; if(Muted)Stop();
+            Muted=!Muted; ApplyGains();
             Debug.Log("ST_LS_AUDIO mute="+Muted);
         }
+        void ApplyGains()
+        {
+            float gain=Muted?0:masterGain*effectsGain;
+            foreach(var source in sources)if(source)source.volume=gain;
+            if(gain<=0)Stop();
+            SyncMusic();
+        }
+        void SyncMusic() { if(music)music.SetPlayback(MusicCanPlay,masterGain*musicGain); }
         public void SetSuspended(bool value)
         {
             if(value && !suspended) Stop();
             suspended=value;
         }
-        void Stop() { foreach(var source in sources)if(source)source.Stop(); }
-        void Play(AudioClip clip, string identity)
+        // This is the independent failure/visibility hold. Foreground menu and
+        // manual pause use SetSuspended, so music retains its wall-time tempo.
+        public void SetMusicSuspended(bool value)
         {
-            if(!CanPlay || !clip)return;
+            musicSuspended=value; SyncMusic();
+        }
+        void Stop() { foreach(var source in sources)if(source)source.Stop(); }
+        void Play(AudioClip clip, string identity, bool preview=false)
+        {
+            bool admitted=preview?ForegroundAudio && !musicSuspended && effectsGain>0:CanPlay;
+            if(!admitted || !clip)return;
             var source=sources[cursor++%Voices]; source.Stop(); source.clip=clip; source.Play();
             Debug.Log("ST_LS_AUDIO event="+identity);
+        }
+        public void PreviewEffect()
+        {
+            // The sample button is a deliberate audio gesture. It does not
+            // remove the run/menu pause or queue a cue for later playback.
+            if(!initialized || !focused || applicationPaused || musicSuspended)return;
+            UnlockFromGesture("effects-preview"); Play(cannon,"preview",true);
         }
         public void PlayEvent(EncounterEventKind kind, int amount, bool targetAlive)
         {
@@ -82,10 +130,13 @@ namespace SingedTerra.LastStand
         public void PlayPurchase() { Play(purchase,"purchase"); }
         // Visibility callbacks own visibility only. The controller owns explicit
         // Pause/failure/catch-up suspension, which focus return must not clear.
-        void OnApplicationFocus(bool value) { focused=value; if(!value)Stop(); }
-        void OnApplicationPause(bool value) { applicationPaused=value; if(value)Stop(); }
+        void OnApplicationFocus(bool value) { focused=value; if(!value)Stop(); SyncMusic(); }
+        void OnApplicationPause(bool value) { applicationPaused=value; if(value)Stop(); SyncMusic(); }
         void OnDestroy()
         {
+            Stop();
+            if(music) { music.SetPlayback(false,0); Destroy(music); }
+            foreach(var source in sources)if(source)Destroy(source);
             foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase})if(clip)Destroy(clip);
         }
     }

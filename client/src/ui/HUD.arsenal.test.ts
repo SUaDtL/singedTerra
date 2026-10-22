@@ -1,13 +1,9 @@
+import { FULL_GAME_INPUT_CAPABILITIES } from '../client/inputCapabilities';
+import type { GameInputCapabilities } from '../client/GameClient';
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  ASH_ROAD_COMBAT_PROFILE_REFERENCE,
-  resolveCampaignCombatProfile,
-} from '@shared/campaign/combatProfiles';
 import { GameEngine } from '@shared/engine/GameEngine';
-import { CampaignClient } from '../campaign/CampaignClient';
-import { ASH_ROAD_EPISODE } from '../campaign/content/episode';
 import type {
   BattleConsoleLifecycleController,
   BattleConsoleLifecycleEnterRequest,
@@ -15,13 +11,11 @@ import type {
 import type { BattleConsolePresentationState } from './battleConsole/types';
 import { HUD } from './HUD';
 
-const campaignProfile = resolveCampaignCombatProfile(
-  ASH_ROAD_COMBAT_PROFILE_REFERENCE,
-);
-const campaignCapabilities = new CampaignClient({
-  encounter: ASH_ROAD_EPISODE.encounters[0]!,
-  combatProfile: campaignProfile,
-}).inputCapabilities;
+const narrowedCapabilities = {
+  ...FULL_GAME_INPUT_CAPABILITIES,
+  buying: false,
+  weaponRoster: ['baby_missile', 'missile', 'cluster_bomb', 'napalm', 'sandhog', 'shield'],
+} satisfies GameInputCapabilities;
 
 function mount() {
   let request: BattleConsoleLifecycleEnterRequest | null = null;
@@ -68,8 +62,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('HUD campaign arsenal projection', () => {
-  it('projects only campaign weapons and keeps depleted equipment disabled', async () => {
+describe('HUD narrowed arsenal projection', () => {
+  it('projects only narrowed weapons and keeps depleted equipment disabled', async () => {
     const { hud, state, latest } = mount();
     try {
       const active = state.tanks.find((tank) => tank.id === state.activePlayerId)!;
@@ -78,7 +72,7 @@ describe('HUD campaign arsenal projection', () => {
       active.inventory.sandhog = { count: 2, unlimited: false };
       active.inventory.napalm = { count: 2, unlimited: false };
       active.inventory.shield = { count: 1, unlimited: false };
-      hud.setInputCapabilities(campaignCapabilities);
+      hud.setInputCapabilities(narrowedCapabilities);
       hud.update(state, false, true, true, true);
 
       const weaponItems = latest().armory.items.filter((item) => item.purchase.weapon);
@@ -102,7 +96,7 @@ describe('HUD campaign arsenal projection', () => {
     const narrowed = mount();
     const narrowedSelect = vi.fn();
     narrowed.hud.onWeaponSelect(narrowedSelect);
-    narrowed.hud.setInputCapabilities(campaignCapabilities);
+    narrowed.hud.setInputCapabilities(narrowedCapabilities);
     narrowed.hud.update(narrowed.state, false, true, true, true);
     narrowed.request()!.dispatch({ type: 'weapon-select', weapon: 'nuke' });
     narrowed.request()!.dispatch({ type: 'armory-equip', weapon: 'heavy_shield' });
@@ -117,20 +111,5 @@ describe('HUD campaign arsenal projection', () => {
     ordinary.request()!.dispatch({ type: 'weapon-select', weapon: 'nuke' });
     expect(ordinarySelect).toHaveBeenCalledExactlyOnceWith('nuke');
     await ordinary.hud.destroy();
-  });
-
-  it('keeps the authoritative campaign selection unchanged when ammunition is depleted', () => {
-    const client = new CampaignClient({
-      encounter: ASH_ROAD_EPISODE.encounters[0]!,
-      combatProfile: campaignProfile,
-    });
-    client.sendAction({ type: 'select_weapon', weapon: 'shield' });
-    const active = client.getState().tanks.find((tank) => tank.id === client.getState().activePlayerId)!;
-    active.inventory.missile.count = 0;
-
-    client.sendAction({ type: 'select_weapon', weapon: 'missile' });
-
-    expect(active.selectedWeapon).toBe('shield');
-    expect(client.getCommittedReplayJournal()).toEqual([]);
   });
 });

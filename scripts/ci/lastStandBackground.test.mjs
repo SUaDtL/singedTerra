@@ -47,7 +47,9 @@ const callerURL=process.env.LAST_STAND_OBSERVATION_SOURCE
     ? pathToFileURL(resolve(process.env.LAST_STAND_GUARD_MODULE))
     : new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url);
 const callerSource=readFileSync(callerURL,'utf8');
-const callerBegin=callerSource.indexOf('\n    const observation=');
+const callerDeclarations=[...callerSource.matchAll(/\n[ \t]*const observation\s*=\s*async\s+options\s*=>/g)];
+assert.equal(callerDeclarations.length,1,'Unique actual production async observation caller is required');
+const callerBegin=callerDeclarations[0].index;
 const callerEnd=callerSource.indexOf('    const reference=',callerBegin);
 assert.ok(callerBegin>0 && callerEnd>callerBegin,'Actual production observation caller is required');
 const actualCaller=new Function('encounters','states','load','check','page','observeRuntimePair','options',

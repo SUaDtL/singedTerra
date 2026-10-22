@@ -20,6 +20,7 @@ namespace SingedTerra.Art
         public float InspectionYaw { get; private set; }
         public bool ShowPartCallouts { get; private set; }=true;
         bool focused=true, recoilDiagnostic=true, encounterWasWide, encounterWasAnimating;
+        bool encounterFullEffects=true;
         Quaternion turretHomeWorld;
         public bool EncounterActive { get; private set; }
         public bool EncounterPaused { get; private set; }
@@ -41,6 +42,26 @@ namespace SingedTerra.Art
         }
         Vector3 cameraGoal,lookGoal;
         int reviewWidth,reviewHeight;
+        Rect garageViewport;
+        bool garageFraming;
+        float garageAspect;
+        bool garageLauncher;
+        Renderer[] garageMeshes;
+        // Fit the authored tank into the space left by the garage cards without
+        // cropping the world camera or changing the active encounter framing.
+        public void SetGarageFraming(Rect normalizedViewport)
+        {
+            if(EncounterActive || battlefield || !view || !tank ||
+                float.IsNaN(normalizedViewport.x) || float.IsNaN(normalizedViewport.y) ||
+                float.IsNaN(normalizedViewport.width) || float.IsNaN(normalizedViewport.height) ||
+                float.IsInfinity(normalizedViewport.x) || float.IsInfinity(normalizedViewport.y) ||
+                float.IsInfinity(normalizedViewport.width) || float.IsInfinity(normalizedViewport.height) ||
+                normalizedViewport.xMin<0 || normalizedViewport.yMin<0 || normalizedViewport.xMax>1 || normalizedViewport.yMax>1 ||
+                normalizedViewport.width<=0 || normalizedViewport.height<=0)return;
+            if(garageFraming && garageViewport==normalizedViewport && Mathf.Approximately(garageAspect,view.aspect) && garageLauncher==showingLauncher)return;
+            garageViewport=normalizedViewport;garageFraming=true;garageAspect=view.aspect;garageLauncher=showingLauncher;
+            UpdateCameraGoal();view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);
+        }
         public void RefreshReviewCamera()
         {
             if(!GetComponent<SingedTerra.VisualReview.BattlefieldReview>())return;
@@ -68,6 +89,27 @@ namespace SingedTerra.Art
                 cameraGoal=lookGoal+Quaternion.Euler(review.CameraPitch,-30f,0)*Vector3.back*75f;
                 reviewWidth=Screen.width;reviewHeight=Screen.height;return;
             }
+            if(garageFraming && !battlefield)
+            {
+                if(garageMeshes==null)garageMeshes=tank.GetComponentsInChildren<Renderer>(true);
+                Bounds bounds=default(Bounds);bool found=false;
+                foreach(var mesh in garageMeshes)
+                {
+                    if(!mesh || !mesh.enabled || !mesh.gameObject.activeInHierarchy)continue;
+                    if(!found){bounds=mesh.bounds;found=true;}else bounds.Encapsulate(mesh.bounds);
+                }
+                if(found)
+                {
+                    var direction=(Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius+Vector3.up*InspectionHeight).normalized;
+                    var rotation=Quaternion.LookRotation(-direction);
+                    float vertical=Mathf.Tan(view.fieldOfView*.5f*Mathf.Deg2Rad),horizontal=vertical*Mathf.Max(.2f,view.aspect);
+                    float limit=Mathf.Max(.025f,Mathf.Min(vertical*garageViewport.height,horizontal*garageViewport.width)*.90f);
+                    float distance=Mathf.Max(1,bounds.extents.magnitude/Mathf.Sin(Mathf.Atan(limit)));
+                    Vector2 centre=garageViewport.center-new Vector2(.5f,.5f);
+                    lookGoal=bounds.center-rotation*new Vector3(centre.x*2*distance*horizontal,centre.y*2*distance*vertical,0);
+                    cameraGoal=lookGoal+direction*distance;return;
+                }
+            }
             cameraGoal=tank.position+(battlefield?new Vector3(17,23,19):
                 Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius
                 +Vector3.up*InspectionHeight);
@@ -93,9 +135,16 @@ namespace SingedTerra.Art
         public void ToggleView(){SetView(!battlefield);}
         public void ToggleAttachment()
         {
-            if(EncounterActive)return;
-            showingLauncher=!showingLauncher;repairModule.SetActive(!showingLauncher);
+            // Legacy art-review shortcut; the playable UI selects explicit identities.
+            TrySelectFitting(showingLauncher ? "repair" : "launcher");
+        }
+        public string FittingId => showingLauncher ? "launcher" : "repair";
+        public bool TrySelectFitting(string id)
+        {
+            if(EncounterActive || (id!="repair" && id!="launcher"))return false;
+            showingLauncher=id=="launcher";repairModule.SetActive(!showingLauncher);
             launcherModule.SetActive(showingLauncher);Report("attachment");
+            return true;
         }
         public void PreviewMotion()
         {
@@ -120,6 +169,11 @@ namespace SingedTerra.Art
             SetView(encounterWasWide,true);
         }
         public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
+        public void SetEncounterEffects(bool full)
+        {
+            encounterFullEffects=full;
+            if(EncounterActive&&!full){flashTime=0;flash.SetActive(false);}
+        }
         public void ClearEncounterFeedback()
         {
             if(!EncounterActive)return;
@@ -138,7 +192,7 @@ namespace SingedTerra.Art
             if(direction.sqrMagnitude<.5f)return;
             Quaternion world=EncounterWorldYaw(turretHomeWorld,inspectionForward,direction);
             turret.localRotation=Quaternion.Inverse(turret.parent.rotation)*world;
-            recoilDiagnostic=false;peakRecoilWorld=0;recoilTime=.7f;flashTime=.09f;
+            recoilDiagnostic=false;peakRecoilWorld=0;recoilTime=.7f;flashTime=encounterFullEffects?.09f:0;
         }
         public static Quaternion EncounterWorldYaw(Quaternion worldHome,Vector3 restForward,Vector3 direction)
         {

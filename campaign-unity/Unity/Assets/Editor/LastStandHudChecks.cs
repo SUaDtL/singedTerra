@@ -55,11 +55,11 @@ public static class LastStandHudChecks
             Canvas.scaleFactor = Mathf.Sqrt((width / 1280f) * (height / 720f));
             Root = (RectTransform)Canvas.transform.Find("LastStandLoopHud");
             typeof(EncounterSession).GetField("focused", Private).SetValue(Loop.Session, true);
-            Canvas.ForceUpdateCanvases(); Hud.Refresh(); Canvas.ForceUpdateCanvases();
+            RefreshCameraCanvas(Canvas,Hud.Refresh);
             Require(Math.Abs(Canvas.pixelRect.width - width) < .1f && Math.Abs(Canvas.pixelRect.height - height) < .1f,
                 "actual camera Canvas viewport");
         }
-        public Button Button(string id) { return Root.Find("LastStandDock/" + id).GetComponent<Button>(); }
+        public Button Button(string id) { return FindButton(Root,id); }
         public Text Text(string id) { return Root.Find("LastStandCard/" + id).GetComponent<Text>(); }
         public void Dispose()
         {
@@ -74,10 +74,104 @@ public static class LastStandHudChecks
     { if (!value) throw new InvalidOperationException(label); }
     static void Invoke(object value, string method)
     { value.GetType().GetMethod(method, Private).Invoke(value, null); }
+    static void RefreshCameraCanvas(Canvas canvas,Action refresh)
+    {
+        // Settle any world-camera change before rebinding this batch fixture's
+        // camera Canvas. Production uses an independent screen-space overlay.
+        Canvas.ForceUpdateCanvases();refresh();
+        if(canvas.renderMode==RenderMode.ScreenSpaceCamera)
+        {
+            var camera=canvas.worldCamera;canvas.renderMode=RenderMode.ScreenSpaceOverlay;
+            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;
+        }
+        Canvas.ForceUpdateCanvases();refresh();Canvas.ForceUpdateCanvases();
+    }
     static void Click(Button button)
     { ExecuteEvents.Execute(button.gameObject, new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left }, ExecuteEvents.pointerClickHandler); }
+    static Button FindButton(Transform root, string id)
+    {
+        Button found=null; int count=0;
+        foreach(var button in root.GetComponentsInChildren<Button>(true))
+            if(button.name==id) { found=button;count++; }
+        Require(count==1,"one actual HUD control "+id);return found;
+    }
+    static Text FindText(Transform root,string id)
+    {
+        Text found=null;int count=0;
+        foreach(var text in root.GetComponentsInChildren<Text>(true))if(text.name==id){found=text;count++;}
+        Require(count==1,"one actual HUD text "+id);return found;
+    }
+    static bool IsInlineArrow(string id) => id=="TierPrevious"||id=="TierNext"||id=="FittingPrevious"||id=="FittingNext";
+    static bool ExpectedGarageCards(LastStandLoopController loop) => (loop.Phase=="garage"||loop.Phase=="workshop") &&
+        loop.Progression.SaveState=="ready" && loop.Progression.ActiveRunId==0 && loop.Progression.PendingDefeat==null && loop.Session.Model==null;
+    static string CorePath(string id) => id=="Menu" ? id : id=="TierPrevious"||id=="TierNext" ? "GarageTierCard/"+id :
+        id=="FittingPrevious"||id=="FittingNext" ? "GarageFittingCard/"+id : "LastStandDock/"+id;
+    static void AssertInlineGarageFields(LastStandLoopController loop,RectTransform root)
+    {
+        var tier=LastStandTierCatalog.Get(loop.Progression.SelectedTier);
+        LastStandSelectionOption fitting=null;
+        foreach(var option in LastStandFittingCatalog.Options)if(option.Id==loop.FittingId)fitting=option;
+        Require(fitting!=null,"actual fitting has authored catalog content");
+        foreach(string id in new[]{"GarageTierName","GarageTierDetail","GarageFittingName","GarageFittingDescription","GarageSave"})
+            RequireVisible(FindText(root,id),"visible inline garage field "+id);
+        Require(FindText(root,"GarageTierName").text==("Tier "+tier.Id+" - "+LastStandEnvironmentCatalog.Get(tier.EnvironmentId).Name).ToUpperInvariant(),
+            "inline card names the actual committed tier");
+        Require(FindText(root,"GarageTierDetail").text=="Goal: survive "+tier.GoalTicks/20+"s. "+
+            LastStandTierHudText.Best(loop.Progression.GetBestTicks(tier.Id),loop.Progression.GetBestKills(tier.Id)),"inline tier goal and best are owner-derived");
+        Require(FindText(root,"GarageFittingName").text==fitting.Name.ToUpperInvariant() &&
+            FindText(root,"GarageFittingDescription").text==fitting.Description,"inline fitting names and explains the equipped module");
+        string expectedSave=loop.HasLockedTierPreview?"DEPLOY: Choose an unlocked tier.":
+            !loop.Session.CanRun?"DEPLOY: Return to this tab.":
+            loop.Progression.NextRunId==int.MaxValue?"DEPLOY: Local run limit reached.":
+            "SALVAGE "+loop.Progression.Wallet+"  |  LOCAL SAVE READY";
+        Require(FindText(root,"GarageSave").text==expectedSave,
+            "garage shows exact owner refusal when unavailable and quiet salvage/confirmed save when admitted; expected="+expectedSave);
+        Require(!FindText(root,"PhaseDetail").gameObject.activeInHierarchy&&!FindText(root,"SaveStatus").gameObject.activeInHierarchy,
+            "ready inline garage removes the old dense detail/status card");
+    }
+    static void AssertGarageHierarchy(LastStandLoopController loop,RectTransform root,Func<RectTransform,Rect> bounds,Rect viewport)
+    {
+        AssertInlineGarageFields(loop,root);
+        var tier=bounds((RectTransform)root.Find("GarageTierCard"));
+        var fitting=bounds((RectTransform)root.Find("GarageFittingCard"));
+        var menu=FindButton(root,"Menu");var menuBounds=bounds((RectTransform)menu.transform);
+        var deploy=FindButton(root,loop.Phase=="workshop"?"Redeploy":"Deploy");var primary=bounds((RectTransform)deploy.transform);
+        var upgrades=FindButton(root,"ShopEntry");var secondary=bounds((RectTransform)upgrades.transform);
+        Require(root.Find("LastStandDock").GetComponent<Image>().color.a==0,
+            "ready garage footer is a transparent structural region around separate actions");
+        Require(menu.transform.parent==root && Contained(menuBounds,viewport) && menuBounds.yMax<=60.2f &&
+            Math.Abs(menuBounds.xMax-(viewport.width-LastStandHudLayout.Edge))<.2f,"Menu floats independently at the top right");
+        Require(Contained(tier,viewport)&&Contained(fitting,viewport)&&!Overlap(tier,fitting),"tier and fitting cards are separate onscreen panels");
+        if(viewport.width>=LastStandHudLayout.PortraitBreakpoint&&viewport.height<240)
+            Require(primary.yMax>=viewport.height-LastStandHudLayout.Edge-.2f&&primary.xMin>=fitting.xMax&&
+                primary.width>secondary.width&&primary.height>=43.9f&&secondary.height>=43.9f,
+                "tiny landscape retains a wider primary Deploy beside Upgrades below the preview");
+        else Require(Math.Abs(primary.center.x-viewport.center.x)<.2f && primary.yMax>=viewport.height-LastStandHudLayout.Edge-.2f &&
+            primary.height>secondary.height && primary.width>secondary.width,"Deploy dominates the lower centre over Upgrades");
+        Require(upgrades.GetComponentInChildren<Text>().text=="UPGRADES","secondary action names permanent upgrades");
+        foreach(var panel in new[]{tier,fitting})
+            Require(!Overlap(panel,menuBounds)&&!Overlap(panel,primary)&&!Overlap(panel,secondary),"garage cards do not cover Menu or primary actions");
+        if(viewport.width<LastStandHudLayout.PortraitBreakpoint)Require(fitting.yMin>=tier.yMax,"portrait fitting follows the tier and preview");
+        foreach(string id in new[]{"TierPrevious","TierNext","FittingPrevious","FittingNext"})
+        {
+            var button=FindButton(root,id);var target=bounds((RectTransform)button.transform);
+            Require(Contained(target,id.StartsWith("Tier",StringComparison.Ordinal)?tier:fitting),"inline arrow stays inside its own card "+id);
+        }
+    }
+    static void SelectFitting(LastStandLoopController loop, TankPresentation art, Transform root, bool launcher, Action refresh)
+    {
+        if(art.showingLauncher==launcher)return;
+        Require(loop.MenuPage=="" && loop.Session.Model==null,"inline fitting starts outside a modal or run");
+        var arrow=FindButton(root,launcher ? "FittingNext" : "FittingPrevious");
+        Require(arrow.IsActive() && arrow.IsInteractable(),"requested fitting arrow is available");Click(arrow);
+        Require(art.showingLauncher==launcher && loop.FittingId==(launcher ? "launcher" : "repair"),
+            "actual fitting arrow selects the explicit catalog identity");
+        RefreshCameraCanvas(root.GetComponentInParent<Canvas>(),refresh);
+        Require(loop.MenuPage=="" && loop.Session.Model==null,"inline fitting never opens a modal or deploys");
+    }
     public static void RunGarage()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory;
         int failures = 0;
         try
@@ -106,7 +200,7 @@ public static class LastStandHudChecks
         {
             foreach (bool launcher in new[] { false, true })
             {
-                if (f.Art.showingLauncher != launcher) Click(f.Button("ToggleFitting"));
+                SelectFitting(f.Loop,f.Art,f.Root,launcher,() => f.Hud.Refresh());
                 f.Hud.Refresh();
                 string text = f.Text("PhaseDetail").text;
                 AssertGarageFields(f);
@@ -118,13 +212,13 @@ public static class LastStandHudChecks
                     "live wallet and next cost/MAX");
                 Require(f.Text("SaveStatus").text.Contains("LOCAL SAVE READY"), "actual confirmed save");
                 string before = f.Storage.Value;
-                Click(f.Button("ToggleFitting"));
+                SelectFitting(f.Loop,f.Art,f.Root,!launcher,() => f.Hud.Refresh());
                 Require(f.Art.showingLauncher != launcher && f.Storage.Value == before && f.Loop.Session.Model == null,
-                    "actual fitting callback changes attachment without progression/run");
+                    "actual fitting selection changes attachment without progression/run");
                 Require(f.Text("PhaseDetail").text.IndexOf(launcher ? "Field repair" : "Auxiliary launcher", StringComparison.OrdinalIgnoreCase) >= 0,
-                    "fitting click refreshes live label");
-                Require(f.Button("ToggleFitting").GetComponentInChildren<Text>().text == (launcher ? "FIT LAUNCHER" : "FIT REPAIR"),
-                    "toggle action names actual alternative");
+                    "fitting selection refreshes live label");
+                Require(FindText(f.Root,"GarageFittingName").text == (launcher ? "FIELD REPAIR" : "AUXILIARY LAUNCHER"),
+                    "inline card names the actual equipped fitting");
                 AssertGarageFields(f);
             }
             Require(f.Text("PhaseHeading").text == "LAST STAND", "Field Console garage title replaces oversized prototype heading");
@@ -172,7 +266,7 @@ public static class LastStandHudChecks
             int count = 0; foreach (var b in f.Root.GetComponentsInChildren<Button>()) if (b.name == "Deploy") count++;
             Require(count == 1 && deploy.IsInteractable(), "one ready Deploy");
             var primary = deploy.GetComponent<Image>().color;
-            Require(primary.r > .7f && primary.g > .5f && primary.b < .5f && primary != f.Button("ToggleFitting").GetComponent<Image>().color,
+            Require(primary.r > .7f && primary.g > .5f && primary.b < .5f && primary != f.Button("FittingNext").GetComponent<Image>().color,
                 "Deploy alone has brass primary surface");
             Require(Contrast(deploy.GetComponentInChildren<Text>().color, primary) >= 4.5, "primary ink contrast");
             var label = deploy.GetComponentInChildren<Text>();
@@ -224,7 +318,20 @@ public static class LastStandHudChecks
             AssertGarageMuteToggle(f);
             var viewport = new Rect(0, 0, profile.x, profile.y);
             var card = Bounds(f, (RectTransform)f.Root.Find("LastStandCard"));
-            Require(Math.Abs(card.x - 12) < .2 && card.width <= 440.2, profile + " side loadout keeps tank space");
+            Require(Math.Abs(card.x - LastStandHudLayout.Edge) < .2,profile + " loadout keeps its edge alignment");
+            if(f.Loop.GarageCardsVisible) AssertGarageHierarchy(f.Loop,f.Root,r=>Bounds(f,r),viewport);
+            else if(card.width > LastStandHudLayout.MaximumCardWidth + .2f)
+            {
+                var detail=Bounds(f,f.Text("PhaseDetail").rectTransform);
+                var status=Bounds(f,f.Text("SaveStatus").rectTransform);
+                float stackedHeight=2*LastStandHudLayout.PanelPadding+LastStandHudLayout.HeadingLines*LastStandHudLayout.HeadingLineHeight+
+                    (LastStandHudLayout.DetailLines+LastStandHudLayout.NoticeLines)*LastStandHudLayout.LineHeight+2*LastStandHudLayout.Gap;
+                Require(profile.x>=LastStandHudLayout.PortraitBreakpoint &&
+                    card.width<=Math.Min(profile.x-2*LastStandHudLayout.Edge,LastStandHudLayout.MaximumDockWidth)+.2f &&
+                    card.height<stackedHeight && Math.Abs(detail.y-status.y)<.2f && detail.xMax+LastStandHudLayout.Gap<=status.xMin+.2f,
+                    profile+" short-height loadout reflows into bounded reading columns and frees vertical battlefield space");
+            }
+            else Require(card.width<=LastStandHudLayout.MaximumCardWidth+.2f,profile+" stacked side loadout keeps tank space");
             var controls = new List<Rect>();
             foreach (var button in f.Root.GetComponentsInChildren<Button>())
             {
@@ -232,7 +339,8 @@ public static class LastStandHudChecks
                 Require(bounds.width >= 43.9 && bounds.height >= 43.9, profile + " actual 44px target " + button.name);
                 Require(bounds.xMin >= -.2 && bounds.yMin >= -.2 && bounds.xMax <= viewport.xMax + .2 && bounds.yMax <= viewport.yMax + .2,
                     profile + " onscreen target " + button.name);
-                Require(!Overlap(bounds, card), profile + " dock does not overlap loadout");
+                Require(!Overlap(bounds, card), profile + " control does not cover the actual title/recovery panel " + button.name +
+                    " blocked="+blocked+" control="+bounds+" panel="+card);
                 foreach (var prior in controls) Require(!Overlap(bounds, prior), profile + " nonoverlap controls");
                 controls.Add(bounds);
                 Color background = button.GetComponent<Image>().color;
@@ -263,9 +371,12 @@ public static class LastStandHudChecks
         using (var f = new Fixture(568,196,level:level,denyRead:blocked))
         foreach (bool launcher in new[] {false,true})
         {
-            f.Art.showingLauncher = launcher; f.Hud.Refresh(); Canvas.ForceUpdateCanvases();
+            if(!blocked)SelectFitting(f.Loop,f.Art,f.Root,launcher,f.Hud.Refresh);
+            else Require(f.Art.TrySelectFitting(launcher?"launcher":"repair"),"blocked short-layout fixture supplies the actual module without bypassing a UI admission claim");
+            RefreshCameraCanvas(f.Canvas,f.Hud.Refresh);
             AssertGarageFields(f); AssertGarageSaveTruth(f); RequireGarageVisible(f);
             var card = Bounds(f,(RectTransform)f.Root.Find("LastStandCard"));
+            if(f.Loop.GarageCardsVisible) AssertGarageHierarchy(f.Loop,f.Root,r=>Bounds(f,r),new Rect(0,0,568,196));
             var controls = new List<Rect>();
             foreach (var button in f.Root.GetComponentsInChildren<Button>())
             {
@@ -317,6 +428,7 @@ public static class LastStandHudChecks
     }
     static void AssertGarageSaveTruth(Fixture f)
     {
+        if(f.Loop.GarageCardsVisible) { AssertInlineGarageFields(f.Loop,f.Root);return; }
         var status = f.Text("SaveStatus"); RequireVisible(status, "required garage SaveStatus");
         if (f.Loop.Progression.SaveState == "ready")
             Require(status.text.Split('\n')[0] == "LOCAL SAVE READY", "confirmed storage has ready field");
@@ -349,13 +461,19 @@ public static class LastStandHudChecks
     }
     static void RequireGarageVisible(Fixture f)
     {
-        foreach (string id in new[] { "PhaseHeading", "PhaseDetail", "SaveStatus" }) RequireVisible(f.Text(id), "required garage " + id);
-        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" })
+        Require(f.Loop.GarageCardsVisible==ExpectedGarageCards(f.Loop),"garage hierarchy follows ready unresolved-run boundaries");
+        RequireVisible(f.Text("PhaseHeading"),"required garage title");
+        if(f.Loop.GarageCardsVisible) AssertInlineGarageFields(f.Loop,f.Root);
+        else foreach(string id in new[]{"PhaseDetail","SaveStatus"})RequireVisible(f.Text(id),"required recovery "+id);
+        foreach (string id in CoreControlIds)
         {
             var button = f.Button(id);
-            bool expected = id == "ToggleFitting" || id == "Deploy" || id == "ToggleMute" || (id == "ToggleTier" && f.Loop.Progression.SaveState == "ready") ||
+            bool expected = id == "Deploy" || id == "Menu" ||
+                IsInlineArrow(id)&&f.Loop.GarageCardsVisible ||
                 (id == "RetrySave" && f.Loop.Progression.SaveState != "ready");
-            Require(button.gameObject.activeInHierarchy == expected, "actual garage control inventory " + id);
+            Require(button.gameObject.activeInHierarchy == expected, "actual garage control inventory " + id+
+                " phase="+f.Loop.Phase+" save="+f.Loop.Progression.SaveState+" activeSelf="+button.gameObject.activeSelf+
+                " activeInHierarchy="+button.gameObject.activeInHierarchy+" menu="+f.Loop.MenuPage);
             if (!expected) continue;
             Require(button.enabled, "required garage Button enabled " + id);
             RequireVisible(button.GetComponent<Image>(), "required garage control " + id);
@@ -366,7 +484,7 @@ public static class LastStandHudChecks
     }
     static void AssertGarageFeedback(Fixture f)
     {
-        foreach (string id in new[] { "ToggleFitting", "Deploy", "ToggleMute", "RetrySave" })
+        foreach (string id in new[] { "TierPrevious","TierNext","FittingPrevious","FittingNext","Deploy","ToggleMute","RetrySave","Menu" })
         {
             var button = f.Button(id); if (!button.gameObject.activeInHierarchy) continue;
             var label = button.GetComponentInChildren<Text>(true); var outline = button.GetComponent<Outline>();
@@ -397,16 +515,30 @@ public static class LastStandHudChecks
     }
     static void AssertGarageMuteToggle(Fixture f)
     {
-        var button = f.Button("ToggleMute"); var label = button.GetComponentInChildren<Text>(true);
+        Require(!f.Button("ToggleMute").IsActive(),"garage leaves audio control in Settings");
+        OpenSettings(f.Loop,f.Root,0,f.Hud.Refresh);
+        var button = f.Button("SettingsMute"); var label = button.GetComponentInChildren<Text>(true);
         bool before = f.Loop.Muted; string save = f.Storage.Value; int run = f.Loop.Progression.ActiveRunId;
         RequireVisible(label, "visible actual sound toggle");
-        Require(label.text == (before ? "SOUND OFF" : "SOUND ON"), "actual current sound label");
+        Require(label.text == (before ? "MASTER SOUND: OFF" : "MASTER SOUND: ON"), "actual current sound label");
         Click(button); Require(f.Loop.Muted != before, "actual sound callback changes owner mute");
         RequireVisible(label, "visible toggled sound label");
-        Require(label.text == (f.Loop.Muted ? "SOUND OFF" : "SOUND ON"), "actual toggled sound label");
-        Click(button); Require(f.Loop.Muted == before && label.text == (before ? "SOUND OFF" : "SOUND ON"), "sound callback restores owner and label");
+        Require(label.text == (f.Loop.Muted ? "MASTER SOUND: OFF" : "MASTER SOUND: ON"), "actual toggled sound label");
+        Click(button); Require(f.Loop.Muted == before && label.text == (before ? "MASTER SOUND: OFF" : "MASTER SOUND: ON"), "sound callback restores owner and label");
+        Click(f.Button("SettingsClose")); Require(!f.Loop.MenuOpen,"garage settings closes through actual control");
         Require(f.Storage.Value == save && f.Loop.Progression.ActiveRunId == run && f.Loop.Session.Model == null,
             "garage sound toggling cannot save or start a run");
+    }
+    static void OpenSettings(LastStandLoopController loop,RectTransform root,int tab,Action refresh)
+    {
+        foreach(string id in new[]{"Menu","MenuSettings","SettingsTab"+tab})
+        {
+            var button=FindOrdinaryButton(root,id);
+            Require(button.IsActive()&&button.IsInteractable(),"settings journey exposes actual control "+id);
+            Click(button);refresh();
+        }
+        Require(loop.MenuPage=="settings","actual Menu journey opens Settings");
+        if(loop.Session.Model!=null)Require(loop.Session.MenuPaused&&loop.Session.Paused,"settings holds active run pause");
     }
 
     // T-06 extends the same actual scene/Canvas fixture. All garage fixtures,
@@ -415,6 +547,7 @@ public static class LastStandHudChecks
         new Vector2Int(390,844), new Vector2Int(844,390), new Vector2Int(720,640) };
     public static void RunBattle()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory; int failures = 0;
         try
         {
@@ -434,7 +567,7 @@ public static class LastStandHudChecks
     { return (LastStandRunClock)typeof(EncounterSession).GetField("runClock", Private).GetValue(f.Loop.Session); }
     static void DeployBattle(Fixture f, bool launcher)
     {
-        if (f.Art.showingLauncher != launcher) Click(f.Button("ToggleFitting"));
+        SelectFitting(f.Loop,f.Art,f.Root,launcher,() => f.Hud.Refresh());
         Click(f.Button("Deploy"));
         Require(f.Loop.Phase == "battle" && f.Loop.Session.Model != null, "real controller deploys combat fixture");
         // Deploy changes the real world camera. In edit-mode batch checks,
@@ -490,9 +623,9 @@ public static class LastStandHudChecks
     static void RequireBattleInventory(Fixture f)
     {
         RequireVisible(f.Text("PhaseHeading"), "required battle PhaseHeading");
-        foreach (string id in new[] { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" })
+        foreach (string id in CoreControlIds)
         {
-            var button = f.Button(id); bool active = id == "Pause" || id == "ToggleMute";
+            var button = f.Button(id); bool active = id=="Menu" || id=="SpeedMinus"||id=="SpeedRate"||id=="SpeedPlus";
             Require(button.gameObject.activeInHierarchy == active, "actual battle stable control inventory " + id);
             if (!active) continue;
             Require(button.enabled, "actual battle Button enabled " + id);
@@ -535,10 +668,15 @@ public static class LastStandHudChecks
     }
     static void BattleState(Fixture f, string state)
     {
-        if (state == "paused" || state == "resume-blocked") { Click(f.Button("Pause")); Require(f.Loop.Session.Paused, "actual pause fixture"); }
+        if (state == "paused" || state == "resume-blocked") { ReanchorPointer(f); Click(f.Button("SpeedRate")); Require(f.Loop.Session.Paused, "actual pause fixture"); }
         if (state == "background" || state == "resume-blocked")
             typeof(EncounterSession).GetMethod("OnApplicationFocus", Private).Invoke(f.Loop.Session,new object[] { false });
-        if (state == "muted") Click(f.Button("ToggleMute"));
+        if (state == "muted")
+        {
+            ReanchorPointer(f);OpenSettings(f.Loop,f.Root,0,f.Hud.Refresh);
+            Click(f.Button("SettingsMute"));Click(f.Button("SettingsClose"));
+            Require(!f.Loop.MenuOpen&&!f.Loop.Session.Paused,"audio journey releases only the menu pause");
+        }
         if (state == "catch-up") { f.Loop.Session.AdvanceAt(Clock(f).LastTimestamp + 10); Require(f.Loop.Session.CatchingUp, "actual over-budget clock debt"); }
         if (state == "settling")
         {
@@ -595,7 +733,7 @@ public static class LastStandHudChecks
     { return inner.xMin >= outer.xMin - .2f && inner.yMin >= outer.yMin - .2f && inner.xMax <= outer.xMax + .2f && inner.yMax <= outer.yMax + .2f; }
     static void AssertBattlePauseFeedback(Fixture f)
     {
-        var button = f.Button("Pause"); var label = button.GetComponentInChildren<Text>(true); var outline = button.GetComponent<Outline>();
+        var button = f.Button("SpeedRate"); var label = button.GetComponentInChildren<Text>(true); var outline = button.GetComponent<Outline>();
         Require(outline, "battle Pause shared stroke exists");
         var pointer = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
         var basic = new BaseEventData(EventSystem.current); bool available = button.IsInteractable();
@@ -622,33 +760,37 @@ public static class LastStandHudChecks
         {
             DeployBattle(f, false); f.Loop.Session.AdvanceAt(Clock(f).LastTimestamp + 10); f.Hud.Refresh();
             Require(f.Loop.Session.CatchingUp && f.Text("PhaseHeading").text == "CATCHING UP", "actual clock debt has honest visible catch-up heading");
-            var pause = f.Button("Pause");
-            Require(pause.gameObject.activeInHierarchy && !pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "PAUSE UNAVAILABLE",
+            var pause = f.Button("SpeedRate");
+            Require(pause.gameObject.activeInHierarchy && !pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "WAIT",
                 "catch-up disables actual conflicting Pause with textual state");
             string save = f.Storage.Value; string snapshot = f.Loop.Session.Model.Snapshot(); double debt = Clock(f).PendingSeconds;
             Click(pause); Require(!f.Loop.Session.Paused && f.Loop.Session.Model.Snapshot() == snapshot && Clock(f).PendingSeconds == debt && f.Storage.Value == save,
                 "disabled catch-up pointer cannot pause drain debt change combat or save");
             f.Loop.Session.AdvanceAt(Clock(f).LastTimestamp); f.Hud.Refresh();
-            Require(!f.Loop.Session.CatchingUp && pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "PAUSE" &&
-                f.Text("PhaseHeading").text == "HOLD THE POSITION", "debt drainage restores current running instruments");
+            Require(!f.Loop.Session.CatchingUp && pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "1.0x" &&
+                f.Text("PhaseHeading").text == LastStandTierHudText.BattleHeading(f.Loop.Session.Model.Profile.Tier,f.Loop.Session.Model.Tick),
+                "debt drainage restores the current tier and goal heading");
             ReanchorPointer(f); Click(pause);
-            Require(f.Loop.Session.Paused && f.Text("PhaseHeading").text == "BATTLE PAUSED" && pause.GetComponentInChildren<Text>().text == "RESUME", "real Pause owner and visible explicit state");
+            Require(f.Loop.Session.Paused && f.Text("PhaseHeading").text == "BATTLE PAUSED" && pause.GetComponentInChildren<Text>().text == "0x\nPAUSED", "real rate control pauses the owner with visible state");
             snapshot = f.Loop.Session.Model.Snapshot(); f.Loop.Session.AdvanceAt(Clock(f).LastTimestamp + 10);
             Require(f.Loop.Session.Model.Snapshot() == snapshot, "paused owner excludes time and combat changes");
             typeof(EncounterSession).GetMethod("OnApplicationFocus", Private).Invoke(f.Loop.Session,new object[] { false });
-            f.Hud.Refresh(); Require(f.Loop.Session.Paused && !pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "RESUME UNAVAILABLE",
+            f.Hud.Refresh(); Require(f.Loop.Session.Paused && !pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "WAIT",
                 "unfocused explicit pause stays visible and Resume follows actual owner refusal");
             Click(pause); Require(f.Loop.Session.Paused && f.Loop.Session.Model.Snapshot() == snapshot, "blocked Resume pointer cannot clear user Pause");
             typeof(EncounterSession).GetMethod("OnApplicationFocus", Private).Invoke(f.Loop.Session,new object[] { true });
-            ReanchorPointer(f); Click(pause); Require(!f.Loop.Session.Paused && pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "PAUSE", "real Resume owner excludes paused interval");
-            var sound = f.Button("ToggleMute"); bool before = f.Loop.Muted; snapshot = f.Loop.Session.Model.Snapshot();
-            Click(sound); Require(f.Loop.Muted != before && sound.GetComponentInChildren<Text>().text == (f.Loop.Muted ? "SOUND OFF" : "SOUND ON"), "actual battle mute callback and active label");
-            Click(sound); Require(f.Loop.Muted == before && f.Loop.Session.Model.Snapshot() == snapshot && f.Storage.Value == save, "mute restoration cannot change combat or progression");
+            ReanchorPointer(f); Click(pause); Require(!f.Loop.Session.Paused && pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "1.0x", "real Resume owner excludes paused interval");
+            bool before = f.Loop.Muted; snapshot = f.Loop.Session.Model.Snapshot();
+            ReanchorPointer(f);OpenSettings(f.Loop,f.Root,0,f.Hud.Refresh);var sound = f.Button("SettingsMute");
+            Click(sound); Require(f.Loop.Muted != before && sound.GetComponentInChildren<Text>().text == (f.Loop.Muted ? "MASTER SOUND: OFF" : "MASTER SOUND: ON"), "actual battle Audio setting callback and active label");
+            Click(sound);Click(f.Button("SettingsClose"));
+            Require(f.Loop.Muted == before && f.Loop.Session.Model.Snapshot() == snapshot && f.Storage.Value == save &&
+                !f.Loop.Session.Paused&&!f.Loop.Session.MenuPaused&&!f.Loop.MenuOpen,"Audio round trip preserves combat and releases only menu pause");
             typeof(EncounterSession).GetMethod("OnApplicationFocus", Private).Invoke(f.Loop.Session,new object[] { false });
-            StepBattle(f); Require(!f.Loop.Session.Paused && pause.GetComponentInChildren<Text>().text == "PAUSE", "focus loss alone never becomes Resume");
+            StepBattle(f); Require(!f.Loop.Session.Paused && pause.GetComponentInChildren<Text>().text == "1.0x", "focus loss alone never becomes manual pause");
             typeof(EncounterSession).GetMethod("OnApplicationFocus", Private).Invoke(f.Loop.Session,new object[] { true });
             BattleState(f,"settling"); RequireBattleInventory(f); ReanchorPointer(f); Click(pause);
-            Require(f.Loop.Session.Paused && pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "RESUME" && f.Text("PhaseHeading").text == "SETTLING PAUSED", "existing settling owner exposes explicit Pause/Resume");
+            Require(f.Loop.Session.Paused && pause.IsInteractable() && pause.GetComponentInChildren<Text>().text == "0x\nPAUSED" && f.Text("PhaseHeading").text == "SETTLING PAUSED", "existing settling owner exposes rate Pause/Resume");
             double terminal = f.Loop.Session.TerminalElapsedSeconds; f.Loop.Session.AdvanceAt(Clock(f).LastTimestamp + 10); Invoke(f.Loop,"Update");
             Require(f.Loop.Phase == "settling" && f.Loop.Session.TerminalElapsedSeconds == terminal, "paused settling cannot advance or auto-Claim");
             ReanchorPointer(f); Click(pause); Require(!f.Loop.Session.Paused && f.Text("PhaseHeading").text == "LAST SHOT", "real settling Resume is presented");
@@ -696,6 +838,7 @@ public static class LastStandHudChecks
     static LastStandLoopController runtimeLoop;
     static LastStandLoopHud runtimeHud;
     static RectTransform runtimeRoot;
+    static LastStandTestPreferencesScope runtimePreferences;
     static LastStandHudChecks()
     {
         // Domain reload calls this before the dedicated scene's actual Start.
@@ -703,6 +846,7 @@ public static class LastStandHudChecks
     }
     static void ArmRuntime()
     {
+        if(runtimePreferences==null)runtimePreferences=new LastStandTestPreferencesScope();
         runtimeStorage = new MemoryStorage { Value = Save(0,0,1) };
         LastStandLoopController.StorageFactory = () => { runtimeFactoryCalls++; return runtimeStorage; };
         Application.logMessageReceived -= CaptureRuntime;
@@ -727,9 +871,9 @@ public static class LastStandHudChecks
     [Serializable] sealed class RuntimeControl
     { public string name,label; public float x,y,width,height; public bool active,interactable; }
     [Serializable] sealed class RuntimeLayout
-    { public string phase,coordinates; public int width,height; public RuntimeControl[] controls,shopControls; }
+    { public string phase,coordinates; public int width,height; public RuntimeControl[] controls,shopControls,settingsControls; }
     static Button RuntimeButton(string id)
-    { return runtimeRoot.Find("LastStandDock/" + id).GetComponent<Button>(); }
+    { return FindOrdinaryButton(runtimeRoot,id); }
     static void AssertRuntimeReport(string state)
     {
         Require(Application.isPlaying, "actual play mode, never an edited isPlaying premise");
@@ -738,8 +882,8 @@ public static class LastStandHudChecks
         Require(report.phase == runtimeLoop.Phase && report.coordinates == "top-left", "runtime current phase and top-left coordinate contract " + state);
         Require(report.width == Screen.width && report.height == Screen.height && report.width > 0 && report.height > 0,
             "runtime actual Screen dimensions " + state);
-        string[] ids = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
-        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exactly nine stable control identities " + state);
+        var ids=CoreControlIds;
+        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exactly eighteen stable core control identities " + state);
         var seen = new HashSet<string>(); var corners = new Vector3[4];
         for (int i = 0; i < ids.Length; i++)
         {
@@ -771,11 +915,26 @@ public static class LastStandHudChecks
                 Math.Abs(control.width-(hi.x-lo.x)) < .2f && Math.Abs(control.height-(hi.y-lo.y)) < .2f,
                 "runtime actual shop top-left bounds " + control.name);
         }
-        Require(seen.Count == 20,"runtime exact unique core9/shop11 union");
+        Require(report.settingsControls!=null && report.settingsControls.Length==ModalControlIds.Length,
+            "runtime exact thirty-five modal controls "+state);
+        for(int i=0;i<ModalControlIds.Length;i++)
+        {
+            var control=report.settingsControls[i];var button=FindOrdinaryButton(runtimeRoot,ModalControlIds[i]);
+            Require(control.name==ModalControlIds[i] && seen.Add(control.name),"runtime unique ordered modal identity "+control.name);
+            Require(control.label==button.GetComponentInChildren<Text>(true).text &&
+                control.active==button.gameObject.activeInHierarchy && control.interactable==button.IsInteractable(),
+                "runtime actual modal label/admission "+control.name);
+            ((RectTransform)button.transform).GetWorldCorners(corners);
+            var lo=RectTransformUtility.WorldToScreenPoint(null,corners[0]);var hi=RectTransformUtility.WorldToScreenPoint(null,corners[2]);
+            Require(Math.Abs(control.x-lo.x)<.2f && Math.Abs(control.y-(Screen.height-hi.y))<.2f &&
+                Math.Abs(control.width-(hi.x-lo.x))<.2f && Math.Abs(control.height-(hi.y-lo.y))<.2f,
+                "runtime actual modal top-left bounds "+control.name);
+        }
+        Require(seen.Count==64,"runtime exact unique core18/shop11/modal35 union");
         int count = runtimeReports.Count;
         runtimeHud.Refresh(); runtimeHud.Layout(); runtimeHud.Layout();
         Require(runtimeReports.Count == count, "runtime duplicate current layout payload suppressed " + state);
-        Debug.Log("ST_LS_HUD_RUNTIME_STATE " + state + " phase=" + report.phase + " screen=" + report.width + "x" + report.height + " nine-current-controls duplicate-suppressed");
+        Debug.Log("ST_LS_HUD_RUNTIME_STATE " + state + " phase=" + report.phase + " screen=" + report.width + "x" + report.height + " sixty-four-current-controls duplicate-suppressed");
     }
     static void RuntimeUpdate()
     {
@@ -804,18 +963,38 @@ public static class LastStandHudChecks
             {
                 if (Time.realtimeSinceStartupAsDouble - runtimeStageTime < .25) return;
                 Require(runtimeLoop.Session.Model.Tick > runtimeTick, "actual runtime Update advances committed battle tick");
-                AssertRuntimeReport("actual-Update-battle"); Click(RuntimeButton("Pause"));
-                Require(runtimeLoop.Session.Paused && RuntimeButton("Pause").GetComponentInChildren<Text>().text == "RESUME", "runtime actual Pause owner and Resume label");
+                AssertRuntimeReport("actual-Update-battle"); Click(RuntimeButton("SpeedRate"));
+                Require(runtimeLoop.Session.Paused && RuntimeButton("SpeedRate").GetComponentInChildren<Text>().text == "0x\nPAUSED", "runtime actual rate Pause owner and visible paused label");
                 AssertRuntimeReport("paused-battle"); runtimeTick = runtimeLoop.Session.Model.Tick;
                 runtimeStageTime = Time.realtimeSinceStartupAsDouble; runtimeStage = 2;
             }
-            else
+            else if(runtimeStage==2)
             {
                 if (Time.realtimeSinceStartupAsDouble - runtimeStageTime < .25) return;
                 Require(runtimeLoop.Session.Model.Tick == runtimeTick, "actual runtime paused Update excludes battle time");
-                bool muted = runtimeLoop.Muted; Click(RuntimeButton("ToggleMute"));
-                Require(runtimeLoop.Muted != muted, "runtime actual sound state changes");
-                AssertRuntimeReport("sound-toggled"); Click(RuntimeButton("Pause"));
+                bool muted = runtimeLoop.Muted;OpenSettings(runtimeLoop,runtimeRoot,0,runtimeHud.Refresh);Click(RuntimeButton("SettingsMute"));
+                Require(runtimeLoop.Muted != muted && runtimeLoop.Session.MenuPaused && runtimeLoop.Session.ManualPaused, "runtime actual sound state changes under both pause owners");
+                Click(RuntimeButton("SettingsClose"));
+                Require(!runtimeLoop.MenuOpen&&!runtimeLoop.Session.MenuPaused&&runtimeLoop.Session.ManualPaused&&runtimeLoop.Session.Model.Tick==runtimeTick,
+                    "runtime Audio close preserves manual pause and exact tick");
+                // Closing Settings genuinely transfers focus to Menu. Its
+                // Selectable tint fades over real frames and belongs in the
+                // reported payload; test de-duplication only after that actual
+                // visual transition has completed, without changing its color.
+                runtimeStageTime=Time.realtimeSinceStartupAsDouble;runtimeStage=3;
+            }
+            else
+            {
+                var menu=RuntimeButton("Menu");var colors=menu.colors;
+                if(Time.realtimeSinceStartupAsDouble-runtimeStageTime<colors.fadeDuration+.5)return;
+                Require(EventSystem.current.currentSelectedGameObject==menu.gameObject,"runtime Settings close restores actual Menu focus");
+                var tint=menu.targetGraphic.canvasRenderer.GetColor();var expected=colors.selectedColor*colors.colorMultiplier;
+                Require(Math.Abs(tint.r-expected.r)<.001f&&Math.Abs(tint.g-expected.g)<.001f&&
+                    Math.Abs(tint.b-expected.b)<.001f&&Math.Abs(tint.a-expected.a)<.001f,
+                    "runtime Menu highlight completes its real bounded Selectable fade");
+                Require(runtimeLoop.Session.ManualPaused&&!runtimeLoop.Session.MenuPaused&&runtimeLoop.Session.Model.Tick==runtimeTick,
+                    "runtime focus transition cannot release manual pause or advance combat");
+                AssertRuntimeReport("sound-toggled"); Click(RuntimeButton("SpeedRate"));
                 Require(!runtimeLoop.Session.Paused, "runtime real Resume callback"); AssertRuntimeReport("resumed-battle");
                 Debug.Log("ST_LS_HUD_PASS test_current_layout_runtime_report"); FinishRuntime(0);
             }
@@ -825,6 +1004,7 @@ public static class LastStandHudChecks
     }
     static void FinishRuntime(int exit)
     {
+        runtimePreferences?.Dispose();runtimePreferences=null;
         UnityEditor.SessionState.SetBool(RuntimeKey,false);
         Application.logMessageReceived -= CaptureRuntime;
         UnityEditor.EditorApplication.update -= RuntimeUpdate;
@@ -882,9 +1062,9 @@ public static class LastStandHudChecks
             typeof(EncounterSession).GetField("focused",Private).SetValue(Loop.Session,true);
             Refresh(); Require(Math.Abs(Canvas.pixelRect.width-profile.x)<.1f && Math.Abs(Canvas.pixelRect.height-profile.y)<.1f,"actual outcome Canvas size");
         }
-        public Button Button(string id) { return Root.Find("LastStandDock/"+id).GetComponent<Button>(); }
+        public Button Button(string id) { return FindButton(Root,id); }
         public Text Text(string id) { return Root.Find("LastStandCard/"+id).GetComponent<Text>(); }
-        public void Refresh() { Canvas.ForceUpdateCanvases(); Hud.Refresh(); Canvas.ForceUpdateCanvases(); }
+        public void Refresh() { RefreshCameraCanvas(Canvas,Hud.Refresh); }
         public Rect Bounds(RectTransform rect)
         {
             var corners = new Vector3[4]; rect.GetWorldCorners(corners);
@@ -920,6 +1100,7 @@ public static class LastStandHudChecks
         new Vector2Int(1366,664),new Vector2Int(1920,976),new Vector2Int(390,688),new Vector2Int(844,266),new Vector2Int(720,516) };
     public static void RunOutcomes()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory=LastStandLoopController.StorageFactory; int failures=0;
         try
         {
@@ -933,13 +1114,15 @@ public static class LastStandHudChecks
     static void OutcomeInventory(OutcomeFixture f)
     {
         string phase=f.Loop.Phase; bool ready=f.Loop.Progression.SaveState=="ready";
-        string[] ids={"ToggleFitting","Deploy","Claim","Purchase","Redeploy","RetrySave","Pause","ToggleMute","ToggleTier"};
+        string[] ids=CoreControlIds;bool cards=ExpectedGarageCards(f.Loop);
+        Require(f.Loop.GarageCardsVisible==cards,"outcome hierarchy follows actual save/run boundaries");
         AssertOrdinaryInventory(f.Root,"outcome " + phase);
         foreach(string id in ids)
         {
-            bool active=id=="ToggleMute" || id=="RetrySave"&&!ready || id=="Pause"&&(phase=="battle"||phase=="settling") ||
-                id=="Claim"&&phase=="result" || (id=="Purchase"||id=="Redeploy"||id=="ToggleFitting")&&phase=="workshop" ||
-                (id=="Deploy"||id=="ToggleFitting")&&phase=="garage" || id=="ToggleTier"&&ready&&(phase=="garage"||phase=="workshop");
+            bool active=id=="Menu" || id=="RetrySave"&&!ready ||
+                id=="Claim"&&phase=="result" || id=="Purchase"&&phase=="workshop"&&!cards || id=="Redeploy"&&phase=="workshop" ||
+                id=="Deploy"&&phase=="garage" || IsInlineArrow(id)&&cards ||
+                (id=="SpeedMinus"||id=="SpeedRate"||id=="SpeedPlus")&&(phase=="battle"||phase=="settling");
             var b=f.Button(id); Require(b.gameObject.activeInHierarchy==active,"outcome exact active inventory "+id+" "+phase);
             if(!active)continue;
             Require(b.enabled,"outcome Button enabled "+id); RequireVisible(b.GetComponent<Image>(),"outcome visible action "+id);
@@ -964,13 +1147,17 @@ public static class LastStandHudChecks
         var card=f.Bounds((RectTransform)f.Root.Find("LastStandCard"));var dock=f.Bounds((RectTransform)f.Root.Find("LastStandDock"));
         Require(Contained(card,viewport)&&Contained(dock,viewport),"outcome containing panels onscreen "+label);
         Require(!Overlap(card,dock),"outcome card/dock nonoverlap "+label);
+        if(f.Loop.GarageCardsVisible)AssertGarageHierarchy(f.Loop,f.Root,f.Bounds,viewport);
         foreach(var image in f.Root.GetComponentsInChildren<Image>())Require(Contained(f.Bounds(image.rectTransform),viewport),"outcome image onscreen "+image.name+" "+label);
         var controls=new List<Rect>();
         foreach(var button in f.Root.GetComponentsInChildren<Button>())
         {
             var bounds=f.Bounds((RectTransform)button.transform);
             Require(bounds.width>=43.9f&&bounds.height>=43.9f,"outcome actual44px target "+button.name);
-            Require(Contained(bounds,viewport)&&Contained(bounds,dock)&&!Overlap(bounds,card),"outcome target containment "+button.name);
+            Require(Contained(bounds,viewport)&&Contained(bounds,f.Bounds((RectTransform)button.transform.parent)),
+                "outcome target stays inside its actual approved owner "+button.name+" target="+bounds+" parent="+button.transform.parent.name);
+            Require(!Overlap(bounds,card),"outcome control does not cover the actual title/recovery panel "+button.name+
+                " target="+bounds+" panel="+card);
             foreach(var prior in controls)Require(!Overlap(bounds,prior),"outcome control nonoverlap");controls.Add(bounds);
         }
         var texts=new List<Rect>();
@@ -1028,17 +1215,40 @@ public static class LastStandHudChecks
     }
     static void OutcomeWorkshopFields(OutcomeFixture f)
     {
-        var p=f.Loop.Progression;string t=f.Text("PhaseDetail").text;RequireVisible(f.Text("PhaseDetail"),"outcome visible workshop fields");
+        var p=f.Loop.Progression;string t=f.Text("PhaseDetail").text;
+        if(f.Loop.GarageCardsVisible)AssertInlineGarageFields(f.Loop,f.Root);
+        else RequireVisible(f.Text("PhaseDetail"),"outcome visible recovery workshop fields");
         Require(t.Split('\n')[0] == "Tier " + p.SelectedTier + " / Goal " + (p.SelectedTier == 1 ? 60 : 90) + "s", "workshop selected tier/goal");
         Require(t.Split('\n')[1].StartsWith("Best"), "workshop persistent best reading line");
         Require(t.Split('\n')[2] == "Cannon Attack " + p.CannonAttackLevel + "/3 / Damage " + p.CannonDamage, "workshop cannon state");
         Require(t.Split('\n')[3] == "Salvage " + p.Wallet + " / Cost " + (p.NextCost == 0 ? "MAX" : p.NextCost.ToString()), "workshop saved wallet and next cost");
         Require(t.Split('\n')[4] == "Fitting: " + (f.Art.showingLauncher ? "Auxiliary launcher" : "Field repair"), "workshop selected fitting");
         bool available=p.SaveState=="ready"&&p.ActiveRunId==0&&p.PendingDefeat==null&&p.NextCost!=0&&p.Wallet>=p.NextCost;
-        Require(f.Button("Purchase").IsInteractable()==available,"outcome complete purchase owner guards");
-        Require(f.Button("Purchase").GetComponentInChildren<Text>(true).text==(p.NextCost==0?"CANNON ATTACK MAX":available?"BUY CANNON ATTACK":"PURCHASE UNAVAILABLE"),"outcome no purchase offer at MAX/unavailable");
+        if(f.Loop.GarageCardsVisible)
+        {
+            Require(!f.Button("Purchase").IsActive(),"ready workshop exposes Upgrades instead of duplicate cannon purchase");
+            Click(f.Button("ShopEntry"));f.Refresh();var buy=f.Button("ShopCard_cannonAttackBuy");
+            var card=LastStandShopPresentation.ProjectPermanent(p,f.Art.showingLauncher?LastStandFitting.Launcher:LastStandFitting.Repair).Cards[(int)LastStandUpgradeTrackId.CannonAttack];
+            Require(buy.IsActive()&&buy.IsInteractable()==available,"actual permanent cannon card retains purchase owner guards");
+            RequireVisible(FindText(f.Root,"ShopCard_cannonAttackLevels"),"actual visible permanent cannon level");
+            Require(FindText(f.Root,"ShopCard_cannonAttackLevels").text=="Level "+p.CannonAttackLevel+" / "+card.Cap &&
+                FindText(f.Root,"ShopCard_cannonAttackPrice").text==card.PriceDescription,"actual upgrade card reports committed level and price/MAX");
+            Click(f.Button("ShopClose"));f.Refresh();
+        }
+        else
+        {
+            Require(f.Button("Purchase").IsInteractable()==available,"outcome complete recovery purchase owner guards");
+            Require(f.Button("Purchase").GetComponentInChildren<Text>(true).text==(p.NextCost==0?"CANNON ATTACK MAX":available?"BUY CANNON ATTACK":"PURCHASE UNAVAILABLE"),"outcome no purchase offer at MAX/unavailable");
+        }
         bool deploy=p.SaveState=="ready"&&f.Loop.Session.CanRun&&p.ActiveRunId==0&&p.PendingDefeat==null&&p.NextRunId!=int.MaxValue;
         Require(f.Button("Redeploy").IsInteractable()==deploy,"outcome complete Redeploy gates");
+    }
+    static void PurchaseCannon(OutcomeFixture f)
+    {
+        if(!f.Loop.GarageCardsVisible){Click(f.Button("Purchase"));return;}
+        var entry=f.Button("ShopEntry");Require(entry.IsActive()&&entry.IsInteractable(),"actual Upgrades entry available");
+        Click(entry);f.Refresh();Click(f.Button("ShopCard_cannonAttackBuy"));f.Refresh();
+        if(f.Button("ShopClose").IsActive()){Click(f.Button("ShopClose"));f.Refresh();}
     }
     static void OutcomeWorkshop()
     {
@@ -1052,15 +1262,15 @@ public static class LastStandHudChecks
                 for(int level=0;level<=3;level++)
                 {
                     OutcomeWorkshopFields(f);OutcomeGeometry(f,"workshop-level"+level);
-                    Click(f.Button("ToggleFitting"));f.Refresh();OutcomeWorkshopFields(f);
-                    if(level<3) { Click(f.Button("Purchase"));Require(f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.CannonDamage==30+10*level,"confirmed real purchase damage"); }
+                    SelectFitting(f.Loop,f.Art,f.Root,!f.Art.showingLauncher,f.Refresh);OutcomeWorkshopFields(f);
+                    if(level<3) { PurchaseCannon(f);Require(f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.CannonDamage==30+10*level,"confirmed real purchase damage"); }
                 }
-                Require(f.Loop.Progression.Wallet==0,"actual1/2/3costs consumed six");string save=f.Storage.Value;Click(f.Button("Purchase"));Require(f.Storage.Value==save,"capped pointer cannot purchase");
+                Require(f.Loop.Progression.Wallet==0,"actual1/2/3costs consumed six");string save=f.Storage.Value;PurchaseCannon(f);Require(f.Storage.Value==save,"capped pointer cannot purchase");
             }
             using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=Save(0,1,1)}))
             {
-                OutcomeWorkshopFields(f);Click(f.Button("Purchase"));Require(f.Loop.Progression.CannonDamage==30&&f.Loop.Progression.Wallet==0&&f.Loop.Progression.NextCost==2,"first actual20to30at1 and next2");
-                upgraded=f.Storage.Value;OutcomeWorkshopFields(f);string save=f.Storage.Value;Click(f.Button("Purchase"));Require(f.Storage.Value==save,"insufficient pointer cannot purchase");
+                OutcomeWorkshopFields(f);PurchaseCannon(f);Require(f.Loop.Progression.CannonDamage==30&&f.Loop.Progression.Wallet==0&&f.Loop.Progression.NextCost==2,"first actual20to30at1 and next2");
+                upgraded=f.Storage.Value;OutcomeWorkshopFields(f);string save=f.Storage.Value;PurchaseCannon(f);Require(f.Storage.Value==save,"insufficient pointer cannot purchase");
                 typeof(EncounterSession).GetField("focused",Private).SetValue(f.Loop.Session,false);f.Refresh();OutcomeWorkshopFields(f);
                 Click(f.Button("Redeploy"));Require(f.Loop.Session.Model==null&&f.Storage.Value==save,"unfocused Redeploy refused");
                 typeof(EncounterSession).GetField("focused",Private).SetValue(f.Loop.Session,true);f.Refresh();f.Deploy();Require(f.Loop.Session.Model.CommittedCannonDamage==30,"real stronger Redeploy commits30");
@@ -1079,6 +1289,7 @@ public static class LastStandHudChecks
     }
     static void OutcomeSaveTruth(OutcomeFixture f)
     {
+        if(f.Loop.GarageCardsVisible){AssertInlineGarageFields(f.Loop,f.Root);return;}
         var p=f.Loop.Progression;var status=f.Text("SaveStatus");RequireVisible(status,"outcome visible real save status");
         if(p.SaveState=="ready")Require(status.text.Split('\n')[0]=="LOCAL SAVE READY","outcome confirmed ready badge");
         else
@@ -1118,7 +1329,7 @@ public static class LastStandHudChecks
                 int wallet=f.Loop.Progression.Wallet,level=f.Loop.Progression.CannonAttackLevel,writes=f.Storage.Writes;string prior=f.Storage.Value;
                 f.Storage.DenyWrite=failure=="denied-write";f.Storage.WriteThenFailRead=failure=="write-readback";f.Storage.MismatchAfterWrite=failure=="mismatch-readback";
                 if(failure=="conflict")f.Storage.Value=Save(2,9,22);
-                if(action=="reserve")Click(f.Button("Deploy"));else if(action=="stage")f.Defeat();else if(action=="claim")Click(f.Button("Claim"));else Click(f.Button("Purchase"));
+                if(action=="reserve")Click(f.Button("Deploy"));else if(action=="stage")f.Defeat();else if(action=="claim")Click(f.Button("Claim"));else PurchaseCannon(f);
                 f.Refresh();Require(f.Loop.Progression.SaveState!="ready"&&f.Loop.Progression.Wallet==wallet&&f.Loop.Progression.CannonAttackLevel==level,"unconfirmed transaction leaves committed values "+action+" "+failure);
                 if(action=="stage")Require(f.Loop.Phase=="save-error"&&f.Loop.Progression.PendingDefeat==null&&!f.Text("PhaseDetail").text.Contains("Earned"),"unconfirmed defeat is no earned award");
                 if(action=="claim")OutcomeResultFields(f);if(action=="purchase")OutcomeWorkshopFields(f);
@@ -1140,40 +1351,126 @@ public static class LastStandHudChecks
 
     // T-08 adds input assertions to the same imported scene and owner fixtures.
     // Earlier assertions, fixtures, selectors and geometry remain unchanged.
-    static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier" };
+    static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects", "SpeedMinus", "SpeedRate", "SpeedPlus",
+        "TierPrevious","TierNext","FittingPrevious","FittingNext" };
+    static readonly string[] CoreControlIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects",
+        "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "TierPrevious","TierNext","FittingPrevious","FittingNext" };
     static readonly string[] ShopControlIds = { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
         "ShopCard_cannonAttackBuy", "ShopCard_launcherAttackBuy", "ShopCard_hullCapacityBuy", "ShopCard_armorBuy",
         "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy" };
+    static readonly string[] ModalControlIds = { "SettingsClose", "ChoicePrevious", "ChoiceNext", "SettingsTab0", "SettingsTab1", "SettingsTab2", "SettingsTab3",
+        "MenuResume", "MenuSettings", "MenuHelp", "MenuAbandon", "MenuCampaigns", "MenuAbout", "SettingsBack", "SettingsMute",
+        "MasterMinus", "MasterPlus", "EffectsMinus", "EffectsPlus", "EffectsSample", "MusicEnabled", "MusicMinus", "MusicPlus",
+        "DisplayQuality", "DisplayEffects", "DisplayFullscreen", "TutorialTips", "PurchaseSuggestions", "GameplayHelp", "DataRetry", "PreferencesRetry",
+        "DataAccount", "SettingsDefaults", "ConfirmCancel", "ConfirmProceed" };
     static Button FindOrdinaryButton(RectTransform root, string id)
     {
         Button found = null; int count = 0;
         foreach (var button in root.GetComponentsInChildren<Button>(true)) if (button.name == id) { found = button; count++; }
         Require(count == 1,"exact one ordinary Button " + id); return found;
     }
-    static void AssertOrdinaryInventory(RectTransform root, string state)
+    internal static void AssertOrdinaryInventory(RectTransform root, string state)
     {
-        var core = new HashSet<string>(InputIds); var shop = new HashSet<string>(ShopControlIds);
-        Require(core.Count == 9 && shop.Count == 11,"exact stable core9 and shop11 sets " + state);
-        foreach (string id in InputIds)
-            Require(root.Find("LastStandDock/" + id).GetComponent<Button>() == FindOrdinaryButton(root,id),
-                "unchanged exact core control path " + id + " " + state);
-        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length == 20,"exact twenty ordinary Buttons " + state);
+        var core = new HashSet<string>(CoreControlIds); var shop = new HashSet<string>(ShopControlIds);var modal=new HashSet<string>(ModalControlIds);
+        Require(core.Count==18 && shop.Count==11 && modal.Count==35,"exact stable core18/shop11/modal35 sets "+state);
+        foreach (string id in CoreControlIds)
+            Require(root.Find(CorePath(id)).GetComponent<Button>() == FindOrdinaryButton(root,id),
+                "exact approved core control path " + id + " " + state);
+        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length==64,"exact sixty-four ordinary Buttons "+state);
         foreach (var button in all)
-            Require(core.Remove(button.name) || shop.Remove(button.name),"unique complete ordinary Button union " + button.name + " " + state);
-        Require(core.Count == 0 && shop.Count == 0,"complete exact core9/shop11 sets " + state);
+            Require(core.Remove(button.name) || shop.Remove(button.name) || modal.Remove(button.name),"unique complete ordinary Button union " + button.name + " " + state);
+        Require(core.Count==0 && shop.Count==0 && modal.Count==0,"complete exact core18/shop11/modal35 sets "+state);
     }
     static readonly string[] InputStates = { "garage", "battle", "paused", "settling", "result", "workshop", "capped", "blocked", "save-error" };
     public static void RunInput()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory; int failures = 0;
         try
         {
             Case("test_visible_enabled_navigation_order", InputNavigation, ref failures);
             Case("test_keyboard_activation_and_focus_style", InputActivation, ref failures);
             Case("test_pointer_targets_match_visual_bounds", InputBounds, ref failures);
+            Case("test_effects_control_preserves_run_and_setting_state", EffectsControl, ref failures);
         }
         finally { LastStandLoopController.StorageFactory = factory; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }
         if (failures != 0) throw new InvalidOperationException("Actual input HUD assertion failures: " + failures);
+    }
+    public static void RunEffects()
+    {
+        using var preferencesScope = new LastStandTestPreferencesScope();
+        var factory = LastStandLoopController.StorageFactory; int failures = 0;
+        try { Case("test_effects_control_preserves_run_and_setting_state", EffectsControl, ref failures); }
+        finally { LastStandLoopController.StorageFactory = factory; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }
+        if (failures != 0) throw new InvalidOperationException("Actual effects HUD assertion failures: " + failures);
+    }
+    static void EffectsControl()
+    {
+        foreach (var profile in OutcomeProfiles) foreach (string state in new[] { "battle", "paused", "settling" })
+        using (var f = InputFixture(profile,state))
+        {
+            var model = f.Loop.Session.Model; string snapshot = model.Snapshot(), save = f.Storage.Value, phase = f.Loop.Phase;
+            bool muted = f.Loop.Muted, paused = f.Loop.Session.ManualPaused;
+            ReanchorInput(f);OpenSettings(f.Loop,f.Root,1,f.Refresh);
+            var button = FindOrdinaryButton(f.Root,"DisplayEffects");
+            Require(button.IsActive() && button.IsInteractable(),"Display effects setting available in " + state);
+            var label = button.GetComponentInChildren<Text>();
+            int clicks = 0; button.onClick.AddListener(() => clicks++);
+            foreach (bool submit in new[] { false, true })
+            {
+                bool previous = f.Loop.Session.View.FullEffects;
+                Require(label.text == (previous ? "EFFECTS: FULL" : "EFFECTS: REDUCED"),"effects label reads actual View state");
+                KeyboardCommand(f,"enter-first");int remaining=VisibleEnabledInput(f).Count;
+                while(EventSystem.current.currentSelectedGameObject!=button.gameObject&&remaining-->0)KeyboardCommand(f,"next");
+                SelectedInput(button,"Display effects reached and revealed by ordinary Tab navigation");
+                f.Camera.Render();Canvas.ForceUpdateCanvases();
+                var bounds = f.Bounds((RectTransform)button.transform);
+                Require(bounds.width >= 43.99f && bounds.height >= 43.99f,"effects actual 44px target");
+                Require(Contained(bounds,f.Bounds((RectTransform)f.Root.Find("SettingsModal/SettingsPanel/SettingsViewport"))),
+                    "Display effects target is fully revealed inside the actual settings mask");
+                Require(label.preferredHeight <= label.rectTransform.rect.height + .2f,"effects label fits " + profile);
+                if (submit)SubmitInput(button);
+                else
+                {
+                    Require(InputRaycast(f,new Vector2(bounds.center.x,f.Canvas.pixelRect.height-bounds.center.y),-1)==button,
+                        "Display effect pointer uses the visible settings mask and actual raycast owner");
+                    Click(button);
+                }
+                Require(clicks == (submit ? 2 : 1) && f.Loop.Session.View.FullEffects != previous,"one effects activation uses actual View owner");
+                Require(label.text == (f.Loop.Session.View.FullEffects ? "EFFECTS: FULL" : "EFFECTS: REDUCED"),"effects label immediately synchronizes");
+                Require(f.Loop.Session.Model == model && model.Snapshot() == snapshot && f.Storage.Value == save && f.Loop.Phase == phase &&
+                    f.Loop.Muted == muted && f.Loop.Session.ManualPaused == paused && f.Loop.Session.MenuPaused && f.Loop.Session.Paused,
+                    "Display effects preserves model save phase audio and both pause owners");
+            }
+            f.Loop.SetPreferences(f.Loop.Preferences.Current.With(reducedEffects:!f.Loop.Preferences.Current.ReducedEffects));
+            Require(label.text == (f.Loop.Session.View.FullEffects ? "EFFECTS: FULL" : "EFFECTS: REDUCED"),"external preference change refreshes actual Display label");
+            Click(f.Button("SettingsClose"));
+            Require(!f.Loop.MenuOpen&&!f.Loop.Session.MenuPaused&&f.Loop.Session.ManualPaused==paused&&f.Loop.Session.Paused==paused&&
+                model.Snapshot()==snapshot&&f.Storage.Value==save,"Display close releases only menu pause and preserves run/save");
+        }
+        foreach (string state in new[] { "garage", "battle", "paused", "settling", "result", "workshop", "blocked", "catch-up", "failure" })
+        using (var f = InputFixture(OutcomeProfiles[0],state == "catch-up" || state == "failure" ? "battle" : state))
+        {
+            if (state == "catch-up")
+            {
+                var clock = (LastStandRunClock)typeof(EncounterSession).GetField("runClock",Private).GetValue(f.Loop.Session);
+                f.Loop.Session.AdvanceAt(clock.LastTimestamp + 10);
+                Require(f.Loop.Session.CatchingUp,"actual catch-up disables effects setting");
+            }
+            if (state == "failure") typeof(EncounterSession).GetMethod("Fail",Private).Invoke(f.Loop.Session,new object[] { "EffectsCheck" });
+            f.Refresh();
+            bool effects = f.Loop.Session.View.FullEffects, muted = f.Loop.Muted;
+            bool manualPaused=f.Loop.Session.ManualPaused;double speed=f.Loop.Session.SelectedSpeed;
+            string save = f.Storage.Value, phase = f.Loop.Phase, snapshot = f.Loop.Session.Model?.Snapshot();
+            foreach(string id in new[]{"Pause","ToggleMute","Effects"})
+            {
+            var button=FindOrdinaryButton(f.Root,id);Require(!button.IsActive(),"legacy battlefield control hidden in "+state+" "+id);
+            int calls = 0; button.onClick.AddListener(() => calls++); Click(button); SubmitInput(button);
+            Require(calls == 0 && f.Loop.Session.View.FullEffects == effects && f.Loop.Muted == muted && f.Storage.Value == save &&
+                f.Loop.Phase == phase && f.Loop.Session.Model?.Snapshot() == snapshot && f.Loop.Session.ManualPaused==manualPaused&&
+                f.Loop.Session.SelectedSpeed==speed,"hidden legacy pointer/Submit cannot change any owner " + state+" "+id);
+            }
+        }
     }
     static OutcomeFixture InputFixture(Vector2Int profile, string state)
     {
@@ -1186,7 +1483,7 @@ public static class LastStandHudChecks
         Require(EventSystem.current != null,"actual scene EventSystem available");
         Invoke(f.Canvas.GetComponent<GraphicRaycaster>(),"OnEnable");
         if (state == "battle" || state == "paused" || state == "settling" || state == "result" || state == "save-error") f.Deploy();
-        if (state == "paused") { ReanchorInput(f); f.Loop.TogglePause(); }
+        if (state == "paused") { ReanchorInput(f); Click(f.Button("SpeedRate"));Require(f.Loop.Session.ManualPaused,"actual rate button establishes manual pause"); }
         if (state == "settling" || state == "result") { InputDefeat(f); if (state == "result") f.FinishSettling(); }
         if (state == "save-error") { storage.DenyWrite = true; InputDefeat(f); }
         f.Refresh(); EventSystem.current.SetSelectedGameObject(null); return f;
@@ -1291,10 +1588,18 @@ public static class LastStandHudChecks
                     state+" textual disabled cue with no false selected outline "+id);
             }
         }
-        foreach (string id in InputIds)
-        using (var f = InputFixture(OutcomeProfiles[0],id == "Claim" ? "result" : id == "Purchase" || id == "Redeploy" ? "workshop" : id == "RetrySave" ? "blocked" : id == "Pause" ? "battle" : "garage"))
+        foreach (string id in new[]{"Deploy","Claim","Redeploy","RetrySave","SpeedRate",
+            "TierPrevious","TierNext","FittingPrevious","FittingNext"})
+        using (var f = InputFixture(OutcomeProfiles[0],id == "Claim" ? "result" : id == "Redeploy" ? "workshop" : id == "RetrySave" ? "blocked" :
+            id == "SpeedRate" ? "battle" : "garage"))
         {
-            if (id == "ToggleTier") { f.Deploy(); f.Defeat(); f.FinishSettling(); f.Loop.Claim(); f.Refresh(); }
+            if(id=="TierPrevious"||id=="TierNext")
+            {
+                Require(f.Loop.Progression.TryDeploy()&&f.Loop.Progression.TryStageDefeat(1200,1)&&f.Loop.Progression.TryClaim(),
+                    "keyboard tier fixture unlocks via the actual saved outcome and claim owner");
+                f.Refresh();if(id=="TierPrevious"){Click(f.Button("TierNext"));f.Refresh();}
+            }
+            if(id=="FittingPrevious")SelectFitting(f.Loop,f.Art,f.Root,true,f.Refresh);
             var b = f.Button(id); Require(b.IsActive() && b.IsInteractable(),"actual eligible action "+id);
             EventSystem.current.SetSelectedGameObject(b.gameObject);
             var text = b.GetComponentInChildren<Text>(true); var outline = b.GetComponent<Outline>();
@@ -1304,21 +1609,52 @@ public static class LastStandHudChecks
             ExecuteEvents.Execute(b.gameObject,pointer,ExecuteEvents.pointerDownHandler);
             Require(text.fontStyle == FontStyle.BoldAndItalic && outline.enabled,id+" distinct non-color press cue");
             ExecuteEvents.Execute(b.gameObject,pointer,ExecuteEvents.pointerUpHandler);
-            int calls = 0; b.onClick.AddListener(()=>calls++); bool attachment = f.Art.showingLauncher, muted = f.Loop.Muted;
-            int wallet = f.Loop.Progression.Wallet, level = f.Loop.Progression.CannonAttackLevel;
+            int calls = 0; b.onClick.AddListener(()=>calls++); bool attachment = f.Art.showingLauncher;
+            int wallet = f.Loop.Progression.Wallet;
             if (id == "RetrySave") f.Storage.DenyRead = false;
-            if (id == "Pause") ReanchorInput(f);
+            if (id == "SpeedRate") ReanchorInput(f);
             SubmitInput(b); Require(calls == 1,"one native Button Submit callback "+id);
             if (b.IsActive() && b.IsInteractable())
                 Require(text.fontStyle == FontStyle.BoldAndItalic && outline.enabled,id+" native keyboard press has non-color cue");
-            if (id == "ToggleFitting") Require(f.Art.showingLauncher != attachment && f.Loop.Session.Model == null,"Submit existing fitting owner");
+            if (id == "FittingPrevious" || id=="FittingNext")
+            {
+                Require(f.Art.showingLauncher!=attachment && f.Loop.FittingId==(id=="FittingNext"?"launcher":"repair") &&
+                    f.Loop.MenuPage=="" && f.Loop.Session.Model==null && f.Loop.Progression.Wallet==wallet,
+                    "one native inline arrow Submit selects the exact fitting without modal, progression or run");
+            }
             if (id == "Deploy" || id == "Redeploy") Require(f.Loop.Phase == "battle" && f.Loop.Progression.ActiveRunId != 0 && f.Loop.Session.Model != null,"Submit existing run owner");
             if (id == "Claim") { Require(f.Loop.Phase == "workshop" && f.Loop.Progression.Wallet == wallet+1 && f.Loop.Progression.PendingDefeat == null,"Submit one manual Claim"); SubmitInput(b); Require(calls == 1 && f.Loop.Progression.Wallet == wallet+1,"hidden claimed control cannot award twice"); }
-            if (id == "Purchase") Require(f.Loop.Progression.CannonAttackLevel == level+1 && f.Loop.Progression.Wallet == wallet-1,"Submit existing saved purchase owner");
             if (id == "RetrySave") Require(f.Loop.Progression.SaveState == "ready" && !b.gameObject.activeInHierarchy,"Submit existing storage recovery owner");
-            if (id == "Pause") Require(f.Loop.Session.Paused && text.text == "RESUME","Submit existing Pause owner and active textual state");
-            if (id == "ToggleTier") Require(f.Loop.Progression.SelectedTier == 2 && f.Loop.Progression.ActiveRunId == 0, "Submit selects the unlocked tier without deployment");
-            if (id == "ToggleMute") Require(f.Loop.Muted != muted && text.text == (f.Loop.Muted ? "SOUND OFF" : "SOUND ON"),"Submit existing mute owner and active textual state");
+            if (id == "SpeedRate") Require(f.Loop.Session.ManualPaused && text.text == "0x\nPAUSED","Submit rate control uses existing Pause owner and visible state");
+            if (id == "TierPrevious" || id=="TierNext")
+            {
+                Require(f.Loop.Progression.SelectedTier==(id=="TierNext"?2:1) && f.Loop.Progression.ActiveRunId==0 &&
+                    f.Loop.Session.Model==null && f.Loop.MenuPage=="",
+                    "one native inline arrow Submit selects the exact unlocked tier without modal or deployment");
+            }
+        }
+        using(var f=InputFixture(OutcomeProfiles[0],"paused"))
+        {
+            string snapshot=f.Loop.Session.Model.Snapshot(),save=f.Storage.Value;bool muted=f.Loop.Muted;
+            ReanchorInput(f);OpenSettings(f.Loop,f.Root,0,f.Refresh);var sound=f.Button("SettingsMute");
+            KeyboardCommand(f,"enter-first");int remaining=VisibleEnabledInput(f).Count;
+            while(EventSystem.current.currentSelectedGameObject!=sound.gameObject&&remaining-->0)KeyboardCommand(f,"next");
+            SelectedInput(sound,"Audio sound control reached by ordinary keyboard navigation");
+            int calls=0;sound.onClick.AddListener(()=>calls++);SubmitInput(sound);
+            Require(calls==1&&f.Loop.Muted!=muted&&sound.GetComponentInChildren<Text>().text==(f.Loop.Muted?"MASTER SOUND: OFF":"MASTER SOUND: ON"),
+                "one native Audio Submit changes the actual preference owner and label");
+            Click(f.Button("SettingsClose"));Require(f.Loop.Session.ManualPaused&&f.Loop.Session.Paused&&!f.Loop.Session.MenuPaused&&
+                !f.Loop.MenuOpen&&f.Loop.Session.Model.Snapshot()==snapshot&&f.Storage.Value==save,"Audio keyboard journey preserves manual pause/run/save");
+        }
+        using(var f=InputFixture(OutcomeProfiles[0],"workshop"))
+        {
+            SubmitInput(f.Button("ShopEntry"));f.Refresh();var buy=f.Button("ShopCard_cannonAttackBuy");
+            Require(buy.IsActive()&&buy.IsInteractable(),"Upgrades exposes actual eligible cannon card to keyboard");
+            EventSystem.current.SetSelectedGameObject(buy.gameObject);int calls=0;buy.onClick.AddListener(()=>calls++);
+            int wallet=f.Loop.Progression.Wallet,level=f.Loop.Progression.CannonAttackLevel;
+            SubmitInput(buy);
+            Require(calls==1&&f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.Wallet==wallet-1,
+                "one native upgrade-card Submit uses the existing saved purchase owner");
         }
     }
     static Button InputRaycast(OutcomeFixture f, Vector2 point, int pointerId)
@@ -1349,17 +1685,43 @@ public static class LastStandHudChecks
                     Require(InputRaycast(f,new Vector2(position.x,f.Canvas.pixelRect.height-position.y),pointerId) != b,"actual pointer/touch cannot activate beyond reported visual bounds "+b.name);
                 KeyboardCommand(f,"next");
             }
-            var mute = f.Button("ToggleMute"); var rect = f.Bounds((RectTransform)mute.transform);
-            int callbacks = 0; mute.onClick.AddListener(()=>callbacks++);
+            if(f.Loop.GarageCardsVisible)
+            {
+                string save=f.Storage.Value;int writes=f.Storage.Writes;
+                foreach(int pointerId in new[]{-1,0})
+                {
+                    bool prior=f.Art.showingLauncher;var arrow=f.Button(prior?"FittingPrevious":"FittingNext");
+                    var targetBounds=f.Bounds((RectTransform)arrow.transform);int arrowCallbacks=0;arrow.onClick.AddListener(()=>arrowCallbacks++);
+                    var pointer=new PointerEventData(EventSystem.current){position=new Vector2(targetBounds.center.x,f.Canvas.pixelRect.height-targetBounds.center.y),
+                        pointerId=pointerId,button=PointerEventData.InputButton.Left};
+                    Require(InputRaycast(f,pointer.position,pointerId)==arrow,"inline fitting uses the same mouse/touch raycast owner");
+                    ExecuteEvents.Execute(arrow.gameObject,pointer,ExecuteEvents.pointerDownHandler);
+                    ExecuteEvents.Execute(arrow.gameObject,pointer,ExecuteEvents.pointerUpHandler);
+                    ExecuteEvents.Execute(arrow.gameObject,pointer,ExecuteEvents.pointerClickHandler);
+                    Require(arrowCallbacks==1&&f.Art.showingLauncher!=prior&&f.Loop.FittingId==(prior?"repair":"launcher")&&f.Loop.MenuPage=="",
+                        "one actual mouse/touch activation selects exact inline fitting");
+                    Require(f.Bounds((RectTransform)arrow.transform)==targetBounds&&f.Storage.Value==save&&f.Storage.Writes==writes,
+                        "inline activation preserves target geometry and gameplay save");
+                }
+                Debug.Log("ST_LS_HUD_INPUT_BOUNDS "+profile+" "+state+" enabled="+enabled.Count);continue;
+            }
+            var menu = f.Button("Menu"); var rect = f.Bounds((RectTransform)menu.transform);
+            int callbacks = 0; menu.onClick.AddListener(()=>callbacks++);
             foreach (int pointerId in new[] { -1,0 })
             {
-                bool prior = f.Loop.Muted; var pointer = new PointerEventData(EventSystem.current) { position = new Vector2(rect.center.x,f.Canvas.pixelRect.height-rect.center.y), pointerId = pointerId, button = PointerEventData.InputButton.Left };
-                var target = InputRaycast(f,pointer.position,pointerId); Require(target == mute,"same actual pointer owner");
+                bool manualPaused=f.Loop.Session.ManualPaused;string snapshot=f.Loop.Session.Model?.Snapshot(),save=f.Storage.Value;
+                if(f.Loop.Session.Model!=null)ReanchorInput(f);
+                var pointer = new PointerEventData(EventSystem.current) { position = new Vector2(rect.center.x,f.Canvas.pixelRect.height-rect.center.y), pointerId = pointerId, button = PointerEventData.InputButton.Left };
+                var target = InputRaycast(f,pointer.position,pointerId); Require(target == menu,"same floating Menu mouse/touch owner");
                 ExecuteEvents.Execute(target.gameObject,pointer,ExecuteEvents.pointerDownHandler);
                 ExecuteEvents.Execute(target.gameObject,pointer,ExecuteEvents.pointerUpHandler);
                 int priorCalls = callbacks; ExecuteEvents.Execute(target.gameObject,pointer,ExecuteEvents.pointerClickHandler);
-                Require(callbacks == priorCalls+1 && f.Loop.Muted != prior,"single mouse/touch activation original owner");
-                Require(f.Bounds((RectTransform)mute.transform) == rect,"activation retains target bounds");
+                Require(callbacks == priorCalls+1 && f.Loop.MenuPage=="menu","single mouse/touch activation opens the actual menu");
+                if(f.Loop.Session.Model!=null)Require(f.Loop.Session.MenuPaused&&f.Loop.Session.Paused,"Menu pointer holds active run");
+                Click(f.Button("SettingsClose"));
+                Require(!f.Loop.MenuOpen&&!f.Loop.Session.MenuPaused&&f.Loop.Session.ManualPaused==manualPaused&&
+                    f.Loop.Session.Model?.Snapshot()==snapshot&&f.Storage.Value==save,"Menu pointer round trip preserves manual pause/model/save");
+                Require(f.Bounds((RectTransform)menu.transform) == rect,"Menu round trip retains target bounds");
             }
             Debug.Log("ST_LS_HUD_INPUT_BOUNDS "+profile+" "+state+" enabled="+enabled.Count);
         }

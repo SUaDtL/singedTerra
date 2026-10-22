@@ -241,6 +241,62 @@ function deferred<T>() {
 }
 
 describe('Lobby account composition', () => {
+  it('opens the existing account panel from the exact Last Stand route without syncing progression', () => {
+    window.history.replaceState(null, '', '/#account/last-stand')
+    localStorage.setItem('singedTerra.lastStand.prototype.v1', 'preserved-local-progress')
+    const root = document.createElement('div')
+    const lobby = new Lobby(root, vi.fn(), (change) => new FakeAccountSession(change))
+    lobby.show()
+    expect(root.querySelector('[role="dialog"][aria-label="Player account"]')).not.toBeNull()
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull()
+    expect(localStorage.getItem('singedTerra.lastStand.prototype.v1')).toBe('preserved-local-progress')
+    expect(window.location.hash).toBe('')
+  })
+
+  it('explains unavailable accounts on the Last Stand route and closes back to the selected campaign', async () => {
+    window.history.replaceState(null, '', '/#account/last-stand')
+    localStorage.setItem('singedTerra.lastStand.prototype.v1', 'preserved-local-progress')
+    const root = document.createElement('div')
+    document.body.append(root)
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (change) => {
+      account = new FakeAccountSession(change, { status: 'unavailable', busy: false, error: '' })
+      return account
+    })
+    lobby.show()
+    await Promise.resolve()
+
+    const dialog = root.querySelector<HTMLElement>('[role="dialog"][aria-label="Player account"]')
+    expect(dialog).not.toBeNull()
+    expect(dialog?.textContent).toContain('Account services are unavailable')
+    expect(dialog?.textContent).toContain('Last Stand progress stays in this browser')
+    expect(dialog?.textContent).toContain('does not sync with an account')
+    expect(dialog?.querySelector('form')).toBeNull()
+    expect(root.querySelector('[data-command-item="last-stand"]')?.getAttribute('aria-current')).toBe('true')
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull()
+    expect(window.location.hash).toBe('')
+    expect(dialog?.contains(document.activeElement)).toBe(true)
+
+    dialog!.querySelector<HTMLButtonElement>('.lobby-overlay__close')!.click()
+    await Promise.resolve()
+    expect(root.querySelector('[role="dialog"][aria-label="Player account"]')).toBeNull()
+    expect(root.querySelector('[data-last-stand-command-view]')).not.toBeNull()
+    expect(root.querySelector('[data-command-item="last-stand"]')?.getAttribute('aria-current')).toBe('true')
+    expect(root.contains(document.activeElement)).toBe(true)
+    expect(root.querySelector('.account-panel')).toBeNull()
+    expect(localStorage.getItem('singedTerra.lastStand.prototype.v1')).toBe('preserved-local-progress')
+    expect(account.submit).not.toHaveBeenCalled()
+    expect(account.signOut).not.toHaveBeenCalled()
+  })
+
+  it('does not open an account from a similar Last Stand fragment', () => {
+    window.history.replaceState(null, '', '/#account/last-stand/extra')
+    const root = document.createElement('div')
+    new Lobby(root, vi.fn(), (change) => new FakeAccountSession(change)).show()
+    expect(root.querySelector('[role="dialog"][aria-label="Player account"]')).toBeNull()
+    expect(window.location.hash).toBe('#account/last-stand/extra')
+  })
+
   it('opens the Last Stand campaign from an explicit return URL and consumes the signal', () => {
     window.history.replaceState(null, '', '/#campaigns/last-stand')
     sessionStorage.setItem('singedterra.command-center.selection.v1', JSON.stringify({

@@ -41,6 +41,7 @@ namespace SingedTerra.Encounter
         public void Initialize(TankPresentation presentation)
         {
             owner = presentation; cube = CreateCube();
+            owner.SetEncounterEffects(FullEffects);
             repairMeshes = owner.repairModule.GetComponentsInChildren<Renderer>(true);
             launcherMeshes = owner.launcherModule.GetComponentsInChildren<Renderer>(true);
             var basis = owner.tank.GetComponentInChildren<Renderer>().sharedMaterial;
@@ -156,6 +157,7 @@ namespace SingedTerra.Encounter
         {
             FullEffects = !FullEffects;
             reviewVisuals?.SetEffects(FullEffects);
+            owner.SetEncounterEffects(FullEffects);
             for (int i = 0; i < life.Length; i++) { life[i] = 0; trails[i].enabled = false; }
         }
         public void Clear()

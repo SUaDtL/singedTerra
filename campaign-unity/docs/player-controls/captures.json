@@ -1,0 +1,80 @@
+{
+  "scope": "Unaltered source-bound Chromium captures; repair subset and separate launcher recovery. No physical-device, listening, native or owner acceptance claim.",
+  "build": "Web-20261022T063027Z-a994fe",
+  "reports": {
+    "touch": {
+      "rawResult": "campaign-unity/Evidence/player-controls/touch-2026-10-22T06-39-32-067Z/result.json",
+      "rawResultSha256": "c33aa68b35b6b98e2a583111837b08d0eccbf30cdfa8066ccbc13d5a46ef45c6",
+      "status": "pass"
+    },
+    "repair": {
+      "rawResult": "campaign-unity/Evidence/player-controls/garage-20261022T063027Z-a994fe/result.json",
+      "rawResultSha256": "87b4058c3a2193c4aee85880a46274e583a0ae92804c63b7babdac4dd23430ae",
+      "status": "failed",
+      "selectedRun": "repair",
+      "selectedRunStatus": "pass",
+      "note": "The overall report remains failed because its launcher audio analyser missed a transient; only the passing repair subset supplies these captures."
+    },
+    "launcher": {
+      "rawResult": "campaign-unity/Evidence/player-controls/garage-launcher-20261022T063027Z-a994fe/result.json",
+      "rawResultSha256": "636256426b1967f9bac2fcbf4aa269308dc47b71e2d3973495fb5ffc866a5ca9",
+      "status": "pass"
+    }
+  },
+  "captures": [
+    {
+      "path": "campaign-unity/docs/player-controls/portrait-controls.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/touch-2026-10-22T06-39-32-067Z/portrait-paused.png",
+      "sha256": "4acaf40db87f1bfe1e9757ba3163a86c03b2d6abfcc261bb0ce835a720611312",
+      "report": "touch"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/portrait-settings.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/touch-2026-10-22T06-39-32-067Z/portrait-tab-0.png",
+      "sha256": "78ec161f16335c1618889636af863625d69b15148317a45c7f29efe34f1d7ec2",
+      "report": "touch"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/landscape-settings.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/touch-2026-10-22T06-39-32-067Z/landscape-audio.png",
+      "sha256": "f83c15d69409b058275c7677c5479dc409b905f6ad706cf0221bd66e1105eabb",
+      "report": "touch"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/garage-desktop.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/garage-20261022T063027Z-a994fe/repair-tier-current-1366.png",
+      "sha256": "9dd2a7a818af950042a63d38f57f8b92f373088334912c82d09e04498cb4c74b",
+      "report": "repair"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/garage-portrait.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/garage-20261022T063027Z-a994fe/repair-tier-current-390.png",
+      "sha256": "a64bcb3157e6d1cd01fd04884564b6752d81dbf04d811aa463fbb09b20212b60",
+      "report": "repair"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/garage-launcher.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/garage-launcher-20261022T063027Z-a994fe/launcher-fitting-selected.png",
+      "sha256": "4390d089223b765762153f853c6dae7bacbf5c6ff9a7d50378968fc7234fbb73",
+      "report": "launcher"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/garage-tier-preview.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/garage-20261022T063027Z-a994fe/repair-tier-locked-preview-1366.png",
+      "sha256": "befe06db8dd23e586f262196f974215ea199a9da0c9bb3f137208c38108779f5",
+      "report": "repair"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/combat-desktop.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/garage-20261022T063027Z-a994fe/repair-battle-paused-1920.png",
+      "sha256": "5fc0d35cd56442a5340f9fcd7e06e7ec25cb4f4d60a3b2415bc75595bbda6513",
+      "report": "repair"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/combat-landscape.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/touch-2026-10-22T06-39-32-067Z/landscape-paused.png",
+      "sha256": "245ab2f5e887784fb372e2ec5005baffe7723820e1082f80da7900c96045b8e8",
+      "report": "touch"
+    }
+  ]
+}

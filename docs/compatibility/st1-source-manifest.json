@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged; Lobby verified storage acquisition made lazy; Last Stand Campaigns entry and exact return fragment affect menu selection only; explicit invite/rejoin and validated imported ST1 challenge retain priority; package prebuild verifies the receipt-bound Unity Web payload; ST1 token parsing, launch configuration, medium CPU policy and deterministic replay unchanged",
+  "disposition": "Ash Road is retired: remove its client, content, save/replay, presentation and conditional engine branches. Reject stale campaign launch descriptors before ordinary client construction. Campaigns offers only Last Stand; exact retired fragment and remembered Ash Road selections recover to Last Stand without opening or modifying historical gameplay storage. Fresh Skirmish startup, explicit invite/rejoin and validated imported ST1 challenge priority remain. Independent review of the nine changed bound sources found ordinary simulation arithmetic and ordering, medium ST1 CPU policy, launch configuration, token parsing and network admission unchanged. Frozen ordinary transcripts, settled snapshots, clone futures, verified tuples and retained cq1 compatibility passed; corrupted-fixture negative controls still reject. Existing reviewed weapon-study, account-return, security dependency and Unity payload admission changes remain in force. All 32 source memberships and strict drift checks are retained.",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -32,7 +32,7 @@
     },
     {
       "path": "client/src/client/createModeClient.ts",
-      "sha256": "629b5253f2cc9be7bca592abe881740d1269be7ac7516c4acb9bbbc9b4cdf1b0"
+      "sha256": "1b359dd3e28bc2c3ceb4ce165c6fd17619e7f725b7c39021d559b196a8e5aed1"
     },
     {
       "path": "client/src/client/fastForward.ts",
@@ -56,7 +56,7 @@
     },
     {
       "path": "client/src/client/modeConfig.ts",
-      "sha256": "b688a0615e41c7ab046a2e144f0ae59e03961cbd580dbd9246f6eaf346a49326"
+      "sha256": "6393a020ce6c79018ef7451d6b2ddd0a944dcb2a0d48acfdc9c9dcf7a5dacede"
     },
     {
       "path": "client/src/client/practiceFieldOrder.ts",
@@ -76,15 +76,15 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "e92bf55f93e5ba5f457fa069a09c4cc0802c27f7711bb27bb3ad99e2a7932ac8"
+      "sha256": "08612b88570fffc8e2675664822008433ca8aeded7e8628a68742a2ca1e6f440"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "9bc1b787afc3f09448eeb0f8bd933fde61093d68f5ce4a363524f87dcadfa8d3"
+      "sha256": "b820d8d704c6d342199186e533fbb2977dde9f0704424dd1a856298dabcec4e2"
     },
     {
       "path": "package.json",
-      "sha256": "0307365d4f356f24bc9f97040c4919cc2160b3ca56964c762964cb914c25bc92"
+      "sha256": "36299d5d5269acd68033376af0775758044cdb4306cdbbc3735088d584e26ce1"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",
@@ -92,7 +92,7 @@
     },
     {
       "path": "shared/src/engine/AI.ts",
-      "sha256": "00fa3ef29e470fda6386f55f357d27d079b989bc6fbb691c33efab717c1cf172"
+      "sha256": "ed2f96d9fc50fbdbd808b25eecf707a2dc28daf5cb583843a7f4f349ee8c66a0"
     },
     {
       "path": "shared/src/engine/AiShotSearch.ts",
@@ -104,15 +104,15 @@
     },
     {
       "path": "shared/src/engine/GameEngine.ts",
-      "sha256": "02e0e9d0aa7e76eee7f46d52299f59698b1714b2349f7b68ca61a78b67234a5f"
+      "sha256": "0c46aa54236595118255202757a4bd39cbd69616fb158c45a8642d94f5b0ae3b"
     },
     {
       "path": "shared/src/engine/Movement.ts",
-      "sha256": "8946ed1d9ee7fd4016f974b79d1b385dfb8cb22fbffcdbd6ac55abf8517b4121"
+      "sha256": "4593000aaea37a36da48fb1b7b966d58b25aae39a7ed4fa2569f9622714ecee2"
     },
     {
       "path": "shared/src/engine/Physics.ts",
-      "sha256": "f4282d3aa6141c9a98ce199f1beae63846e165ed4330501aca874a4ac4b1baff"
+      "sha256": "8ae81c7ab687ac7ef5d0159e9074345ed93b0768704573239aed6a3a4069570e"
     },
     {
       "path": "shared/src/engine/Random.ts",
@@ -144,7 +144,7 @@
     },
     {
       "path": "shared/src/types/GameState.ts",
-      "sha256": "35dbc6029d39b95138769ad939a0375b47ffba086bc0d5ab50487940e00c98bf"
+      "sha256": "29bedf036c617501911eb123ae3830c13a37d15e78a1b5fb422a450c572546ac"
     },
     {
       "path": "shared/src/types/PlayerAction.ts",

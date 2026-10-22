@@ -204,9 +204,16 @@ const html = JSON.parse(process.argv[1]);
       assert.equal(await page.evaluate(()=>document.activeElement.id),'unity-canvas','native Tab returns from anchor to Canvas');
       assert.deepEqual(await page.evaluate(()=>window.calls),[['LastStandLoopHud','NavigateKeyboard','enter-first']]);
       await page.evaluate(()=>window.dispatchEvent(new Event('st-last-stand-keyboard-exit')));
+      await page.evaluate(()=>{window.calls=[];window.nativeKeys=[]});
       await page.keyboard.press('Enter');
-      await page.waitForURL('http://wrapper.test/#campaigns/last-stand');
-      assert.equal(await page.evaluate(()=>window.nativeKeys.filter(x=>x[1]==='Enter').length),0,'native Return activation does not activate Unity');
+      assert.equal(page.url(),'http://wrapper.test/last-stand/','live Unity owns confirmation before Return navigation');
+      assert.deepEqual(await page.evaluate(()=>window.calls),[
+        ['LastStandLoopHud','NavigateKeyboard','enter-first'],['LastStandBrowserBridge','RequestReturn','']],
+        'Return restores Canvas focus and sends one request to the existing confirmation owner');
+      // Return moves focus to Canvas on click; its later keyup may arrive there.
+      // Only a keydown/keypress can trigger the existing native Submit binding.
+      assert.equal(await page.evaluate(()=>window.nativeKeys.filter(x=>x[1]==='Enter'&&x[0]!=='keyup').length),0,
+        'native Return activation does not submit a newly focused Unity control');
       await page.close();
     }
   } finally {await browser.close()}

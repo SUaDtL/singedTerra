@@ -92,7 +92,7 @@ export function startingState(engine) {
 export function sampleShot(source, weapon, aim, { tickLimit = DEFAULT_TICK_LIMIT, terrain = false } = {}) {
   integer(tickLimit, 1, 20000, 'tickLimit');
   const initial = source.getState();
-  if (initial.totalRounds !== 1 || initial.campaign || initial.phase !== 'PLAYER_TURN') {
+  if (initial.totalRounds !== 1 || initial.phase !== 'PLAYER_TURN') {
     throw new Error('Balance probes require an actionable single-round classic engine');
   }
   const actor = initial.tanks.find((tank) => tank.id === initial.activePlayerId);

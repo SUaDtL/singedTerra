@@ -26,7 +26,7 @@ class TierCalibrationTests(unittest.TestCase):
                 executable = output / f"Tier{tier}.exe"
                 sources = [SCRIPTS / name for name in (
                     "EncounterModel.cs", "EncounterProfile.cs", "LastStandTierCatalog.cs",
-                    "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs"
+                    "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs"
                 )] + [Path(__file__).with_name("TierCalibrationChecks.cs")]
                 build = subprocess.run([str(MONO), str(CSC), "-nologo", f"-out:{executable}",
                                         *map(str, sources)], capture_output=True, text=True,

@@ -106,7 +106,7 @@ export function sampleShieldExchange(source, {
   member(subjectId, ['p1', 'p2'], 'subject seat');
   integer(tickLimit, 1, 20_000, 'tickLimit');
   const initial = source.getState();
-  if (initial.campaign || initial.totalRounds !== 1 || initial.phase !== 'PLAYER_TURN'
+  if (initial.totalRounds !== 1 || initial.phase !== 'PLAYER_TURN'
     || initial.activePlayerId !== 'p1' || initial.tanks.length !== 2
     || initial.tanks.some((tank, i) => tank.id !== `p${i + 1}` || !tank.alive || tank.buried
       || tank.team === 1 || tank.team === 2 || tank.powerCap !== 100)) {

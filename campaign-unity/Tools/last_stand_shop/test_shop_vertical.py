@@ -54,7 +54,7 @@ class ShopVerticalTests(unittest.TestCase):
             cls.evidence.mkdir(parents=True, exist_ok=False)
         sources = [SCRIPTS / name for name in (
             "MechanicsShopModel.cs", "LastStandTierCatalog.cs", "EncounterModel.cs", "EncounterProfile.cs",
-            "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs",
+            "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
         )]
         catalog = SCRIPTS / "LastStandUpgradeCatalog.cs"
         cls.fault_fixture = None
@@ -144,6 +144,9 @@ class ShopVerticalTests(unittest.TestCase):
 
     def test_catalog_exact_tracks_and_effects(self):
         self.case("catalog_exact_tracks_and_effects")
+
+    def test_catalog_intervals_use_seconds_without_rounding_levels(self):
+        self.case("catalog_intervals_use_seconds_without_rounding_levels")
 
     def test_catalog_caps_prices_and_fitting(self):
         self.case("catalog_caps_prices_and_fitting")

@@ -1,0 +1,1247 @@
+{
+  "scope": "Derived summary of actual headless Web progression observations; no native or human acceptance.",
+  "raw_result": {
+    "path": "campaign-unity/Evidence/first-session-polish/both-fittings-combat-20261021/result.json",
+    "sha256": "13f46df1df2ac67eac3424657bb411616c455790be8be633fb5a75fe1192f83e"
+  },
+  "fittings": [
+    {
+      "fitting": "repair",
+      "status": "pass",
+      "normalSpeed": true,
+      "seeded": false,
+      "errors": [],
+      "profiles": [
+        {
+          "label": "garage",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "garage",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "garage",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "garage",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "garage",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "combat",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "combat",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "combat",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "combat",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "combat",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "goal-met-live",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "goal-met-live",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "goal-met-live",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "saved-result",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "saved-result",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "saved-result",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "saved-result",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "saved-result",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "actions": [
+        {
+          "name": "ShopEntry",
+          "x": 994.9999694824219,
+          "y": 721.9999980926514,
+          "load": 1,
+          "at": 1792574445255
+        },
+        {
+          "name": "ShopTabAttack",
+          "x": 78.66666412353516,
+          "y": 198,
+          "load": 1,
+          "at": 1792574446575
+        },
+        {
+          "name": "ShopTabDefense",
+          "x": 192.00003814697266,
+          "y": 198,
+          "load": 1,
+          "at": 1792574449645
+        },
+        {
+          "name": "ShopTabUtility",
+          "x": 305.3333435058594,
+          "y": 198,
+          "load": 1,
+          "at": 1792574452717
+        },
+        {
+          "name": "scroll-to-ShopCard_fieldRepairBuy",
+          "load": 1,
+          "from": 0,
+          "to": 69.99999237060547
+        },
+        {
+          "name": "scroll-to-ShopCard_fieldRepairBuy",
+          "load": 1,
+          "from": 69.99999237060547,
+          "to": 100
+        },
+        {
+          "name": "ShopClose",
+          "x": 338.0000305175781,
+          "y": 150,
+          "load": 1,
+          "at": 1792574471399
+        },
+        {
+          "name": "Deploy",
+          "x": 527,
+          "y": 721.9999980926514,
+          "load": 1,
+          "at": 1792574472651
+        },
+        {
+          "name": "Pause",
+          "x": 803.9999389648438,
+          "y": 721.9999370574951,
+          "load": 1,
+          "at": 1792574529183
+        },
+        {
+          "name": "ShopEntry",
+          "x": 1271.9998779296875,
+          "y": 721.9999370574951,
+          "load": 1,
+          "at": 1792574532011
+        },
+        {
+          "name": "ShopTabAttack",
+          "x": 78.66666412353516,
+          "y": 198,
+          "load": 1,
+          "at": 1792574533669
+        },
+        {
+          "name": "ShopTabDefense",
+          "x": 192.00003814697266,
+          "y": 198,
+          "load": 1,
+          "at": 1792574537490
+        },
+        {
+          "name": "ShopTabUtility",
+          "x": 305.3333435058594,
+          "y": 198,
+          "load": 1,
+          "at": 1792574541237
+        },
+        {
+          "name": "scroll-to-ShopCard_fieldRepairBuy",
+          "load": 1,
+          "from": 0,
+          "to": 70
+        },
+        {
+          "name": "scroll-to-ShopCard_fieldRepairBuy",
+          "load": 1,
+          "from": 70,
+          "to": 140
+        },
+        {
+          "name": "scroll-to-ShopCard_fieldRepairBuy",
+          "load": 1,
+          "from": 140,
+          "to": 153
+        },
+        {
+          "name": "scroll-to-ShopCard_cannonCycleBuy",
+          "load": 1,
+          "from": 140,
+          "to": 70.00000762939453
+        },
+        {
+          "name": "scroll-to-ShopCard_fieldRepairBuy",
+          "load": 1,
+          "from": 70.00000762939453,
+          "to": 140
+        },
+        {
+          "name": "ShopClose",
+          "x": 338.0000305175781,
+          "y": 150,
+          "load": 1,
+          "at": 1792574579265
+        },
+        {
+          "name": "Pause",
+          "x": 803.9999389648438,
+          "y": 721.9999370574951,
+          "load": 1,
+          "at": 1792574580801
+        },
+        {
+          "name": "Claim",
+          "x": 605,
+          "y": 721.9999980926514,
+          "load": 2,
+          "at": 1792574617517
+        },
+        {
+          "name": "Purchase",
+          "x": 506.1999816894531,
+          "y": 669.9999389648438,
+          "load": 2,
+          "at": 1792574618708
+        },
+        {
+          "name": "Deploy",
+          "x": 527,
+          "y": 721.9999980926514,
+          "load": 3,
+          "at": 1792574623455
+        },
+        {
+          "name": "ToggleFitting",
+          "x": 371,
+          "y": 721.9999980926514,
+          "load": 4,
+          "at": 1792574629186
+        },
+        {
+          "name": "ToggleTier",
+          "x": 839,
+          "y": 721.9999980926514,
+          "load": 4,
+          "at": 1792574630378
+        },
+        {
+          "name": "Deploy",
+          "x": 527,
+          "y": 721.9999980926514,
+          "load": 4,
+          "at": 1792574632067
+        }
+      ],
+      "storage": [
+        {
+          "label": "initial",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":1,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 1,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 0,
+                "bestKills1": 0,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": false
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 1
+        },
+        {
+          "label": "goal-live",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 2,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 0,
+                "bestKills1": 0,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": false
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 1
+        },
+        {
+          "label": "terminal",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1557,\"bestKills1\":28,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":{\"runId\":1,\"elapsedTicks\":1557,\"kills\":28,\"reward\":1,\"tier\":1,\"profileVersion\":\"tier-goals-v1\",\"isLimit\":false,\"newBestTime\":true,\"newBestKills\":true,\"unlockedTierTwo\":true}}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 2,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1557,
+                "bestKills1": 28,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": {
+              "runId": 1,
+              "elapsedTicks": 1557,
+              "kills": 28,
+              "reward": 1,
+              "tier": 1,
+              "profileVersion": "tier-goals-v1",
+              "isLimit": false,
+              "newBestTime": true,
+              "newBestKills": true,
+              "unlockedTierTwo": true
+            }
+          },
+          "load": 1
+        },
+        {
+          "label": "pending-reload",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1557,\"bestKills1\":28,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":{\"runId\":1,\"elapsedTicks\":1557,\"kills\":28,\"reward\":1,\"tier\":1,\"profileVersion\":\"tier-goals-v1\",\"isLimit\":false,\"newBestTime\":true,\"newBestKills\":true,\"unlockedTierTwo\":true}}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 2,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1557,
+                "bestKills1": 28,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": {
+              "runId": 1,
+              "elapsedTicks": 1557,
+              "kills": 28,
+              "reward": 1,
+              "tier": 1,
+              "profileVersion": "tier-goals-v1",
+              "isLimit": false,
+              "newBestTime": true,
+              "newBestKills": true,
+              "unlockedTierTwo": true
+            }
+          },
+          "load": 2
+        },
+        {
+          "label": "same-tier-redeploy",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":1,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":3,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1557,\"bestKills1\":28,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 1,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 3,
+            "lastFinalizedRunId": 1,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1557,
+                "bestKills1": 28,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 3
+        },
+        {
+          "label": "same-tier-interrupted",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":1,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":3,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1557,\"bestKills1\":28,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 1,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 3,
+            "lastFinalizedRunId": 1,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1557,
+                "bestKills1": 28,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 4
+        },
+        {
+          "label": "unfinished-tier-two",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":1,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":4,\"lastFinalizedRunId\":1,\"selectedTier\":2,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1557,\"bestKills1\":28,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 1,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 4,
+            "lastFinalizedRunId": 1,
+            "selectedTier": 2,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1557,
+                "bestKills1": 28,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 5
+        }
+      ],
+      "inputs": {
+        "e2e/helpers/lastStandTierJourney.mjs": "d8dd150b4bfde2d8e31c13f26555e1eb0f75534f41d115555f5f858f2388bc57",
+        "e2e/last-stand-playable-loop.spec.ts": "0a9a66cbcf73ad801bd562589e46ad9b91a35acb43e036d4c3da73814ebd89ec",
+        "scripts/last-stand-first-session.mjs": "8cce8d3d745d4c6c3c82ea121b70959c115ef24140f933af66e6649e412aff7c"
+      },
+      "manifest": {
+        "client/public/last-stand/asset-manifest.json": "b9b01b85578aa59fd5a73ee4515f7dbeea78181b9a49b244753cbc3979cf1e2b",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "ed9575133b6c0737b2223f845cbc4e0376cdbb15b3f321b153ed247902d910fa",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "664595f58d1672ff9eeea72d7c3021ce8e776ded863b799f96231970b865d251",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.data": "d74e9e1a6d2bf7aae9f43251901094e35fd8a3a05dcdeed29aea6c570a8a2af3",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.loader.js": "38ffcc4e122748e353709675c103b2bf0f1e1dd753cc3d4ee7aec8f1e5ef22e0",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.wasm": "5b1a9889bbf01a497921ff9b3f24150a48a190c48c89fa83a1959a46f6d4a3c2",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "f6b1b3d328684d9fbacabe384bb2340fe5aaa5a109f6f25e14f0725d27e2c822",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "raw_observations": {
+        "path": "campaign-unity/Evidence/first-session-polish/both-fittings-combat-20261021/repair/tier-observations.json",
+        "sha256": "8287a07f38453369af7a2aa26ca18137fbde11a815b2a5492092d36ecec91210"
+      },
+      "final_state": {
+        "action": "session",
+        "phase": "battle",
+        "saveState": "ready",
+        "saveError": "",
+        "notice": "",
+        "profileVersion": "tier-goals-v1",
+        "wallet": 0,
+        "level": 1,
+        "nextCost": 2,
+        "cannonDamage": 30,
+        "runId": 3,
+        "pendingRunId": 0,
+        "tick": 33,
+        "hull": 120,
+        "kills": 0,
+        "selectedTier": 2,
+        "activeTier": 2,
+        "bestTicks1": 1557,
+        "bestTicks2": 0,
+        "bestKills1": 28,
+        "bestKills2": 0,
+        "pendingTier": 0,
+        "pendingReward": 0,
+        "paused": false,
+        "muted": false,
+        "tierTwoUnlocked": true,
+        "goalMet": false,
+        "load": 5,
+        "observedAt": 1792574634036
+      }
+    },
+    {
+      "fitting": "launcher",
+      "status": "pass",
+      "normalSpeed": true,
+      "seeded": false,
+      "errors": [],
+      "profiles": [
+        {
+          "label": "garage",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "garage",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "garage",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "garage",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "garage",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "permanent-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "combat",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "combat",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "combat",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "combat",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "combat",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "temporary-shop-utility",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "goal-met-live",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "goal-met-live",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "goal-met-live",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "goal-met-live",
+          "width": 844,
+          "height": 390
+        },
+        {
+          "label": "saved-result",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "label": "saved-result",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "label": "saved-result",
+          "width": 720,
+          "height": 640
+        },
+        {
+          "label": "saved-result",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "label": "saved-result",
+          "width": 844,
+          "height": 390
+        }
+      ],
+      "actions": [
+        {
+          "name": "ToggleFitting",
+          "x": 371,
+          "y": 721.9999980926514,
+          "load": 1,
+          "at": 1792574641556
+        },
+        {
+          "name": "ShopEntry",
+          "x": 994.9999694824219,
+          "y": 721.9999980926514,
+          "load": 1,
+          "at": 1792574652926
+        },
+        {
+          "name": "ShopTabAttack",
+          "x": 78.66666412353516,
+          "y": 198,
+          "load": 1,
+          "at": 1792574654207
+        },
+        {
+          "name": "ShopTabDefense",
+          "x": 192.00003814697266,
+          "y": 198,
+          "load": 1,
+          "at": 1792574657198
+        },
+        {
+          "name": "ShopTabUtility",
+          "x": 305.3333435058594,
+          "y": 198,
+          "load": 1,
+          "at": 1792574660226
+        },
+        {
+          "name": "ShopClose",
+          "x": 338.0000305175781,
+          "y": 150,
+          "load": 1,
+          "at": 1792574673611
+        },
+        {
+          "name": "Deploy",
+          "x": 527,
+          "y": 721.9999980926514,
+          "load": 1,
+          "at": 1792574674861
+        },
+        {
+          "name": "Pause",
+          "x": 803.9999389648438,
+          "y": 721.9999370574951,
+          "load": 1,
+          "at": 1792574731296
+        },
+        {
+          "name": "ShopEntry",
+          "x": 1271.9998779296875,
+          "y": 721.9999370574951,
+          "load": 1,
+          "at": 1792574733986
+        },
+        {
+          "name": "ShopTabAttack",
+          "x": 78.66666412353516,
+          "y": 198,
+          "load": 1,
+          "at": 1792574735475
+        },
+        {
+          "name": "ShopTabDefense",
+          "x": 192.00003814697266,
+          "y": 198,
+          "load": 1,
+          "at": 1792574739001
+        },
+        {
+          "name": "ShopTabUtility",
+          "x": 305.3333435058594,
+          "y": 198,
+          "load": 1,
+          "at": 1792574742479
+        },
+        {
+          "name": "ShopClose",
+          "x": 338.0000305175781,
+          "y": 150,
+          "load": 1,
+          "at": 1792574760002
+        },
+        {
+          "name": "Pause",
+          "x": 803.9999389648438,
+          "y": 721.9999370574951,
+          "load": 1,
+          "at": 1792574761482
+        },
+        {
+          "name": "Claim",
+          "x": 605,
+          "y": 721.9999980926514,
+          "load": 2,
+          "at": 1792574802587
+        },
+        {
+          "name": "Purchase",
+          "x": 506.1999816894531,
+          "y": 669.9999389648438,
+          "load": 2,
+          "at": 1792574803792
+        },
+        {
+          "name": "ToggleFitting",
+          "x": 371,
+          "y": 721.9999980926514,
+          "load": 3,
+          "at": 1792574808104
+        },
+        {
+          "name": "Deploy",
+          "x": 527,
+          "y": 721.9999980926514,
+          "load": 3,
+          "at": 1792574809902
+        },
+        {
+          "name": "ToggleFitting",
+          "x": 371,
+          "y": 721.9999980926514,
+          "load": 4,
+          "at": 1792574815733
+        },
+        {
+          "name": "ToggleTier",
+          "x": 839,
+          "y": 721.9999980926514,
+          "load": 4,
+          "at": 1792574816973
+        },
+        {
+          "name": "Deploy",
+          "x": 527,
+          "y": 721.9999980926514,
+          "load": 4,
+          "at": 1792574818730
+        }
+      ],
+      "storage": [
+        {
+          "label": "initial",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":1,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 1,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 0,
+                "bestKills1": 0,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": false
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 1
+        },
+        {
+          "label": "goal-live",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 2,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 0,
+                "bestKills1": 0,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": false
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 1
+        },
+        {
+          "label": "terminal",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1647,\"bestKills1\":33,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":{\"runId\":1,\"elapsedTicks\":1647,\"kills\":33,\"reward\":1,\"tier\":1,\"profileVersion\":\"tier-goals-v1\",\"isLimit\":false,\"newBestTime\":true,\"newBestKills\":true,\"unlockedTierTwo\":true}}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 2,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1647,
+                "bestKills1": 33,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": {
+              "runId": 1,
+              "elapsedTicks": 1647,
+              "kills": 33,
+              "reward": 1,
+              "tier": 1,
+              "profileVersion": "tier-goals-v1",
+              "isLimit": false,
+              "newBestTime": true,
+              "newBestKills": true,
+              "unlockedTierTwo": true
+            }
+          },
+          "load": 1
+        },
+        {
+          "label": "pending-reload",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1647,\"bestKills1\":33,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":{\"runId\":1,\"elapsedTicks\":1647,\"kills\":33,\"reward\":1,\"tier\":1,\"profileVersion\":\"tier-goals-v1\",\"isLimit\":false,\"newBestTime\":true,\"newBestKills\":true,\"unlockedTierTwo\":true}}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 0,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 2,
+            "lastFinalizedRunId": 0,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1647,
+                "bestKills1": 33,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": {
+              "runId": 1,
+              "elapsedTicks": 1647,
+              "kills": 33,
+              "reward": 1,
+              "tier": 1,
+              "profileVersion": "tier-goals-v1",
+              "isLimit": false,
+              "newBestTime": true,
+              "newBestKills": true,
+              "unlockedTierTwo": true
+            }
+          },
+          "load": 2
+        },
+        {
+          "label": "same-tier-redeploy",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":1,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":3,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1647,\"bestKills1\":33,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 1,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 3,
+            "lastFinalizedRunId": 1,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1647,
+                "bestKills1": 33,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 3
+        },
+        {
+          "label": "same-tier-interrupted",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":1,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":3,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1647,\"bestKills1\":33,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 1,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 3,
+            "lastFinalizedRunId": 1,
+            "selectedTier": 1,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1647,
+                "bestKills1": 33,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 4
+        },
+        {
+          "label": "unfinished-tier-two",
+          "raw": "{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":1,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":4,\"lastFinalizedRunId\":1,\"selectedTier\":2,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":1647,\"bestKills1\":33,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},\"pendingDefeat\":null}",
+          "data": {
+            "version": 3,
+            "credits": 0,
+            "permanentLevels": {
+              "cannonAttack": 1,
+              "launcherAttack": 0,
+              "hullCapacity": 0,
+              "armor": 0,
+              "cannonCycle": 0,
+              "fieldRepair": 0
+            },
+            "nextRunId": 4,
+            "lastFinalizedRunId": 1,
+            "selectedTier": 2,
+            "tierRecords": {
+              "tier-goals-v1": {
+                "bestTicks1": 1647,
+                "bestKills1": 33,
+                "bestTicks2": 0,
+                "bestKills2": 0,
+                "tierTwoUnlocked": true
+              }
+            },
+            "pendingDefeat": null
+          },
+          "load": 5
+        }
+      ],
+      "inputs": {
+        "e2e/helpers/lastStandTierJourney.mjs": "d8dd150b4bfde2d8e31c13f26555e1eb0f75534f41d115555f5f858f2388bc57",
+        "e2e/last-stand-playable-loop.spec.ts": "0a9a66cbcf73ad801bd562589e46ad9b91a35acb43e036d4c3da73814ebd89ec",
+        "scripts/last-stand-first-session.mjs": "8cce8d3d745d4c6c3c82ea121b70959c115ef24140f933af66e6649e412aff7c"
+      },
+      "manifest": {
+        "client/public/last-stand/asset-manifest.json": "b9b01b85578aa59fd5a73ee4515f7dbeea78181b9a49b244753cbc3979cf1e2b",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "ed9575133b6c0737b2223f845cbc4e0376cdbb15b3f321b153ed247902d910fa",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "664595f58d1672ff9eeea72d7c3021ce8e776ded863b799f96231970b865d251",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.data": "d74e9e1a6d2bf7aae9f43251901094e35fd8a3a05dcdeed29aea6c570a8a2af3",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.loader.js": "38ffcc4e122748e353709675c103b2bf0f1e1dd753cc3d4ee7aec8f1e5ef22e0",
+        "client/public/last-stand/Build/Web-20261021T091010Z-594a77.wasm": "5b1a9889bbf01a497921ff9b3f24150a48a190c48c89fa83a1959a46f6d4a3c2",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "f6b1b3d328684d9fbacabe384bb2340fe5aaa5a109f6f25e14f0725d27e2c822",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "raw_observations": {
+        "path": "campaign-unity/Evidence/first-session-polish/both-fittings-combat-20261021/launcher/tier-observations.json",
+        "sha256": "6d4dab050049eab0b359c1d0cd3ca98dec7e56d10d3367e4f2a2d4f21b89d421"
+      },
+      "final_state": {
+        "action": "session",
+        "phase": "battle",
+        "saveState": "ready",
+        "saveError": "",
+        "notice": "",
+        "profileVersion": "tier-goals-v1",
+        "wallet": 0,
+        "level": 1,
+        "nextCost": 2,
+        "cannonDamage": 30,
+        "runId": 3,
+        "pendingRunId": 0,
+        "tick": 34,
+        "hull": 120,
+        "kills": 0,
+        "selectedTier": 2,
+        "activeTier": 2,
+        "bestTicks1": 1647,
+        "bestTicks2": 0,
+        "bestKills1": 33,
+        "bestKills2": 0,
+        "pendingTier": 0,
+        "pendingReward": 0,
+        "paused": false,
+        "muted": false,
+        "tierTwoUnlocked": true,
+        "goalMet": false,
+        "load": 5,
+        "observedAt": 1792574820754
+      }
+    }
+  ]
+}

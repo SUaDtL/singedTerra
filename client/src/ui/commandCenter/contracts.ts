@@ -55,15 +55,6 @@ export interface CommandCategoryContribution<Context> {
   ) => readonly CommandItemContribution<Context>[];
 }
 
-export type CampaignSavePresentation =
-  | Readonly<{ status: 'checking' }>
-  | Readonly<{ status: 'empty' }>
-  | Readonly<{ status: 'compatible' }>
-  | Readonly<{ status: 'incompatible' }>
-  | Readonly<{ status: 'unavailable' }>
-  | Readonly<{ status: 'restoring' }>
-  | Readonly<{ status: 'complete' }>;
-
 const STABLE_COMMAND_ID = /^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/;
 const MAX_COMMAND_ID_LENGTH = 64;
 

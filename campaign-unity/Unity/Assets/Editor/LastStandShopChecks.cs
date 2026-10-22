@@ -71,8 +71,12 @@ public static class LastStandShopChecks
         var fields = new List<string>();
         for (int i = 0; i < LastStandUpgradeCatalog.Tracks.Count; i++)
             fields.Add("\"" + LastStandUpgradeCatalog.Tracks[i].Key + "\":" + levels[i]);
-        return "{\"version\":2,\"credits\":" + wallet + ",\"permanentLevels\":{" + String.Join(",", fields) +
-            "},\"nextRunId\":" + nextRunId + ",\"lastFinalizedRunId\":0,\"pendingDefeat\":null}";
+        // Ordinary shop scenarios start with current-schema data. Historical
+        // migration scenarios supply their explicit versioned fixtures below.
+        return "{\"version\":3,\"credits\":" + wallet + ",\"permanentLevels\":{" + String.Join(",", fields) +
+            "},\"nextRunId\":" + nextRunId + ",\"lastFinalizedRunId\":0,\"selectedTier\":1," +
+            "\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0," +
+            "\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}";
     }
     static void Require(bool value, string label)
     { if (!value) throw new InvalidOperationException("Last Stand shop deployment check failed: " + label); }
@@ -422,26 +426,30 @@ public static class LastStandShopChecks
     }
     public static void RunIncome()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED");
-        var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_income_hidden_partition_and_terminal_snapshot", () =>
+            Debug.Log("ST_LS_SHOP_COMPILED");
+            var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
             {
-                foreach (bool launcher in new[] { false, true }) { ForegroundHiddenPartitions(launcher); FinalDefeat(launcher); }
-            }, ref failed);
-            NamedIncome("test_income_final_tick_refresh_and_next_run", () =>
+                NamedIncome("test_income_hidden_partition_and_terminal_snapshot", () =>
+                {
+                    foreach (bool launcher in new[] { false, true }) { ForegroundHiddenPartitions(launcher); FinalDefeat(launcher); }
+                }, ref failed);
+                NamedIncome("test_income_final_tick_refresh_and_next_run", () =>
+                {
+                    foreach (bool launcher in new[] { false, true })
+                    { PurchasedPauseAndExit(launcher); NonDefeatTerminal(launcher, true); NonDefeatTerminal(launcher, false); SaveRetryRefreshClaimAndReload(launcher); }
+                }, ref failed);
+            }
+            finally
             {
-                foreach (bool launcher in new[] { false, true })
-                { PurchasedPauseAndExit(launcher); NonDefeatTerminal(launcher, true); NonDefeatTerminal(launcher, false); SaveRetryRefreshClaimAndReload(launcher); }
-            }, ref failed);
-        }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Application.runInBackground = background;
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                Application.runInBackground = background;
+            }
         }
         if (failed) EditorApplication.Exit(1);
     }
@@ -615,21 +623,25 @@ public static class LastStandShopChecks
     }
     public static void RunSettle()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED");
-        var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_settle_purchase_old_stats_and_debt_refusal", () =>
-            { foreach (bool launcher in new[] { false, true }) { OldStatsAndEffects(launcher); DebtRefusal(launcher); } }, ref failed);
-            NamedIncome("test_settle_pause_focus_close_and_stale_input", () =>
-            { foreach (bool launcher in new[] { false, true }) { PausedAndInvalidInput(launcher); PurchaseTerminalAndReentrancy(launcher); } }, ref failed);
-        }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Application.runInBackground = background;
+            Debug.Log("ST_LS_SHOP_COMPILED");
+            var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_settle_purchase_old_stats_and_debt_refusal", () =>
+                { foreach (bool launcher in new[] { false, true }) { OldStatsAndEffects(launcher); DebtRefusal(launcher); } }, ref failed);
+                NamedIncome("test_settle_pause_focus_close_and_stale_input", () =>
+                { foreach (bool launcher in new[] { false, true }) { PausedAndInvalidInput(launcher); PurchaseTerminalAndReentrancy(launcher); } }, ref failed);
+            }
+            finally
+            {
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                Application.runInBackground = background;
+            }
         }
         if (failed) EditorApplication.Exit(1);
     }
@@ -648,6 +660,14 @@ public static class LastStandShopChecks
         public ShopUiFixture(bool launcher, Vector2Int profile, MemoryStorage storage = null)
         {
             Game = new Fixture(launcher, new int[6], storage);
+            // The domain fixture arranges authored modules directly after
+            // controller initialization. Publish that test-owned starting
+            // choice through the controller before exercising live arrows.
+            Game.Loop.RefreshControls();
+            Require(Game.Loop.FittingId==(launcher?"launcher":"repair"),"fixture starts with the intended authored fitting");
+            if(Game.Loop.GarageCardsVisible)
+                Require(Game.Loop.GarageFittingSelection.Current.Id==Game.Loop.FittingId,
+                    "fixture controller selection agrees with its arranged module before UI input");
             Hud = (LastStandLoopHud)typeof(LastStandLoopController).GetField("hud", Private).GetValue(Game.Loop);
             Canvas = UnityEngine.Object.FindFirstObjectByType<Canvas>(); Camera = UnityEngine.Object.FindFirstObjectByType<Camera>();
             texture = new RenderTexture(profile.x, profile.y, 16); Camera.targetTexture = texture;
@@ -676,6 +696,7 @@ public static class LastStandShopChecks
         }
         public void Refresh()
         {
+            Canvas.ForceUpdateCanvases();Hud.Refresh();
             Canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             Canvas.renderMode = RenderMode.ScreenSpaceCamera; Canvas.worldCamera = Camera; Canvas.planeDistance = 1;
             Canvas.ForceUpdateCanvases(); Hud.Refresh(); Canvas.ForceUpdateCanvases();
@@ -699,8 +720,39 @@ public static class LastStandShopChecks
             var clock = (LastStandRunClock)typeof(EncounterSession).GetField("runClock", Private).GetValue(Game.Session);
             typeof(LastStandRunClock).GetField("anchor", Private).SetValue(clock, Time.realtimeSinceStartupAsDouble - elapsed);
         }
+        public void Resize(Vector2Int profile)
+        {
+            texture.Release();texture.width=profile.x;texture.height=profile.y;texture.Create();
+            // A targetTexture mutation in edit mode does not run the player's
+            // Canvas resize lifecycle. Rebind its camera transforms before the
+            // first HUD layout observes new pixels, so production's resize
+            // reveal runs once against the actual final viewport. Do not
+            // select again, set a scroll offset or invoke the reveal handler.
+            Canvas.renderMode=RenderMode.ScreenSpaceOverlay;
+            Canvas.renderMode=RenderMode.ScreenSpaceCamera;Canvas.worldCamera=Camera;Canvas.planeDistance=1;
+            Canvas.ForceUpdateCanvases();Camera.Render();Canvas.ForceUpdateCanvases();
+            var actual=Bounds(Root);
+            Require(Math.Abs(Canvas.pixelRect.width-profile.x)<.1f&&Math.Abs(Canvas.pixelRect.height-profile.y)<.1f&&
+                Math.Abs(actual.x)<.2f&&Math.Abs(actual.y)<.2f&&Math.Abs(actual.width-profile.x)<.2f&&Math.Abs(actual.height-profile.y)<.2f,
+                "resized fixture camera Canvas has coherent physical bounds before HUD layout "+profile+" actual="+actual);
+        }
         public void Dispose()
         { Camera.targetTexture = null; UnityEngine.Object.DestroyImmediate(texture); EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
+    }
+    static void SelectUiFitting(ShopUiFixture f, bool launcher)
+    {
+        if(f.Game.Art.showingLauncher==launcher)return;
+        bool reopen=f.Button("ShopClose").IsActive();
+        if(reopen)f.Click("ShopClose");
+        int writes=f.Game.Storage.Writes, wallet=f.Game.Loop.Progression.Wallet;
+        Require(f.Game.Loop.MenuPage=="","inline fitting starts outside a modal");
+        f.Click(launcher ? "FittingNext" : "FittingPrevious");
+        Require(f.Game.Art.showingLauncher==launcher && f.Game.Loop.FittingId==(launcher ? "launcher" : "repair"),
+            "ordinary inline arrow equips the explicit fitting identity");
+        Require(f.Game.Loop.MenuPage=="" && f.Game.Session.Model==null &&
+            f.Game.Storage.Writes==writes && f.Game.Loop.Progression.Wallet==wallet,
+            "inline fitting never opens a modal, deploys, purchases or saves progression");
+        if(reopen)f.Click("ShopEntry");
     }
     static void FittedCardVisibility()
     {
@@ -730,7 +782,7 @@ public static class LastStandShopChecks
                         }
                     }
                 }
-                if (!run && choice == 0) f.Click("ToggleFitting");
+                if (!run && choice == 0) SelectUiFitting(f,!f.Game.Art.showingLauncher);
             }
             Require(f.Game.Storage.Writes == writes && f.Game.Loop.Progression.Wallet == wallet,
                 "visibility and fitting changes do not purchase or write saves");
@@ -758,15 +810,19 @@ public static class LastStandShopChecks
     }
     public static void RunPolish()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_shop_only_fitted_modules_visible_and_focusable",FittedCardVisibility,ref failed);
-            NamedIncome("test_shop_plain_compact_readable_composition",ShopReadableComposition,ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_shop_only_fitted_modules_visible_and_focusable",FittedCardVisibility,ref failed);
+                NamedIncome("test_shop_plain_compact_readable_composition",ShopReadableComposition,ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         if (failed) EditorApplication.Exit(1);
     }
     static void ReadableEffectSeparator()
@@ -809,8 +865,8 @@ public static class LastStandShopChecks
         {
             WorkshopPendingResult(f); f.Click("Claim");
             var legacy = f.Button("Purchase"); bool eligible = cannonLevel < 3;
-            Require(f.Game.Loop.Phase == "workshop" && legacy.IsActive() && legacy.IsInteractable() == eligible,
-                "closed workshop retains ordinary legacy purchase eligibility");
+            Require(f.Game.Loop.Phase == "workshop" && !legacy.IsActive() && f.Button("ShopEntry").IsActive(),
+                "closed workshop exposes Upgrades and hides the duplicate legacy purchase");
             int writes = f.Game.Storage.Writes, wallet = f.Game.Loop.Progression.Wallet;
             f.Click("ShopEntry");
             Require(!legacy.gameObject.activeInHierarchy && !legacy.IsActive(),
@@ -821,11 +877,13 @@ public static class LastStandShopChecks
             foreach (var button in f.Root.GetComponentsInChildren<Button>(false))
                 if (button.IsInteractable()) Require(button.navigation.selectOnUp != legacy && button.navigation.selectOnDown != legacy,
                     "open Shop navigation excludes legacy purchase");
-            foreach (string id in new[] { "ToggleFitting","Redeploy","ToggleMute","ShopClose" })
+            Require(f.Button("ShopCard_cannonAttackBuy").IsActive()&&f.Button("ShopCard_cannonAttackBuy").IsInteractable()==eligible,
+                "actual permanent card keeps cannon purchase eligibility");
+            foreach (string id in new[] { "Redeploy","Menu","ShopClose" })
                 Require(f.Button(id).IsActive(),"required workshop action remains visible " + id);
             f.Click("ShopClose");
-            Require(legacy.IsActive() && legacy.IsInteractable() == eligible,
-                "closing Shop restores ordinary legacy purchase eligibility");
+            Require(!legacy.IsActive()&&f.Button("ShopEntry").GetComponentInChildren<Text>().text=="UPGRADES",
+                "closing Shop restores the single Upgrades entry without duplicate purchase");
             Require(f.Game.Storage.Writes == writes && f.Game.Loop.Progression.Wallet == wallet &&
                 f.Game.Loop.Progression.CannonAttackLevel == cannonLevel,
                 "opening, closing and focus refresh never purchase or write saves");
@@ -833,26 +891,25 @@ public static class LastStandShopChecks
     }
     public static void RunRenderFollowup()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_shop_rendered_effect_separator",ReadableEffectSeparator,ref failed);
-            NamedIncome("test_shop_workshop_single_purchase_action",WorkshopSinglePurchaseAction,ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_shop_rendered_effect_separator",ReadableEffectSeparator,ref failed);
+                NamedIncome("test_shop_workshop_single_purchase_action",WorkshopSinglePurchaseAction,ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         if (failed) EditorApplication.Exit(1);
     }
     static void ShopInventory(ShopUiFixture f)
     {
-        string[] core = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute" };
-        var expected = new HashSet<string>(core); foreach (string id in ShopIds) Require(expected.Add(id), "distinct core/shop identity");
-        var actual = f.Root.GetComponentsInChildren<Button>(true); Require(actual.Length == 19, "exact ordinary union nineteen");
-        foreach (var button in actual) Require(expected.Remove(button.name), "unique complete real control " + button.name);
-        Require(expected.Count == 0, "complete core8 plus shop11 inventory");
-        foreach (string id in core) Require(f.Root.Find("LastStandDock/" + id).GetComponent<Button>() == f.Button(id), "unchanged core path " + id);
-        Require(f.Root.Find("LastStandDock/ShopEntry").GetComponent<Button>() == f.Button("ShopEntry"), "shop entry in persistent dock");
+        LastStandHudChecks.AssertOrdinaryInventory(f.Root,"shop "+f.Game.Loop.Phase);
+        Require(f.Root.Find("ShopEntry").GetComponent<Button>() == f.Button("ShopEntry"), "upgrade entry is a separate HUD root action");
         foreach (var definition in LastStandUpgradeCatalog.Tracks)
         {
             string id = "ShopCard_" + definition.Key;
@@ -863,8 +920,8 @@ public static class LastStandShopChecks
     static void ShopCards(ShopUiFixture f, LastStandUpgradeCategory category)
     {
         var view = LastStandShopPresentation.ProjectRun(Shop(f.Game.Session));
-        Require(f.Text("ShopHeading").text == "MECHANICS SHOP" && f.Text("ShopCurrency").text == "SCRAP  " + view.Balance,
-            "named live Scrap balance from actual run");
+        Require(f.Text("ShopHeading").text == "SHOP / THIS RUN" && f.Text("ShopCurrency").text == "SCRAP  " + view.Balance,
+            "Scrap purchase lifetime and balance from actual run");
         int visible = 0;
         foreach (var card in view.Cards)
         {
@@ -902,11 +959,22 @@ public static class LastStandShopChecks
             "actual opaque console and native vertical mask/content ScrollRect");
         var panelBounds = f.Bounds(panel); var screen = CanvasBounds(f);
         Require(screen.Contains(panelBounds.min) && screen.Contains(panelBounds.max), "panel lies in actual available Canvas");
-        foreach (string id in new[] { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility", "Pause", "ToggleMute" })
+        foreach (string id in new[] { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility", "Menu" })
         {
+            Require(f.Button(id).IsActive(),"required open Shop fixed control "+id);
             var bounds = f.Bounds((RectTransform)f.Button(id).transform);
             Require(bounds.width >= 43.99f && bounds.height >= 43.99f && screen.Contains(bounds.min) && screen.Contains(bounds.max),
                 "actual reachable fixed 44px target " + id + " bounds=" + bounds + " canvas=" + screen);
+        }
+        foreach(string id in new[]{"Pause","ToggleMute","Effects","SpeedMinus","SpeedPlus"})
+            Require(!f.Button(id).IsActive(),"open Shop hides duplicate battlefield controls "+id);
+        var rate=f.Button("SpeedRate");bool activeRun=f.Game.Loop.Phase=="battle"||f.Game.Loop.Phase=="settling";
+        Require(rate.IsActive()==activeRun,"open temporary Shop retains the single rate pause/resume control");
+        if(activeRun)
+        {
+            var bounds=f.Bounds((RectTransform)rate.transform);
+            Require(bounds.width>=43.99f&&bounds.height>=43.99f&&screen.Contains(bounds.min)&&screen.Contains(bounds.max),
+                "open Shop rate pause/resume remains a reachable 44px control");
         }
         foreach (float normalized in new[] { 1f, .5f, 0f })
         {
@@ -1029,8 +1097,9 @@ public static class LastStandShopChecks
             f.Click("ShopClose"); Require(!f.Button("ShopClose").IsActive() && !f.Game.Session.Paused && Shop(f.Game.Session) == shop,
                 "Close invalidates panel without changing pause/run ledger");
             f.Click("ShopEntry"); ShopCards(f, LastStandUpgradeCategory.Attack);
-            f.Game.Session.TogglePauseAt(f.Game.Timestamp); f.Refresh();
-            Require(f.Game.Session.Paused && f.Button("ShopClose").IsActive(), "explicit pause retains live shop");
+            f.Reanchor();f.Click("SpeedRate");
+            Require(f.Game.Session.ManualPaused && f.Game.Session.Paused && f.Button("ShopClose").IsActive() &&
+                f.Button("SpeedRate").GetComponentInChildren<Text>().text=="0x\nPAUSED", "actual rate pause retains live shop");
             int permanentWallet = f.Game.Loop.Progression.Wallet, permanentP = f.Game.Loop.Progression.CannonAttackLevel;
             int permanentWrites = f.Game.Storage.Writes;
             var oldButton = f.Button("ShopCard_cannonAttackBuy"); f.Game.Session.ReturnToInspection(); f.Refresh();
@@ -1096,16 +1165,109 @@ public static class LastStandShopChecks
     }
     public static void RunBattleShop()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_battle_shop_tabs_live_cards_and_refusal_feedback", () =>
-            { BattleShopProfiles(); BattleShopPausedHullAndRefusals(); }, ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_battle_shop_tabs_live_cards_and_refusal_feedback", () =>
+                { BattleShopProfiles(); BattleShopPausedHullAndRefusals(); }, ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        }
+        if (failed) EditorApplication.Exit(1);
+    }
+    static void FirstSessionClarity()
+    {
+        foreach (var profile in new[] { new Vector2Int(1920,976),new Vector2Int(1366,664),new Vector2Int(720,516),
+            new Vector2Int(390,688),new Vector2Int(844,266) })
+        foreach (bool launcher in new[] { false,true })
+        using (var f = new ShopUiFixture(launcher,profile,new MemoryStorage { Value = Save(new int[6],wallet: 0) }))
+        {
+            f.Click("ShopEntry");
+            Require(f.Text("ShopHeading").text == "SHOP / PERMANENT" && f.Text("ShopCurrency").text == "SALVAGE  0",
+                "permanent title explains lifetime beside the exact committed wallet");
+            Require(f.Text("ShopHeading").preferredHeight <= f.Text("ShopHeading").rectTransform.rect.height + 1,
+                "permanent lifetime heading fits the existing slot");
+            f.Click("ShopClose"); f.Click("Deploy");
+            f.Game.AdvanceTicks(1199); f.Refresh();
+            Require(f.Text("PhaseHeading").text == "HOLD THE POSITION","live banner does not grant an early goal");
+            Require(f.Text("PhaseHeading").preferredHeight<=f.Text("PhaseHeading").rectTransform.rect.height+1,
+                "initial live heading is fully readable at "+profile);
+            int writes = f.Game.Storage.Writes;
+            f.Game.AdvanceTicks(1); f.Refresh();
+            var heading = f.Text("PhaseHeading");
+            Require(f.Game.Loop.Phase == "battle" && heading.text == "Goal met; saves at end",
+                "actual live goal banner explains future persistence");
+            Require(heading.preferredHeight <= heading.rectTransform.rect.height + 1,
+                "live goal save boundary fits the existing one-line slot at " + profile);
+            Require(f.Game.Storage.Writes == writes && f.Game.Loop.Progression.GetBestTicks(1) == 0 &&
+                !f.Game.Loop.Progression.TierTwoUnlocked,"live goal writes no record or unlock");
+            f.Click("ShopEntry");
+            Require(f.Text("ShopHeading").text == "SHOP / THIS RUN" &&
+                f.Text("ShopCurrency").text == "SCRAP  " + Shop(f.Game.Session).Scrap,
+                "temporary title explains lifetime beside the exact run balance");
+            Require(f.Text("ShopHeading").preferredHeight <= f.Text("ShopHeading").rectTransform.rect.height + 1,
+                "temporary lifetime heading fits the existing slot");
+            var scroll = f.Root.Find("ShopPanel").GetComponent<ScrollRect>();
+            scroll.verticalNormalizedPosition = .5f; scroll.onValueChanged.Invoke(new Vector2(0,.5f)); f.Refresh();
+            var model = f.Game.Session.Model; string snapshot = model.Snapshot(), save = f.Game.Storage.Value;
+            var scrollPosition = scroll.content.anchoredPosition;
+            bool original = f.Game.Session.View.FullEffects, muted = f.Game.Loop.Muted;
+            bool manualPaused=f.Game.Session.ManualPaused;
+            string phase = f.Game.Loop.Phase;
+            f.Reanchor();f.Click("Menu");f.Click("MenuSettings");f.Click("SettingsTab1");
+            Require(f.Game.Loop.MenuPage=="settings"&&f.Game.Session.MenuPaused&&f.Game.Session.Paused,
+                "open Shop enters real Display settings and holds the run");
+            var keyboard=f.Root.GetComponent<LastStandHudKeyboard>();keyboard.NavigateKeyboard("enter-first");
+            int remaining=64;
+            while(EventSystem.current.currentSelectedGameObject!=f.Button("DisplayEffects").gameObject&&remaining-->0)keyboard.NavigateKeyboard("next");
+            Require(EventSystem.current.currentSelectedGameObject==f.Button("DisplayEffects").gameObject,
+                "ordinary keyboard focus reveals Display effects even in compact settings");
+            f.Refresh();
+            for (int toggle = 0; toggle < 2; toggle++)
+            {
+                f.Click("DisplayEffects");
+                Require(f.Game.Session.View.FullEffects == (toggle == 0 ? !original : original),"open Shop effects round trip uses actual setting");
+                var effects = f.Button("DisplayEffects"); var label = effects.GetComponentInChildren<Text>();
+                var bounds = f.Bounds((RectTransform)effects.transform);
+                Require(label.text == (f.Game.Session.View.FullEffects ? "EFFECTS: FULL" : "EFFECTS: REDUCED") &&
+                    label.preferredHeight <= label.rectTransform.rect.height + .2f,"open Shop full/reduced label fits " + profile);
+                Require(bounds.width >= 43.99f && bounds.height >= 43.99f && CanvasBounds(f).Contains(bounds.min) &&
+                    CanvasBounds(f).Contains(bounds.max),"open Shop effects retains reachable44px target " + profile);
+                var settingsViewport=f.Bounds((RectTransform)f.Root.Find("SettingsModal/SettingsPanel/SettingsViewport"));
+                Require(settingsViewport.Contains(bounds.min)&&settingsViewport.Contains(bounds.max)&&
+                    ShopRaycast(f,new Vector2(bounds.center.x,f.Canvas.pixelRect.height-bounds.center.y))==effects,
+                    "Display effects is revealed inside the actual mask and reached by the pointer");
+                Require(f.Game.Session.Model == model && model.Snapshot() == snapshot && f.Game.Storage.Value == save &&
+                    f.Game.Storage.Writes == writes && f.Game.Loop.Muted == muted && f.Game.Loop.Phase == phase &&
+                    f.Game.Session.MenuPaused&&f.Game.Session.Paused&&f.Game.Session.ManualPaused==manualPaused&&
+                    f.Root.Find("ShopPanel").gameObject.activeInHierarchy && scroll.content.anchoredPosition == scrollPosition,
+                    "Display effects preserves underlying Shop model save audio phase pause and scroll position");
+            }
+            f.Click("SettingsClose");
+            Require(!f.Game.Loop.MenuOpen&&!f.Game.Session.MenuPaused&&f.Game.Session.Paused==manualPaused&&
+                f.Game.Session.ManualPaused==manualPaused&&model.Snapshot()==snapshot&&f.Game.Storage.Value==save&&
+                f.Root.Find("ShopPanel").gameObject.activeInHierarchy&&scroll.content.anchoredPosition==scrollPosition,
+                "closing Display restores the same Shop without changing manual pause, combat, save or scroll");
+        }
+    }
+    public static void RunFirstSessionClarity()
+    {
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_first_session_clarity_live_goal_and_purchase_lifetimes",FirstSessionClarity,ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     public static void RunT16Affected()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         // Execute existing assertions in one exclusively owned imported Editor.
         RunDeploy(); RunIncome(); RunSettle();
         LastStandHudChecks.RunGarage(); LastStandHudChecks.RunBattle();
@@ -1125,7 +1287,8 @@ public static class LastStandShopChecks
         var progress = f.Game.Loop.Progression;
         var view = LastStandShopPresentation.ProjectPermanent(progress,
             f.Game.Art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair);
-        Require(f.Text("ShopCurrency").text == "SALVAGE  " + progress.Wallet, "permanent cards show only committed Salvage");
+        Require(f.Text("ShopHeading").text == "SHOP / PERMANENT" && f.Text("ShopCurrency").text == "SALVAGE  " + progress.Wallet,
+            "Salvage purchase lifetime and only committed balance");
         int visible = 0;
         foreach (var card in view.Cards)
         {
@@ -1193,7 +1356,7 @@ public static class LastStandShopChecks
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
             {
                 if (!definition.IsEligible(f.Game.Art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair))
-                    f.Click("ToggleFitting");
+                    SelectUiFitting(f,!f.Game.Art.showingLauncher);
                 f.Click("ShopTab" + definition.Category);
                 for (int p = 0; p < 3; p++)
                 {
@@ -1213,7 +1376,7 @@ public static class LastStandShopChecks
             var reloaded = LastStandProgression.Load(f.Game.Storage);
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
                 Require(reloaded.GetPermanentLevel(definition.Id) == 3, "all six verified levels survive reload " + definition.Key);
-            f.Click("ShopClose"); if (f.Game.Art.showingLauncher == launcher) f.Click("ToggleFitting"); f.Click("Redeploy");
+            f.Click("ShopClose"); SelectUiFitting(f,!launcher); f.Click("Redeploy");
             Fresh(Shop(f.Game.Session), 7, !launcher, new[] { 3,3,3,3,3,3 });
             Require(f.Game.Session.Model.CommittedCannonDamage == 50 && !f.Button("ShopClose").IsActive(),
                 "next deployment uses committed baseline and invalidates permanent panel");
@@ -1238,7 +1401,7 @@ public static class LastStandShopChecks
         foreach (bool readFailure in new[] { false, true })
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664)))
         {
-            if (f.Game.Art.showingLauncher) f.Click("ToggleFitting");
+            SelectUiFitting(f,false);
             f.Click("ShopEntry"); f.Click("ShopTabUtility");
             f.Game.Storage.FailWrite = !readFailure; f.Game.Storage.FailReadBack = readFailure;
             f.Click("ShopCard_fieldRepairBuy");
@@ -1290,14 +1453,18 @@ public static class LastStandShopChecks
     }
     public static void RunWorkshop()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_workshop_garage_post_claim_prices_and_save_error", () => {
-            WorkshopProfiles(); foreach (bool launcher in new[] { false, true })
-            { WorkshopPricesAndNextRun(launcher); WorkshopClaimAndSaveErrors(launcher); }
-        }, ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_workshop_garage_post_claim_prices_and_save_error", () => {
+                WorkshopProfiles(); foreach (bool launcher in new[] { false, true })
+                { WorkshopPricesAndNextRun(launcher); WorkshopClaimAndSaveErrors(launcher); }
+            }, ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     // Decode the real compiled call operands: an unused test-only producer is
@@ -1449,14 +1616,18 @@ public static class LastStandShopChecks
     }
     public static void RunWorkshopObservation()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_workshop_committed_levels_observation_without_cards", () => {
-            CommittedObservationCatalogAndDedup(); CommittedObservationAbsentCards(); CommittedObservationUncertainArmor();
-            CommittedObservationTickDedup();
-        }, ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_workshop_committed_levels_observation_without_cards", () => {
+                CommittedObservationCatalogAndDedup(); CommittedObservationAbsentCards(); CommittedObservationUncertainArmor();
+                CommittedObservationTickDedup();
+            }, ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     // Supply bounded input frames to the EXISTING StandaloneInputModule. Its
@@ -1777,7 +1948,7 @@ public static class LastStandShopChecks
             input.Events.SetSelectedGameObject(lower.gameObject); input.Render(); SelectedCardVisible(f,lower);
             foreach (var resized in InputProfiles)
             {
-                var texture = f.Camera.targetTexture; texture.Release(); texture.width=resized.x; texture.height=resized.y; texture.Create();
+                f.Resize(resized);
                 input.Render(); SelectedCardVisible(f,lower);
                 Require(input.Events.currentSelectedGameObject == lower.gameObject && f.Game.Session.Model == model &&
                     f.Game.Storage.Writes == writes && !f.Game.Session.Paused, "resize retains current selected track and sole model");
@@ -1802,15 +1973,19 @@ public static class LastStandShopChecks
     }
     public static void RunInput()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_input_keyboard_pointer_same_intents_and_focus", KeyboardPointerIntents, ref failed);
-            NamedIncome("test_input_terminal_resize_and_no_world_leak", TerminalResizeNoLeak, ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_input_keyboard_pointer_same_intents_and_focus", KeyboardPointerIntents, ref failed);
+                NamedIncome("test_input_terminal_resize_and_no_world_leak", TerminalResizeNoLeak, ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
         }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
         if (failed) EditorApplication.Exit(1);
     }
     static void CompactRealScroll()
@@ -1828,7 +2003,7 @@ public static class LastStandShopChecks
             if (phase != "garage")
             {
                 f.Game.Loop.Deploy(); f.Reanchor(); input.Render();
-                if (phase == "paused") input.Activate("Pause","pointer");
+                if (phase == "paused") input.Activate("SpeedRate","pointer");
             }
             input.Activate("ShopEntry","pointer");
             input.Activate(launcher ? "ShopTabAttack" : "ShopTabUtility","pointer");
@@ -1879,11 +2054,15 @@ public static class LastStandShopChecks
     }
     public static void RunCompactScroll()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_input_compact_real_scroll_reaches_clipped_cards",CompactRealScroll,ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_input_compact_real_scroll_reaches_clipped_cards",CompactRealScroll,ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     static Rect CompleteUpgradeBounds(ShopUiFixture f, string id)
@@ -1917,7 +2096,7 @@ public static class LastStandShopChecks
             if (run)
             {
                 f.Game.Loop.Deploy(); f.Reanchor(); input.Render();
-                if (phase == "paused") input.Activate("Pause","pointer");
+                if (phase == "paused") input.Activate("SpeedRate","pointer");
             }
             int writes = f.Game.Storage.Writes, wallet = f.Game.Loop.Progression.Wallet;
             string saved = f.Game.Storage.Value; var model = f.Game.Session.Model;
@@ -1971,11 +2150,15 @@ public static class LastStandShopChecks
     }
     public static void RunCompactReading()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_input_compact_shop_keeps_upgrade_readable",CompactShopReading,ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_input_compact_shop_keeps_upgrade_readable",CompactShopReading,ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     // T19 imported integration qualification: existing production owners only.
@@ -2089,7 +2272,7 @@ public static class LastStandShopChecks
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664), storage))
         {
             var p = f.Game.Loop.Progression;
-            Require(storage.SuccessfulWrites == 1 && storage.Value.Contains("\"version\":2") && p.Wallet == 8 && p.NextRunId == 7 &&
+            Require(storage.SuccessfulWrites == 1 && storage.Value.Contains("\"version\":3") && p.Wallet == 8 && p.NextRunId == 7 &&
                 p.FinalizedRunId == 5 && p.PendingDefeat.RunId == 6 && p.PendingDefeat.ElapsedTicks == 33 && p.PendingDefeat.Kills == 4 &&
                 p.CannonAttackLevel == 2 && f.Game.Session.Model == null && !f.Button("ShopEntry").IsActive(),
                 "integration imported old-save migration preserves exact pending entitlements without auto-Claim or deploy");
@@ -2160,39 +2343,47 @@ public static class LastStandShopChecks
     }
     public static void RunIntegration()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_integration_two_fittings_effects_and_lifecycle", () =>
-            { foreach (bool launcher in new[] {false,true}) foreach (var profile in new[] {new Vector2Int(1366,664),new Vector2Int(390,688)}) IntegrationEffectsJourney(launcher,profile); },ref failed);
-            NamedIncome("test_integration_old_save_conflict_and_legacy_parity", () =>
-            { foreach (bool launcher in new[] {false,true}) IntegrationOldSaveConflict(launcher); IntegrationLegacySnapshots(); },ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_integration_two_fittings_effects_and_lifecycle", () =>
+                { foreach (bool launcher in new[] {false,true}) foreach (var profile in new[] {new Vector2Int(1366,664),new Vector2Int(390,688)}) IntegrationEffectsJourney(launcher,profile); },ref failed);
+                NamedIncome("test_integration_old_save_conflict_and_legacy_parity", () =>
+                { foreach (bool launcher in new[] {false,true}) IntegrationOldSaveConflict(launcher); IntegrationLegacySnapshots(); },ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = () => new LastStandStore(); EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         }
-        finally { LastStandLoopController.StorageFactory = () => new LastStandStore(); EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         EditorApplication.Exit(failed ? 1 : 0);
     }
     // End T19 imported integration qualification.
 
     public static void RunDeploy()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED");
-        var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            Part("launcher-frozen-effects", () => FrozenProjection(true), ref failed);
-            Part("repair-frozen-effects", () => FrozenProjection(false), ref failed);
-            Part("fresh-zero-baseline", FreshRedeploymentAndZeroBaseline, ref failed);
-            Part("save-focus-admission", SaveAndFocusAdmission, ref failed);
-            Part("shared-scene-parity", SharedSceneParity, ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED");
+            var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                Part("launcher-frozen-effects", () => FrozenProjection(true), ref failed);
+                Part("repair-frozen-effects", () => FrozenProjection(false), ref failed);
+                Part("fresh-zero-baseline", FreshRedeploymentAndZeroBaseline, ref failed);
+                Part("save-focus-admission", SaveAndFocusAdmission, ref failed);
+                Part("shared-scene-parity", SharedSceneParity, ref failed);
+            }
+            finally
+            {
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                Application.runInBackground = background;
+            }
+            Debug.Log((failed ? "ST_LS_SHOP_FAIL " : "ST_LS_SHOP_PASS ") + "test_deploy_frozen_permanent_snapshot_and_fittings");
         }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Application.runInBackground = background;
-        }
-        Debug.Log((failed ? "ST_LS_SHOP_FAIL " : "ST_LS_SHOP_PASS ") + "test_deploy_frozen_permanent_snapshot_and_fittings");
         if (failed) EditorApplication.Exit(1);
     }
 }

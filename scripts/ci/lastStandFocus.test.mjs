@@ -1,8 +1,67 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { join } from 'node:path';
+import { runInNewContext } from 'node:vm';
+import { tierJourneyControlGeometry } from '../../e2e/helpers/lastStandTierJourney.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+
+function ownedStartupFixture({ready=false,missing=false}={}) {
+  const begin=source.indexOf('export async function ownedChrome(');
+  const end=source.indexOf('\nfunction frameTiming',begin);
+  assert.ok(begin>0 && end>begin,'Exercise the maintained owned browser launcher');
+  const page={identity:'original startup tab'},pages=ready?[page]:[],receipts=[],calls=[];
+  const unavailable=new Error('Original startup page did not arrive');
+  let deliver;
+  const context={pages:()=>pages,waitForEvent:async(event,options)=>{
+    assert.equal(event,'page');assert.ok(options.timeout>0 && options.timeout<=20000);
+    calls.push('wait-page');
+    if(missing)throw unavailable;
+    return new Promise(resolve=>{deliver=resolve;});
+  },newPage:()=>assert.fail('Do not replace the original native startup tab')};
+  const browser={contexts:()=>[context],close:async()=>calls.push('close-connection'),
+    newBrowserCDPSession:async()=>({send:async method=>{assert.equal(method,'Browser.close');calls.push('close-browser');}})};
+  const launch=runInNewContext(source.slice(begin,end).replace('export async function','async function')+';ownedChrome',{
+    process:{platform:'linux'},join,assert,existsSync:()=>true,mkdtempSync:()=>'/owned/profile',tmpdir:()=>'/tmp',
+    nativeChromeArgs:()=>['about:blank'],spawn:()=>({pid:12345,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){}}),
+    writeFileSync:(path,contents)=>{if(path.endsWith('browser-profile.json'))receipts.push(JSON.parse(contents));},
+    readFileSync:()=> '12345\n/owned-endpoint',delay:async()=>{},ownedBrowsers:new Set(),ownedBrowserWindows:new WeakMap(),
+    startOwnedSupervisor:()=>({root:{pid:12345},stop:async()=>{calls.push('stop-owned-tree');return {status:'stopped'};}}),
+  });
+  return {page,context,calls,receipts,unavailable,
+    launch:()=>launch({executablePath:()=>'/owned/chrome',connectOverCDP:async()=>browser},'/owned/evidence'),
+    deliver:()=>{pages.push(page);deliver?.(page);}};
+}
+
+test('owned browser waits for its delayed original tab before callers inspect pages',async()=>{
+  const fixture=ownedStartupFixture();let settled=false;
+  const launching=fixture.launch().then(native=>{settled=true;return native;});
+  await new Promise(resolve=>setImmediate(resolve));
+  try {
+    assert.equal(settled,false,'CDP can connect before the original tab becomes available');
+    fixture.deliver();
+    const native=await launching;
+    assert.equal(native.context.pages()[0],fixture.page,'Return the original native tab without synthesizing another');
+    assert.deepEqual(fixture.calls,['wait-page']);
+    await native.close();
+  } finally {fixture.deliver();await (await launching).close();}
+});
+
+test('owned browser preserves an existing tab and cleans up when no original tab arrives',async()=>{
+  const ready=ownedStartupFixture({ready:true});
+  const native=await ready.launch();
+  assert.equal(native.context.pages()[0],ready.page);assert.deepEqual(ready.calls,[]);
+  await native.close();
+  const missing=ownedStartupFixture({missing:true});
+  await assert.rejects(missing.launch(),error=>error===missing.unavailable);
+  assert.deepEqual(missing.calls,['wait-page','close-browser','stop-owned-tree','close-connection']);
+  assert.equal(missing.receipts.at(-1).status,'removed');
+});
+const controlContextBegin=source.indexOf('    const hudControls=');
+const controlContextEnd=source.indexOf('    const geometry=',controlContextBegin);
+assert.ok(controlContextBegin>0 && controlContextEnd>controlContextBegin,'Actual maintained control geometry helpers are required');
+const controlContext=source.slice(controlContextBegin,controlContextEnd);
 const begin=source.indexOf('    const focused=async label=>{');
 const end=source.indexOf('    const screenshot=',begin);
 assert.ok(begin>0 && end>begin,'Actual maintained focus caller is required');
@@ -133,43 +192,68 @@ test('settling pointer prerequisites complete before the brief phase begins',asy
 
 test('prepared pointer follows the actual new control rectangle after the Shop entry disappears',async()=>{
   const begin=source.indexOf('    const armGameClick='),end=source.indexOf('    const gameClick=',begin);
-  const before={phase:'battle',load:1,timeOrigin:100,t:1,width:10,height:10,controls:[{name:'Pause',x:0,y:0,width:2,height:2,active:true,interactable:true}]};
+  const before={phase:'battle',load:1,timeOrigin:100,t:1,width:100,height:100,controls:[{name:'Pause',x:0,y:0,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
   const layouts=[before],states=[{phase:'battle',load:1,timeOrigin:100}];let point,pressed;
   const page={evaluate:async expression=>typeof expression==='function'?{focused:true,timeOrigin:100,
-    canvas:{x:0,y:0,width:10,height:10,pixelWidth:10,pixelHeight:10}}:undefined,
+    canvas:{x:0,y:0,width:100,height:100,pixelWidth:100,pixelHeight:100}}:undefined,
     mouse:{move:async(x,y)=>point={x,y},down:async()=>pressed=point,up:async()=>{}},
-    waitForTimeout:async()=>{},viewportSize:()=>({width:10,height:10})};
-  const run=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert',
-    'let load=1;'+source.slice(begin,end)+'return armGameClick("Pause","session");');
-  const click=await run(async()=>({canvas:{x:0,y:0,width:10,height:10},layout:before,item:before.controls[0]}),
-    async()=>{},page,[],states,{actions:[]},async()=>({load:1,phase:'settling',paused:true}),(ok,message)=>assert.ok(ok,message),layouts,assert);
-  layouts.push({...before,t:2,phase:'settling',controls:[{...before.controls[0],x:6}]});
+    waitForTimeout:async()=>{},viewportSize:()=>({width:100,height:100})};
+  const run=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert','tierJourneyControlGeometry',
+    'let load=1;'+controlContext+source.slice(begin,end)+'return armGameClick("Pause","session");');
+  const click=await run(async()=>({canvas:{x:0,y:0,width:100,height:100},layout:before,item:before.controls[0]}),
+    async()=>{},page,[],states,{actions:[]},async()=>({load:1,phase:'settling',paused:true}),(ok,message)=>assert.ok(ok,message),layouts,assert,tierJourneyControlGeometry);
+  layouts.push({...before,t:2,phase:'settling',controls:[{...before.controls[0],x:50}]});
   states.push({...states[0],phase:'settling'});
-  await click();assert.deepEqual(pressed,{x:7,y:1},'Actual pointer must use the latest observed enabled target, not the old battle center');
+  await click();assert.deepEqual(pressed,{x:72,y:22},'Actual pointer must use the latest observed enabled target, not the old battle center');
+});
+
+test('HUD-only pointer actions require a fresh same-document layout acknowledgement',async()=>{
+  const begin=source.indexOf('    const armGameClick='),end=source.indexOf('    const gameClick=',begin);
+  for(const fault of [undefined,'absent','load','origin','time','predicate']){
+    const before={phase:'workshop',load:1,timeOrigin:100,t:10,width:100,height:100,opened:true,
+      controls:[],shopControls:[{name:'ShopEntry',x:0,y:0,width:44,height:44,active:true,interactable:true}],settingsControls:[],graphics:[]};
+    const layouts=[before],states=[{phase:'workshop',load:1,timeOrigin:100}];let inputs=0;
+    const after={...before,t:11};
+    if(fault==='load')after.load=2;if(fault==='origin')after.timeOrigin=101;
+    if(fault==='time')after.t=9;if(fault==='predicate')after.opened=false;
+    const page={evaluate:async expression=>typeof expression==='function'?{focused:true,timeOrigin:100,
+      canvas:{x:0,y:0,width:100,height:100,pixelWidth:100,pixelHeight:100}}:undefined,
+      mouse:{move:async()=>{},down:async()=>{inputs++;},up:async()=>{if(fault!=='absent')layouts.push(after);}},
+      waitForTimeout:async()=>{},viewportSize:()=>({width:100,height:100})};
+    const run=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert','tierJourneyControlGeometry',
+      'let load=1;'+controlContext+source.slice(begin,end)+'return armGameClick("ShopEntry","hud-layout",item=>item.opened);');
+    const click=await run(async()=>({canvas:{x:0,y:0,width:100,height:100},layout:before,item:before.shopControls[0]}),
+      async()=>{},page,[],states,{actions:[]},async(rows,start,predicate)=>{
+        assert.equal(rows,layouts,'HUD changes must await actual layouts, without invented gameplay states');
+        const actual=rows.slice(start).find(predicate);assert.ok(actual,'Fresh action observation missing');return actual;
+      },(ok,message)=>assert.ok(ok,message),layouts,assert,tierJourneyControlGeometry);
+    if(fault)await assert.rejects(click(),/Fresh action observation missing/);else assert.equal(await click(),after);
+    assert.equal(inputs,1);assert.equal(states.length,1,'A shop opening does not invent a state event');
+  }
 });
 
 for(const loss of ['blur','hidden','reload','resize','used','document','origin','canvas','layout-origin','layout-dimensions',
   'layout-load','stale-layout','phase','missing','disabled','out-of-bounds'])test(`prepared pointer refuses ${loss} before sending input`,async()=>{
   const begin=source.indexOf('    const armGameClick=');const end=source.indexOf('    const gameClick=',begin);
   assert.ok(begin>0 && end>begin);
-  const trace=[],states=[{load:1,timeOrigin:100,phase:'battle'}];let inputs=0,width=10;
-  const layout={load:1,timeOrigin:100,t:1,phase:'battle',width:10,height:10,
-    controls:[{name:'Pause',x:0,y:0,width:2,height:2,active:true,interactable:true}]};
+  const trace=[],states=[{load:1,timeOrigin:100,phase:'battle'}];let inputs=0,width=100;
+  const layout={load:1,timeOrigin:100,t:1,phase:'battle',width:100,height:100,
+    controls:[{name:'Pause',x:0,y:0,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
   const layouts=[layout];
   const page={evaluate:async expression=>typeof expression==='function'?{focused:loss!=='document',timeOrigin:loss==='origin'?101:100,
-    canvas:{x:0,y:0,width:loss==='canvas'?20:10,height:10,pixelWidth:10,pixelHeight:10}}:undefined,
-    mouse:{move:async()=>{},down:async()=>{inputs++;},up:async()=>{}},waitForTimeout:async()=>{},viewportSize:()=>({width,height:10})};
-  const compile=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert',
-    'let load=1;'+source.slice(begin,end)+'return {armGameClick,reload:()=>load++};');
-  const fixture=compile(async()=>({canvas:{x:0,y:0,width:10,height:10},layout,item:layout.controls[0]}),
-    async()=>{},page,trace,states,{actions:[]},async()=>({phase:'settling',paused:true}),(ok,message)=>assert.ok(ok,message),layouts,assert);
+    canvas:{x:0,y:0,width:loss==='canvas'?200:100,height:100,pixelWidth:100,pixelHeight:100}}:undefined,
+    mouse:{move:async()=>{},down:async()=>{inputs++;},up:async()=>{}},waitForTimeout:async()=>{},viewportSize:()=>({width,height:100})};
+  const compile=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert','tierJourneyControlGeometry',
+    'let load=1;'+controlContext+source.slice(begin,end)+'return {armGameClick,reload:()=>load++};');
+  const fixture=compile(async()=>({canvas:{x:0,y:0,width:100,height:100},layout,item:layout.controls[0]}),
+    async()=>{},page,trace,states,{actions:[]},async()=>({phase:'settling',paused:true}),(ok,message)=>assert.ok(ok,message),layouts,assert,tierJourneyControlGeometry);
   const click=await fixture.armGameClick('Pause','session');
   if(loss==='blur')trace.push({globalTarget:true,kind:'blur'});
   if(loss==='hidden')trace.push({globalTarget:true,kind:'visibilitychange',hidden:true});
   if(loss==='reload')fixture.reload();
-  if(loss==='resize')width=20;
+  if(loss==='resize')width=200;
   if(loss==='layout-origin')layouts.push({...layout,timeOrigin:101});
-  if(loss==='layout-dimensions')layouts.push({...layout,width:11});
+  if(loss==='layout-dimensions')layouts.push({...layout,width:101});
   if(loss==='layout-load')layouts.push({...layout,load:2});
   if(loss==='stale-layout')layouts.push({...layout,t:0});
   if(loss==='phase')layouts.push({...layout,phase:'settling'});

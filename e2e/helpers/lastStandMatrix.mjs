@@ -14,11 +14,13 @@ export const LAST_STAND_VIEWPORTS = Object.freeze([
 ].map(Object.freeze));
 
 export const LAST_STAND_ENTRY_ROUTES=Object.freeze([
-  ['compatible Ash Road resume','ash-road'],['remembered Skirmishes','standard'],
+  ['retired save cannot promote a removed campaign','first-salvo'],
+  ['remembered retired campaign selects Last Stand','last-stand'],
+  ['legacy Ash Road route selects Last Stand','last-stand'],['remembered Skirmishes','standard'],
   ['Return before remembered Ash Road','last-stand'],['validated ST1 before remembered Ash Road','imported-challenge'],
   ['invite before validated ST1','online'],['invite before explicit Return','online'],['rejoin before validated ST1','online'],
-  ['invalid mixed signals cannot override remembered Ash Road','ash-road'],
-  ['invalid Return spelling cannot override remembered Ash Road','ash-road'],
+  ['invalid mixed signals recover retired selection','last-stand'],
+  ['invalid Return spelling recovers retired selection','last-stand'],
 ].map(([name,selected])=>Object.freeze({name,selected})));
 
 // Lifecycle shards run the complete fresh-player progression. Independent

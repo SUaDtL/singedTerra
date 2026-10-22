@@ -235,12 +235,12 @@ const PARACHUTE_SLOPE_RISK = 40;
  * turn. Difficulty-scaled and DAMAGE-scaled:
  *  - easy always lobs the free Baby Missile (beatable, predictable).
  *  - a hurt HARD bot raises a held normal shield only when it adds protection
- *    in classic play; the legacy campaign planning path is retained.
+ *    rather than replacing an equal or stronger active pool.
  *  - otherwise: among the damaging weapons the bot actually OWNS (medium excludes
  *    the heavy/premium tier), pick the WEAKEST that can still finish the target in
  *    one solid hit according to the existing damage estimate. Classic hard bots
- *    include the target's remaining shield; medium/campaign retain hull-only
- *    selection. This is a loadout heuristic, not proof of a lethal trajectory.
+ *    include the target's remaining shield; medium retains hull-only selection.
+ *    This is a loadout heuristic, not proof of a lethal trajectory.
  *  - BUY-TO-RESTOCK (hard only, P1-7b): if NOTHING in stock one-shots the target
  *    but the bot can afford a finisher, buy it (see chooseBuy) and fire it. Else
  *    fall back to the strongest weapon in stock.
@@ -261,10 +261,8 @@ function chooseLoadout(
 
   // Normal shields replace the pool; they do not add to it. A classic bot
   // must not spend its turn for zero protection or downgrade a stronger pool.
-  // Campaign profiles/replayed plans retain their established selection path.
   if (difficulty === 'hard' && me.health <= SHIELD_HP_THRESHOLD && has('shield')
-    && (state.campaign !== undefined
-      || me.shieldHp < (getWeapon('shield').behavior?.shield?.capacity ?? 0))) {
+    && me.shieldHp < (getWeapon('shield').behavior?.shield?.capacity ?? 0)) {
     return { weapon: 'shield' };
   }
 
@@ -277,7 +275,7 @@ function chooseLoadout(
   // merely because the shielded tank has little hull left. Keep this same
   // requirement for held stock and restocking so a buy/replan cannot disagree.
   // Terrain bypass, aiming and actual kill prediction are separate concerns.
-  const damageRequired = target.health + (difficulty === 'hard' && state.campaign === undefined
+  const damageRequired = target.health + (difficulty === 'hard'
     ? Math.max(0, target.shieldHp) : 0);
   const weaponBuy = difficulty === 'hard' ? chooseBuy(me, damageRequired, armsLevel, personality) : null;
   const weaponBuyCost = weaponBuy ? getWeapon(weaponBuy).price : 0;
