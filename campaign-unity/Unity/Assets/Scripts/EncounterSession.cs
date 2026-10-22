@@ -252,12 +252,14 @@ namespace SingedTerra.Encounter
         void OnApplicationFocus(bool value)
         {
             focused = value;
-            if (BackgroundContinuation) Emit("visibility"); else if (!value) Suspend("focus");
+            // Idle Last Stand controls also depend on focus. A terminal run
+            // releases its clock while hidden, so notify its HUD on return.
+            if (loop) Emit("visibility"); else if (!value) Suspend("focus");
         }
         void OnApplicationPause(bool value)
         {
             applicationPaused = value;
-            if (BackgroundContinuation) Emit("visibility"); else if (value) Suspend("application");
+            if (loop) Emit("visibility"); else if (value) Suspend("application");
         }
         [Serializable] sealed class State
         {

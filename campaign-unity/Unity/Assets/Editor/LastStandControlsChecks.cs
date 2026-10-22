@@ -120,6 +120,7 @@ public static class LastStandControlsChecks
             Check("test_abandon_cancel_and_confirm_without_award",AbandonCancelAndConfirmWithoutAward);
             Check("test_reset_defaults_preserves_gameplay_and_pause",ResetDefaultsPreservesGameplayAndPause);
             Check("test_failed_save_refuses_navigation",FailedSaveRefusesNavigation);
+            Check("test_idle_controls_restore_after_focus_and_visibility",IdleControlsRestoreAfterFocusAndVisibility);
             Check("test_display_owns_runtime_pipeline_clone",DisplayOwnsRuntimePipelineClone);
             Check("test_guidance_optout_and_audio_sample_admission",GuidanceOptoutAndAudioSampleAdmission);
         }
@@ -129,6 +130,31 @@ public static class LastStandControlsChecks
             LastStandLoopController.PreferencesStorageFactory=preferencesFactory;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
             QualitySettings.renderPipeline=pipeline;Application.runInBackground=background;
+        }
+    }
+
+    static void IdleControlsRestoreAfterFocusAndVisibility()
+    {
+        var pending=new Storage();var progress=LastStandProgression.Load(pending);
+        Require(progress.TryDeploy()&&progress.TryStageDefeat(1600,30),"seed result through its real writer");
+        foreach(var gameplay in new[] { null,Funded,pending.Value })
+        foreach(bool visibility in new[] { false,true })
+        {
+            var f=new Fixture(gameplay:gameplay);string phase=f.Loop.Phase;
+            string callback=visibility?"OnApplicationPause":"OnApplicationFocus";
+            Invoke(f.Loop.Session,callback,visibility);
+            // The background terminal publishes its result while unavailable.
+            // Also cover an idle panel refreshed by resize while in the background.
+            f.Loop.RefreshControls();
+            Require(!f.Loop.CanOpenMenu&&!f.Button("Menu").IsInteractable(),"background menu is unavailable");
+            string saved=f.Game.Value;int writes=f.Game.Writes;
+            Invoke(f.Loop.Session,callback,!visibility);
+            Require(f.Loop.CanOpenMenu&&f.Button("Menu").IsInteractable(),
+                phase+" menu restores after actual "+callback+" without another action or refresh");
+            f.Click("Menu");Require(f.Loop.MenuPage=="menu","restored menu accepts its real pointer action");
+            f.Click("SettingsClose");
+            Require(f.Loop.Phase==phase&&f.Loop.Session.Model==null&&f.Game.Value==saved&&f.Game.Writes==writes,
+                "idle focus restoration and menu never deploy, award or write gameplay");
         }
     }
 

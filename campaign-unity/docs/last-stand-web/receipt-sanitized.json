@@ -2,11 +2,11 @@
   "schema": "singedterra-last-stand-export/v2",
   "complete": true,
   "status": "pass",
-  "build": "Web-20261022T063027Z-a994fe",
+  "build": "Web-20261022T074236Z-ae40a0",
   "scene": "Assets/Scenes/LastStandPrototype.unity",
-  "sourceHead": "ab066a3720a435a7febceaf5d8cedc369488f6a6",
-  "sourceBeforeSha256": "64533913a2379b74443c7d2872432c381233722240e8d8d9a1d438c88de430c1",
-  "sourceAfterSha256": "64533913a2379b74443c7d2872432c381233722240e8d8d9a1d438c88de430c1",
+  "sourceHead": "920a459b4eed8b845a30b5029742941ad66290dd",
+  "sourceBeforeSha256": "9cb832e971d03dbaa9b64cb3f9489876812d331317c294beac98bc751dafa3ab",
+  "sourceAfterSha256": "9cb832e971d03dbaa9b64cb3f9489876812d331317c294beac98bc751dafa3ab",
   "sourceFiles": {
     "Tools/build_web.py": {
       "mode": "lf-text",
@@ -326,7 +326,7 @@
     },
     "Unity/Assets/Editor/LastStandControlsChecks.cs": {
       "mode": "lf-text",
-      "sha256": "e2169e00a889b88e0764759136de6e3fcd33b7160dbfe0ed98f5abcef268297a"
+      "sha256": "576ccef6542ca6e491d4657d2be8c1ef5a04d39dcfc12a1465e8443021e467d9"
     },
     "Unity/Assets/Editor/LastStandControlsChecks.cs.meta": {
       "mode": "lf-text",
@@ -978,7 +978,7 @@
     },
     "Unity/Assets/Scripts/EncounterSession.cs": {
       "mode": "lf-text",
-      "sha256": "ce33848857ceff4e314fb2a1ce969f160f81ffa923434f826425cda7547e0baa"
+      "sha256": "c6b3963f18982cc929db1de25ad14a2032e831f886896cef9005d6cf5d6b24a0"
     },
     "Unity/Assets/Scripts/EncounterSession.cs.meta": {
       "mode": "lf-text",
@@ -83019,10 +83019,10 @@
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
   "artifacts": {
-    "Build/Web-20261022T063027Z-a994fe.data": "d693205dc5c88fc71d9094f9d498b46a5a3d0d91ab64893fb109cafcd2a4e32e",
-    "Build/Web-20261022T063027Z-a994fe.framework.js": "ff956574e158cbce056e74d122c660c0f7cefdaa82b97e296ab5472368397dd8",
-    "Build/Web-20261022T063027Z-a994fe.loader.js": "cf21b764c50c29a8d2d97750ff86c62335d4672aa1d3db5ccff977193e06783f",
-    "Build/Web-20261022T063027Z-a994fe.wasm": "b1383b9403e8817d2a684115b43c41a64f3513812a4be8bb370cd57b597ee98a",
+    "Build/Web-20261022T074236Z-ae40a0.data": "7f0c0cdde5d37b7305a5f5c0ad80a17143447a9af21e917043fde1b32c969283",
+    "Build/Web-20261022T074236Z-ae40a0.framework.js": "ff956574e158cbce056e74d122c660c0f7cefdaa82b97e296ab5472368397dd8",
+    "Build/Web-20261022T074236Z-ae40a0.loader.js": "6aeae9706acc3a31101558c885c5619a666c512d5fbba63cbc6ca5957ef66277",
+    "Build/Web-20261022T074236Z-ae40a0.wasm": "37128f5aa126316708a2e7dc354c9fb62abfa640e5c055fa3077a893109b38cd",
     "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
     "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
     "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
@@ -83035,11 +83035,11 @@
     "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
     "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
     "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
-    "index.html": "9601e4a3bdd896f08bdc59fa448a7e8e5a6a7c26a057f3e220d4398be144ea06"
+    "index.html": "9cdf4adf70ca7ee4324c8fa0d249a111331b0af92609717627e740907b3c24ce"
   },
-  "wrapperSha256": "e50257e92caefb36944f184d308ce7e0ae97de34d8a007a6662ebf903e95d916",
-  "rawReceiptSha256": "fec64bd8fa0057ff120c0134d48694e9e8b4de1232d396d9c409600a3c5ec309",
-  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261022T063027Z-a994fe/result.json",
+  "wrapperSha256": "e8cccbaa6bd0995722ac2f2ac30576c93edad82ea202d2791e843a698e366d48",
+  "rawReceiptSha256": "a61ec02e3791f36f8430a1d5c62f538ae72b95fa8bec90cecf9093297184638e",
+  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261022T074236Z-ae40a0/result.json",
   "approvedArtifacts": {
     "ST-LS-LOOP-SPEC": {
       "revision": 9,
