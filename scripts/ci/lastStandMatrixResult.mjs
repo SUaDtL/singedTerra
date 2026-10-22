@@ -64,11 +64,14 @@ export function assertLastStandMatrix(reports,{head,inputs}) {
       assert.equal(preserved.native_return,'observed unchanged');
       assert.equal(preserved.retirement,'observed Last Stand only');
       assert.equal(report.input_trace?.matched,true,'Unfinished deployments require matched native input');
-      assert.equal(report.input_trace.actions,2);assert.equal(report.input_trace.observed_edges,4);
-      assert.ok(Number.isInteger(report.input_trace.outer_keyboard_edges) && report.input_trace.outer_keyboard_edges>=2,
-        'Unfinished Return requires actual native outer keyboard input');
-      assert.equal(report.actions?.length,2);
-      assert.ok(report.actions.every(a=>a.name==='Deploy' && a.action==='deploy'),'Both unfinished runs require ordinary Deploy');
+      const entryActions=[['Deploy','deploy'],['ConfirmCancel','confirmation-cancel'],['SettingsClose','menu-close'],
+        ['ConfirmProceed','abandon'],['Deploy','deploy']];
+      assert.deepEqual(report.actions?.map(a=>[a.name,a.action]),entryActions,
+        'Unfinished Return requires cancel, close, confirmed abandon and ordinary redeploy in order');
+      assert.equal(report.input_trace.actions,entryActions.length);
+      assert.equal(report.input_trace.observed_edges,entryActions.length*2);
+      assert.ok(Number.isInteger(report.input_trace.outer_keyboard_edges) && report.input_trace.outer_keyboard_edges>=4,
+        'Both unfinished Return requests require actual native outer keyboard input');
       for(const expected of LAST_STAND_ENTRY_ROUTES){
         const observed=report.routes?.filter(r=>r.name===expected.name);
         assert.equal(observed?.length,1,'Every original startup-routing case is required exactly once');

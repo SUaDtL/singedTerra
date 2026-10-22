@@ -84,10 +84,11 @@ function matrixFixture() {
     'retired campaign has no library entry','retired campaign has no start or resume entry',
     'retired campaign bytes preserved through native Last Stand Return','native Return offers only Last Stand',
     'no unclassified browser/Unity/shader/request errors in any scope'];
-  const unfinishedActions=[{name:'Deploy',action:'deploy',x:0,y:0},{name:'Deploy',action:'deploy',x:0,y:0}];
+  const unfinishedActions=[['Deploy','deploy'],['ConfirmCancel','confirmation-cancel'],['SettingsClose','menu-close'],
+    ['ConfirmProceed','abandon'],['Deploy','deploy']].map(([name,action])=>({name,action,x:0,y:0}));
   const unfinishedTrace=[...unfinishedActions.flatMap(a=>['pointerdown','pointerup'].map(kind=>({kind,area:'gameplay',
     button:0,target:'unity-canvas',x:a.x,y:a.y,focused:true,hidden:false}))),
-    ...['keydown','keyup'].map(kind=>({kind,area:'outer',code:'Enter',target:'last-stand-return'}))];
+    ...['keydown','keyup','keydown','keyup'].map(kind=>({kind,area:'outer',code:'Enter',target:'last-stand-return'}))];
   const reports=Array.from({length:12},(_,i)=>{
     const section=i<10?'lifecycle':i===10?'recovery':'entry',shard=i<10?`${i+1}/10`:null;
     const partition=journey.lastStandViewportPartition(shard??undefined,{host:'linux',profile:'linux-functional'});
@@ -192,6 +193,23 @@ test('recovery qualification refuses every missing original fault profile and br
     const sample=structuredClone(baseline);
     sample.reports[10].checks=sample.reports[10].checks.filter(c=>c.name!==check.name);
     assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),check.name);
+  }
+});
+
+test('entry aggregate binds the maintained confirmed Return and reload action sequence',()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf("    if(section.entry){\n    await gameClick('Deploy','deploy');");
+  const end=source.indexOf('    if(section.lifecycle){',begin);
+  assert.ok(begin>0 && end>begin);
+  const actions=[...source.slice(begin,end).matchAll(/await gameClick\('([^']+)','([^']+)'/g)].map(([,name,action])=>[name,action]);
+  const baseline=matrixFixture();
+  assert.deepEqual(baseline.reports[11].actions.map(a=>[a.name,a.action]),actions);
+  assert.doesNotThrow(()=>assertLastStandMatrix(baseline.reports,baseline.expected));
+  for(const fault of [r=>r.actions.splice(1,1),r=>r.actions.push({...r.actions[0]}),
+    r=>r.actions.reverse(),r=>{r.actions[1].action='abandon';},
+    r=>{r.input_trace.actions=2;},r=>{r.input_trace.observed_edges=4;},r=>{r.input_trace.outer_keyboard_edges=2;}]){
+    const sample=structuredClone(baseline);fault(sample.reports[11]);
+    assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected));
   }
 });
 
