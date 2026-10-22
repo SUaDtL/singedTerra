@@ -2563,8 +2563,12 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
     }
     browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, { noDefaults: true, timeout: 20_000 });
     assert.equal(browser.contexts().length, 1, 'One native default context required');
-    ownedBrowserWindows.set(browser,{root:supervisor.root,profile,executable,context:browser.contexts()[0],output});
-    return { browser, context: browser.contexts()[0], close };
+    const context=browser.contexts()[0];
+    // CDP can become available before Chromium publishes its original tab.
+    // Wait for that tab so every caller retains the same native page and focus.
+    if(context.pages().length===0)await context.waitForEvent('page',{timeout:20_000});
+    ownedBrowserWindows.set(browser,{root:supervisor.root,profile,executable,context,output});
+    return { browser, context, close };
   } catch (error) {try{await close();}catch(cleanup){error.cleanup_error=String(cleanup);}throw error;}
 }
 

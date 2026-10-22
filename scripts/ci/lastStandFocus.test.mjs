@@ -1,9 +1,63 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { join } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { tierJourneyControlGeometry } from '../../e2e/helpers/lastStandTierJourney.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+
+function ownedStartupFixture({ready=false,missing=false}={}) {
+  const begin=source.indexOf('export async function ownedChrome(');
+  const end=source.indexOf('\nfunction frameTiming',begin);
+  assert.ok(begin>0 && end>begin,'Exercise the maintained owned browser launcher');
+  const page={identity:'original startup tab'},pages=ready?[page]:[],receipts=[],calls=[];
+  const unavailable=new Error('Original startup page did not arrive');
+  let deliver;
+  const context={pages:()=>pages,waitForEvent:async(event,options)=>{
+    assert.equal(event,'page');assert.ok(options.timeout>0 && options.timeout<=20000);
+    calls.push('wait-page');
+    if(missing)throw unavailable;
+    return new Promise(resolve=>{deliver=resolve;});
+  },newPage:()=>assert.fail('Do not replace the original native startup tab')};
+  const browser={contexts:()=>[context],close:async()=>calls.push('close-connection'),
+    newBrowserCDPSession:async()=>({send:async method=>{assert.equal(method,'Browser.close');calls.push('close-browser');}})};
+  const launch=runInNewContext(source.slice(begin,end).replace('export async function','async function')+';ownedChrome',{
+    process:{platform:'linux'},join,assert,existsSync:()=>true,mkdtempSync:()=>'/owned/profile',tmpdir:()=>'/tmp',
+    nativeChromeArgs:()=>['about:blank'],spawn:()=>({pid:12345,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){}}),
+    writeFileSync:(path,contents)=>{if(path.endsWith('browser-profile.json'))receipts.push(JSON.parse(contents));},
+    readFileSync:()=> '12345\n/owned-endpoint',delay:async()=>{},ownedBrowsers:new Set(),ownedBrowserWindows:new WeakMap(),
+    startOwnedSupervisor:()=>({root:{pid:12345},stop:async()=>{calls.push('stop-owned-tree');return {status:'stopped'};}}),
+  });
+  return {page,context,calls,receipts,unavailable,
+    launch:()=>launch({executablePath:()=>'/owned/chrome',connectOverCDP:async()=>browser},'/owned/evidence'),
+    deliver:()=>{pages.push(page);deliver?.(page);}};
+}
+
+test('owned browser waits for its delayed original tab before callers inspect pages',async()=>{
+  const fixture=ownedStartupFixture();let settled=false;
+  const launching=fixture.launch().then(native=>{settled=true;return native;});
+  await new Promise(resolve=>setImmediate(resolve));
+  try {
+    assert.equal(settled,false,'CDP can connect before the original tab becomes available');
+    fixture.deliver();
+    const native=await launching;
+    assert.equal(native.context.pages()[0],fixture.page,'Return the original native tab without synthesizing another');
+    assert.deepEqual(fixture.calls,['wait-page']);
+    await native.close();
+  } finally {fixture.deliver();await (await launching).close();}
+});
+
+test('owned browser preserves an existing tab and cleans up when no original tab arrives',async()=>{
+  const ready=ownedStartupFixture({ready:true});
+  const native=await ready.launch();
+  assert.equal(native.context.pages()[0],ready.page);assert.deepEqual(ready.calls,[]);
+  await native.close();
+  const missing=ownedStartupFixture({missing:true});
+  await assert.rejects(missing.launch(),error=>error===missing.unavailable);
+  assert.deepEqual(missing.calls,['wait-page','close-browser','stop-owned-tree','close-connection']);
+  assert.equal(missing.receipts.at(-1).status,'removed');
+});
 const controlContextBegin=source.indexOf('    const hudControls=');
 const controlContextEnd=source.indexOf('    const geometry=',controlContextBegin);
 assert.ok(controlContextBegin>0 && controlContextEnd>controlContextBegin,'Actual maintained control geometry helpers are required');
