@@ -16,6 +16,7 @@ namespace SingedTerra.Encounter
         LastStandRunClock runClock;
         bool reconciling, terminalReported;
         double accumulated;
+        double configuredSpeed = LastStandSpeedPolicy.InitialMaximum;
         int run, lastReportSecond = -1;
         bool focused = true, applicationPaused;
         public EncounterModel Model => model;
@@ -26,6 +27,12 @@ namespace SingedTerra.Encounter
         public string Failure { get; private set; } = "";
         public bool CanRun => focused && !applicationPaused;
         public bool BackgroundContinuation => loop && runClock != null;
+        public double MaximumSpeed => LastStandSpeedPolicy.InitialMaximum;
+        public double LastPositiveSpeed => runClock?.LastPositiveSpeed ?? configuredSpeed;
+        public double SelectedSpeed => runClock?.SelectedSpeed ?? configuredSpeed;
+        public double EffectiveSpeed => Paused ? 0 : runClock?.EffectiveSpeed ?? configuredSpeed;
+        public bool ManualPaused => runClock?.ManualPaused ?? Paused;
+        public bool MenuPaused => runClock?.MenuPaused ?? false;
         public bool CatchingUp => BackgroundContinuation && model != null &&
             model.Status == EncounterStatus.Running && runClock.CatchingUp;
         public bool CanPresentFeedback => CanRun && !Paused && Failure == "" && !CatchingUp && !reconciling;
@@ -49,9 +56,9 @@ namespace SingedTerra.Encounter
         public void DeployAt(double timestamp) { StartAt(timestamp, null); }
         // Only the dedicated controller supplies a freshly reserved ledger.
         // Shared and direct session deployments keep their original defaults.
-        internal void DeployReservedRun(LastStandShopState shop)
-        { StartAt(Time.realtimeSinceStartupAsDouble, shop); }
-        void StartAt(double timestamp, LastStandShopState shop)
+        internal void DeployReservedRun(LastStandShopState shop, bool menuPaused = false)
+        { StartAt(Time.realtimeSinceStartupAsDouble, shop, menuPaused); }
+        void StartAt(double timestamp, LastStandShopState shop, bool menuPaused = false)
         {
             if (model != null || !focused || applicationPaused) return;
             bool launcher = art.showingLauncher;
@@ -60,10 +67,12 @@ namespace SingedTerra.Encounter
                 loop ? loop.Progression.CannonDamage : EncounterModel.CannonDamage); run++; accumulated = 0;
             Shop = shop;
             if (Shop != null) ApplyShopProjection();
-            runClock = loop ? new LastStandRunClock(timestamp, model.Profile.Horizon) : null;
+            runClock = loop ? new LastStandRunClock(timestamp, model.Profile.Horizon, configuredSpeed, MaximumSpeed) : null;
+            if (menuPaused && runClock != null) runClock.SetMenuPaused(timestamp, true);
             terminalReported = reconciling = false;
             StepsThisCallback = 0; CallbackElapsedSeconds = TerminalElapsedSeconds = 0;
-            Paused = false; Reason = ""; Failure = ""; lastReportSecond = -1;
+            Paused = runClock != null && runClock.Paused; Reason = Paused ? "menu" : ""; Failure = ""; lastReportSecond = -1;
+            art.SetEncounterPaused(Paused);
             View.Clear(); View.Render(model); Emit("deploy");
             if (runClock != null && runClock.Failed) Fail("InvalidClock");
         }
@@ -83,6 +92,7 @@ namespace SingedTerra.Encounter
         public void ReturnToInspection()
         {
             if (model == null) return;
+            if (runClock != null) configuredSpeed = runClock.LastPositiveSpeed;
             model = null; Shop = null; runClock = null; accumulated = 0; Paused = false; Reason = ""; Failure = "";
             terminalReported = reconciling = false;
             StepsThisCallback = 0; CallbackElapsedSeconds = TerminalElapsedSeconds = 0;
@@ -93,22 +103,54 @@ namespace SingedTerra.Encounter
         {
             if (BackgroundContinuation)
             {
-                if (model == null || Failure != "" || CatchingUp || (Paused && !CanRun)) return;
-                if (!Paused)
-                {
-                    // Reconcile the action boundary before excluding paused time.
-                    AdvanceAt(timestamp);
-                    if (model == null || Failure != "" || CatchingUp) return;
-                    if (!runClock.Pause(timestamp)) { Fail("InvalidClock"); return; }
-                }
-                else if (!runClock.Resume(timestamp)) { Fail("InvalidClock"); return; }
-                Paused = runClock.Paused; Reason = Paused ? "user" : "";
-                art.SetEncounterPaused(Paused || model.Status != EncounterStatus.Running); Emit("pause");
+                if (!PrepareClockAction(timestamp)) return;
+                bool accepted = runClock.ManualPaused ? runClock.Resume(timestamp) : runClock.Pause(timestamp);
+                if (accepted) PublishClockAction("pause");
+                else if (runClock.Failed) Fail("InvalidClock");
                 return;
             }
             if (model == null || model.Status != EncounterStatus.Running || Failure != "") return;
             if (Paused && (!focused || applicationPaused)) return;
             Paused = !Paused; Reason = Paused ? "user" : ""; accumulated = 0; art.SetEncounterPaused(Paused); Emit("pause");
+        }
+        public bool ConfigureSpeed(double speed)
+        {
+            if (model != null) return false;
+            configuredSpeed = LastStandSpeedPolicy.RestorePositive(speed);
+            return true;
+        }
+        public bool TrySetSpeed(double speed) => TrySetSpeedAt(Time.realtimeSinceStartupAsDouble, speed);
+        public bool TrySetSpeedAt(double timestamp, double speed)
+        {
+            if (!LastStandSpeedPolicy.Allows(speed) || !PrepareClockAction(timestamp)) return false;
+            if (!runClock.SetSpeed(timestamp, speed))
+            { if (runClock.Failed) Fail("InvalidClock"); return false; }
+            configuredSpeed = runClock.LastPositiveSpeed;
+            PublishClockAction("speed"); return true;
+        }
+        public bool TrySetMenuPaused(bool paused) => TrySetMenuPausedAt(Time.realtimeSinceStartupAsDouble, paused);
+        public bool TrySetMenuPausedAt(double timestamp, bool paused)
+        {
+            if (!PrepareClockAction(timestamp)) return false;
+            if (!runClock.SetMenuPaused(timestamp, paused))
+            { if (runClock.Failed) Fail("InvalidClock"); return false; }
+            PublishClockAction("menu"); return true;
+        }
+        bool PrepareClockAction(double timestamp)
+        {
+            if (!BackgroundContinuation || model == null || Failure != "" || CatchingUp || !CanRun) return false;
+            // An action cannot change the rate of already elapsed simulation.
+            // Advance may trigger a terminal/controller transition, so recheck
+            // the live owners before changing either pause cause.
+            AdvanceAt(timestamp);
+            return BackgroundContinuation && model != null && Failure == "" && !CatchingUp;
+        }
+        void PublishClockAction(string action)
+        {
+            Paused = runClock.Paused;
+            Reason = runClock.ManualPaused ? "user" : runClock.MenuPaused ? "menu" : "";
+            art.SetEncounterPaused(Paused || model.Status != EncounterStatus.Running);
+            Emit(action);
         }
         public void ToggleEffects() { View.ToggleEffects(); Emit("effects"); }
         void Suspend(string reason)
@@ -157,12 +199,11 @@ namespace SingedTerra.Encounter
             StepsThisCallback = 0; CallbackElapsedSeconds = 0;
             if (!BackgroundContinuation || model == null || Failure != "") return;
             double elapsed = timestamp - runClock.LastTimestamp;
-            double pending = runClock.PendingSeconds;
             if (!runClock.Observe(timestamp)) { Fail("InvalidClock"); return; }
             if (Paused) return;
             CallbackElapsedSeconds = elapsed;
             var current = model;
-            reconciling = !CanRun || pending + elapsed + 1e-9 >= 2 * LastStandRunClock.StepSeconds;
+            reconciling = !CanRun || runClock.PendingSeconds + 1e-9 >= 2 * LastStandRunClock.StepSeconds;
             try
             {
                 if (current.Status != EncounterStatus.Running)
@@ -184,10 +225,12 @@ namespace SingedTerra.Encounter
                 if (current.Status != EncounterStatus.Running)
                 {
                     runClock.Stop(); art.SetEncounterPaused(true);
-                    // Keep only the lifecycle interval, including elapsed that
-                    // extended past the combat horizon in this callback.
+                    // Combat debt is in simulation seconds. The clock retains
+                    // the wall timestamp of the terminal tick, including delayed
+                    // callbacks and the bounded horizon, so cosmetics never
+                    // accelerate or slow down with the selected game speed.
                     TerminalElapsedSeconds = Math.Min(.48, Math.Max(0,
-                        pending + elapsed - StepsThisCallback * LastStandRunClock.StepSeconds));
+                        timestamp - runClock.LastStepTimestamp));
                 }
                 View.Render(current); View.Advance((float)Math.Min(elapsed, .7));
                 if (current.Status != EncounterStatus.Running && !terminalReported)
@@ -224,6 +267,8 @@ namespace SingedTerra.Encounter
             public bool paused, focused, applicationPaused, locked, fullEffects, failed, catchingUp;
             public int callbackSteps;
             public double terminalElapsed;
+            public double selectedSpeed, effectiveSpeed, maximumSpeed;
+            public bool manualPaused, menuPaused;
         }
         void Emit(string action)
         {
@@ -235,6 +280,8 @@ namespace SingedTerra.Encounter
                 reason = Reason, paused = Paused, focused = focused, applicationPaused = applicationPaused,
                 locked = art.EncounterActive, fullEffects = View.FullEffects, failed = Failure != "",
                 catchingUp = CatchingUp, callbackSteps = StepsThisCallback, terminalElapsed = TerminalElapsedSeconds,
+                selectedSpeed = SelectedSpeed, effectiveSpeed = EffectiveSpeed, maximumSpeed = MaximumSpeed,
+                manualPaused = ManualPaused, menuPaused = MenuPaused,
                 tick = model?.Tick ?? 0, hp = model?.Hull ?? 120, maxHp = model?.CurrentMaximumHull ?? 120,
                 spawned = model?.Spawned ?? 0, kills = model?.Kills ?? 0,
                 cannon = model?.CannonShots ?? 0, launcher = model?.LauncherShots ?? 0,

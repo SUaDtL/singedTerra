@@ -31,6 +31,11 @@ namespace SingedTerra.LastStand
         public const float MinimumActionWidth = 148;
         public const float CompactBattleActionWidth = 108;
         public const float CompactFourActionWidth = 88;
+        public const float ExpandedBattleActionWidth = 68;
+        public const float ExpandedPortraitCardWidth = 300;
+        public const float ExpandedPortraitDockPadding = 4;
+        public const float ExpandedShortCardWidth = 520;
+        public const float ExpandedShortFittingWidth = 220;
         public const float MaximumCardWidth = 440;
         public const float MaximumDockWidth = 900;
         public const float BattleCardWidth = 660;
@@ -179,7 +184,7 @@ namespace SingedTerra.LastStand
             // original two-action projection retains its existing dock.
             var dock = new List<Slot>();
             Dock(dock, width, height, activeControls, edge, padding, commandConsole,
-                battle && (actionCount == 3 || actionCount == 4) && !commandConsole,shortRecovery);
+                battle && (actionCount == 3 || actionCount == 4) && !commandConsole,shortRecovery,battle && actionCount > 4);
             if (battle) Battle(slots, width, height, edge, padding, commandConsole, actionCount);
             else Card(slots, width, height, dock.Count == 0 ? height - 2 * Edge : dock[0].Bounds.Y - Edge - Gap);
             slots.AddRange(dock);
@@ -372,11 +377,15 @@ namespace SingedTerra.LastStand
         static void Battle(List<Slot> slots, float width, float height, float edge, float padding, bool commandConsole, int actionCount)
         {
             bool portrait = width < PortraitBreakpoint;
+            bool expandedPortrait = portrait && actionCount > 4;
+            bool expandedShort = !portrait && actionCount > 4 && edge == ShortBattleEdge;
             // A taller viewport can afford a real instrument cluster. Keep the
             // existing compact/short-height reflow when the expanded cluster
             // would cross the actual central-clearance boundary.
             bool instruments = !portrait && edge + InstrumentCardHeight <= height * .2f;
             float cardWidth = Math.Min(width - 2 * edge, instruments ? InstrumentCardWidth : BattleCardWidth);
+            if (expandedPortrait) cardWidth = Math.Min(cardWidth, ExpandedPortraitCardWidth);
+            if (expandedShort) cardWidth = Math.Min(cardWidth, ExpandedShortCardWidth);
             float cardHeight = instruments ? InstrumentCardHeight : portrait ? PortraitBattleCardHeight : 2 * padding + 2 * LineHeight + Gap;
             float left = edge, top = edge;
             if (commandConsole)
@@ -416,8 +425,9 @@ namespace SingedTerra.LastStand
                 Text(slots, "HullValue", "LastStandCard", x, hullY, columnWidth, LineHeight);
                 Text(slots, "ElapsedTime", "LastStandCard", nextColumn, hullY, columnWidth, LineHeight);
                 Add(slots, "HullBar", "LastStandCard", "bar", x, barY, columnWidth, HullBarHeight);
-                Text(slots, "DisabledCount", "LastStandCard", x, secondaryY, columnWidth, LineHeight);
-                Text(slots, "CannonDamage", "LastStandCard", nextColumn, secondaryY, columnWidth, LineHeight);
+                float killsWidth = expandedPortrait ? 110 : columnWidth;
+                Text(slots, "DisabledCount", "LastStandCard", x, secondaryY, killsWidth, LineHeight);
+                Text(slots, "CannonDamage", "LastStandCard", x + killsWidth + Gap, secondaryY, innerWidth - killsWidth - Gap, LineHeight);
                 Text(slots, "Fitting", "LastStandCard", x, fittingY, innerWidth, LineHeight);
             }
             else
@@ -429,22 +439,33 @@ namespace SingedTerra.LastStand
                 Text(slots, "DisabledCount", "LastStandCard", third, y, columnWidth, LineHeight);
                 float secondaryY = y + LineHeight + Gap;
                 Add(slots, "HullBar", "LastStandCard", "bar", x, y + LineHeight + HullBarGap, columnWidth, HullBarHeight);
-                float secondaryWidth = (innerWidth - 2 * Gap - BattleFittingWidth) / 2;
+                float fittingWidth = expandedShort ? ExpandedShortFittingWidth : BattleFittingWidth;
+                float secondaryWidth = (innerWidth - 2 * Gap - fittingWidth) / 2;
                 float cannonX = x + secondaryWidth + Gap;
                 float fittingX = cannonX + secondaryWidth + Gap;
                 Text(slots, "PhaseHeading", "LastStandCard", x, secondaryY, secondaryWidth, LineHeight);
                 Text(slots, "CannonDamage", "LastStandCard", cannonX, secondaryY, secondaryWidth, LineHeight);
-                Text(slots, "Fitting", "LastStandCard", fittingX, secondaryY, BattleFittingWidth, LineHeight);
+                Text(slots, "Fitting", "LastStandCard", fittingX, secondaryY, fittingWidth, LineHeight);
             }
         }
 
         static void Dock(List<Slot> slots, float width, float height, string[] controls, float edge, float padding, bool commandConsole,
-            bool compactBattle = false, bool singleRow = false)
+            bool compactBattle = false, bool singleRow = false, bool expandedBattle = false)
         {
             if (controls.Length == 0) return;
             float dockWidth = DockWidth(width, controls.Length, edge, padding, compactBattle);
+            if (expandedBattle)
+                dockWidth = Math.Min(dockWidth, controls.Length * ExpandedBattleActionWidth + (controls.Length - 1) * Gap + 2 * padding);
+            if (expandedBattle && width < PortraitBreakpoint)
+            {
+                // Eight ordinary controls remain two rows without occupying the
+                // central battlefield or exceeding the existing chrome budget.
+                // Concise labels keep the 68px targets readable at 14px.
+                padding = ExpandedPortraitDockPadding;
+                dockWidth = Math.Min(dockWidth, 4 * ExpandedBattleActionWidth + 3 * Gap + 2 * padding);
+            }
             int columns = compactBattle || singleRow ? controls.Length : Math.Max(1, Math.Min(controls.Length,
-                (int)Math.Floor((dockWidth - 2 * padding + Gap) / (MinimumActionWidth + Gap))));
+                (int)Math.Floor((dockWidth - 2 * padding + Gap) / ((expandedBattle ? ExpandedBattleActionWidth : MinimumActionWidth) + Gap))));
             int rows = (controls.Length + columns - 1) / columns;
             float rowHeight = singleRow ? 3 * LineHeight : MinimumTargetSize;
             float dockHeight = 2 * padding + rows * rowHeight + (rows - 1) * Gap;
@@ -475,7 +496,7 @@ namespace SingedTerra.LastStand
                 float targetHeight = commandConsole ? 52 : rowHeight;
                 float y = commandConsole ? top + dockHeight - padding - targetHeight : top + padding + (i / columns) * (rowHeight + Gap);
                 Add(slots, controls[i], "LastStandDock", "control", x, y, controlWidth, targetHeight);
-                float horizontalPadding = fourBattleActions ? 4 : singleRow ? ActionVerticalPadding : ActionHorizontalPadding;
+                float horizontalPadding = fourBattleActions || expandedBattle ? 4 : singleRow ? ActionVerticalPadding : ActionHorizontalPadding;
                 Text(slots, controls[i] + "Text", controls[i], x + horizontalPadding, y + ActionVerticalPadding,
                     controlWidth - 2 * horizontalPadding, targetHeight - 2 * ActionVerticalPadding);
                 compactX += controlWidth + Gap;

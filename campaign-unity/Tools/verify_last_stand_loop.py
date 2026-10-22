@@ -614,16 +614,23 @@ def verify_shop_vertical(report):
         require(boundary > 0, 'Controls were not complete before graphics')
         fields = json.loads(payload[:boundary] + '}')
         headers = {'phase', 'coordinates', 'selection', 'width', 'height', 'pixelRatio',
-                   'scrollOffset', 'maximumScrollOffset', 'controls', 'shopControls'}
+                   'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset',
+                   'controls', 'shopControls', 'settingsControls'}
         require(set(fields) == headers and fields['coordinates'] == 'top-left'
                 and isinstance(fields['phase'], str) and isinstance(fields['selection'], str), 'Invalid controls header')
         require(all(type(fields[key]) in (int, float) and math.isfinite(fields[key]) and fields[key] >= 0
-                    for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset'))
+                    for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset'))
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
-        expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects'},
+        expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus'},
                     'shopControls': {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}}
+                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'},
+                    'settingsControls': {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
+                    'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
+                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed'}}
         for key, names in expected.items():
             values = fields[key]
             require(isinstance(values, list) and len(values) == len(names)
@@ -1249,14 +1256,21 @@ def verify_shop_recovery(report, require_native=False):
             if key == 'controlsOnly':
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
-                expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects'}
+                expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus'}
                 expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}
+                expected_settings_controls = {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
+                    'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
+                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed'}
                 need(value['coordinates'] == 'top-left' and value['width'] > 0 and value['height'] > 0
-                     and len(value['controls']) == 10 and len(value['shopControls']) == 11
+                     and len(value['controls']) == 14 and len(value['shopControls']) == 11 and len(value['settingsControls']) == 33
                      and {control['name'] for control in value['controls']} == expected_controls
-                     and {control['name'] for control in value['shopControls']} == expected_shop_controls, 'Incomplete recovery controls')
+                     and {control['name'] for control in value['shopControls']} == expected_shop_controls
+                     and {control['name'] for control in value['settingsControls']} == expected_settings_controls, 'Incomplete recovery controls')
             value.update({field: observation[field] for field in ('seq', 'load', 't', 'timeOrigin', 'order', 'documentHidden', 'documentFocused')})
             derived[key].append(value)
     need(all(records[key] == value for key, value in derived.items()), 'Recovery witness differs from raw runtime emission')

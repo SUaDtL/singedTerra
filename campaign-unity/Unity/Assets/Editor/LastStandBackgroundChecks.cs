@@ -38,6 +38,9 @@ public static class LastStandBackgroundChecks
                 // consume the transient model being asserted here.
                 Session.Changed -= (Action)Delegate.CreateDelegate(typeof(Action), Loop, "OnSessionChanged");
                 Session.Stepped -= (Action<EncounterModel>)Delegate.CreateDelegate(typeof(Action<EncounterModel>), Loop, "OnSessionStepped");
+                // Reserve a valid active tier through the real progression owner.
+                // Controller observers remain detached for session-only assertions.
+                Require(Loop.Progression.TryDeploy(), "session-only fixture reserves actual progression tier");
             }
             Field(Session, "focused", true);
             if (Art.showingLauncher != launcher) Art.ToggleAttachment();
@@ -261,19 +264,22 @@ public static class LastStandBackgroundChecks
     }
     public static void Run()
     {
-        var factory = LastStandLoopController.StorageFactory;
         bool failed = false;
-        LastStandLoopController.StorageFactory = () => new MemoryStorage();
-        try
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            Check("test_playable_blur_and_delayed_callbacks_continue", PlayableBlurAndDelayedCallbacksContinue, ref failed);
-            Check("test_legacy_review_retain_suspension", LegacyReviewRetainSuspension, ref failed);
-            Check("test_terminal_and_failure_do_not_repeat", TerminalAndFailureDoNotRepeat, ref failed);
-        }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var factory = LastStandLoopController.StorageFactory;
+            LastStandLoopController.StorageFactory = () => new MemoryStorage();
+            try
+            {
+                Check("test_playable_blur_and_delayed_callbacks_continue", PlayableBlurAndDelayedCallbacksContinue, ref failed);
+                Check("test_legacy_review_retain_suspension", LegacyReviewRetainSuspension, ref failed);
+                Check("test_terminal_and_failure_do_not_repeat", TerminalAndFailureDoNotRepeat, ref failed);
+            }
+            finally
+            {
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
         }
         if (failed) EditorApplication.Exit(1);
     }
@@ -345,7 +351,7 @@ public static class LastStandBackgroundChecks
             Require(Loop.Progression.PendingDefeat != null || Loop.Phase == "save-error", "actual natural defeat reached controller");
         }
     }
-    static string WorkshopSave => "{\"version\":2,\"credits\":1,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":1,\"pendingDefeat\":null}";
+    static string WorkshopSave => "{\"version\":3,\"credits\":1,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}";
     static void BackgroundDefeatSettlesOnce()
     {
         foreach (bool launcher in new[] { false, true })
@@ -382,10 +388,31 @@ public static class LastStandBackgroundChecks
                 denied.Loop.Progression.Wallet == 0, "manual retry confirms one pending defeat without claim");
 
             var limit = new FeedbackFixture(launcher); limit.Deploy();
+            int limitRunId = limit.Loop.Progression.ActiveRunId;
             typeof(EncounterModel).GetProperty(nameof(EncounterModel.Tick)).SetValue(limit.Session.Model, 3599);
             limit.Advance(100.05);
-            Require(limit.Loop.Phase == "garage" && limit.Loop.Progression.PendingDefeat == null &&
-                limit.Loop.Progression.Wallet == 0, "run limit remains non-awarding");
+            var limitResult = limit.Loop.Progression.PendingDefeat;
+            Require(limit.Loop.Phase == "result" && limit.Session.Model == null && limitResult != null &&
+                limitResult.RunId == limitRunId && limitResult.IsLimit && limitResult.Reward == 0 && limitResult.Tier == 1 &&
+                limit.Loop.Progression.Wallet == 0 && limit.Loop.Progression.CannonAttackLevel == 0,
+                "run limit persists a zero-reward result without awarding salvage or upgrades");
+            int limitWrites = limit.Storage.Writes;
+            limit.Advance(100.05); limit.Advance(300);
+            Require(limit.Storage.Writes == limitWrites && limit.Loop.Progression.PendingDefeat.RunId == limitRunId &&
+                limit.Loop.Progression.Wallet == 0 && limit.Loop.Progression.ActiveRunId == 0,
+                "duplicate limit callbacks neither stage again nor award or redeploy");
+            var reloadedLimit = new FeedbackFixture(launcher, limit.Storage);
+            var loadedLimitResult = reloadedLimit.Loop.Progression.PendingDefeat;
+            Require(reloadedLimit.Loop.Phase == "result" && reloadedLimit.Session.Model == null && loadedLimitResult != null &&
+                loadedLimitResult.RunId == limitRunId && loadedLimitResult.IsLimit && loadedLimitResult.Reward == 0 &&
+                reloadedLimit.Loop.Progression.Wallet == 0 && reloadedLimit.Storage.Writes == limitWrites,
+                "reloaded limit retains its zero-reward result without another write");
+            reloadedLimit.Loop.Claim(); reloadedLimit.Loop.Claim();
+            Require(reloadedLimit.Loop.Progression.PendingDefeat == null && reloadedLimit.Loop.Progression.Wallet == 0 &&
+                reloadedLimit.Loop.Progression.CannonAttackLevel == 0 && reloadedLimit.Session.Model == null &&
+                reloadedLimit.Loop.Progression.ActiveRunId == 0 && reloadedLimit.Loop.Progression.NextRunId == 2 &&
+                reloadedLimit.Storage.Writes == limitWrites + 1,
+                "manual limit acknowledgement is once-only with no salvage upgrade or redeploy");
             var failure = new FeedbackFixture(launcher); failure.Deploy(); failure.Advance(double.NaN);
             Require(failure.Loop.Phase == "garage" && failure.Loop.Progression.PendingDefeat == null &&
                 failure.Loop.Progression.Wallet == 0 && failure.Session.Model == null && failure.Loop.Audio.Suspended,
@@ -642,20 +669,24 @@ public static class LastStandBackgroundChecks
     }
     public static void RunFeedback()
     {
-        var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            Check("test_background_defeat_settles_once", BackgroundDefeatSettlesOnce, ref failed);
-            Check("test_pause_excludes_settling_time", PauseExcludesSettlingTime, ref failed);
-            Check("test_focus_restores_current_cues_without_replay", FocusRestoresCurrentCuesWithoutReplay, ref failed);
-            Check("test_mute_and_profile_lifecycle_remain_isolated", MuteAndProfileLifecycleRemainIsolated, ref failed);
-        }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Application.runInBackground = background;
+            var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                Check("test_background_defeat_settles_once", BackgroundDefeatSettlesOnce, ref failed);
+                Check("test_pause_excludes_settling_time", PauseExcludesSettlingTime, ref failed);
+                Check("test_focus_restores_current_cues_without_replay", FocusRestoresCurrentCuesWithoutReplay, ref failed);
+                Check("test_mute_and_profile_lifecycle_remain_isolated", MuteAndProfileLifecycleRemainIsolated, ref failed);
+            }
+            finally
+            {
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                Application.runInBackground = background;
+            }
         }
         if (failed) EditorApplication.Exit(1);
     }

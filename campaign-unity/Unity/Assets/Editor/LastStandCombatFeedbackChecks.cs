@@ -189,18 +189,22 @@ public static class LastStandCombatFeedbackChecks
 
     public static void Run()
     {
-        bool failed = false; bool background = Application.runInBackground;
-        foreach (var test in new (string, Action)[] {
-            ("test_event_time_destruction", EventTimeDestruction),
-            ("test_reduced_informative_feedback", ReducedInformativeFeedback),
-            ("test_toggle_clears_paused_flashes", ToggleClearsPausedFlashes),
-            ("test_reduced_aim_recoil_and_restore", ReducedAimRecoilAndRestore),
-            ("test_model_and_pool_preservation", ModelAndPoolPreservation) })
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            try { test.Item2(); Debug.Log("ST_LS_COMBAT_PASS " + test.Item1); }
-            catch (Exception error) { failed = true; Debug.LogError("ST_LS_COMBAT_FAIL " + test.Item1 + " " + error); }
+            bool background = Application.runInBackground;
+            foreach (var test in new (string, Action)[] {
+                ("test_event_time_destruction", EventTimeDestruction),
+                ("test_reduced_informative_feedback", ReducedInformativeFeedback),
+                ("test_toggle_clears_paused_flashes", ToggleClearsPausedFlashes),
+                ("test_reduced_aim_recoil_and_restore", ReducedAimRecoilAndRestore),
+                ("test_model_and_pool_preservation", ModelAndPoolPreservation) })
+            {
+                try { test.Item2(); Debug.Log("ST_LS_COMBAT_PASS " + test.Item1); }
+                catch (Exception error) { failed = true; Debug.LogError("ST_LS_COMBAT_FAIL " + test.Item1 + " " + error); }
+            }
+            Application.runInBackground = background;
         }
-        Application.runInBackground = background;
         if (failed) EditorApplication.Exit(1);
     }
 }

@@ -13,32 +13,44 @@ const inside = (a, b) => a.x >= b.x - .5 && a.y >= b.y - .5 &&
 // measured bounds and full scroll reach before testing visible intersections.
 export function tierJourneyControlGeometry(layout, canvas) {
   const screen = { x: 0, y: 0, width: layout.width, height: layout.height };
-  const controls = [...layout.controls, ...layout.shopControls].filter(item => item.active);
+  const backgroundControls = [...layout.controls, ...layout.shopControls];
+  const settingsControls = (layout.settingsControls ?? []).filter(item => item.active);
+  const settingsOpen = settingsControls.length > 0;
+  if (settingsOpen) assert.ok(backgroundControls.every(item => !item.interactable),
+    'Modal settings must disable every underlying control');
+  const controls = settingsOpen ? settingsControls : backgroundControls.filter(item => item.active);
   let graphics;
   const projected = controls.map(item => {
     assert.ok(item.width * canvas.width / layout.width >= 43.99 && item.height * canvas.height / layout.height >= 43.99,
       '44 CSS pixel target: ' + item.name);
     let clip = screen;
-    if (item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
+    const settingsContent = settingsOpen && item.name !== 'SettingsClose' && !/^SettingsTab[0-3]$/.test(item.name);
+    if (settingsContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
       assert.equal(layout.graphicsTruncated, false, 'Complete graphics required to qualify clipped controls');
       graphics ??= JSON.parse(layout.raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
-      const viewport = graphics.find(g => g.path.endsWith('/ShopViewport') && g.active);
+      const viewportName = settingsContent ? 'SettingsViewport' : 'ShopViewport';
+      const viewport = graphics.find(g => g.path.endsWith('/' + viewportName) && g.active);
       const graphic = graphics.find(g => g.path.endsWith('/' + item.name) && g.kind === 'Image' && g.active);
       assert.ok(viewport?.hasClip && graphic?.hasClip, 'Measured scroll viewport and control required');
       clip = graphic.clip;
-      assert.deepEqual(clip, viewport.clip, 'Control must use the actual shop viewport');
+      assert.deepEqual(clip, viewport.clip, 'Control must use the actual ' + (settingsContent ? 'settings' : 'shop') + ' viewport');
+      if (settingsContent) assert.ok(graphic.path.startsWith(viewport.path + '/SettingsContent/'),
+        'Clipped settings control belongs to the actual settings content');
       assert.ok(inside(clip, screen) && clip.width > 0 && clip.height > 0, 'Clip lies inside the Canvas');
       for (const key of ['x', 'y', 'width', 'height'])
         assert.ok(Math.abs(item[key] - graphic[key]) < .5, 'Control and graphic bounds agree: ' + item.name);
-      assert.ok(layout.scrollOffset >= 0 && layout.scrollOffset <= layout.maximumScrollOffset + .5);
+      const scrollOffset = settingsContent ? layout.settingsScrollOffset : layout.scrollOffset;
+      const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : layout.maximumScrollOffset;
+      assert.ok(Number.isFinite(scrollOffset) && Number.isFinite(maximumScrollOffset) && maximumScrollOffset >= 0 &&
+        scrollOffset >= 0 && scrollOffset <= maximumScrollOffset + .5, 'Finite bounded actual scroll range');
       assert.ok(item.x >= clip.x - .5 && item.x + item.width <= clip.x + clip.width + .5 && item.height <= clip.height + .5,
-        'Complete Buy target must fit the scroll viewport');
+        'Complete control target must fit the scroll viewport');
       // Layout's scroll offsets are CSS units; emitted rectangles are backing pixels.
       const scale = layout.height / canvas.height;
-      const offset = layout.scrollOffset * scale, maximum = layout.maximumScrollOffset * scale;
+      const offset = scrollOffset * scale, maximum = maximumScrollOffset * scale;
       assert.ok(item.y + offset >= clip.y - .5 &&
         item.y + offset - maximum + item.height <= clip.y + clip.height + .5,
-        'Complete Buy target must be reachable in the real scroll range');
+        'Complete control target must be reachable in the real scroll range');
     } else assert.ok(inside(item, screen), 'Control outside Canvas: ' + item.name);
     const x = Math.max(item.x, clip.x), y = Math.max(item.y, clip.y);
     return { name: item.name, full: inside(item, clip), clip, x, y,

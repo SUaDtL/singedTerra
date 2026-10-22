@@ -426,26 +426,30 @@ public static class LastStandShopChecks
     }
     public static void RunIncome()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED");
-        var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_income_hidden_partition_and_terminal_snapshot", () =>
+            Debug.Log("ST_LS_SHOP_COMPILED");
+            var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
             {
-                foreach (bool launcher in new[] { false, true }) { ForegroundHiddenPartitions(launcher); FinalDefeat(launcher); }
-            }, ref failed);
-            NamedIncome("test_income_final_tick_refresh_and_next_run", () =>
+                NamedIncome("test_income_hidden_partition_and_terminal_snapshot", () =>
+                {
+                    foreach (bool launcher in new[] { false, true }) { ForegroundHiddenPartitions(launcher); FinalDefeat(launcher); }
+                }, ref failed);
+                NamedIncome("test_income_final_tick_refresh_and_next_run", () =>
+                {
+                    foreach (bool launcher in new[] { false, true })
+                    { PurchasedPauseAndExit(launcher); NonDefeatTerminal(launcher, true); NonDefeatTerminal(launcher, false); SaveRetryRefreshClaimAndReload(launcher); }
+                }, ref failed);
+            }
+            finally
             {
-                foreach (bool launcher in new[] { false, true })
-                { PurchasedPauseAndExit(launcher); NonDefeatTerminal(launcher, true); NonDefeatTerminal(launcher, false); SaveRetryRefreshClaimAndReload(launcher); }
-            }, ref failed);
-        }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Application.runInBackground = background;
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                Application.runInBackground = background;
+            }
         }
         if (failed) EditorApplication.Exit(1);
     }
@@ -619,21 +623,25 @@ public static class LastStandShopChecks
     }
     public static void RunSettle()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED");
-        var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_settle_purchase_old_stats_and_debt_refusal", () =>
-            { foreach (bool launcher in new[] { false, true }) { OldStatsAndEffects(launcher); DebtRefusal(launcher); } }, ref failed);
-            NamedIncome("test_settle_pause_focus_close_and_stale_input", () =>
-            { foreach (bool launcher in new[] { false, true }) { PausedAndInvalidInput(launcher); PurchaseTerminalAndReentrancy(launcher); } }, ref failed);
-        }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Application.runInBackground = background;
+            Debug.Log("ST_LS_SHOP_COMPILED");
+            var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_settle_purchase_old_stats_and_debt_refusal", () =>
+                { foreach (bool launcher in new[] { false, true }) { OldStatsAndEffects(launcher); DebtRefusal(launcher); } }, ref failed);
+                NamedIncome("test_settle_pause_focus_close_and_stale_input", () =>
+                { foreach (bool launcher in new[] { false, true }) { PausedAndInvalidInput(launcher); PurchaseTerminalAndReentrancy(launcher); } }, ref failed);
+            }
+            finally
+            {
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                Application.runInBackground = background;
+            }
         }
         if (failed) EditorApplication.Exit(1);
     }
@@ -762,15 +770,19 @@ public static class LastStandShopChecks
     }
     public static void RunPolish()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_shop_only_fitted_modules_visible_and_focusable",FittedCardVisibility,ref failed);
-            NamedIncome("test_shop_plain_compact_readable_composition",ShopReadableComposition,ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_shop_only_fitted_modules_visible_and_focusable",FittedCardVisibility,ref failed);
+                NamedIncome("test_shop_plain_compact_readable_composition",ShopReadableComposition,ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         if (failed) EditorApplication.Exit(1);
     }
     static void ReadableEffectSeparator()
@@ -837,15 +849,19 @@ public static class LastStandShopChecks
     }
     public static void RunRenderFollowup()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_shop_rendered_effect_separator",ReadableEffectSeparator,ref failed);
-            NamedIncome("test_shop_workshop_single_purchase_action",WorkshopSinglePurchaseAction,ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_shop_rendered_effect_separator",ReadableEffectSeparator,ref failed);
+                NamedIncome("test_shop_workshop_single_purchase_action",WorkshopSinglePurchaseAction,ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         if (failed) EditorApplication.Exit(1);
     }
     static void ShopInventory(ShopUiFixture f)
@@ -1100,12 +1116,16 @@ public static class LastStandShopChecks
     }
     public static void RunBattleShop()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_battle_shop_tabs_live_cards_and_refusal_feedback", () =>
-            { BattleShopProfiles(); BattleShopPausedHullAndRefusals(); }, ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_battle_shop_tabs_live_cards_and_refusal_feedback", () =>
+                { BattleShopProfiles(); BattleShopPausedHullAndRefusals(); }, ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     static void FirstSessionClarity()
@@ -1163,15 +1183,20 @@ public static class LastStandShopChecks
     }
     public static void RunFirstSessionClarity()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_first_session_clarity_live_goal_and_purchase_lifetimes",FirstSessionClarity,ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_first_session_clarity_live_goal_and_purchase_lifetimes",FirstSessionClarity,ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     public static void RunT16Affected()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         // Execute existing assertions in one exclusively owned imported Editor.
         RunDeploy(); RunIncome(); RunSettle();
         LastStandHudChecks.RunGarage(); LastStandHudChecks.RunBattle();
@@ -1357,14 +1382,18 @@ public static class LastStandShopChecks
     }
     public static void RunWorkshop()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_workshop_garage_post_claim_prices_and_save_error", () => {
-            WorkshopProfiles(); foreach (bool launcher in new[] { false, true })
-            { WorkshopPricesAndNextRun(launcher); WorkshopClaimAndSaveErrors(launcher); }
-        }, ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_workshop_garage_post_claim_prices_and_save_error", () => {
+                WorkshopProfiles(); foreach (bool launcher in new[] { false, true })
+                { WorkshopPricesAndNextRun(launcher); WorkshopClaimAndSaveErrors(launcher); }
+            }, ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     // Decode the real compiled call operands: an unused test-only producer is
@@ -1516,14 +1545,18 @@ public static class LastStandShopChecks
     }
     public static void RunWorkshopObservation()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_workshop_committed_levels_observation_without_cards", () => {
-            CommittedObservationCatalogAndDedup(); CommittedObservationAbsentCards(); CommittedObservationUncertainArmor();
-            CommittedObservationTickDedup();
-        }, ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_workshop_committed_levels_observation_without_cards", () => {
+                CommittedObservationCatalogAndDedup(); CommittedObservationAbsentCards(); CommittedObservationUncertainArmor();
+                CommittedObservationTickDedup();
+            }, ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); Application.runInBackground = background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     // Supply bounded input frames to the EXISTING StandaloneInputModule. Its
@@ -1869,15 +1902,19 @@ public static class LastStandShopChecks
     }
     public static void RunInput()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_input_keyboard_pointer_same_intents_and_focus", KeyboardPointerIntents, ref failed);
-            NamedIncome("test_input_terminal_resize_and_no_world_leak", TerminalResizeNoLeak, ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_input_keyboard_pointer_same_intents_and_focus", KeyboardPointerIntents, ref failed);
+                NamedIncome("test_input_terminal_resize_and_no_world_leak", TerminalResizeNoLeak, ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
         }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
         if (failed) EditorApplication.Exit(1);
     }
     static void CompactRealScroll()
@@ -1946,11 +1983,15 @@ public static class LastStandShopChecks
     }
     public static void RunCompactScroll()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_input_compact_real_scroll_reaches_clipped_cards",CompactRealScroll,ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_input_compact_real_scroll_reaches_clipped_cards",CompactRealScroll,ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     static Rect CompleteUpgradeBounds(ShopUiFixture f, string id)
@@ -2038,11 +2079,15 @@ public static class LastStandShopChecks
     }
     public static void RunCompactReading()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try { NamedIncome("test_input_compact_shop_keeps_upgrade_readable",CompactShopReading,ref failed); }
-        finally { LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED"); var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try { NamedIncome("test_input_compact_shop_keeps_upgrade_readable",CompactShopReading,ref failed); }
+            finally { LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground=background; }
+        }
         if (failed) EditorApplication.Exit(1);
     }
     // T19 imported integration qualification: existing production owners only.
@@ -2227,39 +2272,47 @@ public static class LastStandShopChecks
     }
     public static void RunIntegration()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED"); bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            NamedIncome("test_integration_two_fittings_effects_and_lifecycle", () =>
-            { foreach (bool launcher in new[] {false,true}) foreach (var profile in new[] {new Vector2Int(1366,664),new Vector2Int(390,688)}) IntegrationEffectsJourney(launcher,profile); },ref failed);
-            NamedIncome("test_integration_old_save_conflict_and_legacy_parity", () =>
-            { foreach (bool launcher in new[] {false,true}) IntegrationOldSaveConflict(launcher); IntegrationLegacySnapshots(); },ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED"); bool background = Application.runInBackground;
+            try
+            {
+                NamedIncome("test_integration_two_fittings_effects_and_lifecycle", () =>
+                { foreach (bool launcher in new[] {false,true}) foreach (var profile in new[] {new Vector2Int(1366,664),new Vector2Int(390,688)}) IntegrationEffectsJourney(launcher,profile); },ref failed);
+                NamedIncome("test_integration_old_save_conflict_and_legacy_parity", () =>
+                { foreach (bool launcher in new[] {false,true}) IntegrationOldSaveConflict(launcher); IntegrationLegacySnapshots(); },ref failed);
+            }
+            finally { LastStandLoopController.StorageFactory = () => new LastStandStore(); EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         }
-        finally { LastStandLoopController.StorageFactory = () => new LastStandStore(); EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); Application.runInBackground = background; }
         EditorApplication.Exit(failed ? 1 : 0);
     }
     // End T19 imported integration qualification.
 
     public static void RunDeploy()
     {
-        Debug.Log("ST_LS_SHOP_COMPILED");
-        var factory = LastStandLoopController.StorageFactory;
-        bool background = Application.runInBackground, failed = false;
-        try
+        bool failed = false;
+        using (var preferencesScope = new LastStandTestPreferencesScope())
         {
-            Part("launcher-frozen-effects", () => FrozenProjection(true), ref failed);
-            Part("repair-frozen-effects", () => FrozenProjection(false), ref failed);
-            Part("fresh-zero-baseline", FreshRedeploymentAndZeroBaseline, ref failed);
-            Part("save-focus-admission", SaveAndFocusAdmission, ref failed);
-            Part("shared-scene-parity", SharedSceneParity, ref failed);
+            Debug.Log("ST_LS_SHOP_COMPILED");
+            var factory = LastStandLoopController.StorageFactory;
+            bool background = Application.runInBackground;
+            try
+            {
+                Part("launcher-frozen-effects", () => FrozenProjection(true), ref failed);
+                Part("repair-frozen-effects", () => FrozenProjection(false), ref failed);
+                Part("fresh-zero-baseline", FreshRedeploymentAndZeroBaseline, ref failed);
+                Part("save-focus-admission", SaveAndFocusAdmission, ref failed);
+                Part("shared-scene-parity", SharedSceneParity, ref failed);
+            }
+            finally
+            {
+                LastStandLoopController.StorageFactory = factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                Application.runInBackground = background;
+            }
+            Debug.Log((failed ? "ST_LS_SHOP_FAIL " : "ST_LS_SHOP_PASS ") + "test_deploy_frozen_permanent_snapshot_and_fittings");
         }
-        finally
-        {
-            LastStandLoopController.StorageFactory = factory;
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Application.runInBackground = background;
-        }
-        Debug.Log((failed ? "ST_LS_SHOP_FAIL " : "ST_LS_SHOP_PASS ") + "test_deploy_frozen_permanent_snapshot_and_fittings");
         if (failed) EditorApplication.Exit(1);
     }
 }

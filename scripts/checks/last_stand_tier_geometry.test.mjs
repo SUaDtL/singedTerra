@@ -58,3 +58,42 @@ test('small targets and overlapping visible targets still fail', () => {
     { name: 'ShopClose', x: 410, y: 10, width: 44, height: 44, active: true }];
   assert.throws(overlap.run, /overlap/);
 });
+
+function settingsSample(dpr = 1) {
+  const clip = { x: 28, y: 180, width: 334, height: 160 };
+  const button = { name: 'SettingsBack', x: 36, y: 360, width: 318, height: 44, active: true, interactable: true };
+  const background = { name: 'Menu', x: 36, y: 210, width: 68, height: 44, active: true, interactable: false };
+  const layout = { width: 390 * dpr, height: 688 * dpr, controls: [background], shopControls: [], settingsControls: [button],
+    scrollOffset: 0, maximumScrollOffset: 9999, settingsScrollOffset: 0, settingsMaximumScrollOffset: 80, graphicsTruncated: false };
+  const graphics = [{ path: 'SettingsModal/SettingsPanel/SettingsViewport', active: true, hasClip: true, clip },
+    { ...button, path: 'SettingsModal/SettingsPanel/SettingsViewport/SettingsContent/SettingsBack', kind: 'Image', hasClip: true, clip }];
+  for (const rect of [clip, button, graphics[1], background])
+    for (const key of ['x', 'y', 'width', 'height']) rect[key] *= dpr;
+  const run = () => tierJourneyControlGeometry({ ...layout, raw: 'ST_LS_HUD_LAYOUT ' + JSON.stringify({ graphics }) }, { width: 390, height: 688 });
+  return { layout, graphics, button, background, clip, run };
+}
+test('settings controls use their actual independent scroll range at both DPRs', () => {
+  for (const dpr of [1, 2]) {
+    const s = settingsSample(dpr);
+    assert.equal(s.run()[0].full, false);
+    s.layout.settingsScrollOffset = 80; s.button.y -= 80 * dpr; s.graphics[1].y -= 80 * dpr;
+    assert.equal(s.run()[0].full, true);
+    s.layout.settingsMaximumScrollOffset = 40; s.layout.settingsScrollOffset = 0;
+    s.button.y += 80 * dpr; s.graphics[1].y += 80 * dpr;
+    assert.throws(s.run, /reachable/, 'Unrelated shop range cannot qualify a settings control');
+  }
+});
+test('modal settings cannot leave underlying controls interactive', () => {
+  const s = settingsSample(); s.background.interactable = true;
+  assert.throws(s.run, /disable every underlying/);
+});
+test('settings clipping requires matching real viewport, control and content evidence', () => {
+  const truncated = settingsSample(); truncated.layout.graphicsTruncated = true;
+  assert.throws(truncated.run, /Complete graphics/);
+  const wrongMask = settingsSample(); wrongMask.graphics[1].clip = { ...wrongMask.clip, height: 200 };
+  assert.throws(wrongMask.run, /actual settings viewport/);
+  const wrongParent = settingsSample(); wrongParent.graphics[1].path = 'Unrelated/SettingsBack';
+  assert.throws(wrongParent.run, /actual settings content/);
+  const wrongRect = settingsSample(); wrongRect.graphics[1].width -= 10;
+  assert.throws(wrongRect.run, /bounds agree/);
+});

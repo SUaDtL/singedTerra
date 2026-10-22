@@ -1,19 +1,19 @@
 {
   "schema": "singedterra-last-stand-web/v1",
   "source": {
-    "build": "Web-20261021T091010Z-594a77",
+    "build": "Web-20261022T000651Z-94e564",
     "receipt": "campaign-unity/docs/last-stand-web/receipt-sanitized.json",
-    "receiptSha256": "ed9575133b6c0737b2223f845cbc4e0376cdbb15b3f321b153ed247902d910fa",
-    "sourceLockSha256": "664595f58d1672ff9eeea72d7c3021ce8e776ded863b799f96231970b865d251",
-    "sourceHead": "60f6e19503b09f526e712aa24b3d9a0a0eb0b259",
-    "sourceInventorySha256": "0ad39f977c291e7426302903b60ca02ffb3d5fc285cc98a58381497e70721a29",
-    "originalIndexSha256": "5d81821f70f4eb118a3f988fea057d6741152ec10d1d77a71bbe8f95627a73c9"
+    "receiptSha256": "8a035b3ea4b550ec21f927747695b663e9ddfba230228cedafacc8f10cfb56f3",
+    "sourceLockSha256": "af15b006bf583ece527a83b295e4c0b417865e69a6f72f85c07379c46d183e59",
+    "sourceHead": "0698acba1c0bd6c550f99333f4e467d0332893a4",
+    "sourceInventorySha256": "55e946176039d9c04fe7baa7c1bdaae424fc951586a28043e33e1e4d83bc006e",
+    "originalIndexSha256": "84bd20955ef291c655db4658b7adbc256b7a8fe5624e02c0e7a3e74a73e0e6c4"
   },
-  "wrapperSha256": "f6b1b3d328684d9fbacabe384bb2340fe5aaa5a109f6f25e14f0725d27e2c822",
+  "wrapperSha256": "ff3ffbda696be112cc74054d765871a512dfa0dc71694e3160f5902356e950a9",
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
       "mode": "lf-text",
-      "sha256": "c40054df47a58eee6a75aeaee76b14261972a6fa8d6881ef1786c804cf373f86"
+      "sha256": "765630d550bfbe6a25d304a846e135dcced1561d888cb9055470cb91f1f87611"
     },
     "Tools/web-index-template.html": {
       "mode": "lf-text",
@@ -21,10 +21,10 @@
     }
   },
   "files": {
-    "Build/Web-20261021T091010Z-594a77.data": "d74e9e1a6d2bf7aae9f43251901094e35fd8a3a05dcdeed29aea6c570a8a2af3",
-    "Build/Web-20261021T091010Z-594a77.framework.js": "dd9c0bda8b19f8916aca019ef470cb46cb68a9e76bf178d44e4c9e54bbd89bc2",
-    "Build/Web-20261021T091010Z-594a77.loader.js": "38ffcc4e122748e353709675c103b2bf0f1e1dd753cc3d4ee7aec8f1e5ef22e0",
-    "Build/Web-20261021T091010Z-594a77.wasm": "5b1a9889bbf01a497921ff9b3f24150a48a190c48c89fa83a1959a46f6d4a3c2",
+    "Build/Web-20261022T000651Z-94e564.data": "7de935e1304760c2ef709baedc824b5bf5921bfe60726297a4b9450fcdbd89ae",
+    "Build/Web-20261022T000651Z-94e564.framework.js": "1726488f80403cf9f13acdc08a70598abccbd99ed17b3e1176500a180758e561",
+    "Build/Web-20261022T000651Z-94e564.loader.js": "f483d22a314f315183b580356cdaec36a0740620df7730924cd38688acf4b882",
+    "Build/Web-20261022T000651Z-94e564.wasm": "9738afd419adc561dd002aed0ff304f3f411cec00a28ab42a5c511e16e6941f8",
     "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
     "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
     "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",

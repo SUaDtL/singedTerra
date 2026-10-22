@@ -460,6 +460,7 @@ export class Lobby {
   private verifiedLaunchBusy = false;
   private verifiedAbandonIntent = false;
   private accountPanelOpen = false;
+  private readonly accountFromLastStand: boolean;
   private accountMode: AccountMode = 'sign-in';
   private readonly createDiagnostics: ProductionDiagnosticsFactory;
   private diagnosticsIntentActive = false;
@@ -566,7 +567,10 @@ export class Lobby {
     this.root = root;
     this.onReady = onReady;
     this.commandSelectionStore = createSessionCommandSelectionStore(window.sessionStorage);
-    this.campaignReturnRequested = window.location.hash === '#campaigns/last-stand';
+    this.campaignReturnRequested = window.location.hash === '#campaigns/last-stand'
+      || window.location.hash === '#account/last-stand';
+    this.accountFromLastStand = window.location.hash === '#account/last-stand';
+    this.accountPanelOpen = this.accountFromLastStand;
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.roomController = new LobbyRoomController(
@@ -1458,7 +1462,7 @@ export class Lobby {
       firstSalvo,
       standardQuickDuel,
     }, this.commandSelectionStore);
-    if (window.location.hash === '#campaigns/last-stand') {
+    if (window.location.hash === '#campaigns/last-stand' || window.location.hash === '#account/last-stand') {
       if (resolvedInitialSelection?.source !== 'explicit-campaign-return') {
         this.campaignReturnRequested = false;
       }
@@ -1529,7 +1533,8 @@ export class Lobby {
         this.accountPanelOpen = false;
         this.render();
         if (!this.diagnosticsIntentActive) {
-          this.root.querySelector<HTMLButtonElement>('.account-panel button')?.focus();
+          (this.root.querySelector<HTMLButtonElement>('.account-panel button')
+            ?? this.lobbyReturnFocusTarget())?.focus();
         }
       },
       onModeChange: (mode: AccountMode) => {
@@ -1554,7 +1559,13 @@ export class Lobby {
     this.root.append(card);
     this.focusRequestedVerifiedDeployment();
     if (this.accountPanelOpen) {
-      const accountContent = buildAccountPanelOverlayContent(accountOptions(true));
+      let accountContent = buildAccountPanelOverlayContent(accountOptions(true));
+      if (!accountContent && this.accountFromLastStand && this.accountSession.state.status === 'unavailable') {
+        accountContent = document.createElement('p');
+        accountContent.className = 'account-panel__summary-unavailable';
+        accountContent.textContent = 'Account services are unavailable in this build. '
+          + 'Last Stand progress stays in this browser and does not sync with an account.';
+      }
       if (accountContent) {
         this.root.append(buildLobbyOverlayView({
           label: 'Player account',

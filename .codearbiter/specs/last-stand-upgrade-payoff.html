@@ -1,0 +1,1530 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: player controls, settings and game speed — sprint candidate · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-UPGRADE-PAYOFF-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-upgrade-payoff.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: player controls, settings and game speed — sprint candidate</h1><p class="deck">Revised full sprint proposal: real menu/settings, persistent preferences, ambient music and channel controls, display options, optional guidance/help, save/account navigation and 0x/0.5x/1x game speed with future research caps. Awaiting careful approval.</p><div class="meta"><span>ST-LS-UPGRADE-PAYOFF-SPEC</span><span>Revision 4 · schema 0.3.2</span><span>76 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INTENT-PAYOFF -->
+<article class="record" id="INTENT-PAYOFF" data-ca-symbol="INTENT-PAYOFF" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-PAYOFF">INTENT-PAYOFF</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Last Stand owner and players</div><div class="field"><span class="label">Outcome</span>Make Last Stand usable as a complete game session: configure sound/display/help, control time, navigate safely, and understand local-save/account boundaries.</div><div class="field"><span class="label">Problem</span>Core play exists but ordinary game controls are scattered or absent: no coherent settings surface, remembered preferences, music, guidance control or selectable speed.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li><li><a href="#SRC-MUSIC">SRC-MUSIC</a></li><li><a href="#SRC-SPEED">SRC-SPEED</a></li><li><a href="#SRC-CONTROLS-AUDIT">SRC-CONTROLS-AUDIT</a></li></ul></div></article>
+<!-- CA:END:INTENT-PAYOFF -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:SCOPE-PLAY -->
+<article class="record" id="SCOPE-PLAY" data-ca-symbol="SCOPE-PLAY" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-PLAY">SCOPE-PLAY</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>The complete Last Stand session: garage, battle, settling, result, workshop, menu/settings/help, safe leave paths, audio/display preferences and game speed.</div></article>
+<!-- CA:END:SCOPE-PLAY -->
+
+<!-- CA:BEGIN:SCOPE-CUE -->
+<article class="record" id="SCOPE-CUE" data-ca-symbol="SCOPE-CUE" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-CUE">SCOPE-CUE</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Help and optional guidance with persistent opt-outs. The original upgrade-payoff cue is a small conditional item inside this larger sprint.</div></article>
+<!-- CA:END:SCOPE-CUE -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:NON-BALANCE -->
+<article class="record" id="NON-BALANCE" data-ca-symbol="NON-BALANCE" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-BALANCE">NON-BALANCE</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No damage/price/reward/cap/tier-goal rebalance. Simulation speed changes wall-time pacing without changing fixed-step rules or results per simulated time.</div></article>
+<!-- CA:END:NON-BALANCE -->
+
+<!-- CA:BEGIN:NON-SYSTEMS -->
+<article class="record" id="NON-SYSTEMS" data-ca-symbol="NON-SYSTEMS" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-SYSTEMS">NON-SYSTEMS</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No equipment, Skills, research economy/content/unlock grants, Tier 3, offline rewards, currency expansion, Android build or multiplayer. Future speed research gets a bounded cap interface only.</div></article>
+<!-- CA:END:NON-SYSTEMS -->
+
+<!-- CA:BEGIN:NON-REWORK -->
+<article class="record" id="NON-REWORK" data-ca-symbol="NON-REWORK" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-REWORK">NON-REWORK</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No art/camera replacement, full HUD rewrite, gameplay save migration, new backend/dependency/analytics service, cloud backup or new authentication. Save import/export/reset, key remapping and localization are deferred.</div></article>
+<!-- CA:END:NON-REWORK -->
+
+<!-- CA:BEGIN:NON-ENGINE -->
+<article class="record" id="NON-ENGINE" data-ca-symbol="NON-ENGINE" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-ENGINE">NON-ENGINE</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No codeArbiter PR implementation, merge, release or unmerged plugin update. No fabricated approval or qualification.</div></article>
+<!-- CA:END:NON-ENGINE -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APPROACH-OBSERVE-EXPERIMENT -->
+<article class="record" id="APPROACH-OBSERVE-EXPERIMENT" data-ca-symbol="APPROACH-OBSERVE-EXPERIMENT" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-OBSERVE-EXPERIMENT">APPROACH-OBSERVE-EXPERIMENT</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DEC-EXPERIMENT">DEC-EXPERIMENT</a></li><li><a href="#DEC-MUSIC">DEC-MUSIC</a></li><li><a href="#DEC-SPEED">DEC-SPEED</a></li><li><a href="#DEC-SHELL">DEC-SHELL</a></li><li><a href="#DEC-ACCOUNT">DEC-ACCOUNT</a></li><li><a href="#DEC-APPROVAL">DEC-APPROVAL</a></li><li><a href="#DEC-ENGINE-ORDER">DEC-ENGINE-ORDER</a></li></ul></div><div class="field"><span class="label">Choice</span>Build a complete player-controls sprint on the existing HUD and state owners; preserve optional upgrade-payoff work as one guidance item.</div><div class="field"><span class="label">Tradeoff</span>Wider than a copy feature but bounded to session controls. Settings and speed require real state/lifecycle work; cloud sync, research content and progression expansions remain separate.</div></article>
+<!-- CA:END:APPROACH-OBSERVE-EXPERIMENT -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:CON-APPROVAL -->
+<article class="record" id="CON-APPROVAL" data-ca-symbol="CON-APPROVAL" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-APPROVAL">CON-APPROVAL</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-OBSERVE</li><li>CR-CUE</li><li>CR-SAVE</li><li>CR-PARITY</li><li>CR-DECIDE</li><li>CR-DELIVERY</li><li>CR-MENU</li><li>CR-AUDIO</li><li>CR-DISPLAY</li><li>CR-SPEED</li><li>CR-DATA</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-REQUEST">SRC-REQUEST</a></li><li><a href="#SRC-WIDER">SRC-WIDER</a></li><li><a href="#SRC-APPROVED">SRC-APPROVED</a></li></ul></div><div class="field"><span class="label">Statement</span>The owner explicitly approved implementation of this nine-task sprint on 2026-10-21. Work may proceed in the current PR while open. Actual final usability/listening acceptance, merge and publication remain separate; do not fabricate receipts or require an approval code.</div></article>
+<!-- CA:END:CON-APPROVAL -->
+
+<!-- CA:BEGIN:CON-ENGINE -->
+<article class="record" id="CON-ENGINE" data-ca-symbol="CON-ENGINE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-ENGINE">CON-ENGINE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-DELIVERY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ENGINE">SRC-ENGINE</a></li><li><a href="#SRC-REQUEST">SRC-REQUEST</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve codeArbiter merge order: finish and merge #1013 before #1016. Do not update to unmerged engine code or treat planning as authorization to merge either PR. Terra planning can proceed with the currently loaded writer.</div></article>
+<!-- CA:END:CON-ENGINE -->
+
+<!-- CA:BEGIN:CON-PRESERVE -->
+<article class="record" id="CON-PRESERVE" data-ca-symbol="CON-PRESERVE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-PRESERVE">CON-PRESERVE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-OBSERVE</li><li>CR-CUE</li><li>CR-SAVE</li><li>CR-PARITY</li><li>CR-DECIDE</li><li>CR-DELIVERY</li><li>CR-MENU</li><li>CR-AUDIO</li><li>CR-DISPLAY</li><li>CR-SPEED</li><li>CR-DATA</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li><li><a href="#SRC-SPEED">SRC-SPEED</a></li><li><a href="#SRC-ACCOUNT">SRC-ACCOUNT</a></li><li><a href="#SRC-CURRENT">SRC-CURRENT</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve existing gameplay/save/award rules, separate account authority, selected Option 1 art/camera and legacy/review scenes. Intentionally add persistent preferences, music, display options and scaled elapsed-time admission; no numerical rebalance or gameplay save migration.</div></article>
+<!-- CA:END:CON-PRESERVE -->
+
+<!-- CA:BEGIN:CON-EVIDENCE -->
+<article class="record" id="CON-EVIDENCE" data-ca-symbol="CON-EVIDENCE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-EVIDENCE">CON-EVIDENCE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-OBSERVE</li><li>CR-CUE</li><li>CR-SAVE</li><li>CR-PARITY</li><li>CR-DECIDE</li><li>CR-DELIVERY</li><li>CR-MENU</li><li>CR-AUDIO</li><li>CR-DISPLAY</li><li>CR-SPEED</li><li>CR-DATA</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li><li><a href="#SRC-CURRENT">SRC-CURRENT</a></li></ul></div><div class="field"><span class="label">Statement</span>Real controls require real backing behavior. Planned tests, Editor results, recorded audio events and green CI are not evidence of rendered Web playback, usability, performance improvement or native acceptance. Report exact observed scope.</div></article>
+<!-- CA:END:CON-EVIDENCE -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:DEC-EXPERIMENT -->
+<article class="record" id="DEC-EXPERIMENT" data-ca-symbol="DEC-EXPERIMENT" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-EXPERIMENT">DEC-EXPERIMENT</a><h3>Sprint scope</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Broaden to complete player controls, persistent settings, audio/music, display, guidance/help, account/save navigation and game speed.</div><div class="field"><span class="label">Rationale</span>Owner explicitly requested a sprint-sized chunk with behavior behind ordinary controls; the payoff cue is now an optional sub-item.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-WIDER">SRC-WIDER</a></div></article>
+<!-- CA:END:DEC-EXPERIMENT -->
+
+<!-- CA:BEGIN:DEC-APPROVAL -->
+<article class="record" id="DEC-APPROVAL" data-ca-symbol="DEC-APPROVAL" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-APPROVAL">DEC-APPROVAL</a><h3>Execution boundary</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Execute the reviewed nine-task sprint.</div><div class="field"><span class="label">Rationale</span>The owner replied Approved after the revised concrete scope was presented.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-APPROVED">SRC-APPROVED</a></div></article>
+<!-- CA:END:DEC-APPROVAL -->
+
+<!-- CA:BEGIN:DEC-ENGINE-ORDER -->
+<article class="record" id="DEC-ENGINE-ORDER" data-ca-symbol="DEC-ENGINE-ORDER" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-ENGINE-ORDER">DEC-ENGINE-ORDER</a><h3>Engine order</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Finish and merge #1013 before #1016; leave both alone in this planning task.</div><div class="field"><span class="label">Rationale</span>The owner intentionally holds #1016 behind unfinished #1013.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-ENGINE">SRC-ENGINE</a></div></article>
+<!-- CA:END:DEC-ENGINE-ORDER -->
+
+<!-- CA:BEGIN:DEC-MUSIC -->
+<article class="record" id="DEC-MUSIC" data-ca-symbol="DEC-MUSIC" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-MUSIC">DEC-MUSIC</a><h3>Ambient music</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Include ambient music and working independent controls.</div><div class="field"><span class="label">Rationale</span>Explicit owner selection. Mood, default mix and final loop remain proposed until candidate listening review.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-MUSIC">SRC-MUSIC</a></div></article>
+<!-- CA:END:DEC-MUSIC -->
+
+<!-- CA:BEGIN:DEC-SPEED -->
+<article class="record" id="DEC-SPEED" data-ca-symbol="DEC-SPEED" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-SPEED">DEC-SPEED</a><h3>Game speed</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Use half-step controls including pause, initially capped at 1x, with a future research-cap contract toward proposed 5x.</div><div class="field"><span class="label">Rationale</span>Owner requested this mechanic; research content and actual unlock grants remain a later system.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-SPEED">SRC-SPEED</a></div></article>
+<!-- CA:END:DEC-SPEED -->
+
+<!-- CA:BEGIN:DEC-SHELL -->
+<article class="record" id="DEC-SHELL" data-ca-symbol="DEC-SHELL" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-SHELL">DEC-SHELL</a><h3>UI ownership</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Propose extending the existing Unity HUD and domain controllers with a small browser-only bridge.</div><div class="field"><span class="label">Rationale</span>Avoid duplicated simulation/audio/settings ownership; preserve current art/camera and reuse bounded tests.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-CONTROLS-AUDIT">SRC-CONTROLS-AUDIT</a></div></article>
+<!-- CA:END:DEC-SHELL -->
+
+<!-- CA:BEGIN:DEC-ACCOUNT -->
+<article class="record" id="DEC-ACCOUNT" data-ca-symbol="DEC-ACCOUNT" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-ACCOUNT">DEC-ACCOUNT</a><h3>Account scope</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Reuse existing parent account management and clearly label Last Stand as local-only.</div><div class="field"><span class="label">Rationale</span>Existing authentication does not provide Last Stand cloud-save authority. No new identity backend is required.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-ACCOUNT">SRC-ACCOUNT</a></div></article>
+<!-- CA:END:DEC-ACCOUNT -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:CR-OBSERVE -->
+<article class="record" id="CR-OBSERVE" data-ca-symbol="CR-OBSERVE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-OBSERVE">CR-OBSERVE</a><h3>Complete controls and navigation inventory</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Classify each control as existing/reuse, add this sprint or deferred with a reason.</li><li>Every in-scope button has an owner, visible state, action, persistence policy and failure/return path; no empty settings tabs or decorative toggles.</li><li>Keep primary battlefield controls visible: Shop, Pause/Resume, - / speed / +, quick mute and Settings. Use layout changes rather than shrinking targets.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-OBSERVE -->
+<article class="record" id="SC-OBSERVE" data-ca-symbol="SC-OBSERVE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-OBSERVE">SC-OBSERVE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound PR 541 candidate is available.</div><div class="field"><span class="label">Then</span>The player has clear ways to configure, pause, learn, leave and return.</div><div class="field"><span class="label">When</span>The menu and control map is reviewed.</div></article>
+<!-- CA:END:SC-OBSERVE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li></ul></div><div class="field"><span class="label">Statement</span>Map ordinary controls to real destinations and implemented behavior before building; include current and proposed surfaces.</div><div class="field"><span class="label">Trigger</span>The menu and control map is reviewed.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-OBSERVE -->
+<article class="record" id="VER-OBSERVE" data-ca-symbol="VER-OBSERVE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-OBSERVE">VER-OBSERVE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>inspection</div><div class="field"><span class="label">Negative control</span>A visible button with no functioning destination or backend behavior fails the inventory.</div><div class="field"><span class="label">Oracle</span>Classify each control as existing/reuse, add this sprint or deferred with a reason. Every in-scope button has an owner, visible state, action, persistence policy and failure/return path; no empty settings tabs or decorative toggles. Keep primary battlefield controls visible: Shop, Pause/Resume, - / speed / +, quick mute and Settings. Use layout changes rather than shrinking targets.</div><div class="field"><span class="label">Planned target</span>Control map and actual garage/battle/result/workshop settings walkthrough</div></article>
+<!-- CA:END:VER-OBSERVE -->
+</div></article>
+<!-- CA:END:CR-OBSERVE -->
+
+<!-- CA:BEGIN:CR-CUE -->
+<article class="record" id="CR-CUE" data-ca-symbol="CR-CUE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-CUE">CR-CUE</a><h3>Player-controlled guidance and useful help</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Settings &gt; Gameplay includes Tutorial tips and Purchase suggestions, both with immediate off switches and remembered values.</li><li>Turning a switch off dismisses related visible optional guidance immediately; it stays off across reload, result/Claim, purchases, tier changes and redeploy.</li><li>Essential save errors, pause/lock status, destructive-action confirmations and normal purchase receipts remain visible; they are not tutorials.</li><li>Help remains explicitly accessible when guidance is off and explains controls, speed, manual Claim, Scrap versus Salvage, six tracks, tiers and unfinished-run loss.</li><li>Keep the same-tier payoff suggestion as a small optional item, only if observation warrants it, after a confirmed first Cannon purchase. It never changes the tier or promises a survival gain.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li><li><a href="#SCOPE-CUE">SCOPE-CUE</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-CUE -->
+<article class="record" id="SC-CUE" data-ca-symbol="SC-CUE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-CUE">SC-CUE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Guidance is enabled or disabled in persisted settings.</div><div class="field"><span class="label">Then</span>Optional prompts follow preferences, while necessary status and requested help remain usable.</div><div class="field"><span class="label">When</span>A first purchase, tutorial trigger, reload or explicit Help action occurs.</div></article>
+<!-- CA:END:SC-CUE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li></ul></div><div class="field"><span class="label">Statement</span>Provide Help and persistent guidance controls; every added optional tutorial or purchase prompt obeys them.</div><div class="field"><span class="label">Trigger</span>A first purchase, tutorial trigger, reload or explicit Help action occurs.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-CUE -->
+<article class="record" id="VER-CUE" data-ca-symbol="VER-CUE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-CUE">VER-CUE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Disable both toggles, trigger all guidance paths including retry, and verify no optional prompt reappears; failed saves still show errors.</div><div class="field"><span class="label">Oracle</span>Settings &gt; Gameplay includes Tutorial tips and Purchase suggestions, both with immediate off switches and remembered values. Turning a switch off dismisses related visible optional guidance immediately; it stays off across reload, result/Claim, purchases, tier changes and redeploy. Essential save errors, pause/lock status, destructive-action confirmations and normal purchase receipts remain visible; they are not tutorials. Help remains explicitly accessible when guidance is off and explains controls, speed, manual Claim, Scrap versus Salvage, six tracks, tiers and unfinished-run loss. Keep the same-tier payoff suggestion as a small optional item, only if observation warrants it, after a confirmed first Cannon purchase. It never changes the tier or promises a survival gain.</div><div class="field"><span class="label">Planned target</span>Settings model, guide policy, purchase controller and real player journey</div></article>
+<!-- CA:END:VER-CUE -->
+</div></article>
+<!-- CA:END:CR-CUE -->
+
+<!-- CA:BEGIN:CR-SAVE -->
+<article class="record" id="CR-SAVE" data-ca-symbol="CR-SAVE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-SAVE">CR-SAVE</a><h3>Persistent preferences without progression corruption</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Audio, effects, quality, guidance and last selected positive speed survive reload; validate types, finite ranges and unlocked speed limits.</li><li>Load preferences before optional tips or sound can leak. No preferences record means documented defaults: master/effects 100%, music 20%, sound on, current visual quality, Full Effects, tips on, speed 1x.</li><li>Fullscreen and active Pause are runtime state, not silently reentered on reload. Pause retains the last positive speed; new deployments use that remembered allowed speed.</li><li>Denied, malformed or future-version preference data does not overwrite gameplay records or prevent play. Apply session choices with an honest &#39;not saved&#39; state when persistence fails.</li><li>Restore settings defaults requires a clear confirmation and affects settings only. Progression, wallets, claims, selected tier and account state remain untouched.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>compatibility</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-SAVE -->
+<article class="record" id="SC-SAVE" data-ca-symbol="SC-SAVE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-SAVE">SC-SAVE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Fresh, valid, malformed, denied and newer-version preferences are present.</div><div class="field"><span class="label">Then</span>The applied values and saved status are truthful and gameplay saves are unchanged.</div><div class="field"><span class="label">When</span>The player adjusts settings, reloads or restores defaults.</div></article>
+<!-- CA:END:SC-SAVE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li></ul></div><div class="field"><span class="label">Statement</span>Persist Last Stand preferences in a separate versioned local store, keeping gameplay save ownership unchanged.</div><div class="field"><span class="label">Trigger</span>The player adjusts settings, reloads or restores defaults.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-SAVE -->
+<article class="record" id="VER-SAVE" data-ca-symbol="VER-SAVE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-SAVE">VER-SAVE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Snapshot gameplay and unrelated storage; preference writes/default restore must never clear or rewrite them.</div><div class="field"><span class="label">Oracle</span>Audio, effects, quality, guidance and last selected positive speed survive reload; validate types, finite ranges and unlocked speed limits. Load preferences before optional tips or sound can leak. No preferences record means documented defaults: master/effects 100%, music 20%, sound on, current visual quality, Full Effects, tips on, speed 1x. Fullscreen and active Pause are runtime state, not silently reentered on reload. Pause retains the last positive speed; new deployments use that remembered allowed speed. Denied, malformed or future-version preference data does not overwrite gameplay records or prevent play. Apply session choices with an honest &#39;not saved&#39; state when persistence fails. Restore settings defaults requires a clear confirmation and affects settings only. Progression, wallets, claims, selected tier and account state remain untouched.</div><div class="field"><span class="label">Planned target</span>New LastStandPreferences model/store and WebGL storage boundary</div></article>
+<!-- CA:END:VER-SAVE -->
+</div></article>
+<!-- CA:END:CR-SAVE -->
+
+<!-- CA:BEGIN:CR-PARITY -->
+<article class="record" id="CR-PARITY" data-ca-symbol="CR-PARITY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-PARITY">CR-PARITY</a><h3>Preserve rules, rewards and existing game boundaries</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Keep existing balance, six tracks, prices, rewards, caps, 60/90 simulated-second goals, tier rules, manual Claim and gameplay save format.</li><li>Equal admitted simulation time and equivalent player actions yield the same combat state at all allowed rates and under background partitioning.</li><li>No fabricated progress on restart, leaving, reload, preferences reset or speed changes; no double awards or terminal callbacks.</li><li>Keep the selected Option 1 art/camera treatment. Full/Reduced Effects remains functional and becomes persistent; legacy/review scenes retain their existing timing.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>invariant</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-PARITY -->
+<article class="record" id="SC-PARITY" data-ca-symbol="SC-PARITY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-PARITY">SC-PARITY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Both fittings and fresh/returning profiles use all new controls.</div><div class="field"><span class="label">Then</span>Progression invariants and intended existing behavior remain true.</div><div class="field"><span class="label">When</span>The player plays, changes speed, opens menus, purchases, reloads and redeploys.</div></article>
+<!-- CA:END:SC-PARITY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li></ul></div><div class="field"><span class="label">Statement</span>New player controls preserve progression and fixed-step gameplay rules.</div><div class="field"><span class="label">Trigger</span>The player plays, changes speed, opens menus, purchases, reloads and redeploys.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-PARITY -->
+<article class="record" id="VER-PARITY" data-ca-symbol="VER-PARITY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-PARITY">VER-PARITY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>An altered reward, dropped/duplicated tick, extra claim, legacy timing change or settings-driven progression reset fails.</div><div class="field"><span class="label">Oracle</span>Keep existing balance, six tracks, prices, rewards, caps, 60/90 simulated-second goals, tier rules, manual Claim and gameplay save format. Equal admitted simulation time and equivalent player actions yield the same combat state at all allowed rates and under background partitioning. No fabricated progress on restart, leaving, reload, preferences reset or speed changes; no double awards or terminal callbacks. Keep the selected Option 1 art/camera treatment. Full/Reduced Effects remains functional and becomes persistent; legacy/review scenes retain their existing timing.</div><div class="field"><span class="label">Planned target</span>Production clock/model/controller tests and full source-bound browser journeys</div></article>
+<!-- CA:END:VER-PARITY -->
+</div></article>
+<!-- CA:END:CR-PARITY -->
+
+<!-- CA:BEGIN:CR-DECIDE -->
+<article class="record" id="CR-DECIDE" data-ca-symbol="CR-DECIDE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-DECIDE">CR-DECIDE</a><h3>Review the complete player experience</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Review actual candidate screenshots and normal-speed/half-speed play; listen to the delivered music and effects.</li><li>Record actual feedback on navigation, modal pause, settings persistence and optional guidance.</li><li>Keep/remove the optional payoff suggestion based on feedback without holding unrelated settings work hostage to that small experiment.</li><li>Automated checks prove their assertions only; human, physical-device and native acceptance stay distinct.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-DECIDE -->
+<article class="record" id="SC-DECIDE" data-ca-symbol="SC-DECIDE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-DECIDE">SC-DECIDE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>An implemented source-matched candidate is available.</div><div class="field"><span class="label">Then</span>Feedback is recorded or honestly remains pending.</div><div class="field"><span class="label">When</span>The owner reviews the complete sprint.</div></article>
+<!-- CA:END:SC-DECIDE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li></ul></div><div class="field"><span class="label">Statement</span>Obtain owner review of menu usability, music, visual modes, speed readability and guidance before treating the sprint as accepted.</div><div class="field"><span class="label">Trigger</span>The owner reviews the complete sprint.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-DECIDE -->
+<article class="record" id="VER-DECIDE" data-ca-symbol="VER-DECIDE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-DECIDE">VER-DECIDE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>inspection</div><div class="field"><span class="label">Negative control</span>Logs saying audio played, green CI or model timing counts cannot be substituted for listening or usability acceptance.</div><div class="field"><span class="label">Oracle</span>Review actual candidate screenshots and normal-speed/half-speed play; listen to the delivered music and effects. Record actual feedback on navigation, modal pause, settings persistence and optional guidance. Keep/remove the optional payoff suggestion based on feedback without holding unrelated settings work hostage to that small experiment. Automated checks prove their assertions only; human, physical-device and native acceptance stay distinct.</div><div class="field"><span class="label">Planned target</span>Candidate review checklist and actual owner feedback</div></article>
+<!-- CA:END:VER-DECIDE -->
+</div></article>
+<!-- CA:END:CR-DECIDE -->
+
+<!-- CA:BEGIN:CR-DELIVERY -->
+<article class="record" id="CR-DELIVERY" data-ca-symbol="CR-DELIVERY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-DELIVERY">CR-DELIVERY</a><h3>Reviewable whole-sprint candidate</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Build the actual Web export and verify source/runtime identity; check current-head CI after changes.</li><li>Reuse PR 541 while it remains open under the earlier same-PR instruction; if already merged, use an accepted successor baseline for the next bounded PR.</li><li>Carry pending native Windows and human acceptance forward explicitly. No borrowed receipts or passing claims for unrun checks.</li><li>No merge, deployment or plugin update is authorized by this planning turn. Preserve engine #1013 before #1016.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-DELIVERY -->
+<article class="record" id="SC-DELIVERY" data-ca-symbol="SC-DELIVERY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-DELIVERY">SC-DELIVERY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The revised sprint has an implementation candidate.</div><div class="field"><span class="label">Then</span>Implementation, local checks, exact-head CI, owner/native acceptance, merge and deployment are separate states.</div><div class="field"><span class="label">When</span>The candidate is handed back for disposition.</div></article>
+<!-- CA:END:SC-DELIVERY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li></ul></div><div class="field"><span class="label">Statement</span>Deliver the complete controls/settings/speed candidate with honest qualification and preserved engine order.</div><div class="field"><span class="label">Trigger</span>The candidate is handed back for disposition.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-DELIVERY -->
+<article class="record" id="VER-DELIVERY" data-ca-symbol="VER-DELIVERY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-DELIVERY">VER-DELIVERY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>inspection</div><div class="field"><span class="label">Negative control</span>Earlier-head CI, an Editor-only check or draft validation cannot pass current Web/native acceptance.</div><div class="field"><span class="label">Oracle</span>Build the actual Web export and verify source/runtime identity; check current-head CI after changes. Reuse PR 541 while it remains open under the earlier same-PR instruction; if already merged, use an accepted successor baseline for the next bounded PR. Carry pending native Windows and human acceptance forward explicitly. No borrowed receipts or passing claims for unrun checks. No merge, deployment or plugin update is authorized by this planning turn. Preserve engine #1013 before #1016.</div><div class="field"><span class="label">Planned target</span>PR candidate and full validation report</div></article>
+<!-- CA:END:VER-DELIVERY -->
+</div></article>
+<!-- CA:END:CR-DELIVERY -->
+
+<!-- CA:BEGIN:CR-MENU -->
+<article class="record" id="CR-MENU" data-ca-symbol="CR-MENU" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-MENU">CR-MENU</a><h3>Real menu, settings tabs and safe return paths</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Game menu includes Resume when applicable, Settings, Help, Abandon run, Return to Campaigns and About/credits.</li><li>Settings tabs are Audio, Display, Gameplay, and Save &amp; Account. Every tab contains functioning controls or truthful information with a working destination.</li><li>Opening menu/settings/help during a playable run uses a reversible menu pause through the same clock owner; closing restores only its own pause. An already manually paused run stays paused.</li><li>Catch-up/failure guards report actual state; never say paused while ticks are still being reconciled. Keep audio controls reachable without unsafe game actions.</li><li>Abandon run and Return/Manage account during unfinished play use Cancel-first confirmation with the exact loss. Abandon ends the run without rewards and returns to garage; a new run still needs Deploy.</li><li>Keyboard Back/Escape closes the topmost in-game surface when delivered; browser fullscreen Escape is not treated as a guaranteed game event. Explicit Close/Back, focus restoration and touch targets remain.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-MENU -->
+<article class="record" id="SC-MENU" data-ca-symbol="SC-MENU" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-MENU">SC-MENU</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The player is in garage, battle, settling, result, workshop, loading or an error state.</div><div class="field"><span class="label">Then</span>Navigation is predictable and irreversible run loss occurs only through the confirmed action.</div><div class="field"><span class="label">When</span>They open, close, cancel or leave via a menu action.</div></article>
+<!-- CA:END:SC-MENU -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li></ul></div><div class="field"><span class="label">Statement</span>Provide an always-discoverable settings/menu entry with complete navigation and no accidental run loss.</div><div class="field"><span class="label">Trigger</span>They open, close, cancel or leave via a menu action.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-MENU -->
+<article class="record" id="VER-MENU" data-ca-symbol="VER-MENU" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-MENU">VER-MENU</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Cancel must leave the same run/ticks/selection intact; closing a menu must not unpause a user pause or trigger a hidden shop purchase.</div><div class="field"><span class="label">Oracle</span>Game menu includes Resume when applicable, Settings, Help, Abandon run, Return to Campaigns and About/credits. Settings tabs are Audio, Display, Gameplay, and Save &amp; Account. Every tab contains functioning controls or truthful information with a working destination. Opening menu/settings/help during a playable run uses a reversible menu pause through the same clock owner; closing restores only its own pause. An already manually paused run stays paused. Catch-up/failure guards report actual state; never say paused while ticks are still being reconciled. Keep audio controls reachable without unsafe game actions. Abandon run and Return/Manage account during unfinished play use Cancel-first confirmation with the exact loss. Abandon ends the run without rewards and returns to garage; a new run still needs Deploy. Keyboard Back/Escape closes the topmost in-game surface when delivered; browser fullscreen Escape is not treated as a guaranteed game event. Explicit Close/Back, focus restoration and touch targets remain.</div><div class="field"><span class="label">Planned target</span>Settings/menu owner, clock pause ownership and wrapper navigation bridge</div></article>
+<!-- CA:END:VER-MENU -->
+</div></article>
+<!-- CA:END:CR-MENU -->
+
+<!-- CA:BEGIN:CR-AUDIO -->
+<article class="record" id="CR-AUDIO" data-ca-symbol="CR-AUDIO" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-AUDIO">CR-AUDIO</a><h3>Audio settings plus real ambient music</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Master, Effects and Music volumes are 0-100%; Music has an explicit on/off control. Quick mute and settings share the same state and preserve channel levels.</li><li>Include one original project-owned ambient loop with restrained industrial mood, no vocals, seamless looping and gentle start/stop transitions; the implementation source and provenance are retained.</li><li>Apply gain changes to currently playing sound as well as future events. No sound before browser user activation; no duplicate music sources on menu/redeploy/reload.</li><li>Music can continue while foreground gameplay is paused or in menus; combat effects remain suspended. Blur/hidden/failure silences audio under explicit policy and returns without replaying missed combat.</li><li>Game speed never changes music tempo or sound pitch; no audio burst from accumulated background events. Include a deliberate sample/test action for effects without starting combat.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-AUDIO -->
+<article class="record" id="SC-AUDIO" data-ca-symbol="SC-AUDIO" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-AUDIO">SC-AUDIO</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The game is muted/unmuted, foreground/background, running/paused and before/after audio activation.</div><div class="field"><span class="label">Then</span>Each setting audibly affects its intended channel and state, with no leakage or replay burst.</div><div class="field"><span class="label">When</span>The player changes channels and speed or opens the menu.</div></article>
+<!-- CA:END:SC-AUDIO -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-MUSIC">SRC-MUSIC</a></li><li><a href="#SRC-CONTROLS-AUDIT">SRC-CONTROLS-AUDIT</a></li><li><a href="#SRC-UNITY-AUDIO">SRC-UNITY-AUDIO</a></li></ul></div><div class="field"><span class="label">Statement</span>Ship master mute/volume, effects volume and independent music controls backed by actual sound.</div><div class="field"><span class="label">Trigger</span>The player changes channels and speed or opens the menu.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-AUDIO -->
+<article class="record" id="VER-AUDIO" data-ca-symbol="VER-AUDIO" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-AUDIO">VER-AUDIO</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Master mute and Music off must silence captured output; effects-only mute must not silence music. Logs alone do not establish rendered audio.</div><div class="field"><span class="label">Oracle</span>Master, Effects and Music volumes are 0-100%; Music has an explicit on/off control. Quick mute and settings share the same state and preserve channel levels. Include one original project-owned ambient loop with restrained industrial mood, no vocals, seamless looping and gentle start/stop transitions; the implementation source and provenance are retained. Apply gain changes to currently playing sound as well as future events. No sound before browser user activation; no duplicate music sources on menu/redeploy/reload. Music can continue while foreground gameplay is paused or in menus; combat effects remain suspended. Blur/hidden/failure silences audio under explicit policy and returns without replaying missed combat. Game speed never changes music tempo or sound pitch; no audio burst from accumulated background events. Include a deliberate sample/test action for effects without starting combat.</div><div class="field"><span class="label">Planned target</span>LastStandAudio/music implementation, live Web playback checks and listening review</div></article>
+<!-- CA:END:VER-AUDIO -->
+</div></article>
+<!-- CA:END:CR-AUDIO -->
+
+<!-- CA:BEGIN:CR-DISPLAY -->
+<article class="record" id="CR-DISPLAY" data-ca-symbol="CR-DISPLAY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-DISPLAY">CR-DISPLAY</a><h3>Working display quality and reduced-effects controls</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Display includes Full/Reduced Effects, quality presets Current and Performance, and capability-aware Enter/Exit Fullscreen.</li><li>Current preserves approved rendering. Performance reduces 3D render scale to a proposed 0.75 while keeping UI legible and geometry correct; do not merely rename the effects switch.</li><li>Quality and effects remain independent and persist. No camera composition or art replacement; switching does not change model outcomes.</li><li>Fullscreen state follows the actual browser and reports unsupported/denied requests honestly. There is a usable exit path.</li><li>Validate all settings pages and battlefield controls across maintained portrait/landscape/DPR profiles with visible focus, usable labels, scrolling and minimum 44px targets.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-DISPLAY -->
+<article class="record" id="SC-DISPLAY" data-ca-symbol="SC-DISPLAY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-DISPLAY">SC-DISPLAY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The player changes display settings on the actual Web export.</div><div class="field"><span class="label">Then</span>The visible output and UI state match the setting and the game remains controllable.</div><div class="field"><span class="label">When</span>The renderer or browser accepts/rejects the request.</div></article>
+<!-- CA:END:SC-DISPLAY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li><li><a href="#SRC-UNITY-INPUT">SRC-UNITY-INPUT</a></li></ul></div><div class="field"><span class="label">Statement</span>Provide real display options with visible rendering effects and correct browser state.</div><div class="field"><span class="label">Trigger</span>The renderer or browser accepts/rejects the request.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-DISPLAY -->
+<article class="record" id="VER-DISPLAY" data-ca-symbol="VER-DISPLAY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-DISPLAY">VER-DISPLAY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A control whose backend value changes but whose actual renderer does not change fails; unreadable UI or false fullscreen state fails.</div><div class="field"><span class="label">Oracle</span>Display includes Full/Reduced Effects, quality presets Current and Performance, and capability-aware Enter/Exit Fullscreen. Current preserves approved rendering. Performance reduces 3D render scale to a proposed 0.75 while keeping UI legible and geometry correct; do not merely rename the effects switch. Quality and effects remain independent and persist. No camera composition or art replacement; switching does not change model outcomes. Fullscreen state follows the actual browser and reports unsupported/denied requests honestly. There is a usable exit path. Validate all settings pages and battlefield controls across maintained portrait/landscape/DPR profiles with visible focus, usable labels, scrolling and minimum 44px targets.</div><div class="field"><span class="label">Planned target</span>Actual render-pipeline binding, HUD layout, Web shell and viewport captures</div></article>
+<!-- CA:END:VER-DISPLAY -->
+</div></article>
+<!-- CA:END:CR-DISPLAY -->
+
+<!-- CA:BEGIN:CR-SPEED -->
+<article class="record" id="CR-SPEED" data-ca-symbol="CR-SPEED" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-SPEED">CR-SPEED</a><h3>Half-step game speed with truthful research limits</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Initial available values are 0, 0.5 and 1; default positive rate is 1. Plus stops at the current 1x cap and explains that higher speeds belong to future research.</li><li>Pause/Resume and the speed readout use the same owner. Minus from 0.5 selects 0; plus from 0 selects 0.5; Resume restores the last positive rate.</li><li>Admit wall-time segments at their active rate into the existing fixed .05-second simulation clock. Preserve fractional carry, callback budget, terminal horizon and retained debt; changing rate never rescales earlier elapsed time.</li><li>Settle the action boundary before a rate change; reject/disable conflicting changes during catch-up rather than retroactively rescaling backlog. Menu pause, manual pause and focus transitions remain consistent.</li><li>Tier goals, displayed run survival, waves, cooldowns, purchases and rewards use simulation time. Cosmetic feedback and audio remain responsive without global Unity time-scale changes.</li><li>Persist the last positive allowed speed, not an active paused run. Reload preserves preferences but keeps the existing unfinished-run loss rule.</li><li>Provide a narrow maximum-speed policy for future research: half-steps through proposed 5x, currently returning 1x. No research currency, unlock UI, grant or progress field is created here; saved preferences cannot grant speed.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-SPEED -->
+<article class="record" id="SC-SPEED" data-ca-symbol="SC-SPEED" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-SPEED">SC-SPEED</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A fresh player has a 1x cap and future-cap test fixtures are isolated from production.</div><div class="field"><span class="label">Then</span>Only allowed rates take effect and equal simulated time produces equal outcomes.</div><div class="field"><span class="label">When</span>They step speed up/down, pause, resume, background and reload.</div></article>
+<!-- CA:END:SC-SPEED -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SPEED">SRC-SPEED</a></li><li><a href="#SRC-CLOCK">SRC-CLOCK</a></li></ul></div><div class="field"><span class="label">Statement</span>Add visible on-screen - / speed / + controls from 0x paused through the unlocked maximum in 0.5 increments.</div><div class="field"><span class="label">Trigger</span>They step speed up/down, pause, resume, background and reload.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-SPEED -->
+<article class="record" id="VER-SPEED" data-ca-symbol="VER-SPEED" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-SPEED">VER-SPEED</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Reject NaN, infinity, negative/non-half-step and over-cap rates. Test 1x/0.5x/0x timing partitions, pending debt and isolated future 1.5-5x fixtures without unlocking them in production.</div><div class="field"><span class="label">Oracle</span>Initial available values are 0, 0.5 and 1; default positive rate is 1. Plus stops at the current 1x cap and explains that higher speeds belong to future research. Pause/Resume and the speed readout use the same owner. Minus from 0.5 selects 0; plus from 0 selects 0.5; Resume restores the last positive rate. Admit wall-time segments at their active rate into the existing fixed .05-second simulation clock. Preserve fractional carry, callback budget, terminal horizon and retained debt; changing rate never rescales earlier elapsed time. Settle the action boundary before a rate change; reject/disable conflicting changes during catch-up rather than retroactively rescaling backlog. Menu pause, manual pause and focus transitions remain consistent. Tier goals, displayed run survival, waves, cooldowns, purchases and rewards use simulation time. Cosmetic feedback and audio remain responsive without global Unity time-scale changes. Persist the last positive allowed speed, not an active paused run. Reload preserves preferences but keeps the existing unfinished-run loss rule. Provide a narrow maximum-speed policy for future research: half-steps through proposed 5x, currently returning 1x. No research currency, unlock UI, grant or progress field is created here; saved preferences cannot grant speed.</div><div class="field"><span class="label">Planned target</span>LastStandRunClock, EncounterSession, speed policy/controller, preferences and visible HUD</div></article>
+<!-- CA:END:VER-SPEED -->
+</div></article>
+<!-- CA:END:CR-SPEED -->
+
+<!-- CA:BEGIN:CR-DATA -->
+<article class="record" id="CR-DATA" data-ca-symbol="CR-DATA" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-DATA">CR-DATA</a><h3>Honest Save &amp; Account and About surfaces</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Show confirmed/failed local-save state, unfinished-run loss, pending-result preservation and the existing Retry Save action when relevant.</li><li>Manage account navigates through a tested fixed route to the existing parent account pane, with the active-run leave confirmation first.</li><li>State clearly that signing in does not sync this Last Stand save; gameplay storage stays separate from Ash Road and account rewards.</li><li>About displays actual build/version and credits, including music provenance. Help/contact destinations use real targets and do not send data automatically.</li><li>Restore defaults is settings-only. Gameplay reset, export/import, cloud backup, social login and password recovery are deferred rather than exposed as dead controls.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-DATA -->
+<article class="record" id="SC-DATA" data-ca-symbol="SC-DATA" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-DATA">SC-DATA</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The player opens Save &amp; Account in a normal or failed-save state.</div><div class="field"><span class="label">Then</span>Information reflects actual owners; no progress is uploaded, cleared or falsely marked synced.</div><div class="field"><span class="label">When</span>They retry a save, inspect storage details or open account management.</div></article>
+<!-- CA:END:SC-DATA -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ACCOUNT">SRC-ACCOUNT</a></li></ul></div><div class="field"><span class="label">Statement</span>Make save status and account navigation useful without inventing cloud progress.</div><div class="field"><span class="label">Trigger</span>They retry a save, inspect storage details or open account management.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-DATA -->
+<article class="record" id="VER-DATA" data-ca-symbol="VER-DATA" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-DATA">VER-DATA</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Account sign-out or restoring settings must not clear Last Stand progression. A fake account pane or inert link fails.</div><div class="field"><span class="label">Oracle</span>Show confirmed/failed local-save state, unfinished-run loss, pending-result preservation and the existing Retry Save action when relevant. Manage account navigates through a tested fixed route to the existing parent account pane, with the active-run leave confirmation first. State clearly that signing in does not sync this Last Stand save; gameplay storage stays separate from Ash Road and account rewards. About displays actual build/version and credits, including music provenance. Help/contact destinations use real targets and do not send data automatically. Restore defaults is settings-only. Gameplay reset, export/import, cloud backup, social login and password recovery are deferred rather than exposed as dead controls.</div><div class="field"><span class="label">Planned target</span>Settings save-status adapter, wrapper return/account route and parent Lobby/account tests</div></article>
+<!-- CA:END:VER-DATA -->
+</div></article>
+<!-- CA:END:CR-DATA -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2>
+<!-- CA:BEGIN:OPEN-SPRINT-APPROVAL -->
+<article class="record" id="OPEN-SPRINT-APPROVAL" data-ca-symbol="OPEN-SPRINT-APPROVAL" data-ca-kind="open_decisions"><div class="record-head"><a class="id" href="#OPEN-SPRINT-APPROVAL">OPEN-SPRINT-APPROVAL</a><h3>Open decisions</h3></div><div class="field"><span class="label">Affects</span><ul class="items"><li>CR-OBSERVE</li><li>CR-CUE</li><li>CR-SAVE</li><li>CR-PARITY</li><li>CR-DECIDE</li><li>CR-DELIVERY</li><li>CR-MENU</li><li>CR-AUDIO</li><li>CR-DISPLAY</li><li>CR-SPEED</li><li>CR-DATA</li></ul></div><div class="field"><span class="label">Blocking</span>true</div><div class="field"><span class="label">Owner</span>User</div><div class="field"><span class="label">Question</span>Approve the revised player-controls/settings/music/game-speed sprint, or amend its concrete scope and behavior?</div><div class="field"><span class="label">Resolution</span>User explicitly replied Approved on 2026-10-21 to the revised nine-task sprint. Implementation authorized; final acceptance, merge and publication remain separate.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-APPROVED">SRC-APPROVED</a></div><div class="field"><span class="label">Status</span>resolved</div></article>
+<!-- CA:END:OPEN-SPRINT-APPROVAL -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-REVIEW -->
+<article class="record" id="SEC-REVIEW" data-ca-symbol="SEC-REVIEW" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-REVIEW">SEC-REVIEW</a><h3>Approved sprint</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The owner approved the revised player controls, settings, ambient music and half-step game-speed sprint on 2026-10-21. Implementation is authorized. Actual final owner acceptance, merge and publication remain separate. The artifact pair retains its original filename to preserve history.</p><div class="refs">References: <a href="#SRC-APPROVED">SRC-APPROVED</a> </div></div></div></article>
+<!-- CA:END:SEC-REVIEW -->
+
+<!-- CA:BEGIN:SEC-BASE -->
+<article class="record" id="SEC-BASE" data-ca-symbol="SEC-BASE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-BASE">SEC-BASE</a><h3>Starting point and preserved delivery work</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Baseline remains PR 541 at 0698acba1c0bd6c550f99333f4e467d0332893a4, observed open/draft. It includes the chosen Option 1 combat treatment and Full/Reduced Effects. Existing CI evidence, owner visual/audio acceptance and native Windows gaps remain distinct. Recheck current refs before implementation; do not reset dirty work or the preserved st-art-pr checkout.</p></div></div></article>
+<!-- CA:END:SEC-BASE -->
+
+<!-- CA:BEGIN:SEC-DESIGN -->
+<article class="record" id="SEC-DESIGN" data-ca-symbol="SEC-DESIGN" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-DESIGN">SEC-DESIGN</a><h3>Player-facing layout and defaults</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Surface</th><th scope="col">Contents</th></tr></thead><tbody><tr><td>Battlefield</td><td>Shop; Pause/Resume; - / current speed / +; quick mute; Settings gear. Preserve readable combat area.</td></tr><tr><td>Game menu</td><td>Resume; Settings; Help; Abandon run; Return to Campaigns; About.</td></tr><tr><td>Audio tab</td><td>Master mute/volume; Effects volume and sample; Music on/off/volume.</td></tr><tr><td>Display tab</td><td>Current/Performance render quality; Full/Reduced Effects; actual fullscreen control.</td></tr><tr><td>Gameplay tab</td><td>Tutorial tips; Purchase suggestions; remembered allowed positive speed and current research cap explanation.</td></tr><tr><td>Save &amp; Account tab</td><td>Local-save status and Retry; Manage account; local-only disclosure; Restore settings defaults.</td></tr><tr><td>Help/About</td><td>Controls, speed and loop guide; real build/version and credits.</td></tr></tbody></table></div></div><div class="block"><p>Preferences apply immediately and save locally. Default master/effects volume is 100%, music 20% and on after activation; visuals retain current quality and Full Effects; optional tips are on; speed starts at 1x. Fullscreen and active pause are not automatically restored. Restore defaults clearly names settings, requires confirmation, and never resets progression.</p></div><div class="block"><p>Main-menu/settings/help pause is owned separately from manual pause. Closing removes only the menu hold; hidden-tab or failure state cannot be accidentally resumed. During catch-up, labels and action availability must reflect the actual clock state. Menus have explicit Close/Back and focus restoration.</p></div><div class="block"><p>The proposed initial music is one restrained, original industrial ambient loop. Music continues at normal tempo during foreground menu/manual pause; combat effects suspend. Background/failure silences both. The owner reviews the actual mix before acceptance.</p></div></div></article>
+<!-- CA:END:SEC-DESIGN -->
+
+<!-- CA:BEGIN:SEC-SMARTS -->
+<article class="record" id="SEC-SMARTS" data-ca-symbol="SEC-SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SMARTS">SEC-SMARTS</a><h3>SMARTS design rationale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Intent: current owner direction expands the sprint beyond upgrade payoff to real settings/navigation, includes ambient music, mandates guidance opt-out and requests half-step speed. Existing Last Stand Unity HUD and separate local saves constrain implementation; parent account authority remains unchanged.</p></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Lens</th><th scope="col">Extend existing Unity HUD/controllers</th><th scope="col">Build a separate DOM settings application</th></tr></thead><tbody><tr><td>Scalable</td><td>Indifferent — Local single-player settings add no service or new scale boundary.</td><td>Indifferent — Local single-player settings add no service or new scale boundary.</td></tr><tr><td>Maintainable</td><td>Strong — Reuses current HUD, audio and run-clock owners.</td><td>Adequate — Adds another UI framework boundary and bridge contract.</td></tr><tr><td>Available</td><td>Indifferent — Both depend on the existing Web runtime and local storage.</td><td>Indifferent — Both depend on the existing Web runtime and local storage.</td></tr><tr><td>Reliable</td><td>Strong — Controls call existing state owners; native shell handles browser-only actions.</td><td>Adequate — Safe with a strict bridge but creates more synchronization paths.</td></tr><tr><td>Testable</td><td>Adequate — Existing Editor and browser paths need keyboard and settings coverage.</td><td>Strong — DOM controls are directly testable with established browser tooling.</td></tr><tr><td>Securable</td><td>Indifferent — Neither requires new services, credentials or dependencies.</td><td>Indifferent — Neither requires new services, credentials or dependencies.</td></tr></tbody></table></div></div><div class="block"><p>Recommendation: extend the existing HUD and domain owners, with a small native shell bridge for fullscreen and leaving/account routes; strength moderate. Maintainable and Reliable favor continuity, while Testable favors DOM. The owner asked for complete behavior, not a second application shell.</p></div><div class="block"><p>Speed uses the dedicated clock&#39;s elapsed-time admission rather than global time scaling: fixed simulation rules, menu responsiveness and music tempo remain separate. Preferences are a versioned separate store; they cannot unlock speeds or change gameplay saves.</p></div><div class="block"><p>Material unknowns: actual Performance preset benefit and ambient music usability. missing_observation: source-matched renderer measurements and owner listening/playtest; decision_critical: true for accepting those treatments, false for drafting/building their bounded candidates. No claimed performance improvement or musical approval yet.</p></div><div class="block"><p>Load-bearing assumptions: existing UI can support readable tabs/controls across maintained profiles, and the current URP pipeline can change 3D render scale independently of UI. Verify during implementation; return material scope changes for review.</p></div><div class="block"><p>Non-SMARTS constraints: keep this one complete player-controls sprint. No cloud-save backend, research economy, imported asset license commitment or gameplay rebalance. Preserve the owner&#39;s engine merge order and explicit review checkpoint.</p></div><div class="block"><p>Priority evidence: current user direction supersedes the narrower first-upgrade-only proposal. ADR-0011 constrains account reuse; roadmap defers larger progression systems.</p></div></div></article>
+<!-- CA:END:SEC-SMARTS -->
+
+<!-- CA:BEGIN:SEC-INVENTORY -->
+<article class="record" id="SEC-INVENTORY" data-ca-symbol="SEC-INVENTORY" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-INVENTORY">SEC-INVENTORY</a><h3>Source-backed control inventory</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Control</th><th scope="col">Current state</th><th scope="col">Sprint treatment</th></tr></thead><tbody><tr><td>Settings/menu</td><td>Missing dedicated pane</td><td>Add gear entry, menu and four working settings tabs</td></tr><tr><td>Pause/resume</td><td>Exists</td><td>Unify with speed 0 and reversible menu pause</td></tr><tr><td>Game speed</td><td>Missing</td><td>Visible half-step - / current / +; cap 1x initially</td></tr><tr><td>Sound toggle</td><td>Exists, runtime only</td><td>Persist and synchronize quick mute with channel settings</td></tr><tr><td>Music</td><td>Missing in Last Stand</td><td>Add ambient loop, on/off and volume</td></tr><tr><td>Effects</td><td>Exists, battle-only runtime switch</td><td>Persist and expose in Display</td></tr><tr><td>Graphics quality/fullscreen</td><td>No player-facing controls found</td><td>Bind real render-scale preset and browser fullscreen</td></tr><tr><td>Help/tutorial controls</td><td>Missing</td><td>Help content, tutorial tips and purchase-suggestion switches</td></tr><tr><td>Return/abandon</td><td>Return link exists; no explicit abandon menu</td><td>Safe confirmed return and abandon-to-garage</td></tr><tr><td>Account</td><td>Exists in parent app only</td><td>Working route to existing pane; local-save disclosure</td></tr><tr><td>Save/recovery</td><td>Existing local save and retry</td><td>Clear status in Save &amp; Account; settings-only defaults</td></tr><tr><td>Credits/build</td><td>No dedicated menu entry found</td><td>Real About information and music provenance</td></tr><tr><td>Cloud sync, save reset/import/export, remapping, language, research UI</td><td>Not part of this candidate</td><td>Explicitly deferred; no placeholder controls</td></tr></tbody></table></div><div class="refs">References: <a href="#SRC-CONTROLS-AUDIT">SRC-CONTROLS-AUDIT</a> <a href="#SRC-ACCOUNT">SRC-ACCOUNT</a> <a href="#SRC-CLOCK">SRC-CLOCK</a> </div></div></div></article>
+<!-- CA:END:SEC-INVENTORY -->
+
+<!-- CA:BEGIN:SEC-SPEED-RULES -->
+<article class="record" id="SEC-SPEED-RULES" data-ca-symbol="SEC-SPEED-RULES" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SPEED-RULES">SEC-SPEED-RULES</a><h3>Game-speed contract</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><ul class="items"><li>Now: 0x, 0.5x, 1x. Half-step buttons stay visible on the battlefield; current cap is enforced independently of preferences.</li><li>Later: research can raise the cap in 0.5 steps toward the proposed 5x ceiling. This sprint creates the narrow cap contract, not the research system or free unlocks.</li><li>0x is the existing pause state. Resume returns to the last positive speed; plus from pause selects 0.5x; no contradictory second pause variable.</li><li>All combat goals and results use simulation seconds. The wall clock admits elapsed segments at their active rate into fixed ticks; existing fractional time and callback debt retain their original accounting.</li><li>Equal weighted simulated time must produce the same state with identical actions, whether foreground, background, partitioned callbacks or changing speed. Higher future-cap fixtures test the contract without shipping unlocks.</li></ul></div></div></article>
+<!-- CA:END:SEC-SPEED-RULES -->
+
+<!-- CA:BEGIN:SEC-ACCEPTANCE -->
+<article class="record" id="SEC-ACCEPTANCE" data-ca-symbol="SEC-ACCEPTANCE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-ACCEPTANCE">SEC-ACCEPTANCE</a><h3>Meaningful acceptance</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><ul class="items"><li>Every control has functioning behavior, correct current state, a tested failure path and a way back.</li><li>Preferences survive reload; turning guidance off is durable and immediate.</li><li>Music/effects/master controls alter actual rendered sound; display presets alter actual rendering; speed controls alter only elapsed simulation admission.</li><li>No progression corruption, automatic rewards, accidental leave, stale pause, audio burst or over-cap speed.</li><li>Owner reviews the actual settings/navigation/music/speed experience. CI and structural draft validation do not imply that acceptance.</li></ul></div></div></article>
+<!-- CA:END:SEC-ACCEPTANCE -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-REQUEST -->
+<article class="record" id="SRC-REQUEST" data-ca-symbol="SRC-REQUEST" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-REQUEST">SRC-REQUEST</a><h3>Owner request: plan the next Last Stand sprint</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>Planning only. The owner explicitly requires careful approval before execution; codeArbiter #1013 must merge before #1016.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-REQUEST -->
+
+<!-- CA:BEGIN:SRC-ROADMAP -->
+<article class="record" id="SRC-ROADMAP" data-ca-symbol="SRC-ROADMAP" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ROADMAP">SRC-ROADMAP</a><h3>Maintained Last Stand direction</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-ROADMAP.md</div><div class="field"><span class="label">Note</span>The next product work is owner acceptance and the defeat-to-upgrade loop. Equipment, Skills, R&amp;D, targeting and longer progression remain later work.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ROADMAP -->
+
+<!-- CA:BEGIN:SRC-TUNING -->
+<article class="record" id="SRC-TUNING" data-ca-symbol="SRC-TUNING" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-TUNING">SRC-TUNING</a><h3>Measured first-upgrade payoff</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/FIRST-SESSION-TUNING.md</div><div class="field"><span class="label">Note</span>With no temporary purchases, first permanent Cannon on Tier 1 adds 7.5 seconds / 7 kills for repair and 6 seconds / 7 kills for launcher. Switching to Tier 2 masks these gains. This does not establish human confusion.</div><div class="field"><span class="label">Type</span>test_reference</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-TUNING -->
+
+<!-- CA:BEGIN:SRC-CONTROLLER -->
+<article class="record" id="SRC-CONTROLLER" data-ca-symbol="SRC-CONTROLLER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CONTROLLER">SRC-CONTROLLER</a><h3>Confirmed purchase and retry path</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs</div><div class="field"><span class="label">Note</span>Purchase and RetrySave expose the confirmed permanent level transition; failed storage remains an error. LastStandProgression commits only after read-back confirmation.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CONTROLLER -->
+
+<!-- CA:BEGIN:SRC-HUD -->
+<article class="record" id="SRC-HUD" data-ca-symbol="SRC-HUD" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-HUD">SRC-HUD</a><h3>Existing tier, best and saved-notice presentation</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</div><div class="field"><span class="label">Note</span>Workshop and garage show selected-tier goals and independent personal bests. SaveStatus presents the saved purchase notice. Personal bests combine builds and are not causal comparisons.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-HUD -->
+
+<!-- CA:BEGIN:SRC-CURRENT -->
+<article class="record" id="SRC-CURRENT" data-ca-symbol="SRC-CURRENT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CURRENT">SRC-CURRENT</a><h3>Current first-session polish candidate</h3></div><div class="field"><span class="label">Locator</span>PR 541 at 0698acba1c0bd6c550f99333f4e467d0332893a4</div><div class="field"><span class="label">Note</span>Observed 2026-10-21: draft/open, 28 successful checks and one expected skip. Visual/audio acceptance and native qualification remain separate; no merge or deployment claim.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/pull/541</div></article>
+<!-- CA:END:SRC-CURRENT -->
+
+<!-- CA:BEGIN:SRC-ENGINE -->
+<article class="record" id="SRC-ENGINE" data-ca-symbol="SRC-ENGINE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ENGINE">SRC-ENGINE</a><h3>Engine merge order</h3></div><div class="field"><span class="label">Locator</span>Current conversation; codeArbiter PRs 1013 and 1016</div><div class="field"><span class="label">Note</span>Both open when inspected. Owner intentionally holds #1016 until unfinished #1013 merges. This sprint neither merges them nor loads unmerged plugin code.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span>https://github.com/arbiterForge/codeArbiter/pull/1016</div></article>
+<!-- CA:END:SRC-ENGINE -->
+
+<!-- CA:BEGIN:SRC-WIDER -->
+<article class="record" id="SRC-WIDER" data-ca-symbol="SRC-WIDER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-WIDER">SRC-WIDER</a><h3>Owner expands the sprint to everyday game controls</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>The owner rejected a small-feature sprint, requested a real settings surface and backing behavior, and requires settings switches for any tutorial or purchase prompts.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-WIDER -->
+
+<!-- CA:BEGIN:SRC-MUSIC -->
+<article class="record" id="SRC-MUSIC" data-ca-symbol="SRC-MUSIC" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-MUSIC">SRC-MUSIC</a><h3>Owner includes ambient music</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>Explicit answer: Include ambient music and its controls.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-MUSIC -->
+
+<!-- CA:BEGIN:SRC-SPEED -->
+<article class="record" id="SRC-SPEED" data-ca-symbol="SRC-SPEED" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-SPEED">SRC-SPEED</a><h3>Owner requests half-step game speed</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>Visible controls from 0/paused in steps of 0.5, initially capped at 1x; research later unlocks higher speeds, with approximately 5x suggested as the eventual ceiling.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-SPEED -->
+
+<!-- CA:BEGIN:SRC-CONTROLS-AUDIT -->
+<article class="record" id="SRC-CONTROLS-AUDIT" data-ca-symbol="SRC-CONTROLS-AUDIT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CONTROLS-AUDIT">SRC-CONTROLS-AUDIT</a><h3>Current Last Stand control inventory</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs; LastStandAudio.cs; LastStandStore.cs; campaign-unity/Tools/make_web_entry.py</div><div class="field"><span class="label">Note</span>Current source has Pause, Sound toggle, battle-only Full/Reduced Effects, shop and return navigation. No dedicated Last Stand settings pane, preference store, music or game-speed selection was found in these owners.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CONTROLS-AUDIT -->
+
+<!-- CA:BEGIN:SRC-CLOCK -->
+<article class="record" id="SRC-CLOCK" data-ca-symbol="SRC-CLOCK" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CLOCK">SRC-CLOCK</a><h3>Existing fixed-step run and background clock</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs; campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</div><div class="field"><span class="label">Note</span>Current clock admits one .05-second model step per .05 seconds active elapsed time, caps callbacks at 128 steps and retains debt. Pause excludes elapsed time; playable background continuation is distinct from legacy/review behavior.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CLOCK -->
+
+<!-- CA:BEGIN:SRC-ACCOUNT -->
+<article class="record" id="SRC-ACCOUNT" data-ca-symbol="SRC-ACCOUNT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ACCOUNT">SRC-ACCOUNT</a><h3>Existing account UI and Last Stand save separation</h3></div><div class="field"><span class="label">Locator</span>client/src/ui/AccountPanelView.ts; client/src/ui/Lobby.ts; .codearbiter/decisions/0011-password-auth-before-google-sso.md</div><div class="field"><span class="label">Note</span>Parent app owns password sign-in/sign-up/sign-out. Last Stand owns its separate browser save. Reuse the parent account surface; do not imply Last Stand cloud sync or add password recovery/social-login services.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ACCOUNT -->
+
+<!-- CA:BEGIN:SRC-UNITY-AUDIO -->
+<article class="record" id="SRC-UNITY-AUDIO" data-ca-symbol="SRC-UNITY-AUDIO" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UNITY-AUDIO">SRC-UNITY-AUDIO</a><h3>Unity 6.3 Web audio support</h3></div><div class="field"><span class="label">Locator</span>Web audio, playback and user-gesture constraints</div><div class="field"><span class="label">Note</span>Plan real-browser gesture, looping, gain, mute, visibility and interruption checks. Editor-only results do not establish Web playback.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/webgl/develop/audio</div></article>
+<!-- CA:END:SRC-UNITY-AUDIO -->
+
+<!-- CA:BEGIN:SRC-UNITY-INPUT -->
+<article class="record" id="SRC-UNITY-INPUT" data-ca-symbol="SRC-UNITY-INPUT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UNITY-INPUT">SRC-UNITY-INPUT</a><h3>Unity 6.3 Web fullscreen and keyboard constraints</h3></div><div class="field"><span class="label">Locator</span>Fullscreen and input in Web</div><div class="field"><span class="label">Note</span>Fullscreen requires a real user action and varies by browser; Escape may be consumed by the browser. Show observed state and retain explicit Back/Close controls.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/webgl/develop/input</div></article>
+<!-- CA:END:SRC-UNITY-INPUT -->
+
+<!-- CA:BEGIN:SRC-APPROVED -->
+<article class="record" id="SRC-APPROVED" data-ca-symbol="SRC-APPROVED" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-APPROVED">SRC-APPROVED</a><h3>Owner approves sprint implementation</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>User replied Approved after reviewing the revised nine-task sprint proposal.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-APPROVED -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>0698acba1c0bd6c550f99333f4e467d0332893a4</div><div class="field"><span class="label">Observed date</span>2026-10-21</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts</li><li>campaign-unity/Tools/make_web_entry.py</li><li>client/src/ui/Lobby.ts</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 99f19298e32056d55a4aef9774698437e4caffc7b1da853c91f5dfd88eddc058<br>Model SHA-256: c7480fb8ac1d6cc3eaff367e6aa519700cfe97fca7080d936a688974e9ddd344</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-UPGRADE-PAYOFF-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "c7480fb8ac1d6cc3eaff367e6aa519700cfe97fca7080d936a688974e9ddd344",
+    "normative_sha256": "99f19298e32056d55a4aef9774698437e4caffc7b1da853c91f5dfd88eddc058",
+    "symbol_count": 76
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "DEC-EXPERIMENT",
+        "DEC-MUSIC",
+        "DEC-SPEED",
+        "DEC-SHELL",
+        "DEC-ACCOUNT",
+        "DEC-APPROVAL",
+        "DEC-ENGINE-ORDER"
+      ],
+      "choice": "Build a complete player-controls sprint on the existing HUD and state owners; preserve optional upgrade-payoff work as one guidance item.",
+      "id": "APPROACH-OBSERVE-EXPERIMENT",
+      "tradeoff": "Wider than a copy feature but bounded to session controls. Settings and speed require real state/lifecycle work; cloud sync, research content and progression expansions remain separate."
+    },
+    "baseline": {
+      "commit": "0698acba1c0bd6c550f99333f4e467d0332893a4",
+      "observed_date": "2026-10-21",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "CR-OBSERVE",
+          "CR-CUE",
+          "CR-SAVE",
+          "CR-PARITY",
+          "CR-DECIDE",
+          "CR-DELIVERY",
+          "CR-MENU",
+          "CR-AUDIO",
+          "CR-DISPLAY",
+          "CR-SPEED",
+          "CR-DATA"
+        ],
+        "id": "CON-APPROVAL",
+        "source_refs": [
+          "SRC-REQUEST",
+          "SRC-WIDER",
+          "SRC-APPROVED"
+        ],
+        "statement": "The owner explicitly approved implementation of this nine-task sprint on 2026-10-21. Work may proceed in the current PR while open. Actual final usability/listening acceptance, merge and publication remain separate; do not fabricate receipts or require an approval code."
+      },
+      {
+        "applies_to": [
+          "CR-DELIVERY"
+        ],
+        "id": "CON-ENGINE",
+        "source_refs": [
+          "SRC-ENGINE",
+          "SRC-REQUEST"
+        ],
+        "statement": "Preserve codeArbiter merge order: finish and merge #1013 before #1016. Do not update to unmerged engine code or treat planning as authorization to merge either PR. Terra planning can proceed with the currently loaded writer."
+      },
+      {
+        "applies_to": [
+          "CR-OBSERVE",
+          "CR-CUE",
+          "CR-SAVE",
+          "CR-PARITY",
+          "CR-DECIDE",
+          "CR-DELIVERY",
+          "CR-MENU",
+          "CR-AUDIO",
+          "CR-DISPLAY",
+          "CR-SPEED",
+          "CR-DATA"
+        ],
+        "id": "CON-PRESERVE",
+        "source_refs": [
+          "SRC-WIDER",
+          "SRC-SPEED",
+          "SRC-ACCOUNT",
+          "SRC-CURRENT"
+        ],
+        "statement": "Preserve existing gameplay/save/award rules, separate account authority, selected Option 1 art/camera and legacy/review scenes. Intentionally add persistent preferences, music, display options and scaled elapsed-time admission; no numerical rebalance or gameplay save migration."
+      },
+      {
+        "applies_to": [
+          "CR-OBSERVE",
+          "CR-CUE",
+          "CR-SAVE",
+          "CR-PARITY",
+          "CR-DECIDE",
+          "CR-DELIVERY",
+          "CR-MENU",
+          "CR-AUDIO",
+          "CR-DISPLAY",
+          "CR-SPEED",
+          "CR-DATA"
+        ],
+        "id": "CON-EVIDENCE",
+        "source_refs": [
+          "SRC-WIDER",
+          "SRC-CURRENT"
+        ],
+        "statement": "Real controls require real backing behavior. Planned tests, Editor results, recorded audio events and green CI are not evidence of rendered Web playback, usability, performance improvement or native acceptance. Report exact observed scope."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Classify each control as existing/reuse, add this sprint or deferred with a reason.",
+          "Every in-scope button has an owner, visible state, action, persistence policy and failure/return path; no empty settings tabs or decorative toggles.",
+          "Keep primary battlefield controls visible: Shop, Pause/Resume, - / speed / +, quick mute and Settings. Use layout changes rather than shrinking targets."
+        ],
+        "id": "CR-OBSERVE",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound PR 541 candidate is available.",
+            "id": "SC-OBSERVE",
+            "then": "The player has clear ways to configure, pause, learn, leave and return.",
+            "when": "The menu and control map is reviewed."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER"
+        ],
+        "statement": "Map ordinary controls to real destinations and implemented behavior before building; include current and proposed surfaces.",
+        "title": "Complete controls and navigation inventory",
+        "trigger": "The menu and control map is reviewed.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-OBSERVE",
+          "method": "inspection",
+          "negative_control": "A visible button with no functioning destination or backend behavior fails the inventory.",
+          "oracle": "Classify each control as existing/reuse, add this sprint or deferred with a reason. Every in-scope button has an owner, visible state, action, persistence policy and failure/return path; no empty settings tabs or decorative toggles. Keep primary battlefield controls visible: Shop, Pause/Resume, - / speed / +, quick mute and Settings. Use layout changes rather than shrinking targets.",
+          "planned_target": "Control map and actual garage/battle/result/workshop settings walkthrough"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Settings \u003e Gameplay includes Tutorial tips and Purchase suggestions, both with immediate off switches and remembered values.",
+          "Turning a switch off dismisses related visible optional guidance immediately; it stays off across reload, result/Claim, purchases, tier changes and redeploy.",
+          "Essential save errors, pause/lock status, destructive-action confirmations and normal purchase receipts remain visible; they are not tutorials.",
+          "Help remains explicitly accessible when guidance is off and explains controls, speed, manual Claim, Scrap versus Salvage, six tracks, tiers and unfinished-run loss.",
+          "Keep the same-tier payoff suggestion as a small optional item, only if observation warrants it, after a confirmed first Cannon purchase. It never changes the tier or promises a survival gain."
+        ],
+        "id": "CR-CUE",
+        "intent_refs": [
+          "SCOPE-PLAY",
+          "SCOPE-CUE"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "Guidance is enabled or disabled in persisted settings.",
+            "id": "SC-CUE",
+            "then": "Optional prompts follow preferences, while necessary status and requested help remain usable.",
+            "when": "A first purchase, tutorial trigger, reload or explicit Help action occurs."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER"
+        ],
+        "statement": "Provide Help and persistent guidance controls; every added optional tutorial or purchase prompt obeys them.",
+        "title": "Player-controlled guidance and useful help",
+        "trigger": "A first purchase, tutorial trigger, reload or explicit Help action occurs.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-CUE",
+          "method": "automated_and_review",
+          "negative_control": "Disable both toggles, trigger all guidance paths including retry, and verify no optional prompt reappears; failed saves still show errors.",
+          "oracle": "Settings \u003e Gameplay includes Tutorial tips and Purchase suggestions, both with immediate off switches and remembered values. Turning a switch off dismisses related visible optional guidance immediately; it stays off across reload, result/Claim, purchases, tier changes and redeploy. Essential save errors, pause/lock status, destructive-action confirmations and normal purchase receipts remain visible; they are not tutorials. Help remains explicitly accessible when guidance is off and explains controls, speed, manual Claim, Scrap versus Salvage, six tracks, tiers and unfinished-run loss. Keep the same-tier payoff suggestion as a small optional item, only if observation warrants it, after a confirmed first Cannon purchase. It never changes the tier or promises a survival gain.",
+          "planned_target": "Settings model, guide policy, purchase controller and real player journey"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Audio, effects, quality, guidance and last selected positive speed survive reload; validate types, finite ranges and unlocked speed limits.",
+          "Load preferences before optional tips or sound can leak. No preferences record means documented defaults: master/effects 100%, music 20%, sound on, current visual quality, Full Effects, tips on, speed 1x.",
+          "Fullscreen and active Pause are runtime state, not silently reentered on reload. Pause retains the last positive speed; new deployments use that remembered allowed speed.",
+          "Denied, malformed or future-version preference data does not overwrite gameplay records or prevent play. Apply session choices with an honest 'not saved' state when persistence fails.",
+          "Restore settings defaults requires a clear confirmation and affects settings only. Progression, wallets, claims, selected tier and account state remain untouched."
+        ],
+        "id": "CR-SAVE",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "compatibility",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "Fresh, valid, malformed, denied and newer-version preferences are present.",
+            "id": "SC-SAVE",
+            "then": "The applied values and saved status are truthful and gameplay saves are unchanged.",
+            "when": "The player adjusts settings, reloads or restores defaults."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER"
+        ],
+        "statement": "Persist Last Stand preferences in a separate versioned local store, keeping gameplay save ownership unchanged.",
+        "title": "Persistent preferences without progression corruption",
+        "trigger": "The player adjusts settings, reloads or restores defaults.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-SAVE",
+          "method": "automated_and_review",
+          "negative_control": "Snapshot gameplay and unrelated storage; preference writes/default restore must never clear or rewrite them.",
+          "oracle": "Audio, effects, quality, guidance and last selected positive speed survive reload; validate types, finite ranges and unlocked speed limits. Load preferences before optional tips or sound can leak. No preferences record means documented defaults: master/effects 100%, music 20%, sound on, current visual quality, Full Effects, tips on, speed 1x. Fullscreen and active Pause are runtime state, not silently reentered on reload. Pause retains the last positive speed; new deployments use that remembered allowed speed. Denied, malformed or future-version preference data does not overwrite gameplay records or prevent play. Apply session choices with an honest 'not saved' state when persistence fails. Restore settings defaults requires a clear confirmation and affects settings only. Progression, wallets, claims, selected tier and account state remain untouched.",
+          "planned_target": "New LastStandPreferences model/store and WebGL storage boundary"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Keep existing balance, six tracks, prices, rewards, caps, 60/90 simulated-second goals, tier rules, manual Claim and gameplay save format.",
+          "Equal admitted simulation time and equivalent player actions yield the same combat state at all allowed rates and under background partitioning.",
+          "No fabricated progress on restart, leaving, reload, preferences reset or speed changes; no double awards or terminal callbacks.",
+          "Keep the selected Option 1 art/camera treatment. Full/Reduced Effects remains functional and becomes persistent; legacy/review scenes retain their existing timing."
+        ],
+        "id": "CR-PARITY",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "invariant",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "Both fittings and fresh/returning profiles use all new controls.",
+            "id": "SC-PARITY",
+            "then": "Progression invariants and intended existing behavior remain true.",
+            "when": "The player plays, changes speed, opens menus, purchases, reloads and redeploys."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER"
+        ],
+        "statement": "New player controls preserve progression and fixed-step gameplay rules.",
+        "title": "Preserve rules, rewards and existing game boundaries",
+        "trigger": "The player plays, changes speed, opens menus, purchases, reloads and redeploys.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-PARITY",
+          "method": "automated_and_review",
+          "negative_control": "An altered reward, dropped/duplicated tick, extra claim, legacy timing change or settings-driven progression reset fails.",
+          "oracle": "Keep existing balance, six tracks, prices, rewards, caps, 60/90 simulated-second goals, tier rules, manual Claim and gameplay save format. Equal admitted simulation time and equivalent player actions yield the same combat state at all allowed rates and under background partitioning. No fabricated progress on restart, leaving, reload, preferences reset or speed changes; no double awards or terminal callbacks. Keep the selected Option 1 art/camera treatment. Full/Reduced Effects remains functional and becomes persistent; legacy/review scenes retain their existing timing.",
+          "planned_target": "Production clock/model/controller tests and full source-bound browser journeys"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Review actual candidate screenshots and normal-speed/half-speed play; listen to the delivered music and effects.",
+          "Record actual feedback on navigation, modal pause, settings persistence and optional guidance.",
+          "Keep/remove the optional payoff suggestion based on feedback without holding unrelated settings work hostage to that small experiment.",
+          "Automated checks prove their assertions only; human, physical-device and native acceptance stay distinct."
+        ],
+        "id": "CR-DECIDE",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "An implemented source-matched candidate is available.",
+            "id": "SC-DECIDE",
+            "then": "Feedback is recorded or honestly remains pending.",
+            "when": "The owner reviews the complete sprint."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER"
+        ],
+        "statement": "Obtain owner review of menu usability, music, visual modes, speed readability and guidance before treating the sprint as accepted.",
+        "title": "Review the complete player experience",
+        "trigger": "The owner reviews the complete sprint.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-DECIDE",
+          "method": "inspection",
+          "negative_control": "Logs saying audio played, green CI or model timing counts cannot be substituted for listening or usability acceptance.",
+          "oracle": "Review actual candidate screenshots and normal-speed/half-speed play; listen to the delivered music and effects. Record actual feedback on navigation, modal pause, settings persistence and optional guidance. Keep/remove the optional payoff suggestion based on feedback without holding unrelated settings work hostage to that small experiment. Automated checks prove their assertions only; human, physical-device and native acceptance stay distinct.",
+          "planned_target": "Candidate review checklist and actual owner feedback"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Build the actual Web export and verify source/runtime identity; check current-head CI after changes.",
+          "Reuse PR 541 while it remains open under the earlier same-PR instruction; if already merged, use an accepted successor baseline for the next bounded PR.",
+          "Carry pending native Windows and human acceptance forward explicitly. No borrowed receipts or passing claims for unrun checks.",
+          "No merge, deployment or plugin update is authorized by this planning turn. Preserve engine #1013 before #1016."
+        ],
+        "id": "CR-DELIVERY",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The revised sprint has an implementation candidate.",
+            "id": "SC-DELIVERY",
+            "then": "Implementation, local checks, exact-head CI, owner/native acceptance, merge and deployment are separate states.",
+            "when": "The candidate is handed back for disposition."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER"
+        ],
+        "statement": "Deliver the complete controls/settings/speed candidate with honest qualification and preserved engine order.",
+        "title": "Reviewable whole-sprint candidate",
+        "trigger": "The candidate is handed back for disposition.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-DELIVERY",
+          "method": "inspection",
+          "negative_control": "Earlier-head CI, an Editor-only check or draft validation cannot pass current Web/native acceptance.",
+          "oracle": "Build the actual Web export and verify source/runtime identity; check current-head CI after changes. Reuse PR 541 while it remains open under the earlier same-PR instruction; if already merged, use an accepted successor baseline for the next bounded PR. Carry pending native Windows and human acceptance forward explicitly. No borrowed receipts or passing claims for unrun checks. No merge, deployment or plugin update is authorized by this planning turn. Preserve engine #1013 before #1016.",
+          "planned_target": "PR candidate and full validation report"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Game menu includes Resume when applicable, Settings, Help, Abandon run, Return to Campaigns and About/credits.",
+          "Settings tabs are Audio, Display, Gameplay, and Save \u0026 Account. Every tab contains functioning controls or truthful information with a working destination.",
+          "Opening menu/settings/help during a playable run uses a reversible menu pause through the same clock owner; closing restores only its own pause. An already manually paused run stays paused.",
+          "Catch-up/failure guards report actual state; never say paused while ticks are still being reconciled. Keep audio controls reachable without unsafe game actions.",
+          "Abandon run and Return/Manage account during unfinished play use Cancel-first confirmation with the exact loss. Abandon ends the run without rewards and returns to garage; a new run still needs Deploy.",
+          "Keyboard Back/Escape closes the topmost in-game surface when delivered; browser fullscreen Escape is not treated as a guaranteed game event. Explicit Close/Back, focus restoration and touch targets remain."
+        ],
+        "id": "CR-MENU",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The player is in garage, battle, settling, result, workshop, loading or an error state.",
+            "id": "SC-MENU",
+            "then": "Navigation is predictable and irreversible run loss occurs only through the confirmed action.",
+            "when": "They open, close, cancel or leave via a menu action."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER"
+        ],
+        "statement": "Provide an always-discoverable settings/menu entry with complete navigation and no accidental run loss.",
+        "title": "Real menu, settings tabs and safe return paths",
+        "trigger": "They open, close, cancel or leave via a menu action.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-MENU",
+          "method": "automated_and_review",
+          "negative_control": "Cancel must leave the same run/ticks/selection intact; closing a menu must not unpause a user pause or trigger a hidden shop purchase.",
+          "oracle": "Game menu includes Resume when applicable, Settings, Help, Abandon run, Return to Campaigns and About/credits. Settings tabs are Audio, Display, Gameplay, and Save \u0026 Account. Every tab contains functioning controls or truthful information with a working destination. Opening menu/settings/help during a playable run uses a reversible menu pause through the same clock owner; closing restores only its own pause. An already manually paused run stays paused. Catch-up/failure guards report actual state; never say paused while ticks are still being reconciled. Keep audio controls reachable without unsafe game actions. Abandon run and Return/Manage account during unfinished play use Cancel-first confirmation with the exact loss. Abandon ends the run without rewards and returns to garage; a new run still needs Deploy. Keyboard Back/Escape closes the topmost in-game surface when delivered; browser fullscreen Escape is not treated as a guaranteed game event. Explicit Close/Back, focus restoration and touch targets remain.",
+          "planned_target": "Settings/menu owner, clock pause ownership and wrapper navigation bridge"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Master, Effects and Music volumes are 0-100%; Music has an explicit on/off control. Quick mute and settings share the same state and preserve channel levels.",
+          "Include one original project-owned ambient loop with restrained industrial mood, no vocals, seamless looping and gentle start/stop transitions; the implementation source and provenance are retained.",
+          "Apply gain changes to currently playing sound as well as future events. No sound before browser user activation; no duplicate music sources on menu/redeploy/reload.",
+          "Music can continue while foreground gameplay is paused or in menus; combat effects remain suspended. Blur/hidden/failure silences audio under explicit policy and returns without replaying missed combat.",
+          "Game speed never changes music tempo or sound pitch; no audio burst from accumulated background events. Include a deliberate sample/test action for effects without starting combat."
+        ],
+        "id": "CR-AUDIO",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The game is muted/unmuted, foreground/background, running/paused and before/after audio activation.",
+            "id": "SC-AUDIO",
+            "then": "Each setting audibly affects its intended channel and state, with no leakage or replay burst.",
+            "when": "The player changes channels and speed or opens the menu."
+          }
+        ],
+        "source_refs": [
+          "SRC-MUSIC",
+          "SRC-CONTROLS-AUDIT",
+          "SRC-UNITY-AUDIO"
+        ],
+        "statement": "Ship master mute/volume, effects volume and independent music controls backed by actual sound.",
+        "title": "Audio settings plus real ambient music",
+        "trigger": "The player changes channels and speed or opens the menu.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-AUDIO",
+          "method": "automated_and_review",
+          "negative_control": "Master mute and Music off must silence captured output; effects-only mute must not silence music. Logs alone do not establish rendered audio.",
+          "oracle": "Master, Effects and Music volumes are 0-100%; Music has an explicit on/off control. Quick mute and settings share the same state and preserve channel levels. Include one original project-owned ambient loop with restrained industrial mood, no vocals, seamless looping and gentle start/stop transitions; the implementation source and provenance are retained. Apply gain changes to currently playing sound as well as future events. No sound before browser user activation; no duplicate music sources on menu/redeploy/reload. Music can continue while foreground gameplay is paused or in menus; combat effects remain suspended. Blur/hidden/failure silences audio under explicit policy and returns without replaying missed combat. Game speed never changes music tempo or sound pitch; no audio burst from accumulated background events. Include a deliberate sample/test action for effects without starting combat.",
+          "planned_target": "LastStandAudio/music implementation, live Web playback checks and listening review"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Display includes Full/Reduced Effects, quality presets Current and Performance, and capability-aware Enter/Exit Fullscreen.",
+          "Current preserves approved rendering. Performance reduces 3D render scale to a proposed 0.75 while keeping UI legible and geometry correct; do not merely rename the effects switch.",
+          "Quality and effects remain independent and persist. No camera composition or art replacement; switching does not change model outcomes.",
+          "Fullscreen state follows the actual browser and reports unsupported/denied requests honestly. There is a usable exit path.",
+          "Validate all settings pages and battlefield controls across maintained portrait/landscape/DPR profiles with visible focus, usable labels, scrolling and minimum 44px targets."
+        ],
+        "id": "CR-DISPLAY",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The player changes display settings on the actual Web export.",
+            "id": "SC-DISPLAY",
+            "then": "The visible output and UI state match the setting and the game remains controllable.",
+            "when": "The renderer or browser accepts/rejects the request."
+          }
+        ],
+        "source_refs": [
+          "SRC-WIDER",
+          "SRC-UNITY-INPUT"
+        ],
+        "statement": "Provide real display options with visible rendering effects and correct browser state.",
+        "title": "Working display quality and reduced-effects controls",
+        "trigger": "The renderer or browser accepts/rejects the request.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-DISPLAY",
+          "method": "automated_and_review",
+          "negative_control": "A control whose backend value changes but whose actual renderer does not change fails; unreadable UI or false fullscreen state fails.",
+          "oracle": "Display includes Full/Reduced Effects, quality presets Current and Performance, and capability-aware Enter/Exit Fullscreen. Current preserves approved rendering. Performance reduces 3D render scale to a proposed 0.75 while keeping UI legible and geometry correct; do not merely rename the effects switch. Quality and effects remain independent and persist. No camera composition or art replacement; switching does not change model outcomes. Fullscreen state follows the actual browser and reports unsupported/denied requests honestly. There is a usable exit path. Validate all settings pages and battlefield controls across maintained portrait/landscape/DPR profiles with visible focus, usable labels, scrolling and minimum 44px targets.",
+          "planned_target": "Actual render-pipeline binding, HUD layout, Web shell and viewport captures"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Initial available values are 0, 0.5 and 1; default positive rate is 1. Plus stops at the current 1x cap and explains that higher speeds belong to future research.",
+          "Pause/Resume and the speed readout use the same owner. Minus from 0.5 selects 0; plus from 0 selects 0.5; Resume restores the last positive rate.",
+          "Admit wall-time segments at their active rate into the existing fixed .05-second simulation clock. Preserve fractional carry, callback budget, terminal horizon and retained debt; changing rate never rescales earlier elapsed time.",
+          "Settle the action boundary before a rate change; reject/disable conflicting changes during catch-up rather than retroactively rescaling backlog. Menu pause, manual pause and focus transitions remain consistent.",
+          "Tier goals, displayed run survival, waves, cooldowns, purchases and rewards use simulation time. Cosmetic feedback and audio remain responsive without global Unity time-scale changes.",
+          "Persist the last positive allowed speed, not an active paused run. Reload preserves preferences but keeps the existing unfinished-run loss rule.",
+          "Provide a narrow maximum-speed policy for future research: half-steps through proposed 5x, currently returning 1x. No research currency, unlock UI, grant or progress field is created here; saved preferences cannot grant speed."
+        ],
+        "id": "CR-SPEED",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "A fresh player has a 1x cap and future-cap test fixtures are isolated from production.",
+            "id": "SC-SPEED",
+            "then": "Only allowed rates take effect and equal simulated time produces equal outcomes.",
+            "when": "They step speed up/down, pause, resume, background and reload."
+          }
+        ],
+        "source_refs": [
+          "SRC-SPEED",
+          "SRC-CLOCK"
+        ],
+        "statement": "Add visible on-screen - / speed / + controls from 0x paused through the unlocked maximum in 0.5 increments.",
+        "title": "Half-step game speed with truthful research limits",
+        "trigger": "They step speed up/down, pause, resume, background and reload.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-SPEED",
+          "method": "automated_and_review",
+          "negative_control": "Reject NaN, infinity, negative/non-half-step and over-cap rates. Test 1x/0.5x/0x timing partitions, pending debt and isolated future 1.5-5x fixtures without unlocking them in production.",
+          "oracle": "Initial available values are 0, 0.5 and 1; default positive rate is 1. Plus stops at the current 1x cap and explains that higher speeds belong to future research. Pause/Resume and the speed readout use the same owner. Minus from 0.5 selects 0; plus from 0 selects 0.5; Resume restores the last positive rate. Admit wall-time segments at their active rate into the existing fixed .05-second simulation clock. Preserve fractional carry, callback budget, terminal horizon and retained debt; changing rate never rescales earlier elapsed time. Settle the action boundary before a rate change; reject/disable conflicting changes during catch-up rather than retroactively rescaling backlog. Menu pause, manual pause and focus transitions remain consistent. Tier goals, displayed run survival, waves, cooldowns, purchases and rewards use simulation time. Cosmetic feedback and audio remain responsive without global Unity time-scale changes. Persist the last positive allowed speed, not an active paused run. Reload preserves preferences but keeps the existing unfinished-run loss rule. Provide a narrow maximum-speed policy for future research: half-steps through proposed 5x, currently returning 1x. No research currency, unlock UI, grant or progress field is created here; saved preferences cannot grant speed.",
+          "planned_target": "LastStandRunClock, EncounterSession, speed policy/controller, preferences and visible HUD"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Show confirmed/failed local-save state, unfinished-run loss, pending-result preservation and the existing Retry Save action when relevant.",
+          "Manage account navigates through a tested fixed route to the existing parent account pane, with the active-run leave confirmation first.",
+          "State clearly that signing in does not sync this Last Stand save; gameplay storage stays separate from Ash Road and account rewards.",
+          "About displays actual build/version and credits, including music provenance. Help/contact destinations use real targets and do not send data automatically.",
+          "Restore defaults is settings-only. Gameplay reset, export/import, cloud backup, social login and password recovery are deferred rather than exposed as dead controls."
+        ],
+        "id": "CR-DATA",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approval of the revised sprint before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The player opens Save \u0026 Account in a normal or failed-save state.",
+            "id": "SC-DATA",
+            "then": "Information reflects actual owners; no progress is uploaded, cleared or falsely marked synced.",
+            "when": "They retry a save, inspect storage details or open account management."
+          }
+        ],
+        "source_refs": [
+          "SRC-ACCOUNT"
+        ],
+        "statement": "Make save status and account navigation useful without inventing cloud progress.",
+        "title": "Honest Save \u0026 Account and About surfaces",
+        "trigger": "They retry a save, inspect storage details or open account management.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-DATA",
+          "method": "automated_and_review",
+          "negative_control": "Account sign-out or restoring settings must not clear Last Stand progression. A fake account pane or inert link fails.",
+          "oracle": "Show confirmed/failed local-save state, unfinished-run loss, pending-result preservation and the existing Retry Save action when relevant. Manage account navigates through a tested fixed route to the existing parent account pane, with the active-run leave confirmation first. State clearly that signing in does not sync this Last Stand save; gameplay storage stays separate from Ash Road and account rewards. About displays actual build/version and credits, including music provenance. Help/contact destinations use real targets and do not send data automatically. Restore defaults is settings-only. Gameplay reset, export/import, cloud backup, social login and password recovery are deferred rather than exposed as dead controls.",
+          "planned_target": "Settings save-status adapter, wrapper return/account route and parent Lobby/account tests"
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "inherited",
+        "choice": "Broaden to complete player controls, persistent settings, audio/music, display, guidance/help, account/save navigation and game speed.",
+        "id": "DEC-EXPERIMENT",
+        "rationale": "Owner explicitly requested a sprint-sized chunk with behavior behind ordinary controls; the payoff cue is now an optional sub-item.",
+        "source_ref": "SRC-WIDER",
+        "topic": "Sprint scope"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Execute the reviewed nine-task sprint.",
+        "id": "DEC-APPROVAL",
+        "rationale": "The owner replied Approved after the revised concrete scope was presented.",
+        "source_ref": "SRC-APPROVED",
+        "topic": "Execution boundary"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Finish and merge #1013 before #1016; leave both alone in this planning task.",
+        "id": "DEC-ENGINE-ORDER",
+        "rationale": "The owner intentionally holds #1016 behind unfinished #1013.",
+        "source_ref": "SRC-ENGINE",
+        "topic": "Engine order"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Include ambient music and working independent controls.",
+        "id": "DEC-MUSIC",
+        "rationale": "Explicit owner selection. Mood, default mix and final loop remain proposed until candidate listening review.",
+        "source_ref": "SRC-MUSIC",
+        "topic": "Ambient music"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Use half-step controls including pause, initially capped at 1x, with a future research-cap contract toward proposed 5x.",
+        "id": "DEC-SPEED",
+        "rationale": "Owner requested this mechanic; research content and actual unlock grants remain a later system.",
+        "source_ref": "SRC-SPEED",
+        "topic": "Game speed"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Propose extending the existing Unity HUD and domain controllers with a small browser-only bridge.",
+        "id": "DEC-SHELL",
+        "rationale": "Avoid duplicated simulation/audio/settings ownership; preserve current art/camera and reuse bounded tests.",
+        "source_ref": "SRC-CONTROLS-AUDIT",
+        "topic": "UI ownership"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Reuse existing parent account management and clearly label Last Stand as local-only.",
+        "id": "DEC-ACCOUNT",
+        "rationale": "Existing authentication does not provide Last Stand cloud-save authority. No new identity backend is required.",
+        "source_ref": "SRC-ACCOUNT",
+        "topic": "Account scope"
+      }
+    ],
+    "governs": [
+      "campaign-unity/Unity/Assets/Scripts",
+      "campaign-unity/Tools/make_web_entry.py",
+      "client/src/ui/Lobby.ts"
+    ],
+    "intent": {
+      "caller": "Last Stand owner and players",
+      "id": "INTENT-PAYOFF",
+      "outcome": "Make Last Stand usable as a complete game session: configure sound/display/help, control time, navigate safely, and understand local-save/account boundaries.",
+      "problem": "Core play exists but ordinary game controls are scattered or absent: no coherent settings surface, remembered preferences, music, guidance control or selectable speed.",
+      "source_refs": [
+        "SRC-WIDER",
+        "SRC-MUSIC",
+        "SRC-SPEED",
+        "SRC-CONTROLS-AUDIT"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "NON-BALANCE",
+        "statement": "No damage/price/reward/cap/tier-goal rebalance. Simulation speed changes wall-time pacing without changing fixed-step rules or results per simulated time."
+      },
+      {
+        "id": "NON-SYSTEMS",
+        "statement": "No equipment, Skills, research economy/content/unlock grants, Tier 3, offline rewards, currency expansion, Android build or multiplayer. Future speed research gets a bounded cap interface only."
+      },
+      {
+        "id": "NON-REWORK",
+        "statement": "No art/camera replacement, full HUD rewrite, gameplay save migration, new backend/dependency/analytics service, cloud backup or new authentication. Save import/export/reset, key remapping and localization are deferred."
+      },
+      {
+        "id": "NON-ENGINE",
+        "statement": "No codeArbiter PR implementation, merge, release or unmerged plugin update. No fabricated approval or qualification."
+      }
+    ],
+    "open_decisions": [
+      {
+        "affects": [
+          "CR-OBSERVE",
+          "CR-CUE",
+          "CR-SAVE",
+          "CR-PARITY",
+          "CR-DECIDE",
+          "CR-DELIVERY",
+          "CR-MENU",
+          "CR-AUDIO",
+          "CR-DISPLAY",
+          "CR-SPEED",
+          "CR-DATA"
+        ],
+        "blocking": true,
+        "id": "OPEN-SPRINT-APPROVAL",
+        "owner": "User",
+        "question": "Approve the revised player-controls/settings/music/game-speed sprint, or amend its concrete scope and behavior?",
+        "resolution": "User explicitly replied Approved on 2026-10-21 to the revised nine-task sprint. Implementation authorized; final acceptance, merge and publication remain separate.",
+        "source_ref": "SRC-APPROVED",
+        "status": "resolved"
+      }
+    ],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "SCOPE-PLAY",
+        "statement": "The complete Last Stand session: garage, battle, settling, result, workshop, menu/settings/help, safe leave paths, audio/display preferences and game speed."
+      },
+      {
+        "id": "SCOPE-CUE",
+        "statement": "Help and optional guidance with persistent opt-outs. The original upgrade-payoff cue is a small conditional item inside this larger sprint."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-APPROVED"
+            ],
+            "text": "The owner approved the revised player controls, settings, ambient music and half-step game-speed sprint on 2026-10-21. Implementation is authorized. Actual final owner acceptance, merge and publication remain separate. The artifact pair retains its original filename to preserve history.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-REVIEW",
+        "title": "Approved sprint"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Baseline remains PR 541 at 0698acba1c0bd6c550f99333f4e467d0332893a4, observed open/draft. It includes the chosen Option 1 combat treatment and Full/Reduced Effects. Existing CI evidence, owner visual/audio acceptance and native Windows gaps remain distinct. Recheck current refs before implementation; do not reset dirty work or the preserved st-art-pr checkout.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-BASE",
+        "title": "Starting point and preserved delivery work"
+      },
+      {
+        "blocks": [
+          {
+            "columns": [
+              "Surface",
+              "Contents"
+            ],
+            "refs": [],
+            "rows": [
+              [
+                "Battlefield",
+                "Shop; Pause/Resume; - / current speed / +; quick mute; Settings gear. Preserve readable combat area."
+              ],
+              [
+                "Game menu",
+                "Resume; Settings; Help; Abandon run; Return to Campaigns; About."
+              ],
+              [
+                "Audio tab",
+                "Master mute/volume; Effects volume and sample; Music on/off/volume."
+              ],
+              [
+                "Display tab",
+                "Current/Performance render quality; Full/Reduced Effects; actual fullscreen control."
+              ],
+              [
+                "Gameplay tab",
+                "Tutorial tips; Purchase suggestions; remembered allowed positive speed and current research cap explanation."
+              ],
+              [
+                "Save \u0026 Account tab",
+                "Local-save status and Retry; Manage account; local-only disclosure; Restore settings defaults."
+              ],
+              [
+                "Help/About",
+                "Controls, speed and loop guide; real build/version and credits."
+              ]
+            ],
+            "type": "table"
+          },
+          {
+            "refs": [],
+            "text": "Preferences apply immediately and save locally. Default master/effects volume is 100%, music 20% and on after activation; visuals retain current quality and Full Effects; optional tips are on; speed starts at 1x. Fullscreen and active pause are not automatically restored. Restore defaults clearly names settings, requires confirmation, and never resets progression.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Main-menu/settings/help pause is owned separately from manual pause. Closing removes only the menu hold; hidden-tab or failure state cannot be accidentally resumed. During catch-up, labels and action availability must reflect the actual clock state. Menus have explicit Close/Back and focus restoration.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "The proposed initial music is one restrained, original industrial ambient loop. Music continues at normal tempo during foreground menu/manual pause; combat effects suspend. Background/failure silences both. The owner reviews the actual mix before acceptance.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-DESIGN",
+        "title": "Player-facing layout and defaults"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Intent: current owner direction expands the sprint beyond upgrade payoff to real settings/navigation, includes ambient music, mandates guidance opt-out and requests half-step speed. Existing Last Stand Unity HUD and separate local saves constrain implementation; parent account authority remains unchanged.",
+            "type": "paragraph"
+          },
+          {
+            "columns": [
+              "Lens",
+              "Extend existing Unity HUD/controllers",
+              "Build a separate DOM settings application"
+            ],
+            "refs": [],
+            "rows": [
+              [
+                "Scalable",
+                "Indifferent — Local single-player settings add no service or new scale boundary.",
+                "Indifferent — Local single-player settings add no service or new scale boundary."
+              ],
+              [
+                "Maintainable",
+                "Strong — Reuses current HUD, audio and run-clock owners.",
+                "Adequate — Adds another UI framework boundary and bridge contract."
+              ],
+              [
+                "Available",
+                "Indifferent — Both depend on the existing Web runtime and local storage.",
+                "Indifferent — Both depend on the existing Web runtime and local storage."
+              ],
+              [
+                "Reliable",
+                "Strong — Controls call existing state owners; native shell handles browser-only actions.",
+                "Adequate — Safe with a strict bridge but creates more synchronization paths."
+              ],
+              [
+                "Testable",
+                "Adequate — Existing Editor and browser paths need keyboard and settings coverage.",
+                "Strong — DOM controls are directly testable with established browser tooling."
+              ],
+              [
+                "Securable",
+                "Indifferent — Neither requires new services, credentials or dependencies.",
+                "Indifferent — Neither requires new services, credentials or dependencies."
+              ]
+            ],
+            "type": "table"
+          },
+          {
+            "refs": [],
+            "text": "Recommendation: extend the existing HUD and domain owners, with a small native shell bridge for fullscreen and leaving/account routes; strength moderate. Maintainable and Reliable favor continuity, while Testable favors DOM. The owner asked for complete behavior, not a second application shell.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Speed uses the dedicated clock's elapsed-time admission rather than global time scaling: fixed simulation rules, menu responsiveness and music tempo remain separate. Preferences are a versioned separate store; they cannot unlock speeds or change gameplay saves.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Material unknowns: actual Performance preset benefit and ambient music usability. missing_observation: source-matched renderer measurements and owner listening/playtest; decision_critical: true for accepting those treatments, false for drafting/building their bounded candidates. No claimed performance improvement or musical approval yet.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Load-bearing assumptions: existing UI can support readable tabs/controls across maintained profiles, and the current URP pipeline can change 3D render scale independently of UI. Verify during implementation; return material scope changes for review.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Non-SMARTS constraints: keep this one complete player-controls sprint. No cloud-save backend, research economy, imported asset license commitment or gameplay rebalance. Preserve the owner's engine merge order and explicit review checkpoint.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Priority evidence: current user direction supersedes the narrower first-upgrade-only proposal. ADR-0011 constrains account reuse; roadmap defers larger progression systems.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-SMARTS",
+        "title": "SMARTS design rationale"
+      },
+      {
+        "blocks": [
+          {
+            "columns": [
+              "Control",
+              "Current state",
+              "Sprint treatment"
+            ],
+            "refs": [
+              "SRC-CONTROLS-AUDIT",
+              "SRC-ACCOUNT",
+              "SRC-CLOCK"
+            ],
+            "rows": [
+              [
+                "Settings/menu",
+                "Missing dedicated pane",
+                "Add gear entry, menu and four working settings tabs"
+              ],
+              [
+                "Pause/resume",
+                "Exists",
+                "Unify with speed 0 and reversible menu pause"
+              ],
+              [
+                "Game speed",
+                "Missing",
+                "Visible half-step - / current / +; cap 1x initially"
+              ],
+              [
+                "Sound toggle",
+                "Exists, runtime only",
+                "Persist and synchronize quick mute with channel settings"
+              ],
+              [
+                "Music",
+                "Missing in Last Stand",
+                "Add ambient loop, on/off and volume"
+              ],
+              [
+                "Effects",
+                "Exists, battle-only runtime switch",
+                "Persist and expose in Display"
+              ],
+              [
+                "Graphics quality/fullscreen",
+                "No player-facing controls found",
+                "Bind real render-scale preset and browser fullscreen"
+              ],
+              [
+                "Help/tutorial controls",
+                "Missing",
+                "Help content, tutorial tips and purchase-suggestion switches"
+              ],
+              [
+                "Return/abandon",
+                "Return link exists; no explicit abandon menu",
+                "Safe confirmed return and abandon-to-garage"
+              ],
+              [
+                "Account",
+                "Exists in parent app only",
+                "Working route to existing pane; local-save disclosure"
+              ],
+              [
+                "Save/recovery",
+                "Existing local save and retry",
+                "Clear status in Save \u0026 Account; settings-only defaults"
+              ],
+              [
+                "Credits/build",
+                "No dedicated menu entry found",
+                "Real About information and music provenance"
+              ],
+              [
+                "Cloud sync, save reset/import/export, remapping, language, research UI",
+                "Not part of this candidate",
+                "Explicitly deferred; no placeholder controls"
+              ]
+            ],
+            "type": "table"
+          }
+        ],
+        "id": "SEC-INVENTORY",
+        "title": "Source-backed control inventory"
+      },
+      {
+        "blocks": [
+          {
+            "items": [
+              "Now: 0x, 0.5x, 1x. Half-step buttons stay visible on the battlefield; current cap is enforced independently of preferences.",
+              "Later: research can raise the cap in 0.5 steps toward the proposed 5x ceiling. This sprint creates the narrow cap contract, not the research system or free unlocks.",
+              "0x is the existing pause state. Resume returns to the last positive speed; plus from pause selects 0.5x; no contradictory second pause variable.",
+              "All combat goals and results use simulation seconds. The wall clock admits elapsed segments at their active rate into fixed ticks; existing fractional time and callback debt retain their original accounting.",
+              "Equal weighted simulated time must produce the same state with identical actions, whether foreground, background, partitioned callbacks or changing speed. Higher future-cap fixtures test the contract without shipping unlocks."
+            ],
+            "refs": [],
+            "type": "list"
+          }
+        ],
+        "id": "SEC-SPEED-RULES",
+        "title": "Game-speed contract"
+      },
+      {
+        "blocks": [
+          {
+            "items": [
+              "Every control has functioning behavior, correct current state, a tested failure path and a way back.",
+              "Preferences survive reload; turning guidance off is durable and immediate.",
+              "Music/effects/master controls alter actual rendered sound; display presets alter actual rendering; speed controls alter only elapsed simulation admission.",
+              "No progression corruption, automatic rewards, accidental leave, stale pause, audio burst or over-cap speed.",
+              "Owner reviews the actual settings/navigation/music/speed experience. CI and structural draft validation do not imply that acceptance."
+            ],
+            "refs": [],
+            "type": "list"
+          }
+        ],
+        "id": "SEC-ACCEPTANCE",
+        "title": "Meaningful acceptance"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-REQUEST",
+        "locator": "Current conversation, 2026-10-21",
+        "note": "Planning only. The owner explicitly requires careful approval before execution; codeArbiter #1013 must merge before #1016.",
+        "title": "Owner request: plan the next Last Stand sprint",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-ROADMAP",
+        "locator": "campaign-unity/docs/LAST-STAND-ROADMAP.md",
+        "note": "The next product work is owner acceptance and the defeat-to-upgrade loop. Equipment, Skills, R\u0026D, targeting and longer progression remain later work.",
+        "title": "Maintained Last Stand direction",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-TUNING",
+        "locator": "campaign-unity/docs/FIRST-SESSION-TUNING.md",
+        "note": "With no temporary purchases, first permanent Cannon on Tier 1 adds 7.5 seconds / 7 kills for repair and 6 seconds / 7 kills for launcher. Switching to Tier 2 masks these gains. This does not establish human confusion.",
+        "title": "Measured first-upgrade payoff",
+        "type": "test_reference",
+        "url": null
+      },
+      {
+        "id": "SRC-CONTROLLER",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs",
+        "note": "Purchase and RetrySave expose the confirmed permanent level transition; failed storage remains an error. LastStandProgression commits only after read-back confirmation.",
+        "title": "Confirmed purchase and retry path",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-HUD",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs",
+        "note": "Workshop and garage show selected-tier goals and independent personal bests. SaveStatus presents the saved purchase notice. Personal bests combine builds and are not causal comparisons.",
+        "title": "Existing tier, best and saved-notice presentation",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CURRENT",
+        "locator": "PR 541 at 0698acba1c0bd6c550f99333f4e467d0332893a4",
+        "note": "Observed 2026-10-21: draft/open, 28 successful checks and one expected skip. Visual/audio acceptance and native qualification remain separate; no merge or deployment claim.",
+        "title": "Current first-session polish candidate",
+        "type": "repository",
+        "url": "https://github.com/SUaDtL/singedTerra/pull/541"
+      },
+      {
+        "id": "SRC-ENGINE",
+        "locator": "Current conversation; codeArbiter PRs 1013 and 1016",
+        "note": "Both open when inspected. Owner intentionally holds #1016 until unfinished #1013 merges. This sprint neither merges them nor loads unmerged plugin code.",
+        "title": "Engine merge order",
+        "type": "user_request",
+        "url": "https://github.com/arbiterForge/codeArbiter/pull/1016"
+      },
+      {
+        "id": "SRC-WIDER",
+        "locator": "Current conversation, 2026-10-21",
+        "note": "The owner rejected a small-feature sprint, requested a real settings surface and backing behavior, and requires settings switches for any tutorial or purchase prompts.",
+        "title": "Owner expands the sprint to everyday game controls",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-MUSIC",
+        "locator": "Current conversation, 2026-10-21",
+        "note": "Explicit answer: Include ambient music and its controls.",
+        "title": "Owner includes ambient music",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-SPEED",
+        "locator": "Current conversation, 2026-10-21",
+        "note": "Visible controls from 0/paused in steps of 0.5, initially capped at 1x; research later unlocks higher speeds, with approximately 5x suggested as the eventual ceiling.",
+        "title": "Owner requests half-step game speed",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-CONTROLS-AUDIT",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs; LastStandAudio.cs; LastStandStore.cs; campaign-unity/Tools/make_web_entry.py",
+        "note": "Current source has Pause, Sound toggle, battle-only Full/Reduced Effects, shop and return navigation. No dedicated Last Stand settings pane, preference store, music or game-speed selection was found in these owners.",
+        "title": "Current Last Stand control inventory",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CLOCK",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs; campaign-unity/Unity/Assets/Scripts/EncounterSession.cs",
+        "note": "Current clock admits one .05-second model step per .05 seconds active elapsed time, caps callbacks at 128 steps and retains debt. Pause excludes elapsed time; playable background continuation is distinct from legacy/review behavior.",
+        "title": "Existing fixed-step run and background clock",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-ACCOUNT",
+        "locator": "client/src/ui/AccountPanelView.ts; client/src/ui/Lobby.ts; .codearbiter/decisions/0011-password-auth-before-google-sso.md",
+        "note": "Parent app owns password sign-in/sign-up/sign-out. Last Stand owns its separate browser save. Reuse the parent account surface; do not imply Last Stand cloud sync or add password recovery/social-login services.",
+        "title": "Existing account UI and Last Stand save separation",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-UNITY-AUDIO",
+        "locator": "Web audio, playback and user-gesture constraints",
+        "note": "Plan real-browser gesture, looping, gain, mute, visibility and interruption checks. Editor-only results do not establish Web playback.",
+        "title": "Unity 6.3 Web audio support",
+        "type": "primary_documentation",
+        "url": "https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/webgl/develop/audio"
+      },
+      {
+        "id": "SRC-UNITY-INPUT",
+        "locator": "Fullscreen and input in Web",
+        "note": "Fullscreen requires a real user action and varies by browser; Escape may be consumed by the browser. Show observed state and retain explicit Back/Close controls.",
+        "title": "Unity 6.3 Web fullscreen and keyboard constraints",
+        "type": "primary_documentation",
+        "url": "https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/webgl/develop/input"
+      },
+      {
+        "id": "SRC-APPROVED",
+        "locator": "Current conversation, 2026-10-21",
+        "note": "User replied Approved after reviewing the revised nine-task sprint proposal.",
+        "title": "Owner approves sprint implementation",
+        "type": "user_request",
+        "url": null
+      }
+    ],
+    "summary": "Revised full sprint proposal: real menu/settings, persistent preferences, ambient music and channel controls, display options, optional guidance/help, save/account navigation and 0x/0.5x/1x game speed with future research caps. Awaiting careful approval.",
+    "title": "Last Stand: player controls, settings and game speed — sprint candidate"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-upgrade-payoff.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 4,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-upgrade-payoff"
+}
+</script>
+</body></html>

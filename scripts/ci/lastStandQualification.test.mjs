@@ -9,6 +9,56 @@ import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
 
+function effectsOnlyFixture(fault=()=>{}) {
+  const calls=[];
+  const layout={settingsControls:[{name:'MusicEnabled',label:'AMBIENT MUSIC: ON',active:true,interactable:true}]};
+  const preferences={musicEnabled:false,muted:false,masterVolume:100,effectsVolume:100};
+  const changed={musicEnabled:false,preferencesState:'ready'};
+  const options={currentLayout:()=>layout,readPreferences:async()=>preferences,
+    check:(value,message)=>assert.ok(value,message),click:async(name,action)=>{
+      calls.push([name,action]);
+      if(name==='MusicEnabled'){layout.settingsControls[0].label='AMBIENT MUSIC: OFF';fault({layout,preferences,changed});}
+      if(name==='SettingsClose')layout.settingsControls[0].active=false;
+      return changed;
+    }};
+  return {calls,options,layout};
+}
+test('legacy effects qualification selects real music-off control before measuring silence',async()=>{
+  const fixture=effectsOnlyFixture();
+  const result=await journey.configureEffectsOnlyJourneyAudio(fixture.options);
+  assert.deepEqual(fixture.calls,[['Menu','menu'],['MenuSettings','menu'],['MusicEnabled','preferences'],['SettingsClose','menu-close']]);
+  assert.equal(result.preferences.musicEnabled,false);
+  assert.equal(fixture.layout.settingsControls[0].active,false);
+  assert.ok(source.indexOf('report.effects_only_audio=await configureEffectsOnlyJourneyAudio')<source.indexOf("const startAudio=await mark();const deployed=await gameClick('Deploy','deploy')"));
+  assert.ok(source.includes("pauseSound.maximum_rms<.0005,'pause stops effects with ambient music explicitly disabled'"));
+});
+test('effects-only setup rejects unconfirmed settings or accidentally silenced effects',async()=>{
+  for(const mutate of [x=>x.preferences.musicEnabled=true,x=>x.preferences.muted=true,
+    x=>x.preferences.masterVolume=0,x=>x.preferences.effectsVolume=0,x=>x.changed.preferencesState='not-saved',
+    x=>x.changed.musicEnabled=true,x=>x.layout.settingsControls[0].label='AMBIENT MUSIC: ON']){
+    const fixture=effectsOnlyFixture(mutate);
+    await assert.rejects(journey.configureEffectsOnlyJourneyAudio(fixture.options),/confirmed real music-off/);
+    assert.ok(!fixture.calls.some(([name])=>name==='SettingsClose'),'Failed setup must not claim completed audio preparation');
+  }
+});
+function cancelledReturnFixture(){
+  const before={load:1,timeOrigin:123,t:10,runId:4,wallet:2,pendingRunId:0,phase:'battle',paused:false,tick:20,hull:120,kills:0};
+  const confirmed={...before,t:20,action:'confirmation',menu:'confirm',paused:true,tick:21};
+  return {before,confirmed,cancelled:{...confirmed,t:30,action:'confirmation-cancel',menu:'menu'},
+    layout:{load:1,timeOrigin:123,selection:'ConfirmCancel',settingsControls:[{name:'ConfirmCancel',active:true,interactable:true}]},
+    saveBefore:'unchanged local record',saveAfter:'unchanged local record'};
+}
+test('unfinished native Return cancellation preserves the run and requires Cancel-first focus',()=>{
+  const fixture=cancelledReturnFixture();assert.equal(journey.validateCancelledReturn(fixture).initialSelection,'ConfirmCancel');
+  for(const mutate of [x=>x.confirmed.runId++,x=>x.cancelled.wallet++,x=>x.cancelled.pendingRunId++,
+    x=>x.cancelled.tick++,x=>x.cancelled.hull--,x=>x.cancelled.kills++,x=>x.cancelled.paused=false,
+    x=>x.cancelled.timeOrigin++,x=>x.cancelled.t=0,x=>x.layout.selection='ConfirmProceed',
+    x=>x.layout.settingsControls[0].interactable=false,x=>x.layout.load++,x=>x.saveAfter='changed']){
+    const candidate=cancelledReturnFixture();mutate(candidate);
+    assert.throws(()=>journey.validateCancelledReturn(candidate));
+  }
+});
+
 async function ownedPortProbe(contents,{exitCode=null}={}){
   const begin=source.indexOf("    const active = join(profile, 'DevToolsActivePort');"),
     end=source.indexOf('    browser = await chromium.connectOverCDP',begin);

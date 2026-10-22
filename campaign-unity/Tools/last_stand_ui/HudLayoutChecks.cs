@@ -28,11 +28,15 @@ static class HudLayoutChecks
         new Scenario { Phase="battle", Controls=new[] {"Pause","ToggleMute"} },
         new Scenario { Phase="settling", Controls=new[] {"Pause","ToggleMute"} },
         new Scenario { Phase="battle", Controls=new[] {"Pause","ToggleMute","Effects","ShopEntry"} },
+        new Scenario { Phase="battle", Controls=new[] {"Pause","ToggleMute","Effects","Menu","SpeedMinus","SpeedRate","SpeedPlus","ShopEntry"} },
         new Scenario { Phase="settling", Controls=new[] {"Pause","ToggleMute","Effects"} },
+        new Scenario { Phase="settling", Controls=new[] {"Pause","ToggleMute","Effects","Menu"} },
+        new Scenario { Phase="garage", Controls=new[] {"ToggleFitting","Deploy","ToggleMute","ToggleTier","Menu","ShopEntry"} },
         new Scenario { Phase="result", Controls=new[] {"Claim","ToggleMute"} },
         new Scenario { Phase="result", SaveError=true, Controls=new[] {"Claim","RetrySave","ToggleMute"} },
         new Scenario { Phase="workshop", Controls=new[] {"ToggleFitting","Purchase","Redeploy","ToggleMute"} },
         new Scenario { Phase="workshop", SaveError=true, Controls=new[] {"ToggleFitting","Purchase","Redeploy","RetrySave","ToggleMute"} },
+        new Scenario { Phase="workshop", Controls=new[] {"ToggleFitting","Purchase","Redeploy","ToggleMute","ToggleTier","Menu","ShopEntry"} },
         new Scenario { Phase="save-error", SaveError=true, Controls=new[] {"RetrySave","ToggleMute"} }
     };
     static void Require(bool condition, string reason)

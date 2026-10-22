@@ -42,6 +42,7 @@ public static class LastStandTierChecks
     }
     public static void Run()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory;
         try
         {

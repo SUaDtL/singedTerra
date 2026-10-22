@@ -16,6 +16,10 @@ namespace SingedTerra.LastStand
         readonly RectTransform hullFill;
         readonly Text heading, detail, status;
         readonly Button deploy, claim, purchase, redeploy, retry, fitting, pause, mute, tier, effects;
+        readonly Button menu, speedMinus, speedRate, speedPlus;
+        readonly LastStandSettingsHud settings;
+        bool menuWasOpen;
+        string menuWasPage;
         readonly Button[] actions;
         readonly Button shopEntry, shopClose;
         readonly Button[] shopTabs, shopActions, allActions;
@@ -196,7 +200,11 @@ namespace SingedTerra.LastStand
             mute = Action("ToggleMute","SOUND ON",dock,loop.ToggleMute);
             tier = Action("ToggleTier","",dock,() => loop.SelectTier(loop.Progression.SelectedTier == 1 ? 2 : 1));
             effects = Action("Effects","",dock,ToggleEffects);
-            actions = new[] { fitting, deploy, claim, purchase, redeploy, retry, pause, mute, tier, effects };
+            menu = Action("Menu","MENU",dock,() => loop.OpenMenu());
+            speedMinus = Action("SpeedMinus","-",dock,() => loop.ChangeSpeed(-1));
+            speedRate = Action("SpeedRate","1x",dock,loop.TogglePause);
+            speedPlus = Action("SpeedPlus","+",dock,() => loop.ChangeSpeed(1));
+            actions = new[] { fitting, deploy, claim, purchase, redeploy, retry, pause, mute, tier, effects, menu, speedMinus, speedRate, speedPlus };
             shopEntry = Action("ShopEntry","MECHANICS SHOP",dock,OpenShop);
             shopPanel = Panel("ShopPanel",root,true);
             shopHeading = Label("ShopHeading",shopPanel,16); shopHeading.text = "MECHANICS SHOP";
@@ -221,8 +229,10 @@ namespace SingedTerra.LastStand
             var extra = new List<Button> { shopEntry, shopClose }; extra.AddRange(shopTabs);
             foreach (var controls in shopCards) extra.Add(controls.Buy);
             shopActions = extra.ToArray();
-            var complete = new List<Button>(actions); complete.AddRange(shopActions); allActions = complete.ToArray();
-            keyboard = root.gameObject.AddComponent<LastStandHudKeyboard>(); keyboard.Initialize(allActions,RevealShopSelection);
+            settings = new LastStandSettingsHud(loop,root,font);
+            var complete = new List<Button>(actions); complete.AddRange(shopActions); complete.AddRange(settings.Buttons); allActions = complete.ToArray();
+            keyboard = root.gameObject.AddComponent<LastStandHudKeyboard>(); keyboard.Initialize(allActions,b => { RevealShopSelection(b); settings.Reveal(b); });
+            keyboard.Escape = () => { if (loop.MenuOpen) loop.CloseMenu(); else loop.OpenMenu(); };
             foreach (string id in new[] { "HullValue", "ElapsedTime", "DisabledCount", "CannonDamage", "Fitting" })
                 readouts.Add(id,Label(id,card,(int)LastStandHudLayout.MinimumTextSize));
             var hullBar = Node("HullBar",card); nodes.Add(hullBar.name,hullBar);
@@ -238,7 +248,7 @@ namespace SingedTerra.LastStand
         void ToggleFitting() { loop.GetComponent<SingedTerra.Art.TankPresentation>().ToggleAttachment(); Refresh(); }
         bool CanChangeEffects()
         { return (loop.Phase == "battle" || loop.Phase == "settling") && loop.Session.Model != null && loop.Session.Failure == "" && !loop.Session.CatchingUp; }
-        void ToggleEffects() { if (CanChangeEffects()) loop.Session.ToggleEffects(); }
+        void ToggleEffects() { if (CanChangeEffects()) loop.ToggleEffects(); }
         // A transient presentation snapshot, read once per refresh. No copied
         // progression, save, simulation, reservation or award state is owned here.
         sealed class Presentation
@@ -264,17 +274,19 @@ namespace SingedTerra.LastStand
             bool canPause = (battle || settling) && model != null && loop.Session.Failure == "" &&
                 !loop.Session.CatchingUp && (!loop.Session.Paused || loop.Session.CanRun);
             var state = new Presentation { Phase = phase, Primary = garage ? "Deploy" : battle || settling ? "Pause" : result ? "Claim" : workshop ? "Redeploy" : "RetrySave",
-                Active = new[] { garage || workshop, garage, result, workshop, workshop, !ready, battle || settling, true, (garage || workshop) && ready, battle || settling },
+                Active = new[] { garage || workshop, garage, result, workshop, workshop, !ready, battle || settling, true, (garage || workshop) && ready, battle || settling, true, battle, battle, battle },
                 Available = new[] { model == null, canDeploy, ready && progress.PendingDefeat != null &&
                     progress.ActiveRunId == 0 && (progress.PendingDefeat.Reward == 0 || progress.Wallet != int.MaxValue),
                     ready && progress.ActiveRunId == 0 && progress.PendingDefeat == null &&
                     progress.NextCost != 0 && progress.Wallet >= progress.NextCost, canDeploy, true,
-                    canPause, true, ready && model == null && progress.ActiveRunId == 0 && progress.PendingDefeat == null && progress.TierTwoUnlocked, CanChangeEffects() },
+                    canPause, true, ready && model == null && progress.ActiveRunId == 0 && progress.PendingDefeat == null && progress.TierTwoUnlocked, CanChangeEffects(),
+                    loop.CanOpenMenu, canPause && loop.Session.SelectedSpeed > 0, canPause, canPause && loop.Session.SelectedSpeed < loop.Session.MaximumSpeed },
                 Labels = new[] { launcher ? "FIT REPAIR" : "FIT LAUNCHER", canDeploy ? "DEPLOY" : "DEPLOY UNAVAILABLE",
                     "CLAIM 1 SALVAGE", "BUY CANNON ATTACK", "REDEPLOY", "RETRY SAVE",
-                    (loop.Session.Paused ? "RESUME" : "PAUSE") + (canPause ? "" : " UNAVAILABLE"), loop.Muted ? "SOUND OFF" : "SOUND ON",
+                    canPause ? loop.Session.Paused ? "RESUME" : "PAUSE" : "WAIT", loop.Muted ? "SOUND OFF" : "SOUND ON",
                     progress.TierTwoUnlocked ? "SELECT TIER " + (progress.SelectedTier == 1 ? "2" : "1") : "TIER 2 LOCKED",
-                    loop.Session.View.FullEffects ? "EFFECTS FULL" : "EFFECTS REDUCED" } };
+                    loop.Session.View.FullEffects ? "FX FULL" : "FX LOW", "MENU", "-",
+                    loop.Session.Paused ? "0 / PAUSED" : loop.Session.EffectiveSpeed.ToString("0.0") + "x", "+" } };
             if (garage)
             {
                 state.Heading = "LAST STAND";
@@ -318,6 +330,7 @@ namespace SingedTerra.LastStand
             state.Status = ready ? "LOCAL SAVE READY\n" + (loop.Notice == "" ? "Unfinished runs earn no reward." : loop.Notice) : progress.SaveError;
             if (ready && (garage || workshop) && !progress.TierTwoUnlocked && loop.Notice == "")
                 state.Status = "LOCAL SAVE READY\n" + LastStandTierHudText.LockReason;
+            if (ready && loop.Guidance.Suggestion != "") state.Status = "LOCAL SAVE READY\n" + loop.Guidance.Suggestion;
             if (model != null)
             {
                 state.HullFraction = Mathf.Clamp01(model.Hull / (float)model.CurrentMaximumHull);
@@ -483,6 +496,7 @@ namespace SingedTerra.LastStand
         }
         public void Refresh()
         {
+            bool menuChanged = menuWasOpen != loop.MenuOpen || menuWasPage != loop.MenuPage;
             var state = ReadPresentation(); keyboard.BeforeRefresh(state.Phase != projectedPhase); projectedPhase = state.Phase;
             heading.text = state.Heading; detail.text = state.Detail; status.text = state.Status;
             for (int i = 0; i < actions.Length; i++)
@@ -494,9 +508,22 @@ namespace SingedTerra.LastStand
             }
             RefreshShop();
             if (shopOpen) purchase.gameObject.SetActive(false);
+            if (shopOpen)
+            {
+                menu.gameObject.SetActive(false); speedMinus.gameObject.SetActive(false);
+                speedRate.gameObject.SetActive(false); speedPlus.gameObject.SetActive(false);
+            }
             foreach (var entry in readouts) entry.Value.text = state.Readouts.TryGetValue(entry.Key,out var value) ? value : "";
             hullFill.anchorMax = new Vector2(state.HullFraction,1);
+            settings.Refresh(); keyboard.TrapFocus = loop.MenuOpen;
+            if (loop.MenuOpen)
+            {
+                foreach(var b in actions) b.interactable=false;
+                foreach(var b in shopActions) b.interactable=false;
+            }
             Layout();
+            if(menuChanged) keyboard.Focus(loop.MenuOpen ? settings.InitialFocus : menu);
+            menuWasOpen=loop.MenuOpen; menuWasPage=loop.MenuPage;
             ReportShopState();
         }
         public void Layout()
@@ -570,6 +597,7 @@ namespace SingedTerra.LastStand
                     new Rect((kills.X-cardSlot.X-4)*unitsX,(kills.Y-cardSlot.Y-4)*unitsY,(kills.Width+8)*unitsX,height*unitsY));
             }
             else cardFrame.SetInstruments(false,default(Rect),default(Rect),default(Rect));
+            settings.Layout(cssWidth,cssHeight,unitsX,unitsY);
             keyboard.Refresh();
             if (resized) RevealCurrentShopSelection();
             ReportLayout();
@@ -704,7 +732,8 @@ namespace SingedTerra.LastStand
         {
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
-            public Control[] controls,shopControls; public GraphicObservation[] graphics;
+            public float settingsScrollOffset,settingsMaximumScrollOffset;
+            public Control[] controls,shopControls,settingsControls; public GraphicObservation[] graphics;
         }
         string NodePath(Transform node)
         {
@@ -755,8 +784,11 @@ namespace SingedTerra.LastStand
             }
             var layout = new LayoutState { phase = loop.Phase, coordinates = "top-left", width = Screen.width, height = Screen.height,
                 pixelRatio = PreferredPixelRatio(), controls = ObserveControls(actions,"Core"), shopControls = ObserveControls(shopActions,shopMode.ToString()),
+                settingsControls = ObserveControls(settings.Buttons,"Settings"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
+            layout.settingsScrollOffset = settings.ScrollOffset;
+            layout.settingsMaximumScrollOffset = settings.MaximumScrollOffset;
             string timerText = timerObservation?.text;
             if (timerObservation != null) timerObservation.text = "";
             string key = JsonUtility.ToJson(layout);
@@ -944,6 +976,8 @@ namespace SingedTerra.LastStand
     // the existing StandaloneInputModule submits their original callbacks.
     public sealed class LastStandHudKeyboard : MonoBehaviour
     {
+        public bool TrapFocus { get; set; }
+        public Action Escape { get; set; }
         Button[] actions;
         GameObject priorSelection;
         bool phaseChanged;
@@ -1024,6 +1058,7 @@ namespace SingedTerra.LastStand
             int next = direction == "enter-first" ? 0 : direction == "enter-last" ? ordered.Count-1 :
                 index < 0 ? backwards ? ordered.Count-1 : 0 : index + (backwards ? -1 : 1);
             if (next >= 0 && next < ordered.Count) { events.SetSelectedGameObject(ordered[next].gameObject); return; }
+            if (TrapFocus && ordered.Count > 0) { events.SetSelectedGameObject(ordered[backwards ? ordered.Count-1 : 0].gameObject); return; }
             events.SetSelectedGameObject(null);
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Constant DOM focus notification only. No player/state input is
@@ -1033,6 +1068,7 @@ namespace SingedTerra.LastStand
         }
         void Update()
         {
+            if (Input.GetKeyDown(KeyCode.Escape)) Escape?.Invoke();
 #if !UNITY_WEBGL || UNITY_EDITOR
             // WebGL Tab is delivered once by the native navigation shell.
             if (Input.GetKeyDown(KeyCode.Tab)) NavigateKeyboard(Input.GetKey(KeyCode.LeftShift) ||

@@ -54,7 +54,7 @@ class ShopVerticalTests(unittest.TestCase):
             cls.evidence.mkdir(parents=True, exist_ok=False)
         sources = [SCRIPTS / name for name in (
             "MechanicsShopModel.cs", "LastStandTierCatalog.cs", "EncounterModel.cs", "EncounterProfile.cs",
-            "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs",
+            "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
         )]
         catalog = SCRIPTS / "LastStandUpgradeCatalog.cs"
         cls.fault_fixture = None

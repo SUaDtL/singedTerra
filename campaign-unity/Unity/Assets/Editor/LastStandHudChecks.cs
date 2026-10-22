@@ -78,6 +78,7 @@ public static class LastStandHudChecks
     { ExecuteEvents.Execute(button.gameObject, new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left }, ExecuteEvents.pointerClickHandler); }
     public static void RunGarage()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory;
         int failures = 0;
         try
@@ -415,6 +416,7 @@ public static class LastStandHudChecks
         new Vector2Int(390,844), new Vector2Int(844,390), new Vector2Int(720,640) };
     public static void RunBattle()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory; int failures = 0;
         try
         {
@@ -696,6 +698,7 @@ public static class LastStandHudChecks
     static LastStandLoopController runtimeLoop;
     static LastStandLoopHud runtimeHud;
     static RectTransform runtimeRoot;
+    static LastStandTestPreferencesScope runtimePreferences;
     static LastStandHudChecks()
     {
         // Domain reload calls this before the dedicated scene's actual Start.
@@ -703,6 +706,7 @@ public static class LastStandHudChecks
     }
     static void ArmRuntime()
     {
+        if(runtimePreferences==null)runtimePreferences=new LastStandTestPreferencesScope();
         runtimeStorage = new MemoryStorage { Value = Save(0,0,1) };
         LastStandLoopController.StorageFactory = () => { runtimeFactoryCalls++; return runtimeStorage; };
         Application.logMessageReceived -= CaptureRuntime;
@@ -825,6 +829,7 @@ public static class LastStandHudChecks
     }
     static void FinishRuntime(int exit)
     {
+        runtimePreferences?.Dispose();runtimePreferences=null;
         UnityEditor.SessionState.SetBool(RuntimeKey,false);
         Application.logMessageReceived -= CaptureRuntime;
         UnityEditor.EditorApplication.update -= RuntimeUpdate;
@@ -920,6 +925,7 @@ public static class LastStandHudChecks
         new Vector2Int(1366,664),new Vector2Int(1920,976),new Vector2Int(390,688),new Vector2Int(844,266),new Vector2Int(720,516) };
     public static void RunOutcomes()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory=LastStandLoopController.StorageFactory; int failures=0;
         try
         {
@@ -1165,6 +1171,7 @@ public static class LastStandHudChecks
     static readonly string[] InputStates = { "garage", "battle", "paused", "settling", "result", "workshop", "capped", "blocked", "save-error" };
     public static void RunInput()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory; int failures = 0;
         try
         {
@@ -1178,6 +1185,7 @@ public static class LastStandHudChecks
     }
     public static void RunEffects()
     {
+        using var preferencesScope = new LastStandTestPreferencesScope();
         var factory = LastStandLoopController.StorageFactory; int failures = 0;
         try { Case("test_effects_control_preserves_run_and_setting_state", EffectsControl, ref failures); }
         finally { LastStandLoopController.StorageFactory = factory; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }

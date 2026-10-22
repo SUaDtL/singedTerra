@@ -12,6 +12,7 @@ namespace SingedTerra.LastStand
         // Editor checks substitute a disposable record without touching a player's local save.
 #if UNITY_EDITOR
         public static Func<ILastStandStorage> StorageFactory = () => new LastStandStore();
+        public static Func<ILastStandStorage> PreferencesStorageFactory = () => new LastStandPreferencesStore();
 #endif
         public LastStandProgression Progression { get; private set; }
         public string Phase { get; private set; } = "garage";
@@ -20,6 +21,14 @@ namespace SingedTerra.LastStand
         public LastStandShopState Shop => Session?.Shop;
         public LastStandShopAccounting FinalAccounting { get; private set; }
         public LastStandAudio Audio { get; private set; }
+        public LastStandPreferences Preferences { get; private set; }
+        public LastStandGuidance Guidance { get; } = new LastStandGuidance();
+        public LastStandDisplaySettings Display { get; private set; }
+        public LastStandBrowserBridge Browser { get; private set; }
+        public string MenuPage { get; private set; } = "";
+        public string Confirmation { get; private set; } = "";
+        public bool MenuOpen => MenuPage != "";
+        public bool CanOpenMenu => !Session.CatchingUp && Session.CanRun;
         public bool Muted => Audio && Audio.Muted;
         TankPresentation art;
         ArtHud artHud;
@@ -42,12 +51,20 @@ namespace SingedTerra.LastStand
             Application.runInBackground = true;
 #if UNITY_EDITOR
             Progression = LastStandProgression.Load(StorageFactory());
+            Preferences = LastStandPreferences.Load(PreferencesStorageFactory());
 #else
             Progression = LastStandProgression.Load(new LastStandStore());
+            Preferences = LastStandPreferences.Load(new LastStandPreferencesStore());
 #endif
+            Session.ConfigureSpeed(Preferences.Current.LastPositiveSpeed);
             Audio = gameObject.AddComponent<LastStandAudio>();
             Audio.Initialize();
+            Display = gameObject.AddComponent<LastStandDisplaySettings>();
+            Browser = new GameObject("LastStandBrowserBridge").AddComponent<LastStandBrowserBridge>();
+            Browser.transform.SetParent(transform, false);
+            ApplyPreferences();
             hud = new LastStandLoopHud(this, canvas, font);
+            Browser.Initialize(this);
             session.Changed += OnSessionChanged;
             session.Stepped += OnSessionStepped;
             artHud.SetPlayableVisible();
@@ -58,6 +75,7 @@ namespace SingedTerra.LastStand
 
         public void Deploy()
         {
+            if (MenuOpen) return;
             if (Phase != "garage" && Phase != "workshop") return;
             if (!Session.CanRun) { Notice = "Return to this tab before deploying."; Refresh("focus-required"); return; }
             if (!Progression.TryDeploy()) { Notice = Progression.SaveError ?? "Deploy is unavailable."; Refresh("save-error"); return; }
@@ -66,6 +84,8 @@ namespace SingedTerra.LastStand
 
         public void SelectTier(int tier)
         {
+            if (MenuOpen) return;
+            Guidance.Dismiss();
             if ((Phase != "garage" && Phase != "workshop") || Session.Model != null) return;
             if (!Progression.TrySelectTier(tier))
             {
@@ -89,7 +109,8 @@ namespace SingedTerra.LastStand
             runShop = shop; FinalAccounting = null;
             failedRun = suppressCallbackFeedback = goalAcknowledged = false;
             Audio.UnlockFromGesture("deploy");
-            Session.DeployReservedRun(shop);
+            Session.ConfigureSpeed(Preferences.Current.LastPositiveSpeed);
+            Session.DeployReservedRun(shop, MenuOpen);
             if (Session.Model == null)
             {
                 FinalizeShop(LastStandShopPurchaseLifecycle.Failed, null);
@@ -100,6 +121,8 @@ namespace SingedTerra.LastStand
                 return;
             }
             Phase = "battle"; Notice = "";
+            Guidance.Dismiss();
+            if (Progression.CannonAttackLevel == 0) Guidance.EnterFirstRun();
             Refresh("deploy");
         }
 
@@ -222,6 +245,7 @@ namespace SingedTerra.LastStand
 
         public void Claim()
         {
+            if (MenuOpen) return;
             if (Phase != "result" || Progression.PendingDefeat == null) return;
             int reward = Progression.PendingDefeat.Reward;
             if (!Progression.TryClaim()) { Notice = Progression.SaveError ?? "Claim is unavailable."; Refresh("save-error"); return; }
@@ -245,6 +269,8 @@ namespace SingedTerra.LastStand
 
         public void Purchase(LastStandUpgradeTrackId track)
         {
+            if (MenuOpen) return;
+            Guidance.Dismiss();
             int index = (int)track;
             if (permanentPurchaseInProgress || index < 0 || index >= LastStandUpgradeCatalog.Tracks.Count ||
                 (Phase != "garage" && Phase != "workshop") || Session.Model != null ||
@@ -270,7 +296,8 @@ namespace SingedTerra.LastStand
                     Refresh("purchase-unavailable"); return;
                 }
                 purchasePending = false;
-                Audio.PlayPurchase(); Notice = definition.Name + " upgraded and saved."; Refresh("purchase");
+                Audio.PlayPurchase(); Notice = definition.Name + " upgraded and saved.";
+                Guidance.PurchaseConfirmed(track, priorLevel); Refresh("purchase");
             }
             finally { permanentPurchaseInProgress = false; }
         }
@@ -342,8 +369,10 @@ namespace SingedTerra.LastStand
             {
                 SyncAudioAdmission();
                 Audio.UnlockFromGesture("retry-purchase"); Audio.PlayPurchase();
+                Guidance.PurchaseConfirmed(pendingPermanentTrack, pendingPermanentPriorLevel);
             }
             purchasePending = false;
+            if (!purchaseConfirmed) Guidance.Dismiss();
             Notice = purchaseConfirmed ? LastStandUpgradeCatalog.Get(pendingPermanentTrack).Name + " upgraded and saved." : "Save confirmed.";
             if (Progression.ActiveRunId != 0 && Session.Model == null) { StartReservedRun(); return; }
             if (Progression.PendingDefeat != null)
@@ -357,8 +386,92 @@ namespace SingedTerra.LastStand
             else if (Phase == "save-error") Phase = "garage";
             Refresh("save-recovered");
         }
-        public void TogglePause() { if (Phase == "battle" || Phase == "settling") Session.TogglePause(); }
-        public void ToggleMute() { Audio.ToggleMute(); Refresh("mute"); }
+        public void TogglePause()
+        {
+            if (MenuOpen || (Phase != "battle" && Phase != "settling")) return;
+            Session.TogglePause(); PersistSpeed();
+        }
+        public void ChangeSpeed(int direction)
+        {
+            if (MenuOpen || Phase != "battle") return;
+            double rate = Math.Max(0, Math.Min(Session.MaximumSpeed, Session.SelectedSpeed + direction * .5));
+            if (Session.TrySetSpeed(rate)) PersistSpeed();
+        }
+        void PersistSpeed()
+        {
+            if (Preferences.Current.LastPositiveSpeed != Session.LastPositiveSpeed)
+                Preferences.Apply(Preferences.Current.With(lastPositiveSpeed: Session.LastPositiveSpeed));
+            Refresh("speed");
+        }
+        public void ToggleMute()
+        {
+            Audio.UnlockFromGesture("mute");
+            SetPreferences(Preferences.Current.With(muted: !Preferences.Current.Muted));
+        }
+        public void SetPreferences(LastStandPreferenceValues value)
+        { Preferences.Apply(value); ApplyPreferences(); Refresh("preferences"); }
+        void ApplyPreferences()
+        {
+            var value = Preferences.Current;
+            if (Session.Model == null) Session.ConfigureSpeed(value.LastPositiveSpeed);
+            Audio.ApplySettings(value);
+            Guidance.Configure(value.TutorialTips, value.PurchaseSuggestions);
+            if (Session.View.FullEffects == value.ReducedEffects) Session.ToggleEffects();
+            Display.Apply(value.Quality);
+        }
+        public void ToggleEffects() => SetPreferences(Preferences.Current.With(reducedEffects: !Preferences.Current.ReducedEffects));
+        public void RetryPreferences() { Preferences.Retry(); ApplyPreferences(); Refresh("preferences-retry"); }
+        public void RefreshControls() { Refresh("controls"); }
+        public void OpenMenu(string page = "menu")
+        {
+            if (!CanOpenMenu) return;
+            if (!MenuOpen && Session.Model != null && !Session.TrySetMenuPaused(true)) return;
+            MenuPage = page; Confirmation = "";
+            Audio.UnlockFromGesture("menu"); Refresh("menu");
+        }
+        public void CloseMenu()
+        {
+            if (!MenuOpen) return;
+            if (Session.Model != null && !Session.TrySetMenuPaused(false)) return;
+            MenuPage = ""; Confirmation = ""; Refresh("menu-close");
+        }
+        public void RequestConfirmation(string action)
+        {
+            if (action != "reset-settings" && action != "abandon") return;
+            if (action == "abandon" && (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp) || Progression.ActiveRunId == 0)) return;
+            OpenMenu("confirm");
+            if (MenuPage == "confirm") { Confirmation = action; Refresh("confirmation"); }
+        }
+        public void CancelConfirmation() { Confirmation = ""; MenuPage = "menu"; Refresh("confirmation-cancel"); }
+        public void RequestNavigation(bool account)
+        {
+            if (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp))
+            { Notice = "Finish reconciling this run and retry any unconfirmed save before leaving."; Refresh("navigation-unavailable"); return; }
+            if (!LastStandNavigationPolicy.RequiresConfirmation(Progression.ActiveRunId)) { Browser.Navigate(account); return; }
+            OpenMenu("confirm");
+            if (MenuPage == "confirm") { Confirmation = account ? "account" : "campaigns"; Refresh("confirmation"); }
+        }
+        public void ConfirmAction()
+        {
+            if (MenuPage != "confirm" || Confirmation == "") return;
+            string action = Confirmation;
+            if (action == "reset-settings")
+            {
+                Preferences.ResetDefaults(true); ApplyPreferences();
+                // Reset preferences does not resume a run or change its current rate.
+                MenuPage = "settings"; Confirmation = ""; Refresh("settings-reset"); return;
+            }
+            if (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp)) return;
+            if (Progression.ActiveRunId != 0)
+            {
+                FinalizeShop(LastStandShopPurchaseLifecycle.Exited, Session.Model);
+                Progression.AbandonRun(); runShop = null;
+                Session.ReturnToInspection(); Phase = "garage";
+                Notice = "Run abandoned. No salvage was awarded."; Guidance.Dismiss();
+            }
+            MenuPage = ""; Confirmation = ""; Refresh("abandon");
+            if (action == "campaigns" || action == "account") Browser.Navigate(action == "account");
+        }
         void DiscardMissedFeedback()
         {
             art.ClearEncounterFeedback();
@@ -367,8 +480,11 @@ namespace SingedTerra.LastStand
         void SyncAudioAdmission()
         {
             if (Audio && Session != null)
+            {
                 Audio.SetSuspended(failedRun || Session.Paused || !Session.CanRun || Session.Failure != "" ||
-                    Progression.SaveState != "ready" || suppressCallbackFeedback);
+                    MenuOpen || Progression.SaveState != "ready" || suppressCallbackFeedback);
+                Audio.SetMusicSuspended(failedRun || !Session.CanRun || Session.Failure != "" || Progression.SaveState != "ready");
+            }
         }
         void OnApplicationFocus(bool active) { if (!active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); } }
         void OnApplicationPause(bool active) { if (active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); } }
@@ -399,7 +515,13 @@ namespace SingedTerra.LastStand
                 bestKills1 = Progression.GetBestKills(1), bestKills2 = Progression.GetBestKills(2),
                 pendingTier = Progression.PendingDefeat?.Tier ?? 0, pendingReward = Progression.PendingDefeat?.Reward ?? 0,
                 goalMet = Session.Model != null && Session.Model.Tick >= LastStandTierCatalog.Get(Session.Model.Profile.Tier).GoalTicks,
-                paused = Session.Paused, muted = Muted }));
+                paused = Session.Paused, muted = Muted, speed = Session.EffectiveSpeed,
+                selectedSpeed = Session.SelectedSpeed, menu = MenuPage, preferencesState = Preferences.SaveState,
+                renderScale = Display.RenderScale, fullscreen = Browser.Fullscreen,
+                musicEnabled = Preferences.Current.MusicEnabled, tutorialTips = Preferences.Current.TutorialTips,
+                purchaseSuggestions = Preferences.Current.PurchaseSuggestions,
+                masterVolume = Preferences.Current.MasterVolume, effectsVolume = Preferences.Current.EffectsVolume,
+                musicVolume = Preferences.Current.MusicVolume }));
         }
         [Serializable] sealed class State
         {
@@ -407,6 +529,11 @@ namespace SingedTerra.LastStand
             public int wallet, level, nextCost, cannonDamage, runId, pendingRunId, tick, hull, kills;
             public int selectedTier, activeTier, bestTicks1, bestTicks2, bestKills1, bestKills2, pendingTier, pendingReward;
             public bool paused, muted, tierTwoUnlocked, goalMet;
+            public double speed, selectedSpeed;
+            public string menu, preferencesState;
+            public float renderScale;
+            public bool fullscreen, musicEnabled, tutorialTips, purchaseSuggestions;
+            public int masterVolume, effectsVolume, musicVolume;
         }
         [Serializable] sealed class HitState { public int tick, cannonDamage, firstFoeHull, kills; }
     }

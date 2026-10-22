@@ -10,13 +10,20 @@ namespace SingedTerra.LastStand
         public const int MaximumStepsPerCallback = 128;
         const double BoundaryTolerance = 1e-9;
         readonly int horizonTicks;
-        double anchor;
+        double anchor, admittedThroughTimestamp;
         int admittedTicks;
 
         public double LastTimestamp => anchor;
+        public double LastStepTimestamp { get; private set; }
         public double PendingSeconds { get; private set; }
         public int StepsThisCallback { get; private set; }
-        public bool Paused { get; private set; }
+        public double MaximumSpeed { get; }
+        public double LastPositiveSpeed { get; private set; }
+        public double SelectedSpeed => ManualPaused ? 0 : LastPositiveSpeed;
+        public double EffectiveSpeed => Paused ? 0 : LastPositiveSpeed;
+        public bool ManualPaused { get; private set; }
+        public bool MenuPaused { get; private set; }
+        public bool Paused => ManualPaused || MenuPaused;
         public bool Failed { get; private set; }
         public bool Stopped { get; private set; }
         public bool AtHorizon => admittedTicks >= horizonTicks;
@@ -24,27 +31,39 @@ namespace SingedTerra.LastStand
             PendingSeconds + BoundaryTolerance >= StepSeconds;
 
         public LastStandRunClock(double startTimestamp, int horizonTicks)
+            : this(startTimestamp, horizonTicks, 1, LastStandSpeedPolicy.InitialMaximum) { }
+
+        public LastStandRunClock(double startTimestamp, int horizonTicks, double initialSpeed, double maximumSpeed)
         {
             if (horizonTicks <= 0) throw new ArgumentOutOfRangeException(nameof(horizonTicks));
+            if (!LastStandSpeedPolicy.IsValidMaximum(maximumSpeed)) throw new ArgumentOutOfRangeException(nameof(maximumSpeed));
+            if (initialSpeed <= 0 || !LastStandSpeedPolicy.Allows(initialSpeed, maximumSpeed))
+                throw new ArgumentOutOfRangeException(nameof(initialSpeed));
             this.horizonTicks = horizonTicks;
-            anchor = startTimestamp;
+            MaximumSpeed = maximumSpeed; LastPositiveSpeed = initialSpeed;
+            anchor = admittedThroughTimestamp = LastStepTimestamp = startTimestamp;
             if (!ValidTimestamp(startTimestamp)) Fail();
         }
 
         // Duplicate timestamps add no time, but may drain already retained debt
-        // under a new callback budget. Stopped clocks retain bounded elapsed for
-        // the settling owner; they can never admit another combat step.
+        // under a new callback budget. PendingSeconds is always simulation time;
+        // LastStepTimestamp is wall time for the separate settling owner.
         public bool Observe(double timestamp)
         {
             if (Failed) return false;
             StepsThisCallback = 0;
             if (!ValidTimestamp(timestamp) || timestamp < anchor) return Fail();
-            double elapsed = timestamp - anchor;
+            double previous = anchor, elapsed = timestamp - anchor;
             anchor = timestamp;
-            if (!Paused)
+            if (!Paused && !Stopped)
             {
                 double remaining = (horizonTicks - admittedTicks) * StepSeconds - PendingSeconds;
-                if (remaining > 0) PendingSeconds += Math.Min(elapsed, remaining);
+                if (remaining > 0 && elapsed > 0)
+                {
+                    double admitted = Math.Min(elapsed * LastPositiveSpeed, remaining);
+                    PendingSeconds += admitted;
+                    admittedThroughTimestamp = previous + admitted / LastPositiveSpeed;
+                }
             }
             return true;
         }
@@ -55,6 +74,10 @@ namespace SingedTerra.LastStand
                 StepsThisCallback >= MaximumStepsPerCallback ||
                 PendingSeconds + BoundaryTolerance < StepSeconds) return false;
             PendingSeconds = Math.Max(0, PendingSeconds - StepSeconds);
+            // Rate changes are admitted only below a complete pending tick.
+            // After this step any remaining debt therefore belongs to the
+            // current rate, even when this tick consumed an older fraction.
+            LastStepTimestamp = admittedThroughTimestamp - PendingSeconds / LastPositiveSpeed;
             admittedTicks++;
             StepsThisCallback++;
             return true;
@@ -65,15 +88,31 @@ namespace SingedTerra.LastStand
         // Resume validates and anchors after excluding the player's paused time.
         public bool Pause(double timestamp)
         {
-            if (!Observe(timestamp)) return false;
-            Paused = true;
+            if (!Observe(timestamp) || CatchingUp) return false;
+            ManualPaused = true;
             return true;
         }
 
         public bool Resume(double timestamp)
         {
-            if (!Observe(timestamp)) return false;
-            Paused = false;
+            if (!Observe(timestamp) || CatchingUp) return false;
+            ManualPaused = false;
+            return true;
+        }
+
+        public bool SetSpeed(double timestamp, double speed)
+        {
+            if (!LastStandSpeedPolicy.Allows(speed, MaximumSpeed)) return false;
+            if (!Observe(timestamp) || CatchingUp) return false;
+            if (speed > 0) LastPositiveSpeed = speed;
+            ManualPaused = speed == 0;
+            return true;
+        }
+
+        public bool SetMenuPaused(double timestamp, bool paused)
+        {
+            if (!Observe(timestamp) || CatchingUp) return false;
+            MenuPaused = paused;
             return true;
         }
 

@@ -32,6 +32,9 @@ function showError(message){console.error('Last Stand load failed',message);docu
 // Register before Unity: native Return/Retry keep normal browser activation.
 const wrapperKeyboardControls=[document.querySelector('#last-stand-return'),document.querySelector('#retry')];
 let lastStandInstance;
+document.querySelector('#last-stand-return').addEventListener('click',event=>{
+  if(lastStandInstance){event.preventDefault();canvas.focus();lastStandInstance.SendMessage('LastStandBrowserBridge','RequestReturn','');}
+});
 function navigateCanvas(direction){if(lastStandInstance&&typeof lastStandInstance.SendMessage==='function')lastStandInstance.SendMessage('LastStandLoopHud','NavigateKeyboard',direction)}
 canvas.addEventListener('focus',()=>navigateCanvas('enter-first'));
 canvas.addEventListener('blur',()=>navigateCanvas('leave'));

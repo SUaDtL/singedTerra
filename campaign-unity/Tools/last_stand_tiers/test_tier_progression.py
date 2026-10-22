@@ -17,7 +17,7 @@ class TierProgressionTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "TierProgressionChecks.exe"
         sources = [SCRIPTS / name for name in (
             "MechanicsShopModel.cs", "LastStandUpgradeCatalog.cs", "LastStandTierCatalog.cs",
-            "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs",
+            "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
         )] + [Path(__file__).with_name("TierProgressionChecks.cs")]
         build = subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+",
             f"-out:{cls.executable}", *map(str, sources)], capture_output=True,

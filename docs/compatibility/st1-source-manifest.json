@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged; Lobby verified storage acquisition made lazy; Last Stand Campaigns entry and exact return fragment affect menu selection only; explicit invite/rejoin and validated imported ST1 challenge retain priority; package prebuild verifies the receipt-bound Unity Web payload; ST1 token parsing, launch configuration, medium CPU policy and deterministic replay unchanged; Vite 8.3.4 security repair advances the reviewed exact Nano ID override to 3.3.20 for PostCSS compatibility, with no ST1 simulation source change; the check chain also runs the Last Stand scroll-geometry regressions required by CONTRIBUTING",
+  "disposition": "wb01-wb03 study commands retained; wb04 own-shield and wb05 target-shield hard-classic selection reviewed; medium ST1 and campaign/verified policies unchanged; Lobby verified storage acquisition made lazy; Last Stand Campaigns entry and exact return fragment affect menu selection only; explicit invite/rejoin and validated imported ST1 challenge retain priority; package prebuild verifies the receipt-bound Unity Web payload; ST1 token parsing, launch configuration, medium CPU policy and deterministic replay unchanged; Vite 8.3.4 security repair advances the reviewed exact Nano ID override to 3.3.20 for PostCSS compatibility, with no ST1 simulation source change; the check chain also runs the Last Stand scroll-geometry regressions required by CONTRIBUTING; exact Last Stand account-return navigation opens the existing account pane or a truthful, closeable unavailable-service message; ST1 parsing, invite/rejoin priority, challenge launch configuration and gameplay semantics remain unchanged",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -80,7 +80,7 @@
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "9bc1b787afc3f09448eeb0f8bd933fde61093d68f5ce4a363524f87dcadfa8d3"
+      "sha256": "ba0364357bf3256a6ada5d3a2726cc7ff1f29f9ce1e6dc0be176920c7a6257fb"
     },
     {
       "path": "package.json",

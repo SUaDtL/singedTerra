@@ -1,0 +1,23 @@
+{
+  "scope": "Unaltered source-bound Chromium touch captures; no physical-device or owner acceptance claim",
+  "build": "Web-20261022T000651Z-94e564",
+  "rawResult": "campaign-unity/Evidence/player-controls/touch-2026-10-22T00-08-46-990Z/result.json",
+  "rawResultSha256": "7b16de960cca8a1c30dede8c07a9229f400230665e587df78b51542761569669",
+  "captures": [
+    {
+      "path": "campaign-unity/docs/player-controls/portrait-controls.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/touch-2026-10-22T00-08-46-990Z/portrait-paused.png",
+      "sha256": "3a1721ab26249b6a42ad9c24ca57155e02db81ba65a89eef6476da58a258bf4f"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/portrait-settings.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/touch-2026-10-22T00-08-46-990Z/portrait-tab-0.png",
+      "sha256": "5c7b4cd23a29c80128f2caceba8e4afbf7b0bdc11cf75fc74f3e72f2819ba8ca"
+    },
+    {
+      "path": "campaign-unity/docs/player-controls/landscape-settings.png",
+      "rawPath": "campaign-unity/Evidence/player-controls/touch-2026-10-22T00-08-46-990Z/landscape-audio.png",
+      "sha256": "12dc42c7e2eaf3c72362416788337eb714c6e41ace91fc0b4cce241c83eb9707"
+    }
+  ]
+}

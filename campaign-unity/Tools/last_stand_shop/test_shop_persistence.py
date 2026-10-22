@@ -49,7 +49,7 @@ class ShopPersistenceTests(unittest.TestCase):
             cls.evidence.mkdir(parents=True, exist_ok=False)
         sources = [SCRIPTS / name for name in (
             "MechanicsShopModel.cs", "LastStandTierCatalog.cs", "LastStandUpgradeCatalog.cs",
-            "LastStandProgression.cs", "LastStandStore.cs", "LastStandShopState.cs", "LastStandRunClock.cs",
+            "LastStandProgression.cs", "LastStandStore.cs", "LastStandShopState.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
         )] + [DRIVER]
         cls.source_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
         argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]

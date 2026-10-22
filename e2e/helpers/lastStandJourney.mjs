@@ -48,16 +48,23 @@ export function readShopControlObservation(raw) {
   const payload=raw.slice(tag.length),boundary=payload.indexOf(',"graphics":[');
   assert.ok(boundary>0,'Complete controls must precede the graphics array');
   const fields=JSON.parse(payload.slice(0,boundary)+'}');
-  const header=['phase','coordinates','selection','width','height','pixelRatio','scrollOffset','maximumScrollOffset','controls','shopControls'];
+  const header=['phase','coordinates','selection','width','height','pixelRatio','scrollOffset','maximumScrollOffset',
+    'settingsScrollOffset','settingsMaximumScrollOffset','controls','shopControls','settingsControls'];
   assert.deepEqual(Object.keys(fields).sort(),header.sort(),'Exact complete controls header');
   assert.ok(fields.coordinates==='top-left' && typeof fields.phase==='string' && typeof fields.selection==='string');
-  for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset'])
+  for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset','settingsScrollOffset','settingsMaximumScrollOffset'])
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
-  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects']],
+  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects',
+      'Menu','SpeedMinus','SpeedRate','SpeedPlus']],
     ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
       'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
-      'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']]];
+      'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']],
+    ['settingsControls',['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3',
+      'MenuResume','MenuSettings','MenuHelp','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
+      'MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus',
+      'DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp',
+      'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed']]];
   for(const [key,expected]of names) {
     const items=fields[key];assert.ok(Array.isArray(items) && items.length===expected.length,'Complete '+key);
     assert.deepEqual(items.map(item=>item.name).sort(),expected.sort(),'Unique known '+key);
@@ -2905,6 +2912,45 @@ export function lastStandQualificationProfile(name='windows-player',host=process
   return Object.freeze({name,nativeMedia:name==='windows-player'});
 }
 
+// This lifecycle qualifies effects, mute and missed-event suppression. Select
+// its channel scope through ordinary controls before measuring audio; music's
+// behavior during a pause is separately qualified by the controls journey.
+export async function configureEffectsOnlyJourneyAudio({click,currentLayout,readPreferences,check}) {
+  await click('Menu','menu');
+  await click('MenuSettings','menu');
+  const music=()=>currentLayout().settingsControls.filter(item=>item.name==='MusicEnabled' && item.active && item.interactable);
+  check(music().length===1 && music()[0].label==='AMBIENT MUSIC: ON','effects-only setup observes enabled ambient music');
+  const changed=await click('MusicEnabled','preferences');
+  const preferences=await readPreferences();
+  check(changed.musicEnabled===false && changed.preferencesState==='ready' && preferences?.musicEnabled===false &&
+    preferences.muted===false && preferences.masterVolume===100 && preferences.effectsVolume===100 &&
+    music().length===1 && music()[0].label==='AMBIENT MUSIC: OFF',
+    'effects-only lifecycle uses confirmed real music-off setting with effects unchanged',preferences);
+  await click('SettingsClose','menu-close');
+  check(!currentLayout().settingsControls.some(item=>item.active),'effects-only setup closes the actual settings modal');
+  return {scope:'effects only; music disabled through its real persisted control',preferences};
+}
+
+export function validateCancelledReturn({before,confirmed,cancelled,layout,saveBefore,saveAfter}) {
+  for(const item of [confirmed,cancelled]) {
+    assert.equal(item.load,before.load,'Return cancellation stays in the same document');
+    assert.equal(item.timeOrigin,before.timeOrigin,'Return cancellation cannot reload the document');
+    assert.equal(item.runId,before.runId,'Return cancellation preserves the active run');
+    assert.equal(item.wallet,before.wallet,'Return cancellation cannot award or spend salvage');
+    assert.equal(item.pendingRunId,before.pendingRunId,'Return cancellation cannot stage a reward');
+    assert.equal(item.phase,'battle');assert.equal(item.paused,true);
+  }
+  assert.ok(before.runId>0 && confirmed.action==='confirmation' && confirmed.menu==='confirm');
+  assert.ok(cancelled.action==='confirmation-cancel' && cancelled.menu==='menu');
+  assert.ok(confirmed.t>=before.t && cancelled.t>=confirmed.t,'Return observations retain actual event order');
+  for(const key of ['tick','hull','kills']) assert.equal(cancelled[key],confirmed[key],'Cancelled modal preserves '+key);
+  assert.equal(layout.selection,'ConfirmCancel','Destructive confirmation initially focuses Cancel');
+  assert.equal(layout.load,before.load);assert.equal(layout.timeOrigin,before.timeOrigin);
+  assert.ok(layout.settingsControls.some(item=>item.name==='ConfirmCancel' && item.active && item.interactable));
+  assert.equal(saveAfter,saveBefore,'Return cancellation leaves stored progression unchanged');
+  return {before,confirmed,cancelled,initialSelection:layout.selection};
+}
+
 export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
   const sectionName=process.env.LAST_STAND_JOURNEY_SECTION;
@@ -3201,6 +3247,14 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     report.renderer=await page.evaluate(()=>{const canvas=document.querySelector('#unity-canvas');const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');if(!gl)return{available:false};const info=gl.getExtension('WEBGL_debug_renderer_info');return{available:true,vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER),version:gl.getParameter(gl.VERSION),unmasked_renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null};});
     check(report.renderer.available,'actual WebGL renderer observed',report.renderer);
     }
+    // Loaded after this module is initialized: both maintained journeys share
+    // the same measured target/clipping oracle without an eager module cycle.
+    const {tierJourneyControlGeometry}=await import('./lastStandTierJourney.mjs');
+    const hudControls=layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls];
+    const projectedControls=(layout,canvas)=>tierJourneyControlGeometry({...layout,graphicsTruncated:false,
+      // retainRuntimeObservation already parsed the complete original record.
+      // Serialize its observed graphics only for the shared reader boundary.
+      raw:'ST_LS_HUD_LAYOUT '+JSON.stringify({graphics:layout.graphics})},canvas);
     const geometry=async(name)=>{
       const {canvas,pixels}=await page.locator('#unity-canvas').evaluate(element=>{
         const box=element.getBoundingClientRect(),visible=getComputedStyle(element).visibility==='visible' && box.width>0 && box.height>0;
@@ -3210,17 +3264,9 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       assert.ok(canvas);
       const layout=layouts.at(-1);check(layout?.coordinates==='top-left','real HUD top-left convention');
       check(Math.abs(layout.width-pixels.width)<=1 && Math.abs(layout.height-pixels.height)<=1,'HUD dimensions use actual canvas backing pixels',{canvas,pixels,layout});
-      for(const item of layout.controls)if(item.active) {
-        check(item.x>=-.5 && item.y>=-.5 && item.x+item.width<=layout.width+.5 && item.y+item.height<=layout.height+.5,`real HUD ${item.name} in canvas`);
-        if(VIEWPORTS.slice(0,5).some(v=>v.width===page.viewportSize().width && v.height===page.viewportSize().height))
-          check(item.width*canvas.width/layout.width>=44-.001 && item.height*canvas.height/layout.height>=44-.001,`real HUD ${item.name} has 44 CSS pixel target`);
-      }
-      const visible=layout.controls.filter(item=>item.active);
-      for(let i=0;i<visible.length;i++)for(let j=i+1;j<visible.length;j++) {
-        const a=visible[i],b=visible[j];check(!(a.x+a.width>b.x+.5 && b.x+b.width>a.x+.5 && a.y+a.height>b.y+.5 && b.y+b.height>a.y+.5),
-          `actual ${a.name}/${b.name} targets do not overlap`);
-      }
-      const control=layout.controls.filter(item=>item.name===name && item.active && item.interactable);
+      const projected=projectedControls(layout,canvas);
+      check(projected.some(item=>item.name===name && item.full),`real HUD ${name} is completely visible inside its actual viewport`);
+      const control=hudControls(layout).filter(item=>item.name===name && item.active && item.interactable);
       check(control.length===1,`operable real HUD ${name}`);return{canvas,layout,item:control[0]};
     };
     const resize=async(viewport,{capture=true}={})=>{
@@ -3277,8 +3323,10 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
           'prepared pointer requires the current same-document layout');
         assert.ok(box && ['x','y','width','height'].every(key=>Number.isFinite(box[key]) && Math.abs(box[key]-canvas[key])<.5) &&
           box.pixelWidth===current.width && box.pixelHeight===current.height,'prepared pointer refuses changed Canvas geometry');
-        const targets=current.controls.filter(control=>control.name===name && control.active && control.interactable);
+        const targets=hudControls(current).filter(control=>control.name===name && control.active && control.interactable);
         assert.equal(targets.length,1,'prepared pointer requires one currently enabled target');const target=targets[0];
+        assert.ok(projectedControls(current,canvas).some(item=>item.name===name && item.full),
+          'prepared pointer requires the complete target in its current actual viewport');
         assert.ok(['x','y','width','height'].every(key=>Number.isFinite(target[key])) && target.width>0 && target.height>0 &&
           target.x>=0 && target.y>=0 && target.x+target.width<=current.width+.5 && target.y+target.height<=current.height+.5,
           'prepared pointer target must be within the actual Canvas');
@@ -3298,7 +3346,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await geometry(name);await keyboardFocus(page.locator('#last-stand-return'));
       await page.keyboard.press('Tab');
       check(await page.locator('#unity-canvas').evaluate(element=>document.activeElement===element),'native Tab enters actual Unity controls');
-      const ordered=layouts.at(-1).controls.filter(item=>item.active && item.interactable).sort((a,b)=>Math.abs(a.y-b.y)>.5?a.y-b.y:a.x-b.x);
+      const ordered=hudControls(layouts.at(-1)).filter(item=>item.active && item.interactable).sort((a,b)=>Math.abs(a.y-b.y)>.5?a.y-b.y:a.x-b.x);
       const index=ordered.findIndex(item=>item.name===name);check(index>=0,'keyboard target is actually enabled');
       await page.evaluate("window.__stInputArea='gameplay-keyboard'");
       const keys=[];for(let i=0;i<index;i++){await page.keyboard.press('Tab');keys.push('Tab');}
@@ -3415,7 +3463,24 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     // Two unfinished exits exercise native Return and ordinary reload without an award.
     if(section.entry){
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
+    const returnBefore=states.at(-1),returnSave=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
+    let returnStart=states.length;
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
+    const confirmedReturn=await until(states,returnStart,item=>item.action==='confirmation' && item.menu==='confirm',8);
+    const confirmationLayout=layouts.at(-1);
+    check(confirmationLayout.selection==='ConfirmCancel','native Return initially focuses Cancel for the unfinished run');
+    const cancelledReturn=await gameClick('ConfirmCancel','confirmation-cancel');
+    report.lifecycle.push({kind:'unfinished-return-cancel',evidence:validateCancelledReturn({before:returnBefore,
+      confirmed:confirmedReturn,cancelled:cancelledReturn,layout:confirmationLayout,saveBefore:returnSave,
+      saveAfter:await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)})});
+    await gameClick('SettingsClose','menu-close');
+    returnStart=states.length;
+    await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
+    await until(states,returnStart,item=>item.action==='confirmation' && item.menu==='confirm',8);
+    check(layouts.at(-1).selection==='ConfirmCancel','reopened native Return still defaults to Cancel');
+    const abandonedReturn=await gameClick('ConfirmProceed','abandon');
+    check(abandonedReturn.runId===0 && abandonedReturn.pendingRunId===0 && abandonedReturn.wallet===returnBefore.wallet,
+      'confirmed native Return abandons without reward',abandonedReturn);
     await page.locator('[data-last-stand-command-view]').waitFor();
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
     check(await ashBytes()===originalAsh,'Ash Road record bytes preserved through native Last Stand Return');
@@ -3446,6 +3511,8 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(layouts.at(-1).controls.find(item=>item.name==='ToggleFitting').label.trim().toUpperCase()==='FIT LAUNCHER','baseline repair fitting retained');
     }
     if(section.lifecycle){
+    report.effects_only_audio=await configureEffectsOnlyJourneyAudio({click:gameClick,currentLayout:()=>layouts.at(-1),
+      readPreferences:()=>page.evaluate(()=>JSON.parse(localStorage.getItem('singedTerra.lastStand.preferences.v1'))),check});
     await screenshot('00-garage');await phaseMatrix('garage');
     const baselineHitStart=hits.length;
     const startAudio=await mark();const deployed=await gameClick('Deploy','deploy');
@@ -3455,15 +3522,15 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(first.firstFoeHull===10,'first base cannon leaves identical 30 HP foe at 10 HP',first);
     await page.waitForTimeout(750);const sound=await energy(Math.max(startAudio,firstHit-500),await mark());
     if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);const layoutPause=await battleLayouts();
-    const muted=await gameClick('ToggleMute','mute');check(muted.muted,'actual mute state enabled');const muteStart=await mark();await page.waitForTimeout(1200);
+    const muted=await gameClick('ToggleMute','preferences');check(muted.muted,'actual mute state enabled');const muteStart=await mark();await page.waitForTimeout(1200);
     const mute=await energy(muteStart+150,await mark());if(player)check(mute.maximum_rms<.0005,'mute suppresses rendered output',mute);
-    const unmuted=await gameClick('ToggleMute','mute');check(!unmuted.muted,'actual mute state disabled');
+    const unmuted=await gameClick('ToggleMute','preferences');check(!unmuted.muted,'actual mute state disabled');
     const pauseBefore=layoutPause?.before??await observation();
     const paused=layoutPause?.paused??await gameKey('Pause','session',item=>item.paused);
     const pausedObservation=layoutPause?.paused??await observation({action:'pause',paused:true,minT:pauseBefore.t,run:pauseBefore.run});
     const pauseStart=await mark();await page.waitForTimeout(1200);const pauseSound=await energy(pauseStart+150,await mark());
     check(states.at(-1).tick===paused.tick,'pause stops combat ticks');
-    if(player)check(pauseSound.maximum_rms<.0005,'pause stops sound',pauseSound);
+    if(player)check(pauseSound.maximum_rms<.0005,'pause stops effects with ambient music explicitly disabled',pauseSound);
     if(player)await phaseMatrix('explicit-pause');await away('hidden',10500);const returned=await observation({paused:true,run:pausedObservation.run});
     await gameKey('Pause','session',item=>!item.paused);
     const resumed=await observation({action:'pause',paused:false,minT:returned.t,run:returned.run});
@@ -3643,8 +3710,17 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
         check(retry.saveState!=='ready','corrupt Retry preserves blocked state');
         check(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)==='{bad json','corrupt bytes preserved by Retry');
       }
+      const returnURL=page.url(),returnStateStart=states.length;
       await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
-      await page.locator('[data-last-stand-command-view]').waitFor();check(await page.locator('#st-splash').count()===0,`${probe}: native Return independent of save`);
+      if(probe==='corrupt'){
+        const refused=await until(states,returnStateStart,item=>item.action==='navigation-unavailable',8);
+        check(refused.saveState!=='ready' && page.url()===returnURL &&
+          await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)==='{bad json',
+          'corrupt save refuses native Return and preserves the unconfirmed record',refused);
+      }else{
+        await page.locator('[data-last-stand-command-view]').waitFor();
+        check(await page.locator('#st-splash').count()===0,'recovered confirmed save permits native Return');
+      }
     }
     }
     scope='healthy';

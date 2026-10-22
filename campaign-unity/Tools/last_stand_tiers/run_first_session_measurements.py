@@ -19,7 +19,7 @@ PINNED_EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.
 SOURCE_NAMES = (
     "EncounterModel.cs", "EncounterProfile.cs", "LastStandTierCatalog.cs",
     "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs", "LastStandProgression.cs",
-    "LastStandStore.cs", "LastStandRunClock.cs",
+    "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
 )
 FIELDS = (
     "tier", "fitting", "scenario", "ticks", "kills", "hull", "status",
