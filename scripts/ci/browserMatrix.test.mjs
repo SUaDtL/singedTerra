@@ -119,6 +119,26 @@ function matrixFixture() {
   return {reports,expected:{head,inputs}};
 }
 
+test('actual upgrade purchase evidence satisfies the matrix and rejects incorrect wallet, level or damage',async()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf("    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');");
+  const end=source.indexOf('\n',begin);
+  assert.ok(begin>0 && end>begin,'Execute the maintained purchase observation');
+  const run=new Function('gameKey','check','return (async()=>{'+source.slice(begin,end)+'})();');
+  for(const fault of [null,{wallet:1},{level:0},{cannonDamage:20}]){
+    const sample=matrixFixture(),observations=[];
+    await run(async(name,action)=>{
+      assert.equal(name,'ShopCard_cannonAttackBuy');assert.equal(action,'purchase');
+      return {wallet:0,level:1,cannonDamage:30,...fault};
+    },(pass,name)=>observations.push({name,pass}));
+    assert.equal(observations.length,1);
+    for(const report of sample.reports.filter(r=>r.viewport_partition.section==='lifecycle'))
+      report.checks=report.checks.filter(c=>c.name!=='one salvage commits Cannon Attack level1').concat(observations);
+    if(fault)assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),/Every assertion must pass/);
+    else assert.doesNotThrow(()=>assertLastStandMatrix(sample.reports,sample.expected));
+  }
+});
+
 test('matrix qualification requires all actual branches, profiles and exact source/runtime bindings', () => {
   const {reports,expected}=matrixFixture();
   const result=assertLastStandMatrix(reports,expected);

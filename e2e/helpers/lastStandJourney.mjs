@@ -3707,7 +3707,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     await gameClick('ShopEntry','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     if(!layouts.at(-1).shopControls.some(item=>item.name==='ShopCard_cannonAttackBuy'&&item.active))
       await gameClick('ShopTabAttack','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopCard_cannonAttackBuy'&&control.active));
-    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1 through Upgrades',bought);
+    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
     await gameClick('ShopClose','hud-layout',item=>!item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
     await screenshot('05-purchased');if(player)await saveAudio('workshop',{purchase:[purchaseStart,await mark()]});
