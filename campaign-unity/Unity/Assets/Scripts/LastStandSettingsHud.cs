@@ -12,7 +12,7 @@ namespace SingedTerra.LastStand
         readonly LastStandLoopController loop;
         readonly Font font;
         readonly RectTransform shade, panel, viewport, content;
-        readonly Text title, body;
+        readonly Text title, body, choiceName;
         readonly ScrollRect scroll;
         readonly Button close;
         readonly List<Button> buttons = new List<Button>();
@@ -59,7 +59,10 @@ namespace SingedTerra.LastStand
             shade = Node("SettingsModal",parent); shade.gameObject.AddComponent<Image>().color = new Color(0,0,0,.82f);
             panel = Node("SettingsPanel",shade); panel.gameObject.AddComponent<Image>().color = new Color(.12f,.15f,.13f);
             title = Text("SettingsHeading",panel,22); title.color = Brass;
+            choiceName = Text("SelectionName",panel,18);choiceName.alignment=TextAnchor.MiddleCenter;choiceName.color=Brass;
             close = Button("SettingsClose","CLOSE",panel,loop.CloseMenu);
+            Button("ChoicePrevious","<",panel,() => loop.MoveSelection(-1));
+            Button("ChoiceNext",">",panel,() => loop.MoveSelection(1));
             tabs = new Button[4]; string[] labels = { "Audio", "Display", "Gameplay", "Save & Account" };
             for (int i=0;i<labels.Length;i++)
             {
@@ -132,12 +135,24 @@ namespace SingedTerra.LastStand
             if (previousPage != loop.MenuPage) { ResetScroll(); previousPage=loop.MenuPage; }
             foreach (var b in buttons) b.gameObject.SetActive(false);
             close.gameObject.SetActive(true); visible.Clear();
+            choiceName.gameObject.SetActive(loop.SelectionOpen);
+            shade.GetComponent<Image>().color=loop.SelectionOpen ? Color.clear : new Color(0,0,0,.82f);
             var p = loop.Preferences.Current;
             title.text = loop.MenuPage == "settings" ? "SETTINGS" : loop.MenuPage == "confirm" ? "PLEASE CONFIRM" : loop.MenuPage.ToUpperInvariant();
             body.text = "";
             bool canLeave = LastStandNavigationPolicy.CanLeave(loop.Progression.SaveState,loop.Session.CatchingUp);
             switch (loop.MenuPage)
             {
+                case "tier":
+                case "fitting":
+                    var choice=loop.Selection.Current;
+                    title.text=loop.MenuPage=="tier" ? "TIER" : "FITTING";
+                    choiceName.text=choice.Name;
+                    body.text=(choice.Unlocked ? "SELECTED" : "LOCKED PREVIEW - DEPLOY UNAVAILABLE")+"\n"+choice.Description;
+                    if(!loop.CanSelectLoadout)body.text+="\n"+(loop.Progression.SaveError ?? "Selection is currently unavailable.");
+                    Show("ChoicePrevious",enabled:loop.CanSelectLoadout && loop.Selection.CanPrevious);
+                    Show("ChoiceNext",enabled:loop.CanSelectLoadout && loop.Selection.CanNext);
+                    break;
                 case "menu":
                     body.text = loop.Session.Model != null ? "Run paused. Closing this menu preserves a manual pause." : "LAST STAND";
                     if(loop.Guidance.Tutorial != "") body.text += "\n\n" + loop.Guidance.Tutorial;
@@ -192,6 +207,28 @@ namespace SingedTerra.LastStand
             if (!loop.MenuOpen) return;
             scaleX=unitsX; scaleY=unitsY;
             Place(shade,0,0,width*unitsX,height*unitsY);
+            if(loop.SelectionOpen)
+            {
+                // A fixed footprint with the real battlefield visible behind it.
+                // Only the description scrolls; arrows and Close remain reachable.
+                float cw=Math.Min(420,width-16), ch=Math.Min(280,height-16);
+                Place(panel,(width-cw-8)*unitsX,(height-ch-8)*unitsY,cw*unitsX,ch*unitsY);
+                Place(title.rectTransform,12*unitsX,12*unitsY,(cw-124)*unitsX,44*unitsY);
+                Place((RectTransform)close.transform,(cw-104)*unitsX,12*unitsY,92*unitsX,44*unitsY);
+                Place((RectTransform)controls["ChoicePrevious"].transform,12*unitsX,68*unitsY,44*unitsX,44*unitsY);
+                Place((RectTransform)controls["ChoiceNext"].transform,(cw-56)*unitsX,68*unitsY,44*unitsX,44*unitsY);
+                Place(choiceName.rectTransform,64*unitsX,64*unitsY,(cw-128)*unitsX,52*unitsY);
+                viewportHeight=Math.Max(44,ch-132);
+                Place(viewport,12*unitsX,120*unitsY,(cw-24)*unitsX,viewportHeight*unitsY);
+                float bw=cw-40;body.fontSize=Mathf.CeilToInt(16*unitsY);
+                var textSettings=body.GetGenerationSettings(new Vector2(bw*unitsX,0));
+                float bh=body.cachedTextGeneratorForLayout.GetPreferredHeight(body.text,textSettings)/body.pixelsPerUnit+16*unitsY;
+                Place(body.rectTransform,8*unitsX,8*unitsY,bw*unitsX,bh);
+                content.sizeDelta=new Vector2((cw-24)*unitsX,Math.Max(viewportHeight*unitsY,bh+16*unitsY));
+                ClampScroll();scroll.scrollSensitivity=44*unitsY;
+                foreach(var t in shade.GetComponentsInChildren<Text>(true))if(t!=body)t.fontSize=Mathf.CeilToInt((t==title?22:t==choiceName?18:16)*unitsY);
+                return;
+            }
             float w=Math.Min(700,width-16), h=height-16, x=(width-w)/2;
             Place(panel,x*unitsX,8*unitsY,w*unitsX,h*unitsY);
             Place(title.rectTransform,12*unitsX,12*unitsY,(w-124)*unitsX,44*unitsY);
@@ -232,6 +269,18 @@ namespace SingedTerra.LastStand
             if(y<offset) offset=y;
             else if(y+rect.rect.height>offset+viewportHeight*scaleY) offset=y+rect.rect.height-viewportHeight*scaleY;
             content.anchoredPosition=new Vector2(0,Mathf.Clamp(offset,0,Math.Max(0,content.rect.height-viewportHeight*scaleY)));
+        }
+        public void ScrollKeyboard(string direction)
+        {
+            if(!loop.MenuOpen)return;
+            float maximum=Math.Max(0,content.rect.height-viewportHeight*scaleY),offset=content.anchoredPosition.y;
+            float step=Math.Max(44,viewportHeight*.8f)*scaleY;
+            if(direction=="scroll-up")offset-=step;
+            else if(direction=="scroll-down")offset+=step;
+            else if(direction=="scroll-start")offset=0;
+            else if(direction=="scroll-end")offset=maximum;
+            else return;
+            scroll.StopMovement();content.anchoredPosition=new Vector2(0,Mathf.Clamp(offset,0,maximum));
         }
     }
     public sealed class LastStandSettingsSelection : MonoBehaviour, ISelectHandler

@@ -6,7 +6,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { chromium } from '@playwright/test';
 import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
-  fetchBoundRuntime, assertServedBytes, readShopControlObservation } from '../e2e/helpers/lastStandJourney.mjs';
+  fetchBoundRuntime, assertServedBytes, readShopControlObservation, selectLastStandFitting,
+  changeLastStandSetting, validateCompactCombatControls } from '../e2e/helpers/lastStandJourney.mjs';
 import { tierJourneyControlGeometry } from '../e2e/helpers/lastStandTierJourney.mjs';
 
 const baseline = process.argv.includes('--baseline');
@@ -72,37 +73,47 @@ for (const fitting of ['repair', 'launcher']) for (const effects of baseline ? [
       }
       throw new Error('Expected player observation absent: ' + JSON.stringify(state()));
     };
+    const controls=layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls];
     const click = async name => {
-      await until(() => layouts.at(-1)?.controls.some(c => c.name === name && c.active && c.interactable), 10);
+      const pixels=await page.locator('#unity-canvas').evaluate(c=>({width:c.width,height:c.height}));
+      await until(()=>Math.abs(layouts.at(-1)?.width-pixels.width)<1&&Math.abs(layouts.at(-1)?.height-pixels.height)<1,10);
+      await until(() => layouts.at(-1)&&controls(layouts.at(-1)).some(c => c.name === name && c.active && c.interactable), 10);
       const layout = layouts.at(-1), canvas = await page.locator('#unity-canvas').boundingBox();
-      const item = layout.controls.find(c => c.name === name && c.active && c.interactable);
+      const item = controls(layout).find(c => c.name === name && c.active && c.interactable);
       assert.ok(tierJourneyControlGeometry(layout, canvas).find(c => c.name === name)?.full, 'Fully visible ' + name);
       const x = canvas.x + (item.x + item.width / 2) * canvas.width / layout.width;
       const y = canvas.y + (item.y + item.height / 2) * canvas.height / layout.height;
       run.actions.push({ name, label: item.label, tick: state()?.tick, x, y });
       await page.mouse.click(x, y, { delay: 100 });
     };
+    const changeSetting=control=>changeLastStandSetting({control,click,currentLayout:()=>layouts.at(-1),currentState:state,
+      readValue:()=>control==='SettingsMute'?state().muted:encounter().fullEffects,waitFor:predicate=>until(predicate,10)});
     await page.goto(new URL('last-stand/', base).href);
     await until(() => state()?.saveState === 'ready');
     assert.equal(state().level, 0); assert.equal(state().wallet, 0); assert.equal(state().selectedTier, 1);
-    if (fitting === 'launcher') await click('ToggleFitting');
+    await selectLastStandFitting({fitting,click,currentLayout:()=>layouts.at(-1),currentState:state,
+      waitFor:predicate=>until(predicate,10)});
     await click('Deploy'); await until(() => state()?.phase === 'battle');
     await until(() => encounter()?.fitting === fitting, 5);
     assert.equal(encounter().fitting, fitting, 'Actual deployed fitting matches the capture label');
-    if (effects === 'reduced') { await click('Effects'); await until(() => encounter()?.fullEffects === false, 5); }
+    if (effects === 'reduced') { await changeSetting('DisplayEffects'); await until(() => encounter()?.fullEffects === false, 5); }
     const started = Date.now();
     for (const [label, tick] of [['early', 180], ['busy-muted', 1000]]) {
-      if (label === 'busy-muted') { await click('ToggleMute'); await until(() => state()?.muted === true, 5); }
+      if (label === 'busy-muted') {
+        if(baseline)await click('ToggleMute');else await changeSetting('SettingsMute');
+        await until(() => state()?.muted === true, 5);
+      }
       await until(() => state()?.tick >= tick);
       assert.equal(state().phase, 'battle'); assert.equal(state().paused, false);
       assert.equal(encounter()?.fitting, fitting);
       assert.equal(encounter()?.fullEffects, effects === 'full');
+      if(!baseline)validateCompactCombatControls(layouts.at(-1));
       const path = join(directory, label + '.png'); await page.screenshot({ path });
       run.captures.push({ label, path, state: state(), encounter: encounter(), elapsedMs: Date.now() - started });
     }
     assert.ok(Date.now() - started >= 45_000, 'Capture uses normal elapsed time');
     if (!baseline) {
-      await click('Pause'); await until(() => state()?.paused === true, 5);
+      await click('SpeedRate'); await until(() => state()?.paused === true, 5);
       const paused = state().tick, model = { hull: state().hull, kills: state().kills, wallet: state().wallet };
       for (const [width, height] of [[1920, 1080], [1366, 768], [720, 640], [390, 844], [844, 390]]) {
         await page.setViewportSize({ width, height }); await page.waitForTimeout(250);
@@ -111,10 +122,11 @@ for (const fitting of ['repair', 'launcher']) for (const effects of baseline ? [
         const canvas = await page.locator('#unity-canvas').boundingBox();
         tierJourneyControlGeometry(layouts.at(-1), canvas);
         const original = encounter().fullEffects;
-        await click('Effects'); await until(() => encounter().fullEffects !== original, 5);
-        await click('Effects'); await until(() => encounter().fullEffects === original, 5);
+        await changeSetting('DisplayEffects'); await until(() => encounter().fullEffects !== original, 5);
+        await changeSetting('DisplayEffects'); await until(() => encounter().fullEffects === original, 5);
         assert.equal(state().tick, paused); assert.equal(state().muted, true); assert.equal(state().paused, true);
         assert.deepEqual({ hull: state().hull, kills: state().kills, wallet: state().wallet }, model);
+        validateCompactCombatControls(layouts.at(-1));
         const label = 'paused-controls-' + width + 'x' + height;
         const path = join(directory, label + '.png'); await page.screenshot({ path });
         run.captures.push({ label, path, viewport: { width, height }, state: state(), encounter: encounter() });

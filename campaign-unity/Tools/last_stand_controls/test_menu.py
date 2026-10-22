@@ -15,6 +15,12 @@ ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
 UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
 CASES = (
+    "test_scalable_selector_entries",
+    "test_locked_tier_preview_preserves_admission",
+    "test_unlocked_tier_and_fitting_selection",
+    "test_selector_save_failure_restores_environment",
+    "test_selector_environment_preflight_preserves_save",
+    "test_selector_description_keyboard_scroll",
     "test_failed_deploy_retry_preserves_menu_hold",
     "test_existing_suite_preference_scope",
     "test_existing_suite_pipeline_scope",

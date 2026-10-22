@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: player controls, settings and game speed — sprint candidate · codeArbiter</title><style>
 :root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
-</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-UPGRADE-PAYOFF-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-upgrade-payoff.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: player controls, settings and game speed — sprint candidate</h1><p class="deck">Revised full sprint proposal: real menu/settings, persistent preferences, ambient music and channel controls, display options, optional guidance/help, save/account navigation and 0x/0.5x/1x game speed with future research caps. Awaiting careful approval.</p><div class="meta"><span>ST-LS-UPGRADE-PAYOFF-SPEC</span><span>Revision 4 · schema 0.3.2</span><span>76 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-UPGRADE-PAYOFF-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-upgrade-payoff.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: player controls, settings and game speed — sprint candidate</h1><p class="deck">Revised full sprint proposal: real menu/settings, persistent preferences, ambient music and channel controls, display options, optional guidance/help, save/account navigation and 0x/0.5x/1x game speed with future research caps. Awaiting careful approval.</p><div class="meta"><span>ST-LS-UPGRADE-PAYOFF-SPEC</span><span>Revision 12 · schema 0.3.2</span><span>97 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
 <!-- CA:BEGIN:INTENT-PAYOFF -->
 <article class="record" id="INTENT-PAYOFF" data-ca-symbol="INTENT-PAYOFF" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-PAYOFF">INTENT-PAYOFF</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Last Stand owner and players</div><div class="field"><span class="label">Outcome</span>Make Last Stand usable as a complete game session: configure sound/display/help, control time, navigate safely, and understand local-save/account boundaries.</div><div class="field"><span class="label">Problem</span>Core play exists but ordinary game controls are scattered or absent: no coherent settings surface, remembered preferences, music, guidance control or selectable speed.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-WIDER">SRC-WIDER</a></li><li><a href="#SRC-MUSIC">SRC-MUSIC</a></li><li><a href="#SRC-SPEED">SRC-SPEED</a></li><li><a href="#SRC-CONTROLS-AUDIT">SRC-CONTROLS-AUDIT</a></li></ul></div></article>
 <!-- CA:END:INTENT-PAYOFF -->
@@ -31,7 +31,7 @@
 <!-- CA:END:NON-ENGINE -->
 </section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
 <!-- CA:BEGIN:APPROACH-OBSERVE-EXPERIMENT -->
-<article class="record" id="APPROACH-OBSERVE-EXPERIMENT" data-ca-symbol="APPROACH-OBSERVE-EXPERIMENT" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-OBSERVE-EXPERIMENT">APPROACH-OBSERVE-EXPERIMENT</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DEC-EXPERIMENT">DEC-EXPERIMENT</a></li><li><a href="#DEC-MUSIC">DEC-MUSIC</a></li><li><a href="#DEC-SPEED">DEC-SPEED</a></li><li><a href="#DEC-SHELL">DEC-SHELL</a></li><li><a href="#DEC-ACCOUNT">DEC-ACCOUNT</a></li><li><a href="#DEC-APPROVAL">DEC-APPROVAL</a></li><li><a href="#DEC-ENGINE-ORDER">DEC-ENGINE-ORDER</a></li></ul></div><div class="field"><span class="label">Choice</span>Build a complete player-controls sprint on the existing HUD and state owners; preserve optional upgrade-payoff work as one guidance item.</div><div class="field"><span class="label">Tradeoff</span>Wider than a copy feature but bounded to session controls. Settings and speed require real state/lifecycle work; cloud sync, research content and progression expansions remain separate.</div></article>
+<article class="record" id="APPROACH-OBSERVE-EXPERIMENT" data-ca-symbol="APPROACH-OBSERVE-EXPERIMENT" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-OBSERVE-EXPERIMENT">APPROACH-OBSERVE-EXPERIMENT</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DEC-EXPERIMENT">DEC-EXPERIMENT</a></li><li><a href="#DEC-MUSIC">DEC-MUSIC</a></li><li><a href="#DEC-SPEED">DEC-SPEED</a></li><li><a href="#DEC-SHELL">DEC-SHELL</a></li><li><a href="#DEC-ACCOUNT">DEC-ACCOUNT</a></li><li><a href="#DEC-APPROVAL">DEC-APPROVAL</a></li><li><a href="#DEC-ENGINE-ORDER">DEC-ENGINE-ORDER</a></li><li><a href="#DEC-SELECTOR-PREVIEW">DEC-SELECTOR-PREVIEW</a></li></ul></div><div class="field"><span class="label">Choice</span>Build a complete player-controls sprint on the existing HUD and state owners; preserve optional upgrade-payoff work as one guidance item.</div><div class="field"><span class="label">Tradeoff</span>Wider than a copy feature but bounded to session controls. Settings and speed require real state/lifecycle work; cloud sync, research content and progression expansions remain separate.</div></article>
 <!-- CA:END:APPROACH-OBSERVE-EXPERIMENT -->
 </section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
 <!-- CA:BEGIN:CON-APPROVAL -->
@@ -77,6 +77,18 @@
 <!-- CA:BEGIN:DEC-ACCOUNT -->
 <article class="record" id="DEC-ACCOUNT" data-ca-symbol="DEC-ACCOUNT" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-ACCOUNT">DEC-ACCOUNT</a><h3>Account scope</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Reuse existing parent account management and clearly label Last Stand as local-only.</div><div class="field"><span class="label">Rationale</span>Existing authentication does not provide Last Stand cloud-save authority. No new identity backend is required.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-ACCOUNT">SRC-ACCOUNT</a></div></article>
 <!-- CA:END:DEC-ACCOUNT -->
+
+<!-- CA:BEGIN:DEC-SELECTOR-PREVIEW -->
+<article class="record" id="DEC-SELECTOR-PREVIEW" data-ca-symbol="DEC-SELECTOR-PREVIEW" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-SELECTOR-PREVIEW">DEC-SELECTOR-PREVIEW</a><h3>Scalable tier/fitting selection and environment identity</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Compact catalog-driven selector cards with bounded arrows; tier browsing previews environment through the first locked tier. Tier definitions reference separately reusable environment identities.</div><div class="field"><span class="label">Rationale</span>Current owner steering supersedes the earlier list proposal. A locked preview never commits a playable selection or enables deployment. Existing two authored environments provide the first bounded candidate.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-SELECTOR-REVIEW">SRC-SELECTOR-REVIEW</a></div></article>
+<!-- CA:END:DEC-SELECTOR-PREVIEW -->
+
+<!-- CA:BEGIN:DEC-WAVE-CLEAR -->
+<article class="record" id="DEC-WAVE-CLEAR" data-ca-symbol="DEC-WAVE-CLEAR" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-WAVE-CLEAR">DEC-WAVE-CLEAR</a><h3>Wave completion boundary</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Defeat the wave&#39;s enemies: clear the defined enemy group, with no timer-based overlapping advancement.</div><div class="field"><span class="label">Rationale</span>Owner selected defeated enemy groups in the current conversation. Exact targets and reward tuning remain proposed work.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-WAVE-DIRECTION">SRC-WAVE-DIRECTION</a></div></article>
+<!-- CA:END:DEC-WAVE-CLEAR -->
+
+<!-- CA:BEGIN:DEC-WAVE-CHECKPOINT -->
+<article class="record" id="DEC-WAVE-CHECKPOINT" data-ca-symbol="DEC-WAVE-CHECKPOINT" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-WAVE-CHECKPOINT">DEC-WAVE-CHECKPOINT</a><h3>Run continuity and earned wave progression</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Resume from full state at the last completed wave. Closing/reloading may lose at most the unfinished part of a wave, while cleared rewards and unlocks stay earned.</div><div class="field"><span class="label">Rationale</span>Owner corrected the current closed-tab loss and explicitly accepted hp/upgrades/resources/wave state at the last completed wave. Atomic checkpoint plus reward writes prevent duplication or one-sided purchase rollback.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-WAVE-DIRECTION">SRC-WAVE-DIRECTION</a></div></article>
+<!-- CA:END:DEC-WAVE-CHECKPOINT -->
 </section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
 <!-- CA:BEGIN:CR-OBSERVE -->
 <article class="record" id="CR-OBSERVE" data-ca-symbol="CR-OBSERVE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-OBSERVE">CR-OBSERVE</a><h3>Complete controls and navigation inventory</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the revised player-controls sprint; the optional payoff cue alone is conditional on observed value.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Classify each control as existing/reuse, add this sprint or deferred with a reason.</li><li>Every in-scope button has an owner, visible state, action, persistence policy and failure/return path; no empty settings tabs or decorative toggles.</li><li>Keep primary battlefield controls visible: Shop, Pause/Resume, - / speed / +, quick mute and Settings. Use layout changes rather than shrinking targets.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approval of the revised sprint before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
@@ -209,6 +221,54 @@
 <!-- CA:END:VER-DATA -->
 </div></article>
 <!-- CA:END:CR-DATA -->
+
+<!-- CA:BEGIN:CR-SELECTORS -->
+<article class="record" id="CR-SELECTORS" data-ca-symbol="CR-SELECTORS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-SELECTORS">CR-SELECTORS</a><h3>Scalable compact choice windows</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Owner review correction within this PR.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Garage/workshop displays compact Tier and Fitting arrow cards directly around a large tank/environment preview, with explicit current name and description; no growing battlefield button strip.</li><li>Options come from catalogs with stable identities; no current-versus-other binary branch or modulo-two selector. Test the reusable browser with at least 18 options and a third fitting fixture without shipping fake content.</li><li>Tier navigation is bounded without wrap and ends at the first locked tier. Show its unlock reason and environment preview while blocking deployment. Do not persist locked preview as the selected playable tier.</li><li>Leaving a locked preview restores the selected playable environment. Unlocked tier selection uses existing durable admission and errors; active runs, catch-up, pending results and save failure refuse unsafe changes.</li><li>Fitting selection uses explicit identity and description; no ambiguous action label naming only the other fitting. Initial two mechanics remain unchanged.</li><li>Controls remain readable and reachable across maintained viewport sizes with keyboard focus, touch targets and environment visible behind the compact window.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Garage/workshop without an active or unresolved run.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-SELECTORS -->
+<article class="record" id="SC-SELECTORS" data-ca-symbol="SC-SELECTORS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-SELECTORS">SC-SELECTORS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A bounded catalog of unlocked choices plus the first locked tier.</div><div class="field"><span class="label">Then</span>The intended choice and preview are truthful; saved state and run admission stay authoritative.</div><div class="field"><span class="label">When</span>The player uses previous/next, cancel/close, keyboard or touch.</div></article>
+<!-- CA:END:SC-SELECTORS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SELECTOR-REVIEW">SRC-SELECTOR-REVIEW</a></li></ul></div><div class="field"><span class="label">Statement</span>Garage/workshop displays compact Tier and Fitting arrow cards directly around a large tank/environment preview, with explicit current name and description; no growing battlefield button strip.</div><div class="field"><span class="label">Trigger</span>Player browses tier or fitting choices.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-SELECTORS -->
+<article class="record" id="VER-SELECTORS" data-ca-symbol="VER-SELECTORS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-SELECTORS">VER-SELECTORS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Locked preview or fabricated selection must never change the saved tier, bypass unlocks, mutate an active run, or deploy the prior tier while a locked card appears selected.</div><div class="field"><span class="label">Oracle</span>Garage/workshop exposes current Tier and Fitting controls; each opens a compact window with explicit previous/next arrows, current name and description, without a growing battlefield button strip. Options come from catalogs with stable identities; no current-versus-other binary branch or modulo-two selector. Test the reusable browser with at least 18 options and a third fitting fixture without shipping fake content. Tier navigation is bounded without wrap and ends at the first locked tier. Show its unlock reason and environment preview while blocking deployment. Do not persist locked preview as the selected playable tier. Closing a locked preview restores the selected playable environment. Unlocked tier selection uses the existing durable admission and errors; active runs, catch-up, pending results and save failure refuse unsafe changes. Fitting selection uses explicit identity and description; no ambiguous action label naming only the other fitting. Initial two mechanics remain unchanged. Controls remain readable and reachable across maintained viewport sizes with keyboard focus, touch targets and environment visible behind the compact window.</div><div class="field"><span class="label">Planned target</span>Pure option navigation, imported Unity controller/UI, source-bound browser and touch capture</div></article>
+<!-- CA:END:VER-SELECTORS -->
+</div></article>
+<!-- CA:END:CR-SELECTORS -->
+
+<!-- CA:BEGIN:CR-TIER-ENV -->
+<article class="record" id="CR-TIER-ENV" data-ca-symbol="CR-TIER-ENV" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-TIER-ENV">CR-TIER-ENV</a><h3>Distinct tier environments with reusable identities</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Owner review correction within this PR.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Tier definitions reference environment identity independently of tier number; multiple tiers can refer to one environment without copying the environment.</li><li>Initial candidate maps Tier 1 to existing Sunlit Ash and Tier 2 to existing Iron Perimeter; browsing shows the actual scene environment before deployment.</li><li>Preview changes presentation only. Admitted runs capture the playable tier/environment; later selector events cannot change combat rules or its environment mid-run.</li><li>Previously chosen initial battlefield framing and existing simulation, timing, rewards, manual Claim, saves and performance controls remain coherent. Actual screenshots demonstrate the two environments; owner visual acceptance remains pending.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Garage/workshop without an active or unresolved run.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-TIER-ENV -->
+<article class="record" id="SC-TIER-ENV" data-ca-symbol="SC-TIER-ENV" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-TIER-ENV">SC-TIER-ENV</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A bounded catalog of unlocked choices plus the first locked tier.</div><div class="field"><span class="label">Then</span>The intended choice and preview are truthful; saved state and run admission stay authoritative.</div><div class="field"><span class="label">When</span>The player uses previous/next, cancel/close, keyboard or touch.</div></article>
+<!-- CA:END:SC-TIER-ENV -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SELECTOR-REVIEW">SRC-SELECTOR-REVIEW</a></li></ul></div><div class="field"><span class="label">Statement</span>Tier definitions reference environment identity independently of tier number; multiple tiers can refer to one environment without copying the environment.</div><div class="field"><span class="label">Trigger</span>Player browses tier or fitting choices.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-TIER-ENV -->
+<article class="record" id="VER-TIER-ENV" data-ca-symbol="VER-TIER-ENV" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-TIER-ENV">VER-TIER-ENV</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>An invalid/missing environment must fail clearly without overwriting progress; cosmetic changes cannot alter model snapshots, unlocked tier or admitted run.</div><div class="field"><span class="label">Oracle</span>Tier definitions reference environment identity independently of tier number; multiple tiers can refer to one environment without copying the environment. Initial candidate maps Tier 1 to existing Sunlit Ash and Tier 2 to existing Iron Perimeter; browsing shows the actual scene environment before deployment. Preview changes presentation only. Admitted runs capture the playable tier/environment; later selector events cannot change combat rules or its environment mid-run. Previously chosen initial battlefield framing and existing simulation, timing, rewards, manual Claim, saves and performance controls remain coherent. Actual screenshots demonstrate the two environments; owner visual acceptance remains pending.</div><div class="field"><span class="label">Planned target</span>Catalog mapping, scene environment ownership and actual Web pixels</div></article>
+<!-- CA:END:VER-TIER-ENV -->
+</div></article>
+<!-- CA:END:CR-TIER-ENV -->
+
+<!-- CA:BEGIN:CR-GARAGE -->
+<article class="record" id="CR-GARAGE" data-ca-symbol="CR-GARAGE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-GARAGE">CR-GARAGE</a><h3>Intentional garage hierarchy and attached module callout</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Owner accepts the wireframe direction and requests a module connection.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-APPROVAL">CON-APPROVAL</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Deploy is the visually dominant lower-centre garage action, with a smaller Upgrades action for permanent upgrades and quiet salvage/save information.</li><li>Menu is a standalone top-right hamburger with an accessible Menu name and at least a 44 CSS-pixel target; it remains separate from gameplay action panels.</li><li>Tier arrow card is above the preview; fitting arrow card sits beside it on wide screens and below it in portrait. Reflow must preserve readable controls and an unobstructed tank.</li><li>A restrained noninteractive leader connects the fitting card to the actual active module bounds, with a small endpoint highlight. It tracks attachment changes, projection and viewport resizing, and hides for combat, menus, hidden/offscreen modules and invalid projection.</li><li>Keep actual two-tier/two-fitting gameplay and save authority unchanged. The generated tank and terrain illustrate composition; a future art-quality pass is discussion only.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Garage/workshop without an active or unresolved run.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-GARAGE -->
+<article class="record" id="SC-GARAGE" data-ca-symbol="SC-GARAGE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-GARAGE">SC-GARAGE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A garage fitting card and active visible authored module.</div><div class="field"><span class="label">Then</span>The card and subtle callout identify that exact module without intercepting input or mutating gameplay.</div><div class="field"><span class="label">When</span>Player changes fitting or resizes the viewport.</div></article>
+<!-- CA:END:SC-GARAGE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-GARAGE-HIERARCHY">SRC-GARAGE-HIERARCHY</a></li></ul></div><div class="field"><span class="label">Statement</span>Deploy is the visually dominant lower-centre garage action, with a smaller Upgrades action for permanent upgrades and quiet salvage/save information.</div><div class="field"><span class="label">Trigger</span>Player prepares a run or changes fitting.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-GARAGE -->
+<article class="record" id="VER-GARAGE" data-ca-symbol="VER-GARAGE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-GARAGE">VER-GARAGE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Offscreen, inactive and behind-camera modules, overlays and active runs must not leave a misleading callout; locked tier preview never deploys the saved prior tier.</div><div class="field"><span class="label">Oracle</span>Deploy is the visually dominant lower-centre garage action, with a smaller Upgrades action for permanent upgrades and quiet salvage/save information. Menu is a standalone top-right hamburger with an accessible Menu name and at least a 44 CSS-pixel target; it remains separate from gameplay action panels. Tier arrow card is above the preview; fitting arrow card sits beside it on wide screens and below it in portrait. Reflow must preserve readable controls and an unobstructed tank. A restrained noninteractive leader connects the fitting card to the actual active module bounds, with a small endpoint highlight. It tracks attachment changes, projection and viewport resizing, and hides for combat, menus, hidden/offscreen modules and invalid projection. Keep actual two-tier/two-fitting gameplay and save authority unchanged. The generated tank and terrain illustrate composition; a future art-quality pass is discussion only.</div><div class="field"><span class="label">Planned target</span>Pure responsive geometry, imported Unity hierarchy/projection and fresh browser captures</div></article>
+<!-- CA:END:VER-GARAGE -->
+</div></article>
+<!-- CA:END:CR-GARAGE -->
+
+<!-- CA:BEGIN:CR-COMBAT-UI -->
+<article class="record" id="CR-COMBAT-UI" data-ca-symbol="CR-COMBAT-UI" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-COMBAT-UI">CR-COMBAT-UI</a><h3>Separated combat controls with room for the battlefield</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Owner explicitly rejects the same jammed control strip during combat.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Floating top-right Menu remains separate from gameplay panels during combat.</li><li>Sound and effects are controlled through the existing Audio and Display settings, without duplicate battlefield buttons.</li><li>One compact previous/rate/next game-speed group owns speed and pause presentation; the rate button keeps the existing pause behavior. No additional standalone Pause button crowds the battlefield.</li><li>In-run Upgrades is a separate corner action with the real temporary upgrade shop behind it; do not mix the entire action inventory into one strip.</li><li>Maintain readable instruments, minimum 44 CSS-pixel targets, focus/pointer access and an unobstructed central battlefield on desktop, portrait and short landscape. Preserve manual/menu/focus pause ownership, speed caps and upgrade accounting.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-PLAY">SCOPE-PLAY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>A deployed or settling run.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-COMBAT-UI -->
+<article class="record" id="SC-COMBAT-UI" data-ca-symbol="SC-COMBAT-UI" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-COMBAT-UI">SC-COMBAT-UI</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A live run with speed, pause, upgrades and menu available.</div><div class="field"><span class="label">Then</span>Each group is discoverable without an undifferentiated control strip or hidden battlefield.</div><div class="field"><span class="label">When</span>The player adjusts speed, pauses, opens upgrades or settings.</div></article>
+<!-- CA:END:SC-COMBAT-UI -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMBAT-HIERARCHY">SRC-COMBAT-HIERARCHY</a></li></ul></div><div class="field"><span class="label">Statement</span>Floating top-right Menu remains separate from gameplay panels during combat.</div><div class="field"><span class="label">Trigger</span>An active run shows its controls.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-COMBAT-UI -->
+<article class="record" id="VER-COMBAT-UI" data-ca-symbol="VER-COMBAT-UI" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-COMBAT-UI">VER-COMBAT-UI</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Hidden legacy buttons must not steal focus or pointer input; layout changes must not change the authoritative run clock, bypass speed caps or pause twice.</div><div class="field"><span class="label">Oracle</span>Floating top-right Menu remains separate from gameplay panels during combat. Sound and effects are controlled through the existing Audio and Display settings, without duplicate battlefield buttons. One compact previous/rate/next game-speed group owns speed and pause presentation; the rate button keeps the existing pause behavior. No additional standalone Pause button crowds the battlefield. In-run Upgrades is a separate corner action with the real temporary upgrade shop behind it; do not mix the entire action inventory into one strip. Maintain readable instruments, minimum 44 CSS-pixel targets, focus/pointer access and an unobstructed central battlefield on desktop, portrait and short landscape. Preserve manual/menu/focus pause ownership, speed caps and upgrade accounting.</div><div class="field"><span class="label">Planned target</span>Imported HUD/input geometry and fresh source-bound combat/controls/touch captures</div></article>
+<!-- CA:END:VER-COMBAT-UI -->
+</div></article>
+<!-- CA:END:CR-COMBAT-UI -->
 </section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2>
 <!-- CA:BEGIN:OPEN-SPRINT-APPROVAL -->
 <article class="record" id="OPEN-SPRINT-APPROVAL" data-ca-symbol="OPEN-SPRINT-APPROVAL" data-ca-kind="open_decisions"><div class="record-head"><a class="id" href="#OPEN-SPRINT-APPROVAL">OPEN-SPRINT-APPROVAL</a><h3>Open decisions</h3></div><div class="field"><span class="label">Affects</span><ul class="items"><li>CR-OBSERVE</li><li>CR-CUE</li><li>CR-SAVE</li><li>CR-PARITY</li><li>CR-DECIDE</li><li>CR-DELIVERY</li><li>CR-MENU</li><li>CR-AUDIO</li><li>CR-DISPLAY</li><li>CR-SPEED</li><li>CR-DATA</li></ul></div><div class="field"><span class="label">Blocking</span>true</div><div class="field"><span class="label">Owner</span>User</div><div class="field"><span class="label">Question</span>Approve the revised player-controls/settings/music/game-speed sprint, or amend its concrete scope and behavior?</div><div class="field"><span class="label">Resolution</span>User explicitly replied Approved on 2026-10-21 to the revised nine-task sprint. Implementation authorized; final acceptance, merge and publication remain separate.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-APPROVED">SRC-APPROVED</a></div><div class="field"><span class="label">Status</span>resolved</div></article>
@@ -227,7 +287,7 @@
 <!-- CA:END:SEC-DESIGN -->
 
 <!-- CA:BEGIN:SEC-SMARTS -->
-<article class="record" id="SEC-SMARTS" data-ca-symbol="SEC-SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SMARTS">SEC-SMARTS</a><h3>SMARTS design rationale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Intent: current owner direction expands the sprint beyond upgrade payoff to real settings/navigation, includes ambient music, mandates guidance opt-out and requests half-step speed. Existing Last Stand Unity HUD and separate local saves constrain implementation; parent account authority remains unchanged.</p></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Lens</th><th scope="col">Extend existing Unity HUD/controllers</th><th scope="col">Build a separate DOM settings application</th></tr></thead><tbody><tr><td>Scalable</td><td>Indifferent — Local single-player settings add no service or new scale boundary.</td><td>Indifferent — Local single-player settings add no service or new scale boundary.</td></tr><tr><td>Maintainable</td><td>Strong — Reuses current HUD, audio and run-clock owners.</td><td>Adequate — Adds another UI framework boundary and bridge contract.</td></tr><tr><td>Available</td><td>Indifferent — Both depend on the existing Web runtime and local storage.</td><td>Indifferent — Both depend on the existing Web runtime and local storage.</td></tr><tr><td>Reliable</td><td>Strong — Controls call existing state owners; native shell handles browser-only actions.</td><td>Adequate — Safe with a strict bridge but creates more synchronization paths.</td></tr><tr><td>Testable</td><td>Adequate — Existing Editor and browser paths need keyboard and settings coverage.</td><td>Strong — DOM controls are directly testable with established browser tooling.</td></tr><tr><td>Securable</td><td>Indifferent — Neither requires new services, credentials or dependencies.</td><td>Indifferent — Neither requires new services, credentials or dependencies.</td></tr></tbody></table></div></div><div class="block"><p>Recommendation: extend the existing HUD and domain owners, with a small native shell bridge for fullscreen and leaving/account routes; strength moderate. Maintainable and Reliable favor continuity, while Testable favors DOM. The owner asked for complete behavior, not a second application shell.</p></div><div class="block"><p>Speed uses the dedicated clock&#39;s elapsed-time admission rather than global time scaling: fixed simulation rules, menu responsiveness and music tempo remain separate. Preferences are a versioned separate store; they cannot unlock speeds or change gameplay saves.</p></div><div class="block"><p>Material unknowns: actual Performance preset benefit and ambient music usability. missing_observation: source-matched renderer measurements and owner listening/playtest; decision_critical: true for accepting those treatments, false for drafting/building their bounded candidates. No claimed performance improvement or musical approval yet.</p></div><div class="block"><p>Load-bearing assumptions: existing UI can support readable tabs/controls across maintained profiles, and the current URP pipeline can change 3D render scale independently of UI. Verify during implementation; return material scope changes for review.</p></div><div class="block"><p>Non-SMARTS constraints: keep this one complete player-controls sprint. No cloud-save backend, research economy, imported asset license commitment or gameplay rebalance. Preserve the owner&#39;s engine merge order and explicit review checkpoint.</p></div><div class="block"><p>Priority evidence: current user direction supersedes the narrower first-upgrade-only proposal. ADR-0011 constrains account reuse; roadmap defers larger progression systems.</p></div></div></article>
+<article class="record" id="SEC-SMARTS" data-ca-symbol="SEC-SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SMARTS">SEC-SMARTS</a><h3>SMARTS design rationale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Intent: current owner direction expands the sprint beyond upgrade payoff to real settings/navigation, includes ambient music, mandates guidance opt-out and requests half-step speed. Existing Last Stand Unity HUD and separate local saves constrain implementation; parent account authority remains unchanged.</p></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Lens</th><th scope="col">Extend existing Unity HUD/controllers</th><th scope="col">Build a separate DOM settings application</th></tr></thead><tbody><tr><td>Scalable</td><td>Indifferent — Local single-player settings add no service or new scale boundary.</td><td>Indifferent — Local single-player settings add no service or new scale boundary.</td></tr><tr><td>Maintainable</td><td>Strong — Reuses current HUD, audio and run-clock owners.</td><td>Adequate — Adds another UI framework boundary and bridge contract.</td></tr><tr><td>Available</td><td>Indifferent — Both depend on the existing Web runtime and local storage.</td><td>Indifferent — Both depend on the existing Web runtime and local storage.</td></tr><tr><td>Reliable</td><td>Strong — Controls call existing state owners; native shell handles browser-only actions.</td><td>Adequate — Safe with a strict bridge but creates more synchronization paths.</td></tr><tr><td>Testable</td><td>Adequate — Existing Editor and browser paths need keyboard and settings coverage.</td><td>Strong — DOM controls are directly testable with established browser tooling.</td></tr><tr><td>Securable</td><td>Indifferent — Neither requires new services, credentials or dependencies.</td><td>Indifferent — Neither requires new services, credentials or dependencies.</td></tr></tbody></table></div></div><div class="block"><p>Recommendation: extend the existing HUD and domain owners, with a small native shell bridge for fullscreen and leaving/account routes; strength moderate. Maintainable and Reliable favor continuity, while Testable favors DOM. The owner asked for complete behavior, not a second application shell.</p></div><div class="block"><p>Speed uses the dedicated clock&#39;s elapsed-time admission rather than global time scaling: fixed simulation rules, menu responsiveness and music tempo remain separate. Preferences are a versioned separate store; they cannot unlock speeds or change gameplay saves.</p></div><div class="block"><p>Material unknowns: actual Performance preset benefit and ambient music usability. missing_observation: source-matched renderer measurements and owner listening/playtest; decision_critical: true for accepting those treatments, false for drafting/building their bounded candidates. No claimed performance improvement or musical approval yet.</p></div><div class="block"><p>Load-bearing assumptions: existing UI can support readable tabs/controls across maintained profiles, and the current URP pipeline can change 3D render scale independently of UI. Verify during implementation; return material scope changes for review.</p></div><div class="block"><p>Non-SMARTS constraints: keep this one complete player-controls sprint. No cloud-save backend, research economy, imported asset license commitment or gameplay rebalance. Preserve the owner&#39;s engine merge order and explicit review checkpoint.</p></div><div class="block"><p>Priority evidence: current user direction supersedes the narrower first-upgrade-only proposal. ADR-0011 constrains account reuse; roadmap defers larger progression systems.</p></div><div class="block"><p>Owner review correction: the earlier Scalable=Indifferent cells considered local/service load but omitted content growth. Binary tier and fitting toggles fail the stated growth horizon of many tiers and multiple fittings. This rationale does not justify those controls. Replacement must use catalog-backed selection lists with stable identity, current selection, descriptive/locked states, bounded scroll and keyboard/touch access; domain admission stays authoritative. Tier environment identity is a separate product choice now awaiting owner direction. No implementation or verification of the correction is claimed.</p></div><div class="block"><p>2026-10-21 selector correction: scale horizon is growth in tiers and fittings, explicitly including 18+ tiers. Current user choice prefers a compact arrow window with the actual environment visible; this supersedes the scrollable-list proposal. Distinct environments can be revisited by later tiers.</p><div class="refs">References: <a href="#SRC-SELECTOR-REVIEW">SRC-SELECTOR-REVIEW</a> </div></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Lens</th><th scope="col">Pairwise toggles</th><th scope="col">Scrollable selection list</th><th scope="col">Compact arrow window</th></tr></thead><tbody><tr><td>Scalable</td><td>Weak — Current-versus-other branches stop at two choices.</td><td>Strong — Catalog rows grow within bounded scrolling.</td><td>Strong — Catalog indexing keeps a fixed control footprint.</td></tr><tr><td>Maintainable</td><td>Weak — Labels and branch logic require edits per option.</td><td>Strong — One row renderer consumes catalog metadata.</td><td>Strong — One card renderer consumes catalog metadata.</td></tr><tr><td>Available</td><td>Indifferent — All choices remain local to the existing runtime.</td><td>Indifferent — All choices remain local to the existing runtime.</td><td>Indifferent — All choices remain local to the existing runtime.</td></tr><tr><td>Reliable</td><td>Weak — Current label hides selection and lock context.</td><td>Strong — Explicit current and locked option states.</td><td>Strong — Explicit preview, committed selection and endpoint states.</td></tr><tr><td>Testable</td><td>Weak — Two-option checks hide growth defects.</td><td>Strong — Synthetic catalogs exercise long lists and admission guards.</td><td>Strong — Synthetic catalogs exercise endpoints, lock boundary and admission guards.</td></tr><tr><td>Securable</td><td>Indifferent — Same local save and domain admission boundaries.</td><td>Indifferent — Same local save and domain admission boundaries.</td><td>Indifferent — Same local save and domain admission boundaries.</td></tr></tbody></table></div></div><div class="block"><p>Selection: compact arrow window; strength strong under explicit owner preference for visible environment previews. Trade-off: sequential browsing takes more actions than a long list. First-locked visibility bounds discovery; revisit larger-library navigation when observed browsing cost warrants it. No server-scale claim substitutes for content-scale checks.</p><div class="refs">References: <a href="#SRC-SELECTOR-REVIEW">SRC-SELECTOR-REVIEW</a> </div></div><div class="block"><p>Remaining Unknown: subjective readability and appeal of the two existing environment treatments in this new tier context. missing_observation: owner review of current-source rendered previews; decision_critical: false for implementing the reversible candidate, true for final visual acceptance. Non-SMARTS constraint: reuse authored project assets and keep this PR reviewable; do not add unearned tiers/fittings or an economy migration.</p></div></div></article>
 <!-- CA:END:SEC-SMARTS -->
 
 <!-- CA:BEGIN:SEC-INVENTORY -->
@@ -241,6 +301,14 @@
 <!-- CA:BEGIN:SEC-ACCEPTANCE -->
 <article class="record" id="SEC-ACCEPTANCE" data-ca-symbol="SEC-ACCEPTANCE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-ACCEPTANCE">SEC-ACCEPTANCE</a><h3>Meaningful acceptance</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><ul class="items"><li>Every control has functioning behavior, correct current state, a tested failure path and a way back.</li><li>Preferences survive reload; turning guidance off is durable and immediate.</li><li>Music/effects/master controls alter actual rendered sound; display presets alter actual rendering; speed controls alter only elapsed simulation admission.</li><li>No progression corruption, automatic rewards, accidental leave, stale pause, audio burst or over-cap speed.</li><li>Owner reviews the actual settings/navigation/music/speed experience. CI and structural draft validation do not imply that acceptance.</li></ul></div></div></article>
 <!-- CA:END:SEC-ACCEPTANCE -->
+
+<!-- CA:BEGIN:SEC-GARAGE-WIREFRAME -->
+<article class="record" id="SEC-GARAGE-WIREFRAME" data-ca-symbol="SEC-GARAGE-WIREFRAME" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-GARAGE-WIREFRAME">SEC-GARAGE-WIREFRAME</a><h3>Garage hierarchy design checkpoint</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Owner accepted the direction of garage-layout-proposal.png and requested a subtle visual leader from fitting card to the actual module. Revised board garage-layout-callout-proposal.png and its prompt document the connection. This authorizes implementation of composition/callout; final rendered acceptance remains separate.</p><div class="refs">References: <a href="#SRC-GARAGE-HIERARCHY">SRC-GARAGE-HIERARCHY</a> <a href="#CR-GARAGE">CR-GARAGE</a> </div></div><div class="block"><p>The imagegen tank and scenery remain illustrative. Existing editable Blender model, Unity materials and URP lighting were inspected for the owner&#39;s art-quality question. Discussed future material/lighting/camera first pass and model refinement; no full art overhaul included.</p></div></div></article>
+<!-- CA:END:SEC-GARAGE-WIREFRAME -->
+
+<!-- CA:BEGIN:SEC-WAVE-FOLLOWON -->
+<article class="record" id="SEC-WAVE-FOLLOWON" data-ca-symbol="SEC-WAVE-FOLLOWON" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-WAVE-FOLLOWON">SEC-WAVE-FOLLOWON</a><h3>Next gameplay design: tier waves and milestone rewards</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Design direction: each tier has an ordered wave progression, an advancement target, and data-authored milestone rewards. Continue the survival run beyond the advancement target. Separate one-time tier milestones/armament unlocks from repeatable resource earnings. Preserve wallets, upgrades and existing unlocked tiers when migrating away from time goals; do not invent historical wave clears.</p><div class="refs">References: <a href="#SRC-WAVE-DIRECTION">SRC-WAVE-DIRECTION</a> </div></div><div class="block"><p>Owner chose: defeat the wave&#39;s enemies. Each wave is a bounded enemy cohort; completion occurs after every member is defeated, rather than elapsed time or overlapping timed admissions. Proposed tuning remains open: exact target waves, composition/cadence, reward schedule, claim timing and removal/replacement of the current safety horizon. No wave simulation, rewards, migration or unlock behavior has been changed by this UI follow-up.</p></div><div class="block"><p>Owner requires resumable runs and explicitly accepts a last-completed-wave checkpoint: persist hull, temporary upgrades, run resources, completed wave, selected loadout and relevant run state together. A close/reload during a wave resumes at the start of that unfinished wave from the previous completed checkpoint; at most partial-wave progress rolls back. Create a starting checkpoint before wave 1. Cleared-wave rewards, milestone/unlock ledger and checkpoint must commit atomically so reload cannot duplicate or lose rewards. Mid-wave purchases and spending must roll back together, not preserve one side. Ordinary exits preserve the run; deliberate abandon remains explicit. Existing implementation currently continues only while open and does not restore active runs after reload; do not represent this requirement as already implemented.</p><div class="refs">References: <a href="#SRC-WAVE-DIRECTION">SRC-WAVE-DIRECTION</a> </div></div></div></article>
+<!-- CA:END:SEC-WAVE-FOLLOWON -->
 </section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
 <!-- CA:BEGIN:SRC-REQUEST -->
 <article class="record" id="SRC-REQUEST" data-ca-symbol="SRC-REQUEST" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-REQUEST">SRC-REQUEST</a><h3>Owner request: plan the next Last Stand sprint</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>Planning only. The owner explicitly requires careful approval before execution; codeArbiter #1013 must merge before #1016.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
@@ -305,7 +373,23 @@
 <!-- CA:BEGIN:SRC-APPROVED -->
 <article class="record" id="SRC-APPROVED" data-ca-symbol="SRC-APPROVED" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-APPROVED">SRC-APPROVED</a><h3>Owner approves sprint implementation</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>User replied Approved after reviewing the revised nine-task sprint proposal.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
 <!-- CA:END:SRC-APPROVED -->
-</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>0698acba1c0bd6c550f99333f4e467d0332893a4</div><div class="field"><span class="label">Observed date</span>2026-10-21</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts</li><li>campaign-unity/Tools/make_web_entry.py</li><li>client/src/ui/Lobby.ts</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 99f19298e32056d55a4aef9774698437e4caffc7b1da853c91f5dfd88eddc058<br>Model SHA-256: c7480fb8ac1d6cc3eaff367e6aa519700cfe97fca7080d936a688974e9ddd344</p></footer></main></div>
+
+<!-- CA:BEGIN:SRC-SELECTOR-REVIEW -->
+<article class="record" id="SRC-SELECTOR-REVIEW" data-ca-symbol="SRC-SELECTOR-REVIEW" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-SELECTOR-REVIEW">SRC-SELECTOR-REVIEW</a><h3>Owner corrects selector scale and chooses tier environment previews</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>Replace pairwise Tier/Fitting toggles with compact windows and arrows. Preview battlefield while browsing tiers; expose only through the first locked tier. Distinct battlefield identities, with later tiers allowed to revisit environments.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-SELECTOR-REVIEW -->
+
+<!-- CA:BEGIN:SRC-GARAGE-HIERARCHY -->
+<article class="record" id="SRC-GARAGE-HIERARCHY" data-ca-symbol="SRC-GARAGE-HIERARCHY" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-GARAGE-HIERARCHY">SRC-GARAGE-HIERARCHY</a><h3>Owner reviews garage hierarchy and requests imagegen wireframe</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-22</div><div class="field"><span class="label">Note</span>Owner rejects prototype placement, requests floating hamburger and imagegen wireframe, then accepts its direction and requests a visual leader/highlight attached to the actual fitting module. Latest tank-quality question is discussion, not authority for a model replacement.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-GARAGE-HIERARCHY -->
+
+<!-- CA:BEGIN:SRC-COMBAT-HIERARCHY -->
+<article class="record" id="SRC-COMBAT-HIERARCHY" data-ca-symbol="SRC-COMBAT-HIERARCHY" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-COMBAT-HIERARCHY">SRC-COMBAT-HIERARCHY</a><h3>Owner rejects the packed combat control strip</h3></div><div class="field"><span class="label">Locator</span>Current conversation screenshot, 2026-10-22</div><div class="field"><span class="label">Note</span>Owner supplied combat screenshot showing Pause/Sound/FX/Menu/three speed buttons/Shop in one strip and called it the same jammed-together mess. Preserved as docs/player-controls/combat-controls-before.png; this is owner-supplied old preview evidence, not a new source-bound acceptance capture.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-COMBAT-HIERARCHY -->
+
+<!-- CA:BEGIN:SRC-WAVE-DIRECTION -->
+<article class="record" id="SRC-WAVE-DIRECTION" data-ca-symbol="SRC-WAVE-DIRECTION" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-WAVE-DIRECTION">SRC-WAVE-DIRECTION</a><h3>Owner moves tier progression toward waves and milestone rewards</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-22</div><div class="field"><span class="label">Note</span>Owner requests waves within each tier, target wave counts for advancement, and varied wave milestone rewards that provide progression resources or unlock armaments. This is a new gameplay direction; current control-layout implementation continues independently.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-WAVE-DIRECTION -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>0698acba1c0bd6c550f99333f4e467d0332893a4</div><div class="field"><span class="label">Observed date</span>2026-10-21</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts</li><li>campaign-unity/Tools/make_web_entry.py</li><li>client/src/ui/Lobby.ts</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 4c1833da8ed8c657f9ab691123d07ab89bcf51902428b6dfcf1302fdc7cee56b<br>Model SHA-256: 4dd48ff53c3946a7fb6b6690cee0a0915c22bff4c1c5acd84b96de9810227279</p></footer></main></div>
 <script id="ca-artifact-model" type="application/json">
 {
   "artifact_id": "ST-LS-UPGRADE-PAYOFF-SPEC",
@@ -317,9 +401,9 @@
     "state": "draft"
   },
   "integrity": {
-    "model_sha256": "c7480fb8ac1d6cc3eaff367e6aa519700cfe97fca7080d936a688974e9ddd344",
-    "normative_sha256": "99f19298e32056d55a4aef9774698437e4caffc7b1da853c91f5dfd88eddc058",
-    "symbol_count": 76
+    "model_sha256": "4dd48ff53c3946a7fb6b6690cee0a0915c22bff4c1c5acd84b96de9810227279",
+    "normative_sha256": "4c1833da8ed8c657f9ab691123d07ab89bcf51902428b6dfcf1302fdc7cee56b",
+    "symbol_count": 97
   },
   "kind": "spec",
   "normative": {
@@ -331,7 +415,8 @@
         "DEC-SHELL",
         "DEC-ACCOUNT",
         "DEC-APPROVAL",
-        "DEC-ENGINE-ORDER"
+        "DEC-ENGINE-ORDER",
+        "DEC-SELECTOR-PREVIEW"
       ],
       "choice": "Build a complete player-controls sprint on the existing HUD and state owners; preserve optional upgrade-payoff work as one guidance item.",
       "id": "APPROACH-OBSERVE-EXPERIMENT",
@@ -963,6 +1048,201 @@
           "oracle": "Show confirmed/failed local-save state, unfinished-run loss, pending-result preservation and the existing Retry Save action when relevant. Manage account navigates through a tested fixed route to the existing parent account pane, with the active-run leave confirmation first. State clearly that signing in does not sync this Last Stand save; gameplay storage stays separate from Ash Road and account rewards. About displays actual build/version and credits, including music provenance. Help/contact destinations use real targets and do not send data automatically. Restore defaults is settings-only. Gameplay reset, export/import, cloud backup, social login and password recovery are deferred rather than exposed as dead controls.",
           "planned_target": "Settings save-status adapter, wrapper return/account route and parent Lobby/account tests"
         }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Owner review correction within this PR."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Garage/workshop displays compact Tier and Fitting arrow cards directly around a large tank/environment preview, with explicit current name and description; no growing battlefield button strip.",
+          "Options come from catalogs with stable identities; no current-versus-other binary branch or modulo-two selector. Test the reusable browser with at least 18 options and a third fitting fixture without shipping fake content.",
+          "Tier navigation is bounded without wrap and ends at the first locked tier. Show its unlock reason and environment preview while blocking deployment. Do not persist locked preview as the selected playable tier.",
+          "Leaving a locked preview restores the selected playable environment. Unlocked tier selection uses existing durable admission and errors; active runs, catch-up, pending results and save failure refuse unsafe changes.",
+          "Fitting selection uses explicit identity and description; no ambiguous action label naming only the other fitting. Initial two mechanics remain unchanged.",
+          "Controls remain readable and reachable across maintained viewport sizes with keyboard focus, touch targets and environment visible behind the compact window."
+        ],
+        "id": "CR-SELECTORS",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Garage/workshop without an active or unresolved run."
+        ],
+        "scenarios": [
+          {
+            "given": "A bounded catalog of unlocked choices plus the first locked tier.",
+            "id": "SC-SELECTORS",
+            "then": "The intended choice and preview are truthful; saved state and run admission stay authoritative.",
+            "when": "The player uses previous/next, cancel/close, keyboard or touch."
+          }
+        ],
+        "source_refs": [
+          "SRC-SELECTOR-REVIEW"
+        ],
+        "statement": "Garage/workshop displays compact Tier and Fitting arrow cards directly around a large tank/environment preview, with explicit current name and description; no growing battlefield button strip.",
+        "title": "Scalable compact choice windows",
+        "trigger": "Player browses tier or fitting choices.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-SELECTORS",
+          "method": "automated_and_review",
+          "negative_control": "Locked preview or fabricated selection must never change the saved tier, bypass unlocks, mutate an active run, or deploy the prior tier while a locked card appears selected.",
+          "oracle": "Garage/workshop exposes current Tier and Fitting controls; each opens a compact window with explicit previous/next arrows, current name and description, without a growing battlefield button strip. Options come from catalogs with stable identities; no current-versus-other binary branch or modulo-two selector. Test the reusable browser with at least 18 options and a third fitting fixture without shipping fake content. Tier navigation is bounded without wrap and ends at the first locked tier. Show its unlock reason and environment preview while blocking deployment. Do not persist locked preview as the selected playable tier. Closing a locked preview restores the selected playable environment. Unlocked tier selection uses the existing durable admission and errors; active runs, catch-up, pending results and save failure refuse unsafe changes. Fitting selection uses explicit identity and description; no ambiguous action label naming only the other fitting. Initial two mechanics remain unchanged. Controls remain readable and reachable across maintained viewport sizes with keyboard focus, touch targets and environment visible behind the compact window.",
+          "planned_target": "Pure option navigation, imported Unity controller/UI, source-bound browser and touch capture"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Owner review correction within this PR."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Tier definitions reference environment identity independently of tier number; multiple tiers can refer to one environment without copying the environment.",
+          "Initial candidate maps Tier 1 to existing Sunlit Ash and Tier 2 to existing Iron Perimeter; browsing shows the actual scene environment before deployment.",
+          "Preview changes presentation only. Admitted runs capture the playable tier/environment; later selector events cannot change combat rules or its environment mid-run.",
+          "Previously chosen initial battlefield framing and existing simulation, timing, rewards, manual Claim, saves and performance controls remain coherent. Actual screenshots demonstrate the two environments; owner visual acceptance remains pending."
+        ],
+        "id": "CR-TIER-ENV",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Garage/workshop without an active or unresolved run."
+        ],
+        "scenarios": [
+          {
+            "given": "A bounded catalog of unlocked choices plus the first locked tier.",
+            "id": "SC-TIER-ENV",
+            "then": "The intended choice and preview are truthful; saved state and run admission stay authoritative.",
+            "when": "The player uses previous/next, cancel/close, keyboard or touch."
+          }
+        ],
+        "source_refs": [
+          "SRC-SELECTOR-REVIEW"
+        ],
+        "statement": "Tier definitions reference environment identity independently of tier number; multiple tiers can refer to one environment without copying the environment.",
+        "title": "Distinct tier environments with reusable identities",
+        "trigger": "Player browses tier or fitting choices.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-TIER-ENV",
+          "method": "automated_and_review",
+          "negative_control": "An invalid/missing environment must fail clearly without overwriting progress; cosmetic changes cannot alter model snapshots, unlocked tier or admitted run.",
+          "oracle": "Tier definitions reference environment identity independently of tier number; multiple tiers can refer to one environment without copying the environment. Initial candidate maps Tier 1 to existing Sunlit Ash and Tier 2 to existing Iron Perimeter; browsing shows the actual scene environment before deployment. Preview changes presentation only. Admitted runs capture the playable tier/environment; later selector events cannot change combat rules or its environment mid-run. Previously chosen initial battlefield framing and existing simulation, timing, rewards, manual Claim, saves and performance controls remain coherent. Actual screenshots demonstrate the two environments; owner visual acceptance remains pending.",
+          "planned_target": "Catalog mapping, scene environment ownership and actual Web pixels"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Owner accepts the wireframe direction and requests a module connection."
+        },
+        "constraint_refs": [
+          "CON-APPROVAL",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Deploy is the visually dominant lower-centre garage action, with a smaller Upgrades action for permanent upgrades and quiet salvage/save information.",
+          "Menu is a standalone top-right hamburger with an accessible Menu name and at least a 44 CSS-pixel target; it remains separate from gameplay action panels.",
+          "Tier arrow card is above the preview; fitting arrow card sits beside it on wide screens and below it in portrait. Reflow must preserve readable controls and an unobstructed tank.",
+          "A restrained noninteractive leader connects the fitting card to the actual active module bounds, with a small endpoint highlight. It tracks attachment changes, projection and viewport resizing, and hides for combat, menus, hidden/offscreen modules and invalid projection.",
+          "Keep actual two-tier/two-fitting gameplay and save authority unchanged. The generated tank and terrain illustrate composition; a future art-quality pass is discussion only."
+        ],
+        "id": "CR-GARAGE",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Garage/workshop without an active or unresolved run."
+        ],
+        "scenarios": [
+          {
+            "given": "A garage fitting card and active visible authored module.",
+            "id": "SC-GARAGE",
+            "then": "The card and subtle callout identify that exact module without intercepting input or mutating gameplay.",
+            "when": "Player changes fitting or resizes the viewport."
+          }
+        ],
+        "source_refs": [
+          "SRC-GARAGE-HIERARCHY"
+        ],
+        "statement": "Deploy is the visually dominant lower-centre garage action, with a smaller Upgrades action for permanent upgrades and quiet salvage/save information.",
+        "title": "Intentional garage hierarchy and attached module callout",
+        "trigger": "Player prepares a run or changes fitting.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-GARAGE",
+          "method": "automated_and_review",
+          "negative_control": "Offscreen, inactive and behind-camera modules, overlays and active runs must not leave a misleading callout; locked tier preview never deploys the saved prior tier.",
+          "oracle": "Deploy is the visually dominant lower-centre garage action, with a smaller Upgrades action for permanent upgrades and quiet salvage/save information. Menu is a standalone top-right hamburger with an accessible Menu name and at least a 44 CSS-pixel target; it remains separate from gameplay action panels. Tier arrow card is above the preview; fitting arrow card sits beside it on wide screens and below it in portrait. Reflow must preserve readable controls and an unobstructed tank. A restrained noninteractive leader connects the fitting card to the actual active module bounds, with a small endpoint highlight. It tracks attachment changes, projection and viewport resizing, and hides for combat, menus, hidden/offscreen modules and invalid projection. Keep actual two-tier/two-fitting gameplay and save authority unchanged. The generated tank and terrain illustrate composition; a future art-quality pass is discussion only.",
+          "planned_target": "Pure responsive geometry, imported Unity hierarchy/projection and fresh browser captures"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Owner explicitly rejects the same jammed control strip during combat."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Floating top-right Menu remains separate from gameplay panels during combat.",
+          "Sound and effects are controlled through the existing Audio and Display settings, without duplicate battlefield buttons.",
+          "One compact previous/rate/next game-speed group owns speed and pause presentation; the rate button keeps the existing pause behavior. No additional standalone Pause button crowds the battlefield.",
+          "In-run Upgrades is a separate corner action with the real temporary upgrade shop behind it; do not mix the entire action inventory into one strip.",
+          "Maintain readable instruments, minimum 44 CSS-pixel targets, focus/pointer access and an unobstructed central battlefield on desktop, portrait and short landscape. Preserve manual/menu/focus pause ownership, speed caps and upgrade accounting."
+        ],
+        "id": "CR-COMBAT-UI",
+        "intent_refs": [
+          "SCOPE-PLAY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "A deployed or settling run."
+        ],
+        "scenarios": [
+          {
+            "given": "A live run with speed, pause, upgrades and menu available.",
+            "id": "SC-COMBAT-UI",
+            "then": "Each group is discoverable without an undifferentiated control strip or hidden battlefield.",
+            "when": "The player adjusts speed, pauses, opens upgrades or settings."
+          }
+        ],
+        "source_refs": [
+          "SRC-COMBAT-HIERARCHY"
+        ],
+        "statement": "Floating top-right Menu remains separate from gameplay panels during combat.",
+        "title": "Separated combat controls with room for the battlefield",
+        "trigger": "An active run shows its controls.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-COMBAT-UI",
+          "method": "automated_and_review",
+          "negative_control": "Hidden legacy buttons must not steal focus or pointer input; layout changes must not change the authoritative run clock, bypass speed caps or pause twice.",
+          "oracle": "Floating top-right Menu remains separate from gameplay panels during combat. Sound and effects are controlled through the existing Audio and Display settings, without duplicate battlefield buttons. One compact previous/rate/next game-speed group owns speed and pause presentation; the rate button keeps the existing pause behavior. No additional standalone Pause button crowds the battlefield. In-run Upgrades is a separate corner action with the real temporary upgrade shop behind it; do not mix the entire action inventory into one strip. Maintain readable instruments, minimum 44 CSS-pixel targets, focus/pointer access and an unobstructed central battlefield on desktop, portrait and short landscape. Preserve manual/menu/focus pause ownership, speed caps and upgrade accounting.",
+          "planned_target": "Imported HUD/input geometry and fresh source-bound combat/controls/touch captures"
+        }
       }
     ],
     "decisions": [
@@ -1021,6 +1301,30 @@
         "rationale": "Existing authentication does not provide Last Stand cloud-save authority. No new identity backend is required.",
         "source_ref": "SRC-ACCOUNT",
         "topic": "Account scope"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Compact catalog-driven selector cards with bounded arrows; tier browsing previews environment through the first locked tier. Tier definitions reference separately reusable environment identities.",
+        "id": "DEC-SELECTOR-PREVIEW",
+        "rationale": "Current owner steering supersedes the earlier list proposal. A locked preview never commits a playable selection or enables deployment. Existing two authored environments provide the first bounded candidate.",
+        "source_ref": "SRC-SELECTOR-REVIEW",
+        "topic": "Scalable tier/fitting selection and environment identity"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Defeat the wave's enemies: clear the defined enemy group, with no timer-based overlapping advancement.",
+        "id": "DEC-WAVE-CLEAR",
+        "rationale": "Owner selected defeated enemy groups in the current conversation. Exact targets and reward tuning remain proposed work.",
+        "source_ref": "SRC-WAVE-DIRECTION",
+        "topic": "Wave completion boundary"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Resume from full state at the last completed wave. Closing/reloading may lose at most the unfinished part of a wave, while cleared rewards and unlocks stay earned.",
+        "id": "DEC-WAVE-CHECKPOINT",
+        "rationale": "Owner corrected the current closed-tab loss and explicitly accepted hp/upgrades/resources/wave state at the last completed wave. Atomic checkpoint plus reward writes prevent duplication or one-sided purchase rollback.",
+        "source_ref": "SRC-WAVE-DIRECTION",
+        "topic": "Run continuity and earned wave progression"
       }
     ],
     "governs": [
@@ -1254,6 +1558,78 @@
             "refs": [],
             "text": "Priority evidence: current user direction supersedes the narrower first-upgrade-only proposal. ADR-0011 constrains account reuse; roadmap defers larger progression systems.",
             "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Owner review correction: the earlier Scalable=Indifferent cells considered local/service load but omitted content growth. Binary tier and fitting toggles fail the stated growth horizon of many tiers and multiple fittings. This rationale does not justify those controls. Replacement must use catalog-backed selection lists with stable identity, current selection, descriptive/locked states, bounded scroll and keyboard/touch access; domain admission stays authoritative. Tier environment identity is a separate product choice now awaiting owner direction. No implementation or verification of the correction is claimed.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-SELECTOR-REVIEW"
+            ],
+            "text": "2026-10-21 selector correction: scale horizon is growth in tiers and fittings, explicitly including 18+ tiers. Current user choice prefers a compact arrow window with the actual environment visible; this supersedes the scrollable-list proposal. Distinct environments can be revisited by later tiers.",
+            "type": "paragraph"
+          },
+          {
+            "columns": [
+              "Lens",
+              "Pairwise toggles",
+              "Scrollable selection list",
+              "Compact arrow window"
+            ],
+            "refs": [],
+            "rows": [
+              [
+                "Scalable",
+                "Weak — Current-versus-other branches stop at two choices.",
+                "Strong — Catalog rows grow within bounded scrolling.",
+                "Strong — Catalog indexing keeps a fixed control footprint."
+              ],
+              [
+                "Maintainable",
+                "Weak — Labels and branch logic require edits per option.",
+                "Strong — One row renderer consumes catalog metadata.",
+                "Strong — One card renderer consumes catalog metadata."
+              ],
+              [
+                "Available",
+                "Indifferent — All choices remain local to the existing runtime.",
+                "Indifferent — All choices remain local to the existing runtime.",
+                "Indifferent — All choices remain local to the existing runtime."
+              ],
+              [
+                "Reliable",
+                "Weak — Current label hides selection and lock context.",
+                "Strong — Explicit current and locked option states.",
+                "Strong — Explicit preview, committed selection and endpoint states."
+              ],
+              [
+                "Testable",
+                "Weak — Two-option checks hide growth defects.",
+                "Strong — Synthetic catalogs exercise long lists and admission guards.",
+                "Strong — Synthetic catalogs exercise endpoints, lock boundary and admission guards."
+              ],
+              [
+                "Securable",
+                "Indifferent — Same local save and domain admission boundaries.",
+                "Indifferent — Same local save and domain admission boundaries.",
+                "Indifferent — Same local save and domain admission boundaries."
+              ]
+            ],
+            "type": "table"
+          },
+          {
+            "refs": [
+              "SRC-SELECTOR-REVIEW"
+            ],
+            "text": "Selection: compact arrow window; strength strong under explicit owner preference for visible environment previews. Trade-off: sequential browsing takes more actions than a long list. First-locked visibility bounds discovery; revisit larger-library navigation when observed browsing cost warrants it. No server-scale claim substitutes for content-scale checks.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Remaining Unknown: subjective readability and appeal of the two existing environment treatments in this new tier context. missing_observation: owner review of current-source rendered previews; decision_critical: false for implementing the reversible candidate, true for final visual acceptance. Non-SMARTS constraint: reuse authored project assets and keep this PR reviewable; do not add unearned tiers/fittings or an economy migration.",
+            "type": "paragraph"
           }
         ],
         "id": "SEC-SMARTS",
@@ -1378,6 +1754,50 @@
         ],
         "id": "SEC-ACCEPTANCE",
         "title": "Meaningful acceptance"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-GARAGE-HIERARCHY",
+              "CR-GARAGE"
+            ],
+            "text": "Owner accepted the direction of garage-layout-proposal.png and requested a subtle visual leader from fitting card to the actual module. Revised board garage-layout-callout-proposal.png and its prompt document the connection. This authorizes implementation of composition/callout; final rendered acceptance remains separate.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "The imagegen tank and scenery remain illustrative. Existing editable Blender model, Unity materials and URP lighting were inspected for the owner's art-quality question. Discussed future material/lighting/camera first pass and model refinement; no full art overhaul included.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-GARAGE-WIREFRAME",
+        "title": "Garage hierarchy design checkpoint"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-WAVE-DIRECTION"
+            ],
+            "text": "Design direction: each tier has an ordered wave progression, an advancement target, and data-authored milestone rewards. Continue the survival run beyond the advancement target. Separate one-time tier milestones/armament unlocks from repeatable resource earnings. Preserve wallets, upgrades and existing unlocked tiers when migrating away from time goals; do not invent historical wave clears.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Owner chose: defeat the wave's enemies. Each wave is a bounded enemy cohort; completion occurs after every member is defeated, rather than elapsed time or overlapping timed admissions. Proposed tuning remains open: exact target waves, composition/cadence, reward schedule, claim timing and removal/replacement of the current safety horizon. No wave simulation, rewards, migration or unlock behavior has been changed by this UI follow-up.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-WAVE-DIRECTION"
+            ],
+            "text": "Owner requires resumable runs and explicitly accepts a last-completed-wave checkpoint: persist hull, temporary upgrades, run resources, completed wave, selected loadout and relevant run state together. A close/reload during a wave resumes at the start of that unfinished wave from the previous completed checkpoint; at most partial-wave progress rolls back. Create a starting checkpoint before wave 1. Cleared-wave rewards, milestone/unlock ledger and checkpoint must commit atomically so reload cannot duplicate or lose rewards. Mid-wave purchases and spending must roll back together, not preserve one side. Ordinary exits preserve the run; deliberate abandon remains explicit. Existing implementation currently continues only while open and does not restore active runs after reload; do not represent this requirement as already implemented.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-WAVE-FOLLOWON",
+        "title": "Next gameplay design: tier waves and milestone rewards"
       }
     ],
     "sources": [
@@ -1508,6 +1928,38 @@
         "title": "Owner approves sprint implementation",
         "type": "user_request",
         "url": null
+      },
+      {
+        "id": "SRC-SELECTOR-REVIEW",
+        "locator": "Current conversation, 2026-10-21",
+        "note": "Replace pairwise Tier/Fitting toggles with compact windows and arrows. Preview battlefield while browsing tiers; expose only through the first locked tier. Distinct battlefield identities, with later tiers allowed to revisit environments.",
+        "title": "Owner corrects selector scale and chooses tier environment previews",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-GARAGE-HIERARCHY",
+        "locator": "Current conversation, 2026-10-22",
+        "note": "Owner rejects prototype placement, requests floating hamburger and imagegen wireframe, then accepts its direction and requests a visual leader/highlight attached to the actual fitting module. Latest tank-quality question is discussion, not authority for a model replacement.",
+        "title": "Owner reviews garage hierarchy and requests imagegen wireframe",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-COMBAT-HIERARCHY",
+        "locator": "Current conversation screenshot, 2026-10-22",
+        "note": "Owner supplied combat screenshot showing Pause/Sound/FX/Menu/three speed buttons/Shop in one strip and called it the same jammed-together mess. Preserved as docs/player-controls/combat-controls-before.png; this is owner-supplied old preview evidence, not a new source-bound acceptance capture.",
+        "title": "Owner rejects the packed combat control strip",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-WAVE-DIRECTION",
+        "locator": "Current conversation, 2026-10-22",
+        "note": "Owner requests waves within each tier, target wave counts for advancement, and varied wave milestone rewards that provide progression resources or unlock armaments. This is a new gameplay direction; current control-layout implementation continues independently.",
+        "title": "Owner moves tier progression toward waves and milestone rewards",
+        "type": "user_request",
+        "url": null
       }
     ],
     "summary": "Revised full sprint proposal: real menu/settings, persistent preferences, ambient music and channel controls, display options, optional guidance/help, save/account navigation and 0x/0.5x/1x game speed with future research caps. Awaiting careful approval.",
@@ -1522,7 +1974,7 @@
     "renderer": "codearbiter-html/0.1.0",
     "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
   },
-  "revision": 4,
+  "revision": 12,
   "schema_version": "0.3.2",
   "slug": "last-stand-upgrade-payoff"
 }

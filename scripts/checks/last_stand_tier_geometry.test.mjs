@@ -87,6 +87,23 @@ test('modal settings cannot leave underlying controls interactive', () => {
   const s = settingsSample(); s.background.interactable = true;
   assert.throws(s.run, /disable every underlying/);
 });
+
+test('selector arrows remain fixed outside the description viewport at both DPRs', () => {
+  for(const dpr of [1,2]) {
+    const s=settingsSample(dpr);
+    s.layout.settingsControls=[
+      {name:'ChoicePrevious',x:24*dpr,y:92*dpr,width:44*dpr,height:44*dpr,active:true,interactable:false},
+      {name:'ChoiceNext',x:322*dpr,y:92*dpr,width:44*dpr,height:44*dpr,active:true,interactable:true}];
+    assert.ok(s.run().every(control=>control.full),'Arrows need no description scroll or clipping evidence');
+    s.layout.settingsControls[1].width=40*dpr;
+    assert.throws(s.run,/44 CSS pixel/,'Fixed arrows retain target-size requirements');
+    s.layout.settingsControls[1].width=44*dpr;
+    s.layout.settingsControls[1].x=380*dpr;
+    assert.throws(s.run,/outside Canvas/,'Fixed arrows retain Canvas bounds');
+    s.layout.settingsControls[1].x=30*dpr;
+    assert.throws(s.run,/overlap/,'Fixed arrows retain overlap rejection');
+  }
+});
 test('settings clipping requires matching real viewport, control and content evidence', () => {
   const truncated = settingsSample(); truncated.layout.graphicsTruncated = true;
   assert.throws(truncated.run, /Complete graphics/);

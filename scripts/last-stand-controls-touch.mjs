@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { chromium } from '@playwright/test';
 import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
-  fetchBoundRuntime, assertServedBytes, readShopControlObservation } from '../e2e/helpers/lastStandJourney.mjs';
+  fetchBoundRuntime, assertServedBytes, readShopControlObservation, validateCompactCombatControls } from '../e2e/helpers/lastStandJourney.mjs';
 import { tierJourneyControlGeometry } from '../e2e/helpers/lastStandTierJourney.mjs';
 
 const base=admitJourneyBase(process.env.E2E_LIVE_URL??'http://127.0.0.1:4173/singedTerra/');
@@ -47,19 +47,41 @@ try {
     await until(()=>items().some(c=>c.name===name&&c.active&&c.interactable));
     for(let i=0;i<12;i++){
       const c=items().find(c=>c.name===name),viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&g.kind==='Image');
-      if(viewport&&c.mode==='Settings'&&!/^Settings(?:Close|Tab[0-3])$/.test(name)&&(c.y<viewport.y||c.y+c.height>viewport.y+viewport.height)){
+      if(viewport&&c.mode==='Settings'&&!['ChoicePrevious','ChoiceNext'].includes(name)&&!/^Settings(?:Close|Tab[0-3])$/.test(name)&&(c.y<viewport.y||c.y+c.height>viewport.y+viewport.height)){
         await swipe(c.y<viewport.y);continue;
       }
       const p=await point(c);await page.touchscreen.tap(p.x,p.y);report.actions.push({input:'tap',name,...p});await page.waitForTimeout(250);return;
     }throw Error('Touch target unreachable: '+name);
   };
   const capture=async(label)=>{tierJourneyControlGeometry(layout,await page.locator('#unity-canvas').boundingBox());
+    if(['battle','settling'].includes(latest.phase)&&latest.menu===''&&!layout.shopControls.some(c=>c.name==='ShopClose'&&c.active))
+      validateCompactCombatControls(layout);
     await page.screenshot({path:join(output,label+'.png')});report.captures.push({label,state:{...latest},layout:raw()});persist();};
   const awaitCanvasSize=async()=>{const box=await page.locator('#unity-canvas').boundingBox();
     await until(()=>layout&&Math.abs(layout.width/layout.pixelRatio-box.width)<1&&Math.abs(layout.height/layout.pixelRatio-box.height)<1);};
   await page.goto(new URL('last-stand/',base).href);await until(()=>latest?.saveState==='ready');
   await awaitCanvasSize();
-  await tap('Deploy');await tap('Pause');assert.equal(latest.selectedSpeed,0);
+  const originalSave=await page.evaluate(()=>localStorage.getItem('singedTerra.lastStand.prototype.v1'));
+  for(const viewport of [{width:390,height:844},{width:844,height:390}]) {
+    await page.setViewportSize(viewport);await awaitCanvasSize();
+    assert.equal(items().find(c=>c.name==='ToggleTier').active,false);
+    await tap('TierNext');await until(()=>latest.garageTierId==='2');
+    assert.equal(latest.garageTierUnlocked,false);assert.equal(latest.lockedTierPreview,true);
+    assert.equal(latest.selectedTier,1);assert.equal(latest.environmentId,'iron-perimeter');assert.equal(latest.menu,'');
+    assert.equal(items().find(c=>c.name==='TierNext').interactable,false);assert.equal(items().find(c=>c.name==='Deploy').interactable,false);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('singedTerra.lastStand.prototype.v1')),originalSave);
+    await capture('tier-locked-preview-'+viewport.width);
+    await tap('TierPrevious');await until(()=>latest.garageTierId==='1');assert.equal(latest.environmentId,'sunlit-ash');
+    assert.equal(latest.lockedTierPreview,false);assert.equal(latest.menu,'');
+    await tap('FittingNext');await until(()=>latest.fittingId==='launcher');
+    assert.equal(items().find(c=>c.name==='FittingNext').interactable,false);
+    assert.equal(latest.menu,'','Fitting touch arrow operates inline');
+    await capture('fitting-launcher-'+viewport.width);
+    await tap('FittingPrevious');await until(()=>latest.fittingId==='repair');
+    assert.equal(items().find(c=>c.name==='FittingPrevious').interactable,false);assert.equal(latest.menu,'');
+  }
+  await page.setViewportSize({width:390,height:844});await awaitCanvasSize();
+  await tap('Deploy');await tap('SpeedRate');assert.equal(latest.selectedSpeed,0);
   await tap('SpeedPlus');assert.equal(latest.selectedSpeed,.5);await tap('SpeedPlus');assert.equal(latest.selectedSpeed,1);
   assert.equal(items().find(c=>c.name==='SpeedPlus').interactable,false,'Touch cannot exceed the initial cap');
   await tap('SpeedMinus');await tap('SpeedMinus');assert.equal(latest.selectedSpeed,0);await capture('portrait-paused');

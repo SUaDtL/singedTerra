@@ -1,7 +1,6 @@
 """One pinned Editor launch for actual imported HUD checks; no player save access."""
 from datetime import datetime, timezone
 from pathlib import Path
-import hashlib
 import json
 import os
 import subprocess
@@ -12,8 +11,19 @@ PROJECT = ROOT / "campaign-unity" / "Unity"
 UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
 EVIDENCE = Path(r"C:\Users\brenn\codearbiter-review-integration-20261006\ui-t05-garage-system-20261007")
 
+HASH_SCRIPT = """const fs=require('node:fs'),crypto=require('node:crypto');
+const files=JSON.parse(fs.readFileSync(0,'utf8'));
+process.stdout.write(JSON.stringify(Object.fromEntries(files.map(p=>[p,crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')]))));"""
 
-def run_checks(method):
+
+def source_hashes(paths):
+    result = subprocess.run(["node", "-e", HASH_SCRIPT], input=json.dumps([str(p) for p in paths]),
+                            capture_output=True, text=True, cwd=ROOT, timeout=30, check=True)
+    values = json.loads(result.stdout)
+    return {p.relative_to(ROOT).as_posix() if p.is_relative_to(ROOT) else str(p): values[str(p)] for p in paths}
+
+
+def run_checks(method, extra_inputs=()):
     evidence = EVIDENCE / ("editor-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
     evidence.mkdir(parents=True, exist_ok=False)
     env = os.environ.copy()
@@ -32,12 +42,13 @@ def run_checks(method):
     log = evidence / "unity-editor.log"
     argv = [str(UNITY), "-batchmode", "-nographics", "-quit", "-projectPath", str(PROJECT),
             "-executeMethod", method, "-logFile", str(log)]
-    inputs = list((PROJECT / "Assets" / "Scripts").glob("*.cs")) + [PROJECT / "Assets" / "Editor" / "LastStandHudChecks.cs"]
-    source = {str(p.relative_to(ROOT)).replace("\\", "/"): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
+    inputs = list((PROJECT / "Assets" / "Scripts").glob("*.cs")) + [PROJECT / "Assets" / "Editor" / "LastStandHudChecks.cs", *extra_inputs]
+    source = source_hashes(inputs)
+    unity_sha256 = source_hashes([UNITY])[str(UNITY)]
     process = subprocess.Popen(argv, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, encoding="utf-8", errors="replace")
     (evidence / "invocation.json").write_text(json.dumps({"argv": argv, "cwd": str(ROOT), "pid": process.pid,
-        "source_sha256": source, "unity_sha256": hashlib.sha256(UNITY.read_bytes()).hexdigest()}, indent=2))
+        "source_sha256": source, "unity_sha256": unity_sha256}, indent=2))
     try:
         stdout, stderr = process.communicate(timeout=300)
     except subprocess.TimeoutExpired:
@@ -46,10 +57,10 @@ def run_checks(method):
         (evidence / "timeout.txt").write_text(stdout + "\n" + stderr)
         raise
     content = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-    after = {str(p.relative_to(ROOT)).replace("\\", "/"): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
+    after = source_hashes(inputs)
     (evidence / "result.json").write_text(json.dumps({"exit": process.returncode, "stdout": stdout,
         "stderr": stderr, "source_unchanged": source == after,
-        "log_sha256": hashlib.sha256(log.read_bytes()).hexdigest() if log.exists() else None}, indent=2))
+        "log_sha256": source_hashes([log]).get(log.relative_to(ROOT).as_posix() if log.is_relative_to(ROOT) else str(log)) if log.exists() else None}, indent=2))
     if source != after:
         raise RuntimeError("HUD check source changed during the owned Editor launch")
     print("Unity evidence:", evidence)

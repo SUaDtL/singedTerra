@@ -9,6 +9,151 @@ import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
 
+function fittingFixture(initial='repair',fault=()=>{}) {
+  const state={fittingId:initial,menu:''},calls=[];
+  const layout={controls:[{name:'ToggleFitting',active:false,interactable:false},
+    {name:'FittingPrevious',active:true,interactable:initial==='launcher'},
+    {name:'FittingNext',active:true,interactable:initial==='repair'}]};
+  const options={currentState:()=>state,currentLayout:()=>layout,waitFor:async predicate=>assert.ok(predicate(),'Current selector observation required'),
+    click:async name=>{
+      calls.push(name);
+      if(name==='FittingNext'||name==='FittingPrevious'){
+        state.fittingId=name==='FittingNext'?'launcher':'repair';
+        layout.controls[1].interactable=state.fittingId==='launcher';
+        layout.controls[2].interactable=state.fittingId==='repair';
+      }
+      fault({state,layout,name});
+    }};
+  return {options,calls,state,layout};
+}
+
+test('fitting journey uses the actual inline arrow and observes equipped identity in either direction',async()=>{
+  for(const [initial,fitting,arrow] of [['repair','launcher','FittingNext'],['launcher','repair','FittingPrevious']]){
+    const fixture=fittingFixture(initial);await journey.selectLastStandFitting({...fixture.options,fitting});
+    assert.deepEqual(fixture.calls,[arrow]);assert.equal(fixture.state.fittingId,fitting);
+    assert.equal(fixture.state.menu,'');
+  }
+  const unchanged=fittingFixture();await journey.selectLastStandFitting({...unchanged.options,fitting:'repair'});
+  assert.deepEqual(unchanged.calls,[],'Already-equipped identity avoids unnecessary selection input');
+});
+
+test('fitting journey rejects unavailable, mismatched or modal selections before claiming completion',async()=>{
+  for(const fault of [
+    ({state})=>{state.menu='fitting';},
+    ({state})=>{state.fittingId='repair';},
+    ({layout})=>{layout.controls[1].interactable=false;},
+    ({layout})=>{layout.controls[0].active=true;},
+  ]){
+    const fixture=fittingFixture('repair',fault);
+    await assert.rejects(journey.selectLastStandFitting({...fixture.options,fitting:'launcher'}));
+    assert.deepEqual(fixture.calls,['FittingNext'],'Failed inline selection never opens or closes an unrelated modal');
+  }
+  const unavailable=fittingFixture();unavailable.layout.controls[2].interactable=false;
+  await assert.rejects(journey.selectLastStandFitting({...unavailable.options,fitting:'launcher'}),/visibly available/);
+  assert.deepEqual(unavailable.calls,[],'Unavailable arrows refuse before sending input');
+  const covered=fittingFixture();covered.state.menu='menu';
+  await assert.rejects(journey.selectLastStandFitting({...covered.options,fitting:'launcher'}),/actual garage/);
+  assert.deepEqual(covered.calls,[],'Covered garage refuses before sending input');
+});
+
+test('fitting journey awaits a real post-reload layout even when the default fitting is already selected',async()=>{
+  for(const fitting of ['repair','launcher']) {
+    const fixture=fittingFixture();let layoutReady=false,readinessWaits=0;
+    fixture.options.currentLayout=()=>layoutReady?fixture.layout:undefined;
+    fixture.options.waitFor=async predicate=>{
+      if(!layoutReady) {
+        assert.equal(predicate(),false,'State readiness cannot stand in for the missing HUD layout');
+        layoutReady=true;readinessWaits++;
+      }
+      assert.ok(predicate(),'Actual awaited observation is required');
+    };
+    await journey.selectLastStandFitting({...fixture.options,fitting});
+    assert.equal(readinessWaits,1);
+    assert.deepEqual(fixture.calls,fitting==='launcher'?['FittingNext']:[]);
+  }
+  const missing=fittingFixture();missing.options.currentLayout=()=>undefined;
+  await assert.rejects(journey.selectLastStandFitting({...missing.options,fitting:'launcher'}));
+  assert.deepEqual(missing.calls,[],'A missing layout never permits pointer input');
+});
+
+function settingFixture(control,paused=false,fault=()=>{}){
+  const state={menu:'',paused,selectedSpeed:paused?0:.5,muted:false},calls=[];
+  let effects=true,tab=0;
+  const layout={settingsControls:[]};
+  const refresh=()=>{layout.settingsControls=['MenuSettings','SettingsTab0','SettingsTab1','SettingsClose','SettingsMute','DisplayEffects']
+    .map(name=>({name,active:state.menu==='menu'?name==='MenuSettings':state.menu==='settings'&&
+      (name==='SettingsClose'||name.startsWith('SettingsTab')||name===(tab===0?'SettingsMute':'DisplayEffects')),interactable:true}));};
+  refresh();
+  const options={control,currentState:()=>state,currentLayout:()=>layout,
+    readValue:()=>control==='SettingsMute'?state.muted:effects,waitFor:async predicate=>assert.ok(predicate(),'Actual settings observation required'),
+    click:async name=>{calls.push(name);
+      if(name==='Menu')state.menu='menu';else if(name==='MenuSettings')state.menu='settings';
+      else if(name.startsWith('SettingsTab'))tab=Number(name.slice(-1));else if(name==='SettingsClose')state.menu='';
+      else if(name==='SettingsMute')state.muted=!state.muted;else if(name==='DisplayEffects')effects=!effects;
+      refresh();fault({name,state,layout});
+    }};
+  return {options,state,calls};
+}
+test('combat preferences use visible Audio or Display controls and preserve manual pause and speed',async()=>{
+  for(const [control,tab]of [['SettingsMute',0],['DisplayEffects',1]])for(const paused of [false,true]){
+    const fixture=settingFixture(control,paused);await journey.changeLastStandSetting(fixture.options);
+    assert.deepEqual(fixture.calls,['Menu','MenuSettings','SettingsTab'+tab,control,'SettingsClose']);
+    assert.equal(fixture.state.menu,'');assert.equal(fixture.state.paused,paused);
+    assert.equal(fixture.state.selectedSpeed,paused?0:.5);
+  }
+});
+test('combat settings refuse wrong pages, hidden controls, unchanged values and pause/rate drift',async()=>{
+  for(const fault of [
+    ({name,state})=>{if(name==='Menu')state.menu='about';},
+    ({name,layout})=>{if(name==='SettingsTab0')layout.settingsControls.find(c=>c.name==='SettingsMute').active=false;},
+    ({name,state})=>{if(name==='SettingsMute')state.muted=false;},
+    ({name,state})=>{if(name==='SettingsClose')state.paused=true;},
+    ({name,state})=>{if(name==='SettingsClose')state.selectedSpeed=1;},
+  ])await assert.rejects(journey.changeLastStandSetting(settingFixture('SettingsMute',false,fault).options));
+  const covered=settingFixture('SettingsMute');covered.state.menu='settings';
+  await assert.rejects(journey.changeLastStandSetting(covered.options),/starts at the actual game/);assert.deepEqual(covered.calls,[]);
+});
+
+test('combat capture rejects legacy clutter, missing speed controls, modal or inaccessible actions',()=>{
+  const fixture=()=>({phase:'battle',controls:['Menu','SpeedMinus','SpeedRate','SpeedPlus'].map(name=>({name,active:true,interactable:true})),
+    shopControls:[{name:'ShopEntry',active:true,interactable:true}],settingsControls:[]});
+  const valid=fixture();assert.equal(journey.validateCompactCombatControls(valid),valid);
+  for(const mutate of [
+    x=>x.controls.push({name:'Pause',active:true,interactable:true}),
+    x=>x.controls.push({name:'ToggleMute',active:true,interactable:true}),
+    x=>x.controls.push({name:'Effects',active:true,interactable:true}),
+    x=>x.controls.pop(),x=>x.controls[0].interactable=false,x=>x.controls[2].interactable=false,
+    x=>x.shopControls[0].active=false,x=>x.shopControls[0].interactable=false,
+    x=>x.shopControls.push({name:'ShopClose',active:true,interactable:true}),
+    x=>x.settingsControls.push({name:'SettingsClose',active:true}),x=>x.phase='garage',
+  ]){const value=fixture();mutate(value);assert.throws(()=>journey.validateCompactCombatControls(value));}
+});
+
+function calloutFixture(){
+  return {visible:true,target:'Attachment_Repair',width:1366,height:664,pixelRatio:1,
+    anchorWorld:{x:1,y:2,z:3},projectedAnchor:{x:800,y:320,z:12},endpointScreen:{x:800,y:320}};
+}
+test('fitting callout parser requires actual current module, viewport and projected endpoint agreement',()=>{
+  for(const [fitting,target] of [['repair','Attachment_Repair'],['launcher','Attachment_Launcher']]){
+    const value=calloutFixture();value.target=target;
+    assert.equal(journey.validateFittingCalloutObservation(value,{visible:true,fitting,width:1366,height:664}),value);
+  }
+  const hidden={...calloutFixture(),visible:false,target:'',projectedAnchor:{x:0,y:0,z:0},endpointScreen:{x:0,y:0}};
+  journey.validateFittingCalloutObservation(hidden,{visible:false,width:1366,height:664});
+  for(const mutate of [value=>delete value.target,value=>value.extra=true,value=>value.visible=1,
+    value=>value.target='WholeHull',value=>value.target='Attachment_Launcher',value=>value.width=1365,
+    value=>value.height=665,value=>value.pixelRatio=0,value=>value.anchorWorld.x=NaN,
+    value=>value.projectedAnchor.z=-1,value=>value.projectedAnchor.x=1400,
+    value=>value.endpointScreen.x+=2,value=>value.endpointScreen.y-=2]){
+    const candidate=calloutFixture();mutate(candidate);
+    assert.throws(()=>journey.validateFittingCalloutObservation(candidate,{visible:true,fitting:'repair',width:1366,height:664}));
+  }
+  for(const mutate of [value=>value.target='Attachment_Repair',value=>value.projectedAnchor.x=12,value=>value.endpointScreen.y=12]){
+    const candidate=structuredClone(hidden);mutate(candidate);
+    assert.throws(()=>journey.validateFittingCalloutObservation(candidate,{visible:false}),'Hidden stale markers must refuse');
+  }
+});
+
 function effectsOnlyFixture(fault=()=>{}) {
   const calls=[];
   const layout={settingsControls:[{name:'MusicEnabled',label:'AMBIENT MUSIC: ON',active:true,interactable:true}]};
@@ -230,7 +375,7 @@ function settlingFixture(){
   const staged={...session,t:202,action:'defeat-staged',phase:'settling',tick:2,hull:0,runId:0,pendingRunId:7};
   const result={...staged,t:300,action:'result',phase:'result',tick:0};
   const layout={...id,t:201,phase:'settling',controls:[{name:'Claim',active:false,interactable:false},
-    {name:'Pause',active:true,interactable:true}]};
+    {name:'SpeedRate',active:true,interactable:true}]};
   return {before:{...encounter,hull:120,loop:session},result,states:[session,staged,result],
     encounters:[encounter,terminal],layouts:[layout],oracle:{1:model,2:{...model,tick:2,hp:0,status:'Defeated'}}};
 }
@@ -423,7 +568,7 @@ async function battleLayoutFixture(player=false,fault,withMute=false){
   const begin=source.indexOf('    const battleLayouts=async()=>{');
   const end=source.indexOf('    // Two unfinished exits',begin);
   const callBegin=source.indexOf("    if(player)check(sound.maximum_rms");
-  const callEnd=source.indexOf(withMute?'    const pauseStart=':'    const muted=',callBegin);
+  const callEnd=source.indexOf(withMute?'    const pauseStart=':'    const changeSetting=',callBegin);
   const base={t:100,timeOrigin:10000,load:1,run:1,tick:10,hull:120,kills:0,terminalElapsed:0,
     status:'Running',paused:false,loop:{phase:'battle'}};
   const rows=[base,{...base,t:200,paused:true},{...base,t:800,paused:true},
@@ -436,23 +581,22 @@ async function battleLayoutFixture(player=false,fault,withMute=false){
     resumed:{...base,t:11300,tick:11},after:{...base,t:12100,tick:26},events:[],oracle:{}});
   let paused=false,muted=false;const calls=[],report={lifecycle:[]};
   const run=new Function('player','check','sound','screenshot','phaseMatrix','observation','gameClick','mark',
-    'reference','validateModelObservation','sameDocument','elapsedTicks','report','matrix','assert','page','energy','gameKey',
+    'reference','validateModelObservation','sameDocument','elapsedTicks','report','matrix','assert','page','energy','gameKey','changeLastStandSetting','layouts',
     'return (async()=>{'+(begin<0?'':source.slice(begin,end))+source.slice(callBegin,callEnd)+'})()');
   await run(player,(ok,name)=>assert.ok(ok,name),{maximum_rms:1},async()=>{
     assert.equal(paused,!player,'Linux battle screenshot must be publicly paused; Windows stays live');calls.push('screenshot');
   },async label=>{
     assert.equal(paused,!player,'Slow Linux battle layouts must be publicly paused');calls.push(label);
   },async()=>structuredClone(rows.shift()),async(name,action,predicate)=>{
-    if(name==='ToggleMute'){
-      assert.ok(paused,'Linux mute inspection must remain under actual Pause');muted=!muted;calls.push('mute');return {muted};
-    }
-    assert.equal(name,'Pause');paused=!paused;calls.push(paused?'pause':'resume');
+    assert.equal(name,'SpeedRate');paused=!paused;calls.push(paused?'pause':'resume');
     const state={phase:'battle',paused};assert.ok(predicate(state));return state;
   },async()=>950,()=>({}),()=>{},(a,b)=>{
     assert.equal(a.timeOrigin,b.timeOrigin,'same document origin');assert.equal(a.run,b.run,'same run');
   },(a,b)=>assert.equal(b.tick-a.tick,(b.t-a.t)/50),report,
     {phaseViewports:['standard','wide','portrait','compact','small'].map(name=>({name}))},assert,
-    {waitForTimeout:async()=>{}},async()=>null,async()=>assert.fail('Linux must not toggle a second Pause during its paused inspection'));
+    {waitForTimeout:async()=>{}},async()=>null,async()=>assert.fail('Linux must not toggle a second Pause during its paused inspection'),
+    async({control})=>{assert.equal(control,'SettingsMute');assert.ok(paused,'Linux mute inspection remains manually paused');
+      muted=!muted;calls.push('settings-mute');return {muted};},[]);
   return {calls,report};
 }
 
@@ -466,7 +610,7 @@ test('actual first-hit call pauses Linux layout inspection and preserves Windows
 
 test('actual Linux mute and Pause preparation reuse the real paused layout interval',async()=>{
   const {calls}=await battleLayoutFixture(false,undefined,true);
-  assert.deepEqual(calls,['pause','screenshot','battle','mute','mute']);
+  assert.deepEqual(calls,['pause','screenshot','battle','settings-mute','settings-mute']);
   assert.ok(source.includes("if(player)await phaseMatrix('explicit-pause')"),'One actual Linux paused matrix covers both geometry observations');
   assert.ok(source.includes('validateExplicitPause({before:pauseBefore,paused:pausedObservation,returned,'),
     'Original actual Resume/counter/time/model oracle remains mandatory');

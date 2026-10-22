@@ -9,6 +9,7 @@ import {join} from 'node:path';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import * as partitionOwner from '../../e2e/helpers/lastStandMatrix.mjs';
+import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
 
 test('startup routing has an independent owner instead of repeating on every gameplay shard',()=>{
   const {include:lanes}=browserMatrix();
@@ -200,7 +201,8 @@ test('actual journey section guards execute all Windows sections and keep Linux 
   const commonStart=source.indexOf('    if(section.entry || section.lifecycle){');
   const entryStart=source.indexOf('    if(section.entry){',commonStart);
   const preparationStart=source.indexOf('    if(section.entry || section.lifecycle){',entryStart);
-  const entryEnd=source.indexOf('    const geometry=',preparationStart);
+  const entryEnd=source.indexOf('    // Loaded after this module is initialized:',preparationStart);
+  assert.ok(entryEnd>preparationStart,'Section guard fixture ends before unconditional shared helper initialization');
   const exitsStart=source.indexOf('    if(section.entry){',entryEnd);
   const mainStart=source.indexOf('    if(section.lifecycle){',exitsStart),recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
   const recoveryEnd=source.indexOf("    scope='healthy';\n    report.input_trace=",recoveryStart);
@@ -216,10 +218,10 @@ test('actual journey section guards execute all Windows sections and keep Linux 
       const reached=new Error('Explicit inert first-side-effect sentinel');
       const stop=()=>{throw reached;};
       const run=new AsyncFunction('section','goto','gameClick','readFileSync','join','ROOT','assert','ash','skirmish',
-        'ashRoadRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page','screenshot',
+        'ashRoadRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page','screenshot','report','configureEffectsOnlyJourneyAudio','check',
         '"use strict";let scope,rejoin,rejoinBinding;'+block);
       const execution=run(section,stop,stop,stop,()=>'', '/inert',assert,{},{},{},partitionOwner.LAST_STAND_ENTRY_ROUTES,
-        stop,{setViewportSize:stop},stop);
+        stop,{setViewportSize:stop},stop,new Proxy({},{get:stop,set:stop}),stop,stop);
       if(owner==='common'?(section.entry || section.lifecycle):section[owner])
         await assert.rejects(execution,error=>error===reached);
       else await execution;
@@ -276,15 +278,17 @@ test('portrait partitions resume Ash Road in landscape and restore canonical Uni
 test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapshot', async () => {
   const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
   const begin=source.indexOf('    const geometry=async(name)=>{'),end=source.indexOf('    const resize=async',begin);
+  const controlBegin=source.indexOf('    const hudControls=');
   assert.ok(begin>0 && end>begin);
+  assert.ok(controlBegin>0&&controlBegin<begin,'Maintained HUD collection and projection closures required');
   for(const fault of [undefined,'hidden','collapsed','zero-area','backing-size']) {
     let reads=0;
     const box={x:0,y:0,width:fault==='zero-area'?0:1280,height:720},element={width:fault==='backing-size'?1290:1280,height:720,
       getBoundingClientRect:()=>box};
     const layout={coordinates:'top-left',width:1280,height:720,
-      controls:[{name:'ToggleMute',x:10,y:10,width:44,height:44,active:true,interactable:true}]};
-    const run=runInNewContext('(async()=>{'+source.slice(begin,end)+'return geometry("ToggleMute");})()',{
-      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],
+      controls:[{name:'Menu',x:10,y:10,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
+    const run=runInNewContext('(async()=>{'+source.slice(controlBegin,begin)+source.slice(begin,end)+'return geometry("Menu");})()',{
+      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],tierJourneyControlGeometry,
       getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'}),
       page:{viewportSize:()=>({width:1280,height:720}),locator:()=>({
         boundingBox:async()=>{reads++;return fault==='hidden'?null:box;},
@@ -292,7 +296,7 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
       })},
     });
     if(fault)await assert.rejects(run);
-    else {const result=await run;assert.equal(result.item.name,'ToggleMute');assert.equal(result.canvas.width,1280);
+    else {const result=await run;assert.equal(result.item.name,'Menu');assert.equal(result.canvas.width,1280);
       assert.equal(reads,1,'Separate CSS/backing reads add a slow renderer roundtrip to every geometry check');}
   }
 });

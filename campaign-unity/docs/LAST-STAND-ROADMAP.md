@@ -9,7 +9,34 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The current in-repo visual scope is
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
-## Current approved slice — Tier Goals and Personal Bests
+## Owner direction update — October 22, 2026
+
+The current player-controls sprint and its garage/combat layout corrections remain
+in draft PR #541. Final rendered acceptance is separate from implementation checks.
+The owner now wants **waves within each tier** to become the progression backbone:
+advance tiers by reaching a wave target, and place resource rewards or armament
+unlocks at authored wave milestones. A run can continue beyond its advancement
+target; first-clear milestones and repeatable earnings need distinct rules.
+
+The next gameplay proposal must define wave completion and pacing, per-tier targets,
+milestone rewards, safe claims, and a save migration that preserves existing wallets,
+upgrades and unlocked tiers without fabricating historical wave completions. The owner
+chose to clear each wave by **defeating its defined enemy group**; waves do not advance
+on an overlapping timer. Exact numbers and reward cadence are not settled. The current time goals and safety
+horizon below describe the implemented provisional rules until that replacement is
+designed, approved and verified; no wave behavior is implemented by the UI correction.
+
+The owner also requires **resumable runs from the last completed wave**. Save hull,
+temporary upgrades, run resources, completed wave, loadout and relevant run state as
+one checkpoint, together with the cleared-wave rewards and milestone unlock ledger.
+Closing or reloading during a wave may roll back that unfinished wave only; resume
+at its start from the previous completed checkpoint. Create the initial checkpoint
+before wave 1. Roll back mid-wave purchases and their spending together, and preserve
+the explicit abandon action. The current implementation does not yet restore active
+runs after closing/reloading; background continuation while a tab remains open is a
+separate existing behavior.
+
+## Implemented provisional slice — Tier Goals and Personal Bests
 
 On October 17, 2026 the owner approved the
 [tier progression specification](../../.codearbiter/specs/last-stand-tier-progression.html).

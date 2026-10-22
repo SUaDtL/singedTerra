@@ -26,7 +26,7 @@ spec.loader.exec_module(verifier)
 def _current_control_fixture():
     """Invented current control inventory for parser tests, never runtime evidence."""
     core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus')
+            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext')
     shop = ('ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
             'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
             'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy')
@@ -34,7 +34,8 @@ def _current_control_fixture():
                 'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                 'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                 'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
-                'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed')
+                'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
+                'ChoicePrevious', 'ChoiceNext')
     def controls(names):
         return [dict(name=name, label=name, accessibleLabel=name, mode='', trackKey='',
                      x=0, y=0, width=44, height=44, active=True, interactable=True) for name in names]
@@ -656,7 +657,7 @@ await test('failure_flush',async()=>{
 
 await test('native_history',async()=>{
   const count=12,events=[],report={actions:[],checks:[]};let failNext=false;
-  const layout={seq:0,timeOrigin:1,width:1366,height:768,controls:[{name:'Pause',x:5,y:5,width:100,height:50,active:true,interactable:true}],shopControls:[]};
+  const layout={seq:0,timeOrigin:1,width:1366,height:768,controls:[{name:'Pause',x:5,y:5,width:100,height:50,active:true,interactable:true}],shopControls:[],settingsControls:[]};
   const records={controlsOnly:[layout],input:[],geometry:[]};let time=0,pointer={x:0,y:0};
   const retain=runInNewContext('('+retained.trim()+')');
   const page={
@@ -1189,7 +1190,7 @@ class ShopJourneyGuardTests(unittest.TestCase):
         scripts = TOOLS.parent / 'Unity/Assets/Scripts'
         core_source = (scripts / 'LastStandLoopHud.cs').read_text(encoding='utf8')
         settings_source = (scripts / 'LastStandSettingsHud.cs').read_text(encoding='utf8')
-        action_names = dict(re.findall(r'(\w+) = Action\("([^"]+)"', core_source))
+        action_names = dict(re.findall(r'(\w+)\s*=\s*Action\("([^"]+)"', core_source))
         action_fields = re.search(r'actions = new\[\] \{([^}]+)\}', core_source).group(1)
         actual_core = [action_names[field.strip()] for field in action_fields.split(',')]
         actual_settings = re.findall(r'Button\("([^"]+)",', settings_source)
@@ -1222,8 +1223,8 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,14);assert.equal(controls.shopControls.length,11);assert.equal(controls.settingsControls.length,33);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls].map(c=>c.name)).size,58);
+assert.equal(controls.controls.length,18);assert.equal(controls.shopControls.length,11);assert.equal(controls.settingsControls.length,35);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls].map(c=>c.name)).size,64);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
@@ -1237,6 +1238,10 @@ const cases={
   'missing-tier-control':complete({...value,controls:value.controls.filter(v=>v.name!=='ToggleTier')}),
   'missing-effects-control':complete({...value,controls:value.controls.filter(v=>v.name!=='Effects')}),
   'missing-speed-control':complete({...value,controls:value.controls.filter(v=>v.name!=='SpeedRate')}),
+  'missing-inline-tier-previous':complete({...value,controls:value.controls.filter(v=>v.name!=='TierPrevious')}),
+  'missing-inline-tier-next':complete({...value,controls:value.controls.filter(v=>v.name!=='TierNext')}),
+  'missing-inline-fitting-previous':complete({...value,controls:value.controls.filter(v=>v.name!=='FittingPrevious')}),
+  'missing-inline-fitting-next':complete({...value,controls:value.controls.filter(v=>v.name!=='FittingNext')}),
   'missing-settings-inventory':complete(Object.fromEntries(Object.entries(value).filter(([key])=>key!=='settingsControls'))),
   'duplicate-settings-control':complete({...value,settingsControls:value.settingsControls.map((v,i)=>i===0?value.settingsControls[1]:v)}),
   'missing-settings-control':complete({...value,settingsControls:value.settingsControls.slice(1)}),

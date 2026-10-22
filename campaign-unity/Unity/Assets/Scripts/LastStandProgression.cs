@@ -133,10 +133,17 @@ namespace SingedTerra.LastStand
         public int GetBestKills(int tier) => committed != null && LastStandTierCatalog.IsValid(tier)
             ? committed.BestKills[tier - 1] : 0;
 
+        public bool IsTierUnlocked(int tier)
+        {
+            if(committed==null || !LastStandTierCatalog.IsValid(tier))return false;
+            var definition=LastStandTierCatalog.Get(tier);
+            return definition.RequiredTier==0 || GetBestTicks(definition.RequiredTier)>=definition.RequiredTicks;
+        }
+
         public bool TrySelectTier(int tier)
         {
             if (!Ready || activeRunId != 0 || committed.Pending != null || !LastStandTierCatalog.IsValid(tier) ||
-                tier == 2 && !committed.TierTwoUnlocked) return false;
+                !IsTierUnlocked(tier)) return false;
             if (tier == committed.SelectedTier) return true;
             var next = committed.Copy();
             next.SelectedTier = tier;

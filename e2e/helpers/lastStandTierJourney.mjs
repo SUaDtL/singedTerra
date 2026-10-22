@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
-  fetchBoundRuntime, assertServedBytes, readShopControlObservation } from './lastStandJourney.mjs';
+  fetchBoundRuntime, assertServedBytes, readShopControlObservation, selectLastStandFitting } from './lastStandJourney.mjs';
 
 const inside = (a, b) => a.x >= b.x - .5 && a.y >= b.y - .5 &&
   a.x + a.width <= b.x + b.width + .5 && a.y + a.height <= b.y + b.height + .5;
@@ -24,7 +24,7 @@ export function tierJourneyControlGeometry(layout, canvas) {
     assert.ok(item.width * canvas.width / layout.width >= 43.99 && item.height * canvas.height / layout.height >= 43.99,
       '44 CSS pixel target: ' + item.name);
     let clip = screen;
-    const settingsContent = settingsOpen && item.name !== 'SettingsClose' && !/^SettingsTab[0-3]$/.test(item.name);
+    const settingsContent = settingsOpen && !['SettingsClose','ChoicePrevious','ChoiceNext'].includes(item.name) && !/^SettingsTab[0-3]$/.test(item.name);
     if (settingsContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
       assert.equal(layout.graphicsTruncated, false, 'Complete graphics required to qualify clipped controls');
       graphics ??= JSON.parse(layout.raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
@@ -128,7 +128,7 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
   };
   const click = async name => {
     const { layout, canvas, projected } = await geometry();
-    const item = [...layout.controls, ...layout.shopControls].find(item => item.name === name && item.active && item.interactable);
+    const item = [...layout.controls, ...layout.shopControls, ...layout.settingsControls].find(item => item.name === name && item.active && item.interactable);
     assert.ok(item, 'Current operable control: ' + name);
     assert.ok(projected.find(item => item.name === name)?.full, 'Click target must be fully revealed: ' + name);
     const x = canvas.x + (item.x + item.width / 2) * canvas.width / layout.width;
@@ -140,12 +140,8 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
     const path = testInfo.outputPath(label + '.png'); await page.screenshot({ path });
     shots.push(path); report.screenshots.push({ label, viewport: page.viewportSize(), state: current(states) });
   };
-  const selectFitting = async () => {
-    const other = fitting === 'launcher' ? 'REPAIR' : 'LAUNCHER';
-    const selected = () => current(layouts)?.controls.find(item => item.name === 'ToggleFitting')?.label.trim().toUpperCase() === 'FIT ' + other;
-    if (!selected()) { await click('ToggleFitting'); await until(selected, 8); }
-    assert.ok(selected(), 'Selected fitting remains observable through its switch label');
-  };
+  const selectFitting = () => selectLastStandFitting({fitting,click,currentLayout:()=>current(layouts),
+    currentState:()=>current(states),waitFor:predicate=>until(predicate,8)});
   const captureShop = async label => {
     await click('ShopEntry');
     await until(() => current(layouts)?.shopControls.some(item => item.name === 'ShopClose' && item.active), 8);
@@ -198,7 +194,20 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
     assert.equal(initial.credits, 0); assert.equal(initial.version, 3);
     assert.ok(Object.values(initial.permanentLevels).every(level => level === 0));
     assert.deepEqual(initial.tierRecords['tier-goals-v1'], { bestTicks1: 0, bestKills1: 0, bestTicks2: 0, bestKills2: 0, tierTwoUnlocked: false });
-    assert.equal(current(layouts).controls.find(item => item.name === 'ToggleTier').interactable, false);
+    assert.equal(current(layouts).controls.find(item => item.name === 'ToggleTier').active, false);
+    assert.equal(current(layouts).controls.find(item => item.name === 'TierNext').interactable, true);
+    const initialEnvironment=current(states).environmentId;
+    await click('TierNext');await until(()=>current(states)?.garageTierId==='2',8);
+    assert.equal(current(states).garageTierUnlocked,false,'The first locked tier is preview-only');
+    assert.equal(current(states).lockedTierPreview,true);assert.equal(current(states).menu,'');
+    assert.equal(current(states).selectedTier,1);assert.equal(current(states).environmentId,'iron-perimeter');
+    assert.equal(current(layouts).controls.find(item=>item.name==='TierNext').interactable,false,'No navigation beyond the first locked tier');
+    assert.equal(current(layouts).controls.find(item=>item.name==='Deploy').interactable,false);
+    assert.deepEqual(await stored('locked-preview'),initial,'Locked environment preview preserves the exact gameplay save');
+    await capture('first-locked-tier-preview');
+    await click('TierPrevious');await until(()=>current(states)?.garageTierId==='1',8);
+    assert.equal(current(states).lockedTierPreview,false);assert.equal(current(states).menu,'');
+    assert.equal(current(states).environmentId,initialEnvironment,'Previous restores the committed environment');
     await selectFitting();
     await matrix('garage');
     if (firstSession) await captureShop('permanent');
@@ -206,14 +215,14 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
     await until(() => current(states)?.activeTier === 1 && current(states)?.phase === 'battle');
     await matrix('combat');
     await until(() => current(states)?.tick >= 1100);
-    await click('Pause'); await until(() => current(states)?.paused);
+    await click('SpeedRate'); await until(() => current(states)?.paused);
     const pausedTick = current(states).tick;
     await page.waitForTimeout(1200); assert.equal(current(states).tick, pausedTick);
     if (firstSession) {
       await captureShop('temporary');
       assert.equal(current(states).tick, pausedTick, 'Shop observation preserves explicit Pause');
     }
-    await click('Pause'); await until(() => !current(states)?.paused);
+    await click('SpeedRate'); await until(() => !current(states)?.paused);
     await until(() => current(states)?.goalMet);
     assert.equal(current(states).phase, 'battle'); assert.equal(current(states).tierTwoUnlocked, false);
     const live = await stored('goal-live'); assert.equal(live.tierRecords['tier-goals-v1'].bestTicks1, 0);
@@ -227,7 +236,13 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
     await matrix('saved-result');
     await reload(); assert.deepEqual(await stored('pending-reload'), terminal);
     await click('Claim'); await until(() => current(states)?.phase === 'workshop' && current(states)?.wallet === 1);
-    await click('Purchase'); await until(() => current(states)?.level === 1 && current(states)?.wallet === 0);
+    await click('ShopEntry');
+    await until(()=>current(layouts)?.shopControls.some(item=>item.name==='ShopClose'&&item.active),8);
+    if(!current(layouts).shopControls.some(item=>item.name==='ShopCard_cannonAttackBuy'&&item.active)){
+      await click('ShopTabAttack');await until(()=>current(layouts)?.shopControls.some(item=>item.name==='ShopCard_cannonAttackBuy'&&item.active),8);
+    }
+    await click('ShopCard_cannonAttackBuy'); await until(() => current(states)?.level === 1 && current(states)?.wallet === 0);
+    await click('ShopClose');await until(()=>!current(layouts)?.shopControls.some(item=>item.name==='ShopClose'&&item.active),8);
     await reload();
     assert.equal(current(states).tierTwoUnlocked, true); assert.equal(current(states).level, 1);
     await selectFitting();
@@ -242,7 +257,10 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
       assert.deepEqual(await stored('same-tier-interrupted'), beforeInterruption, 'Unfinished comparison run grants nothing');
       await selectFitting();
     }
-    await click('ToggleTier'); await until(() => current(states)?.selectedTier === 2);
+    await click('TierNext'); await until(() => current(states)?.selectedTier === 2);
+    assert.equal(current(states).garageTierId,'2');assert.equal(current(states).garageTierUnlocked,true);
+    assert.equal(current(states).lockedTierPreview,false);assert.equal(current(states).environmentId,'iron-perimeter');
+    assert.equal(current(states).menu,'');
     await capture('tier-two-selected'); await click('Deploy');
     await until(() => current(states)?.activeTier === 2 && current(states)?.tick >= 20);
     assert.equal(current(states).tierTwoUnlocked, true);

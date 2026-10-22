@@ -291,7 +291,7 @@ def verify_shop_presentation(report, directory):
                 and shell['return']['width'] >= 44 and shell['return']['height'] >= 44 and shell['return']['font'] >= 14,
                 'Outer viewport or Return is clipped/undersized')
         if phase in ('running', 'paused'):
-            require({'Pause', 'ToggleMute', 'ShopClose'}.issubset({c['name'] for c in enabled}), 'A required battle action is hidden')
+            require({'Menu', 'SpeedRate', 'ShopClose'}.issubset({c['name'] for c in enabled}), 'A required battle action is hidden')
             require(all(any(g['active'] and g['path'].endswith('/' + name) for g in layout['graphics']) for name in ('HullValue', 'ElapsedTime')),
                     'Hull or Time disappeared')
         require(all(c['n'] == 0 for c in state['cards']), 'Matrix inputs leaked into a temporary purchase')
@@ -622,7 +622,7 @@ def verify_shop_vertical(report):
                     for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset'))
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
         expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus'},
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext'},
                     'shopControls': {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'},
@@ -630,7 +630,8 @@ def verify_shop_vertical(report):
                     'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
-                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed'}}
+                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
+                    'ChoicePrevious', 'ChoiceNext'}}
         for key, names in expected.items():
             values = fields[key]
             require(isinstance(values, list) and len(values) == len(names)
@@ -1257,7 +1258,7 @@ def verify_shop_recovery(report, require_native=False):
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
                 expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus'}
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext'}
                 expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}
@@ -1265,9 +1266,10 @@ def verify_shop_recovery(report, require_native=False):
                     'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
-                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed'}
+                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
+                    'ChoicePrevious', 'ChoiceNext'}
                 need(value['coordinates'] == 'top-left' and value['width'] > 0 and value['height'] > 0
-                     and len(value['controls']) == 14 and len(value['shopControls']) == 11 and len(value['settingsControls']) == 33
+                     and len(value['controls']) == 18 and len(value['shopControls']) == 11 and len(value['settingsControls']) == 35
                      and {control['name'] for control in value['controls']} == expected_controls
                      and {control['name'] for control in value['shopControls']} == expected_shop_controls
                      and {control['name'] for control in value['settingsControls']} == expected_settings_controls, 'Incomplete recovery controls')
@@ -1509,8 +1511,8 @@ def verify_shop_recovery(report, require_native=False):
          and pause['before']['paused'] and pause['after']['paused'] and not pause['resumed']['paused']
          and all(pause['before'][key] == pause['after'][key] == pause['resumed'][key] for key in ('tick', 'hull', 'kills')),
          'Pause counted elapsed time, changed the model, or resumed automatically')
-    action_at(game['pause_action'], 'Pause', (deploy,), (pause['before'],))
-    action_at(game['resume_action'], 'Pause', (pause['end'],), (pause['resumed'],))
+    action_at(game['pause_action'], 'SpeedRate', (deploy,), (pause['before'],))
+    action_at(game['resume_action'], 'SpeedRate', (pause['end'],), (pause['resumed'],))
     delta = pause['following']['tick'] - pause['resumed']['tick']
     elapsed = pause['following']['t'] - pause['resumed']['t']
     need(abs(delta - elapsed / 50) <= 1.01 and pause['following']['callbackSteps'] <= 128, 'Pause resume admitted dropped or extra clock debt')
@@ -1576,10 +1578,10 @@ def verify_shop_recovery(report, require_native=False):
              and row['paused']['paused'] is True and row['resumed']['paused'] is False
              and row['paused']['tick'] == prior['tick'] == result['tick'] == following['tick'] == row['resumed']['tick'],
              'Natural terminal candidate purchase lacks its paused earned atomic debit')
-        action_at(row['pause_action'], 'Pause', (final_deploy,), (row['paused'],))
+        action_at(row['pause_action'], 'SpeedRate', (final_deploy,), (row['paused'],))
         control = action_at(row['action'], 'ShopCard_' + row['key'] + 'Buy', (prior,), (result, following))
         need(control['mode'] == 'Run' and control['trackKey'] == row['key'], 'Natural candidate Buy names another track')
-        action_at(row['resume_action'], 'Pause', (following,), (row['resumed'],))
+        action_at(row['resume_action'], 'SpeedRate', (following,), (row['resumed'],))
     accounted = [purchase, *[row['result'] for row in candidates]]
     boundary = game.get('catchup_purchase', {})
     if boundary.get('result') and boundary['result'] != purchase:

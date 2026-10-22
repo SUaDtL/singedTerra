@@ -6,7 +6,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { chromium } from '@playwright/test';
 import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity, fetchBoundRuntime, assertServedBytes,
-  readShopControlObservation, AUDIO_CAPTURE } from '../e2e/helpers/lastStandJourney.mjs';
+  readShopControlObservation, AUDIO_CAPTURE, selectLastStandFitting, validateFittingCalloutObservation,
+  validateCompactCombatControls } from '../e2e/helpers/lastStandJourney.mjs';
 import { tierJourneyControlGeometry } from '../e2e/helpers/lastStandTierJourney.mjs';
 
 const arguments_=process.argv.slice(2), fittingArguments=arguments_.filter(value=>value.startsWith('--fitting='));
@@ -38,8 +39,8 @@ const persist=()=>writeFileSync(join(output,'result.json'),JSON.stringify(report
 try {
 for(const fitting of fittings) {
   const browser=await chromium.launch({headless:true});
-  const run={fitting,status:'running',actions:[],captures:[],audioWindows:[],errors:[],consoleErrors:[]}; report.runs.push(run); persist();
-  let page,latest,layout,parseError;
+  const run={fitting,status:'running',actions:[],captures:[],audioWindows:[],callouts:[],errors:[],consoleErrors:[]}; report.runs.push(run); persist();
+  let page,latest,layout,callout,parseError;
   try {
     const context=await browser.newContext({viewport:{width:1366,height:768},deviceScaleFactor:fitting==='launcher'?2:1,
       proxy:{server:'http://127.0.0.1:9',bypass:'127.0.0.1,localhost'}});
@@ -61,6 +62,10 @@ for(const fitting of fittings) {
       try {
         if(text.startsWith('ST_LS_STATE ')) latest=JSON.parse(text.slice(12));
         if(text.startsWith('ST_LS_HUD_LAYOUT ')) layout=readShopControlObservation(text);
+        if(text.startsWith('ST_LS_FITTING_CALLOUT ')){
+          callout=validateFittingCalloutObservation(JSON.parse(text.slice('ST_LS_FITTING_CALLOUT '.length)));
+          run.callouts.push({observedAt:Date.now(),value:callout});
+        }
       } catch(error) { parseError ??= error; run.rejectedTelemetry ??= text; }
     });
     const until=async(check,seconds=15)=>{
@@ -74,16 +79,19 @@ for(const fitting of fittings) {
       const box=await page.locator('#unity-canvas').boundingBox();
       return {x:box.x+(c.x+c.width/2)*box.width/layout.width,y:box.y+(c.y+c.height/2)*box.height/layout.height};
     };
-    const click=async(name)=>{
+    const awaitCanvasSize=async()=>{
       // The ready event can precede Unity's first DPR-aware Canvas update.
       // Wait for actual geometry after every load/resize before mapping input.
       const bounds=await page.locator('#unity-canvas').boundingBox();
       await until(()=>layout&&Math.abs(layout.width/layout.pixelRatio-bounds.width)<1&&Math.abs(layout.height/layout.pixelRatio-bounds.height)<1);
+    };
+    const click=async(name)=>{
+      await awaitCanvasSize();
       await until(()=>items()?.some(c=>c.name===name&&c.active&&c.interactable));
       for(let attempt=0;attempt<16;attempt++) {
         const item=items().find(c=>c.name===name&&c.active&&c.interactable);
         const viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&g.kind==='Image');
-        if(viewport&&item.mode==='Settings'&&!['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3'].includes(name)) {
+        if(viewport&&item.mode==='Settings'&&!['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3','ChoicePrevious','ChoiceNext'].includes(name)) {
           if(item.y<viewport.y||item.y+item.height>viewport.y+viewport.height) {
             await page.mouse.move(...Object.values(await point(viewport)));
             await page.mouse.wheel(0,item.y<viewport.y?-220:220); await page.waitForTimeout(100); continue;
@@ -96,8 +104,14 @@ for(const fitting of fittings) {
     };
     const capture=async(label)=>{
       tierJourneyControlGeometry(layout,await page.locator('#unity-canvas').boundingBox());
+      if(['battle','settling'].includes(latest.phase)&&latest.menu===''&&!layout.shopControls.some(c=>c.name==='ShopClose'&&c.active))
+        validateCompactCombatControls(layout);
+      const visible=latest.menu===''&&['garage','workshop'].includes(latest.phase)&&
+        !layout.shopControls.some(c=>c.name==='ShopClose'&&c.active);
+      await until(()=>callout&&callout.visible===visible&&callout.width===layout.width&&callout.height===layout.height);
+      validateFittingCalloutObservation(callout,{visible,fitting:latest.fittingId,width:layout.width,height:layout.height});
       const path=join(output,fitting+'-'+label+'.png'); await page.screenshot({path});
-      run.captures.push({label,path,state:{...latest},layout:raw()}); persist();
+      run.captures.push({label,path,state:{...latest},layout:raw(),callout}); persist();
     };
     const audioWindow=async(label,audible)=>{
       const start=await page.evaluate(()=>performance.now()); let samples=[];
@@ -127,7 +141,7 @@ for(const fitting of fittings) {
     const keyboardCycle=async()=>{
       const box=await page.locator('#unity-canvas').boundingBox();
       const offset=layout.settingsScrollOffset*layout.height/box.height;
-      const fixed=name=>name==='SettingsClose'||/^SettingsTab[0-3]$/.test(name);
+      const fixed=name=>['SettingsClose','ChoicePrevious','ChoiceNext'].includes(name)||/^SettingsTab[0-3]$/.test(name);
       const ordered=items().filter(c=>c.mode==='Settings'&&c.active&&c.interactable)
         .map(c=>({...c,logicalY:c.y+(fixed(c.name)?0:offset)})).sort((a,b)=>Math.abs(a.logicalY-b.logicalY)>.5?a.logicalY-b.logicalY:a.x-b.x);
       const initial=raw().selection; let index=ordered.findIndex(c=>c.name===initial);
@@ -141,6 +155,18 @@ for(const fitting of fittings) {
       index=(index+ordered.length-1)%ordered.length;
       await page.keyboard.press('Shift+Tab'); await until(()=>raw().selection===ordered[index].name);
       await page.keyboard.press('Tab'); await until(()=>raw().selection===initial);
+    };
+    const keyboardGarageArrow=async(name,observed)=>{
+      assert.equal(latest.menu,'','Garage keyboard check has no overlay');
+      const bound=items().filter(c=>c.active&&c.interactable).length+3,visited=[];
+      for(let i=0;i<bound;i++) {
+        await page.keyboard.press('Tab');await page.waitForTimeout(100);visited.push(raw().selection);
+        if(raw().selection!==name||!await page.locator('#unity-canvas').evaluate(c=>document.activeElement===c))continue;
+        assert.ok(items().some(c=>c.name===name&&c.active&&c.interactable),'Keyboard arrow is visibly enabled');
+        await page.keyboard.press('Enter');await until(observed);
+        run.actions.push({input:'keyboard',name,keys:[...visited.map(()=> 'Tab'),'Enter'],visited});return;
+      }
+      throw Error('Keyboard cannot reach actual inline arrow '+name+': '+visited.join(','));
     };
     const frameWindow=async(label)=>{
       const intervals=await page.evaluate(()=>new Promise(resolve=>{
@@ -159,7 +185,45 @@ for(const fitting of fittings) {
     const beforeGesture=await page.evaluate(()=>(window.__stAudioCapture?.captures??[]).map(c=>({state:c.context.state,samples:c.samples})));
     assert.ok(beforeGesture.every(c=>c.samples.every(s=>s.peak<0.00001)),'No rendered audio before the first gesture');
     run.beforeGesture=beforeGesture;
-    if(fitting==='launcher') await click('ToggleFitting');
+    await selectLastStandFitting({fitting,click,currentLayout:()=>layout,currentState:()=>latest,waitFor:predicate=>until(predicate)});
+    const originalSave=await page.evaluate(()=>localStorage.getItem('singedTerra.lastStand.prototype.v1'));
+    assert.equal(latest.environmentId,'sunlit-ash');
+    for(const viewport of [{width:1920,height:1080},{width:1366,height:768},{width:720,height:640},{width:390,height:844},{width:844,height:390}]) {
+      await page.setViewportSize(viewport);await awaitCanvasSize();
+      assert.equal(latest.menu,'');assert.equal(latest.garageTierId,'1');assert.equal(latest.garageTierUnlocked,true);
+      assert.equal(items().find(c=>c.name==='ToggleTier').active,false,'Legacy tier toggle stays hidden in the garage');
+      assert.equal(items().find(c=>c.name==='TierPrevious').interactable,false,'Tier browser has a bounded first endpoint');
+      await capture('tier-current-'+viewport.width);
+      if(viewport.width===1920)await keyboardGarageArrow('TierNext',()=>latest.garageTierId==='2');
+      else {await click('TierNext');await until(()=>latest.garageTierId==='2');}
+      assert.equal(latest.garageTierUnlocked,false);assert.equal(latest.selectedTier,1);assert.equal(latest.lockedTierPreview,true);
+      assert.equal(latest.menu,'','Inline tier preview does not open a modal');
+      assert.equal(latest.environmentId,'iron-perimeter');
+      assert.equal(items().find(c=>c.name==='TierNext').interactable,false,'First locked tier is the preview boundary');
+      assert.equal(items().find(c=>c.name==='Deploy').interactable,false,'Locked preview cannot deploy the previous tier');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('singedTerra.lastStand.prototype.v1')),originalSave,'Preview never commits a locked tier');
+      await capture('tier-locked-preview-'+viewport.width);
+      if(viewport.width===1920) {
+        await keyboardGarageArrow('TierPrevious',()=>latest.garageTierId==='1');
+        await click('TierNext');await until(()=>latest.lockedTierPreview);
+        await click('Menu');await until(()=>latest.menu==='menu');
+        await until(()=>callout?.visible===false);validateFittingCalloutObservation(callout,{visible:false});
+        assert.equal(latest.environmentId,'sunlit-ash','Opening Menu restores the selected battlefield');
+        assert.equal(latest.lockedTierPreview,false);
+        await click('SettingsClose');await until(()=>latest.menu==='');
+      } else {await click('TierPrevious');await until(()=>latest.garageTierId==='1');}
+      assert.equal(latest.selectedTier,1);assert.equal(latest.environmentId,'sunlit-ash','Returning from locked preview restores the selected battlefield');
+      assert.equal(latest.lockedTierPreview,false);assert.equal(latest.menu,'');
+    }
+    await page.setViewportSize({width:1366,height:768});
+    await selectLastStandFitting({fitting,click,currentLayout:()=>layout,currentState:()=>latest,waitFor:predicate=>until(predicate)});
+    await awaitCanvasSize();
+    const fittingName=raw().graphics.find(g=>g.active&&g.kind==='Text'&&g.path.endsWith('/GarageFittingName'));
+    assert.ok(fittingName&&fittingName.text.toUpperCase().includes(fitting==='repair'?'FIELD REPAIR':'AUXILIARY LAUNCHER'),
+      'Visible garage card names the actual equipped fitting');
+    assert.ok(raw().graphics.some(g=>g.active&&g.kind==='Text'&&g.path.endsWith('/GarageFittingDescription')&&g.text.trim()),
+      'Visible fitting card supplies its mechanic description');
+    await capture('fitting-selected');
     await click('Menu'); await click('MenuSettings'); await audioWindow('menu-music',true);
     await click('MusicEnabled'); await audioWindow('music-disabled',false);
     await sampleEffect('effects-sample-with-music-off',true);
@@ -185,6 +249,7 @@ for(const fitting of fittings) {
     await click('SettingsTab2'); await click('TutorialTips'); await click('PurchaseSuggestions');
     await capture('gameplay-settings');
     await click('SettingsClose'); await click('Deploy'); await until(()=>latest.phase==='battle');
+    await until(()=>callout?.visible===false);validateFittingCalloutObservation(callout,{visible:false});
     await click('SpeedMinus'); assert.equal(latest.selectedSpeed,.5);
     const before=latest.tick,startWall=Date.now(); await page.waitForTimeout(2100);
     await click('SpeedMinus'); // Reconcile and emit the exact end of this measured rate interval.
@@ -193,7 +258,7 @@ for(const fitting of fittings) {
     run.halfSpeed={elapsed,advanced};
     assert.equal(latest.paused,true); assert.equal(latest.selectedSpeed,0);
     await click('SpeedPlus'); assert.equal(latest.selectedSpeed,.5);
-    await click('Pause'); const paused=latest.tick;
+    await click('SpeedRate'); const paused=latest.tick;
     await click('Menu'); await click('MenuSettings');
     for(const viewport of [{width:1920,height:1080},{width:1366,height:768},{width:720,height:640},{width:390,height:844},{width:844,height:390}]) {
       await click('SettingsClose');
@@ -225,7 +290,9 @@ for(const fitting of fittings) {
     if(hidden) { await audioWindow('hidden-tab-silence',false); }
     run.backgroundVisibility={hidden,scope:hidden?'actual headless tab visibility':'headless browser did not hide original tab; native check remains pending'};
     await page.bringToFront(); await away.close(); await audioWindow('return-to-tab-music',true);
-    await click('ToggleMute'); await audioWindow('master-muted',false); await click('ToggleMute');
+    await click('Menu'); await click('MenuSettings'); await click('SettingsTab0');
+    await click('SettingsMute'); await audioWindow('master-muted',false); await click('SettingsMute');
+    await click('SettingsClose'); assert.equal(latest.paused,true,'Audio settings preserve manual pause');
     await click('Menu'); await click('MenuAbandon');
     assert.equal(raw().selection,'ConfirmCancel','Destructive confirmation defaults to Cancel');
     await click('ConfirmCancel'); assert.equal(latest.runId>0,true);
@@ -239,7 +306,7 @@ for(const fitting of fittings) {
     assert.ok(audio.supported); assert.deepEqual(audio.errors,[]);
     for(const [i,c] of audio.captures.entries()) writeFileSync(join(output,fitting+'-audio-'+i+'.webm'),Buffer.from(c.audio,'base64'));
     run.audio=audio.captures.map(({audio,...summary})=>summary);
-    latest=null; layout=null; await page.reload(); await until(()=>latest?.saveState==='ready',60);
+    latest=null; layout=null; callout=null; await page.reload(); await until(()=>latest?.saveState==='ready',60);
     await click('Menu'); await click('MenuSettings'); await click('SettingsTab2');
     assert.match(items().find(c=>c.name==='TutorialTips').label,/OFF/);
     assert.match(items().find(c=>c.name==='PurchaseSuggestions').label,/OFF/);
@@ -253,7 +320,7 @@ for(const fitting of fittings) {
     await page.waitForURL(url=>url.hash==='#account/last-stand'||url.pathname.endsWith('/singedTerra/'));
     await page.getByRole('dialog',{name:'Player account'}).waitFor({state:'visible',timeout:15000});
     run.accountRoute={url:page.url(),dialogVisible:true};
-    latest=null; layout=null; await page.goto(new URL('last-stand/',base).href); await until(()=>latest?.saveState==='ready',60);
+    latest=null; layout=null; callout=null; await page.goto(new URL('last-stand/',base).href); await until(()=>latest?.saveState==='ready',60);
     await click('Deploy'); const exitRun=latest.runId;
     await page.getByRole('link',{name:/return to campaigns/i}).click(); await until(()=>latest.menu==='confirm');
     assert.equal(raw().selection,'ConfirmCancel'); await click('ConfirmCancel'); assert.equal(latest.runId,exitRun);
@@ -266,7 +333,7 @@ for(const fitting of fittings) {
       const response=await route.fetch();
       await route.fulfill({response,headers:{...response.headers(),'permissions-policy':'fullscreen=()'}});
     });
-    latest=null; layout=null; await page.goto(new URL('last-stand/',base).href); await until(()=>latest?.saveState==='ready',60);
+    latest=null; layout=null; callout=null; await page.goto(new URL('last-stand/',base).href); await until(()=>latest?.saveState==='ready',60);
     await click('Menu'); await click('MenuSettings'); await click('SettingsTab1');
     assert.equal(await page.evaluate(()=>document.fullscreenEnabled),false);
     assert.equal(items().find(c=>c.name==='DisplayFullscreen').interactable,false);

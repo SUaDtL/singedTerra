@@ -2,12 +2,96 @@
 
 Approved for implementation by the owner on 2026-10-21. PR #541 is the existing delivery branch. This note records implementation and verification; it is not final owner acceptance, merge or publication authority.
 
+## October 22 layout correction
+
+The owner rejected the original garage and combat action strips. The current source
+uses bounded inline Tier and Fitting arrow cards, a dominant lower-centre Deploy,
+a smaller Upgrades action, quiet save information and a separate top-right Menu.
+Tier browsing exposes unlocked tiers and the first locked preview; previewing a
+locked environment never commits that tier or permits deployment. The two authored
+tier environments have distinct identities, and fitting cards connect to the
+actual visible tank module with a noninteractive projected leader and highlight.
+
+Combat keeps only the compact minus/rate/plus group and a separate Run Upgrades
+action. The rate button owns pause/resume; Sound and Effects remain in the existing
+settings tabs. Legacy duplicate battlefield buttons are hidden. This correction
+preserves the run clock, independent pause holds, speed caps and shop accounting.
+
+The [garage wireframe](player-controls/garage-layout-proposal.png) and
+[callout wireframe](player-controls/garage-layout-callout-proposal.png) record the
+accepted composition direction. Their illustrated tank quality is not runtime
+evidence or an implemented art overhaul. The
+[owner-supplied combat screenshot](player-controls/combat-controls-before.png)
+records the rejected old preview.
+
+Current imported checks pass for 18 menu/controller cases, six actual-mesh fitting
+projection/lifecycle cases, four strict garage cases, three result/recovery cases,
+the runtime layout-report case and three pure layout cases. The affected battle
+shop case passed; both workshop purchase and native resize/input cases passed
+after correcting test-owned initial fitting synchronization and camera-Canvas
+resize order. All purchase, scroll, clipping and raycast assertions remain.
+
+Independent source review found and cleared two defects through regression
+RED/GREEN: environment failures now stay visible in the quiet garage footer, and
+the fitting callout hides beyond the world camera's far clipping plane even when
+its UI camera remains visible. Final imported evidence is
+`Evidence/last-stand-controls/20261022T062539Z-d1c46967`,
+`Evidence/last-stand-fitting/editor-20261022T062845Z-2cef1631` and
+`Evidence/player-controls-client/garage-shop-recovery-green.log`.
+Fresh `Web-20261022T063027Z-a994fe` passed the maintained exporter, before/after
+source and toolchain guards, packaging, payload/source validators, ST1 compatibility,
+typecheck and production build. Localhost now serves that export.
+
+The repair controls journey passed 50 captures and nine audio windows, and Chromium
+touch passed 12 captures / 34 actions. The first combined controls report remains
+failed: its launcher analyser missed the short effects sample during concurrent
+browser load; the retained WebM independently contains the rendered transient.
+The separate serial launcher recovery passed 50 captures and nine audio windows
+with unchanged thresholds in
+`Evidence/player-controls/garage-launcher-20261022T063027Z-a994fe`. This is coverage
+across retained runs, not a new combined-run pass. Their runtime inventories match.
+
+Fresh-storage progression also exposed a real test-helper readiness race after
+goal, Claim, permanent purchase and reload. Its delayed-layout regression was RED
+then GREEN; all 102 browser guard tests pass after awaiting the actual HUD layout.
+The launcher recovery uses that corrected helper; the earlier repair and touch
+captures retain their exact original input identities. The corrected normal-speed,
+fresh-storage progression journey passed both fittings with 91 screenshots in
+`Evidence/first-session-polish/garage-reload-20261022T063027Z-a994fe`, including
+goals, manual Claim, earned permanent purchases, reload, stronger same-tier
+redeployment and Tier 2 selection. Final owner acceptance remains pending. Earlier
+verification below applies to the previous packaged candidate unless superseded here.
+
+Unaltered rendered comparisons: [desktop garage](player-controls/garage-desktop.png),
+[portrait garage](player-controls/garage-portrait.png),
+[launcher callout](player-controls/garage-launcher.png),
+[locked tier preview](player-controls/garage-tier-preview.png),
+[desktop combat](player-controls/combat-desktop.png) and
+[short landscape combat](player-controls/combat-landscape.png).
+The [capture inventory](player-controls/captures.json) binds each copy to its raw
+report, run scope and digest.
+
+Historical `--baseline` capture replay is not qualified by this correction: its
+older control inventory is incompatible with the current strict parser. Retained
+historical images remain available; current-candidate proof uses the current
+controls mode. Crypto review also leaves pre-existing Python provenance hashing
+outside the changed operations; the modified shared runner uses the approved
+Node SHA-256 implementation.
+
+Waves and resumable runs are the next gameplay proposal, recorded in the
+[roadmap](LAST-STAND-ROADMAP.md). The owner requires each wave to finish by defeating
+its defined enemy group and the full run state to checkpoint at each completed
+wave. Reloading may replay only the unfinished wave. Rewards, unlocks, resources,
+HP and temporary upgrades must restore consistently, with an initial checkpoint
+before wave 1 and explicit abandonment kept separate. This layout correction does
+not implement that replacement or active-run restoration.
+
 ## Control ownership
 
 | Surface | Controls and behavior | Owner |
 | --- | --- | --- |
-| Garage / workshop | Existing fitting, tier, deploy, permanent upgrades, shop, mute; new Menu | Progression/controller, existing shop |
-| Running | Pause/Resume, minus / selected rate / plus, mute, effects, shop, Menu | EncounterSession and its LastStandRunClock; no global time scale |
+| Garage / workshop | Tier and Fitting arrow cards, Deploy, Upgrades, floating Menu | Progression/controller, existing shop |
+| Running | Minus / selected rate or pause / plus, separate Run Upgrades, floating Menu | EncounterSession and its LastStandRunClock; no global time scale |
 | Catch-up | Current progress remains visible; pause, rate and modal entry refuse until debt reconciles | Run clock/session |
 | Menu | Close/resume, settings, help, abandon, Campaigns, About | Controller; independent menu pause hold |
 | Audio | Master mute/volume, effects volume and sample, music enable/volume | Preferences, LastStandAudio, LastStandMusic |

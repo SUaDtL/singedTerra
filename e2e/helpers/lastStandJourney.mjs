@@ -56,7 +56,7 @@ export function readShopControlObservation(raw) {
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
   const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects',
-      'Menu','SpeedMinus','SpeedRate','SpeedPlus']],
+      'Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext']],
     ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
       'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
       'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']],
@@ -64,7 +64,7 @@ export function readShopControlObservation(raw) {
       'MenuResume','MenuSettings','MenuHelp','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
       'MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus',
       'DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp',
-      'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed']]];
+      'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed','ChoicePrevious','ChoiceNext']]];
   for(const [key,expected]of names) {
     const items=fields[key];assert.ok(Array.isArray(items) && items.length===expected.length,'Complete '+key);
     assert.deepEqual(items.map(item=>item.name).sort(),expected.sort(),'Unique known '+key);
@@ -88,6 +88,97 @@ export function readShopControlObservation(raw) {
     graphicsTruncated=true;
   }
   return {...fields,observationScope:'complete-controls-only',graphicsTruncated,raw};
+}
+
+// Use the catalog card's actual inline arrow and observe the equipped identity.
+// Legacy ToggleFitting controls are retained only for old comparison surfaces.
+export async function selectLastStandFitting({fitting,click,currentLayout,currentState,waitFor}) {
+  assert.ok(['repair','launcher'].includes(fitting),'Known shipped player fitting required');
+  assert.equal(currentState()?.menu,'','Inline fitting selection requires the actual garage');
+  await waitFor(()=>Array.isArray(currentLayout()?.controls));
+  const selected=()=>currentState()?.fittingId===fitting;
+  if(!selected()) {
+    const arrow=fitting==='launcher'?'FittingNext':'FittingPrevious';
+    assert.ok(currentLayout().controls.some(item=>item.name===arrow&&item.active&&item.interactable),
+      'Inline fitting arrow is visibly available');
+    await click(arrow);await waitFor(selected);
+  }
+  assert.ok(selected(),'Actual fitting identity is selected');
+  assert.equal(currentState().menu,'','Fitting arrows do not open a menu');
+  const controls=currentLayout().controls;
+  const previous=controls.filter(item=>item.name==='FittingPrevious'&&item.active),
+    next=controls.filter(item=>item.name==='FittingNext'&&item.active);
+  assert.equal(previous.length,1);assert.equal(next.length,1,'One pair of inline fitting arrows is visible');
+  assert.equal(previous[0].interactable,fitting==='launcher','Current fitting has the correct previous endpoint');
+  assert.equal(next[0].interactable,fitting==='repair','Current fitting has the correct next endpoint');
+  assert.ok(controls.filter(item=>item.name==='ToggleFitting').every(item=>!item.active),
+    'Legacy fitting toggle is hidden in the actual garage');
+}
+
+// Exercise the visible settings surface and return with the owner's manual
+// pause/rate intact. The caller supplies the actual setting observation.
+export async function changeLastStandSetting({control,click,currentLayout,currentState,readValue,waitFor}) {
+  const tabs={SettingsMute:0,DisplayEffects:1};
+  assert.ok(Object.hasOwn(tabs,control),'Known settings action required');
+  const before={...currentState()};
+  assert.equal(before?.menu,'','Settings journey starts at the actual game');
+  assert.equal(typeof before.paused,'boolean');assert.ok(Number.isFinite(before.selectedSpeed)&&before.selectedSpeed>=0);
+  const original=readValue();assert.equal(typeof original,'boolean','Actual setting value required');
+  const available=name=>currentLayout().settingsControls.some(item=>item.name===name&&item.active&&item.interactable);
+  await click('Menu');await waitFor(()=>currentState()?.menu==='menu'&&available('MenuSettings'));
+  await click('MenuSettings');await waitFor(()=>currentState()?.menu==='settings'&&available('SettingsTab'+tabs[control]));
+  await click('SettingsTab'+tabs[control]);await waitFor(()=>available(control));
+  await click(control);await waitFor(()=>readValue()===!original);
+  await click('SettingsClose');await waitFor(()=>currentState()?.menu==='');
+  assert.equal(currentState().paused,before.paused,'Settings close preserves the manual pause');
+  assert.equal(currentState().selectedSpeed,before.selectedSpeed,'Settings changes preserve the selected game speed');
+  assert.equal(readValue(),!original,'Actual setting remains changed after closing');
+  return currentState();
+}
+
+export function validateCompactCombatControls(layout){
+  assert.ok(['battle','settling'].includes(layout.phase),'Actual combat layout required');
+  assert.ok(layout.settingsControls.every(item=>!item.active),'Combat inspection requires closed settings');
+  assert.deepEqual(layout.controls.filter(item=>item.active).map(item=>item.name).sort(),
+    ['Menu','SpeedMinus','SpeedRate','SpeedPlus'].sort(),'Combat shows the floating Menu and one speed group');
+  assert.deepEqual(layout.shopControls.filter(item=>item.active).map(item=>item.name),['ShopEntry'],
+    'Combat exposes the separate real Upgrades entry');
+  for(const name of ['Menu','SpeedRate'])assert.ok(layout.controls.some(item=>item.name===name&&item.interactable),
+    'Combat action remains operable: '+name);
+  assert.ok(layout.shopControls.find(item=>item.name==='ShopEntry').interactable,'Combat Upgrades remains operable');
+  return layout;
+}
+
+// Small passive runtime witness, separate from the intentionally stable HUD
+// control inventory. Imported-scene checks independently project module bounds.
+export function validateFittingCalloutObservation(value,{visible,fitting,width,height}={}) {
+  assert.ok(value&&typeof value==='object'&&!Array.isArray(value),'Actual fitting callout object required');
+  assert.deepEqual(Object.keys(value).sort(),['visible','target','width','height','pixelRatio','anchorWorld','projectedAnchor','endpointScreen'].sort(),
+    'Exact fitting callout observation shape');
+  assert.equal(typeof value.visible,'boolean');assert.equal(typeof value.target,'string');
+  for(const name of ['width','height'])assert.ok(Number.isInteger(value[name])&&value[name]>0,'Positive callout viewport '+name);
+  assert.ok(Number.isFinite(value.pixelRatio)&&value.pixelRatio>0,'Positive callout pixel ratio');
+  for(const [name,keys] of [['anchorWorld',['x','y','z']],['projectedAnchor',['x','y','z']],['endpointScreen',['x','y']]]){
+    assert.ok(value[name]&&typeof value[name]==='object');assert.deepEqual(Object.keys(value[name]).sort(),[...keys].sort());
+    for(const key of keys)assert.ok(Number.isFinite(value[name][key]),'Finite callout '+name+'.'+key);
+  }
+  if(visible!==undefined)assert.equal(value.visible,visible,'Callout has the required actual visibility');
+  if(width!==undefined)assert.equal(value.width,width,'Callout belongs to current viewport width');
+  if(height!==undefined)assert.equal(value.height,height,'Callout belongs to current viewport height');
+  if(value.visible){
+    const targets={repair:'Attachment_Repair',launcher:'Attachment_Launcher'};
+    assert.ok(Object.values(targets).includes(value.target),'Callout names an authored fitting module');
+    if(fitting!==undefined){assert.ok(Object.hasOwn(targets,fitting));assert.equal(value.target,targets[fitting],'Callout targets the actual equipped module');}
+    assert.ok(value.projectedAnchor.z>0,'Visible callout projects in front of camera');
+    for(const [key,limit] of [['x',value.width],['y',value.height]]){
+      assert.ok(value.projectedAnchor[key]>=0&&value.projectedAnchor[key]<=limit,'Visible module anchor lies in viewport');
+      assert.ok(Math.abs(value.endpointScreen[key]-value.projectedAnchor[key])<=1,'Callout endpoint agrees with projected module anchor');
+    }
+  }else{
+    assert.equal(value.target,'','Hidden callout cannot identify a stale module');
+    assert.deepEqual(value.projectedAnchor,{x:0,y:0,z:0});assert.deepEqual(value.endpointScreen,{x:0,y:0});
+  }
+  return value;
 }
 
 async function bindShopPlayerRuntime(baseURL) {
@@ -228,7 +319,7 @@ export async function runLastStandShopJourney({baseURL,chromium,fitting}) {
       await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10000});
       const layout=current(records.controlsOnly),canvas=await page.locator('#unity-canvas').boundingBox();
       check(layout?.coordinates==='top-left' && canvas,'Current real HUD geometry');
-      const candidates=[...layout.controls,...layout.shopControls].filter(item=>item.name===name && item.active && item.interactable);
+      const candidates=[...layout.controls,...layout.shopControls,...layout.settingsControls].filter(item=>item.name===name && item.active && item.interactable);
       check(candidates.length===1,'One actual enabled control: '+name);
       const control=candidates[0];check(control.width*canvas.width/layout.width>=44-.01 && control.height*canvas.height/layout.height>=44-.01,
         'Actual control has a 44 CSS pixel target: '+name);
@@ -244,8 +335,9 @@ export async function runLastStandShopJourney({baseURL,chromium,fitting}) {
     };
     const card=state=>state.cards.find(item=>item.key===track);
     const fit=async()=>{
-      if(!card(current(records.shopStates)).eligible){const start=records.shopStates.length;await click('ToggleFitting');
-        await until(records.shopStates,start,state=>card(state)?.eligible);}
+      await selectLastStandFitting({fitting,click,currentLayout:()=>current(records.controlsOnly),currentState:()=>current(records.states),
+        waitFor:predicate=>until(records.states,0,()=>predicate())});
+      check(card(current(records.shopStates)).eligible,'Selected fitting is eligible for its actual shop track');
     };
     const open=async()=>{
       let start=records.shopStates.length;await click('ShopEntry');await until(records.shopStates,start,state=>state.open);
@@ -305,7 +397,7 @@ export async function runLastStandShopJourney({baseURL,chromium,fitting}) {
     check(deploy.scrap===0 && deploy.cards.every(item=>item.n===0 && item.p===0),'Actual first run starts empty');
     if(presentation){await open();await presentation.matrix('running');await presentation.close();}
     await until(records.shopStates,start,state=>state.uniqueKills>=2 && state.scrap>=5,80);
-    start=records.states.length;await click('Pause');await until(records.states,start,state=>state.paused);
+    start=records.states.length;await click('SpeedRate');await until(records.states,start,state=>state.paused);
     await open();if(presentation){await presentation.matrix('paused');await presentation.category(fitting==='launcher'?'Attack':'Utility');
       await presentation.reveal('ShopCard_'+track+'Buy');motion=await startMotion(native.context,page,output);
       report.presentation.media_begin=await presentation.clock();await page.waitForTimeout(300);}
@@ -317,7 +409,7 @@ export async function runLastStandShopJourney({baseURL,chromium,fitting}) {
     const after=witness('temporary_after',await until(records.shopStates,stateStart,state=>card(state)?.n===1));
     check(after.scrap===before.scrap-5 && card(after).nextPrice===10,'Exact settled debit and next independent price');
     if(presentation)await presentation.purchaseFocus('ShopCard_'+track+'Buy');
-    await screenshot('temporary-purchase');start=records.states.length;await click('Pause');await until(records.states,start,state=>!state.paused);
+    await screenshot('temporary-purchase');start=records.states.length;await click('SpeedRate');await until(records.states,start,state=>!state.paused);
     witness('temporary_effect',await until(records.combat,0,item=>item.runId===deploy.runId && item.tick>purchase.tick &&
       item.events.some(event=>event.kind===eventKind && event.amount===amount),65));
     if(presentation){await screenshot('temporary-effect');await page.waitForTimeout(500);report.presentation.media_end=await presentation.clock();
@@ -934,7 +1026,7 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
         console.log('ST_TEST_GEOMETRY '+JSON.stringify(value));return value;
       },layout.seq);
       const canvas=await until(records.geometry,0,row=>row.t===measurement.t&&row.layoutSeq===layout.seq);
-      const controls=[...layout.controls,...layout.shopControls].filter(item=>item.name===name&&item.active&&item.interactable);
+      const controls=[...layout.controls,...layout.shopControls,...layout.settingsControls].filter(item=>item.name===name&&item.active&&item.interactable);
       check(controls.length===1,'One actual recovery control: '+name);const control=controls[0];
       check(control.width*canvas.width/layout.width>=43.99&&control.height*canvas.height/layout.height>=43.99,'Recovery target at least 44 CSS pixels');
       const x=canvas.x+(control.x+control.width/2)*canvas.width/layout.width,y=canvas.y+(control.y+control.height/2)*canvas.height/layout.height;
@@ -1064,7 +1156,8 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
 
     // A new null save separates storage compatibility money from real run income.
     await fixture(null);const game=report.gameplay;game.initial=await snapshot('gameplay-initial');
-    if(!current(records.shopStates).cards.find(item=>item.key==='fieldRepair').eligible)await click('ToggleFitting');
+    await selectLastStandFitting({fitting:'repair',click,currentLayout:()=>current(records.controlsOnly),currentState:()=>current(records.states),
+      waitFor:predicate=>until(records.states,0,()=>predicate())});
     const reservation=report.storage_cases['reservation-denied']={fault:'denied',before:await snapshot('reservation-before')};
     await mode('denied');reservation.action=await click('Deploy');await captureFailure(reservation,'reservation-denied');
     await recover(reservation,'reservation-denied',false);
@@ -1072,7 +1165,7 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
     check(game.deploy&&game.deploy.scrap===0&&game.deploy.cards.every(item=>item.p===0&&item.n===0),'Fresh run has no seeded income or levels');
     await until(records.shopStates,0,state=>state.hasActiveLedger&&state.uniqueKills>=2&&state.scrap>=5,80);
     if(nativeMode){await away('blur');await away('hidden');}
-    let start=records.states.length;game.pause_action=await click('Pause');await until(records.states,start,state=>state.paused);
+    let start=records.states.length;game.pause_action=await click('SpeedRate');await until(records.states,start,state=>state.paused);
     await open('Utility');
     // Background continuation may already have drained every elapsed step.
     // Label the observed settled input honestly; RunSettle separately proves
@@ -1090,7 +1183,7 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
     pause.end=await clock('pause-end');pause.after=current(records.states);
     pause.elapsed_ms=pause.end.t-pause.start.t;
     check(pause.elapsed_ms>=10000&&pause.before.tick===pause.after.tick&&pause.after.paused,'Elapsed explicit Pause preserves model tick');
-    start=records.states.length;game.resume_action=await click('Pause');await until(records.states,start,state=>!state.paused);
+    start=records.states.length;game.resume_action=await click('SpeedRate');await until(records.states,start,state=>!state.paused);
     // Keep the actual resume boundary, before subsequent normal-speed ticks.
     pause.resumed=records.states.slice(start).find(state=>state.load===load&&!state.paused);
     const encounterStart=records.encounters.length;await page.waitForTimeout(1200);
@@ -1108,12 +1201,16 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
     await recover(defeatCase,'defeat-uncertain',false);game.result=await snapshot('gameplay-result');
     game.refreshes=[];
     // Real UI refreshes must not restage defeat or mint a second reward.
-    for(let index=0;index<3;index++){await click('ToggleMute');game.refreshes.push(await snapshot('terminal-refresh-'+index));}
+    for(let index=0;index<3;index++){await changeLastStandSetting({control:'SettingsMute',click,
+      currentLayout:()=>current(records.controlsOnly),currentState:()=>current(records.states),
+      readValue:()=>current(records.states).muted,waitFor:predicate=>until(records.states,0,()=>predicate())});
+      game.refreshes.push(await snapshot('terminal-refresh-'+index));}
     game.claim_ready=await claimReady(game.deploy.runId,game.deploy.timeOrigin);
     game.claim_action=await click('Claim');await until(records.states,0,state=>state.phase==='workshop'&&state.wallet===1);
     game.claimed=await snapshot('gameplay-claimed');
     await loadGame();game.reload=await snapshot('gameplay-reload');
-    if(!current(records.shopStates).cards.find(item=>item.key==='fieldRepair').eligible)await click('ToggleFitting');
+    await selectLastStandFitting({fitting:'repair',click,currentLayout:()=>current(records.controlsOnly),currentState:()=>current(records.states),
+      waitFor:predicate=>until(records.states,0,()=>predicate())});
     game.redeploy_action=await click('Redeploy');game.redeploy=await deployedLedger(2);
     await page.waitForTimeout(500);await loadGame();game.unfinished_reload=await snapshot('unfinished-reload');
     check(game.redeploy.scrap===0&&game.redeploy.cards.every(item=>item.n===0)&&game.unfinished_reload.state.wallet===1,'Redeploy and unfinished reload do not carry temporary state or mint reward');
@@ -1121,7 +1218,8 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
     // including zero final-step kills. Bound RunIncome proves the controlled
     // final-kill accounting case; it cannot replace hidden/manual-Claim proof.
     const finalCase=report.terminal_case={before:await snapshot('final-step-before'),purchases:[]};
-    if(!current(records.shopStates).cards.find(item=>item.key==='fieldRepair').eligible)await click('ToggleFitting');
+    await selectLastStandFitting({fitting:'repair',click,currentLayout:()=>current(records.controlsOnly),currentState:()=>current(records.states),
+      waitFor:predicate=>until(records.states,0,()=>predicate())});
     finalCase.deploy_action=await click('Redeploy');
     finalCase.deploy=await deployedLedger(3);
     let terminalOther,terminalError;
@@ -1353,7 +1451,7 @@ export function validateSettlingTransition({before,result,states,layouts,encount
   assert.ok(observed.length && observed.every(item=>Array.isArray(item.controls) &&
     item.controls.some(control=>control.name==='Claim') &&
     !item.controls.some(control=>control.name==='Claim' && control.active && control.interactable)) &&
-    observed.some(item=>item.controls.some(control=>control.name==='Pause' && control.active && control.interactable)),
+    observed.some(item=>item.controls.some(control=>control.name==='SpeedRate' && control.active && control.interactable)),
     'Settling layout absent or Claim enabled before the manual result');
   return {before,terminal,staged:staged[0],result,layouts:observed};
 }
@@ -3275,7 +3373,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       const pixels=await page.locator('#unity-canvas').evaluate(element=>({width:element.width,height:element.height}));
       if(Math.abs(layouts.at(-1).width-pixels.width)>1 || Math.abs(layouts.at(-1).height-pixels.height)>1)
         await until(layouts,start,item=>Math.abs(item.width-pixels.width)<=1 && Math.abs(item.height-pixels.height)<=1,8);
-      await geometry('ToggleMute');
+      await geometry('Menu');
       const outer=await page.evaluate(()=>({width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,
         scrollHeight:document.documentElement.scrollHeight,nav:document.querySelector('#last-stand-nav').getBoundingClientRect().toJSON(),
         link:document.querySelector('#last-stand-return').getBoundingClientRect().toJSON(),
@@ -3325,19 +3423,20 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
           box.pixelWidth===current.width && box.pixelHeight===current.height,'prepared pointer refuses changed Canvas geometry');
         const targets=hudControls(current).filter(control=>control.name===name && control.active && control.interactable);
         assert.equal(targets.length,1,'prepared pointer requires one currently enabled target');const target=targets[0];
-        assert.ok(projectedControls(current,canvas).some(item=>item.name===name && item.full),
-          'prepared pointer requires the complete target in its current actual viewport');
         assert.ok(['x','y','width','height'].every(key=>Number.isFinite(target[key])) && target.width>0 && target.height>0 &&
           target.x>=0 && target.y>=0 && target.x+target.width<=current.width+.5 && target.y+target.height<=current.height+.5,
           'prepared pointer target must be within the actual Canvas');
+        assert.ok(projectedControls(current,canvas).some(item=>item.name===name && item.full),
+          'prepared pointer requires the complete target in its current actual viewport');
         const resolved={x:box.x+(target.x+target.width/2)*box.width/current.width,
           y:box.y+(target.y+target.height/2)*box.height/current.height};
-        const start=states.length;
+        const layoutAction=action==='hud-layout',rows=layoutAction?layouts:states,start=rows.length;
         await page.mouse.move(resolved.x,resolved.y);
         await page.mouse.down();await page.waitForTimeout(150);await page.mouse.up();
         report.actions.push({name,action,...resolved,hold_ms:150,resolved_layout:{load:current.load,timeOrigin:current.timeOrigin,
           phase:current.phase,t:current.t,target:{x:target.x,y:target.y,width:target.width,height:target.height}}});
-        const observed=await until(states,start,item=>item.load===armedLoad && item.action===action && predicate(item),8);
+        const observed=await until(rows,start,item=>item.load===armedLoad && item.timeOrigin===layout.timeOrigin &&
+          (layoutAction?Number.isFinite(item.t)&&item.t>=current.t:item.action===action) && predicate(item),8);
         check(true,'prepared pointer used the actual current enabled target',{name,...resolved,phase:current.phase});return observed;
       };
     };
@@ -3355,7 +3454,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await page.keyboard.down('Enter');await page.waitForTimeout(150);await page.keyboard.up('Enter');keys.push('Enter');
       const observed=await until(states,start,item=>item.action===action && predicate(item),8);
       report.keyboard_actions.push({name,action,keys,hold_ms:150,visible_order:ordered.map(item=>item.name)});
-      const activations=name==='Pause'?encounters.slice(encStart).filter(item=>item.action==='pause'):
+      const activations=name==='SpeedRate'?encounters.slice(encStart).filter(item=>item.action==='pause'):
         states.slice(start).filter(item=>item.action===action);
       check(activations.length===1,'one actual owner receives each keyboard activation',activations);
       await page.evaluate("window.__stInputArea='outer'");return observed;
@@ -3442,7 +3541,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       if(player){await screenshot('01-base-first-hit');return;}
       const before=await observation();
       check(before.loop.phase==='battle' && !before.paused,'layout inspection starts in active battle');
-      await gameClick('Pause','session',item=>item.phase==='battle' && item.paused);
+      await gameClick('SpeedRate','session',item=>item.phase==='battle' && item.paused);
       const paused=await observation({action:'pause',paused:true,minT:before.t,run:before.run});
       check(paused.loop.phase==='battle','layout inspection paused actual battle');
       validateModelObservation(paused,reference(paused));
@@ -3508,7 +3607,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished reload abandoned without award',restored);
     if(player)report.lifecycle.push({kind:'live-battle-layout-abandonment',ready:restored});
-    check(layouts.at(-1).controls.find(item=>item.name==='ToggleFitting').label.trim().toUpperCase()==='FIT LAUNCHER','baseline repair fitting retained');
+    check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'baseline repair fitting retained in its visible garage card');
     }
     if(section.lifecycle){
     report.effects_only_audio=await configureEffectsOnlyJourneyAudio({click:gameClick,currentLayout:()=>layouts.at(-1),
@@ -3522,17 +3621,20 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(first.firstFoeHull===10,'first base cannon leaves identical 30 HP foe at 10 HP',first);
     await page.waitForTimeout(750);const sound=await energy(Math.max(startAudio,firstHit-500),await mark());
     if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);const layoutPause=await battleLayouts();
-    const muted=await gameClick('ToggleMute','preferences');check(muted.muted,'actual mute state enabled');const muteStart=await mark();await page.waitForTimeout(1200);
+    const changeSetting=control=>changeLastStandSetting({control,click:name=>gameClick(name,'hud-layout'),
+      currentLayout:()=>layouts.at(-1),currentState:()=>states.at(-1),readValue:()=>states.at(-1).muted,
+      waitFor:predicate=>until(layouts,0,()=>predicate(),8)});
+    const muted=await changeSetting('SettingsMute');check(muted.muted,'actual mute state enabled');const muteStart=await mark();await page.waitForTimeout(1200);
     const mute=await energy(muteStart+150,await mark());if(player)check(mute.maximum_rms<.0005,'mute suppresses rendered output',mute);
-    const unmuted=await gameClick('ToggleMute','preferences');check(!unmuted.muted,'actual mute state disabled');
+    const unmuted=await changeSetting('SettingsMute');check(!unmuted.muted,'actual mute state disabled');
     const pauseBefore=layoutPause?.before??await observation();
-    const paused=layoutPause?.paused??await gameKey('Pause','session',item=>item.paused);
+    const paused=layoutPause?.paused??await gameKey('SpeedRate','session',item=>item.paused);
     const pausedObservation=layoutPause?.paused??await observation({action:'pause',paused:true,minT:pauseBefore.t,run:pauseBefore.run});
     const pauseStart=await mark();await page.waitForTimeout(1200);const pauseSound=await energy(pauseStart+150,await mark());
     check(states.at(-1).tick===paused.tick,'pause stops combat ticks');
     if(player)check(pauseSound.maximum_rms<.0005,'pause stops effects with ambient music explicitly disabled',pauseSound);
     if(player)await phaseMatrix('explicit-pause');await away('hidden',10500);const returned=await observation({paused:true,run:pausedObservation.run});
-    await gameKey('Pause','session',item=>!item.paused);
+    await gameKey('SpeedRate','session',item=>!item.paused);
     const resumed=await observation({action:'pause',paused:false,minT:returned.t,run:returned.run});
     const resumeStart=await mark();await until(encounters,0,item=>item.load===load && item.t>=resumeStart+700 && !item.paused && !item.catchingUp,8);
     const pauseAfter=await observation({minT:resumeStart+700,run:resumed.run});
@@ -3551,12 +3653,12 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark(),defeatStart=states.length;
     const settlingBefore=await observation();let defeatTime;
     if(player){
-    const settlingClick=await armGameClick('Pause','session',item=>item.paused && item.phase==='settling');
+    const settlingClick=await armGameClick('SpeedRate','session',item=>item.paused && item.phase==='settling');
     check(states.at(-1).phase==='battle','settling input is prepared while the actual battle is running');
     await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);defeatTime=await mark();
     const settlingPaused=await settlingClick();await focused('settling paused');await phaseMatrix('settling');
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'no Claim during actual settling');
-    const settlingResumed=await gameClick('Pause','session',item=>!item.paused);await page.waitForTimeout(750);
+    const settlingResumed=await gameClick('SpeedRate','session',item=>!item.paused);await page.waitForTimeout(750);
     report.lifecycle.push({kind:'settling-interaction',scope:'native-pause-five-viewports-resume',
       paused:settlingPaused,resumed:settlingResumed,viewports:matrix.phaseViewports.map(item=>item.name)});
     }else await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);
@@ -3606,13 +3708,17 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'Claim unavailable after one award');
     for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('workshop');
     await resize(VIEWPORTS.find(item=>item.name==='compact'));const purchaseStart=await mark();
-    const bought=await gameKey('Purchase','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
+    await gameClick('ShopEntry','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
+    if(!layouts.at(-1).shopControls.some(item=>item.name==='ShopCard_cannonAttackBuy'&&item.active))
+      await gameClick('ShopTabAttack','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopCard_cannonAttackBuy'&&control.active));
+    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1 through Upgrades',bought);
+    await gameClick('ShopClose','hud-layout',item=>!item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
     await screenshot('05-purchased');if(player)await saveAudio('workshop',{purchase:[purchaseStart,await mark()]});
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===0 && again.pendingRunId===0,'purchase reload retains permanent level and spent balance',again);
-    check(layouts.at(-1).controls.find(item=>item.name==='ToggleFitting').label.trim().toUpperCase()==='FIT LAUNCHER','same repair fitting retained after upgrade');
+    check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
     await resize(captureViewport);const hitStart=hits.length;await gameClick('Deploy','deploy');
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
     const upgradedHit=await until(hits,hitStart,item=>item.cannonDamage===30,45);const noCaptureEnd=await mark();
