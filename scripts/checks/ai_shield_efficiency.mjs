@@ -105,13 +105,4 @@ for (const difficulty of ['easy', 'medium', 'hard']) for (const hull of [1, 35, 
   }
 }
 
-// Ash Road may have different shield capacities and regenerated CPU plans in
-// stored transcripts. Keep its established selection path rather than changing it.
-const campaign = engine();
-// Presence-only selector fixture; no campaign actions, parser or save is exercised.
-campaign.getState().campaign = Object.freeze({});
-const campaignTank = campaign.getState().tanks[0];
-campaignTank.health = 20; campaignTank.shieldHp = 240;
-campaignTank.inventory.shield.count = 1; // Synthetic compatibility boundary probe.
-assert.equal(plan(campaign).weapon, 'shield', 'legacy campaign planning is deliberately preserved');
 console.log(`AI SHIELD EFFICIENCY CHECK: PASSED (WB-04 legal undercut, replay and ${cases} boundary cases)`);

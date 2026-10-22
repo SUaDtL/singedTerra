@@ -4,10 +4,6 @@ import { AIR_PIXEL, LAVA_PIXEL, CANVAS_WIDTH, CANVAS_HEIGHT, ARENA_FLOOR_Y, pixe
 import { TANK_WIDTH, TANK_HEIGHT } from './Tank.ts';
 import { clamp } from './math.ts';
 import type { VerificationWorkBudget } from './VerificationWorkBudget.ts';
-import {
-  isLiveCampaignObject,
-  type CampaignObjectState,
-} from '../campaign/objects.ts';
 
 /**
  * Deterministic projectile physics (SPEC §4.2). Fixed 16ms timestep so hot-seat
@@ -64,7 +60,6 @@ export type CollisionResult =
   | { type: 'none' }
   | { type: 'ground'; x: number; y: number; material: TerrainMaterial }
   | { type: 'tank'; tankId: string; x: number; y: number }
-  | { type: 'object'; objectId: string; x: number; y: number }
   | {
       type: 'wall';
       side: 'left' | 'right';
@@ -147,7 +142,6 @@ export function sweepCollide(
   tanks: readonly TankState[],
   walls: WallMode = 'open',
   work?: VerificationWorkBudget,
-  objects?: readonly CampaignObjectState[],
 ): CollisionResult {
   work?.charge('sweepSegments');
   const endX = p.x;
@@ -175,7 +169,7 @@ export function sweepCollide(
     const t = i / steps;
     probe.x = prevX + dx * t;
     probe.y = prevY + dy * t;
-    const hit = collide(probe, terrain, tanks, walls, work, objects);
+    const hit = collide(probe, terrain, tanks, walls, work);
     if (hit.type !== 'none') {
       if (hit.type === 'wall' && walls === 'wrap') {
         // The first out-of-bounds supersample can be up to SWEEP_STEP beyond
@@ -258,7 +252,6 @@ export function collide(
   tanks: readonly TankState[],
   walls: WallMode = 'open',
   work?: VerificationWorkBudget,
-  objects?: readonly CampaignObjectState[],
 ): CollisionResult {
   work?.charge('collisionChecks');
   // Out of bounds (horizontal). A miss — handled before terrain/tank so an
@@ -289,23 +282,6 @@ export function collide(
     if (p.x >= left && p.x <= right && p.y >= top && p.y <= bottom) {
       return { type: 'tank', tankId: tank.id, x: p.x, y: p.y };
     }
-  }
-
-  // Campaign object hit (AABB). Only live objects block. When authored bounds
-  // overlap at the same swept sample, stable identity — never caller order —
-  // selects the contact.
-  let objectId: string | undefined;
-  for (const object of objects ?? []) {
-    work?.charge('engineSteps');
-    if (!isLiveCampaignObject(object)) continue;
-    const { left, right, top, bottom } = object.collisionBounds;
-    if (p.x >= left && p.x <= right && p.y >= top && p.y <= bottom
-      && (objectId === undefined || object.id < objectId)) {
-      objectId = object.id;
-    }
-  }
-  if (objectId !== undefined) {
-    return { type: 'object', objectId, x: p.x, y: p.y };
   }
 
   // Ground hit. y grows downward. The logical arena floor is an implicit solid
@@ -351,7 +327,6 @@ export function wrapSideWall(
   terrain: Uint8Array,
   tanks: readonly TankState[],
   work?: VerificationWorkBudget,
-  objects?: readonly CampaignObjectState[],
 ): CollisionResult {
   const entryX = hit.side === 'left'
     ? CANVAS_WIDTH - WALL_INSET
@@ -360,11 +335,11 @@ export function wrapSideWall(
   const endY = hit.y + (hit.remainingY ?? 0);
   p.x = entryX;
   p.y = hit.y;
-  const entryHit = collide(p, terrain, tanks, 'open', work, objects);
+  const entryHit = collide(p, terrain, tanks, 'open', work);
   if (entryHit.type !== 'none') return entryHit;
   p.x = endX;
   p.y = endY;
-  return sweepCollide(p, entryX, hit.y, terrain, tanks, 'open', work, objects);
+  return sweepCollide(p, entryX, hit.y, terrain, tanks, 'open', work);
 }
 
 /** Bounce tuning (named constants, not magic numbers). */

@@ -11,8 +11,16 @@ The current in-repo visual scope is
 
 ## Owner direction update — October 22, 2026
 
-The current player-controls sprint and its garage/combat layout corrections remain
-in draft PR #541. Final rendered acceptance is separate from implementation checks.
+The owner accepted the current player-controls sprint and garage/combat layout in
+PR #541 on October 22, with merge authorized once its required CI passes. Native
+background-media qualification remains separate from that rendered UI acceptance.
+The owner then extended the same PR to retire Ash Road **including its code**.
+Last Stand is the campaign. Remove the former campaign's content, runtime,
+launch/resume paths, dedicated presentation, assets and tests. Preserve generic
+Skirmish, Multiplayer, Challenge and deterministic engine behavior. Recover old
+campaign menu selections and exact legacy links to Last Stand; leave historical
+save bytes alone. Earlier Ash Road coexistence and resume observations below are
+historical evidence, superseded as current product direction by this decision.
 The owner now wants **waves within each tier** to become the progression backbone:
 advance tiers by reaching a wave target, and place resource rewards or armament
 unlocks at authored wave milestones. A run can continue beyond its advancement
@@ -35,6 +43,23 @@ before wave 1. Roll back mid-wave purchases and their spending together, and pre
 the explicit abandon action. The current implementation does not yet restore active
 runs after closing/reloading; background continuation while a tab remains open is a
 separate existing behavior.
+
+Include these presentation corrections with the wave conversion:
+
+- Carry the existing brass and graphite frame and button treatment through the
+  opened Menu, Settings tabs, Help, About and confirmation surfaces. The floating
+  Menu entry remains in its own corner. Preserve focus handling, scrolling,
+  readable text and 44 CSS-pixel targets at portrait and short landscape sizes.
+- Correct the shared panel and button corner composition. The current frame mesh
+  has clipped corners but sits on an opaque rectangular `Image`, leaving square
+  patches outside the bevel. Give the backing and visible frame the same outline;
+  check border, shadow and screw geometry as well. Apply the shared correction
+  across affected panels rather than covering individual corners. Verify rendered
+  edges against both tier environments at desktop, portrait and short landscape
+  sizes, including active, disabled, highlighted and pressed buttons.
+
+These visual follow-ups are scheduled with waves and do not block the owner's
+acceptance of the current layout. They are not implemented by this direction note.
 
 ## Implemented provisional slice — Tier Goals and Personal Bests
 
@@ -119,7 +144,7 @@ The older TypeScript artillery game remains a separate product path.
 The site now presents Last Stand under Campaigns. Its native link opens the
 packaged Unity Web export on the same origin, and the export returns to the
 Last Stand campaign entry. The first playable loop keeps its own local save;
-Ash Road progress, account rewards and verified play are separate. This entry
+account rewards and verified play are separate. This entry
 does not settle the pending visual, motion or sound acceptance.
 
 The current `BattlefieldReview` scene offers two matched treatments. The owner

@@ -1,6 +1,44 @@
 # Last Stand player controls
 
-Approved for implementation by the owner on 2026-10-21. PR #541 is the existing delivery branch. This note records implementation and verification; it is not final owner acceptance, merge or publication authority.
+Approved for implementation by the owner on 2026-10-21. On October 22 the owner accepted the current UI and authorized PR #541 to merge after passing CI, including removal of Ash Road code. This note records observed checks; merge, publication and native qualification remain separate results.
+
+## October 22 campaign retirement
+
+Last Stand is the only campaign. The Ash Road client, content, replay/save
+implementation, UI, audio, art and shared-engine branches are removed. Retired
+menu selections and the exact legacy campaign fragment select Last Stand;
+ordinary fresh startup, explicit invites, rejoin and imported ST1 challenge
+priority remain. Historical Ash Road storage is opaque and untouched.
+
+The refreshed client coverage run passed 246 files / 2,402 tests: lines 94.92%,
+branches 84.79%, statements 91.73%, functions 91.30%. Typecheck, weapon/shield
+checks, the ordinary transcript/clone compatibility oracle and the unchanged
+retained cq1 artifact verifier passed. The 103 browser-contract guards passed.
+These local results do not substitute for exact-head hosted CI or browser proof.
+
+Independent security/compatibility review cleared exactly nine ST1 source-pin
+updates while retaining all 32 memberships and strict drift detection. Coverage
+review found two generic weapon-selection regressions inside a removed campaign
+test file; they now live in the ordinary integration suite, where all 96 tests
+pass. The reviewer cleared the correction. Browser checks passed 35 affected
+cases across desktop, touch and small-window projects; the remaining desktop
+geometry case passed after correcting its singleton-layout expectation. The
+real Last Stand tier-goal, unlock and reload journey passed against the new
+export in 2.1 minutes. Hosted CI remains required before merge.
+
+Hosted lifecycle checks on the preceding candidate exposed an idle Menu focus
+defect: a terminal result cleared the run clock while hidden, preventing control
+refresh on foreground return. The new actual-callback regression reproduced it,
+then passed after idle Last Stand sessions began emitting visibility updates.
+All 19 imported-scene menu cases passed. Export
+`Web-20261022T074236Z-ae40a0` passed export, packaging and source/payload admission;
+the earlier failed export remains failed evidence.
+
+The owner requested the menu's brass/graphite chrome and the panel-corner
+correction alongside wave conversion. The corner source has an opaque rectangular
+backing beneath a clipped frame; its geometry needs the same clipped boundary.
+Neither follow-up is claimed implemented here. Earlier reports below describe
+their named candidates and do not qualify newly changed source automatically.
 
 ## October 22 layout correction
 
@@ -59,7 +97,7 @@ captures retain their exact original input identities. The corrected normal-spee
 fresh-storage progression journey passed both fittings with 91 screenshots in
 `Evidence/first-session-polish/garage-reload-20261022T063027Z-a994fe`, including
 goals, manual Claim, earned permanent purchases, reload, stronger same-tier
-redeployment and Tier 2 selection. Final owner acceptance remains pending. Earlier
+redeployment and Tier 2 selection. Owner UI acceptance was subsequently granted. Earlier
 verification below applies to the previous packaged candidate unless superseded here.
 
 Unaltered rendered comparisons: [desktop garage](player-controls/garage-desktop.png),
@@ -131,6 +169,6 @@ Review the actual [portrait controls](player-controls/portrait-controls.png), [p
 - Preserved journal `Evidence/player-controls/2026-10-21T23-49-11-952Z` passed the repair fitting, but the launcher used stale coordinates after its final resize. The next journal, `Evidence/player-controls/2026-10-22T00-09-55-357Z`, passed the entire repair journey against the final export (39 captures and nine measured audio windows). Its launcher completed the responsive layouts, audio and abandon checks, then clicked outside the page after reload because readiness preceded the DPR-aware canvas update. Both overall failed runs remain failed. The runner now waits for canvas geometry before every click, including reload; its earlier exact bytes are retained with that report.
 - The targeted launcher rerun, `node scripts/last-stand-controls.mjs --fitting=launcher`, passed in `Evidence/player-controls/2026-10-22T00-23-29-269Z`: 39 captures, nine measured audio windows, persisted opt-outs, Cancel/confirm reset, account dialog, confirmed wrapper return and browser-enforced fullscreen denial. Its runtime hashes exactly match the separately passing repair journey above; the helpers and validators are unchanged. These two retained runs provide both-fitting coverage, not a new combined-run pass. Recorded WebM audio is retained with each run for owner listening. Independent review found no actionable defects in the runner correction or its explicit subset reporting.
 - Both normal-speed, fresh-storage progression journeys passed against the final export in `Evidence/first-session-polish/first-session-2026-10-22T00-10-15-194Z`. Each fitting covered 30 phase/profile combinations; 89 screenshots total retain purchases, manual Claim, reload, tier unlock and stronger redeploy observations. No gameplay save was seeded and owner acceptance is separate.
-- Final owner listening/usability feedback, native Windows/background-media qualification and exact-head hosted CI remain pending. The headless tab did not actually become hidden, so no hidden-tab silence result is claimed. Headless frame-cadence samples are not hardware-performance qualification.
+- At that observation, owner feedback, native Windows/background-media qualification and exact-head hosted CI remained pending. The owner subsequently accepted the UI; native qualification remains separate. The headless tab did not actually become hidden, so no hidden-tab silence result is claimed. Headless frame-cadence samples are not hardware-performance qualification.
 
 Music source and authorship are documented in `../Tools/last_stand_controls/AUDIO_PROVENANCE.md`.

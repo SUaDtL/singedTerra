@@ -124,16 +124,12 @@ assert.equal(plan(noFinisher).buy, undefined);
 assert.equal(plan(noFinisher).weapon, 'baby_missile');
 
 // A zero or partial pool still permits cheaper stock when it covers the estimate.
-// Existing defensive/area priorities and campaign semantics are not replaced.
+// Existing defensive and area priorities are not replaced.
 const area = engine();
 area.getState().tanks[1].health = 1; area.getState().tanks[1].shieldHp = 240;
 assert.equal(plan(area, 'hard', 4, 'area_denial').weapon, 'napalm');
 area.getState().tanks[0].health = 30;
 assert.equal(plan(area).weapon, 'shield', 'own useful defense still precedes offense');
-const campaign = engine();
-campaign.getState().campaign = Object.freeze({}); // selector-only compatibility fixture.
-campaign.getState().tanks[1].health = 10; campaign.getState().tanks[1].shieldHp = 240;
-assert.equal(plan(campaign).weapon, 'baby_missile', 'legacy campaign planner retains hull-only selection');
 const missing = engine();
 missing.getState().tanks[1].alive = false;
 assert.equal(plan(missing), null);

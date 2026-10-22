@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import type { GameState } from '@shared/types/GameState'
 import type { PlayerAction } from '@shared/types/PlayerAction'
 import type { HotSeatProgressionReceipt } from './client/hotSeatProgression'
@@ -34,7 +34,9 @@ const seams = vi.hoisted(() => ({
   onBuy: null as null | ((purchase: Record<string, unknown>, tankId?: string) => void),
   onNextRound: null as null | (() => void),
   onTouchPower: null as null | ((delta: number) => void),
-  inputAction: null as null | ((action: PlayerAction) => void),
+  onWeaponSelect: null as null | ((weapon: GameState['tanks'][number]['selectedWeapon']) => void),
+  inputAction: null as null | ((action: PlayerAction) => boolean | void),
+  inputSetWeapons: [] as GameState['tanks'][number]['selectedWeapon'][],
   rawInputStepAngle: null as null | ((delta: number) => void),
   inputPowerCaps: [] as number[],
   useActualGameEngine: false,
@@ -101,7 +103,6 @@ const seams = vi.hoisted(() => ({
   lobbyLaunchFailures: [] as string[],
   launchFocusSnapshot: { key: 'initiating-control' } as unknown,
   restoredLaunchFocus: [] as unknown[],
-  campaignLaunchRefreshes: 0,
   hudDestroys: 0,
   accountRevalidations: 0,
   revalidateAccountIdentity: (): Promise<boolean> => Promise.resolve(true),
@@ -268,7 +269,7 @@ vi.mock('./input/InputHandler', async (importOriginal) => {
     private readonly delegate: InstanceType<typeof actual.InputHandler> | null
     constructor(
       canvas: HTMLCanvasElement,
-      onAction: (action: PlayerAction) => void,
+      onAction: (action: PlayerAction) => boolean | void,
       options?: ConstructorParameters<typeof actual.InputHandler>[2],
     ) {
       seams.inputAction = onAction
@@ -289,7 +290,7 @@ vi.mock('./input/InputHandler', async (importOriginal) => {
       seams.inputPowerCaps.push(powerCap)
       this.delegate?.setPowerCap(powerCap)
     }
-    setWeapon() {}
+    setWeapon(weapon: GameState['tanks'][number]['selectedWeapon']) { seams.inputSetWeapons.push(weapon) }
     stepAngle(delta: number) { this.delegate?.stepAngle(delta) }
     stepMove() {}
     stepPower(delta: number) { this.delegate?.stepPower(delta) }
@@ -322,7 +323,7 @@ vi.mock('./ui/HUD', () => ({
     onTouchAngle() {}
     onTouchPower(callback: (delta: number) => void) { seams.onTouchPower = callback }
     onTouchWeapon() {}
-    onWeaponSelect() {}
+    onWeaponSelect(callback: NonNullable<typeof seams.onWeaponSelect>) { seams.onWeaponSelect = callback }
     setProgressionReceipt(receipt: Record<string, unknown>) {
       seams.progressionReceipts.push(receipt)
     }
@@ -394,7 +395,6 @@ vi.mock('./ui/Lobby', () => ({
     captureLaunchFocus() { return seams.launchFocusSnapshot }
     restoreLaunchFocus(snapshot: unknown) { seams.restoredLaunchFocus.push(snapshot) }
     showLaunchFailure(message: string) { seams.lobbyLaunchFailures.push(message) }
-    refreshCampaignSaveAfterLaunchFailure() { seams.campaignLaunchRefreshes += 1; return Promise.resolve() }
     showNetworkRecovery(message: string, retry: () => void) {
       seams.lobbyShows += 1
       seams.lobbyRecovery = { message, retry }
@@ -794,7 +794,9 @@ describe('production hot-seat progression composition', () => {
     seams.onBuy = null
     seams.onNextRound = null
     seams.onTouchPower = null
+    seams.onWeaponSelect = null
     seams.inputAction = null
+    seams.inputSetWeapons.length = 0
     seams.rawInputStepAngle = null
     seams.inputPowerCaps.length = 0
     seams.useActualGameEngine = false
@@ -858,7 +860,6 @@ describe('production hot-seat progression composition', () => {
     seams.lobbyLaunchFailures.length = 0
     seams.launchFocusSnapshot = { key: 'initiating-control' }
     seams.restoredLaunchFocus.length = 0
-    seams.campaignLaunchRefreshes = 0
     seams.hudDestroys = 0
     seams.accountRevalidations = 0
     seams.revalidateAccountIdentity = () => Promise.resolve(true)
@@ -874,6 +875,65 @@ describe('production hot-seat progression composition', () => {
     clearSession()
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('synchronizes the local weapon cursor only after authoritative selection acceptance', async () => {
+    const listeners = vi.spyOn(window, 'addEventListener')
+    onTestFinished(() => {
+      for (const [type, listener, options] of listeners.mock.calls) window.removeEventListener(type, listener, options)
+      listeners.mockRestore()
+    })
+    const state = liveVerifiedState()
+    state.tanks[0]!.selectedWeapon = 'shield'
+    const client = fakeClient(state, 0.15, (action) => {
+      if (action.type === 'select_weapon' && action.weapon === 'napalm') {
+        state.tanks[0]!.selectedWeapon = 'napalm'
+      }
+    })
+    seams.clients.push(client)
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [] })
+    seams.inputSetWeapons.length = 0
+
+    seams.onWeaponSelect!('missile')
+    expect(seams.forwardedActions.at(-1)).toEqual({ type: 'select_weapon', weapon: 'missile' })
+    expect(state.tanks[0]!.selectedWeapon).toBe('shield')
+    expect(seams.inputSetWeapons).toEqual([])
+
+    seams.onWeaponSelect!('napalm')
+    expect(seams.forwardedActions.at(-1)).toEqual({ type: 'select_weapon', weapon: 'napalm' })
+    expect(state.tanks[0]!.selectedWeapon).toBe('napalm')
+    expect(seams.inputSetWeapons).toEqual(['napalm'])
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }))
+    await Promise.resolve()
+  })
+
+  it('reports authoritative weapon rejection and acceptance through the InputHandler callback', async () => {
+    const listeners = vi.spyOn(window, 'addEventListener')
+    onTestFinished(() => {
+      for (const [type, listener, options] of listeners.mock.calls) window.removeEventListener(type, listener, options)
+      listeners.mockRestore()
+    })
+    const state = liveVerifiedState()
+    state.tanks[0]!.selectedWeapon = 'shield'
+    const client = fakeClient(state, 0.15, (action) => {
+      if (action.type === 'select_weapon' && action.weapon === 'napalm') {
+        state.tanks[0]!.selectedWeapon = 'napalm'
+      }
+    })
+    seams.clients.push(client)
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [] })
+
+    expect(seams.inputAction!({ type: 'select_weapon', weapon: 'missile' })).toBe(false)
+    expect(seams.forwardedActions.at(-1)).toEqual({ type: 'select_weapon', weapon: 'missile' })
+    expect(state.tanks[0]!.selectedWeapon).toBe('shield')
+
+    expect(seams.inputAction!({ type: 'select_weapon', weapon: 'napalm' })).toBe(true)
+    expect(seams.forwardedActions.at(-1)).toEqual({ type: 'select_weapon', weapon: 'napalm' })
+    expect(state.tanks[0]!.selectedWeapon).toBe('napalm')
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }))
+    await Promise.resolve()
   })
 
   it('retains one match owner across persisted-page cycles and blocks input until recovery settles', async () => {

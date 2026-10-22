@@ -270,8 +270,8 @@ describe('Lobby return focus', () => {
     root.querySelector<HTMLButtonElement>(
       '[data-command-surface="rail"][data-command-category="campaigns"]',
     )?.click()
-    root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!.click()
-    const primary = root.querySelector<HTMLButtonElement>('[data-command-item="ash-road"]')!
+    root.querySelector<HTMLButtonElement>('[data-command-item="last-stand"]')!.click()
+    const primary = root.querySelector<HTMLButtonElement>('[data-command-item="last-stand"]')!
     primary.focus()
     const snapshot = launchOwner.captureLaunchFocus!()
     const outside = document.createElement('button')
@@ -284,7 +284,7 @@ describe('Lobby return focus', () => {
     expect(document.activeElement).toBe(primary)
     expect(root.querySelector('[role="alert"]')?.textContent)
       .toBe('Campaign progress changed in another session.')
-    expect(root.querySelector('[data-command-item="ash-road"]')?.getAttribute('aria-current'))
+    expect(root.querySelector('[data-command-item="last-stand"]')?.getAttribute('aria-current'))
       .toBe('true')
   })
 

@@ -3049,7 +3049,7 @@ export function validateCancelledReturn({before,confirmed,cancelled,layout,saveB
   return {before,confirmed,cancelled,initialSelection:layout.selection};
 }
 
-export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, entrypoint, profileName }) {
+export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
   const sectionName=process.env.LAST_STAND_JOURNEY_SECTION;
   const shard=['entry','recovery'].includes(sectionName) && process.env.LAST_STAND_JOURNEY_SHARD===''?undefined:process.env.LAST_STAND_JOURNEY_SHARD;
@@ -3277,21 +3277,23 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     check(!requests.some(r=>r.url.includes('/last-stand/Build/')),'zero Unity runtime payload before ordinary launch');
     check(await page.locator('[data-last-stand-loss-disclosure]').innerText()===await page.locator('[data-last-stand-loss-disclosure]').textContent(), 'entry loss disclosure is rendered');
     check((await page.locator('[data-last-stand-loss-disclosure]').innerText()).includes('without a reward'),'entry disclosure names no-award unfinished loss');
-    await outerPointer(page.locator('[data-command-item="ash-road"]')); await selected('ash-road');
-    await goto('');await dismissSplash();await selected('ash-road');
-    report.routes=[{name:'fresh Campaigns',selected:'last-stand'},{name:'remembered Ash Road',selected:'ash-road'}];
+    check(await page.locator('[data-command-item="ash-road"]').count()===0,'retired campaign has no library entry');
+    await goto('');await dismissSplash();await selected('last-stand');
+    report.routes=[{name:'fresh Campaigns',selected:'last-stand'},{name:'remembered Last Stand',selected:'last-stand'}];
     }
     if(section.entry){
     const routeCases=[
-      {name:'compatible Ash Road resume',record:ashRoadRecord,suffix:'',expected:'ash-road'},
+      {name:'retired save cannot promote a removed campaign',record:retiredCampaignRecord,suffix:'',expected:'first-salvo'},
+      {name:'remembered retired campaign selects Last Stand',remembered:ash,suffix:'',expected:'last-stand'},
+      {name:'legacy Ash Road route selects Last Stand',suffix:'#campaigns/ash-road',expected:'last-stand'},
       {name:'remembered Skirmishes',remembered:skirmish,suffix:'',expected:'standard'},
       {name:'Return before remembered Ash Road',remembered:ash,suffix:'#campaigns/last-stand',expected:'last-stand'},
       {name:'validated ST1 before remembered Ash Road',remembered:ash,suffix:'#challenge=ST1-CW-16',expected:'imported-challenge'},
       {name:'invite before validated ST1',remembered:ash,suffix:'?join=ab12#challenge=ST1-CW-16',expected:'online'},
       {name:'invite before explicit Return',remembered:ash,suffix:'?join=ab12#campaigns/last-stand',expected:'online'},
       {name:'rejoin before validated ST1',remembered:ash,session:{roomId:'room-rejoin-fixture',roomCode:'BACK',playerId:'player-rejoin-fixture'},suffix:'#challenge=ST1-CW-16',expected:'online'},
-      {name:'invalid mixed signals cannot override remembered Ash Road',remembered:ash,suffix:'?join=bad!#challenge=ST1-CW-17',expected:'ash-road'},
-      {name:'invalid Return spelling cannot override remembered Ash Road',remembered:ash,suffix:'#campaigns/last-stand/invalid',expected:'ash-road'},
+      {name:'invalid mixed signals recover retired selection',remembered:ash,suffix:'?join=bad!#challenge=ST1-CW-17',expected:'last-stand'},
+      {name:'invalid Return spelling recovers retired selection',remembered:ash,suffix:'#campaigns/last-stand/invalid',expected:'last-stand'},
     ];
     assert.deepEqual(routeCases.map(({name,expected})=>({name,selected:expected})),LAST_STAND_ENTRY_ROUTES,
       'Exact original startup-routing inventory required');
@@ -3300,7 +3302,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       if(rejoin)rejoinBinding=await bindConfiguredRejoinFixture(base);
       await setRouteState(fixture);await goto(fixture.suffix);await dismissSplash();
       await selected(fixture.expected);
-      if(fixture.record)check(/resume ash road/i.test(await page.locator('[data-command-primary]').innerText()),'compatible Ash Road remains resumable');
+      check(await page.locator('[data-command-item="ash-road"]').count()===0,'retired campaign cannot reappear through startup signals');
       report.routes.push({name:fixture.name,selected:fixture.expected});
     }
     rejoin=false;
@@ -3309,7 +3311,7 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       await page.setViewportSize({width:viewport.width,height:viewport.height});await setRouteState();
       await goto('');await dismissSplash();await openCampaigns();await selected('last-stand');
       const order=await page.locator('.command-center__library-items .command-center__item').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
-      check(order[0]==='last-stand' && order.includes('ash-road'),`${viewport.name}: Last Stand first with selectable Ash Road`,order);
+      check(order.length===1 && order[0]==='last-stand',`${viewport.name}: Last Stand is the only campaign`,order);
       const primary=page.getByRole('link',{name:'Launch Last Stand',exact:true});await keyboardFocus(primary);
       await primary.scrollIntoViewIfNeeded();const bounds=await primary.boundingBox();
       check(bounds && bounds.width>=44 && bounds.height>=44 && bounds.x>=0 && bounds.x+bounds.width<=viewport.width && bounds.y>=0 && bounds.y+bounds.height<=viewport.height,
@@ -3321,26 +3323,26 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
     }
     if(section.entry || section.lifecycle){
     await page.setViewportSize({width:1280,height:720});
-    await setRouteState({record:ashRoadRecord,remembered:ash});await goto('');await dismissSplash();await selected('ash-road');
-    check(/resume ash road/i.test(await page.locator('[data-command-primary]').innerText()),'preserved compatible resume before Last Stand');
+    await setRouteState({record:retiredCampaignRecord,remembered:ash});await goto('');await dismissSplash();await selected('last-stand');
+    check(await page.locator('[data-command-item="ash-road"]').count()===0,'retired campaign has no start or resume entry');
     ashBytes=async()=>page.evaluate(async()=>new Promise((done,reject)=>{
       const request=indexedDB.open('singedterra-campaign',1);request.onerror=()=>reject(request.error);
       request.onsuccess=()=>{const db=request.result,read=db.transaction('campaign-runs').objectStore('campaign-runs').get('ash-road-local');
         read.onerror=()=>{db.close();reject(read.error);};read.onsuccess=()=>{db.close();done(JSON.stringify(read.result));};};
     }));
-    originalAsh=await ashBytes();check(originalAsh===JSON.stringify(ashRoadRecord),'exact compatible Ash Road stored record before entry');
-    report.ash_road_preservation={before_sha256:hash(originalAsh),native_return:'MISSING until keyboard passes',actual_resume:'MISSING until keyboard passes'};
-    if(!section.entry)Object.assign(report.ash_road_preservation,{native_return:'unexecuted-in-lifecycle-section',
-      actual_resume:'unexecuted-in-lifecycle-section'});
-    await outerPointer(page.locator('.command-center__item[data-command-item="last-stand"]'));await selected('last-stand');
+    originalAsh=await ashBytes();check(originalAsh===JSON.stringify(retiredCampaignRecord),'opaque retired campaign record preserved on startup');
+    report.retired_campaign_preservation={before_sha256:hash(originalAsh),native_return:'MISSING until keyboard passes',
+      retirement:'MISSING until native Return'};
+    if(!section.entry)Object.assign(report.retired_campaign_preservation,{native_return:'unexecuted-in-lifecycle-section',
+      retirement:'unexecuted-in-lifecycle-section'});
     const launch=page.getByRole('link',{name:'Launch Last Stand',exact:true});
     await keyboardFocus(launch); const before=states.length;
     await page.keyboard.press('Enter');await page.locator('#unity-canvas').waitFor();await focused('Unity ordinary launch');
     const ready=await until(states,before,item=>item.action==='ready',60);
     assertUnityReady(ready);
     check(true,'genuine Unity scene ready after player launch',ready);
-    const afterLaunchAsh=await ashBytes();check(afterLaunchAsh===originalAsh,'Ash Road record bytes preserved through real Last Stand launch');
-    report.ash_road_preservation.after_launch_sha256=hash(afterLaunchAsh);
+    const afterLaunchAsh=await ashBytes();check(afterLaunchAsh===originalAsh,'retired campaign bytes preserved through real Last Stand launch');
+    report.retired_campaign_preservation.after_launch_sha256=hash(afterLaunchAsh);
     check(requests.some(r=>r.url.endsWith('.wasm')) && requests.some(r=>r.url.endsWith('.data')),'ordinary launch requests real Unity payload');
     report.renderer=await page.evaluate(()=>{const canvas=document.querySelector('#unity-canvas');const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');if(!gl)return{available:false};const info=gl.getExtension('WEBGL_debug_renderer_info');return{available:true,vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER),version:gl.getParameter(gl.VERSION),unmasked_renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null};});
     check(report.renderer.available,'actual WebGL renderer observed',report.renderer);
@@ -3582,22 +3584,12 @@ export async function runLastStandJourney({ baseURL, chromium, ashRoadRecord, en
       'confirmed native Return abandons without reward',abandonedReturn);
     await page.locator('[data-last-stand-command-view]').waitFor();
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
-    check(await ashBytes()===originalAsh,'Ash Road record bytes preserved through native Last Stand Return');
-    report.ash_road_preservation.native_return='observed unchanged';
-    // Ash Road's artillery HUD requires landscape even when this Unity shard
-    // owns a portrait observation. Keep gameplay at its canonical viewport.
-    await page.setViewportSize({width:1280,height:720});
-    await selected('last-stand');await outerPointer(page.locator('.command-center__item[data-command-item="ash-road"]'));await selected('ash-road');
-    const resume=page.locator('[data-command-primary]');check(/resume ash road/i.test(await resume.innerText()),'compatible Ash Road remains resumable after native Return');
-    await outerPointer(resume);await page.locator('#app').waitFor({state:'visible'});check(!await page.locator('#lobby').isVisible(),'actual compatible Ash Road resume enters its game');
-    report.ash_road_preservation.actual_resume='observed via public Resume control';
-    const briefing=page.getByRole('dialog',{name:'First salvo briefing',exact:true});
-    if(await briefing.isVisible())await outerPointer(briefing.getByRole('button',{name:'Enter battle',exact:true}));
-    const menu=page.locator('#hud .st-hud__menu');
-    if(!await menu.isVisible())await outerPointer(page.getByRole('button',{name:/Open (?:match|mission) ledger/}));
-    await outerPointer(menu);await outerPointer(page.getByRole('dialog',{name:'Command Menu',exact:true}).getByRole('button',{name:'Return to Lobby',exact:true}));
-    await page.locator('#lobby').waitFor({state:'visible'});await selected('ash-road');
-    await outerPointer(page.locator('.command-center__item[data-command-item="last-stand"]'));
+    check(await ashBytes()===originalAsh,'retired campaign bytes preserved through native Last Stand Return');
+    report.retired_campaign_preservation.native_return='observed unchanged';
+    await selected('last-stand');
+    const campaignItems=await page.locator('.command-center__library-items [data-command-item]').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
+    check(campaignItems.length===1&&campaignItems[0]==='last-stand','native Return offers only Last Stand');
+    report.retired_campaign_preservation.retirement='observed Last Stand only';
     start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished Return abandoned without award',restored);

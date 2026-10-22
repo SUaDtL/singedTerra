@@ -4,7 +4,6 @@ import {
   commandItemId,
   isCommandCategoryId,
   isCommandItemId,
-  type CampaignSavePresentation,
   type CommandCategoryContribution,
   type CommandCategoryId,
   type CommandItemContribution,
@@ -114,42 +113,5 @@ describe('command contribution contracts', () => {
     expect(view.focusDefault).toHaveBeenCalledOnce();
     expect(view.dispose).toHaveBeenCalledTimes(2);
     expect(release).toHaveBeenCalledOnce();
-  });
-});
-
-describe('CampaignSavePresentation', () => {
-  it('keeps all seven save outcomes explicit and exhaustively discriminated', () => {
-    expectTypeOf<CampaignSavePresentation['status']>().toEqualTypeOf<
-      | 'checking'
-      | 'empty'
-      | 'compatible'
-      | 'incompatible'
-      | 'unavailable'
-      | 'restoring'
-      | 'complete'
-    >();
-    const states = [
-      { status: 'checking' },
-      { status: 'empty' },
-      { status: 'compatible' },
-      { status: 'incompatible' },
-      { status: 'unavailable' },
-      { status: 'restoring' },
-      { status: 'complete' },
-    ] as const satisfies readonly CampaignSavePresentation[];
-
-    expect(states.map((state) => state.status)).toEqual([
-      'checking',
-      'empty',
-      'compatible',
-      'incompatible',
-      'unavailable',
-      'restoring',
-      'complete',
-    ]);
-
-    // @ts-expect-error Unknown save states cannot collapse into the presentation contract.
-    const invalid: CampaignSavePresentation = { status: 'error' };
-    void invalid;
   });
 });

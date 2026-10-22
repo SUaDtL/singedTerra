@@ -1,67 +1,52 @@
 import { expect, test } from '@playwright/test';
 import {
+  assertPreparationFrameGeometry,
   gotoLobby,
-  openAshRoadWorkspace,
+  openLastStandWorkspace,
   openStandardSkirmishWorkspace,
   selectCommandWorkspace,
 } from './support';
 
-const TRANSITION_VIEWPORT = { width: 1180, height: 860 } as const;
-const CAMPAIGN_TRANSITIONS = [
-  { width: 1800, height: 900, splitSupport: true, splitMission: true },
-  { width: 1220, height: 900, splitSupport: false, splitMission: true },
-  { width: 900, height: 720, splitSupport: false, splitMission: true },
-  { width: 820, height: 720, splitSupport: false, splitMission: false },
+const PREPARATION_TRANSITIONS = [
+  { width: 1800, height: 900 },
+  { width: 1220, height: 900 },
+  { width: 900, height: 720 },
+  { width: 820, height: 720 },
 ] as const;
 
 test.describe('preparation body layout ownership', () => {
-  test('Campaign owns one full-width support stack without inherited grid placement', async ({ page }) => {
-    await page.setViewportSize(TRANSITION_VIEWPORT);
+  test('Last Stand keeps its briefing and deployment dock composed through resize', async ({ page }) => {
     await gotoLobby(page);
-    await openAshRoadWorkspace(page);
-
-    const layout = await page.locator('[data-campaign-command-view]').evaluate((root) => {
-      const support = root.querySelector<HTMLElement>('.campaign-command__supporting');
-      const loadout = support?.querySelector<HTMLElement>(':scope > .campaign-command__loadout');
-      const briefing = support?.querySelector<HTMLElement>(':scope > .campaign-command__disclosure');
-      const body = root.querySelector<HTMLElement>('.preparation-frame__body-inner');
-      if (!support || !loadout || !briefing || !body) throw new Error('Campaign layout is incomplete');
-
-      const supportRect = support.getBoundingClientRect();
-      const loadoutRect = loadout.getBoundingClientRect();
-      const briefingRect = briefing.getBoundingClientRect();
-      const loadoutStyle = getComputedStyle(loadout);
-      const briefingStyle = getComputedStyle(briefing);
-
-      return {
-        loadoutRow: loadoutStyle.gridRowStart,
-        loadoutColumn: loadoutStyle.gridColumnStart,
-        briefingRow: briefingStyle.gridRowStart,
-        briefingColumn: briefingStyle.gridColumnStart,
-        loadoutLeftDelta: Math.abs(loadoutRect.left - supportRect.left),
-        loadoutRightDelta: Math.abs(loadoutRect.right - supportRect.right),
-        briefingLeftDelta: Math.abs(briefingRect.left - supportRect.left),
-        briefingRightDelta: Math.abs(briefingRect.right - supportRect.right),
-        ordered: briefingRect.top >= loadoutRect.bottom,
-        horizontalOverflow: body.scrollWidth - body.clientWidth,
-      };
-    });
-
-    expect(layout.loadoutRow, 'loadout must not target a named row from its former parent')
-      .toBe('auto');
-    expect(layout.loadoutColumn, 'loadout must use the support stack column')
-      .toBe('1');
-    expect(layout.briefingRow, 'briefing must not target a named row from its former parent')
-      .toBe('auto');
-    expect(layout.briefingColumn, 'briefing must use the support stack column')
-      .toBe('1');
-    expect(layout.loadoutLeftDelta).toBeLessThanOrEqual(1);
-    expect(layout.loadoutRightDelta).toBeLessThanOrEqual(1);
-    expect(layout.briefingLeftDelta).toBeLessThanOrEqual(1);
-    expect(layout.briefingRightDelta).toBeLessThanOrEqual(1);
-    expect(layout.ordered, 'briefing must follow loadout in the same support stack').toBe(true);
-    expect(layout.horizontalOverflow, 'campaign body must not clip at the transition width')
-      .toBeLessThanOrEqual(1);
+    await openLastStandWorkspace(page);
+    const root = page.locator('[data-last-stand-command-view]');
+    const launch = root.locator('[data-command-action="launch-last-stand"]');
+    await launch.focus();
+    for (const geometry of [...PREPARATION_TRANSITIONS, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+      await page.setViewportSize(geometry);
+      await expect(launch).toBeFocused();
+      await expect(launch).toHaveAttribute('href', /\/last-stand\/$/);
+      await expect(page.locator('[data-command-item="ash-road"]')).toHaveCount(0);
+      await assertPreparationFrameGeometry(page, '[data-last-stand-command-view]');
+      const layout = await root.evaluate((element) => {
+        const body = element.querySelector<HTMLElement>('.preparation-frame__body')!;
+        const board = body.querySelector<HTMLElement>('.last-stand-command__board')!;
+        const heading = element.querySelector<HTMLElement>('.preparation-frame__heading')!;
+        const dock = element.querySelector<HTMLElement>('.preparation-frame__dock')!;
+        const disclosure = dock.querySelector<HTMLElement>('[data-last-stand-loss-disclosure]')!;
+        return {
+          overflow: body.scrollWidth - body.clientWidth,
+          ordered: heading.getBoundingClientRect().bottom <= body.getBoundingClientRect().top + 1
+            && body.getBoundingClientRect().bottom <= dock.getBoundingClientRect().top + 1,
+          boardContained: board.getBoundingClientRect().left >= body.getBoundingClientRect().left - 1
+            && board.getBoundingClientRect().right <= body.getBoundingClientRect().right + 1,
+          disclosureOwnedByDock: !!disclosure,
+        };
+      });
+      expect(layout.overflow).toBeLessThanOrEqual(1);
+      expect(layout.ordered).toBe(true);
+      expect(layout.boardContained).toBe(true);
+      expect(layout.disclosureOwnedByDock).toBe(true);
+    }
   });
 
   test('Skirmish facts are attached to the briefing board instead of an implicit body track', async ({ page }) => {
@@ -114,100 +99,14 @@ test.describe('preparation body layout ownership', () => {
       .toBeLessThanOrEqual(1);
   });
 
-  test('Campaign heading content keeps its authored sequence in portrait preparation', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await gotoLobby(page);
-    await openAshRoadWorkspace(page);
-
-    const heading = await page.locator('[data-campaign-command-view]').evaluate((root) => {
-      const chapter = root.querySelector<HTMLElement>('.campaign-command__chapter');
-      const assignment = root.querySelector<HTMLElement>(
-        '.preparation-frame__heading .campaign-command__fact-label',
-      );
-      const mission = root.querySelector<HTMLElement>('.campaign-command__mission');
-      if (!chapter || !assignment || !mission) throw new Error('Campaign heading is incomplete');
-      const chapterRect = chapter.getBoundingClientRect();
-      const assignmentRect = assignment.getBoundingClientRect();
-      const missionRect = mission.getBoundingClientRect();
-      return {
-        assignmentAfterChapter: assignmentRect.top >= chapterRect.bottom - 1,
-        missionAfterAssignment: missionRect.top >= assignmentRect.bottom - 1,
-      };
-    });
-
-    expect(heading.assignmentAfterChapter, 'assignment label must follow the campaign kicker')
-      .toBe(true);
-    expect(heading.missionAfterAssignment, 'mission title must follow the assignment label')
-      .toBe(true);
-  });
-
-  test('Campaign crosses only viable outer and nested grid transitions without losing edits or focus', async ({ page }) => {
-    await page.setViewportSize(CAMPAIGN_TRANSITIONS[0]);
-    await gotoLobby(page);
-    await openAshRoadWorkspace(page);
-    const kit = page.locator('.campaign-command__kit-select');
-    await kit.selectOption({ index: 1 });
-    await kit.focus();
-
-    for (const geometry of CAMPAIGN_TRANSITIONS) {
-      await page.setViewportSize(geometry);
-      await expect(kit).toHaveValue('assault');
-      await expect(kit).toBeFocused();
-
-      const layout = await page.locator('[data-campaign-command-view]').evaluate((root) => {
-        const body = root.querySelector<HTMLElement>('.preparation-frame__body-inner');
-        const decision = root.querySelector<HTMLElement>('.campaign-command__decision');
-        const support = root.querySelector<HTMLElement>('.campaign-command__supporting');
-        const equipment = root.querySelector<HTMLElement>('.campaign-command__equipment dd');
-        if (!body || !decision || !support || !equipment) {
-          throw new Error('Campaign transition layout is incomplete');
-        }
-        const decisionRect = decision.getBoundingClientRect();
-        const supportRect = support.getBoundingClientRect();
-        const text = equipment.firstChild;
-        const brokenWords: string[] = [];
-        if (text?.nodeType === Node.TEXT_NODE && text.textContent) {
-          for (const match of text.textContent.matchAll(/[A-Za-z]+/g)) {
-            const range = document.createRange();
-            range.setStart(text, match.index!);
-            range.setEnd(text, match.index! + match[0].length);
-            if (range.getClientRects().length > 1) brokenWords.push(match[0]);
-          }
-        }
-        return {
-          containerWidth: root.getBoundingClientRect().width,
-          horizontalOverflow: body.scrollWidth - body.clientWidth,
-          supportBesideMission: supportRect.left >= decisionRect.right - 1,
-          missionColumnCount: getComputedStyle(decision).gridTemplateColumns.split(' ').length,
-          brokenWords,
-        };
-      });
-
-      expect(layout.horizontalOverflow, `Campaign clips at ${geometry.width}px`)
-        .toBeLessThanOrEqual(1);
-      expect(
-        layout.supportBesideMission,
-        `Campaign support transition at ${geometry.width}px viewport / ${layout.containerWidth}px workspace`,
-      )
-        .toBe(geometry.splitSupport);
-      expect(
-        layout.missionColumnCount,
-        `Campaign mission transition at ${geometry.width}px viewport / ${layout.containerWidth}px workspace`,
-      )
-        .toBe(geometry.splitMission ? 2 : 1);
-      expect(layout.brokenWords, `Campaign fragments loadout words at ${geometry.width}px`)
-        .toEqual([]);
-    }
-  });
-
   test('Skirmish briefing board stays composed through the same live resize path', async ({ page }) => {
-    await page.setViewportSize(CAMPAIGN_TRANSITIONS[0]);
+    await page.setViewportSize(PREPARATION_TRANSITIONS[0]);
     await gotoLobby(page);
     await selectCommandWorkspace(page, 'Skirmishes', 'crosswind-range');
     const launch = page.locator('[data-skirmish-command-view] [data-preparation-primary]');
     await launch.focus();
 
-    for (const geometry of CAMPAIGN_TRANSITIONS) {
+    for (const geometry of PREPARATION_TRANSITIONS) {
       await page.setViewportSize(geometry);
       await expect(launch).toBeFocused();
       await expect(page.locator('[data-skirmish-command-view]'))

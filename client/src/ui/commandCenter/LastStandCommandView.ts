@@ -1,3 +1,4 @@
+import { commandCategoryId, commandItemId, type CommandCategoryContribution } from './contracts';
 import { createPreparationFrame } from '../PreparationFrame';
 import type { MountedCommandView } from './contracts';
 
@@ -32,7 +33,7 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
   for (const [term, value] of [
     ['Assignment', 'Endure the assault'],
     ['Progress', 'Salvage and permanent cannon upgrades'],
-    ['Save', 'Separate local save in this browser'],
+    ['Save', 'Local save in this browser'],
   ] as const) {
     const dt = document.createElement('dt');
     dt.textContent = term;
@@ -45,6 +46,8 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
   const launch = document.createElement('a');
   launch.className = 'command-center__action command-center__primary-action lobby-btn primary preparation-frame__primary-action last-stand-command__launch';
   launch.dataset.commandAction = 'launch-last-stand';
+  launch.dataset.commandPrimary = '';
+  launch.dataset.preparationPrimary = '';
   launch.href = `${import.meta.env.BASE_URL}last-stand/`;
   launch.textContent = 'Launch Last Stand';
 
@@ -59,10 +62,10 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
     root,
     eyebrow: 'Campaigns / Last Stand',
     title: 'Last Stand',
-    description: 'A local survival prototype with its own progression.',
+    description: 'The survival campaign: hold the line and build lasting upgrades.',
     body: board,
     dockLabel: 'Field deployment',
-    dockStatus: 'Your Last Stand save stays separate from Ash Road.',
+    dockStatus: 'Progress is saved locally in this browser.',
     dockMessage: disclosure,
     secondaryActions: launch,
   });
@@ -72,5 +75,18 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
     update: () => undefined,
     focusDefault: () => launch.focus(),
     dispose: () => root.remove(),
+  };
+}
+
+export function createLastStandCommandCategoryContribution<Context>(): CommandCategoryContribution<Context> {
+  return {
+    id: commandCategoryId('campaigns'), label: 'Campaigns', icon: 'campaigns', order: 10,
+    availability: () => true,
+    provideItems: () => [{
+      id: commandItemId('last-stand'),
+      summary: { label: 'Last Stand', description: 'Survive, salvage, upgrade, and redeploy.' },
+      availability: () => true,
+      createView: (host) => createLastStandCommandView<Context>(host),
+    }],
   };
 }

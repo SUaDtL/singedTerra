@@ -5,7 +5,6 @@ import { expect, test, type Browser, type BrowserContext, type Page } from '@pla
 import {
   assertPreparationFieldReachable,
   assertPreparationFrameGeometry,
-  enterBattleIfBriefed,
   openLocalPreparation,
   openOnlinePreparation,
   openVerifiedOperations,
@@ -106,18 +105,6 @@ async function openLobby(page: Page): Promise<void> {
     .toContainText('Ranger');
 }
 
-async function returnFromBattle(page: Page): Promise<void> {
-  await enterBattleIfBriefed(page);
-  const menu = page.locator('#hud .st-hud__menu');
-  if (!(await menu.isVisible())) {
-    await page.getByRole('button', { name: /Open (?:match|mission) ledger/u }).click();
-  }
-  await menu.click();
-  await page.getByRole('dialog', { name: 'Command Menu', exact: true })
-    .getByRole('button', { name: 'Return to Lobby', exact: true }).click();
-  await expect(page.locator('#lobby')).toBeVisible();
-}
-
 async function capture(
   page: Page,
   records: EvidenceRecord[],
@@ -179,15 +166,10 @@ test.describe('T44 unified preparation evidence', () => {
       const { context, page } = await createEvidencePage(browser, geometry);
       await openLobby(page);
 
-      await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
-      await expect(page.locator('[data-campaign-save-status]')).not.toContainText('Checking');
-      await capture(page, records, geometry, 'campaign-empty', '[data-campaign-command-view]');
-      await page.getByRole('button', { name: 'Start Ash Road', exact: true }).click();
-      await expect(page.locator('#app')).toBeVisible();
-      await returnFromBattle(page);
-      await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
-      await expect(page.getByRole('button', { name: 'Resume Ash Road', exact: true })).toBeVisible();
-      await capture(page, records, geometry, 'campaign-resume', '[data-campaign-command-view]');
+      await selectCommandWorkspace(page, 'Campaigns', 'last-stand');
+      await expect(page.locator('[data-command-action="launch-last-stand"]')).toHaveAttribute('href', /\/last-stand\/$/);
+      await expect(page.locator('[data-command-item="ash-road"]')).toHaveCount(0);
+      await capture(page, records, geometry, 'campaign-last-stand', '[data-last-stand-command-view]');
 
       await selectCommandWorkspace(page, 'Skirmishes', 'standard');
       await capture(page, records, geometry, 'skirmish-standard', '[data-skirmish-command-view]');
@@ -286,7 +268,7 @@ test.describe('T44 unified preparation evidence', () => {
 
     await selectCommandWorkspace(page, 'Skirmishes', 'crosswind-range');
     await page.waitForTimeout(800);
-    await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
+    await selectCommandWorkspace(page, 'Campaigns', 'last-stand');
     await page.waitForTimeout(800);
     await context.close();
     if (!video) throw new Error('Playwright did not create the resize recording');

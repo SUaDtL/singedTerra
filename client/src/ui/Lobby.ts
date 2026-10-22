@@ -1,3 +1,4 @@
+import { createLastStandCommandCategoryContribution } from './commandCenter/LastStandCommandView';
 import { normalizeCreateRoomFallback, projectAuthoritativeNetworkMode, WIND_DEFAULT, GRAVITY_DEFAULT, type ModeSetup, type ModePlayer } from '../client/modeConfig';
 import lobbyCss from './Lobby.css?raw';
 import lobbyConsoleCss from './LobbyConsole.css?raw';
@@ -103,30 +104,6 @@ import {
 import { VerifiedChallengeStorage } from '../client/verifiedChallengeStorage';
 import { VerifiedChallengeTransport } from '../client/verifiedChallenge';
 import { createVerifiedChallengeInvoker } from '../client/verifiedChallengeBackend';
-import { parseCampaignRun } from '@shared/campaign/definitions';
-import { ASH_ROAD_EPISODE, ASH_ROAD_ROUTE_IDS } from '../campaign/content/episode';
-import { FUEL_STOP_FIXTURE } from '../campaign/content/fuel-stop';
-import { campaignDescriptorFromCheckpoint, createCampaignCheckpoint } from '../campaign/checkpoint';
-import { createCampaignRunState, type CampaignRunState } from '../campaign/runReducer';
-import { createCampaignLoadout } from '../campaign/loadout';
-import {
-  createCampaignReplayPayload,
-  type CampaignReplayPayload,
-} from '../campaign/replay';
-import { createIndexedDbCampaignStorage, type CampaignStorage } from '../campaign/storage';
-import {
-  CampaignSavePresentationOwner,
-} from './commandCenter/CampaignSavePresentation';
-import {
-  browserCampaignRunReplacementConfirmation,
-  CampaignRunReplacementCoordinator,
-  type CampaignRunReplacementConfirmationPort,
-} from './commandCenter/CampaignRunReplacement';
-import {
-  createAshRoadCommandCategoryContribution,
-  type CampaignCommandContext,
-  type CampaignKitId,
-} from './commandCenter/CampaignCommandView';
 import {
   createSkirmishCommandCategoryContribution,
   type ImportedSkirmishChallenge,
@@ -210,12 +187,6 @@ export type LobbyPlayer = ModePlayer;
 
 /** Configuration produced by the lobby once the player(s) are ready. */
 export interface LobbyConfig extends ModeSetup {
-  /** Device-local campaign progress paired with the strict campaign descriptor. */
-  campaignRunState?: CampaignRunState;
-  /** Strict replay payload selected through the public device-local resume affordance. */
-  campaignReplayPayload?: CampaignReplayPayload;
-  /** CAS revision paired with campaignReplayPayload at lobby selection time. */
-  campaignReplayRevision?: number;
   /** Local Quick Duel presentation only; never enters the deterministic action protocol. */
   quickOperation?: {
     readonly id: string;
@@ -415,15 +386,7 @@ const defaultProductionDiagnosticsFactory: ProductionDiagnosticsFactory = async 
   return createProductionDiagnostics(supabase, { readiness: 'loading' });
 };
 
-const defaultCampaignStorage: CampaignStorage = Object.freeze({
-  load: (slotId: string) => createIndexedDbCampaignStorage().load(slotId),
-  compareAndSwap: (input: Parameters<CampaignStorage['compareAndSwap']>[0]) => (
-    createIndexedDbCampaignStorage().compareAndSwap(input)
-  ),
-});
-
 interface LobbyCommandCenterContext extends
-  CampaignCommandContext,
   SkirmishCommandContext,
   MultiplayerCommandContext {}
 
@@ -497,12 +460,8 @@ export class Lobby {
   private onlineWorkspaceSuspended = false;
   private browseLifetimeSignal: AbortSignal | null = null;
   private networkRecoveryRetry: (() => void) | null = null;
-  private readonly campaignSavePresentation: CampaignSavePresentationOwner;
-  private readonly campaignRunReplacement: CampaignRunReplacementCoordinator;
   private readonly commandSelectionStore: SessionCommandSelectionStore;
   private commandCenterShell: CommandCenterShell<LobbyCommandCenterContext> | null = null;
-  private campaignInitialPromotionEligible = false;
-  private selectedCampaignKit: CampaignKitId = 'precision';
   private campaignReturnRequested = false;
   private pendingLaunchFocus: LobbyLaunchFocusSnapshot | null = null;
 
@@ -560,14 +519,21 @@ export class Lobby {
     createDiagnostics: ProductionDiagnosticsFactory = defaultProductionDiagnosticsFactory,
     private readonly generateQuickDuelSeed: () => number = browserQuickDuelSeed,
     createVerifiedChallengeSession: VerifiedChallengeSessionFactory = defaultVerifiedChallengeSessionFactory,
-    campaignSaveStorage: CampaignStorage = defaultCampaignStorage,
-    campaignRunReplacementConfirmation: CampaignRunReplacementConfirmationPort =
-      browserCampaignRunReplacementConfirmation,
   ) {
     this.root = root;
     this.onReady = onReady;
-    this.commandSelectionStore = createSessionCommandSelectionStore(window.sessionStorage);
+    const storedSelection = createSessionCommandSelectionStore(window.sessionStorage);
+    this.commandSelectionStore = {
+      ...storedSelection,
+      read: () => {
+        const selection = storedSelection.read();
+        return selection?.categoryId === 'campaigns' && selection.itemId === 'ash-road'
+          ? { categoryId: commandCategoryId('campaigns'), itemId: commandItemId('last-stand') }
+          : selection;
+      },
+    };
     this.campaignReturnRequested = window.location.hash === '#campaigns/last-stand'
+      || window.location.hash === '#campaigns/ash-road'
       || window.location.hash === '#account/last-stand';
     this.accountFromLastStand = window.location.hash === '#account/last-stand';
     this.accountPanelOpen = this.accountFromLastStand;
@@ -588,12 +554,6 @@ export class Lobby {
       ? this.accountSession.state.profile.id
       : null;
     this.verifiedChallengeSession = createVerifiedChallengeSession(authenticatedAccountId);
-    this.campaignSavePresentation = new CampaignSavePresentationOwner(campaignSaveStorage);
-    this.campaignRunReplacement = new CampaignRunReplacementCoordinator(
-      campaignSaveStorage,
-      this.campaignSavePresentation,
-      campaignRunReplacementConfirmation,
-    );
     this.accountSession.subscribeVerifiedCareer?.(() => { this.render(); });
     this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
@@ -1120,29 +1080,6 @@ export class Lobby {
     if (options.focusLobby) this.focusLobbyReturnTarget();
     void this.accountSession.initialize();
     void this.checkRejoinCandidate();
-    void this.checkCampaignResume();
-  }
-
-  private async checkCampaignResume(): Promise<void> {
-    const refresh = this.campaignSavePresentation.refresh();
-    if (!this.root.hidden) {
-      this.commandCenterShell?.update(this.campaignCommandContext());
-    }
-    await refresh;
-    if (!this.root.hidden) {
-      const context = this.campaignCommandContext();
-      this.commandCenterShell?.update(context);
-      if (
-        context.savePresentation.status === 'compatible'
-        && this.campaignInitialPromotionEligible
-      ) {
-        const promoted = this.commandCenterShell?.promoteInitialSelection({
-          categoryId: commandCategoryId('campaigns'),
-          itemId: commandItemId('ash-road'),
-        }) === true;
-        if (promoted) this.campaignInitialPromotionEligible = false;
-      }
-    }
   }
 
   /** Capture the meaningful control that initiated one application launch. */
@@ -1163,11 +1100,6 @@ export class Lobby {
       return;
     }
     this.lobbyReturnFocusTarget()?.focus({ preventScroll: true });
-  }
-
-  /** Re-project the campaign save owner after a launch failed to commit. */
-  async refreshCampaignSaveAfterLaunchFailure(): Promise<void> {
-    await this.checkCampaignResume();
   }
 
   /**
@@ -1223,7 +1155,6 @@ export class Lobby {
   hide(): void {
     this.networkRecoveryRetry = null;
     this.pendingLaunchFocus = null;
-    this.campaignSavePresentation.invalidate();
     this.commandCenterShell?.destroy();
     this.commandCenterShell = null;
     this.roomController.retire();
@@ -1376,16 +1307,8 @@ export class Lobby {
     };
   }
 
-  private campaignCommandContext(): LobbyCommandCenterContext {
+  private commandContext(): LobbyCommandCenterContext {
     return {
-      savePresentation: this.campaignSavePresentation.presentation,
-      resumeCandidate: this.campaignSavePresentation.resumeCandidate,
-      selectedKit: this.selectedCampaignKit,
-      onSelectKit: (kitId) => { this.selectedCampaignKit = kitId; },
-      onStart: (kitId) => this.startAshRoad(kitId),
-      onResume: () => { this.resumeAshRoad(); },
-      onNewRun: (kitId, lifetime) => this.startAshRoad(kitId, lifetime),
-      onRetrySave: () => this.checkCampaignResume(),
       firstSalvoAvailable: firstSalvoPreferenceUnseen(),
       importedChallenge: this.importedSkirmishChallenge(),
       importedChallengeInvalid: this.seedChallenge.status === 'invalid',
@@ -1410,7 +1333,7 @@ export class Lobby {
   >[] {
     const multiplayer = createMultiplayerCommandCategoryContribution<LobbyCommandCenterContext>();
     return [
-      createAshRoadCommandCategoryContribution<LobbyCommandCenterContext>(),
+      createLastStandCommandCategoryContribution<LobbyCommandCenterContext>(),
       createSkirmishCommandCategoryContribution<LobbyCommandCenterContext>(),
       multiplayer,
     ];
@@ -1419,12 +1342,12 @@ export class Lobby {
   private mountCommandCenter(): HTMLElement {
     const host = document.createElement('div');
     host.className = 'lobby-command-center';
-    const context = this.campaignCommandContext();
+    const context = this.commandContext();
     const contributions = this.commandCenterContributions();
     const registry = resolveCommandRegistry(contributions, context);
     const campaigns = {
       categoryId: commandCategoryId('campaigns'),
-      itemId: commandItemId('ash-road'),
+      itemId: commandItemId('last-stand'),
     };
     const firstSalvo = {
       categoryId: commandCategoryId('skirmishes'),
@@ -1455,14 +1378,11 @@ export class Lobby {
       ...(this.seedChallenge.status === 'valid' ? {
         importedChallenge: { explicit: true, validated: true, selection: importedChallenge },
       } : {}),
-      campaign: {
-        compatible: this.campaignSavePresentation.presentation.status === 'compatible',
-        selection: campaigns,
-      },
       firstSalvo,
       standardQuickDuel,
     }, this.commandSelectionStore);
-    if (window.location.hash === '#campaigns/last-stand' || window.location.hash === '#account/last-stand') {
+    if (window.location.hash === '#campaigns/last-stand' || window.location.hash === '#campaigns/ash-road'
+      || window.location.hash === '#account/last-stand') {
       if (resolvedInitialSelection?.source !== 'explicit-campaign-return') {
         this.campaignReturnRequested = false;
       }
@@ -1474,8 +1394,6 @@ export class Lobby {
       this.inviteRouteRequested = false;
       this.commandSelectionStore.remember(resolvedInitialSelection.selection);
     }
-    this.campaignInitialPromotionEligible = resolvedInitialSelection?.source === 'first-salvo'
-      || resolvedInitialSelection?.source === 'standard-quick-duel';
     const initialSelection = resolvedInitialSelection?.selection ?? campaigns;
     this.commandCenterShell = createCommandCenterShell(host, {
       contributions,
@@ -1928,118 +1846,6 @@ export class Lobby {
       target.__singedTerraE2E = Object.freeze({ quickDuelSeed: seed });
     }
     this.launchQuickDuel(operation, seed, 'local-selection');
-  }
-
-  private async startAshRoad(kitId: CampaignKitId, lifetime?: AbortSignal): Promise<void> {
-    const route = ASH_ROAD_EPISODE.routes.find(({ id }) => id === ASH_ROAD_ROUTE_IDS.highRoad);
-    if (!route) throw new Error('Ash Road is missing its public opening route');
-    const run = parseCampaignRun({
-      kind: 'campaign-run',
-      runVersion: 1,
-      runId: 'ash-road-local-run',
-      episodeId: ASH_ROAD_EPISODE.episodeId,
-      episodeVersion: ASH_ROAD_EPISODE.episodeVersion,
-      episodeContentDigest: ASH_ROAD_EPISODE.contentDigest,
-      combatProfileId: FUEL_STOP_FIXTURE.combatProfile.profileId,
-      combatProfileVersion: FUEL_STOP_FIXTURE.combatProfile.profileVersion,
-      combatProfileContentDigest: FUEL_STOP_FIXTURE.combatProfile.contentDigest,
-      routeId: route.id,
-      encounterIds: route.encounterIds,
-      currentEncounterIndex: 0,
-    });
-    if (!run) throw new Error('Ash Road public run is invalid');
-    const checkpoint = createCampaignCheckpoint({
-      run,
-      encounter: FUEL_STOP_FIXTURE.encounter,
-      combatProfile: FUEL_STOP_FIXTURE.combatProfile,
-      attempt: 1,
-      supplies: 2,
-    });
-    const campaignRunState = createCampaignRunState(
-      checkpoint,
-      createCampaignLoadout({
-        offensiveWeaponIds: kitId === 'assault'
-          ? ['missile', 'cluster_bomb']
-          : kitId === 'breach'
-            ? ['missile', 'sandhog']
-            : ['missile', 'napalm'],
-      }),
-    );
-    const config: LobbyConfig = {
-      mode: 'hotseat',
-      experience: 'campaign',
-      campaign: {
-        encounter: checkpoint.encounter,
-        combatProfile: FUEL_STOP_FIXTURE.combatProfile,
-      },
-      campaignRunState,
-      players: [
-        { name: 'Ranger', color: PALETTE[0].value },
-        { name: 'Defender', color: PALETTE[1].value, ai: 'hard' },
-      ],
-      playerNames: ['Ranger', 'Defender'],
-    };
-    const saveStatus = this.campaignSavePresentation.presentation.status;
-    if (saveStatus === 'empty') {
-      this.onReady(config);
-      return;
-    }
-    if (saveStatus !== 'compatible' && saveStatus !== 'complete') return;
-
-    const payload = createCampaignReplayPayload({
-      runState: campaignRunState,
-      acceptedCommands: [],
-    });
-    const replacement = await this.campaignRunReplacement.replace(payload);
-    if (lifetime?.aborted) {
-      // A confirmed replacement may commit after its initiating view retires.
-      // Re-project that durable state without reviving the stale view or
-      // launching from its callback.
-      if (replacement.status === 'replaced') await this.checkCampaignResume();
-      return;
-    }
-    if (replacement.status !== 'replaced') {
-      if (replacement.status === 'conflict') {
-        this.render();
-        this.showLaunchFailure(
-          'Campaign progress changed in another session. Review the refreshed save before trying again.',
-        );
-        this.root.querySelector<HTMLElement>('[data-command-primary]')?.focus({ preventScroll: true });
-      }
-      return;
-    }
-    this.onReady({
-      ...config,
-      campaignReplayPayload: replacement.payload,
-      campaignReplayRevision: replacement.revision,
-    });
-  }
-
-  private resumeAshRoad(): void {
-    const resume = this.campaignSavePresentation.resumeCandidate;
-    if (!resume) return;
-    this.pendingLaunchFocus = this.captureLobbyFocus();
-    if (!this.campaignSavePresentation.beginRestoring()) return;
-    this.render();
-    const { payload, revision } = resume;
-    const runState = payload.runState;
-    const descriptor = campaignDescriptorFromCheckpoint(
-      runState.checkpoint,
-      runState.attemptCheckpoint.loadout,
-    );
-    this.onReady({
-      mode: 'hotseat',
-      experience: 'campaign',
-      campaign: descriptor,
-      campaignRunState: runState,
-      campaignReplayPayload: payload,
-      campaignReplayRevision: revision,
-      players: [
-        { name: 'Ranger', color: PALETTE[0].value },
-        { name: 'Defender', color: PALETTE[1].value, ai: 'hard' },
-      ],
-      playerNames: ['Ranger', 'Defender'],
-    });
   }
 
   /** Imported input reaches launch only after strict ST1 resolution. */

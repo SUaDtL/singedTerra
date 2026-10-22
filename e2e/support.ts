@@ -66,7 +66,7 @@ export async function gotoLobby(page: Page): Promise<void> {
 }
 
 export type CommandCategoryName = 'Campaigns' | 'Skirmishes' | 'Multiplayer';
-export type CommandItemName = 'ash-road' | 'local-battle'
+export type CommandItemName = 'last-stand' | 'local-battle'
   | 'verified-operations' | 'online' | 'first-salvo' | 'standard' | 'crosswind-range'
   | 'caldera-run' | 'last-light-siege' | 'lean-arsenal' | 'imported-challenge';
 
@@ -110,10 +110,10 @@ export async function selectCommandWorkspace(
   await expect(commandItem).toHaveAttribute('aria-current', 'true');
 }
 
-export async function openAshRoadWorkspace(page: Page): Promise<void> {
-  await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
-  await expect(page.locator('[data-campaign-command-view]')).toBeVisible();
-  await expect(page.locator('[data-campaign-save-status]')).not.toContainText('Checking');
+export async function openLastStandWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Campaigns', 'last-stand');
+  await expect(page.locator('[data-last-stand-command-view]')).toBeVisible();
+  await expect(page.locator('[data-command-action="launch-last-stand"]')).toHaveAttribute('href', /\/last-stand\/$/);
 }
 
 export async function openStandardSkirmishWorkspace(page: Page): Promise<void> {
@@ -153,52 +153,6 @@ export async function openOnlinePreparation(page: Page): Promise<void> {
   await expect(workspace).toBeVisible();
   await expect(page.getByRole('tabpanel', { name: 'Play Online preparation', exact: true }))
     .toHaveCount(0);
-}
-
-/** Open the campaign's mode-aware Match/Mission ledger when it is drawer-owned. */
-export async function openMissionLedger(page: Page): Promise<boolean> {
-  const mission = page.getByRole('region', { name: 'Campaign mission', exact: true });
-  if (await mission.isVisible()) return false;
-  const trigger = page.getByRole('button', { name: 'Open mission ledger', exact: true });
-  await expect(trigger).toBeVisible();
-  await trigger.click();
-  await expect(mission).toBeVisible();
-  return true;
-}
-
-export async function closeMissionLedger(page: Page): Promise<void> {
-  const close = page.getByRole('button', { name: 'Close mission ledger', exact: true });
-  if (await close.isVisible()) await close.click();
-}
-
-/**
- * Start Fuel Stop through the ordinary guest-facing campaign entry. This helper
- * intentionally has no query fixture, storage seed, DOM removal after entry, or
- * engine hook: a missing public campaign control is a product failure.
- */
-export async function gotoFuelStopFromPublicEntry(page: Page): Promise<void> {
-  await gotoLobby(page);
-
-  await openAshRoadWorkspace(page);
-
-  const start = page.getByRole('button', { name: 'Start Ash Road', exact: true });
-  await expect(start).toBeVisible({ timeout: 5_000 });
-  await start.scrollIntoViewIfNeeded();
-  await expect(start).toBeEnabled();
-  await start.focus();
-  await expect(start).toBeFocused();
-  await page.keyboard.press('Enter');
-
-  await expect(page.locator('#lobby')).toBeHidden();
-  await expect(page.locator('#game')).toBeVisible();
-  await expect(page.locator('[data-campaign-mission]')).toHaveAttribute(
-    'data-campaign-result', 'active',
-  );
-  await expect(page.locator('[data-battle-console-surface]'))
-    .toHaveAttribute('data-active-commander', 'p1');
-  await enterBattleIfBriefed(page);
-  const skipCoach = page.getByRole('button', { name: 'Skip', exact: true });
-  if (await skipCoach.isVisible()) await skipCoach.click();
 }
 
 /**

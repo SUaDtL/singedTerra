@@ -22,7 +22,8 @@ const recoveryChecks=['.loader.js: real Retry recovered genuine scene','.wasm: r
 const entryChecks=['global fresh startup remains Skirmishes','zero Unity runtime payload before ordinary launch',
   'entry loss disclosure is rendered','entry disclosure names no-award unfinished loss',
   'unfinished Return abandoned without award','unfinished reload abandoned without award',
-  'Ash Road record bytes preserved through native Last Stand Return','actual compatible Ash Road resume enters its game',
+  'retired campaign has no library entry','retired campaign has no start or resume entry',
+  'retired campaign bytes preserved through native Last Stand Return','native Return offers only Last Stand',
   'no unclassified browser/Unity/shader/request errors in any scope'];
 export function assertLastStandMatrix(reports,{head,inputs}) {
   assert.match(head,/^[a-f0-9]{40}$/,'Exact matrix checkout required');
@@ -57,11 +58,11 @@ export function assertLastStandMatrix(reports,{head,inputs}) {
     assert.deepEqual(report.viewport_partition.entry_viewports,section==='entry'?partition.entryViewports.map(v=>v.name):[]);
     assert.equal(report.viewport_partition.gameplay_viewport,section!=='recovery'?'standard':null,'Original gameplay viewport required');
     if(section==='entry'){
-      const preserved=report.ash_road_preservation;
-      assert.match(preserved?.before_sha256??'',/^[a-f0-9]{64}$/,'Original compatible Ash Road bytes required');
-      assert.equal(preserved.after_launch_sha256,preserved.before_sha256,'Ash Road changed on ordinary launch');
+      const preserved=report.retired_campaign_preservation;
+      assert.match(preserved?.before_sha256??'',/^[a-f0-9]{64}$/,'Opaque retired campaign bytes required');
+      assert.equal(preserved.after_launch_sha256,preserved.before_sha256,'Retired campaign bytes changed on ordinary launch');
       assert.equal(preserved.native_return,'observed unchanged');
-      assert.equal(preserved.actual_resume,'observed via public Resume control');
+      assert.equal(preserved.retirement,'observed Last Stand only');
       assert.equal(report.input_trace?.matched,true,'Unfinished deployments require matched native input');
       assert.equal(report.input_trace.actions,2);assert.equal(report.input_trace.observed_edges,4);
       assert.ok(Number.isInteger(report.input_trace.outer_keyboard_edges) && report.input_trace.outer_keyboard_edges>=2,
@@ -92,7 +93,7 @@ export function assertLastStandMatrix(reports,{head,inputs}) {
         assert.equal(capture.scope,'healthy');assert.ok(Number.isInteger(capture.load) && capture.load>0);
         const observed=report.campaign_entry.find(v=>v.viewport?.name===viewport);
         assert.deepEqual(observed?.viewport,selected,'Wrong observed Campaigns entry viewport');
-        assert.ok(observed.order?.[0]==='last-stand' && observed.order.includes('ash-road'),'Both Campaigns remain selectable');
+        assert.deepEqual(observed.order,['last-stand'],'Last Stand must be the only campaign');
         const b=observed.bounds;
         assert.ok(b && ['x','y','width','height'].every(k=>Number.isFinite(b[k])) && b.width>=44 && b.height>=44 && b.x>=0 && b.y>=0 &&
           b.x+b.width<=selected.width && b.y+b.height<=selected.height,'Entry launch must remain visible and reachable');
