@@ -46,13 +46,15 @@ namespace UnityEngine
         public float spatialBlend, volume=1, pitch=1;
         public int priority=128, PlayCount, StopCount;
         public AudioClip clip;
-        public void Play() { isPlaying=true; PlayCount++; }
-        public void Stop() { isPlaying=false; StopCount++; }
+        public static Action AfterPlay, BeforeStop;
+        public void Play() { isPlaying=true; PlayCount++; AfterPlay?.Invoke(); }
+        public void Stop() { BeforeStop?.Invoke(); isPlaying=false; StopCount++; }
     }
     public sealed class AudioListener : Component { public static bool pause; }
     public static class Application { public static bool isFocused=true; }
-    public static class Time { public static float unscaledDeltaTime=.1f, deltaTime=.1f, timeScale=1; }
-    public static class Debug { public static readonly List<string> Logs=new List<string>(); public static void Log(string s) { Logs.Add(s); } }
+    public static class Time { public static double realtimeSinceStartupAsDouble; public static float unscaledDeltaTime=.1f, deltaTime=.1f, timeScale=1; }
+    public static class JsonUtility { public static readonly List<object> Values=new List<object>(); public static string ToJson(object value) { Values.Add(value); return "{}"; } }
+    public static class Debug { public static readonly List<string> Logs=new List<string>(); public static Action<string> AfterLog; public static void Log(string s) { Logs.Add(s); AfterLog?.Invoke(s); } }
     public static class Mathf
     {
         public const float PI=(float)Math.PI;
@@ -82,10 +84,12 @@ public static class AudioSettingsChecks
     }
     static LastStandAudio Fixture()
     {
-        Debug.Logs.Clear(); Application.isFocused=true; Time.timeScale=1; Time.deltaTime=Time.unscaledDeltaTime=.1f;
+        Debug.Logs.Clear(); Debug.AfterLog=null; AudioSource.AfterPlay=null; AudioSource.BeforeStop=null; Time.realtimeSinceStartupAsDouble=.496; Application.isFocused=true; Time.timeScale=1; Time.deltaTime=Time.unscaledDeltaTime=.1f;
         var obj=new GameObject(); var tank=obj.AddComponent<SingedTerra.Art.TankPresentation>();
         tank.view=new GameObject().AddComponent<Component>();
-        var audio=obj.AddComponent<LastStandAudio>();audio.Initialize();return audio;
+        var audio=obj.AddComponent<LastStandAudio>();audio.Initialize();
+        int ordinal=0; audio.CombatAdmission=cue=>LastStandAudioCue.Prepare(cue,1,1,0,10,10,++ordinal,.496,0,0,true);
+        JsonUtility.Values.Clear();return audio;
     }
     static AudioSource[] Effects(LastStandAudio audio) => audio.gameObject.Components.OfType<AudioSource>().Where(s=>!s.loop).ToArray();
     static AudioSource Music(LastStandAudio audio)
@@ -126,6 +130,69 @@ public static class AudioSettingsChecks
         Require(EffectPlays(audio)==before,"muted burst is refused");audio.ToggleMute();
         Invoke(audio,"OnApplicationFocus",false);audio.PlayEvent(EncounterEventKind.Scattergun,8,true);
         Require(EffectPlays(audio)==before,"hidden burst is refused");
+    }
+    static void EachCombatCueUsesItsOwnFreshPlaybackBoundary()
+    {
+        var audio=Fixture();audio.UnlockFromGesture("test-click");
+        AudioSource.AfterPlay=()=>Time.realtimeSinceStartupAsDouble+=.005;
+        audio.PlayEvent(EncounterEventKind.Cannon,1,false);
+        Require(EffectPlays(audio)==1,"Second cue after the 500ms boundary must be suppressed independently");
+        AudioSource.AfterPlay=null;
+        int before=EffectPlays(audio);audio.PlayDefeat();
+        Require(EffectPlays(audio)==before,"Terminal cue uses the same expired callback");
+        audio.PlayPurchase();audio.PreviewEffect();
+        Require(EffectPlays(audio)==before+2,"Gesture cues do not inherit the expired gameplay callback");
+    }
+    static LastStandAudioCue Decision(string cue,int id,int run,int from,int tick,int steps,int ordinal,
+        double timestamp,double previous,double now,double pending,bool eligible)
+    { var value=LastStandAudioCue.Prepare(cue,id,run,from,tick,steps,ordinal,timestamp,previous,pending,eligible);value.Admit(now);return value; }
+    static void PlaybackBoundaryClocksPreparationAndDiagnostics()
+    {
+        foreach(double now in new[]{.5,.500001,.495,-1,double.NaN,double.PositiveInfinity})
+        {
+            var audio=Fixture();audio.UnlockFromGesture("test-click");Time.realtimeSinceStartupAsDouble=now;
+            audio.PlayDefeat();
+            var decision=JsonUtility.Values.OfType<LastStandAudioCue>().Single();
+            Require(EffectPlays(audio)==(now==.5?1:0),"Exact500ms boundary and invalid/backward clocks fail closed");
+            Require(decision.admittedAt.Equals(now),"Witness keeps the sampled clock without clamping");
+        }
+        var active=Fixture();active.UnlockFromGesture("test-click");
+        active.PlayEvent(EncounterEventKind.Cannon,1,true);active.PlayEvent(EncounterEventKind.Cannon,1,true);
+        var voices=Effects(active);int stops=voices.Sum(v=>v.StopCount);
+        Time.realtimeSinceStartupAsDouble=.501;active.PlayEvent(EncounterEventKind.Cannon,1,true);
+        Require(voices.All(v=>v.isPlaying) && voices.Sum(v=>v.StopCount)==stops && EffectPlays(active)==4,
+            "Already expired attempts leave all active voices and ring position alone");
+        Time.realtimeSinceStartupAsDouble=.496;active.PlayDefeat();
+        Require(voices[0].clip.name=="LastStand_Defeat","Expired attempts never consume the next ring voice");
+        var prepared=Fixture();prepared.UnlockFromGesture("test-click");
+        AudioSource.BeforeStop=()=>Time.realtimeSinceStartupAsDouble+=.005;
+        prepared.PlayEvent(EncounterEventKind.Cannon,1,true);
+        Require(EffectPlays(prepared)==0 && JsonUtility.Values.OfType<LastStandAudioCue>().All(c=>!c.played&&c.reason=="expired"),
+            "Slow source preparation is included before every actual playback admission");
+        var logged=Fixture();logged.UnlockFromGesture("test-click");
+        Debug.AfterLog=s=>{if(s.StartsWith("ST_ENC_CALLBACK"))Time.realtimeSinceStartupAsDouble+=.01;};
+        logged.PlayEvent(EncounterEventKind.Cannon,1,false);
+        var attempts=JsonUtility.Values.OfType<LastStandAudioCue>().ToArray();
+        Require(EffectPlays(logged)==1 && attempts.Length==2 && attempts[0].played && attempts[0].admittedAt==.496 &&
+            !attempts[1].played && attempts[1].reason=="expired" && attempts[1].ordinal==2,
+            "Post-Play logging never rewrites admission, but its cost counts before the next cue");
+        Debug.AfterLog=null;int before=EffectPlays(logged);Time.realtimeSinceStartupAsDouble=.496;
+        Require(EffectPlays(logged)==before,"Suppressed attempts never queue on time/focus change");
+        logged.PlayEvent(EncounterEventKind.Cannon,1,true);Require(EffectPlays(logged)==before+2,"Only new model events play");
+        logged.CombatAdmission=null;before=EffectPlays(logged);logged.PlayDefeat();
+        Require(EffectPlays(logged)==before,"Missing callback context refuses combat playback");
+        foreach(var kind in new[]{EncounterEventKind.Launcher,EncounterEventKind.Scattergun,EncounterEventKind.CloseHit,EncounterEventKind.RangedHit})
+        {
+            var audio=Fixture();audio.UnlockFromGesture("test-click");Time.realtimeSinceStartupAsDouble=.501;
+            audio.PlayEvent(kind,1,false);Require(EffectPlays(audio)==0 && JsonUtility.Values.OfType<LastStandAudioCue>().Any(),
+                "Every combat path retains an expired disposition");
+        }
+        foreach(var decision in new[]{
+            Decision("cannon",1,1,0,11,11,1,.496,0,.496,0,true),
+            Decision("cannon",1,1,0,1,1,1,.496,0,.496,.05,true),
+            Decision("cannon",1,1,0,1,1,1,.501,0,.501,0,true),
+            Decision("cannon",1,1,0,1,1,1,.496,0,.496,0,false)})
+            Require(!decision.played && decision.reason=="callback","Recent cue cannot excuse oversized, stale, indebted or unfocused callback");
     }
     static void InitializeDoesNotDuplicateSources()
     {
@@ -211,6 +278,8 @@ public static class AudioSettingsChecks
         {
             switch(args[0])
             {
+                case "each_combat_cue_uses_its_own_fresh_playback_boundary":EachCombatCueUsesItsOwnFreshPlaybackBoundary();break;
+                case "playback_boundary_clocks_preparation_and_diagnostics":PlaybackBoundaryClocksPreparationAndDiagnostics();break;
                 case "existing_effect_admission":ExistingEffectAdmission();break;
                 case "scattergun_feedback_and_holds":ScattergunFeedbackAndHolds();break;
                 case "initialize_does_not_duplicate_sources":InitializeDoesNotDuplicateSources();break;

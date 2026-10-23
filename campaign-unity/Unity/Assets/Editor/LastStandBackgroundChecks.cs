@@ -298,10 +298,11 @@ public static class LastStandBackgroundChecks
         public string Value;
         public int Writes;
         public bool FailWrite;
+        public Action BeforeWrite;
         public string Read() => Value;
         public void Write(string value)
         {
-            Writes++;
+            Writes++; BeforeWrite?.Invoke();
             if (FailWrite) throw new InvalidOperationException("deliberate disposable storage failure");
             Value = value;
         }
@@ -312,9 +313,11 @@ public static class LastStandBackgroundChecks
         public readonly LastStandLoopController Loop;
         public EncounterSession Session => Loop.Session;
         public readonly FeedbackStorage Storage;
+        readonly bool expectedLauncher;
+        public double StartTimestamp { get; private set; } = 100;
         public FeedbackFixture(bool launcher = false, FeedbackStorage storage = null)
         {
-            Storage = storage ?? new FeedbackStorage();
+            expectedLauncher=launcher; Storage = storage ?? new FeedbackStorage();
             LastStandLoopController.StorageFactory = () => Storage;
             EditorSceneManager.OpenScene(Playable, OpenSceneMode.Single);
             Art = UnityEngine.Object.FindFirstObjectByType<TankPresentation>();
@@ -322,16 +325,19 @@ public static class LastStandBackgroundChecks
             Loop = Art.GetComponent<LastStandLoopController>();
             Field(Session, "focused", true);
             Invoke(Loop.Audio, "OnApplicationFocus", true);
-            if (Art.showingLauncher != launcher) Art.ToggleAttachment();
+            if (!Loop.Progression.HasCheckpoint && Loop.Progression.PendingDefeat==null &&
+                Loop.Progression.SelectedFitting!=(launcher?"launcher":"repair")) Loop.MoveGarageFitting(1);
         }
         public void Deploy(double start = 100)
         {
-            Loop.Deploy();
-            Require(Session.Model != null && Loop.Progression.ActiveRunId > 0, "real reserved deployment");
+            StartTimestamp=start; Loop.Deploy();
+            Require(Session.Model != null && Session.Model.HasLauncher==expectedLauncher && Loop.Progression.ActiveRunId > 0, "real reserved deployment and selected fitting");
             Field(Session, "runClock", new LastStandRunClock(start, Session.Model.Profile.Horizon));
         }
         public void Advance(double timestamp)
         {
+            // Synthetic model time and cue admission share one explicit test clock.
+            Field(Loop.Audio, "CombatClock", (Func<double>)(()=>timestamp));
             if (Session.Model != null) Session.AdvanceAt(timestamp);
             Invoke(Loop, "Update");
         }
@@ -347,109 +353,168 @@ public static class LastStandBackgroundChecks
         }
         public void Defeat(double timestamp)
         {
-            for (int i = 0; i < 40 && Loop.Phase == "battle"; i++) Advance(timestamp);
-            Require(Loop.Progression.PendingDefeat != null || Loop.Phase == "save-error", "actual natural defeat reached controller");
+            var oracle=NaturalWaveDefeat(expectedLauncher);
+            double target=Math.Max(timestamp,StartTimestamp+oracle.Tick*.05+.6);
+            int budget=oracle.Tick/LastStandRunClock.MaximumStepsPerCallback+oracle.CompletedWave+8;
+            for(int i=0;i<budget && (Loop.Phase=="battle" || Loop.Phase=="settling");i++)Advance(target);
+            Require(Loop.Phase=="result" || Loop.Phase=="save-error", "actual natural wave defeat or durable-save refusal reached controller");
         }
     }
     static string WorkshopSave => "{\"version\":3,\"credits\":1,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}";
+    static EncounterModel NaturalWaveDefeat(bool launcher)
+    {
+        var model=new EncounterModel(launcher,EncounterProfile.ForTier(1));
+        while(model.Status==EncounterStatus.Running && model.Tick<100000) {
+            model.Step();
+            if(model.AwaitingWaveCommit && model.Status==EncounterStatus.Running)model.ContinueAfterCheckpoint();
+        }
+        Require(model.Status==EncounterStatus.Defeated,"bounded current authored fitting reaches a natural wave defeat");
+        return model;
+    }
+    static int EarnedWaveSalvage(int completed)
+    {
+        int result=0;
+        for(int wave=1;wave<=completed;wave++) {
+            var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(1),wave);
+            result+=reward.RepeatableSalvage+reward.FirstClearSalvage;
+        }
+        return result;
+    }
     static void BackgroundDefeatSettlesOnce()
     {
-        foreach (bool launcher in new[] { false, true })
-        {
-            var f = new FeedbackFixture(launcher); f.Deploy(); f.Focus(false); f.Hidden(true); f.Defeat(300);
-            Require(f.Loop.Phase == "result" && f.Session.Model == null,
-                "background active .48 settling exposes persisted manual result on callback");
-            int writes = f.Storage.Writes, runId = f.Loop.Progression.PendingDefeat.RunId;
-            Require(writes == 3 && f.Loop.Progression.Wallet == 0 && f.Loop.Progression.CannonAttackLevel == 0 &&
-                f.Loop.Progression.ActiveRunId == 0 && f.Loop.Progression.NextRunId == 2,
-                "one initial save, reservation and stage; no automatic claim purchase or redeploy");
-            f.Advance(300); f.Hidden(false); f.Focus(true); f.Advance(301);
-            Require(f.Storage.Writes == writes && f.Loop.Progression.PendingDefeat.RunId == runId,
-                "duplicate callback and repeated return cannot stage twice");
-            var reloaded = new FeedbackFixture(launcher, f.Storage);
-            Require(reloaded.Loop.Phase == "result" && reloaded.Loop.Progression.PendingDefeat.RunId == runId,
-                "persisted pending result reloads without an award");
-            reloaded.Loop.Claim(); reloaded.Loop.Claim();
-            Require(reloaded.Loop.Progression.Wallet == 1 && reloaded.Storage.Writes == writes + 1 &&
-                reloaded.Loop.Progression.PendingDefeat == null && reloaded.Session.Model == null,
-                "manual claim remains exactly once and no automatic redeploy");
+        foreach(bool launcher in new[]{false,true}) {
+            var oracle=NaturalWaveDefeat(launcher);
+            var f=new FeedbackFixture(launcher);f.Deploy();int initialWrites=f.Storage.Writes,runId=f.Loop.Progression.ActiveRunId;
+            f.Focus(false);f.Hidden(true);f.Defeat(300);
+            int earned=EarnedWaveSalvage(oracle.CompletedWave),writes=f.Storage.Writes;
+            Require(f.Loop.Phase=="result" && f.Session.Model==null && f.Loop.Progression.PendingDefeat==null &&
+                !f.Loop.Progression.HasCheckpoint && f.Loop.Progression.FinalizedRunId==runId,
+                "hidden wave defeat settles and invalidates its checkpoint without a new manual payout");
+            Require(f.Loop.Progression.Wallet==earned && f.Loop.Progression.GetBestWave(1)==oracle.CompletedWave &&
+                writes==initialWrites+oracle.CompletedWave+(oracle.AwaitingWaveCommit?0:1) &&
+                f.Loop.Progression.CannonAttackLevel==0 && f.Loop.Progression.NextRunId==2,
+                "exact completed-wave rewards and one durable write per boundary/finalization, with no automatic purchase or redeploy");
+            string finished=f.Storage.Value;
+            f.Advance(1000);f.Hidden(false);f.Focus(true);f.Advance(1001);f.Loop.Claim();f.Loop.Claim();
+            Require(f.Storage.Writes==writes && f.Storage.Value==finished && f.Loop.Progression.Wallet==earned && f.Session.Model==null,
+                "duplicate callbacks, foreground return and repeated Continue cannot award or write again");
+            var reloaded=new FeedbackFixture(launcher,f.Storage);
+            Require(reloaded.Loop.Phase==(earned>0?"workshop":"garage") && reloaded.Session.Model==null &&
+                !reloaded.Loop.Progression.HasCheckpoint && reloaded.Loop.Progression.Wallet==earned && reloaded.Storage.Writes==writes,
+                "reload keeps earned waves without resurrecting the defeated run or a pending payout");
 
-            var denied = new FeedbackFixture(launcher); denied.Deploy(); denied.Storage.FailWrite = true;
-            denied.Focus(false); denied.Defeat(300);
-            Require(denied.Loop.Phase == "save-error" && denied.Loop.Progression.PendingDefeat == null &&
-                denied.Loop.Progression.Wallet == 0 && denied.Loop.Progression.SaveState == "retry",
-                "failed staging cannot expose successful result or award");
-            int deniedWrites = denied.Storage.Writes;
-            denied.Advance(300); denied.Advance(310);
-            Require(denied.Storage.Writes == deniedWrites && denied.Loop.Progression.PendingDefeat == null,
-                "failed storage waits for existing manual recovery owner");
-            denied.Storage.FailWrite = false; denied.Focus(true); denied.Loop.RetrySave();
-            Require(denied.Loop.Phase == "result" && denied.Loop.Progression.PendingDefeat != null &&
-                denied.Loop.Progression.Wallet == 0, "manual retry confirms one pending defeat without claim");
+            var denied=new FeedbackFixture(launcher);denied.Deploy();string starting=denied.Storage.Value;
+            denied.Storage.FailWrite=true;denied.Focus(false);denied.Defeat(300);
+            Require(denied.Loop.Phase=="save-error" && denied.Session.CheckpointBlocked && denied.Session.Paused &&
+                denied.Loop.Progression.HasCheckpoint && denied.Loop.Progression.Checkpoint.CompletedWave==0 &&
+                denied.Loop.Progression.PendingDefeat==null && denied.Loop.Progression.Wallet==0 && denied.Storage.Value==starting,
+                "failed first-wave checkpoint retains original durable state and exposes no unconfirmed reward");
+            int deniedWrites=denied.Storage.Writes;denied.Advance(1000);denied.Advance(1100);
+            Require(denied.Storage.Writes==deniedWrites && denied.Loop.Progression.Wallet==0,
+                "blocked background callbacks never retry storage or award by themselves");
+            denied.Storage.FailWrite=false;denied.Focus(true);denied.Loop.RetrySave();
+            Require(denied.Loop.Phase=="battle" && denied.Session.Paused && !denied.Session.CheckpointBlocked &&
+                denied.Loop.Progression.Checkpoint.CompletedWave==1 && denied.Loop.Progression.Wallet==EarnedWaveSalvage(1) &&
+                denied.Storage.Writes==deniedWrites+1,"manual wave Retry confirms once and leaves an explicit Resume pause");
+            string recovered=denied.Storage.Value;denied.Loop.RetrySave();denied.Advance(1200);
+            Require(denied.Storage.Value==recovered && denied.Storage.Writes==deniedWrites+1,
+                "repeated Retry and paused time cannot duplicate the recovered checkpoint reward");
 
-            var limit = new FeedbackFixture(launcher); limit.Deploy();
-            int limitRunId = limit.Loop.Progression.ActiveRunId;
-            typeof(EncounterModel).GetProperty(nameof(EncounterModel.Tick)).SetValue(limit.Session.Model, 3599);
-            limit.Advance(100.05);
-            var limitResult = limit.Loop.Progression.PendingDefeat;
-            Require(limit.Loop.Phase == "result" && limit.Session.Model == null && limitResult != null &&
-                limitResult.RunId == limitRunId && limitResult.IsLimit && limitResult.Reward == 0 && limitResult.Tier == 1 &&
-                limit.Loop.Progression.Wallet == 0 && limit.Loop.Progression.CannonAttackLevel == 0,
-                "run limit persists a zero-reward result without awarding salvage or upgrades");
-            int limitWrites = limit.Storage.Writes;
-            limit.Advance(100.05); limit.Advance(300);
-            Require(limit.Storage.Writes == limitWrites && limit.Loop.Progression.PendingDefeat.RunId == limitRunId &&
-                limit.Loop.Progression.Wallet == 0 && limit.Loop.Progression.ActiveRunId == 0,
-                "duplicate limit callbacks neither stage again nor award or redeploy");
-            var reloadedLimit = new FeedbackFixture(launcher, limit.Storage);
-            var loadedLimitResult = reloadedLimit.Loop.Progression.PendingDefeat;
-            Require(reloadedLimit.Loop.Phase == "result" && reloadedLimit.Session.Model == null && loadedLimitResult != null &&
-                loadedLimitResult.RunId == limitRunId && loadedLimitResult.IsLimit && loadedLimitResult.Reward == 0 &&
-                reloadedLimit.Loop.Progression.Wallet == 0 && reloadedLimit.Storage.Writes == limitWrites,
-                "reloaded limit retains its zero-reward result without another write");
-            reloadedLimit.Loop.Claim(); reloadedLimit.Loop.Claim();
-            Require(reloadedLimit.Loop.Progression.PendingDefeat == null && reloadedLimit.Loop.Progression.Wallet == 0 &&
-                reloadedLimit.Loop.Progression.CannonAttackLevel == 0 && reloadedLimit.Session.Model == null &&
-                reloadedLimit.Loop.Progression.ActiveRunId == 0 && reloadedLimit.Loop.Progression.NextRunId == 2 &&
-                reloadedLimit.Storage.Writes == limitWrites + 1,
-                "manual limit acknowledgement is once-only with no salvage upgrade or redeploy");
-            var failure = new FeedbackFixture(launcher); failure.Deploy(); failure.Advance(double.NaN);
-            Require(failure.Loop.Phase == "garage" && failure.Loop.Progression.PendingDefeat == null &&
-                failure.Loop.Progression.Wallet == 0 && failure.Session.Model == null && failure.Loop.Audio.Suspended,
-                "technical failure returns without award or feedback admission");
-            var unfinished = new FeedbackFixture(launcher); unfinished.Deploy();
-            var abandoned = new FeedbackFixture(launcher, unfinished.Storage);
-            Require(abandoned.Loop.Progression.Wallet == 0 && abandoned.Loop.Progression.PendingDefeat == null,
-                "unfinished same-record reload cannot earn an award");
+            var terminalDenied=new FeedbackFixture(launcher);terminalDenied.Deploy();
+            terminalDenied.Storage.BeforeWrite=()=>{if(terminalDenied.Session.Model?.Status==EncounterStatus.Defeated)
+                terminalDenied.Storage.FailWrite=true;};
+            terminalDenied.Focus(false);terminalDenied.Defeat(300);
+            Require(terminalDenied.Loop.Phase=="save-error" && terminalDenied.Session.Model.Status==EncounterStatus.Defeated &&
+                terminalDenied.Loop.Progression.HasCheckpoint && terminalDenied.Loop.Progression.PendingDefeat==null &&
+                terminalDenied.Loop.Progression.Wallet==earned,"failed terminal finalization preserves already earned milestones and checkpoint");
+            int terminalWrites=terminalDenied.Storage.Writes;terminalDenied.Advance(1000);
+            Require(terminalDenied.Storage.Writes==terminalWrites,"terminal refusal also waits for manual retry");
+            terminalDenied.Storage.BeforeWrite=null;terminalDenied.Storage.FailWrite=false;terminalDenied.Focus(true);
+            terminalDenied.Loop.RetrySave();terminalDenied.Loop.RetrySave();
+            Require(terminalDenied.Loop.Phase=="result" && terminalDenied.Session.Model==null &&
+                !terminalDenied.Loop.Progression.HasCheckpoint && terminalDenied.Loop.Progression.PendingDefeat==null &&
+                terminalDenied.Loop.Progression.Wallet==earned && terminalDenied.Storage.Writes==terminalWrites+1,
+                "terminal Retry finalizes once without a second payout");
+
+            var limit=new FeedbackFixture(launcher);limit.Deploy();int limitRun=limit.Loop.Progression.ActiveRunId;
+            string checkpoint=limit.Storage.Value;int limitWrites=limit.Storage.Writes;
+            // Explicit technical-ceiling fixture; ordinary waves have no timed horizon.
+            typeof(EncounterModel).GetProperty(nameof(EncounterModel.Tick)).SetValue(limit.Session.Model,int.MaxValue-1024);
+            limit.Advance(100.05);var frozen=limit.Session.Model.Snapshot();
+            Require(limit.Session.Model.Status==EncounterStatus.Limit && limit.Loop.Progression.HasCheckpoint &&
+                limit.Loop.Progression.ActiveRunId==limitRun && limit.Loop.Progression.PendingDefeat==null &&
+                limit.Loop.Progression.Wallet==0 && limit.Storage.Value==checkpoint,
+                "integer safety ceiling freezes without a false wave clear, payout or checkpoint replacement");
+            limit.Advance(101);limit.Advance(300);
+            Require(limit.Session.Model.Snapshot()==frozen && limit.Storage.Writes==limitWrites,
+                "duplicate limit callbacks cannot step, award or write");
+            var reloadedLimit=new FeedbackFixture(launcher,limit.Storage);
+            Require(reloadedLimit.Loop.Progression.HasCheckpoint && reloadedLimit.Loop.Progression.Checkpoint.CompletedWave==0 &&
+                reloadedLimit.Loop.Progression.ActiveRunId==limitRun && reloadedLimit.Session.Model==null && reloadedLimit.Storage.Writes==limitWrites,
+                "reload offers the last confirmed boundary, not a manufactured technical-limit reward");
+            reloadedLimit.Loop.RequestConfirmation("abandon");reloadedLimit.Loop.ConfirmAction();reloadedLimit.Loop.ConfirmAction();
+            Require(!reloadedLimit.Loop.Progression.HasCheckpoint && reloadedLimit.Loop.Progression.Wallet==0 &&
+                reloadedLimit.Loop.Progression.NextRunId==2 && reloadedLimit.Storage.Writes==limitWrites+1,
+                "explicit abandon invalidates the retained checkpoint once without salvage or redeploy");
+
+            var failure=new FeedbackFixture(launcher);failure.Deploy();string saved=failure.Storage.Value;failure.Advance(double.NaN);
+            Require(failure.Loop.Phase=="garage" && failure.Loop.Progression.PendingDefeat==null && failure.Loop.Progression.HasCheckpoint &&
+                failure.Loop.Progression.Wallet==0 && failure.Session.Model==null && failure.Loop.Audio.Suspended && failure.Storage.Value==saved,
+                "technical failure admits no award or cue and preserves the confirmed resumable boundary");
+            var unfinished=new FeedbackFixture(launcher);unfinished.Deploy();int unfinishedWrites=unfinished.Storage.Writes;
+            var resumed=new FeedbackFixture(launcher,unfinished.Storage);
+            Require(resumed.Loop.Progression.HasCheckpoint && resumed.Loop.Progression.Wallet==0 && resumed.Session.Model==null &&
+                resumed.Storage.Writes==unfinishedWrites,"unfinished reload preserves the same run without an award or extra write");
+            resumed.Loop.Deploy();
+            Require(resumed.Session.Model!=null && resumed.Session.Model.HasLauncher==launcher && resumed.Session.Paused &&
+                resumed.Session.Model.Tick==0 && resumed.Loop.Progression.ActiveRunId==1 && resumed.Storage.Writes==unfinishedWrites,
+                "the real Resume control restores the saved fitting and boundary under explicit pause");
+        }
+        LegacyPendingFeedbackResults();
+    }
+    static void LegacyPendingFeedbackResults()
+    {
+        foreach(bool limit in new[]{false,true}) {
+            int ticks=limit?3600:1200,reward=limit?0:1;
+            string raw="{\"version\":3,\"credits\":0,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},"+
+                "\"nextRunId\":2,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":"+ticks+",\"bestKills1\":4,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":true}},"+
+                "\"pendingDefeat\":{\"runId\":1,\"elapsedTicks\":"+ticks+",\"kills\":4,\"reward\":"+reward+",\"tier\":1,\"profileVersion\":\"tier-goals-v1\",\"isLimit\":"+(limit?"true":"false")+",\"newBestTime\":true,\"newBestKills\":true,\"unlockedTierTwo\":true}}";
+            var f=new FeedbackFixture(storage:new FeedbackStorage{Value=raw});int writes=f.Storage.Writes;
+            Require(f.Loop.Phase=="result" && f.Loop.Progression.PendingDefeat!=null &&
+                f.Loop.Progression.PendingDefeat.IsLimit==limit && f.Loop.Progression.Wallet==0 && f.Loop.Progression.GetBestWave(1)==0,
+                "historical pending result migration preserves its exact manual reward without inventing wave clears");
+            f.Loop.Claim();f.Loop.Claim();
+            Require(f.Loop.Progression.PendingDefeat==null && f.Loop.Progression.Wallet==reward && f.Storage.Writes==writes+1 &&
+                f.Session.Model==null && f.Loop.Progression.CannonAttackLevel==0 && !f.Loop.Progression.HasCheckpoint,
+                "historical reward or zero-reward limit acknowledgement remains exactly once and never deploys");
+            var reload=new FeedbackFixture(storage:f.Storage);
+            Require(reload.Loop.Progression.PendingDefeat==null && reload.Loop.Progression.Wallet==reward && reload.Storage.Writes==writes+1,
+                "claimed historical result cannot reappear or pay again after reload");
         }
     }
     static void PauseExcludesSettlingTime()
     {
-        foreach (bool launcher in new[] { false, true })
-        {
-            var oracle = new EncounterModel(launcher, EncounterProfile.PlayablePrototype);
-            while (oracle.Status == EncounterStatus.Running) oracle.Step();
-            double end = 100 + oracle.Tick * .05;
-            var f = new FeedbackFixture(launcher); f.Deploy();
-            for (int i = 0; i < 40 && f.Loop.Phase == "battle"; i++) f.Advance(end);
-            Require(f.Loop.Phase == "settling" && f.Session.TerminalElapsedSeconds < .01, "exact natural terminal boundary");
-            // Editor uptime can be shorter than a full natural run. Anchor the
-            // already-terminal session at the real controller action boundary.
-            end = Time.realtimeSinceStartupAsDouble;
-            Field(f.Session, "runClock", new LastStandRunClock(end, oracle.Profile.Horizon));
+        foreach(bool launcher in new[]{false,true}) {
+            var oracle=NaturalWaveDefeat(launcher);double end=100+oracle.Tick*.05;
+            var f=new FeedbackFixture(launcher);f.Deploy();
+            int budget=oracle.Tick/LastStandRunClock.MaximumStepsPerCallback+oracle.CompletedWave+8;
+            for(int i=0;i<budget && f.Loop.Phase=="battle";i++)f.Advance(end);
+            Require(f.Loop.Phase=="settling" && f.Session.Model.Tick==oracle.Tick && f.Session.TerminalElapsedSeconds<.01,
+                "exact current wave model terminal boundary");
+            end=Time.realtimeSinceStartupAsDouble;
+            Field(f.Session,"runClock",new LastStandRunClock(end,oracle.Profile.Horizon));
             f.Loop.TogglePause();
-            Require(f.Session.Paused && f.Loop.Audio.Suspended, "actual settling Pause action freezes lifecycle and audio");
-            int writes = f.Storage.Writes;
-            f.Focus(false); f.Hidden(true); f.Advance(end + 10); f.Hidden(false); f.Focus(true);
-            Require(f.Session.Paused && f.Loop.Phase == "settling" && f.Session.TerminalElapsedSeconds < .1 &&
-                f.Storage.Writes == writes, "ten seconds away and focus return cannot clear explicit settling Pause");
-            f.Session.TogglePauseAt(end + 20);
-            f.Advance(end + 20.25); f.Advance(end + 20.25);
-            Require(f.Loop.Phase == "settling" && f.Session.TerminalElapsedSeconds < .35,
+            Require(f.Session.Paused && f.Loop.Audio.Suspended,"actual settling Pause action freezes lifecycle and audio");
+            int writes=f.Storage.Writes,wallet=f.Loop.Progression.Wallet;
+            f.Focus(false);f.Hidden(true);f.Advance(end+10);f.Hidden(false);f.Focus(true);
+            Require(f.Session.Paused && f.Loop.Phase=="settling" && f.Session.TerminalElapsedSeconds<.1 && f.Storage.Writes==writes,
+                "ten seconds away and focus return cannot clear explicit settling Pause");
+            f.Session.TogglePauseAt(end+20);f.Advance(end+20.25);f.Advance(end+20.25);
+            Require(f.Loop.Phase=="settling" && f.Session.TerminalElapsedSeconds<.35,
                 "resume excludes paused wall time; duplicate cumulative elapsed is not charged twice");
-            f.Advance(end + 20.49);
-            Require(f.Loop.Phase == "result" && f.Session.Model == null && f.Storage.Writes == writes,
-                "only new active elapsed completes original .48 settling interval");
+            f.Advance(end+20.49);
+            Require(f.Loop.Phase=="result" && f.Session.Model==null && f.Storage.Writes==writes && f.Loop.Progression.Wallet==wallet,
+                "only new active elapsed completes .48 settling, without another award or durable write");
         }
     }
     static void FocusRestoresCurrentCuesWithoutReplay()
@@ -521,8 +586,11 @@ public static class LastStandBackgroundChecks
         Application.logMessageReceived += observe;
         try
         {
-            var store = new FeedbackStorage { Value = WorkshopSave, FailWrite = true };
+            var store = new FeedbackStorage { Value = WorkshopSave };
             var f = new FeedbackFixture(false, store);
+            Require(f.Loop.Progression.SaveState=="ready" && store.Value.StartsWith("{\"version\":4,"),
+                "historical workshop migration finishes before the purchase fault is injected");
+            int initialWrites=store.Writes;store.FailWrite=true;
             f.Loop.Audio.UnlockFromGesture("test-current-failed-purchase");
             // A ready current controller action reconciles the edit-mode
             // fixture's initial focus suspension without touching storage.
@@ -531,7 +599,7 @@ public static class LastStandBackgroundChecks
                 "failed-purchase fixture begins with actual eligible focused unlocked audio");
             string committed = store.Value;
             f.Loop.Purchase();
-            Require(f.Loop.Progression.SaveState == "retry" && store.Value == committed && store.Writes == 1 &&
+            Require(f.Loop.Progression.SaveState == "retry" && store.Value == committed && store.Writes == initialWrites + 1 &&
                 f.Loop.Progression.CannonAttackLevel == 0 && f.Loop.Progression.Wallet == 1 &&
                 f.Loop.Progression.PendingDefeat == null && f.Loop.Progression.ActiveRunId == 0 &&
                 f.Session.Model == null && cues.Count == 0,
@@ -548,13 +616,13 @@ public static class LastStandBackgroundChecks
             Field(f.Session, "focused", true); Field(f.Session, "applicationPaused", false);
             f.Advance(110);
             Require(f.Loop.Progression.SaveState == "retry" && f.Loop.Audio.Suspended && cues.Count == 0 &&
-                store.Writes == 1 && store.Value == committed,
+                store.Writes == initialWrites + 1 && store.Value == committed,
                 "foreground return alone neither retries unconfirmed purchase nor replays its cue");
             store.FailWrite = false;
             f.Loop.RetrySave();
             Require(f.Loop.Progression.SaveState == "ready" && f.Loop.Progression.CannonAttackLevel == 1 &&
                 f.Loop.Progression.Wallet == 0 && f.Loop.Progression.PendingDefeat == null &&
-                f.Loop.Progression.ActiveRunId == 0 && f.Session.Model == null && store.Writes == 2,
+                f.Loop.Progression.ActiveRunId == 0 && f.Session.Model == null && store.Writes == initialWrites + 2,
                 "manual retry confirms exactly one purchase transaction without automatic award or redeploy");
             Require(cues.Count == 1 && cues[0] == "ST_LS_AUDIO event=purchase" &&
                 f.Loop.Audio.CanPlay && !f.Loop.Audio.Suspended,
@@ -564,15 +632,22 @@ public static class LastStandBackgroundChecks
             Require(loaded.CannonAttackLevel == 1 && loaded.Wallet == 0 && loaded.PendingDefeat == null,
                 "confirmed manual retry purchase persists the exact upgraded level and cost");
             f.Loop.RetrySave();
-            Require(cues.Count == 1 && store.Writes == 2 && store.Value == purchased &&
+            Require(cues.Count == 1 && store.Writes == initialWrites + 2 && store.Value == purchased &&
                 f.Loop.Progression.CannonAttackLevel == 1 && f.Loop.Progression.Wallet == 0 && f.Session.Model == null,
                 "duplicate manual retry cannot replay a cue buy another level or start a run");
 
-            var blockedStore = new FeedbackStorage { Value = WorkshopSave, FailWrite = true };
+            var blockedStore = new FeedbackStorage { Value = WorkshopSave };
             var blocked = new FeedbackFixture(false, blockedStore);
+            Require(blocked.Loop.Progression.SaveState=="ready" && blockedStore.Value.StartsWith("{\"version\":4,"),
+                "conflict fixture begins with a confirmed current workshop save");
+            int blockedInitialWrites=blockedStore.Writes;string blockedCommitted=blockedStore.Value;
+            blockedStore.FailWrite=true;
             blocked.Loop.Audio.UnlockFromGesture("test-current-conflicting-save");
             blocked.Loop.Purchase();
-            blockedStore.Value = WorkshopSave.Replace("\"credits\":1", "\"credits\":2");
+            Require(blocked.Loop.Progression.SaveState=="retry" && blockedStore.Value==blockedCommitted &&
+                blockedStore.Writes==blockedInitialWrites+1,"purchase failure leaves the current committed record before conflict injection");
+            blockedStore.Value = blockedCommitted.Replace("\"credits\":1", "\"credits\":2");
+            Require(blockedStore.Value!=blockedCommitted,"conflict fixture changes actual current save bytes");
             int priorCues = cues.Count;
             blocked.Loop.RetrySave();
             Require(blocked.Loop.Progression.SaveState == "blocked" && blocked.Session.CanRun &&
@@ -581,7 +656,7 @@ public static class LastStandBackgroundChecks
                 blocked.Loop.Progression.PendingDefeat == null && blocked.Session.Model == null && cues.Count == priorCues,
                 "actual conflicting purchase save stays focused blocked silent and non-awarding");
             blocked.Loop.Audio.PlayPurchase();
-            Require(cues.Count == priorCues && blockedStore.Writes == 1,
+            Require(cues.Count == priorCues && blockedStore.Writes == blockedInitialWrites + 1,
                 "blocked save refuses purchase audio without overwriting its conflicting record");
         }
         finally { Application.logMessageReceived -= observe; }
@@ -666,6 +741,69 @@ public static class LastStandBackgroundChecks
             }
         }
         finally { Application.runInBackground = prior; }
+    }
+    static void CurrentCuePairExpiresIndependently()
+    {
+        var f=new FeedbackFixture();f.Deploy();
+        var cues=new System.Collections.Generic.List<LastStandAudioCue>();
+        var played=new System.Collections.Generic.List<string>();double now=100;
+        Application.LogCallback observe=(message,stack,type)=>{
+            if(message.StartsWith("ST_ENC_CALLBACK ")) {
+                var cue=JsonUtility.FromJson<LastStandAudioCue>(message.Substring("ST_ENC_CALLBACK ".Length));
+                if(cue.action=="cue")cues.Add(cue);
+            }
+            if(message.StartsWith("ST_LS_AUDIO event=")) {
+                played.Add(message);
+                if(message=="ST_LS_AUDIO event=cannon") Field(f.Loop.Audio,"CombatClock",(Func<double>)(()=>now+.501));
+            }
+        };
+        Application.logMessageReceived+=observe;
+        try {
+            for(int i=1;i<=300 && f.Session.Model.CannonShots==0;i++){now=100+i*.05;f.Advance(now);}
+            Require(f.Session.Model.CannonShots==1 && f.Session.Failure=="", "actual model and hit processing continue independently of cue suppression");
+            Require(played.Count==1 && played[0]=="ST_LS_AUDIO event=cannon" && cues.Count==2 &&
+                cues[0].played && cues[0].cue=="cannon" && !cues[1].played && cues[1].reason=="expired" &&
+                cues[0].id==cues[1].id && cues[0].tick==cues[1].tick && cues[0].ordinal==1 && cues[1].ordinal==2,
+                "real controller retains one played and one expired disposition at the actual shot boundary");
+            Require(f.Session.PrepareCombatCue("defeat")==null,"ended callback cannot authorize replay");
+        } finally { Application.logMessageReceived-=observe; }
+    }
+    static void TerminalCueIncludesPersistenceTime()
+    {
+        var store=new FeedbackStorage();var f=new FeedbackFixture(storage:store);f.Deploy();double now=100;
+        var cues=new System.Collections.Generic.List<LastStandAudioCue>();bool played=false;
+        store.BeforeWrite=()=>{if(f.Session.Model?.Status==EncounterStatus.Defeated)
+            Field(f.Loop.Audio,"CombatClock",(Func<double>)(()=>now+.501));};
+        Application.LogCallback observe=(message,stack,type)=>{
+            if(message.StartsWith("ST_ENC_CALLBACK ")) {
+                var cue=JsonUtility.FromJson<LastStandAudioCue>(message.Substring("ST_ENC_CALLBACK ".Length));
+                if(cue.action=="cue" && cue.cue=="defeat")cues.Add(cue);
+            }
+            if(message=="ST_LS_AUDIO event=defeat")played=true;
+        };
+        Application.logMessageReceived+=observe;
+        try {
+            for(int i=1;i<20000 && f.Loop.Phase=="battle";i++){now=100+i*.05;f.Advance(now);}
+            Require(f.Loop.Phase=="settling" && f.Loop.Progression.ActiveRunId==0 && !f.Loop.Progression.HasCheckpoint &&
+                f.Session.Failure=="", "actual terminal persistence completes before feedback");
+            Require(!played && cues.Count==1 && !cues[0].played && cues[0].reason=="expired",
+                "terminal storage time cannot admit a stale defeat cue or erase its explicit disposition");
+        } finally { Application.logMessageReceived-=observe; }
+    }
+    public static void RunCueAdmission()
+    {
+        bool failed=false;
+        using(var preferencesScope=new LastStandTestPreferencesScope()) {
+            var factory=LastStandLoopController.StorageFactory;
+            try {
+                Check("test_current_cue_pair_expires_independently",CurrentCuePairExpiresIndependently,ref failed);
+                Check("test_terminal_cue_includes_persistence_time",TerminalCueIncludesPersistenceTime,ref failed);
+            } finally {
+                LastStandLoopController.StorageFactory=factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+            }
+        }
+        if(failed)EditorApplication.Exit(1);
     }
     public static void RunFeedback()
     {

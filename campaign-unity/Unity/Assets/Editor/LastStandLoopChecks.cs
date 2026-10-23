@@ -29,7 +29,14 @@ public static class LastStandLoopChecks
         found.Invoke(value,null);
     }
     static void Focus(EncounterSession session)
-    { typeof(EncounterSession).GetField("focused",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(session,true); }
+    {
+        typeof(EncounterSession).GetField("focused",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(session,true);
+        // Batch Editor focus does not establish audio focus. Admit the same
+        // explicit fixture focus through the actual audio visibility owner.
+        var audio=session.GetComponent<LastStandAudio>();
+        if(audio)typeof(LastStandAudio).GetMethod("OnApplicationFocus",BindingFlags.Instance|BindingFlags.NonPublic)
+            .Invoke(audio,new object[]{true});
+    }
     static void InitializeScene()
     {
         var art=UnityEngine.Object.FindFirstObjectByType<TankPresentation>();
@@ -291,7 +298,7 @@ public static class LastStandLoopChecks
         InitializeScene();
         var loop=UnityEngine.Object.FindFirstObjectByType<LastStandLoopController>();
         Focus(loop.Session); loop.Deploy();
-        Require(loop.Audio.Unlocked && !loop.Audio.Suspended && loop.Session.Model!=null,
+        Require(loop.Audio.Unlocked && loop.Audio.CanPlay && !loop.Audio.Suspended && loop.Session.Model!=null,
             "batched audio dispatch ready");
         var model=loop.Session.Model;
         while(model.Tick<59)model.Step();
@@ -300,10 +307,11 @@ public static class LastStandLoopChecks
         // clock anchor ahead of subsequent real Pause/Resume action timestamps.
         typeof(EncounterSession).GetField("runClock",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(loop.Session,
             new LastStandRunClock(Time.realtimeSinceStartupAsDouble-.11d,model.Profile.Horizon));
-        var heard=new List<string>();
+        var heard=new List<string>();var cues=new List<string>();
         Application.LogCallback observer=(message,stack,type)=>
         {
             if(message.StartsWith("ST_LS_HIT ",StringComparison.Ordinal))heard.Add(message);
+            if(message.StartsWith("ST_LS_AUDIO event=",StringComparison.Ordinal))cues.Add(message);
         };
         Application.logMessageReceived+=observer;
         try
@@ -311,7 +319,8 @@ public static class LastStandLoopChecks
             Invoke(loop.Session,"Update");
             Require(model.Tick>=61 && model.CannonShots==1 && model.Events.Count==0,
                 "one shot occurred before final tick of admitted frame");
-            Require(heard.Count==1,"batched shot reaches audio dispatch");
+            Require(heard.Count==1 && cues.Contains("ST_LS_AUDIO event=cannon") && cues.Contains("ST_LS_AUDIO event=impact"),
+                "batched shot reaches actual fresh cannon and impact voice admission");
             var admitted=heard.Count;
             loop.TogglePause(); loop.TogglePause();
             Invoke(loop,"OnSessionChanged");

@@ -179,6 +179,28 @@ static class SpeedChecks
             Near(session.TerminalElapsedSeconds, .48, "settling remains bounded");
         }
     }
+    static void CueCallbackLifetime()
+    {
+        var session=Session();double now=0;int stepped=0,terminal=0,ordinary=0;
+        session.Stepped+=model=>{
+            stepped++;var cue=session.PrepareCombatCue("impact");
+            Check(cue!=null && cue.Admit(now) && cue.tick==model.Tick && cue.steps==session.StepsThisCallback,
+                "Actual session binds cue to currently admitted step");
+        };
+        session.Changed+=()=>{
+            if(session.Model.Status!=EncounterStatus.Defeated){ordinary++;return;}
+            if(terminal>0)return;
+            terminal++;var fresh=session.PrepareCombatCue("defeat");
+            var delayed=session.PrepareCombatCue("defeat");
+            Check(fresh!=null && fresh.Admit(now) && fresh.run>0 && fresh.tick==session.Model.Tick,
+                "Terminal Changed retains current callback after clock Stop");
+            Check(!delayed.Admit(now+.501) && delayed.reason=="expired","Terminal persistence/presentation time counts before defeat playback");
+        };
+        while(session.Model.Status==EncounterStatus.Running){now+=.05;session.AdvanceAt(now);}
+        Check(terminal==1 && ordinary>0 && stepped>0,"Actual natural defeat reaches terminal callback");
+        Check(session.PrepareCombatCue("defeat")==null,"Completed callback cannot authorize future combat cues");
+        now+=.1;session.AdvanceAt(now);Check(session.PrepareCombatCue("defeat")==null,"Settling has no combat callback");
+    }
     static void Legacy()
     {
         var session = Session();
@@ -202,6 +224,7 @@ static class SpeedChecks
         {
             switch (args[0])
             {
+                case "cue_callback_lifetime": CueCallbackLifetime(); break;
                 case "half_speed_weighted_combat_parity": HalfSpeed(); break;
                 case "rate_boundary_fraction_and_retained_debt": RateBoundary(); break;
                 case "pause_holds_resume_and_plus_from_zero": Holds(); break;

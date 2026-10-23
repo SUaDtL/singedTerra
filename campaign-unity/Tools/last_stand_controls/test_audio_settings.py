@@ -20,7 +20,7 @@ class AudioSettingsTests(unittest.TestCase):
     def setUpClass(cls):
         cls.output = tempfile.TemporaryDirectory(prefix="st-audio-settings-")
         cls.executable = Path(cls.output.name) / "AudioSettingsChecks.exe"
-        sources = [SCRIPTS / name for name in ("LastStandAudio.cs", "LastStandPreferences.cs", "LastStandStore.cs")]
+        sources = [SCRIPTS / name for name in ("LastStandAudio.cs", "LastStandPreferences.cs", "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs")]
         sources.append(Path(__file__).with_name("AudioSettingsChecks.cs"))
         music = SCRIPTS / "LastStandMusic.cs"
         if music.exists():
@@ -40,6 +40,12 @@ class AudioSettingsTests(unittest.TestCase):
                                 text=True, encoding="utf-8-sig", timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
+
+    def test_each_combat_cue_uses_its_own_fresh_playback_boundary(self):
+        self.case("each_combat_cue_uses_its_own_fresh_playback_boundary")
+
+    def test_playback_boundary_clocks_preparation_and_diagnostics(self):
+        self.case("playback_boundary_clocks_preparation_and_diagnostics")
 
     def test_existing_effect_admission(self):
         self.case("existing_effect_admission")

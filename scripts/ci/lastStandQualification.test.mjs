@@ -1322,8 +1322,100 @@ function waveReturnTerminalFixture(kind='hidden'){
   x.cues=[{...id,t:7059,text:'ST_LS_AUDIO event=impact\n'},{...id,t:7059.1,text:'ST_LS_AUDIO event=defeat\n'}];
   x.kind=kind;
   if(kind==='blur'){x.events=[{...x.events[0],kind:'blur',hidden:false},{...x.events[2],kind:'focus'}];x.encounters[0].t=7012;}
-  return withCallbackRecords(x,.05);
+  return withCueWitnesses(withCallbackRecords(x,.05));
 }
+function withCueWitnesses(x){
+  const [begin,end]=x.callbackRecords;
+  x.callbackRecords=[begin,...x.cues.map((c,i)=>({...c,text:undefined,action:'cue',id:begin.id,run:begin.run,
+    fromTick:begin.fromTick,tick:end.tick,steps:end.steps,ordinal:i+1,cue:c.text.match(/event=(\w+)/)[1],
+    timestamp:begin.timestamp,previousTimestamp:begin.previousTimestamp,admittedAt:begin.timestamp+.0001*(i+1),
+    played:true,reason:'played',t:c.t-.00001})),end];
+  return x;
+}
+function waveCueFixture(){
+  const x=focusAckFixture(),rule='last-stand-waves-v1',rules=rule+':playable-prototype-v1';
+  x.before={...x.before,wave:1,rules,fitting:'repair',loop:{...x.before.loop,profileVersion:rule,activeTier:1}};
+  x.encounters=x.encounters.map(e=>({...e,wave:1,completedWave:0,rules}));
+  x.states=x.states.map(e=>({...e,profileVersion:rule,activeTier:1,fittingId:'repair',hasCheckpoint:true,pendingRunId:0}));
+  return withCueWitnesses(x);
+}
+test('actual audio return caller rejects contradictory wave/archive identity before recording evidence',async()=>{
+  const start=source.indexOf('    const noReplay=async('),end=source.indexOf('\n    const away=',start);
+  assert.ok(start>=0 && end>start);
+  const run=async x=>{
+    const report={lifecycle:[]};
+    const noReplay=runInNewContext(source.slice(start,end)+';noReplay',{
+      validateAwayAudioReturn:journey.validateAwayAudioReturn,validateNoReplayAudio:journey.validateNoReplayAudio,
+      cues:x.cues,states:x.states,encounters:x.encounters,callbackRecords:x.callbackRecords,
+      reference:()=>x.oracle,energy:async()=>null,check:(value,message)=>assert.ok(value,message),report,
+    });
+    await noReplay(x.begin,x.recovered,x);return report;
+  };
+  // Current and explicitly archived inputs both retain their intended lane.
+  const archive=focusAckFixture();archive.before.rules='playable-prototype-v1';
+  archive.before.loop.profileVersion='tier-goals-v1';
+  for(const x of [waveCueFixture(),archive,focusAckFixture()]){
+    const report=await run(x);assert.equal(report.lifecycle.length,1);
+    assert.equal(report.lifecycle[0].boundary.callbacks.length,1);
+  }
+  for(const mutate of [
+    x=>{x.before.loop.profileVersion='tier-goals-v1';x.callbackRecords=x.callbackRecords.filter(c=>c.action!=='cue');},
+    x=>{delete x.before.loop.profileVersion;},x=>{delete x.before.rules;},
+    x=>{x.before.rules='playable-prototype-v1';},
+    x=>{x.before.loop.profileVersion='tier-goals-v1';x.cues=[];x.callbackRecords=x.callbackRecords.filter(c=>c.action!=='cue');},
+  ]){
+    const x=waveCueFixture();mutate(x);
+    await assert.rejects(()=>run(x),/wave profile and model rules disagree/,String(mutate));
+  }
+});
+
+test('current-wave cue decisions distinguish fresh playback from delayed diagnostic logging',()=>{
+  const x=waveCueFixture();
+  // Keep admission exactly at500ms while only the diagnostic emission is late.
+  const begin=x.callbackRecords[0],end=x.callbackRecords.at(-1);
+  for(const row of x.callbackRecords)row.previousTimestamp=begin.timestamp-.49;
+  begin.elapsed=end.elapsed=.49;begin.pending=.05;
+  for(const row of x.callbackRecords.filter(c=>c.action==='cue'))row.admittedAt=begin.previousTimestamp+.5;
+  for(const row of x.callbackRecords.filter(c=>c.action==='cue'))row.t+=30;
+  x.cues.forEach(c=>c.t+=30);x.states.at(-1).t+=30;end.t+=30;end.age=(end.t-begin.t)/1000;
+  assert.equal(journey.validateAwayAudioReturn(x).boundary.callbacks.length,1);
+});
+test('current-wave cue decisions retain exact expired attempts including entirely silent callbacks',()=>{
+  for(const all of [false,true]){
+    const x=waveCueFixture(),begin=x.callbackRecords[0];
+    const attempts=x.callbackRecords.filter(c=>c.action==='cue');
+    for(const row of all?attempts:attempts.slice(1)){row.played=false;row.reason='expired';row.admittedAt=begin.previousTimestamp+.500001;}
+    // Slow processing may finish later; admission retains the exact callback origin.
+    x.callbackRecords.at(-1).age=.6;x.callbackRecords.at(-1).t+=600;x.states.at(-1).t+=550;x.recovered+=600;
+    x.cues=all?[]:x.cues.slice(0,1);
+    const proof=journey.validateAwayAudioReturn(x);
+    assert.equal(proof.boundary.callbacks.length,1);assert.equal(proof.boundary.callbacks[0].attempts.length,2);
+  }
+});
+test('current-wave cue decisions reject stale played, missing, forged, reordered and wrong-tick attempts',()=>{
+  for(const mutate of [
+    x=>{x.cues.at(-1).t=x.callbackRecords.at(-1).t+1;x.recovered=x.callbackRecords.at(-1).t+2;},
+    x=>{x.cues=[];x.callbackRecords=x.callbackRecords.filter(c=>c.action!=="cue");},
+    x=>x.callbackRecords.splice(1,1),x=>x.callbackRecords.splice(2,0,{...x.callbackRecords[1]}),
+    x=>x.callbackRecords[1].run++,x=>x.callbackRecords[1].id++,x=>x.callbackRecords[1].ordinal=2,
+    x=>x.callbackRecords[2].ordinal=1,x=>x.callbackRecords[1].tick--,x=>x.callbackRecords[1].steps++,
+    x=>x.callbackRecords[1].admittedAt=x.callbackRecords[1].previousTimestamp+.500001,
+    x=>x.callbackRecords[1].admittedAt=NaN,x=>x.callbackRecords[1].admittedAt=-1,
+    x=>x.callbackRecords[1].admittedAt=x.callbackRecords[1].timestamp-.01,
+    x=>x.callbackRecords[1].previousTimestamp--,x=>x.callbackRecords[1].cue='impact',
+    x=>{x.cues=[];x.callbackRecords[1].played=false;x.callbackRecords[1].reason='expired';},
+    x=>{x.callbackRecords[1].played=false;x.callbackRecords[1].reason='expired';},
+  ]){const x=waveCueFixture();mutate(x);assert.throws(()=>journey.validateAwayAudioReturn(x),undefined,String(mutate));}
+});
+test('current-wave cue decisions bind the exact event tick inside a multi-step callback',()=>{
+  const x=waveCueFixture(),begin=x.callbackRecords[0],end=x.callbackRecords.at(-1);
+  x.oracle[22]={...x.oracle[21],tick:22};x.states.at(-1).tick=22;
+  for(const record of x.callbackRecords)record.previousTimestamp=begin.timestamp-.1;
+  begin.elapsed=end.elapsed=.1;begin.pending=.1;end.tick=22;end.steps=2;
+  assert.equal(journey.validateAwayAudioReturn(x).boundary.callbacks.length,1);
+  for(const attempt of x.callbackRecords.filter(c=>c.action==='cue')){attempt.tick=22;attempt.steps=2;}
+  assert.throws(()=>journey.validateAwayAudioReturn(x),/exact model tick/);
+});
 test('fresh current-wave terminal return cues bind finalized no-payout identity for blur and hidden returns',()=>{
   for(const kind of ['blur','hidden']){
     const x=waveReturnTerminalFixture(kind),result=journey.validateAwayAudioReturn(x);

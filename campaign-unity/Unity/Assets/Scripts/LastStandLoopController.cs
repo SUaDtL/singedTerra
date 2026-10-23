@@ -87,6 +87,7 @@ namespace SingedTerra.LastStand
             Session.ConfigureSpeed(Preferences.Current.LastPositiveSpeed);
             Audio = gameObject.AddComponent<LastStandAudio>();
             Audio.Initialize();
+            Audio.CombatAdmission = Session.PrepareCombatCue;
             Display = gameObject.AddComponent<LastStandDisplaySettings>();
             Browser = new GameObject("LastStandBrowserBridge").AddComponent<LastStandBrowserBridge>();
             Browser.transform.SetParent(transform, false);
@@ -529,7 +530,7 @@ namespace SingedTerra.LastStand
             }
             bool confirmed=purchasePending && Progression.GetPermanentLevel(pendingPermanentTrack)==pendingPermanentPriorLevel+1;
             purchasePending=false;
-            if(confirmed){Audio.UnlockFromGesture("retry-purchase");Audio.PlayPurchase();Guidance.PurchaseConfirmed(pendingPermanentTrack,pendingPermanentPriorLevel);}
+            if(confirmed){SyncAudioAdmission();Audio.UnlockFromGesture("retry-purchase");Audio.PlayPurchase();Guidance.PurchaseConfirmed(pendingPermanentTrack,pendingPermanentPriorLevel);}
             if(startingSavePending && Progression.HasCheckpoint)
             {startingSavePending=false;Phase="garage";Notice="Starting checkpoint saved. Select Resume when ready.";}
             else if(Progression.PendingDefeat!=null)Phase="result";

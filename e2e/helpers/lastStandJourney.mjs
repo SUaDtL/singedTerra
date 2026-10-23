@@ -1598,13 +1598,42 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
   const observed=cues.filter(c=>current(c) && c.t>=loss.t+200 && c.t<=recovered);
   assert.ok(observed.every(c=>Number.isFinite(c.t)),'Invalid current audio cue clock');
   const returnCues=observed.filter(c=>c.t>=returned.t),callbacks=[];
-  if(returnCues.length) {
+  const waveRun=before.loop?.profileVersion==='last-stand-waves-v1';
+  assert.equal(waveRun,typeof before.rules==='string' && before.rules.startsWith('last-stand-waves-v1:'),
+    'Native audio interval wave profile and model rules disagree');
+  const attempts=waveRun?(callbackRecords??[]).filter(c=>current(c) && c.action==='cue' && c.t>=returned.t && c.t<=recovered):[];
+  const observations=waveRun?attempts:returnCues;
+  const playedByAttempt=new Map();
+  if(waveRun){
+    // A fully omitted silent group must not erase model events. Only fresh,
+    // foreground, non-indebted callbacks with an unmuted source state qualify
+    // for this obligation; old background debt is still deliberately discarded.
+    for(const begin of (callbackRecords??[]).filter(c=>current(c) && c.run===before.run && c.action==='begin' &&
+      c.t>=returned.t && c.t<=recovered && c.focused===true && c.applicationPaused===false && c.paused===false &&
+      c.failed===false && c.elapsed>=0 && c.elapsed<=.5 && c.priorPending>=0 && c.priorPending<.05)){
+      const end=callbackRecords.find(c=>current(c) && c.run===begin.run && c.id===begin.id && c.action==='end' && c.t<=recovered);
+      const prior=states.findLast(c=>current(c) && c.sessionRun===begin.run && c.tick===begin.fromTick && c.t<=begin.t);
+      const a=oracle[begin.fromTick],b=oracle[end?.tick];
+      if(end && end.steps>0 && end.steps<=10 && prior?.phase==='battle' && prior.muted===false && prior.saveState==='ready' && a && b &&
+        (b.cannon>a.cannon || b.launcher>a.launcher || (b.scattergun??0)>(a.scattergun??0) ||
+         b.closeHits>a.closeHits || b.rangedHits>a.rangedHits || b.status==='Defeated'))
+        assert.ok(attempts.some(c=>c.id===begin.id && c.run===begin.run),'Current-wave model callback is missing all cue decisions');
+    }
+    const played=attempts.filter(c=>c.played===true);
+    assert.equal(played.length,returnCues.length,'Current-wave playback requires one exact cue decision per played line');
+    for(const [i,attempt] of played.entries()){
+      const cue=returnCues[i],next=attempts[attempts.indexOf(attempt)+1];
+      assert.ok(cue.text.match(/^ST_LS_AUDIO event=(\w+)\s*$/)?.[1]===attempt.cue && cue.t>=attempt.t &&
+        (!next || cue.t<=next.t),'Played cue order/name differs from its playback decision');
+      playedByAttempt.set(attempt,cue);
+    }
+  }
+  if(observations.length) {
     const resumed=encounters.find(e=>current(e) && e.run===before.run && e.action==='visibility' &&
-      e.t>=modelFocusReturn.t && e.t<=returnCues[0].t && e.focused && !e.applicationPaused);
+      e.t>=modelFocusReturn.t && e.t<=observations[0].t && e.focused && !e.applicationPaused);
     assert.ok(resumed && !resumed.paused && !resumed.failed && !resumed.catchingUp,
       'Current reconciled foreground model boundary absent');
     validateModelObservation(resumed,oracle);
-    const waveRun=before.loop.profileVersion==='last-stand-waves-v1';
     const finalizedWave=s=>s.runId===0 && s.pendingRunId===0 && s.hasCheckpoint===false &&
       s.profileVersion===before.loop.profileVersion && s.activeTier===before.loop.activeTier && s.fittingId===before.fitting;
     if(waveRun)assert.ok(before.wave>0 && before.rules?.startsWith(before.loop.profileVersion+':') && resumed.rules===before.rules,
@@ -1616,8 +1645,8 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     assert.ok(Array.isArray(callbackRecords),'Return cues require actual callback admission records');
     const records=callbackRecords.filter(c=>current(c) && c.run===before.run && c.t<=recovered);
     const groups=new Map();
-    for(const cue of returnCues) {
-      const admitted=records.findLast(c=>c.action==='begin' && c.t<=cue.t);
+    for(const cue of observations) {
+      const admitted=records.findLast(c=>c.action==='begin' && c.t<=cue.t && (!waveRun || c.id===cue.id));
       const ends=admitted?records.filter(c=>c.action==='end' && c.id===admitted.id):[];
       const completed=ends[0];
       assert.ok(admitted && completed && ends.length===1 && Number.isInteger(admitted.id) && admitted.id>0 &&
@@ -1638,7 +1667,7 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
         Number.isInteger(completed.steps) && completed.steps>0 && completed.steps<=10 &&
         completed.tick===admitted.fromTick+completed.steps &&
         Math.abs(admitted.pending-completed.pending-completed.steps*.05)<1e-7 &&
-        (admitted.elapsed+admitted.age)*1000+cue.t-admitted.t<=500 &&
+        (waveRun || (admitted.elapsed+admitted.age)*1000+cue.t-admitted.t<=500) &&
         [admitted,completed].every(c=>c.focused===true && c.applicationPaused===false && c.paused===false && c.failed===false),
         'Return cue lacks a fresh eligible foreground model callback');
       const previous=runLoops.findLast(s=>s.tick===admitted.fromTick && s.t<=admitted.t);
@@ -1672,25 +1701,50 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
         !admission.catchingUp,'Background/catch-up return cue observed');
       assert.ok(oracle[next.tick] && next.hull===oracle[next.tick].hp && next.kills===oracle[next.tick].kills,
         'Return callback differs from current source-bound model');
-      const group=groups.get(admitted)??{previous,next,terminal,admitted,completed,cues:[]};group.cues.push(cue);groups.set(admitted,group);
+      const group=groups.get(admitted)??{previous,next,terminal,admitted,completed,cues:[],attempts:[]};
+      if(waveRun){
+        assert.ok(cue.run===before.run && Number.isInteger(cue.ordinal) && cue.ordinal===group.attempts.length+1 &&
+          (!cue.played || playedByAttempt.get(cue)?.t<=completed.t) &&
+          cue.fromTick===admitted.fromTick && cue.timestamp===admitted.timestamp && cue.previousTimestamp===admitted.previousTimestamp &&
+          Number.isInteger(cue.tick) && cue.tick>admitted.fromTick && cue.tick<=completed.tick &&
+          Number.isInteger(cue.steps) && cue.steps===cue.tick-admitted.fromTick &&
+          (!group.attempts.length || cue.tick>=group.attempts.at(-1).tick && cue.t>=group.attempts.at(-1).t) &&
+          Number.isFinite(cue.admittedAt) && cue.admittedAt>=0 && cue.admittedAt>=admitted.timestamp+admitted.age &&
+          cue.admittedAt<=completed.timestamp+completed.age &&
+          (!group.attempts.length || cue.admittedAt>=group.attempts.at(-1).admittedAt) &&
+          (cue.played===true && cue.reason==='played' && cue.admittedAt-cue.previousTimestamp<=.5 ||
+           cue.played===false && cue.reason==='expired' && cue.admittedAt-cue.previousTimestamp>.5),
+          'Invalid, stale or foreign current-wave cue decision');
+        group.attempts.push(cue);if(cue.played)group.cues.push(playedByAttempt.get(cue));
+      }else group.cues.push(cue);
+      groups.set(admitted,group);
     }
-    for(const {previous,next,terminal,admitted,completed,cues:actual} of groups.values()) {
+    for(const {previous,next,terminal,admitted,completed,cues:actual,attempts:decisions} of groups.values()) {
       const expected=[];
       for(let tick=previous.tick+1;tick<=next.tick;tick++) {
         const a=oracle[tick-1],b=oracle[tick];assert.ok(a && b,'Return model event tick absent');
         const cannon=b.cannon-a.cannon,weapons=cannon+b.launcher-a.launcher,killed=b.kills-a.kills;
         assert.ok(cannon>=0 && weapons>=killed && killed>=0,'Invalid source-bound return model event counters');
-        expected.push(...Array(cannon).fill('cannon'),...Array(killed).fill('destruction'),
-          ...Array(weapons-killed+b.closeHits-a.closeHits+b.rangedHits-a.rangedHits).fill('impact'));
+        const tickNames=[...Array(cannon).fill('cannon'),...Array(killed).fill('destruction'),
+          ...Array(weapons-killed+b.closeHits-a.closeHits+b.rangedHits-a.rangedHits).fill('impact')];
+        if(waveRun){
+          // This maintained return lane qualifies repair/launcher model counters.
+          // A burst oracle must expose individual target events before it can qualify Scattergun audio.
+          assert.equal((b.scattergun??0)-(a.scattergun??0),0,'Return cue oracle lacks individual Scattergun target events');
+          const witnessed=decisions.filter(c=>c.tick===tick && c.cue!=='defeat').map(c=>c.cue);
+          assert.deepEqual(witnessed.sort(),[...tickNames].sort(),'Cue decision differs from its exact model tick');
+        }
+        expected.push(...tickNames);
       }
-      const names=actual.map(c=>c.text.match(/^ST_LS_AUDIO event=(\w+)\s*$/)?.[1]);
+      const names=waveRun?decisions.map(c=>c.cue):actual.map(c=>c.text.match(/^ST_LS_AUDIO event=(\w+)\s*$/)?.[1]);
+      const ordered=waveRun?decisions:actual;
       if(terminal) {
-        assert.ok(names.at(-1)==='defeat' && actual.at(-1).t>=terminal.t &&
-          actual.slice(0,-1).every(c=>c.t<=terminal.t), 'Return terminal cue ordering differs');
+        assert.ok(names.at(-1)==='defeat' && ordered.at(-1).t>=terminal.t &&
+          ordered.slice(0,-1).every(c=>c.t<=terminal.t), 'Return terminal cue ordering differs');
         expected.push('defeat');
       }
       assert.deepEqual(names.sort(),expected.sort(),'Unmatched, stale or duplicate background/return replay cue');
-      callbacks.push({from:previous.tick,to:next.tick,t:next.t,admitted,completed,cues:actual});
+      callbacks.push({from:previous.tick,to:next.tick,t:next.t,admitted,completed,cues:actual,...(waveRun?{attempts:decisions}:{})});
     }
   }
   const end=returnCues[0]?.t??recovered;

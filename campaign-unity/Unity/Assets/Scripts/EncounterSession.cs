@@ -15,6 +15,10 @@ namespace SingedTerra.Encounter
         LastStandLoopController loop;
         LastStandRunClock runClock;
         bool reconciling, terminalReported;
+        CallbackState audioCallback;
+        EncounterModel audioModel;
+        LastStandRunClock audioClock;
+        int audioOrdinal;
         double accumulated;
         double configuredSpeed = LastStandSpeedPolicy.InitialMaximum;
         int run, callbackSequence, lastReportSecond = -1;
@@ -207,6 +211,12 @@ namespace SingedTerra.Encounter
             int callback = ++callbackSequence, fromTick = current.Tick;
             bool reportCallback = current.Status == EncounterStatus.Running && callbackClock.CatchingUp;
             reconciling = !CanRun || runClock.PendingSeconds + 1e-9 >= 2 * LastStandRunClock.StepSeconds;
+            if (reportCallback)
+            {
+                audioCallback = new CallbackState { id=callback, run=run, fromTick=fromTick,
+                    timestamp=timestamp, previousTimestamp=previousTimestamp, priorPending=priorPending };
+                audioModel=current; audioClock=callbackClock; audioOrdinal=0;
+            }
             if (reportCallback) EmitCallback("begin", callback, fromTick, current, callbackClock, timestamp, previousTimestamp, priorPending);
             try
             {
@@ -255,8 +265,17 @@ namespace SingedTerra.Encounter
                 // presentation work. Its clock belongs to admission, whereas
                 // the browser stamps actual cue and HUD emission independently.
                 if (reportCallback) EmitCallback("end", callback, fromTick, current, callbackClock, timestamp, previousTimestamp, priorPending);
+                audioCallback=null; audioModel=null; audioClock=null;
                 reconciling = false;
             }
+        }
+        public LastStandAudioCue PrepareCombatCue(string cue)
+        {
+            var context=audioCallback;
+            if (context==null) return null;
+            return LastStandAudioCue.Prepare(cue, context.id, context.run, context.fromTick, audioModel.Tick,
+                audioClock.StepsThisCallback, ++audioOrdinal, context.timestamp, context.previousTimestamp,
+                context.priorPending, CanRun && !Paused && Failure=="" && !CheckpointBlocked);
         }
         public void HoldCheckpoint()
         {

@@ -69,6 +69,9 @@ class SpeedTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
+    def test_cue_callback_lifetime(self):
+        self.case("cue_callback_lifetime")
+
     def test_half_speed_weighted_combat_parity(self):
         self.case("half_speed_weighted_combat_parity")
 

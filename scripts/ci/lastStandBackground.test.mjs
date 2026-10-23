@@ -68,11 +68,24 @@ const callObserved=(x,options)=>actualCaller(x.encounters,x.states,1,
     waitForTimeout:async ms=>{x.waits++;x.now+=ms;if(x.onWait)x.onWait();},
   },journey.observeRuntimePair,options);
 
-function nativeWindowObservation(pid) {
+function nativeWindowObservation(pid, ownership=null) {
   assert.ok(Number.isInteger(pid) && pid>0,'Native window observation requires the owned browser PID');
+  if(ownership)assert.ok(ownership.pid===pid && ownership.root?.pid===pid && ownership.root.start &&
+    ownership.root.exe && ownership.profile,'Complete owned fixture identity required');
+  const encoded=Buffer.from(JSON.stringify(ownership)).toString('base64');
   // Read actual Win32 top-level window state without native activation or
   // document focus/visibility emulation. Player focus qualification stays T-11.
   const script=`$ErrorActionPreference='Stop'
+    $owner=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json
+    function Assert-OwnedFixture {
+      if($owner){
+        $live=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
+        if(-not $live -or $live.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $live.ExecutablePath -ne $owner.root.exe){throw 'Owned fixture process identity mismatch'}
+        $argument='--user-data-dir='+$owner.profile
+        if(-not ($live.CommandLine.Contains('"'+$argument+'"') -or $live.CommandLine.Split(' ').Contains($argument))){throw 'Owned fixture profile mismatch'}
+      }
+    }
+    Assert-OwnedFixture
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
@@ -81,6 +94,12 @@ using System.Text;
 public class LastStandNativeWindowProbe {
   public delegate bool EnumProc(IntPtr window, IntPtr parameter);
   [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
+  [StructLayout(LayoutKind.Sequential)] public struct MonitorInfo { public uint Size; public Rect Monitor, Work; public uint Flags; }
+  [DllImport("user32.dll", SetLastError=true)] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
+  [DllImport("user32.dll")] public static extern IntPtr GetThreadDpiAwarenessContext();
+  [DllImport("user32.dll")] public static extern bool AreDpiAwarenessContextsEqual(IntPtr first, IntPtr second);
+  [DllImport("user32.dll")] public static extern IntPtr MonitorFromWindow(IntPtr window, uint flags);
+  [DllImport("user32.dll", EntryPoint="GetMonitorInfoW", SetLastError=true)] public static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback, IntPtr parameter);
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr window, out uint pid);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
@@ -89,31 +108,48 @@ public class LastStandNativeWindowProbe {
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr window, StringBuilder text, int count);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr window, StringBuilder text, int count);
   public static object[] Read(uint owner) {
+    var previous=SetThreadDpiAwarenessContext(new IntPtr(-4));
+    if(previous==IntPtr.Zero)throw new InvalidOperationException("Physical fixture context unavailable");
+    try {
+    if(!AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(),new IntPtr(-4)))throw new InvalidOperationException("Physical fixture context rejected");
     var windows = new List<object>();
-    EnumWindows((window, parameter) => {
+    bool complete=EnumWindows((window, parameter) => {
       uint pid; GetWindowThreadProcessId(window, out pid);
       if (pid == owner) {
+        if(windows.Count>=12)throw new InvalidOperationException("Owned fixture window observation overflow");
         Rect rect; bool measured = GetWindowRect(window, out rect);
+        var monitor=MonitorFromWindow(window,0); // No nearest-monitor fallback.
+        var info=new MonitorInfo { Size=(uint)Marshal.SizeOf(typeof(MonitorInfo)) };
+        bool monitorMeasured=monitor!=IntPtr.Zero && GetMonitorInfo(monitor,ref info);
         var kind = new StringBuilder(256); GetClassName(window, kind, kind.Capacity);
         var title = new StringBuilder(1024); GetWindowText(window, title, title.Capacity);
         windows.Add(new { hwnd = window.ToInt64().ToString(), pid = pid,
           visible = IsWindowVisible(window), minimized = IsIconic(window), measured = measured,
           kind = kind.ToString(), title = title.ToString(), left = rect.Left, top = rect.Top,
-          width = rect.Right - rect.Left, height = rect.Bottom - rect.Top });
+          width = rect.Right - rect.Left, height = rect.Bottom - rect.Top,
+          workarea = monitorMeasured ? new { left=info.Work.Left, top=info.Work.Top,
+            width=info.Work.Right-info.Work.Left, height=info.Work.Bottom-info.Work.Top } : null });
       }
       return true;
     }, IntPtr.Zero);
+    if(!complete)throw new InvalidOperationException("Incomplete owned fixture window observation");
     return windows.ToArray();
+    } finally {
+      if(SetThreadDpiAwarenessContext(previous)==IntPtr.Zero || !AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(),previous))
+        throw new InvalidOperationException("Physical fixture context restoration failed");
+    }
   }
 }
 '@
-    ConvertTo-Json -InputObject @([LastStandNativeWindowProbe]::Read(${pid})) -Compress`;
+    $windows=@([LastStandNativeWindowProbe]::Read(${pid}))
+    Assert-OwnedFixture
+    ConvertTo-Json -InputObject $windows -Depth 5 -Compress`;
   return JSON.parse(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',
     Buffer.from(script,'utf16le').toString('base64')],
     {encoding:'utf8',timeout:10_000,maxBuffer:1024*1024,windowsHide:true}));
 }
 
-async function placeOwnedInertWindow({native,page,report,role}) {
+async function placeOwnedInertWindow({native,page,report,role,output}) {
   // Fit this owned inert fixture to the current monitor rather than a retained
   // desktop's coordinates. Only geometry and real tab selection change; the
   // production native/document oracle stays strict.
@@ -131,18 +167,27 @@ async function placeOwnedInertWindow({native,page,report,role}) {
     assert.ok(targetInfo.type==='page' && targetInfo.targetId && targetInfo.browserContextId);
     record.before=await browserSession.send('Browser.getWindowForTarget',{targetId:targetInfo.targetId});
     assert.equal(record.before.bounds.windowState,'normal');
-    record.display=await page.evaluate(()=>({left:screen.availLeft,top:screen.availTop,
-      width:screen.availWidth,height:screen.availHeight}));
-    assert.ok(Object.values(record.display).every(Number.isInteger),'Measured available display required');
-    assert.ok(record.display.width>=640 && record.display.height>=480,'Display must fit the inert fixture');
+    const receipt=JSON.parse(readFileSync(join(output,'browser-profile.json'),'utf8'));
+    record.native_before=nativeWindowObservation(receipt.pid,receipt);
+    record.window=journey.bindOwnedNativeWindow({windows:record.native_before,dropped:0},record.before.bounds,receipt.pid);
+    record.display=record.window.workarea;
+    assert.ok(record.display && ['left','top','width','height'].every(key=>Number.isSafeInteger(record.display[key])) &&
+      record.display.width>0 && record.display.height>0 &&
+      Number.isSafeInteger(record.display.left+record.display.width) && Number.isSafeInteger(record.display.top+record.display.height),
+      'Measured safe native workarea required');
     const inset=role.endsWith('auxiliary')?40:20;
     record.requested={left:record.display.left+inset,top:record.display.top+inset,
-      width:Math.min(1300,record.display.width-inset*2),
-      height:Math.min(988,record.display.height-inset*2)};
+      width:Math.min(record.window.width,record.display.width-inset*2),
+      height:Math.min(record.window.height,record.display.height-inset*2)};
+    assert.ok(record.requested.width>=640 && record.requested.height>=480,'Native workarea must fit the inert fixture');
     await browserSession.send('Browser.setWindowBounds',{windowId:record.before.windowId,bounds:record.requested});
     record.after=await browserSession.send('Browser.getWindowForTarget',{targetId:targetInfo.targetId});
     assert.equal(record.after.windowId,record.before.windowId);
     for(const key of Object.keys(record.requested))assert.equal(record.after.bounds[key],record.requested[key]);
+    record.native_after=nativeWindowObservation(receipt.pid,receipt);
+    const after=journey.bindOwnedNativeWindow({windows:record.native_after,dropped:0},record.after.bounds,receipt.pid);
+    assert.equal(after.hwnd,record.window.hwnd,'Owned fixture HWND changed');
+    assert.deepEqual(after.workarea,record.display,'Owned fixture workarea changed');
     record.tab_before=await documentState();await page.bringToFront();record.tab_after=await documentState();
   } finally {for(const value of [session,browserSession])if(value)await value.detach();}
 }
@@ -343,7 +388,7 @@ async function assertPrecleanupWindowDiagnostics({faultOnly=false}={}) {
   try {
     native=await journey.ownedChrome(chromium,output);page=native.context.pages()[0];page.setDefaultTimeout(10_000);
     await page.goto('data:text/html,'+encodeURIComponent('<!doctype html><title>Owned precleanup diagnostics guard</title><button style="width:200px;height:100px">Inert focus target</button>'));
-    await placeOwnedInertWindow({native,page,report,role:'precleanup-original'});
+    await placeOwnedInertWindow({native,page,report,role:'precleanup-original',output});
     await journey.activateOwnedNativeWindow({native,page,report,kind:'setup',role:'precleanup-original'});
     if(!faultOnly)await episode(false);
     if(!process.env.LAST_STAND_PRECLEANUP_TARGET_ONLY)await episode(true);
@@ -925,7 +970,7 @@ async function assertOwnedNativeForegroundDriver() {
     const goto=aux.goto.bind(aux);
     aux.goto=async(...args)=>{
       const result=await goto(...args);
-      await placeOwnedInertWindow({native,page:aux,report,role:'foreground-auxiliary'});
+      await placeOwnedInertWindow({native,page:aux,report,role:'foreground-auxiliary',output});
       return result;
     };
     const close=aux.close.bind(aux);
@@ -936,7 +981,7 @@ async function assertOwnedNativeForegroundDriver() {
     await page.setViewportSize({width:1280,height:720});
     await page.exposeFunction('__stNativeForegroundEvent',event=>{report.events.push(event);});
     await page.goto('data:text/html,'+encodeURIComponent('<!doctype html><title>Owned native foreground fixture</title><button style="width:200px;height:100px">Inert focus target</button><script>for(const kind of ["focus","blur","visibilitychange","pointerdown","pointerup"])addEventListener(kind,e=>window.__stNativeForegroundEvent({kind,hidden:document.hidden,focused:document.hasFocus(),trusted:e.isTrusted,t:performance.now(),timeOrigin:performance.timeOrigin}));</script>'));
-    await placeOwnedInertWindow({native,page,report,role:'foreground-original'});
+    await placeOwnedInertWindow({native,page,report,role:'foreground-original',output});
     await journey.activateOwnedNativeWindow({native,page,report,kind:'setup',role:'foreground-original'});
     await page.bringToFront();await page.mouse.click(40,40);
     await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10000});
@@ -1767,6 +1812,114 @@ async function assertConfiguredRejoinBoundary() {
   await binderReadBoundaries();
 }
 
+
+test('inert placement uses the observed owned monitor instead of emulated screen dimensions',async()=>{
+  for(const origin of [{left:0,top:0},{left:-1280,top:-200}]){
+    const f=inertPlacementFixture({origin});await f.run();
+    assert.deepEqual(f.requests,[{left:origin.left+20,top:origin.top+20,width:1024,height:760}]);
+    assert.equal(f.screenReads,0,'Emulated page.screen must never authorize native placement');
+    assert.equal(f.probes,2);assert.equal(f.fronts,1);assert.equal(f.detaches,2);
+  }
+});
+test('inert placement rejects unsafe or mismatched ownership and geometry before tab activation',async()=>{
+  for(const fault of ['foreign','ambiguous','unmeasured','missing-workarea','small-workarea','unsafe-workarea',
+    'cdp-native-mismatch','post-size','post-window','post-native','post-monitor','stale-process']){
+    const f=inertPlacementFixture({fault});await assert.rejects(f.run(),undefined,fault);
+    assert.equal(f.fronts,0,fault+' must not activate the tab');assert.equal(f.detaches,2);
+    assert.equal(f.requests.length,fault.startsWith('post-')?1:0,fault+' mutation boundary');
+  }
+});
+function inertPlacementFixture({origin={left:0,top:0},fault}={}){
+  const root={pid:77,ppid:55,start:'exact-owned-start',exe:'owned-chrome'},receipt={pid:77,root,profile:'/inert-profile'};
+  const workarea={...origin,width:1064,height:800};
+  let bounds={left:origin.left+10,top:origin.top+10,width:1044,height:788,windowState:'normal'};
+  const f={requests:[],screenReads:0,probes:0,fronts:0,detaches:0},report={};
+  const session={send:async()=>({targetInfo:{type:'page',targetId:'owned-target',browserContextId:'owned-context'}}),detach:async()=>{f.detaches++;}};
+  const browserSession={send:async(method,args)=>{
+    if(method==='Browser.setWindowBounds'){
+      f.requests.push({...args.bounds});bounds={...bounds,...args.bounds,width:Math.min(args.bounds.width,1044)};
+      if(fault==='post-size')bounds.width--;return {};
+    }
+    return {windowId:fault==='post-window' && f.requests.length?2:1,bounds:{...bounds}};
+  },detach:async()=>{f.detaches++;}};
+  const native={context:{newCDPSession:async()=>session},browser:{newBrowserCDPSession:async()=>browserSession}};
+  const page={context:()=>native.context,isClosed:()=>false,url:()=> 'data:text/html,inert',bringToFront:async()=>{f.fronts++;},
+    evaluate:async fn=>{if(String(fn).includes('screen.')){f.screenReads++;return {left:0,top:0,width:1280,height:720};}
+      return {hidden:true,focused:false,visibility:'hidden',t:1,timeOrigin:2};}};
+  const probe=(pid,owner)=>{
+    f.probes++;assert.equal(pid,root.pid);assert.equal(JSON.stringify(owner),JSON.stringify(receipt));
+    if(fault==='stale-process')throw new Error('Owned process changed');
+    const item={...bounds,pid,hwnd:'444',kind:'Chrome_WidgetWin_1',visible:true,minimized:false,measured:true,workarea:{...workarea}};
+    if(fault==='foreign')item.pid++;
+    if(fault==='unmeasured')item.measured=false;
+    if(fault==='missing-workarea')delete item.workarea;
+    if(fault==='small-workarea')item.workarea.width=400;
+    if(fault==='unsafe-workarea')item.workarea.left=Number.MAX_SAFE_INTEGER;
+    if(fault==='cdp-native-mismatch' || fault==='post-native' && f.requests.length)item.width--;
+    if(fault==='post-monitor' && f.requests.length)item.workarea.left++;
+    return fault==='ambiguous'?[item,{...item,hwnd:'445'}]:[item];
+  };
+  const fn=runInNewContext('('+placeOwnedInertWindow.toString()+')',{
+    assert,journey,readFileSync:()=>JSON.stringify(receipt),join:(...p)=>p.join('/'),nativeWindowObservation:probe,
+  });
+  f.run=()=>fn({native,page,report,role:'foreground-original',output:'/inert-output'});return f;
+}
+
+test('inert placement native probe preserves physical context and exact process admission',()=>{
+  if(process.platform!=='win32')return;
+  let script;
+  const observe=new Function('assert','Buffer','execFileSync','return ('+nativeWindowObservation.toString()+');')(
+    assert,Buffer,(_exe,args)=>{script=Buffer.from(args.at(-1),'base64').toString('utf16le');return '[]';});
+  observe(77,{pid:77,root:{pid:77,start:'2026-10-23T00:00:00.0000000Z',exe:'C:\\owned\\chrome.exe'},profile:'C:\\owned\\profile'});
+  const nativeBlock=script.match(/    Add-Type -TypeDefinition @'\n([\s\S]+?)\n'@/);assert.ok(nativeBlock);
+  const bodies={
+    SetThreadDpiAwarenessContext:'if(context.ToInt64()==-4){if(Mode=="dpi-denied")return IntPtr.Zero;var old=Context;Context=context;return old;}Restores++;if(Mode=="restore-denied")return IntPtr.Zero;Context=context;return new IntPtr(-4);',
+    GetThreadDpiAwarenessContext:'return Mode=="dpi-mismatch" && Context.ToInt64()==-4?new IntPtr(-3):Context;',
+    AreDpiAwarenessContextsEqual:'return first==second;',
+    MonitorFromWindow:'if(flags!=0)throw new Exception("Monitor fallback forbidden");return Mode=="monitor-missing"?IntPtr.Zero:new IntPtr(9);',
+    GetMonitorInfo:'if(info.Size!=40)throw new Exception("Monitor structure mismatch");info.Work=new Rect {Left=-1280,Top=-200,Right=-216,Bottom=600};return Mode!="monitor-failure";',
+    EnumWindows:'callback(new IntPtr(444),IntPtr.Zero);return Mode!="enumeration-failure";',
+    GetWindowThreadProcessId:'pid=77;return 1;',IsWindowVisible:'return true;',IsIconic:'return false;',
+    GetWindowRect:'rect=new Rect {Left=-1270,Top=-190,Right=-226,Bottom=598};return true;',
+    GetClassName:'text.Append("Chrome_WidgetWin_1");return 18;',GetWindowText:'text.Append("Inert owned fixture");return 19;',
+  };
+  let replaced=0;
+  let source=nativeBlock[1].replace(/^  \[DllImport[^\n]+\] public static extern (.+?) (\w+)\((.*)\);$/gm,
+    (_line,type,name,params)=>{assert.ok(bodies[name],'Inert implementation required: '+name);replaced++;
+      return '  public static '+type+' '+name+'('+params+') { '+bodies[name]+' }';});
+  assert.equal(replaced,Object.keys(bodies).length);assert.ok(!source.includes('[DllImport'));
+  source=source.replace('public class LastStandNativeWindowProbe {','public class LastStandNativeWindowProbe {\npublic static string Mode; public static IntPtr Context; public static int Restores;');
+  const action=script.replace(nativeBlock[0],'');
+  const setup=["$ErrorActionPreference='Stop'",'function Get-CimInstance { param($ClassName,$Filter)',
+    ' $global:queries++'," $stamp=[DateTime]::Parse('2026-10-23T00:00:00.0000000Z').ToUniversalTime()",
+    " if($mode -eq 'identity-before' -or ($mode -eq 'identity-after' -and $global:queries -eq 2)){$stamp=$stamp.AddSeconds(1)}",
+    " $command='--user-data-dir=C:\\owned\\profile';if($mode -eq 'profile-mismatch'){$command='--user-data-dir=C:\\foreign\\profile'}",
+    " [pscustomobject]@{CreationDate=$stamp;ExecutablePath='C:\\owned\\chrome.exe';CommandLine=$command}",'}',
+    "Add-Type -TypeDefinition @'",source,"'@",'$rows=@()',
+    "foreach($mode in @('valid','dpi-denied','dpi-mismatch','restore-denied','monitor-missing','monitor-failure','identity-before','identity-after','profile-mismatch','enumeration-failure')){",
+    ' [LastStandNativeWindowProbe]::Mode=$mode;[LastStandNativeWindowProbe]::Context=[IntPtr](-2);[LastStandNativeWindowProbe]::Restores=0',
+    ' $global:queries=0;$answer=$null;$failure=$null',
+    ' try{$answer=& {'+action+'}}catch{$failure=$_.Exception.Message}',
+    ' $rows+=@{mode=$mode;answer=$answer;error=$failure;queries=$global:queries;restores=[LastStandNativeWindowProbe]::Restores;context=[LastStandNativeWindowProbe]::Context.ToInt64()}',
+    '}',"@{fixture='all native/provider calls inert';rows=$rows}|ConvertTo-Json -Depth 6 -Compress",
+  ].join('\n');
+  const result=JSON.parse(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',
+    '$taskScript=[Console]::In.ReadToEnd(); & ([ScriptBlock]::Create($taskScript))'],
+    {input:setup,encoding:'utf8',timeout:10000,maxBuffer:1024*1024,windowsHide:true}));
+  console.log('ST_LS_INERT_PLACEMENT_PROBE='+JSON.stringify(result));
+  for(const row of result.rows){
+    if(['valid','monitor-missing','monitor-failure'].includes(row.mode)){
+      assert.equal(row.error,null,row.mode);assert.equal(row.queries,2);
+      const windows=JSON.parse(row.answer);assert.ok(Array.isArray(windows),'Native probe must preserve its array contract');
+      const item=windows[0];
+      assert.equal(item.hwnd,'444');
+      if(row.mode==='valid')assert.deepEqual(item.workarea,{left:-1280,top:-200,width:1064,height:800});
+      else assert.equal(item.workarea,null,'Unavailable monitor must never become guessed coordinates');
+    }else assert.ok(row.error,row.mode+' must refuse');
+    assert.equal(row.restores,['dpi-denied','identity-before','profile-mismatch'].includes(row.mode)?0:1,row.mode);
+    assert.equal(row.context,row.mode==='restore-denied'?-4:-2,row.mode);
+  }
+});
 
 test('native activation pins process admission and keeps provider latency outside inserted input', () => {
   if(process.platform!=='win32')return;

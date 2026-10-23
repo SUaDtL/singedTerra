@@ -2,11 +2,11 @@
   "schema": "singedterra-last-stand-export/v2",
   "complete": true,
   "status": "pass",
-  "build": "Web-20261023T045700Z-954e31",
+  "build": "Web-20261023T144559Z-97fac3",
   "scene": "Assets/Scenes/LastStandPrototype.unity",
-  "sourceHead": "5797b64e49422a09f0b0f5def022b1b1c969dd5e",
-  "sourceBeforeSha256": "d9dceb2c61ac16ac3e77f65ea9642c6761880f159090031878fa84c22b70e870",
-  "sourceAfterSha256": "d9dceb2c61ac16ac3e77f65ea9642c6761880f159090031878fa84c22b70e870",
+  "sourceHead": "252192483d14f9de891df8459470001ad6625150",
+  "sourceBeforeSha256": "61d7c4351c01902163eb8cc489351c8b8acef42bff113a2a2a628dd75df9dd4c",
+  "sourceAfterSha256": "61d7c4351c01902163eb8cc489351c8b8acef42bff113a2a2a628dd75df9dd4c",
   "sourceFiles": {
     "Tools/build_web.py": {
       "mode": "lf-text",
@@ -318,7 +318,7 @@
     },
     "Unity/Assets/Editor/LastStandBackgroundChecks.cs": {
       "mode": "lf-text",
-      "sha256": "93be8e81cf6a4a47733b139aa6e6e9ab7076fab2ce8df33b74b80f02d9b8fb16"
+      "sha256": "6804f4c9921ad65c719858235c468a2e2e1d97a672add0e0ce69f19792abeec0"
     },
     "Unity/Assets/Editor/LastStandBackgroundChecks.cs.meta": {
       "mode": "lf-text",
@@ -374,7 +374,7 @@
     },
     "Unity/Assets/Editor/LastStandLoopChecks.cs": {
       "mode": "lf-text",
-      "sha256": "f3c2b129c82d62595c94d9d8c580bc6637e38183e524bfea04781df07d759c89"
+      "sha256": "fc2de0242b57e147ec592e7600930e6d0843ee3270f404344b2e50363fe9ecee"
     },
     "Unity/Assets/Editor/LastStandLoopChecks.cs.meta": {
       "mode": "lf-text",
@@ -1002,7 +1002,7 @@
     },
     "Unity/Assets/Scripts/EncounterSession.cs": {
       "mode": "lf-text",
-      "sha256": "06d69107f704180e0e0b782f1dccac2c1ad4d2bfabb93e463d9a3981c01f0677"
+      "sha256": "7a0845b9ffe8b67d4c4b9c90f595168ba57474bdab070e636b2b773cacabadb1"
     },
     "Unity/Assets/Scripts/EncounterSession.cs.meta": {
       "mode": "lf-text",
@@ -1018,7 +1018,7 @@
     },
     "Unity/Assets/Scripts/LastStandAudio.cs": {
       "mode": "lf-text",
-      "sha256": "7e66d20d0bb535f817fea34c30b4fab9b3cf5b2e8d613858b3f7bf76bf1229eb"
+      "sha256": "5d46a7b86e2cd03b84c44beb416d2fe5b2882e274b8636578028fc8c575a4078"
     },
     "Unity/Assets/Scripts/LastStandAudio.cs.meta": {
       "mode": "lf-text",
@@ -1082,7 +1082,7 @@
     },
     "Unity/Assets/Scripts/LastStandLoopController.cs": {
       "mode": "lf-text",
-      "sha256": "632d63710f8d9b7513d8d0f42ccdb81e16dc86c37fec02ee0ad4d54dff845814"
+      "sha256": "6fcea350b0c528ebb215d4aeeaaa2227a37b88dbfdd8a74d28d476c9ea0c0682"
     },
     "Unity/Assets/Scripts/LastStandLoopController.cs.meta": {
       "mode": "lf-text",
@@ -1154,7 +1154,7 @@
     },
     "Unity/Assets/Scripts/LastStandRunClock.cs": {
       "mode": "lf-text",
-      "sha256": "3a39d03a1f91a221b97a40f1482d652c92801b519f8be1fe79f441aaab4de917"
+      "sha256": "feb970fe742724cdca010b9493a1d4c5128d3e235134cb26f548409746a349a5"
     },
     "Unity/Assets/Scripts/LastStandRunClock.cs.meta": {
       "mode": "lf-text",
@@ -83099,10 +83099,10 @@
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
   "artifacts": {
-    "Build/Web-20261023T045700Z-954e31.data": "7489425291b4f862d46e6d45213d8fad9d3642c1217bbb365565c54a8882e0aa",
-    "Build/Web-20261023T045700Z-954e31.framework.js": "67d4807d9ada43cd334107b10e598d5ad8bae52b78a8b04afee9b2d396b534c4",
-    "Build/Web-20261023T045700Z-954e31.loader.js": "e7bb0902e9669b7f32d522eb6eef1f790ac6282509f4e32b200afaa3697fdeda",
-    "Build/Web-20261023T045700Z-954e31.wasm": "6fac57d967e95ce42f508c7d850c69cebf4ed425701975f0607d190a366830d6",
+    "Build/Web-20261023T144559Z-97fac3.data": "10343af4d20d3ccc3352761abeb09421db86d913af5821ffd51958fd041a0ab8",
+    "Build/Web-20261023T144559Z-97fac3.framework.js": "36ab33a1fb5092bb88a9dadabc0e1b6ca8bb7e1af8e3fd8f47da2f2e2da82092",
+    "Build/Web-20261023T144559Z-97fac3.loader.js": "c1f7132428ed23a8103736b71d56314da4c174d016d1735b4a40c6a3c50a0689",
+    "Build/Web-20261023T144559Z-97fac3.wasm": "ca7d97c42b63ec8a5e37330700d1b86ebd4658a2f9a712357000cfb7748e238d",
     "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
     "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
     "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
@@ -83115,11 +83115,11 @@
     "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
     "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
     "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
-    "index.html": "7acdfe0c04010a6c4199f54d52ee696cb98486724a13f142e925502730170dee"
+    "index.html": "dc4dfdc516816829ae7361af8459d293b14ecd976a17962c07e384ab685da970"
   },
-  "wrapperSha256": "02cdbbf312470bebad328d41422941ccae0efaa0cd4dd20f114117f72abc1a7f",
-  "rawReceiptSha256": "f053dfa8db5083a8b26027df99b97100501f2d534035ce4e60c91afd674d7162",
-  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261023T045700Z-954e31/result.json",
+  "wrapperSha256": "7adf7adece54b76d92ea564c5e78c77fc18c9e381ae1af4c96d2b821f07e0e21",
+  "rawReceiptSha256": "ba97ccab148de0d1cd8fe0e3c2675dcdf05642ae98c0893eb9c965649a145eb8",
+  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261023T144559Z-97fac3/result.json",
   "approvedArtifacts": {
     "ST-LS-WAVES-SPEC": {
       "revision": 8,
@@ -83127,8 +83127,8 @@
       "normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8"
     },
     "ST-LS-WAVES-PLAN": {
-      "revision": 51,
-      "model_sha256": "dc9b0ffc341d1c18168cd86bd9d8f64e1e0e6a754b53496759053d2b33b58082",
+      "revision": 76,
+      "model_sha256": "f73db6e7d099fdd71e5c54c64aa76f625f4e7cb236a07b053cc8e6398470c6bc",
       "normative_sha256": "19b7747a8c75a218ac1f0bdbdfd6945e3d215bb597fd6efc3b38fbe21b0c0872"
     }
   },
