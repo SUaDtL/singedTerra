@@ -9,7 +9,7 @@ import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_ORACLE_SOURCES} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
-import {assertCombinedWaveQualification,assertWaveBinding,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
+import {assertCombinedWaveQualification,assertWaveBinding,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
   WAVE_LIFECYCLE_CHECKS,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_ERROR_CHECK} from './lastStandWaveQualification.mjs';
 
 // Inert contract fixtures only. They are never browser reports or acceptance.
@@ -100,8 +100,20 @@ function terminalFixture(mode){
   const saved={version:4,checkpoint:null,pendingDefeat:null,lastFinalizedRunId:run,credits:4};
   const layouts=[{...identity,phase:'settling',t:202,controls:[{name:'Claim',active:false,interactable:false}]}];
   return {kind:'wave-terminal',mode,evidence:{before,terminal,staged,result,saved,layouts},
-    ...(mode==='hidden'?{interval:{begin:110,recovered:240,before:{...before}}}:{})};
+    ...(mode==='hidden'?{interval:{begin:110,recovered:240,before:{...before},events:[
+      {...identity,t:105,kind:'visibilitychange',hidden:true,focused:false,globalTarget:true},
+      {...identity,t:235,kind:'visibilitychange',hidden:false,focused:true,globalTarget:true}]}}:{})};
 }
+test('hidden terminal cannot use recovered bookkeeping to hide an earlier real visibility return',()=>{
+ const valid=lifeReport(expectedFixture());assert.doesNotThrow(()=>assertWaveTerminals(valid));
+ for(const change of [r=>r.interval.events[1].t=190,r=>r.interval.events[1].t=220,
+  r=>{r.interval.events[1].t=220;r.interval.events.push({...r.interval.events[1],t:239});},r=>r.interval.events.shift(),
+  r=>r.interval.events[1].load++,r=>r.interval.events[1].timeOrigin++,r=>r.interval.events[1].scope='other',
+  r=>r.interval.events[1].globalTarget=false,r=>r.interval.before.run++,r=>r.interval.begin=99]){
+  const value=lifeReport(expectedFixture()),row=value.lifecycle.find(r=>r.kind==='wave-terminal'&&r.mode==='hidden');
+  change(row);assert.throws(()=>assertWaveTerminals(value),undefined,String(change));
+ }
+});
 function intervalFixture(kind='hidden'){
   const pause=kind==='explicit-pause';
   const id={load:kind==='hidden'?7:6,timeOrigin:7000,scope:'healthy'},model={...id,action:'tick',run:1,tick:0,
@@ -262,9 +274,10 @@ test('current CLIs dispatch only the wave contract while historical exports stay
 test('raw wave verifier binds compiler streams, every native edge, oracle membership and actual screenshot pixels',t=>{
   const root=mkdtempSync(join(tmpdir(),'st-inert-wave-reader-'));t.after(()=>rmSync(root,{recursive:true}));mkdirSync(join(root,'wave-model-oracle'));
   const expected=expectedFixture(),report=baseReport(expected),sha=b=>createHash('sha256').update(b).digest('hex');
-  const raw=Buffer.from(profiles.flatMap(key=>[0,1].map(tick=>key.replaceAll(':',',')+`,${tick},120,0,0,0,0,0,0,0,0,0,1,0,Running\r\n`)).join(''));
+  const raw=Buffer.from(profiles.flatMap(key=>[0,1,2].map(tick=>key.replaceAll(':',',')+
+    `,${tick},${tick===2?0:120},0,0,0,0,0,0,${tick===2?1:0},0,0,1,0,${tick===2?'Defeated':'Running'}\r\n`)).join(''));
   const empty=Buffer.alloc(0),driver=Buffer.from('inert fixture, never executed'),exe=Buffer.from('not an executable');
-  const model=report.wave_model;model.rows=48;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
+  const model=report.wave_model;model.rows=72;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
   model.commands[0].stdoutSha256=sha(empty);model.commands[0].stderrSha256=sha(empty);model.commands[1].stdoutSha256=sha(raw);model.commands[1].stderrSha256=sha(empty);
   const put=(name,value)=>writeFileSync(join(root,name),typeof value==='object'&&!Buffer.isBuffer(value)?JSON.stringify(value):value);
   put('wave-model-oracle/binding.json',model);put('wave-model-oracle/commands.json',{inputs:model.inputs,commands:model.commands});
@@ -304,6 +317,20 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
     put('runtime-telemetry.json',changed);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
     put('runtime-telemetry.json',telemetry);put('input-trace.json',e.events.slice(0,1));
     assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+  }
+  const before=intervalFixture().evidence.before;Object.assign(before.loop,{wallet:4,completedWave:0,saveState:'ready'});
+  const {loop,hull,...initial}=before,terminal={...initial,t:200,tick:2,action:'terminal',status:'Defeated',hp:0,closeHits:1};
+  const staged={...loop,t:201,action:'defeat-staged',phase:'settling',runId:0,pendingRunId:0,hasCheckpoint:false,tick:2,hull:0};
+  const result={...staged,t:230,action:'result',phase:'result',tick:0},layout={...staged,t:202,controls:[]};
+  const terminalRaw={states:[loop,staged,result],encounters:[initial,terminal],layouts:[layout]};
+  const saved={version:4,checkpoint:null,pendingDefeat:null,lastFinalizedRunId:19,credits:4};
+  const proof=journey.validateWaveTerminal({before,result,saved,...terminalRaw,oracle:{0:initial,2:terminal}});
+  const interval={before,begin:110,recovered:240,events:terminalFixture('hidden').interval.events.map(e=>({...e,load:before.load,timeOrigin:before.timeOrigin}))};
+  report.lifecycle=[{kind:'wave-terminal',mode:'hidden',evidence:proof,interval}];put('runtime-telemetry.json',terminalRaw);put('input-trace.json',interval.events);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const changed of [interval.events.slice(0,1),interval.events.map(e=>({...e,load:e.load+1})),
+    interval.events.map(e=>e.hidden?e:{...e,t:220})]){
+    put('input-trace.json',changed);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
   }
   report.lifecycle=[];put('runtime-telemetry.json',{states:[],encounters:[],layouts:[]});put('input-trace.json',[]);
   const png=Buffer.alloc(24);Buffer.from([137,80,78,71,13,10,26,10]).copy(png);png.write('IHDR',12);png.writeUInt32BE(44,16);png.writeUInt32BE(44,20);

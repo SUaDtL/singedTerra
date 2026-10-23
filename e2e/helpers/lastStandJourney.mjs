@@ -1290,9 +1290,9 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync, renameSync, unlinkSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute, dirname } from 'node:path';
-import { tmpdir, release, arch } from 'node:os';
+import { tmpdir, release, arch, uptime } from 'node:os';
 import { gunzipSync } from 'node:zlib';
 import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 
@@ -1956,10 +1956,10 @@ export function removeOwnedProfile(profile) {
 }
 export function lastStandJourneyTimeBudget(host=process.platform,{served=false}={}) {
   assert.ok(['win32','linux'].includes(host),'Unsupported journey budget host');
-  // Native wave qualification reached checkpoint reload after 13 minutes;
-  // two further ~253-second natural terminals, matrices and recovery need
-  // a bounded 30-minute total. Individual action and media guards stay fixed.
-  const testMs=host==='win32'?1_800_000:3_600_000,startupMs=served?0:180_000;
+  // Native qualification reached the hidden natural terminal at 28.5 minutes,
+  // before loader/wasm and storage recovery matrices or final retention. Admit
+  // 40 minutes total; individual action, gameplay and media guards stay fixed.
+  const testMs=host==='win32'?2_400_000:3_600_000,startupMs=served?0:180_000;
   // Test/browser clocks start after webServer setup; the standalone owner
   // starts before it and must also admit owned-tree cleanup.
   // Software-rendered Linux Unity frames can occupy the page thread beyond
@@ -1971,60 +1971,101 @@ export function lastStandJourneyTimeBudget(host=process.platform,{served=false}=
 export function ownedSupervisorLifetimeLimit(host=process.platform) {
   return ['win32','linux'].includes(host)?lastStandJourneyTimeBudget(host).supervisorMs+10_000:640_000;
 }
-export function startOwnedSupervisor(child, output, profile, lifetimeMs=640_000) {
+export function publishOwnedSupervisorJson(path,value) {
+  const text=JSON.stringify(value,null,2),pending=`${path}.pending-${randomUUID()}`;
+  let fd,created=false;
+  try {
+    fd=openSync(pending,'wx');created=true;
+    writeFileSync(fd,text);closeSync(fd);fd=undefined;
+    renameSync(pending,path);
+  } catch(error) {
+    if(fd!==undefined)try{closeSync(fd);}catch{}
+    if(created)try{unlinkSync(pending);}catch{}
+    throw error;
+  }
+}
+export async function finishOwnedSupervisorCleanup(options,known) {
+  const cleanup={tree:await stopOwnedProcessTree(known)};
+  if(options.profile)removeOwnedProfile(options.profile);
+  else {
+    cleanup.profiles=[];
+    const scan=directory=>{for(const entry of readdirSync(directory,{withFileTypes:true})){
+      const path=join(directory,entry.name);if(entry.isSymbolicLink())throw new Error('Evidence symlink refused');
+      if(entry.isDirectory())scan(path);else if(entry.name==='browser-profile.json'){
+        const receipt=JSON.parse(readFileSync(path,'utf8'));
+        if(receipt.status==='removed' || !existsSync(receipt.profile))continue;
+        assert.ok(cleanup.tree.known.some(item=>sameProcess(item,receipt.root)),'Profile browser ownership not in supervised tree');
+        removeOwnedProfile(receipt.profile);cleanup.profiles.push({profile:receipt.profile,root:receipt.root,removed:true});
+      }
+    }};scan(options.output);
+  }
+  cleanup.profile_removed=options.profile?!existsSync(options.profile):null;return cleanup;
+}
+export function startOwnedSupervisor(child, output, profile, lifetimeMs=640_000, expectedRoot) {
   assert.ok(Number.isInteger(lifetimeMs) && lifetimeMs>0 && lifetimeMs<=ownedSupervisorLifetimeLimit(),'Invalid owned lifetime');
   admitEvidenceParent(output);
   assert.ok(Number.isInteger(child.pid) && child.pid>0,'Owned spawn did not return a PID');
   const table=processTable(),root=table.find(item=>item.pid===child.pid),owner=table.find(item=>item.pid===process.pid);
   assert.ok(root && owner,'Owned process exited before supervision admission');
   assert.equal(root.ppid,owner.pid,'Owned child ancestry mismatch');
+  assert.ok(typeof root.exe==='string' && root.exe.length>0 && typeof owner.exe==='string' && owner.exe.length>0,'Owned executable identity absent');
+  if(expectedRoot)assert.ok(sameProcess(root,expectedRoot),'Owned child identity changed before supervision admission');
   const id=randomUUID().slice(0,8),path=join(output,`supervisor-${id}.json`);
   const options={root,owner,profile,output,lifetimeMs,path,known:collectOwnedDescendants(table,[{...root,depth:0}])};
-  writeFileSync(path,JSON.stringify(options,null,2));
+  publishOwnedSupervisorJson(path,options);
   const watcher=spawn(process.execPath,[join(ROOT,'scripts/last-stand-playable-loop.mjs'),'--watch-owner',path],
     {detached:true,stdio:'ignore',windowsHide:true});watcher.unref();
   const resultPath=`${path}.result.json`,stopPath=`${path}.stop`;
   return {path,resultPath,root,stop:async()=>{
-    writeFileSync(stopPath,'stop');const deadline=Date.now()+35_000;
-    while(!existsSync(resultPath) && Date.now()<deadline)await delay(100);
-    assert.ok(existsSync(resultPath),'Owned supervisor result absent');
-    const result=JSON.parse(readFileSync(resultPath,'utf8'));
-    assert.equal(result.status,'stopped',`Owned cleanup failed: ${result.error}`);return result;
+    try {
+      writeFileSync(stopPath,'stop');const deadline=Date.now()+35_000;
+      while(!existsSync(resultPath) && Date.now()<deadline)await delay(100);
+      assert.ok(existsSync(resultPath),'Owned supervisor result absent');
+      const result=JSON.parse(readFileSync(resultPath,'utf8'));
+      assert.ok(sameProcess(result.root,options.root) && result.root.ppid===options.root.ppid,'Owned supervisor result root mismatch');
+      assert.ok(sameProcess(result.owner,options.owner) && result.owner.ppid===options.owner.ppid,'Owned supervisor result owner mismatch');
+      assert.equal(result.profile,options.profile,'Owned supervisor result profile mismatch');
+      assert.equal(result.status,'stopped',`Owned cleanup failed: ${result.error}`);
+      assert.ok(Array.isArray(result.tree?.remaining) && result.tree.remaining.length===0,'Owned supervisor result did not confirm complete cleanup');
+      if(profile)assert.equal(result.profile_removed,true,'Owned supervisor result did not confirm profile removal');
+      return result;
+    } catch(error) {
+      // The parent retains the original admitted identities even if the watcher
+      // cannot retain observations or publish a complete result. Failure stays
+      // failure after this bounded, identity-checked cleanup attempt.
+      try{error.fallback_cleanup=await finishOwnedSupervisorCleanup(options,options.known);}
+      catch(cleanup){error.cleanup_error=String(cleanup);}
+      throw error;
+    }
   }};
 }
 export async function watchOwnedProcess(options) {
   admitEvidenceParent(options.output);
   assert.ok(relative(options.output,options.path).startsWith('supervisor-'),'Supervisor receipt containment failed');
-  let known=options.known,reason='owner-exit';const begin=Date.now(),result={status:'running',root:options.root,owner:options.owner,profile:options.profile};
+  let known=options.known,reason='owner-exit',admitted=false,failure;const begin=Date.now(),result={status:'running',root:options.root,owner:options.owner,profile:options.profile};
   try {
     assert.equal(options.root.ppid,options.owner.pid,'Supervisor root was not created by its recorded owner');
     assert.ok(options.root.exe && options.owner.exe,'Owned executable identity absent');
     assert.ok(Number.isInteger(options.lifetimeMs) && options.lifetimeMs>0 && options.lifetimeMs<=ownedSupervisorLifetimeLimit(),'Invalid owned lifetime');
+    admitted=true;
     while(true){const table=processTable();known=collectOwnedDescendants(table,known);
-      writeFileSync(`${options.path}.observed.json`,JSON.stringify({known,observedAt:new Date().toISOString()},null,2));
+      publishOwnedSupervisorJson(`${options.path}.observed.json`,{known,observedAt:new Date().toISOString()});
       if(existsSync(`${options.path}.stop`)){reason='requested-stop';break;}
       if(!table.some(item=>sameProcess(item,options.owner)))break;
       if(!table.some(item=>sameProcess(item,options.root))){reason='root-exit';break;}
       if(Date.now()-begin>options.lifetimeMs){reason='timeout';break;}
       await delay(200);
     }
-    result.reason=reason;result.tree=await stopOwnedProcessTree(known);
-    if(options.profile)removeOwnedProfile(options.profile);
-    else {
-      result.profiles=[];
-      const scan=directory=>{for(const entry of readdirSync(directory,{withFileTypes:true})){
-        const path=join(directory,entry.name);if(entry.isSymbolicLink())throw new Error('Evidence symlink refused');
-        if(entry.isDirectory())scan(path);else if(entry.name==='browser-profile.json'){
-          const receipt=JSON.parse(readFileSync(path,'utf8'));
-          if(receipt.status==='removed' || !existsSync(receipt.profile))continue;
-          assert.ok(result.tree.known.some(item=>sameProcess(item,receipt.root)),'Profile browser ownership not in supervised tree');
-          removeOwnedProfile(receipt.profile);result.profiles.push({profile:receipt.profile,root:receipt.root,removed:true});
-        }
-      }};scan(options.output);
-    }
-    result.status='stopped';result.profile_removed=options.profile?!existsSync(options.profile):null;
-  } catch(error){result.status='failed';result.error=String(error);result.known=known;}
-  finally{writeFileSync(`${options.path}.result.json`,JSON.stringify(result,null,2));}
+  } catch(error){failure=error;result.status='failed';result.error=String(error);result.known=known;}
+  finally {
+    result.reason=reason;
+    if(admitted)try {
+      Object.assign(result,await finishOwnedSupervisorCleanup(options,known));
+      if(result.status!=='failed')result.status='stopped';
+    } catch(error){failure??=error;result.status='failed';result.error??=String(error);result.cleanup_error=String(error);result.known=known;}
+    try{publishOwnedSupervisorJson(`${options.path}.result.json`,result);}
+    catch(error){if(failure){failure.publication_error=String(error);throw failure;}throw error;}
+  }
 }
 
 export function nativeChromeArgs(profile, mode='native') {
@@ -2042,18 +2083,60 @@ function retainWindowFailure(report,key,value) {
 }
 function ownedNativeWindowSnapshot(owner, activation=null) {
   assert.equal(process.platform,'win32','Native HWND observation is unavailable on this host');
-  const encoded=Buffer.from(JSON.stringify({root:owner.root,profile:owner.profile,activation})).toString('base64');
+  const startedUptimeMs=Math.floor(uptime())*1000;
+  assert.ok(Number.isSafeInteger(startedUptimeMs) && startedUptimeMs>0,'Native subprocess monotonic origin unavailable');
+  const encoded=Buffer.from(JSON.stringify({root:owner.root,profile:owner.profile,activation,startedUptimeMs})).toString('base64');
   return JSON.parse(powershell(`$owner=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json
-    $current=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
-    if(-not $current -or $current.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $current.ExecutablePath -ne $owner.root.exe){throw 'Owned native process identity mismatch'}
-    $argument='--user-data-dir='+$owner.profile
-    if(-not ($current.CommandLine.Contains('"'+$argument+'"') -or $current.CommandLine.Split(' ').Contains($argument))){throw 'Owned native profile mismatch'}
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 public class LastStandAwayWindowProbe {
+
+  // One noninheritable kernel object stays pinned across full CIM admission.
+  // Later checks never reacquire a PID or invoke a provider while input is held.
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern bool CloseHandle(IntPtr handle);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern uint GetProcessId(IntPtr handle);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern bool GetProcessTimes(IntPtr handle, out long created, out long exited, out long kernel, out long user);
+  [DllImport("kernel32.dll", EntryPoint="QueryFullProcessImageNameW", CharSet=CharSet.Unicode, SetLastError=true)] public static extern bool QueryFullProcessImageName(IntPtr handle, uint flags, StringBuilder image, ref int size);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern uint WaitForSingleObject(IntPtr handle, uint timeout);
+  [DllImport("kernel32.dll")] public static extern ulong GetTickCount64();
+  public sealed class ProcessPin : IDisposable {
+    IntPtr handle; readonly uint pid; readonly string exe; long created;
+    ProcessPin(IntPtr value, uint processId, string executable) { handle=value;pid=processId;exe=executable; }
+    public static ProcessPin Open(uint pid, string exe) {
+      if (pid == 0 || String.IsNullOrEmpty(exe)) throw new InvalidOperationException("Missing owned kernel identity");
+      var handle=OpenProcess(0x101000, false, pid); // QUERY_LIMITED_INFORMATION | SYNCHRONIZE
+      if (handle == IntPtr.Zero) throw new InvalidOperationException("Owned process handle unavailable");
+      var pin=new ProcessPin(handle,pid,exe);
+      try {
+        long exited, kernel, user;
+        if (!GetProcessTimes(handle,out pin.created,out exited,out kernel,out user) || !pin.Check())
+          throw new InvalidOperationException("Owned kernel identity mismatch");
+        return pin;
+      } catch { pin.Dispose(); throw; }
+    }
+    public bool Check() {
+      long fresh, exited, kernel, user; var image=new StringBuilder(32768); int size=image.Capacity;
+      return handle != IntPtr.Zero && WaitForSingleObject(handle,0) == 258 && GetProcessId(handle) == pid &&
+        GetProcessTimes(handle,out fresh,out exited,out kernel,out user) && fresh == created &&
+        QueryFullProcessImageName(handle,0,image,ref size) && String.Equals(image.ToString(),exe,StringComparison.OrdinalIgnoreCase);
+    }
+    public void Dispose() {
+      if (handle == IntPtr.Zero) return;
+      if (!CloseHandle(handle)) throw new InvalidOperationException("Owned process handle release failed");
+      handle=IntPtr.Zero;
+    }
+  }
+  public static bool CanBeginInput(ulong startedUptimeMs) {
+    ulong now=GetTickCount64();
+    // Node/libuv uptime and this clock share GetTickCount64 on Windows.
+    // Floor at the parent is conservative and includes spawn/Add-Type/admission.
+    // Reserve at least two seconds of the unchanged ten-second subprocess bound.
+    return startedUptimeMs > 0 && now >= startedUptimeMs && now-startedUptimeMs < 8000;
+  }
   public delegate bool EnumProc(IntPtr window, IntPtr parameter);
   [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback, IntPtr parameter);
@@ -2182,7 +2265,7 @@ public class LastStandAwayWindowProbe {
     if (proof.hitTest == 2) proof.status = "proved"; // HTCAPTION only.
     return proof;
   }
-  public static object Activate(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity) {
+  public static object Activate(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, Func<bool> inputBudget = null) {
     var physical = new PhysicalProof(); IntPtr previous = IntPtr.Zero;
     try { previous = SetThreadDpiAwarenessContext(new IntPtr(-4)); }
     catch (EntryPointNotFoundException) {
@@ -2197,7 +2280,7 @@ public class LastStandAwayWindowProbe {
       if (GetWindowRect(new IntPtr(Int64.Parse(handle)), out rect)) physical.geometry = new Geometry {
         left = rect.Left, top = rect.Top, width = rect.Right-rect.Left, height = rect.Bottom-rect.Top };
       physical.desktop = PhysicalDesktop();
-      return ActivatePhysical(owner, handle, left, top, width, height, identity, physical);
+      return ActivatePhysical(owner, handle, left, top, width, height, identity, physical, inputBudget);
     } finally {
       if (previous != IntPtr.Zero) physical.restored = SetThreadDpiAwarenessContext(previous) != IntPtr.Zero &&
         AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), previous);
@@ -2237,8 +2320,8 @@ public class LastStandAwayWindowProbe {
     }, IntPtr.Zero);
     return observed && owned;
   }
-  static object ActivatePhysical(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical) {
-    var result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, false);
+  static object ActivatePhysical(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical, Func<bool> inputBudget) {
+    var result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, false, inputBudget);
     if (result.reason != "no-uncovered-owned-caption" || result.attempted) return result;
     var window = new IntPtr(Int64.Parse(handle));
     var preparation = new OwnedPresentationProof { normalProbes = result.probes };
@@ -2255,7 +2338,7 @@ public class LastStandAwayWindowProbe {
       preparation.applied = placed && identity() && PhysicalContext() && OwnedPresentationTree(owner, window) &&
         ValidWindow(owner, window, left, top, width, height, true) && SameGeometry(physical.desktop, PhysicalDesktop());
       if (!preparation.applied) result.reason = "owned-presentation-preparation-rejected";
-      else result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, true);
+      else result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, true, inputBudget);
     } finally {
       // Restore only the same still-owned HWND. A refusal/error cannot become accepted activation.
       bool restoreAccepted = false;
@@ -2281,7 +2364,7 @@ public class LastStandAwayWindowProbe {
     }
     return result;
   }
-  static ActivationOutcome ActivateCaption(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical, bool prepared) {
+  static ActivationOutcome ActivateCaption(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical, bool prepared, Func<bool> inputBudget) {
     var window = new IntPtr(Int64.Parse(handle)); var probes = new List<CaptionProof>();
     CaptionProof caption = null; bool placed = false, placementAttempted = false, attempted = false, balanced = true;
     uint sent = 0, cleanupSent = 0; int size = Marshal.SizeOf(typeof(Input)), expectedSize = IntPtr.Size == 8 ? 40 : 28;
@@ -2326,12 +2409,14 @@ public class LastStandAwayWindowProbe {
     if (caption.status != "proved") return finish("caption-changed-before-input", false);
     caption.keysClear = InputStateClear(out capture, out pressed); caption.capture = capture;
     if (!caption.keysClear) return finish("capture-or-held-input-before-input", false);
+    if (inputBudget != null && !inputBudget()) return finish("native-input-budget-exhausted", false);
     caption.rechecked = true; attempted = true;
     physical.moveSent = SendInput(1, move, size); sent = physical.moveSent;
     if (physical.moveSent != 1) return finish("native-move-count-rejected", false);
     // No button event is possible until the actual physical cursor and exact owned caption are re-proven after moving.
     physical.beforeDown = ReprovePhysical(owner, window, physical.geometry, physical, caption.x, caption.y, identity, false, "before-down");
     if (physical.beforeDown == null) return finish("post-move-physical-proof-rejected", false);
+    if (inputBudget != null && !inputBudget()) return finish("native-input-budget-exhausted", false);
     var down = new Input[1]; down[0].Data.Mouse.Flags = 2;
     physical.downSent = SendInput(1, down, size); sent += physical.downSent; balanced = physical.downSent == 0;
     if (physical.downSent != 1) return finish("native-down-count-rejected", false);
@@ -2376,16 +2461,21 @@ public class LastStandAwayWindowProbe {
   }
 }
 '@
-    if($owner.activation){
-      $a=$owner.activation
-      $identityCheck={
-        $live=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
-        if(-not $live -or $live.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $live.ExecutablePath -ne $owner.root.exe){return $false}
-        $profileArgument='--user-data-dir='+$owner.profile
-        return ($live.CommandLine.Contains('"'+$profileArgument+'"') -or $live.CommandLine.Split(' ').Contains($profileArgument))
-      }
-      [LastStandAwayWindowProbe]::Activate($owner.root.pid,$a.hwnd,$a.left,$a.top,$a.width,$a.height,[Func[bool]]$identityCheck)|ConvertTo-Json -Depth 8 -Compress
-    } else {[LastStandAwayWindowProbe]::Read($owner.root.pid)|ConvertTo-Json -Depth 5 -Compress}`));
+    $pin=[LastStandAwayWindowProbe+ProcessPin]::Open($owner.root.pid,$owner.root.exe)
+    try {
+      # The same live kernel object spans this exact start/exe/profile admission.
+    $current=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
+    if(-not $current -or $current.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $current.ExecutablePath -ne $owner.root.exe){throw 'Owned native process identity mismatch'}
+    $argument='--user-data-dir='+$owner.profile
+    if(-not ($current.CommandLine.Contains('"'+$argument+'"') -or $current.CommandLine.Split(' ').Contains($argument))){throw 'Owned native profile mismatch'}
+      if(-not $pin.Check()){throw 'Owned process exited or changed during admission'}
+      if($owner.activation){
+        $a=$owner.activation
+        $identityCheck={return $pin.Check()}
+        $inputBudget={return [LastStandAwayWindowProbe]::CanBeginInput($owner.startedUptimeMs)}
+        [LastStandAwayWindowProbe]::Activate($owner.root.pid,$a.hwnd,$a.left,$a.top,$a.width,$a.height,[Func[bool]]$identityCheck,[Func[bool]]$inputBudget)|ConvertTo-Json -Depth 8 -Compress
+      } else {[LastStandAwayWindowProbe]::Read($owner.root.pid)|ConvertTo-Json -Depth 5 -Compress}
+    } finally {$pin.Dispose()}`));
 }
 // Passive observations precede auxiliary cleanup. Each document is sampled in
 // sequence; native foreground is not an inference about document focus.
@@ -2592,15 +2682,14 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
   const profile = mkdtempSync(join(tmpdir(), 'st-ls-chrome-'));
   const args = nativeChromeArgs(profile,mode);
   const child = spawn(executable, args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: process.platform !== 'win32' });
-  let log = '', browser, closed = false, supervisor;
+  let log = '', browser, closed = false, supervisor, ownedRoot;
   child.stdout.on('data', data => { log += data; });
   child.stderr.on('data', data => { log += data; });
   child.on('error', error => { log += String(error); });
   const receipt = status => writeFileSync(join(output, 'browser-profile.json'), JSON.stringify({
-    profile, status, pid: child.pid, root:supervisor?.root, executable, args, launch_mode:mode,
+    profile, status, pid: child.pid, root:supervisor?.root??ownedRoot, executable, args, launch_mode:mode,
     focus: mode==='shop-headless'?'headless actual document, noDefaults:true':'native default context, noDefaults:true',
     ownership: 'task-created process and temporary profile' }, null, 2));
-  receipt('active');
   const close = async () => {
     if (closed) return;
     try {
@@ -2608,7 +2697,8 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
       if(supervisor) {
         const cleanup=await supervisor.stop();writeFileSync(join(output,'browser-cleanup.json'),JSON.stringify(cleanup,null,2));
       } else {
-        if(child.pid && child.exitCode===null)await stopOwnedProcessTree([{...ownedProcessIdentity(child.pid),depth:0}]);
+        assert.ok(ownedRoot,'Owned startup child identity was not admitted');
+        await stopOwnedProcessTree([{...ownedRoot,depth:0}]);
         removeOwnedProfile(profile);
       }
       if(browser)await Promise.race([browser.close().catch(()=>{}),delay(2000)]);
@@ -2617,7 +2707,12 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
     finally{writeFileSync(join(output,'native-chrome.log'),log);}
   };
   try {
-    supervisor=startOwnedSupervisor(child,output,profile,lifetimeMs);
+    const candidate=ownedProcessIdentity(child.pid);
+    assert.equal(candidate.ppid,process.pid,'Owned child ancestry mismatch');
+    assert.ok(typeof candidate.exe==='string' && candidate.exe.length>0,'Owned executable identity absent');
+    ownedRoot=candidate;
+    receipt('active');
+    supervisor=startOwnedSupervisor(child,output,profile,lifetimeMs,ownedRoot);
     receipt('active');
     ownedBrowsers.add(close);
     const active = join(profile, 'DevToolsActivePort');
@@ -3077,6 +3172,36 @@ export async function retainJourneyOutcome(report, cleanup, persist, originalErr
   if(persistFailed)throw persistError;
 }
 
+export function persistLastStandJourneyEvidence(report,observations,write,diagnose=message=>console.error(message)) {
+  const {messages,failures,httpErrors,expectedFaults,observerFailures,
+    states,encounters,callbackRecords,hits,layouts,cues,trace,requests}=observations;
+  let firstError,failed=false;
+  const failure=(stage,error)=>{
+    if(!failed)firstError=error;failed=true;report.status='failed';
+    report.persist_error??=String(error);
+    (report.persistence_errors??=[]).push({stage,error:String(error),stack:error?.stack??String(error)});
+  };
+  const attempt=(stage,action)=>{try{action();}catch(error){failure(stage,error);}};
+  // Each independent record gets an attempt even when classification or an
+  // earlier write fails. Missing evidence always leaves a failed qualification.
+  attempt('browser-classification',()=>{report.browser_evidence=classifyBrowserEvidence(messages,failures,httpErrors,expectedFaults);});
+  if(observerFailures.length)attempt('observer-failures.json',()=>write('observer-failures.json',observerFailures));
+  for(const [name,data]of [
+    ['console.json',messages],['runtime-telemetry.json',{states,encounters,callbackRecords,hits,layouts,cues}],
+    ['input-trace.json',trace],['requests.json',{requests,failures,httpErrors}],['result.json',report],
+  ])attempt(name,()=>write(name,data));
+  if(failed){
+    // Full-report failure still gets a small independent diagnostic and stderr;
+    // neither claims that the missing raw records were retained successfully.
+    const brief=value=>value===undefined?undefined:String(value).slice(0,2000);
+    const compact=()=>({status:'failed',error:brief(report.error),cleanup_error:brief(report.cleanup_error),persist_error:brief(report.persist_error),
+      persistence_errors:report.persistence_errors.map(({stage,error,stack})=>({stage,error:error.slice(0,1000),stack:stack.slice(0,2000)}))});
+    attempt('persistence-failure.json',()=>write('persistence-failure.json',compact()));
+    attempt('stderr',()=>diagnose('LAST_STAND_LOOP_PERSISTENCE_FAILURE='+JSON.stringify(compact())));
+    throw firstError;
+  }
+}
+
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
@@ -3166,6 +3291,32 @@ export function validateCancelledReturn({before,confirmed,cancelled,layout,saveB
   return {before,confirmed,cancelled,initialSelection:layout.selection};
 }
 
+export function isWaveResultFor(before,item) {
+  return item?.action==='result' && item.phase==='result' && item.sessionRun===before.run &&
+    item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope &&
+    Number.isFinite(item.t) && item.t>=before.t;
+}
+export function assertWaveStillHidden(before,begin,events) {
+  assert.ok(!events.some(item=>item.load===before.load && item.timeOrigin===before.timeOrigin &&
+    item.scope===before.scope && item.globalTarget===true && item.kind==='visibilitychange' &&
+    item.t>=begin && !item.hidden),'Hidden terminal wait observed a premature native visibility return');
+}
+export function validateHiddenWaveTerminal({interval,evidence,events=interval?.events}) {
+  const {before,terminal,staged,result}=evidence;
+  assert.ok(interval && Number.isFinite(interval.begin) && Number.isFinite(interval.recovered) &&
+    interval.before.t<=interval.begin && interval.begin<interval.recovered);
+  for(const key of ['load','timeOrigin','scope','run'])assert.equal(interval.before[key],before[key]);
+  assert.deepEqual(events,waveIntervalEvents(interval.before,{...interval.before,t:interval.recovered},events),
+    'Hidden terminal requires its exact bounded native visibility events');
+  assert.ok(events.every((event,index)=>Number.isFinite(event.t) && (!index || event.t>=events[index-1].t)));
+  const loss=events.find(item=>item.kind==='visibilitychange' && item.hidden && !item.focused);
+  const visible=loss && events.find(item=>item.t>loss.t && item.kind==='visibilitychange' && !item.hidden);
+  assert.ok(loss && visible && loss.t<=interval.begin && visible.t<=interval.recovered &&
+    loss.t<terminal.t && terminal.t<=staged.t && staged.t<=result.t && result.t<visible.t,
+    'Terminal, durable staging and exact result must finish before the first actual visibility return');
+  assert.ok(isWaveResultFor(before,result),'Hidden terminal requires the exact same-session result transition');
+  return {loss,visible};
+}
 export function validateWaveTerminal({before,result,saved,states,encounters,layouts,oracle}) {
   assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
     before.loop?.runId>0 && before.status==='Running' && before.loop.phase==='battle' &&
@@ -3277,11 +3428,11 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     // screenshots/layouts. Failure and the existing finally retain full state.
     appendFileSync(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
     if(!condition || Date.now()-lastResultWrite>=1000) {
-      writeFileSync(resultPath,JSON.stringify(report,null,2));lastResultWrite=Date.now();
+      writeShopPresentationJson(resultPath,report);lastResultWrite=Date.now();
     }
     assert.ok(condition,name);
   };
-  const write = (name, data) => writeFileSync(join(output,name),JSON.stringify(data,null,2));
+  const write = (name, data) => writeShopPresentationJson(join(output,name),data);
   const retainObserverFailure=(record,error)=>{
     observerError??=error;originalError??=error;report.status='failed';
     report.error=`${originalError.name}: ${originalError.message}`;
@@ -3678,7 +3829,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       const result=validateNoReplayAudio({energy:measured,cues:observedCues});report.lifecycle.push({kind:'no-replay',
         begin:selected.begin,end:selected.end,energy:result,cues:observedCues,boundary:selected.boundary});return result;
     };
-    const away=async(kind,ms)=>{
+    const away=async(kind,ms,{waitHidden}={})=>{
       const traceStart=trace.length;const before=await observation();let other,session,awayError;
       await page.bringToFront();
       await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10000});
@@ -3694,11 +3845,12 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
         if(kind==='blur')await activateOwnedNativeWindow({native,page:other,report,kind,role:'auxiliary'});
         await page.waitForFunction(kind==='blur'?'!document.hidden && !document.hasFocus()':'document.hidden && !document.hasFocus()',null,{timeout:10000});
         const begin=await mark();await page.waitForTimeout(ms);
+        if(waitHidden){assert.equal(kind,'hidden');await waitHidden({before,begin});}
         await page.bringToFront();
         if(kind==='blur')await activateOwnedNativeWindow({native,page,report,kind,role:'original'});
         await page.waitForFunction('!document.hidden && document.hasFocus()');
         const recovered=await mark();await noReplay(begin+200,recovered,{kind,before,begin,recovered,ms,events:trace.slice(traceStart)});
-        return {before,begin,recovered};
+        return {before,begin,recovered,...(waitHidden?{events:waveIntervalEvents(before,{...before,t:recovered},trace.slice(traceStart))}:{})};
       } catch(error) {
         awayError=error;
         try {await retainAwayFailure({native,page,other,kind,report,output,error,
@@ -3955,7 +4107,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       terminalPaused=await prepared();await phaseMatrix('settling');
       terminalResumed=await gameClick('SpeedRate','session',item=>item.phase==='settling' && !item.paused);
     }
-    const naturalResult=await until(states,terminalStart,item=>item.load===load && item.phase==='result',
+    const naturalResult=await until(states,terminalStart,item=>isWaveResultFor(terminalBefore,item),
       (expectedTerminal.tick-terminalBefore.tick)*.05+30);
     const naturalSaved=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const naturalProof=validateWaveTerminal({before:terminalBefore,result:naturalResult,saved:naturalSaved,
@@ -3979,11 +4131,15 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const backgroundBefore=await observation(),backgroundOracle=reference(backgroundBefore);
     const backgroundExpected=Object.values(backgroundOracle).at(-1),backgroundStart=states.length;
     check(backgroundExpected.status==='Defeated','background actual wave model has natural terminal');
-    const terminalAway=await away('hidden',(backgroundExpected.tick-backgroundBefore.tick)*50+1500);
-    const backgroundResult=await until(states,backgroundStart,item=>item.load===load && item.phase==='result',15);
+    const terminalAway=await away('hidden',(backgroundExpected.tick-backgroundBefore.tick)*50+1500,{
+      waitHidden:({before,begin})=>until(states,backgroundStart,item=>{
+        assertWaveStillHidden(before,begin,trace);return isWaveResultFor(backgroundBefore,item);
+      },60)});
+    const backgroundResult=await until(states,backgroundStart,item=>isWaveResultFor(backgroundBefore,item),15);
     const backgroundFinal=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const backgroundProof=validateWaveTerminal({before:backgroundBefore,result:backgroundResult,saved:backgroundFinal,
       states,encounters,layouts,oracle:backgroundOracle});
+    validateHiddenWaveTerminal({interval:terminalAway,evidence:backgroundProof});
     report.lifecycle.push({kind:'wave-terminal',mode:'hidden',interval:terminalAway,evidence:backgroundProof});
     check(true,'background natural defeat finalizes checkpoint once without payout',backgroundProof);
     const savedTerminalBytes=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
@@ -4110,11 +4266,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       if(motion)await motion.stop().catch(error=>{report.motion_cleanup_error=String(error);});
       if(native)await native.close();
     },()=>{
-      report.browser_evidence=classifyBrowserEvidence(messages,failures,httpErrors,expectedFaults);
-      if(observerFailures.length)write('observer-failures.json',observerFailures);
-      write('console.json',messages);write('runtime-telemetry.json',{states,encounters,callbackRecords,hits,layouts,cues});write('input-trace.json',trace);
-      write('requests.json',{requests,failures,httpErrors});write('result.json',report);
-      console.log(`LAST_STAND_LOOP_EVIDENCE=${output}`);
+      try{persistLastStandJourneyEvidence(report,{messages,failures,httpErrors,expectedFaults,observerFailures,
+        states,encounters,callbackRecords,hits,layouts,cues,trace,requests},write,message=>console.error(message));}
+      finally{console.log(`LAST_STAND_LOOP_EVIDENCE=${output}`);}
     },originalError);}catch(error){throw originalError??error;}
     // A callback can arrive while cleanup awaits. Its first error still
     // wins after cleanup and persistence complete, even after a return.

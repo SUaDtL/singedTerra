@@ -246,7 +246,7 @@ async function assertPrecleanupWindowDiagnostics({faultOnly=false}={}) {
   console.log('ST_LS_PRECLEANUP_DIAGNOSTICS='+output);
   const report={window_failures:[],events:[],episodes:[],status:'running',fixture:
     'owned inert document; actual focus precondition; exact auxiliary activation rejects before cleanup'};
-  const begin=callerSource.indexOf('    const away=async(kind,ms)=>{');
+  const begin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney('));
   const end=callerSource.indexOf('    const saveAudio=',begin);
   assert.ok(begin>0 && end>begin,'Actual maintained away caller is required');
   const actualAway=new Function('native','page','observation','check','mark','noReplay','report','output',
@@ -455,6 +455,7 @@ async function assertOwnedCaptionExposureControls() {
       const args=params.split(',').filter(x=>x.trim()).map(part=>{
         const words=part.trim().split(/\s+/);return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
       }).join(', ');
+      if(line.includes('kernel32.dll'))return '  public static '+type+' '+name+'('+params+') { throw new InvalidOperationException("Kernel admission must not run in the direct Activate seam"); }';
       return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
     });
   assert.ok(replaced>=20 && !source.includes('[DllImport'),'All preparation externs must be inert');
@@ -538,6 +539,7 @@ async function assertPhysicalCaptionNativeSeamControls() {
       const args=params.split(',').filter(x=>x.trim()).map(part=>{
         const words=part.trim().split(/\s+/);return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
       }).join(', ');
+      if(line.includes('kernel32.dll'))return '  public static '+type+' '+name+'('+params+') { throw new InvalidOperationException("Kernel admission must not run in the direct Activate seam"); }';
       return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
     });
   assert.ok(replaced>=20 && !source.includes('[DllImport'),'All native externs must be inert in seam controls');
@@ -623,6 +625,7 @@ async function assertPhysicalCaptionDynamicSeamControls() {
       const args=params.split(',').filter(x=>x.trim()).map(part=>{
         const words=part.trim().split(/\s+/);return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
       }).join(', ');
+      if(line.includes('kernel32.dll'))return '  public static '+type+' '+name+'('+params+') { throw new InvalidOperationException("Kernel admission must not run in the direct Activate seam"); }';
       return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
     });
   assert.ok(replaced>=20 && !source.includes('[DllImport'),'All dynamic-control externs must be inert');
@@ -816,7 +819,7 @@ async function assertOriginalNativeForegroundPreconditions() {
   if(process.platform!=='win32')return;
   const focusedBegin=callerSource.indexOf('    const focused=async label=>{');
   const focusedEnd=callerSource.indexOf('    const screenshot=',focusedBegin);
-  const awayBegin=callerSource.indexOf('    const away=async(kind,ms)=>{');
+  const awayBegin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney('));
   const awayEnd=callerSource.indexOf('    const saveAudio=',awayBegin);
   assert.ok(focusedBegin>0 && focusedEnd>focusedBegin && awayBegin>0 && awayEnd>awayBegin);
   const gateBegin=callerSource.indexOf('export async function ensureOwnedNativeForeground(');
@@ -897,7 +900,7 @@ async function assertOwnedNativeForegroundDriver() {
   console.log('ST_LS_NATIVE_FOREGROUND='+output);
   const report={status:'running',fixture:'owned inert document; native foreground only; no gameplay/audio acceptance',
     events:[],snapshots:[],window_failures:[]};
-  const begin=callerSource.indexOf('    const away=async(kind,ms)=>{'),end=callerSource.indexOf('    const saveAudio=',begin);
+  const begin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney(')),end=callerSource.indexOf('    const saveAudio=',begin);
   assert.ok(begin>0 && end>begin,'Actual maintained away body required');
   writeFileSync(join(output,'actual-away-source.txt'),callerSource.slice(begin,end));
   const run=new Function('native','page','observation','check','mark','noReplay','report','output',
@@ -1763,3 +1766,123 @@ async function assertConfiguredRejoinBoundary() {
   await defaultFixturePreservation();
   await binderReadBoundaries();
 }
+
+
+test('native activation pins process admission and keeps provider latency outside inserted input', () => {
+  if(process.platform!=='win32')return;
+  const begin=callerSource.indexOf('function ownedNativeWindowSnapshot(');
+  const end=callerSource.indexOf('// Passive observations precede',begin);
+  assert.ok(begin>=0 && end>begin);
+  let actualScript;
+  const makeCapture=clock=>new Function('assert','process','Buffer','powershell','uptime',
+    callerSource.slice(begin,end)+'return ownedNativeWindowSnapshot;')(
+      assert,{platform:'win32'},Buffer,script=>{actualScript=script;return '{}';},clock);
+  const owner={root:{pid:77,ppid:55,start:'2026-10-23T00:00:00.0000000Z',exe:'C:\\owned\\chrome.exe'},profile:'C:\\owned\\profile'};
+  for(const value of [-1,0,NaN,Infinity,Number.MAX_SAFE_INTEGER])assert.throws(()=>makeCapture(()=>value)(owner),/monotonic origin/);
+  const capture=makeCapture(()=>1000);
+  capture({root:{pid:77,ppid:55,start:'2026-10-23T00:00:00.0000000Z',exe:'C:\\owned\\chrome.exe'},
+    profile:'C:\\owned\\profile'},{hwnd:'444',left:20,top:30,width:800,height:600});
+  let source=actualScript.split("    Add-Type -TypeDefinition @'\n")[1]?.split("\n'@")[0];
+  assert.ok(source,'Actual emitted native source required');
+  let replaced=0;
+  source=source.replace(/^  \[DllImport[^\n]+\] public static extern (.+?) (\w+)\((.*)\);$/gm,
+    (line,type,name,params)=>{
+      replaced++;
+      const args=params.split(',').filter(x=>x.trim()).map(part=>{
+        const words=part.trim().split(/\s+/);
+        return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
+      }).join(', ');
+      return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
+    });
+  assert.ok(replaced>=20 && !source.includes('[DllImport'),'Every OS call must be inert');
+  const tick=String.fromCharCode(96);
+  let seam=assertPhysicalCaptionNativeSeamControls.toString().split('const seam='+tick)[1]?.split(tick+';')[0];
+  assert.ok(seam);
+  seam=seam.replace('public static string Mode;',
+    'public static int Opens, Closes, Checks; public static bool Pinned, Exited; public static string Mode;')
+    .replace('Mode=mode;Moves=', 'Mode=mode;Opens=Closes=Checks=0;Pinned=Exited=false;Moves=')
+    .replace('public static bool Identity()',[
+    'public static IntPtr OpenProcess(uint access, bool inherit, uint pid) {',
+    '  Opens++;if(access!=0x101000 || inherit || pid!=77)throw new InvalidOperationException("Unexpected process authority");',
+    '  if(Mode=="missing" || Mode=="access-denied")return IntPtr.Zero;Pinned=true;return new IntPtr(900);',
+    '}',
+    'public static bool CloseHandle(IntPtr handle) {',
+    '  if(handle!=new IntPtr(900) || !Pinned)throw new InvalidOperationException("Unexpected handle release");',
+    '  Closes++;Pinned=false;return true;',
+    '}',
+    'public static uint GetProcessId(IntPtr handle) { Checks++;if(Mode=="check-exception" && Checks>1)throw new InvalidOperationException("Injected kernel query failure");return Mode=="pid-mismatch"?88u:77u; }',
+    'public static bool GetProcessTimes(IntPtr handle, out long created, out long exited, out long kernel, out long user) {',
+    '  created=1000000+(Mode=="creation-drift" && Moves>0?1:0);exited=kernel=user=0;return Mode!="time-unavailable";',
+    '}',
+    'public static bool QueryFullProcessImageName(IntPtr handle, uint flags, StringBuilder image, ref int size) {',
+    '  image.Append(Mode=="exe-mismatch"?"C:\\\\foreign\\\\chrome.exe":"C:\\\\owned\\\\chrome.exe");',
+    '  size=image.Length;return Mode!="image-unavailable";',
+    '}',
+    'public static uint WaitForSingleObject(IntPtr handle, uint timeout) {',
+    '  if(timeout!=0 || handle!=new IntPtr(900) || !Pinned)throw new InvalidOperationException("Unbounded or unpinned wait");',
+    '  return Exited || Mode=="exit-before-admission" || (Mode=="exit-after-move" && Moves>0)?0u:258u;',
+    '}',
+    'public static ulong GetTickCount64() {',
+    '  return (ulong)(Mode=="budget-future"?999999:Mode=="budget-expired"?1009000:(Mode=="budget-after-move" && Moves>0 || Mode=="budget-after-down" && Downs>0)?1009000:1000100);',
+    '}',
+    'public static bool Identity()'].join('\n'));
+  source=source.slice(0,source.lastIndexOf('}'))+seam+'\n}';
+  const nativeBlock=actualScript.match(/    Add-Type -TypeDefinition @'\n[\s\S]+?\n'@/)[0];
+  const action=actualScript.replace(nativeBlock,'');
+  const setup=[
+    "$ErrorActionPreference='Stop'",
+    "$taskMode='valid';$global:taskQueries=0;$global:taskInsideDown=0;$global:taskQueryWithoutPin=0",
+    'function Get-CimInstance {',
+    '  param($ClassName,$Filter)',
+    '  $global:taskQueries++',
+    "  if($taskMode -eq 'provider-exception'){throw 'Injected CIM admission failure'}",
+    "  $kind='LastStandAwayWindowProbe+Seam' -as [type]",
+    '  if($kind){',
+    '    if([LastStandAwayWindowProbe+Seam]::Downs -gt [LastStandAwayWindowProbe+Seam]::Ups){$global:taskInsideDown++}',
+    '    if(-not [LastStandAwayWindowProbe+Seam]::Pinned){$global:taskQueryWithoutPin++}',
+    "    if($taskMode -eq 'exit-during-admission' -or $taskMode -eq 'pid-reuse'){[LastStandAwayWindowProbe+Seam]::Exited=$true}",
+    '  }else{$global:taskQueryWithoutPin++}',
+    "  $stamp=[DateTime]::Parse('2026-10-23T00:00:00.0000000Z').ToUniversalTime()",
+    "  if($taskMode -eq 'start-mismatch'){$stamp=$stamp.AddSeconds(1)}",
+    '  $command=\'"C:\\owned\\chrome.exe" --user-data-dir=C:\\owned\\profile\'',
+    '  if($taskMode -eq \'profile-mismatch\'){$command=\'"C:\\owned\\chrome.exe" --user-data-dir=C:\\foreign\\profile\'}',
+    "  [pscustomobject]@{ProcessId=77;CreationDate=$stamp;ExecutablePath='C:\\owned\\chrome.exe';CommandLine=$command}",
+    '}',
+  ].join('\n');
+  // Run actual emitted admission/control flow; every provider/native call is inert.
+  const script=setup+"\nAdd-Type -TypeDefinition @'\n"+source+"\n'@\n"+[
+    '$rows=@()',
+    "foreach($taskMode in @('valid','budget-after-down','missing','access-denied','exit-before-admission','provider-exception','check-exception','exit-during-admission','pid-reuse','pid-mismatch','start-mismatch','profile-mismatch','exe-mismatch','time-unavailable','image-unavailable','creation-drift','exit-after-move','budget-expired','budget-after-move','budget-future')){",
+    '  [LastStandAwayWindowProbe+Seam]::Reset($taskMode)',
+    '  $global:taskQueries=0;$global:taskInsideDown=0;$global:taskQueryWithoutPin=0;$answer=$null;$failure=$null',
+    '  try{$answer=& {'+action+'}|ConvertFrom-Json}catch{$failure=$_.Exception.Message}',
+    '  $rows+=@{mode=$taskMode;accepted=($answer.accepted -eq $true);reason=$answer.reason;error=$failure;',
+    '    providerCalls=$global:taskQueries;providerDuringDown=$global:taskInsideDown;providerWithoutPin=$global:taskQueryWithoutPin;',
+    '    opens=[LastStandAwayWindowProbe+Seam]::Opens;closes=[LastStandAwayWindowProbe+Seam]::Closes;',
+    '    pinned=[LastStandAwayWindowProbe+Seam]::Pinned;checks=[LastStandAwayWindowProbe+Seam]::Checks;',
+    '    moves=[LastStandAwayWindowProbe+Seam]::Moves;downs=[LastStandAwayWindowProbe+Seam]::Downs;ups=[LastStandAwayWindowProbe+Seam]::Ups}',
+    '}',
+    "@{fixture='actual emitted script with all OS/provider calls inert';rows=$rows}|ConvertTo-Json -Depth 5 -Compress",
+  ].join('\n');
+  const raw=execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',
+    '$taskScript=[Console]::In.ReadToEnd(); & ([ScriptBlock]::Create($taskScript))'],
+    {input:script,encoding:'utf8',timeout:10000,maxBuffer:4*1024*1024,windowsHide:true});
+  const evidence=JSON.parse(raw),good=evidence.rows[0];
+  console.log('ST_LS_PINNED_IDENTITY='+JSON.stringify(evidence));
+  assert.equal(good.accepted,true,'Valid exact admitted process must retain activation behavior');
+  assert.equal(good.providerDuringDown,0,'No potentially slow provider query may run with this call’s button held');
+  assert.equal(good.providerWithoutPin,0,'Full profile/start admission must occur while the kernel object is pinned');
+  assert.equal(good.providerCalls,1,'Only full admission uses the provider; later proofs use the same kernel handle');
+  assert.ok(good.checks>=5,'Fresh kernel identity checks must remain at existing input gates');
+  assert.equal(good.opens,1);assert.equal(good.closes,1);assert.equal(good.downs,1);assert.equal(good.ups,1);
+  const released=evidence.rows.find(row=>row.mode==='budget-after-down');
+  assert.ok(released.accepted && released.downs===1 && released.ups===1 && released.closes===1 && !released.pinned,'Budget expiry must never suppress an otherwise safe owned release');
+  for(const row of evidence.rows.slice(2)){
+    assert.equal(row.accepted,false,'Refuse '+row.mode);
+    assert.equal(row.downs,0,'Do not insert down for '+row.mode);
+    assert.equal(row.ups,0,'Do not send unowned up for '+row.mode);
+    assert.equal(row.pinned,false,'Release every successfully acquired handle for '+row.mode);
+    assert.equal(row.opens,1,'Never reacquire a replacement PID for '+row.mode);
+    assert.equal(row.closes,['missing','access-denied'].includes(row.mode)?0:1,'Close only an acquired handle for '+row.mode);
+  }
+});

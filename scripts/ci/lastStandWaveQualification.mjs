@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve,dirname,basename} from 'node:path';
 import {LAST_STAND_JOURNEY_INPUTS,validateCheckpointResume,validateWaveTerminal,validateGameplayInput,validateKeyboardGameplayInput,validateModelObservation,
-  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents} from '../../e2e/helpers/lastStandJourney.mjs';
+  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents,validateHiddenWaveTerminal} from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_ORACLE_SOURCES,parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 
 export const WAVE_CONTRACT='last-stand-waves/v1';
@@ -133,9 +133,7 @@ export function assertWaveTerminals(report) {
       layout.timeOrigin===before.timeOrigin&&layout.t>=terminal.t&&layout.t<=result.t&&
       !layout.controls.some(c=>c.name==='Claim'&&c.active&&c.interactable)));
     if(row.mode==='hidden'){
-      assert.ok(row.interval?.begin<terminal.t&&row.interval.recovered>=result.t,'Terminal must happen during the actual hidden interval');
-      assert.equal(row.interval.before.run,before.run);assert.equal(row.interval.before.load,before.load);
-      assert.equal(row.interval.before.timeOrigin,before.timeOrigin);
+      validateHiddenWaveTerminal(row);
     }
   }
   const foreground=terminals.find(row=>row.mode==='foreground').evidence,reload=only(report.lifecycle,'terminal-reload');
@@ -252,6 +250,12 @@ export function verifyWaveFiles(resultPath,report) {
     }else if(record.kind==='wave-terminal'){
       const proof=validateWaveTerminal({...record.evidence,...telemetry,oracle:oracle(record.evidence.before)});
       assert.deepEqual(proof,record.evidence,'Terminal proof differs from actual source-bound telemetry');
+      if(record.mode==='hidden'){
+        const {interval}=record;
+        const events=waveIntervalEvents(interval.before,{...interval.before,t:interval.recovered},trace);
+        assert.deepEqual(events,interval.events,'Hidden terminal events differ from actual input trace');
+        validateHiddenWaveTerminal({...record,events});
+      }
       if(record.interaction){actualState(record.interaction.paused);actualState(record.interaction.resumed);}
     }else if(record.kind==='terminal-reload')actualState(record.state);
     else if(record.kind==='background-wave'){

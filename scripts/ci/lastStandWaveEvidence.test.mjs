@@ -1,10 +1,62 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
+import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {validateWaveTerminal,validateCheckpointResume} from '../../e2e/helpers/lastStandJourney.mjs';
 
 // Inert observations test rejection. They never qualify a browser or grant saves.
 const clone=x=>structuredClone(x);
+const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+test('actual foreground and background collectors select the current result transition instead of a later session row',async()=>{
+ const before={load:6,timeOrigin:1000,scope:'healthy',run:1,t:10},result={...before,t:100,action:'result',phase:'result',sessionRun:1};
+ const rows=[result,{...result,t:102,action:'session'},{...result,t:104,sessionRun:2},{...result,t:105,timeOrigin:2000}];
+ for(const [name,saved,owner,start] of [['naturalResult','naturalSaved','terminalBefore','terminalStart'],
+  ['backgroundResult','backgroundFinal','backgroundBefore','backgroundStart']]){
+  const begin=source.indexOf('    const '+name+'=await until('),end=source.indexOf('    const '+saved+'=',begin);
+  assert.ok(begin>0 && end>begin);
+  const run=new Function('until','states','load',owner,start,'expectedTerminal','isWaveResultFor',
+   'return(async()=>{'+source.slice(begin,end)+'return '+name+';})();');
+  const selected=await run(async(items,index,predicate)=>items.slice(index).filter(predicate).at(-1),rows,6,before,0,{tick:5080},journey.isWaveResultFor);
+  assert.equal(selected,result,'Only the genuine current-session result transition may be collected');
+ }
+});
+
+test('actual hidden terminal caller waits for result before returning the tab and refuses early visibility',async()=>{
+ const begin=source.indexOf('    const terminalAway=await away('),end=source.indexOf('    const backgroundFinal=',begin);
+ assert.ok(begin>0 && end>begin);
+ const before={load:6,timeOrigin:1000,scope:'healthy',run:1,t:10,tick:0},result={...before,t:100,action:'result',phase:'result',sessionRun:1};
+ for(const earlyReturn of [false,true]){
+  const events=[],order=[],states=[{...result,t:50,phase:'battle',action:'session'}];
+  const until=async(items,start,predicate,seconds)=>{
+   assert.ok(seconds>0 && seconds<=60);order.push('observe');
+   if(earlyReturn)events.push({...before,t:70,kind:'visibilitychange',hidden:false,globalTarget:true});
+   states.push(result,{...result,t:102,action:'session'});
+   return items.slice(start).filter(predicate).at(-1);
+  };
+  const away=async(kind,ms,options)=>{assert.equal(kind,'hidden');assert.ok(ms>0);order.push('hidden');
+   assert.equal(typeof options?.waitHidden,'function','Completion must be observed while the original tab remains hidden');
+   await options.waitHidden({before,begin:20});order.push('visible');return {};};
+  const run=new Function('away','until','states','load','backgroundBefore','backgroundStart','backgroundExpected','trace','isWaveResultFor','assertWaveStillHidden',
+   'return(async()=>{'+source.slice(begin,end)+'return backgroundResult;})();');
+  const work=run(away,until,states,6,before,0,{tick:5080},events,journey.isWaveResultFor,journey.assertWaveStillHidden);
+  if(earlyReturn){await assert.rejects(work);assert.ok(!order.includes('visible'));}
+  else {assert.equal(await work,result);assert.ok(order.indexOf('observe')<order.indexOf('visible'));}
+ }
+});
+test('actual away owner awaits hidden completion after its minimum interval and before native return',async()=>{
+ const begin=source.indexOf('    const away=async(',source.indexOf('export async function runLastStandJourney(')),end=source.indexOf('\n    const ',begin+10);
+ assert.ok(begin>0 && end>begin);const order=[],before={t:10,load:1,timeOrigin:1000,scope:'healthy'},trace=[];
+ const page={bringToFront:async()=>order.push('original-front'),waitForFunction:async()=>{},waitForTimeout:async()=>order.push('minimum-away')};
+ const other={goto:async()=>{},bringToFront:async()=>order.push('hidden'),isClosed:()=>false,close:async()=>order.push('closed')};
+ const native={context:{newPage:async()=>other}},report={},marks=[20,100];
+ const run=new Function('trace','observation','page','process','check','native','report','mark','noReplay','waveIntervalEvents','cleanupAwayAuxiliary','assert',
+  source.slice(begin,end)+'return away;');
+ const away=run(trace,async()=>before,page,{platform:'linux'},(condition,message)=>assert.ok(condition,message),native,report,
+  async()=>marks.shift(),async()=>order.push('audio'),journey.waveIntervalEvents,journey.cleanupAwayAuxiliary,assert);
+ await away('hidden',60,{waitHidden:async()=>order.push('result')});
+ assert.deepEqual(order.slice(0,5),['original-front','hidden','minimum-away','result','original-front']);
+});
 function csv(){return Buffer.from([1,2].flatMap(tier=>['repair','launcher','scattergun'].flatMap(fitting=>[20,30,40,50].flatMap(damage=>[
  `${tier},${fitting},${damage},0,120,0,0,0,0,0,0,0,0,0,1,0,Running`,
  `${tier},${fitting},${damage},1,120,1,1,1,0,0,0,0,0,0,2,1,Running`,

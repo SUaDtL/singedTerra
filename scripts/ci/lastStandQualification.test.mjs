@@ -847,7 +847,7 @@ test('explicit Pause admits model focus acknowledgement before visible return bu
 
 test('central workload budget separates web-server startup and bounds actual owners',()=>{
   assert.equal(typeof journey.lastStandJourneyTimeBudget,'function','Actual caller budget must be centralized');
-  for(const [host,testMs]of [['win32',1_800_000],['linux',3_600_000]]){
+  for(const [host,testMs]of [['win32',2_400_000],['linux',3_600_000]]){
     for(const served of [false,true]){
       const b=journey.lastStandJourneyTimeBudget(host,{served});
       assert.equal(b.testMs,testMs);assert.equal(b.startupMs,served?0:180_000);
@@ -862,7 +862,7 @@ test('central workload budget separates web-server startup and bounds actual own
   for(const [file,needles]of [
     ['../../e2e/last-stand-playable-loop.spec.ts',['test.setTimeout(lastStandJourneyTimeBudget().testMs)']],
     ['../last-stand-playable-loop.mjs',['lastStandJourneyTimeBudget(process.platform,{served:Boolean(process.env.E2E_LIVE_URL)})',
-      'startOwnedSupervisor(child,output,null,budget.supervisorMs)','budget.runnerMs']],
+      'startOwnedSupervisor(child,output,null,budget.supervisorMs,ownedRoot)','budget.runnerMs']],
   ]){
     const text=readFileSync(new URL(file,import.meta.url),'utf8');
     for(const needle of needles)assert.ok(text.includes(needle),file+' uses actual derived '+needle);
@@ -903,7 +903,7 @@ test('actual maintained journey uses a finite host DOM allowance without changin
     const budget=journey.lastStandJourneyTimeBudget(host);
     assert.equal(budget.actionMs,observed);
     assert.ok(Number.isFinite(observed) && observed>0 && observed<budget.testMs);
-    assert.equal(budget.testMs,host==='linux'?3_600_000:1_800_000);
+    assert.equal(budget.testMs,host==='linux'?3_600_000:2_400_000);
   }
 });
 
@@ -971,19 +971,190 @@ test('qualification has a closed Windows default and rejects every incompatible 
 });
 
 test('actual owned watcher admits the derived cleanup budget but retains a closed host bound',async()=>{
-  const begin=source.indexOf('export async function watchOwnedProcess('),end=source.indexOf('\nexport function nativeChromeArgs',begin);
-  for(const [host,lifetime,expected]of [['win32',2_030_000,'stopped'],['win32',2_040_001,'failed'],
+  for(const [host,lifetime,expected]of [['win32',2_630_000,'stopped'],['win32',2_640_000,'stopped'],['win32',2_640_001,'failed'],
     ['linux',3_830_000,'stopped'],['linux',3_840_001,'failed'],['linux',640_000,'stopped']]){
-    let record;
-    const run=runInNewContext(source.slice(begin,end).replace('export async','async')+';watchOwnedProcess',{
-      assert,process:{platform:host},admitEvidenceParent:()=>{},relative:()=> 'supervisor-inert.json',
-      ownedSupervisorLifetimeLimit:()=>journey.ownedSupervisorLifetimeLimit(host),
-      processTable:()=>[],collectOwnedDescendants:()=>[],writeFileSync:(_path,json)=>record=JSON.parse(json),
-      existsSync:()=>true,stopOwnedProcessTree:async()=>({known:[],remaining:[]}),readdirSync:()=>[],
-    });
-    await run({output:'/explicit-inert',path:'/explicit-inert/supervisor-inert.json',root:{ppid:2,exe:'inert'},
-      owner:{pid:2,exe:'inert'},known:[],lifetimeMs:lifetime});
+    const f=inertSupervisor({host});await f.watchOwnedProcess({...f.options,lifetimeMs:lifetime});
+    const record=JSON.parse(f.files.get(f.options.path+'.result.json'));
     assert.equal(record.status,expected,host+' actual owned watcher lifetime '+lifetime);
+  }
+});
+
+function inertSupervisor({failWrite,stopRequested=true,host='win32'}={}) {
+  const root={pid:40,ppid:20,start:'200',exe:'inert-browser',depth:0};
+  const owner={pid:20,ppid:10,start:'100',exe:'inert-owner'};
+  const options={output:'/explicit-inert',path:'/explicit-inert/supervisor-inert.json',
+    root,owner,profile:'/explicit-inert-profile',known:[root],lifetimeMs:1000};
+  const files=new Map(),descriptors=new Map(),cleanup=[],writes=[],renames=[];let fd=0,profile=true;
+  const write=(path,text)=>{
+    path=typeof path==='number'?descriptors.get(path):path;writes.push(path);
+    if(failWrite?.(path)){files.set(path,'');throw Object.assign(new Error('injected ENOSPC: '+path),{code:'ENOSPC'});}
+    files.set(path,String(text));
+  };
+  const begin=source.includes('export function publishOwnedSupervisorJson(')
+    ?source.indexOf('export function publishOwnedSupervisorJson('):source.indexOf('export function startOwnedSupervisor(');
+  const end=source.indexOf('\nexport function nativeChromeArgs',begin);
+  const context={assert,process:{pid:20,execPath:'inert-node',platform:host},ROOT:'/explicit-inert',
+    admitEvidenceParent:()=>{},relative:()=> 'supervisor-inert.json',join:(...parts)=>parts.join('/'),
+    randomUUID:()=> 'inert-id',ownedSupervisorLifetimeLimit:()=>journey.ownedSupervisorLifetimeLimit(host),
+    processTable:()=>[root,owner],collectOwnedDescendants:journey.collectOwnedDescendants,
+    sameProcess:(a,b)=>a.pid===b.pid && a.start===b.start && a.exe===b.exe,
+    writeFileSync:write,readFileSync:path=>files.get(path),
+    openSync:(path,mode)=>{assert.equal(mode,'wx');assert.ok(!files.has(path));files.set(path,'');descriptors.set(++fd,path);return fd;},
+    closeSync:value=>descriptors.delete(value),unlinkSync:path=>files.delete(path),
+    renameSync:(from,to)=>{renames.push([from,to]);files.set(to,files.get(from));files.delete(from);},
+    existsSync:path=>path===options.profile?profile:path.endsWith('.stop')?stopRequested || files.has(path):files.has(path),
+    stopOwnedProcessTree:async known=>{cleanup.push(JSON.parse(JSON.stringify(known)));return{known,stopped:known,remaining:[]};},
+    removeOwnedProfile:path=>{assert.equal(path,options.profile);profile=false;},
+    readdirSync:()=>[],delay:async()=>{},spawn:()=>({unref(){}}),console:{error(){}}};
+  const actual=runInNewContext(source.slice(begin,end).replaceAll(/^export /gm,'')+
+    ';({startOwnedSupervisor,watchOwnedProcess,publishOwnedSupervisorJson})',context);
+  return {...actual,options,files,cleanup,writes,renames,descriptors,context};
+}
+
+test('owned watcher still cleans admitted exact identities after observational ENOSPC and reports failure',async()=>{
+  const f=inertSupervisor({failWrite:path=>path.includes('.observed.json')});
+  await f.watchOwnedProcess(f.options);
+  assert.deepEqual(f.cleanup,[f.options.known],'Observational write failure must not skip admitted cleanup');
+  const result=JSON.parse(f.files.get(f.options.path+'.result.json'));
+  assert.equal(result.status,'failed');assert.match(result.error,/ENOSPC/);
+  assert.deepEqual(result.tree.remaining,[]);assert.equal(result.profile_removed,true);
+});
+
+test('owned watcher never cleans inadmissible ownership or lifetime after failed validation',async()=>{
+  for(const change of [{root:{pid:40,ppid:999,start:'200',exe:'inert-browser'}},{lifetimeMs:0}]){
+    const f=inertSupervisor();await f.watchOwnedProcess({...f.options,...change});
+    assert.deepEqual(f.cleanup,[]);assert.equal(JSON.parse(f.files.get(f.options.path+'.result.json')).status,'failed');
+  }
+});
+
+test('owned watcher failed final publication cannot leave partial JSON at its result path',async()=>{
+  const f=inertSupervisor({failWrite:path=>path.includes('.result.json')});
+  await assert.rejects(f.watchOwnedProcess(f.options),/ENOSPC/);
+  assert.deepEqual(f.cleanup,[f.options.known]);
+  assert.equal(f.files.has(f.options.path+'.result.json'),false,'Incomplete final JSON must never be published');
+  assert.equal(f.descriptors.size,0);assert.equal(f.files.has(f.options.path+'.result.json.pending-inert-id'),false);
+});
+
+test('owned supervisor stop falls back to its admitted identities on stop-marker ENOSPC',async()=>{
+  const f=inertSupervisor({failWrite:path=>path.endsWith('.stop')});
+  const supervisor=f.startOwnedSupervisor({pid:40},f.options.output,f.options.profile,1000);
+  await assert.rejects(supervisor.stop(),/ENOSPC/);
+  assert.deepEqual(f.cleanup,[f.options.known],'Stop receipt failure must still attempt exact admitted cleanup');
+});
+
+test('owned supervisor rejects malformed final publication and still attempts admitted cleanup',async()=>{
+  const f=inertSupervisor(),supervisor=f.startOwnedSupervisor({pid:40},f.options.output,f.options.profile,1000);
+  f.files.set(supervisor.resultPath,'');
+  await assert.rejects(supervisor.stop(),/JSON|publication/);
+  assert.deepEqual(f.cleanup,[f.options.known],'A permanently empty receipt must not leave owned cleanup unattempted');
+});
+
+test('owned supervisor only admits complete matching successful cleanup receipts',async()=>{
+  const receipt=options=>({status:'stopped',root:options.root,owner:options.owner,profile:options.profile,
+    tree:{known:options.known,remaining:[]},profile_removed:true});
+  for(const change of [null,result=>{result.root={...result.root,start:'reused-start'};},
+    result=>{result.root={...result.root,exe:'unrelated-executable'};},result=>{result.owner={...result.owner,pid:999};},
+    result=>{result.profile='/unowned-profile';},result=>{result.tree.remaining=[result.root];},
+    result=>{result.profile_removed=false;},result=>{result.status='failed';result.error='observational ENOSPC';}]){
+    const f=inertSupervisor(),supervisor=f.startOwnedSupervisor({pid:40},f.options.output,f.options.profile,1000);
+    const result=receipt(f.options);change?.(result);f.files.set(supervisor.resultPath,JSON.stringify(result));
+    if(change){await assert.rejects(supervisor.stop(),/mismatch|cleanup|removal|ENOSPC/);assert.deepEqual(f.cleanup,[f.options.known]);}
+    else {assert.equal((await supervisor.stop()).status,'stopped');assert.deepEqual(f.cleanup,[]);}
+  }
+});
+
+test('owned supervisor failed publications preserve prior bytes and only remove their own pending file',()=>{
+  const f=inertSupervisor(),path=f.options.path+'.result.json',pending=path+'.pending-inert-id';
+  f.files.set(path,'previous complete receipt');f.files.set(pending,'pre-existing unrelated collision');
+  assert.throws(()=>f.publishOwnedSupervisorJson(path,{status:'failed'}));
+  assert.equal(f.files.get(pending),'pre-existing unrelated collision');assert.equal(f.files.get(path),'previous complete receipt');
+  f.files.delete(pending);f.context.renameSync=()=>{throw new Error('injected rename refusal');};
+  assert.throws(()=>f.publishOwnedSupervisorJson(path,{status:'failed'}),/rename refusal/);
+  assert.equal(f.files.has(pending),false);assert.equal(f.files.get(path),'previous complete receipt');assert.equal(f.descriptors.size,0);
+});
+
+test('owned watcher preserves observational failure through cleanup and final publication failures',async()=>{
+  const f=inertSupervisor({failWrite:path=>path.includes('.observed.json') || path.includes('.result.json')});
+  f.context.stopOwnedProcessTree=async()=>{throw new Error('injected cleanup refusal');};
+  await assert.rejects(f.watchOwnedProcess(f.options),error=>{
+    assert.match(error.message,/observed.json/);assert.match(error.publication_error,/result.json/);return true;
+  });
+  assert.equal(f.files.has(f.options.path+'.result.json'),false);
+});
+
+test('owned supervisor parent rejects missing executable identity before admitting fallback cleanup',()=>{
+  for(const who of ['root','owner']){
+    const f=inertSupervisor();f.options[who].exe=undefined;
+    assert.throws(()=>f.startOwnedSupervisor({pid:40},f.options.output,f.options.profile,1000),/executable/);
+    assert.deepEqual(f.cleanup,[]);assert.equal(f.files.size,0);
+  }
+});
+
+test('owned Chrome startup retention failures clean only the child identity admitted before the write',async()=>{
+  const begin=source.indexOf('export async function ownedChrome('),end=source.indexOf('\nfunction frameTiming(',begin);
+  for(const stage of ['initial-receipt','supervisor-options','inadmissible-parent','missing-executable']){
+    const root={pid:40,ppid:stage==='inadmissible-parent'?999:20,start:'200',exe:stage==='missing-executable'?undefined:'inert-browser'};
+    const reused={pid:40,ppid:20,start:'999',exe:'unrelated-reused-pid'},cleanup=[],removed=[];
+    const failure=new Error('injected startup ENOSPC: '+stage);let current=root;
+    const child={pid:40,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){}};
+    const run=runInNewContext(source.slice(begin,end).replace('export async','async')+';ownedChrome',{
+      assert,process:{platform:'win32',pid:20,env:{ProgramFiles:'/explicit-inert'}},
+      join:(...parts)=>parts.join('/'),tmpdir:()=>'/explicit-inert-temp',mkdtempSync:()=>'/explicit-inert-temp/st-ls-chrome-fixture',
+      existsSync:()=>true,spawn:()=>child,nativeChromeArgs:()=>[],ownedProcessIdentity:()=>current,
+      writeFileSync(path){if(path.endsWith('browser-profile.json') && stage==='initial-receipt'){current=reused;throw failure;}},
+      startOwnedSupervisor(){current=reused;throw failure;},
+      stopOwnedProcessTree:async known=>{cleanup.push(JSON.parse(JSON.stringify(known)));return{known,remaining:[]};},
+      removeOwnedProfile:path=>removed.push(path),delay:async()=>{},ownedBrowsers:new Set(),ownedBrowserWindows:new Map(),
+    });
+    await assert.rejects(run({},'/explicit-inert-output'),error=>{
+      if(stage==='inadmissible-parent')assert.match(error.message,/ancestry|parent/);
+      else if(stage==='missing-executable')assert.match(error.message,/executable/);
+      else assert.equal(error,failure);return true;
+    });
+    if(['inadmissible-parent','missing-executable'].includes(stage)){
+      assert.deepEqual(cleanup,[]);assert.deepEqual(removed,[]);
+    }else{
+      assert.deepEqual(cleanup,[[{...root,depth:0}]],stage+' must retain the original PID/start/exe tuple');
+      assert.deepEqual(removed,['/explicit-inert-temp/st-ls-chrome-fixture']);
+    }
+  }
+});
+
+test('standalone journey setup failure cleans its pre-write admitted child and cannot pass',async()=>{
+  const runner=readFileSync(new URL('../last-stand-playable-loop.mjs',import.meta.url),'utf8');
+  const begin=runner.indexOf("  const root=resolve(import.meta.dirname,'..');"),end=runner.lastIndexOf('\n}');
+  assert.ok(begin>=0 && end>begin,'Actual standalone runner body required');
+  const body=runner.slice(begin,end).replace('import.meta.dirname',"'/explicit-inert/scripts'");
+  for(const stage of ['supervisor-options','inadmissible-parent','missing-executable']){
+    const root={pid:40,ppid:stage==='inadmissible-parent'?999:20,start:'200',exe:stage==='missing-executable'?undefined:'inert-runner'};
+    const reused={pid:40,ppid:20,start:'999',exe:'unrelated-reused-pid'},cleanup=[],files=new Map();
+    const failure=new Error('injected runner options ENOSPC');let current=root;
+    const child={pid:40,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){},once(){}};
+    const processFixture={pid:20,execPath:'inert-node',platform:'win32',env:{},stderr:{write(){}},once(){}};
+    const report=await runInNewContext('(async()=>{'+body+';return report;})()',{
+      assert,process:processFixture,resolve:(...parts)=>parts.join('/'),join:(...parts)=>parts.join('/'),
+      admitEvidenceParent:()=>'/explicit-inert',randomUUID:()=> 'inert-id',mkdirSync(){},spawn:()=>child,
+      lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget('win32'),ownedProcessIdentity:()=>current,
+      startOwnedSupervisor(){current=reused;throw failure;},
+      finishOwnedSupervisorCleanup:async(options,known)=>{assert.equal(options.profile,null);
+        cleanup.push(JSON.parse(JSON.stringify(known)));return{tree:{known,remaining:[]},profiles:[],profile_removed:null};},
+      clearTimeout(){},writeFileSync:(path,value)=>files.set(path,value),console:{log(){}},
+    });
+    assert.equal(report.status,'failed');assert.equal(processFixture.exitCode,1);
+    if(stage==='supervisor-options'){
+      assert.equal(report.error,String(failure));assert.deepEqual(cleanup,[[{...root,depth:0}]]);
+      assert.equal(report.cleanup.tree.remaining.length,0);
+    }else{
+      assert.match(report.error,stage==='inadmissible-parent'?/ancestry|parent/:/executable/);assert.deepEqual(cleanup,[]);
+    }
+  }
+});
+
+test('owned supervisor cannot replace the pre-write admitted child with a reused process identity',()=>{
+  for(const key of ['pid','start','exe']){
+    const f=inertSupervisor(),expected={...f.options.root,[key]:key==='pid'?999:'different-'+key};
+    assert.throws(()=>f.startOwnedSupervisor({pid:40},f.options.output,f.options.profile,1000,expected),/identity changed/);
+    assert.deepEqual(f.cleanup,[]);assert.equal(f.files.size,0);
   }
 });
 
