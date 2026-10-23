@@ -12,6 +12,7 @@ function ownedStartupFixture({ready=false,missing=false}={}) {
   const end=source.indexOf('\nfunction frameTiming',begin);
   assert.ok(begin>0 && end>begin,'Exercise the maintained owned browser launcher');
   const page={identity:'original startup tab'},pages=ready?[page]:[],receipts=[],calls=[];
+  const root={pid:12345,ppid:6789,start:'100',exe:'/owned/chrome'};
   const unavailable=new Error('Original startup page did not arrive');
   let deliver;
   const context={pages:()=>pages,waitForEvent:async(event,options)=>{
@@ -23,11 +24,15 @@ function ownedStartupFixture({ready=false,missing=false}={}) {
   const browser={contexts:()=>[context],close:async()=>calls.push('close-connection'),
     newBrowserCDPSession:async()=>({send:async method=>{assert.equal(method,'Browser.close');calls.push('close-browser');}})};
   const launch=runInNewContext(source.slice(begin,end).replace('export async function','async function')+';ownedChrome',{
-    process:{platform:'linux'},join,assert,existsSync:()=>true,mkdtempSync:()=>'/owned/profile',tmpdir:()=>'/tmp',
+    process:{platform:'linux',pid:root.ppid},join,assert,existsSync:()=>true,mkdtempSync:()=>'/owned/profile',tmpdir:()=>'/tmp',
     nativeChromeArgs:()=>['about:blank'],spawn:()=>({pid:12345,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){}}),
+    ownedProcessIdentity:pid=>{assert.equal(pid,root.pid);return root;},
     writeFileSync:(path,contents)=>{if(path.endsWith('browser-profile.json'))receipts.push(JSON.parse(contents));},
     readFileSync:()=> '12345\n/owned-endpoint',delay:async()=>{},ownedBrowsers:new Set(),ownedBrowserWindows:new WeakMap(),
-    startOwnedSupervisor:()=>({root:{pid:12345},stop:async()=>{calls.push('stop-owned-tree');return {status:'stopped'};}}),
+    startOwnedSupervisor:(child,output,profile,lifetimeMs,admittedRoot)=>{
+      assert.equal(child.pid,root.pid);assert.equal(admittedRoot,root);
+      return {root,stop:async()=>{calls.push('stop-owned-tree');return {status:'stopped'};}};
+    },
   });
   return {page,context,calls,receipts,unavailable,
     launch:()=>launch({executablePath:()=>'/owned/chrome',connectOverCDP:async()=>browser},'/owned/evidence'),
