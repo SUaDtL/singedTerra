@@ -861,13 +861,12 @@ async function assertCurrentDeploymentHitSelection() {
 }
 
 async function assertOriginalNativeForegroundPreconditions() {
-  if(process.platform!=='win32')return;
   const focusedBegin=callerSource.indexOf('    const focused=async label=>{');
   const focusedEnd=callerSource.indexOf('    const screenshot=',focusedBegin);
   const awayBegin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney('));
   const awayEnd=callerSource.indexOf('    const saveAudio=',awayBegin);
   assert.ok(focusedBegin>0 && focusedEnd>focusedBegin && awayBegin>0 && awayEnd>awayBegin);
-  const gateBegin=callerSource.indexOf('export async function ensureOwnedNativeForeground(');
+  const gateBegin=callerSource.indexOf('async function waitForOwnedNativeForeground(');
   const gateEnd=callerSource.indexOf('\nexport async function activateOwnedNativeWindow(',gateBegin);
   const outcomes=[],failures=[];
   const runCase=async(caller,fault)=>{
@@ -879,9 +878,9 @@ async function assertOriginalNativeForegroundPreconditions() {
     const report={},browser={},owner={root,profile:'explicit-inert-owned-profile',executable:'explicit-inert-executable'};
     const document={hidden:false,hasFocus:()=>focused,visibilityState:'visible'};
     const contextForVM={document,performance:{now:()=>time,timeOrigin:100000}};
-    const evaluate=async expression=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')()':expression,contextForVM);
+    const evaluate=async(expression,arg)=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')(arg)':expression,{...contextForVM,arg});
     const page={context:()=>native.context,isClosed:()=>false,bringToFront:async()=>{focused=true;},evaluate,
-      waitForFunction:async predicate=>assert.ok(await evaluate(predicate),'Honest inert document predicate'),
+      waitForFunction:async(predicate,arg)=>assert.ok(await evaluate(predicate,arg),'Honest inert document predicate'),
       waitForTimeout:async ms=>{time+=ms;}};
     const other={context:()=>native.context,isClosed:()=>closed,goto:async()=>{},bringToFront:async()=>{focused=false;},close:async()=>{closed=true;}};
     const session={send:async method=>{
@@ -903,21 +902,21 @@ async function assertOriginalNativeForegroundPreconditions() {
     // On broken source this dependency is never reached; actual caller admission
     // itself is the RED. On candidate source execute the new maintained gate.
     const ensure=gateBegin<0?async()=>{throw new Error('declared owned original establishment refusal');}:
-      new Function('assert','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
+      new Function('assert','process','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
         'bindOwnedNativeWindow','activateOwnedNativeWindow','retainWindowFailure','windowError',
         callerSource.slice(gateBegin,gateEnd).replace('export async function','async function')+'return ensureOwnedNativeForeground;')(
-        assert,registry,()=>root,()=>({foreground:{...foreground},windows:[window],dropped:0}),journey.bindOwnedNativeWindow,
+        assert,{platform:'win32'},registry,()=>root,()=>({foreground:{...foreground},windows:[window],dropped:0}),journey.bindOwnedNativeWindow,
         activate,(r,key,value)=>(r[key]??=[]).push(value),error=>({name:error.name,message:error.message}));
-    const focusedCaller=new Function('native','page','report','check','ensureOwnedNativeForeground',
+    const focusedCaller=new Function('process','native','page','report','check','ensureOwnedNativeForeground',
       callerSource.slice(focusedBegin,focusedEnd)+'return focused("inert native baseline");');
-    const awayCaller=new Function('native','page','observation','check','mark','noReplay','report','output',
+    const awayCaller=new Function('process','native','page','observation','check','mark','noReplay','report','output',
       'retainAwayFailure','cleanupAwayAuxiliary','activateOwnedNativeWindow','ensureOwnedNativeForeground','trace',
       callerSource.slice(awayBegin,awayEnd)+'return away("blur",10500);');
     const before={documentFocused:focused,documentHidden:document.hidden,nativeForeground:{...foreground}};
     let error;
     try{
-      if(caller==='focused')await focusedCaller(native,page,report,(ok,name)=>assert.ok(ok,name),ensure);
-      else await awayCaller(native,page,async()=>({inert:true}),(ok,name)=>assert.ok(ok,name),async()=>time,
+      if(caller==='focused')await focusedCaller({platform:'win32'},native,page,report,(ok,name)=>assert.ok(ok,name),ensure);
+      else await awayCaller({platform:'win32'},native,page,async()=>({inert:true}),(ok,name)=>assert.ok(ok,name),async()=>time,
         async()=>{},report,'explicit-inert-output',async()=>{},async({other})=>other?.close(),activate,ensure,[]);
     }catch(cause){error=cause;}
     const row={caller,fault,before,actualGate:gateBegin>=0,blocked:Boolean(error),error:error?.message,auxCreated,activations};
@@ -1054,7 +1053,7 @@ async function assertNativeLaunchOptions() {
 
 async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve('scripts/ci/lastStandBackground.test.mjs'),'utf8')) {
   const begin=setupSource.indexOf('  const episode=async fault=>{'),end=setupSource.indexOf('    const activation=new Error(',begin);
-  const gateBegin=callerSource.indexOf('export async function ensureOwnedNativeForeground(');
+  const gateBegin=callerSource.indexOf('async function waitForOwnedNativeForeground(');
   const gateEnd=callerSource.indexOf('\nexport async function activateOwnedNativeWindow(',gateBegin);
   assert.ok(begin>0 && end>begin && gateBegin>0 && gateEnd>gateBegin,'Actual precleanup setup and maintained native gate required');
   const run=new Function('page','native','report','journey','observedPage','assert',
@@ -1067,10 +1066,10 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
     const window={...bounds,hwnd:'41002',pid:root.pid,kind:'Chrome_WidgetWin_1',measured:true,visible:true,minimized:false};
     const foreign={hwnd:'61002',pid:61001},report={},browser={},order=[];
     let foreground=fault==='already-foreground'?{hwnd:window.hwnd,pid:root.pid}:{...foreign};
-    let activations=0,gateCalls=0,domWaits=0,gateCompleted=false,error;
+    let activations=0,gateCalls=0,domWaits=0,nativeDocumentWaits=0,gateCompleted=false,error;
     const document={hidden:false,hasFocus:()=>true,visibilityState:'visible'};
-    const evaluate=async expression=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')()':expression,
-      {document,performance:{now:()=>1000,timeOrigin:100000}});
+    const evaluate=async(expression,arg)=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')(arg)':expression,
+      {document,performance:{now:()=>1000,timeOrigin:100000},arg});
     const session={send:async method=>{
       if(method==='Target.getTargetInfo')return {targetInfo:{type:'page',targetId:'inert-original-target',browserContextId:'inert-owned-context'}};
       if(method==='Browser.getWindowForTarget')return {windowId:41,bounds};
@@ -1081,12 +1080,13 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
     const registry=new WeakMap(fault==='wrong-browser-owner'?[]:[[browser,owner]]);
     const page={context:()=>fault==='wrong-page-owner'?{}:native.context,isClosed:()=>false,evaluate,
       bringToFront:async()=>{order.push('bringToFront');},mouse:{click:async(x,y)=>{assert.equal(x,40);assert.equal(y,40);order.push('click');}},
-      waitForFunction:async(predicate,arg,options)=>{domWaits++;order.push('dom-wait');assert.equal(options.timeout,10000);
-        assert.ok(await evaluate(predicate),'Honest inert DOM predicate');}};
-    const actualGate=new Function('assert','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
+      waitForFunction:async(predicate,arg,options)=>{
+        if(gateCompleted){domWaits++;order.push('dom-wait');}else{nativeDocumentWaits++;order.push('native-document-wait');}
+        assert.equal(options.timeout,10000);assert.ok(await evaluate(predicate,arg),'Honest inert DOM predicate');}};
+    const actualGate=new Function('assert','process','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
       'bindOwnedNativeWindow','activateOwnedNativeWindow','retainWindowFailure','windowError',
       callerSource.slice(gateBegin,gateEnd).replace('export async function','async function')+'return ensureOwnedNativeForeground;')(
-      assert,registry,()=>fault==='wrong-process-owner'?{...root,created:'wrong-process-epoch'}:root,
+      assert,{platform:'win32'},registry,()=>fault==='wrong-process-owner'?{...root,created:'wrong-process-epoch'}:root,
       ()=>({foreground:{...foreground},windows:[window],dropped:0}),journey.bindOwnedNativeWindow,
       async({native:target,page:targetPage,role})=>{
         assert.equal(target,native);assert.equal(targetPage,page);assert.equal(role,'precleanup-precondition');
@@ -1101,11 +1101,11 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
       ({hidden:document.hidden,focused:document.hasFocus()}))}),assert);}
     catch(cause){error=cause;}
     const positive=['already-foreground','activation-required'].includes(fault),record=report.native_foreground_preconditions?.at(-1);
-    const passed=positive?!error && gateCalls===1 && gateCompleted && domWaits===1 && record?.status==='verified' &&
+    const passed=positive?!error && gateCalls===1 && gateCompleted && domWaits===1 && nativeDocumentWaits===1 && record?.status==='verified' &&
       record.after.foreground.hwnd===window.hwnd && record.after.foreground.pid===root.pid &&
       order.indexOf('native-verified')<order.indexOf('dom-wait') && activations===(fault==='activation-required'?1:0):
       error?.name==='AssertionError' && gateCalls===1 && !gateCompleted && domWaits===0 && record?.status==='refused';
-    const row={fault,passed:Boolean(passed),error:error?.message,order,gateCalls,domWaits,activations,
+    const row={fault,passed:Boolean(passed),error:error?.message,order,gateCalls,domWaits,nativeDocumentWaits,activations,
       documentOnlyFocused:true,beforeNative:fault==='already-foreground'?{hwnd:window.hwnd,pid:root.pid}:foreign,afterNative:foreground};
     rows.push(row);if(!passed)failures.push(row);
   }
@@ -1113,6 +1113,95 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
     actualGate:callerSource.slice(gateBegin,gateEnd),fixture:'honest inert ownership/native/document records; actual gate and setup; no native PASS or gameplay claim'}));
   assert.equal(failures.length,0,'Actual precleanup setup must verify exact owned native admission before its DOM wait and reject false document-only admission');
 }
+
+test('native document readiness retains original caller admission controls',async()=>{
+  await assertPrecleanupNativeAdmission();
+  await assertOriginalNativeForegroundPreconditions();
+});
+
+test('native document readiness waits after one admitted activation and revalidates exact ownership',async()=>{
+  const gateBegin=callerSource.indexOf('export async function ensureOwnedNativeForeground(');
+  const helperBegin=callerSource.indexOf('async function waitForOwnedNativeForeground(');
+  const gateEnd=callerSource.indexOf('\nexport async function ownedChrome(',gateBegin);
+  const focusedBegin=callerSource.indexOf('    const focused=async label=>{');
+  const focusedEnd=callerSource.indexOf('    const screenshot=',focusedBegin);
+  assert.ok(gateBegin>0 && gateEnd>gateBegin && focusedBegin>0 && focusedEnd>focusedBegin);
+  const rows=[];
+  for(const entry of ['focused','auxiliary','already-foreground'])for(const fault of ['delayed-visible','never-visible',
+    'never-focused','new-document','hidden-again','reused-process','changed-target','changed-context','changed-window',
+    'changed-hwnd','foreign-foreground-pid','foreign-foreground-hwnd']) {
+    const root={pid:41001,ppid:41000,start:'inert-process-epoch',exe:'inert-browser.exe'};
+    const bounds={left:10,top:10,width:1044,height:788,windowState:'normal'};
+    const window={...bounds,hwnd:'41002',pid:root.pid,kind:'Chrome_WidgetWin_1',measured:true,visible:true,minimized:false};
+    const target={type:'page',targetId:'inert-selected-page',browserContextId:'inert-context'};
+    const report={},browser={},order=[];
+    let foreground=entry==='already-foreground'?{pid:root.pid,hwnd:window.hwnd}:{pid:61001,hwnd:'61002'};
+    let hidden=true,focused=true,t=8525,timeOrigin=100000,waited=false,activations=0,waits=0,detaches=0;
+    const document={get hidden(){return hidden;},hasFocus:()=>focused,get visibilityState(){return hidden?'hidden':'visible';}};
+    const evaluate=async(expression,arg)=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')(arg)':expression,
+      {document,performance:{now:()=>t,get timeOrigin(){return timeOrigin;}},arg});
+    const session={send:async method=>{
+      if(method==='Target.getTargetInfo')return {targetInfo:{...target,
+        ...(waited&&fault==='changed-target'?{targetId:'foreign-page'}:{}),
+        ...(waited&&fault==='changed-context'?{browserContextId:'foreign-context'}:{})}};
+      if(method==='Browser.getWindowForTarget')return {windowId:waited&&fault==='changed-window'?99:41,bounds};
+      assert.fail('Unexpected inert CDP method '+method);
+    },detach:async()=>{detaches++;}};
+    const native={browser,context:{newCDPSession:async()=>session}};browser.newBrowserCDPSession=async()=>session;
+    const owner={root,profile:'inert-owned-profile',executable:root.exe,context:native.context};
+    const page={context:()=>native.context,isClosed:()=>false,evaluate,bringToFront:async()=>{order.push('tab-selection');},
+      waitForFunction:async(predicate,arg,options)=>{
+        waits++;assert.equal(options.timeout,10000,'Retain the existing action timeout');
+        if(waited){assert.ok(await evaluate(predicate,arg));return;}
+        order.push('wait-document');assert.equal(await evaluate(predicate,arg),false,'The initial sample is genuinely hidden');
+        waited=true;t=8992;hidden=fault==='never-visible';focused=fault!=='never-focused';
+        if(fault==='new-document')timeOrigin++;
+        if(!await evaluate(predicate,arg))throw new Error('inert document readiness timeout');
+        if(fault==='hidden-again')hidden=true;
+      }};
+    const snapshot=(observedOwner,activate)=>{
+      assert.equal(observedOwner,owner);
+      if(activate){activations++;order.push('physical-activation');foreground={pid:root.pid,hwnd:window.hwnd};return {accepted:true};}
+      order.push(waited?'native-recheck':'native-before');
+      return {dropped:0,windows:[{...window,...(waited&&fault==='changed-hwnd'?{hwnd:'41003'}:{})}],
+        foreground:waited&&fault==='foreign-foreground-pid'?{pid:61001,hwnd:window.hwnd}:
+          waited&&fault==='foreign-foreground-hwnd'?{pid:root.pid,hwnd:'61002'}:{...foreground}};
+    };
+    const actual=new Function('assert','process','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
+      'bindOwnedNativeWindow','assertOwnedNativeActivation','retainWindowFailure','windowError',
+      callerSource.slice(helperBegin>=0?helperBegin:gateBegin,gateEnd).replaceAll('export async function','async function')+
+      'return {ensureOwnedNativeForeground,activateOwnedNativeWindow};')(
+      assert,{platform:'win32'},new WeakMap([[browser,owner]]),()=>{
+        order.push(waited?'identity-recheck':'identity-before');return waited&&fault==='reused-process'?{...root,start:'reused-epoch'}:root;
+      },snapshot,journey.bindOwnedNativeWindow,result=>assert.equal(result.accepted,true),
+      (record,key,value)=>(record[key]??=[]).push(value),error=>({name:error.name,message:error.message}));
+    const focusedCaller=new Function('process','native','page','report','check','ensureOwnedNativeForeground',
+      callerSource.slice(focusedBegin,focusedEnd)+'return focused("inert delayed native visibility");');
+    let error;
+    try {
+      if(entry==='auxiliary')await actual.activateOwnedNativeWindow({native,page,report,kind:'blur',role:'auxiliary'});
+      else await focusedCaller({platform:'win32'},native,page,report,(ok,name)=>assert.ok(ok,name),actual.ensureOwnedNativeForeground);
+    }catch(cause){error=cause;}
+    const records=[...(report.native_activations??[]),...(report.native_foreground_preconditions??[])];
+    const row={entry,fault,activations,waits,detaches,order,error:error?.message};rows.push(row);
+    if(fault==='delayed-visible'){
+      assert.equal(error,undefined,`${entry}: delayed genuine visibility must be awaited after exact native admission`);
+      assert.ok(records.every(record=>record.status==='verified' && !record.document.hidden && record.document.focused));
+      for(const record of records){
+        assert.equal(record.document.timeOrigin,100000);assert.equal(record.after.foreground.pid,root.pid);
+        assert.equal(record.after.foreground.hwnd,window.hwnd);
+      }
+      assert.ok(order.lastIndexOf('identity-recheck')>order.indexOf('wait-document'));
+      assert.ok(order.lastIndexOf('native-recheck')>order.indexOf('wait-document'));
+    }else {
+      assert.ok(error,`${entry}/${fault}: document readiness cannot bypass exact ownership or foreground binding`);
+      assert.ok(records.every(record=>record.status==='refused'),`${entry}/${fault}: failed readiness must not publish verified records`);
+    }
+    assert.equal(activations,entry==='already-foreground'?0:1,'Never retry activation or send additional input');
+    assert.equal(detaches,entry==='focused'?4:2,'Every opened page/browser session is detached');
+  }
+  console.log('ST_LS_NATIVE_DOCUMENT_READINESS='+JSON.stringify({rows,fixture:'actual maintained callers with inert delayed document/native records; no browser or input'}));
+});
 
 test('Linux current-source qualification reaches fresh model compilation', () => {
   const begin=callerSource.indexOf('function qualifyCurrentEncounterSource(sources) {');

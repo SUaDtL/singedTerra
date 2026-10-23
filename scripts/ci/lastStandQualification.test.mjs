@@ -1369,6 +1369,58 @@ test('actual audio return caller rejects contradictory wave/archive identity bef
   }
 });
 
+test('actual observer and audio caller accept only silent finalized current-wave result intervals',async()=>{
+  const start=source.indexOf('    const noReplay=async('),end=source.indexOf('\n    const away=',start);
+  assert.ok(start>=0 && end>start);
+  const fixture=async(kind='hidden')=>{
+    // Reduced shard9 CI39973718698 result-state rows. Bounds are inert;
+    // the production observer pairs the actual model-less lifecycle shape.
+    const id={load:6,timeOrigin:1792767933281.4,scope:'healthy'};
+    const model={...id,action:'visibility',t:270273.19999999995,run:1,rules:'playable-prototype-v1',
+      status:'Fitting',fitting:'repair',tick:0,wave:0,completedWave:0,hp:120,kills:0,locked:false,
+      clockTimestamp:-1,clockPending:-1,callbackSteps:0,paused:false,failed:false,catchingUp:false};
+    const state={...id,action:'session',t:270335.79999999993,sessionRun:1,profileVersion:'last-stand-waves-v1',
+      phase:'result',saveState:'ready',runId:0,pendingRunId:0,activeTier:0,hasCheckpoint:false,
+      tick:0,wave:0,completedWave:0,hull:120,kills:0,paused:false,cannonDamage:30};
+    const before=await journey.observeRuntimePair({encounters:[model],states:[state],load:6,
+      clock:async()=>({t:272510.29999999993,timeOrigin:id.timeOrigin}),
+      wait:async()=>assert.fail('Already coherent idle pair must not wait'),check:(v,m)=>assert.ok(v,m)});
+    const event=(type,t,focused,hidden)=>({...id,kind:type,t,focused,hidden,globalTarget:true});
+    const events=kind==='hidden'?[event('blur',273181.5,false,false),event('visibilitychange',273212.29999999993,false,true),
+      event('focus',279230.3999999999,true,true),event('visibilitychange',279259.79999999993,true,false)]:
+      [event('blur',273181.5,false,false),event('focus',279230.3999999999,true,false)];
+    return {kind,before,begin:273220,recovered:279400,ms:6000,events,cues:[],callbackRecords:[],
+      encounters:[model,{...model,t:279231.1}],states:[state,{...state,t:279257}]};
+  };
+  const run=async x=>{
+    const report={lifecycle:[]};
+    const noReplay=runInNewContext(source.slice(start,end)+';noReplay',{
+      validateAwayAudioReturn:journey.validateAwayAudioReturn,validateNoReplayAudio:journey.validateNoReplayAudio,
+      cues:x.cues,states:x.states,encounters:x.encounters,callbackRecords:x.callbackRecords,
+      reference:()=>undefined,energy:async()=>null,check:(v,m)=>assert.ok(v,m),report,
+    });
+    await noReplay(x.begin,x.recovered,x);return report;
+  };
+  for(const kind of ['hidden','blur']){
+    const report=await run(await fixture(kind));
+    assert.equal(report.lifecycle.length,1);assert.equal(report.lifecycle[0].boundary.callbacks.length,0);
+    assert.equal(report.lifecycle[0].cues.length,0);
+  }
+  for(const mutate of [
+    x=>x.before.status='Running',x=>x.before.wave=1,x=>x.before.tick=1,x=>x.before.locked=true,
+    x=>x.before.clockTimestamp=0,x=>x.before.clockPending=0,x=>x.before.callbackSteps=1,
+    x=>{delete x.before.rules;},x=>x.before.loop.phase='battle',x=>x.before.loop.runId=3,
+    x=>x.before.loop.pendingRunId=3,x=>x.before.loop.activeTier=1,x=>x.before.loop.hasCheckpoint=true,
+    x=>x.before.loop.sessionRun++,x=>x.before.loop.load++,x=>x.before.loop.wave=1,
+    x=>x.before.loop.tick=1,x=>x.before.loop.saveState='retry',
+    x=>x.encounters.at(-1).status='Running',x=>x.states.at(-1).runId=4,
+    x=>x.cues.push({...x.before,t:x.begin+1,text:'ST_LS_AUDIO event=defeat\n'}),
+    x=>x.cues.push({...x.before,t:x.recovered-1,text:'ST_LS_AUDIO event=cannon\n'}),
+    x=>x.callbackRecords.push({...x.before,t:x.begin+1,action:'begin'}),
+    x=>x.callbackRecords.push({...x.before,t:x.recovered-1,action:'cue',played:false,reason:'expired'}),
+  ]){const x=await fixture();mutate(x);await assert.rejects(()=>run(x),undefined,String(mutate));}
+});
+
 test('current-wave cue decisions distinguish fresh playback from delayed diagnostic logging',()=>{
   const x=waveCueFixture();
   // Keep admission exactly at500ms while only the diagnostic emission is late.

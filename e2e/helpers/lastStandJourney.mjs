@@ -1599,8 +1599,25 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
   assert.ok(observed.every(c=>Number.isFinite(c.t)),'Invalid current audio cue clock');
   const returnCues=observed.filter(c=>c.t>=returned.t),callbacks=[];
   const waveRun=before.loop?.profileVersion==='last-stand-waves-v1';
-  assert.equal(waveRun,typeof before.rules==='string' && before.rules.startsWith('last-stand-waves-v1:'),
+  // The current controller retains its wave profile after ReturnToInspection
+  // removes the model. Its finalized result has explicit absent-clock/run fields;
+  // it is a silent lifecycle boundary, never an archived combat callback lane.
+  const idleModel=item=>current(item) && item.run===before.run && item.status==='Fitting' &&
+    item.rules==='playable-prototype-v1' && item.tick===0 && item.wave===0 && item.completedWave===0 &&
+    item.locked===false && item.clockTimestamp===-1 && item.clockPending===-1 && item.callbackSteps===0 &&
+    item.paused===false && item.failed===false && item.catchingUp===false;
+  const idleLoop=item=>current(item) && item.sessionRun===before.run && item.profileVersion==='last-stand-waves-v1' &&
+    item.phase==='result' && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
+    item.activeTier===0 && item.hasCheckpoint===false && item.tick===0 && item.wave===0 && item.completedWave===0;
+  const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop) && before.loop.t>=before.t;
+  assert.equal(waveRun,typeof before.rules==='string' && before.rules.startsWith('last-stand-waves-v1:') || idleWaveResult,
     'Native audio interval wave profile and model rules disagree');
+  if(idleWaveResult){
+    const during=item=>current(item) && item.t>=before.t && item.t<=recovered;
+    assert.ok(Array.isArray(callbackRecords) && !callbackRecords.some(during) && !cues.some(during) &&
+      encounters.filter(during).every(idleModel) && states.filter(during).every(idleLoop),
+      'Finalized idle result cannot admit combat callbacks, cues or an active lifecycle');
+  }
   const attempts=waveRun?(callbackRecords??[]).filter(c=>current(c) && c.action==='cue' && c.t>=returned.t && c.t<=recovered):[];
   const observations=waveRun?attempts:returnCues;
   const playedByAttempt=new Map();
@@ -2655,6 +2672,35 @@ export function assertOwnedNativeActivation(result,window,pid) {
   assert.equal(result.snapshot.foreground?.pid,pid,'Owned native foreground PID verification failed');
   assert.equal(result.snapshot.foreground?.hwnd,window.hwnd,'Owned native foreground HWND verification failed');
 }
+async function waitForOwnedNativeForeground({owner,page,session,browserSession,record}) {
+  record.documentBefore=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
+    visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
+  assert.ok(Number.isFinite(record.documentBefore.timeOrigin) && record.documentBefore.timeOrigin>0 &&
+    Number.isFinite(record.documentBefore.t) && record.documentBefore.t>=0,'Owned document clock required');
+  // Native activation can precede Chrome's real visibilitychange. Observe the
+  // same document within the existing action bound; do not reactivate it.
+  await page.waitForFunction(origin=>performance.timeOrigin===origin && !document.hidden &&
+    document.visibilityState==='visible' && document.hasFocus(),record.documentBefore.timeOrigin,{timeout:10_000});
+  record.document=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
+    visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
+  assert.equal(record.document.timeOrigin,record.documentBefore.timeOrigin,'Owned document changed during foreground admission');
+  assert.ok(Number.isFinite(record.document.t) && record.document.t>=record.documentBefore.t,'Owned document clock regressed');
+  assert.ok(!record.document.hidden && record.document.visibility==='visible' && record.document.focused,
+    'Owned original document must be visible and focused');
+  assert.deepEqual(ownedProcessIdentity(owner.root.pid),owner.root,'Owned browser process identity mismatch');
+  const {targetInfo}=await session.send('Target.getTargetInfo');
+  assert.equal(targetInfo.type,'page','Owned foreground target type changed');
+  assert.equal(targetInfo.targetId,record.target.targetId,'Owned foreground target changed');
+  assert.equal(targetInfo.browserContextId,record.target.browserContextId,'Owned foreground browser context changed');
+  const currentWindow=await browserSession.send('Browser.getWindowForTarget',{targetId:targetInfo.targetId});
+  assert.deepEqual(currentWindow,record.cdp_window,'Owned foreground CDP window binding changed');
+  record.after=ownedNativeWindowSnapshot(owner);
+  const observed=bindOwnedNativeWindow(record.after,currentWindow.bounds,owner.root.pid);
+  assert.equal(observed.hwnd,record.window.hwnd,'Owned foreground HWND binding changed');
+  assert.equal(record.after.foreground?.pid,owner.root.pid,'Owned native foreground PID verification failed');
+  assert.equal(record.after.foreground?.hwnd,record.window.hwnd,'Owned native foreground HWND verification failed');
+}
+
 export async function ensureOwnedNativeForeground({native,page,report,kind,role}) {
   const record={kind,role,utc:new Date().toISOString(),status:'refused',activationNeeded:false};
   retainWindowFailure(report,'native_foreground_preconditions',record);
@@ -2677,15 +2723,7 @@ export async function ensureOwnedNativeForeground({native,page,report,kind,role}
     record.window=bindOwnedNativeWindow(record.before,record.cdp_window.bounds,owner.root.pid);
     record.activationNeeded=record.before.foreground?.pid!==owner.root.pid || record.before.foreground?.hwnd!==record.window.hwnd;
     if(record.activationNeeded)await activateOwnedNativeWindow({native,page,report,kind,role});
-    record.document=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
-      visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
-    assert.ok(!record.document.hidden && record.document.focused,'Owned original document must be visible and focused');
-    assert.deepEqual(ownedProcessIdentity(owner.root.pid),owner.root,'Owned browser process identity mismatch');
-    record.after=ownedNativeWindowSnapshot(owner);
-    const observed=bindOwnedNativeWindow(record.after,record.cdp_window.bounds,owner.root.pid);
-    assert.equal(observed.hwnd,record.window.hwnd,'Owned foreground HWND binding changed');
-    assert.equal(record.after.foreground?.pid,owner.root.pid,'Owned native foreground PID verification failed');
-    assert.equal(record.after.foreground?.hwnd,record.window.hwnd,'Owned native foreground HWND verification failed');
+    await waitForOwnedNativeForeground({owner,page,session,browserSession,record});
     record.status='verified';return record;
   } catch(error){record.error=windowError(error);throw error;}
   finally {
@@ -2717,8 +2755,7 @@ export async function activateOwnedNativeWindow({native,page,report,kind,role}) 
     record.activation=ownedNativeWindowSnapshot(owner,record.window);
     record.attempts=record.activation.attempted?1:0;
     assertOwnedNativeActivation(record.activation,record.window,owner.root.pid);
-    record.document=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
-      visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
+    await waitForOwnedNativeForeground({owner,page,session,browserSession,record});
     record.status='verified';
     return record;
   } catch(error){record.error=windowError(error);throw error;}
