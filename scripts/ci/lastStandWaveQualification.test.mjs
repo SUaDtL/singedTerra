@@ -108,8 +108,9 @@ function intervalFixture(kind='hidden'){
     hp:120,kills:0,spawned:0,cannon:0,launcher:0,healed:0,closeHits:0,rangedHits:0,alive:0,wave:1,completedWave:0,
     rules:'last-stand-waves-v1:playable-prototype-v1',status:'Running',paused:false,failed:false,catchingUp:false,
     callbackSteps:1,selectedSpeed:1,effectiveSpeed:1,clockTimestamp:1,clockPending:0,terminalElapsed:0,fitting:'repair',tier:1};
-  const sample=(t,extra={})=>{const row={...model,t,...extra};return {...row,hull:row.hp,loop:{...id,t:t+1,action:'session',phase:'battle',runId:1,activeTier:1,cannonDamage:20,hull:row.hp}};};
-  const before=sample(100),paused=sample(100,{action:'pause',paused:true,reason:'user'}),
+  const sample=(t,extra={})=>{const row={...model,t,...extra};return {...row,hull:row.hp,loop:{...id,t:t+1,action:'session',phase:'battle',runId:19,
+    sessionRun:row.run,tick:row.tick,kills:row.kills,paused:row.paused,activeTier:1,cannonDamage:20,hull:row.hp}};};
+  const before=sample(90),paused=sample(100,{action:'pause',paused:true,reason:'user'}),
     returned=sample(10100,{action:'visibility',paused:true,reason:'user',clockTimestamp:11}),
     resumed=sample(10200,{action:'pause',clockTimestamp:11.1}),
     after=sample(pause?10300:200,{tick:1,clockTimestamp:pause?11.15:1.05});
@@ -289,6 +290,16 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
       const broken=clone(record);mutate(broken.evidence);report.lifecycle=[broken];
       assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
     }
+    // Both rows really exist in this inert raw capture. Authenticating each row
+    // separately must not admit a report that pairs unrelated observations.
+    for(const mutate of [v=>v.load++,v=>v.timeOrigin++,v=>v.scope='other',v=>v.sessionRun++,v=>v.runId++,
+      v=>v.tick++,v=>v.kills++,v=>v.paused=true,v=>v.t=e.after.t-.1]){
+      const broken=clone(record),alternate=broken.evidence.after.loop;alternate.t+=.25;mutate(alternate);
+      const withAlternate=clone(telemetry);withAlternate.states.push(alternate);
+      report.lifecycle=[broken];put('runtime-telemetry.json',withAlternate);
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(mutate));
+    }
+    put('runtime-telemetry.json',telemetry);
     report.lifecycle=[record];const changed=clone(telemetry);changed.encounters.at(-1).clockTimestamp+=.05;
     put('runtime-telemetry.json',changed);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
     put('runtime-telemetry.json',telemetry);put('input-trace.json',e.events.slice(0,1));

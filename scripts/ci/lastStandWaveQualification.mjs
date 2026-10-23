@@ -229,7 +229,14 @@ export function verifyWaveFiles(resultPath,report) {
         const {loop,hull,...model}=e[key];
         assert.deepEqual(telemetry.encounters.find(item=>item.load===model.load && item.timeOrigin===model.timeOrigin &&
           item.t===model.t && item.action===model.action),model,'Interval endpoint differs from actual runtime telemetry');
-        actualState(loop);assert.equal(hull,loop.hull);assert.equal(model.hp,hull);
+        actualState(loop);
+        for(const field of ['load','timeOrigin','scope','tick','kills','paused'])
+          assert.equal(loop[field],model[field],'Interval loop/model pairing differs: '+field);
+        assert.equal(loop.sessionRun,model.run,'Interval loop belongs to another encounter session');
+        assert.ok(Number.isSafeInteger(loop.runId) && loop.runId>0 && loop.runId===e.before.loop.runId,
+          'Interval loop belongs to another saved run');
+        assert.ok(Number.isFinite(loop.t) && loop.t>=model.t,'Interval loop predates its model observation');
+        assert.equal(hull,loop.hull);assert.equal(model.hp,hull);
         validateModelObservation(model,oracle(e[key]));
       }
       const events=waveIntervalEvents(paused?e.paused:e.before,paused?e.resumed:e.after,trace);
