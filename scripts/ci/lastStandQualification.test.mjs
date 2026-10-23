@@ -9,6 +9,85 @@ import { assertCombinedQualification } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
 
+function keyboardSubmitFixture(){
+  const identity={load:3,timeOrigin:1000,scope:'healthy'},prepared={...identity,t:10,phase:'battle'};
+  return {name:'SpeedRate',prepared,state:{...identity,phase:'battle'},
+    layout:{...prepared,t:30,selection:'SpeedRate',controls:[{name:'SpeedRate',active:true,interactable:true}],shopControls:[],settingsControls:[]},
+    navigation:{...identity,t:20,kind:'keydown',code:'Tab',target:'unity-canvas',focused:true,hidden:false},
+    documentState:{timeOrigin:1000,t:40,focused:true}};
+}
+test('keyboard submit requires fresh exact selection and a current focused document',()=>{
+  assert.equal(typeof journey.validateKeyboardSubmit,'function');
+  assert.doesNotThrow(()=>journey.validateKeyboardSubmit(keyboardSubmitFixture()));
+  for(const mutate of [v=>v.layout.selection='ShopEntry',v=>v.layout.selection='Menu',v=>v.layout.t=19,
+    v=>v.layout.load++,v=>v.layout.timeOrigin++,v=>v.layout.scope='other',v=>v.layout.phase='result',
+    v=>v.state.phase='result',v=>v.navigation.load++,v=>v.navigation.timeOrigin++,v=>v.navigation.scope='other',
+    v=>v.navigation.code='Enter',v=>v.navigation.hidden=true,v=>v.navigation.focused=false,
+    v=>v.documentState.focused=false,v=>v.documentState.timeOrigin++,v=>v.documentState.t=19,
+    v=>v.layout.controls[0].interactable=false,v=>v.layout.controls[0].active=false,
+    v=>v.layout.shopControls.push({...v.layout.controls[0]})]){
+    const value=keyboardSubmitFixture();mutate(value);assert.throws(()=>journey.validateKeyboardSubmit(value));
+  }
+});
+test('actual keyboard caller refuses retained wave-boundary focus migration before Enter',async()=>{
+  const begin=source.indexOf('    const gameKey=async('),end=source.indexOf('\n    const mark=',begin);
+  assert.ok(begin>=0 && end>begin);
+  for(const [selection,delayed] of [['SpeedRate',false],['ShopEntry',false],['Menu',false],['SpeedRate',true],['ShopEntry',true]]){
+    const value=keyboardSubmitFixture(),trace=[],states=[],encounters=[],downs=[],report={keyboard_actions:[],screenshots:[]};
+    let now=10,freshWaits=0;
+    value.layout.controls=[{name:'Menu',x:20,y:0},{name:'SpeedRate',x:0,y:20},{name:'ShopEntry',x:40,y:20}]
+      .map(c=>({...c,active:true,interactable:true}));
+    const layouts=[value.layout],page={locator:()=>({evaluate:async()=>true}),waitForTimeout:async()=>{},
+      evaluate:async code=>typeof code==='string'?null:{...value.documentState,t:now+10},
+      keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=delayed?19:now+1;},
+        down:async key=>{downs.push(key);states.push({action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
+    const run=runInNewContext(source.slice(begin,end)+';gameKey',{page,trace,states,encounters,layouts,report,
+      geometry:async()=>({layout:value.prepared}),keyboardFocus:async()=>{},
+      hudControls:layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls],
+      check:(condition,message)=>assert.ok(condition,message),screenshot:async()=>{value.layout.selection=selection;},
+      until:async(items,start,predicate)=>{
+        if(items===layouts && delayed){
+          assert.equal(predicate(value.layout),false,'A delayed pre-Tab layout is not a fresh selection observation');
+          value.layout.t=now+1;freshWaits++;assert.equal(predicate(value.layout),true,'Freshness wait must not wait for the expected target');
+        }
+        return items.slice(start).find(predicate);
+      },validateKeyboardSubmit:journey.validateKeyboardSubmit});
+    states.push(value.state);
+    if(selection==='SpeedRate'){await run('SpeedRate','session',item=>item.paused);assert.deepEqual(downs,['Enter']);}
+    else {await assert.rejects(run('SpeedRate','session',item=>item.paused));assert.deepEqual(downs,[]);}
+    assert.equal(freshWaits,delayed?1:0);
+  }
+});
+
+function waveClockFixture(){
+  // Inert shape reproduces Linux3's 65 admitted ticks and delayed console tail.
+  const sample={load:3,timeOrigin:1000,scope:'healthy',run:1,rules:'last-stand-waves-v1:playable-prototype-v1',
+    wave:1,completedWave:0,tick:215,hp:120,hull:120,kills:0,spawned:1,cannon:0,launcher:0,healed:0,
+    closeHits:0,rangedHits:0,alive:1,status:'Running',paused:false,catchingUp:false,failed:false,
+    callbackSteps:1,terminalElapsed:0,selectedSpeed:1,effectiveSpeed:1,clockPending:.026};
+  const before={...sample,t:200000,clockTimestamp:198.54},paused={...sample,t:210000,paused:true,reason:'user',clockTimestamp:208.54};
+  const returned={...paused,t:222000,clockTimestamp:220.54},resumed={...sample,t:227226.9,clockTimestamp:225.768};
+  const after={...sample,t:230535.8,tick:280,clockTimestamp:229.038,clockPending:.046,callbackSteps:7};
+  const events=[{load:3,timeOrigin:1000,scope:'healthy',globalTarget:true,t:210100,kind:'visibilitychange',hidden:true,focused:false},
+    {load:3,timeOrigin:1000,scope:'healthy',globalTarget:true,t:222100,kind:'visibilitychange',hidden:false,focused:true}];
+  return {before,paused,returned,resumed,after,events,oracle:{215:paused,280:after}};
+}
+test('current wave elapsed proof uses exact admitted clock and carry despite delayed state emission',()=>{
+  const value=waveClockFixture(),proof=journey.validateExplicitPause(value);
+  assert.equal(proof.resumed_ticks,65);assert.equal(proof.clock.basis,'admitted-clock/v1');
+  assert.equal(proof.resumed,value.resumed);assert.equal(proof.after,value.after);
+  for(const mutate of [v=>delete v.after.clockTimestamp,v=>delete v.resumed.clockPending,v=>v.after.clockTimestamp+=.05,
+    v=>v.after.clockTimestamp=-1,v=>v.after.clockTimestamp=NaN,v=>v.after.clockPending=.05,v=>v.resumed.clockPending=-.01,
+    v=>v.after.clockPending+=.01,v=>v.after.tick++,v=>v.resumed.effectiveSpeed=.5,v=>v.after.selectedSpeed=2,
+    v=>v.after.callbackSteps=129,v=>v.after.catchingUp=true,v=>v.resumed.catchingUp=true,v=>v.after.rules='historical',
+    v=>v.after.scope='other',v=>v.events[1].scope='other',v=>v.events[1].globalTarget=false]){
+    const invalid=waveClockFixture();mutate(invalid);assert.throws(()=>journey.validateExplicitPause(invalid));
+  }
+  const background={kind:'hidden',before:{...value.resumed,t:210000},after:value.after,
+    events:value.events,oracle:{215:value.resumed,280:value.after}};
+  assert.equal(journey.validateBackgroundInterval(background).clock.basis,'admitted-clock/v1');
+});
+
 function fittingFixture(initial='repair',fault=()=>{}) {
   const state={fittingId:initial,menu:''},calls=[];
   const layout={controls:[{name:'ToggleFitting',active:false,interactable:false},
@@ -718,7 +797,7 @@ test('actual Windows live layout inspection uses the resumed run before checkpoi
 test('live layout elapsed endpoints require fresh post-advance tick observations',async()=>{
   const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
   const clockBegin=source.indexOf('function sameDocument('),clockEnd=source.indexOf('const MODEL_FIELDS=',clockBegin);
-  const elapsed=runInNewContext(source.slice(clockBegin,clockEnd)+';elapsedTicks',{assert});
+  const elapsed=runInNewContext(source.slice(clockBegin,clockEnd).replaceAll('export function ','function ')+';elapsedTicks',{assert});
   const run=new Function('player','observation','check','phaseMatrix','report','matrix',
     'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
   const id={load:15,timeOrigin:100000,run:1,paused:false,catchingUp:false,callbackSteps:1,loop:{phase:'battle'}};

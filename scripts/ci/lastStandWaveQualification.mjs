@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve,dirname,basename} from 'node:path';
-import {LAST_STAND_JOURNEY_INPUTS,validateCheckpointResume,validateWaveTerminal,validateGameplayInput,validateKeyboardGameplayInput,validateModelObservation} from '../../e2e/helpers/lastStandJourney.mjs';
+import {LAST_STAND_JOURNEY_INPUTS,validateCheckpointResume,validateWaveTerminal,validateGameplayInput,validateKeyboardGameplayInput,validateModelObservation,
+  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents} from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_ORACLE_SOURCES,parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 
 export const WAVE_CONTRACT='last-stand-waves/v1';
@@ -77,6 +78,10 @@ export function assertWaveBinding(report,{head,inputs,runtime,served,waveSources
   requireWaveChecks(report,[WAVE_ERROR_CHECK]);
 }
 const only=(rows,kind)=>{const found=rows?.filter(row=>row.kind===kind);assert.equal(found?.length,1,'Exactly one '+kind+' proof required');return found[0];};
+function assertWaveIntervalClock(record){
+  const e=record.evidence;assert.equal(e?.clock?.basis,'admitted-clock/v1','Current wave interval requires actual admitted clock evidence');
+  assert.deepEqual(validateAdmittedClock(record.kind==='explicit-pause'?e.resumed:e.before,e.after),e.clock);
+}
 export function assertWaveLifecycle(report) {
   requireWaveChecks(report,WAVE_LIFECYCLE_CHECKS);
   const resume=only(report.lifecycle,'checkpoint-resume');validateCheckpointResume(resume);
@@ -96,8 +101,9 @@ export function assertWaveLifecycle(report) {
   assert.equal(background.after.timeOrigin,background.interval.before.timeOrigin);
   assert.equal(background.after.run,background.interval.before.run);
   assert.ok(background.after.tick>background.interval.before.tick);
-  assert.ok(report.lifecycle.some(row=>row.kind==='explicit-pause'&&row.evidence),'Explicit pause evidence remains required');
-  assert.ok(report.lifecycle.some(row=>row.kind==='hidden'&&row.evidence),'Actual hidden progress evidence remains required');
+  assertWaveIntervalClock(only(report.lifecycle,'explicit-pause'));
+  assertWaveIntervalClock(only(report.lifecycle,'hidden'));
+  for(const row of report.lifecycle.filter(row=>row.kind==='blur'))assertWaveIntervalClock(row);
   assert.ok(report.lifecycle.some(row=>['no-replay','no-replay-telemetry'].includes(row.kind)&&Array.isArray(row.cues)&&row.cues.length===0),'Observed no-replay evidence required');
   assert.ok(report.keyboard_actions.some(a=>a.name==='ShopCard_cannonAttackBuy'&&a.action==='purchase'),'Real keyboard purchase required');
   assert.ok(report.keyboard_actions.some(a=>a.name==='SpeedRate'&&a.action==='session'),'Real keyboard speed controls required');
@@ -217,7 +223,21 @@ export function verifyWaveFiles(resultPath,report) {
   const oracle=before=>profiles[`${before.tier}:${before.fitting}:${before.loop.cannonDamage}`]??
     profiles[`${before.loop.activeTier}:${before.fitting}:${before.loop.cannonDamage}`];
   for(const record of report.lifecycle??[]){
-    if(record.kind==='checkpoint-resume'){
+    if(['explicit-pause','hidden','blur'].includes(record.kind)){
+      assertWaveIntervalClock(record);const e=record.evidence,paused=record.kind==='explicit-pause';
+      for(const key of paused?['before','paused','returned','resumed','after']:['before','after']){
+        const {loop,hull,...model}=e[key];
+        assert.deepEqual(telemetry.encounters.find(item=>item.load===model.load && item.timeOrigin===model.timeOrigin &&
+          item.t===model.t && item.action===model.action),model,'Interval endpoint differs from actual runtime telemetry');
+        actualState(loop);assert.equal(hull,loop.hull);assert.equal(model.hp,hull);
+        validateModelObservation(model,oracle(e[key]));
+      }
+      const events=waveIntervalEvents(paused?e.paused:e.before,paused?e.resumed:e.after,trace);
+      assert.deepEqual(events,e.events,'Interval native events differ from actual input trace');
+      const proof=paused?validateExplicitPause({...e,events,oracle:oracle(e.before)}):
+        validateBackgroundInterval({...e,kind:record.kind,events,oracle:oracle(e.before)});
+      assert.deepEqual(proof,e,'Interval proof differs from actual admitted clock and source model');
+    }else if(record.kind==='checkpoint-resume'){
       validateCheckpointResume(record);actualState(record.resumed);actualState(record.stable);
       const e=record.saved.checkpoint.encounter,expected=profiles[`${e.tier}:${['launcher','repair','scattergun'][e.fitting]}:${e.committedCannonDamage}`]?.[e.tick];
       assert.ok(expected,'Saved boundary absent from source model');

@@ -1424,12 +1424,37 @@ function nativeIntervalEvents(kind,before,after,events) {
 }
 function elapsedTicks(before,after) {
   sameDocument(before,after);
+  if(isWaveObservation(before) || isWaveObservation(after))return validateAdmittedClock(before,after);
   const expected=(after.t-before.t)/50, actual=after.tick-before.tick;
   // Fractional carry at two observed fixed-step boundaries is below one tick.
   assert.ok(actual>0 && Math.abs(actual-expected)<=1.01, 'Background elapsed tick reconciliation differs');
   assert.ok(!after.paused && !after.catchingUp,'Background continuation paused or retained unresolved debt');
   assert.ok(Number.isInteger(after.callbackSteps) && after.callbackSteps>=0 && after.callbackSteps<=128,
     'Background callback step budget exceeded');
+}
+function isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || item?.rules?.startsWith('last-stand-waves-v1:');}
+export function validateAdmittedClock(before,after) {
+  sameDocument(before,after);
+  for(const item of [before,after]){
+    assert.match(item.rules??'',/^last-stand-waves-v1:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
+    assert.equal(item.scope,'healthy');assert.equal(item.status,'Running');
+    assert.equal(item.paused,false);assert.equal(item.catchingUp,false);assert.equal(item.failed,false);
+    assert.equal(item.selectedSpeed,1);assert.equal(item.effectiveSpeed,1);
+    assert.ok(Number.isFinite(item.clockTimestamp) && item.clockTimestamp>=0 &&
+      Number.isFinite(item.clockPending) && item.clockPending>=0 && item.clockPending<.05,
+      'Active wave observation requires its actual admitted clock and sub-step carry');
+    assert.ok(Number.isInteger(item.callbackSteps) && item.callbackSteps>=0 && item.callbackSteps<=128,
+      'Background callback step budget exceeded');
+  }
+  assert.equal(after.rules,before.rules);
+  const elapsed=after.clockTimestamp-before.clockTimestamp,ticks=after.tick-before.tick;
+  assert.ok(elapsed>0 && ticks>0 && Math.abs(ticks*.05-(elapsed+before.clockPending-after.clockPending))<=1e-6,
+    'Admitted elapsed time, fixed ticks and retained carry differ');
+  return {basis:'admitted-clock/v1',elapsed_ms:elapsed*1000,ticks,initial_carry:before.clockPending,final_carry:after.clockPending};
+}
+export function waveIntervalEvents(before,after,events) {
+  return events.filter(item=>item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope &&
+    item.globalTarget===true && ['blur','focus','visibilitychange'].includes(item.kind) && item.t>=before.t && item.t<=after.t);
 }
 const MODEL_FIELDS=['tick','hp','kills','spawned','cannon','launcher','healed','closeHits','rangedHits','alive','status'];
 export function validateModelObservation(observed,oracle) {
@@ -1480,11 +1505,12 @@ export function validateSettlingTransition({before,result,states,layouts,encount
   return {before,terminal,staged:staged[0],result,layouts:observed};
 }
 export function validateBackgroundInterval({kind,before,after,events,oracle}) {
-  elapsedTicks(before,after);nativeIntervalEvents(kind,before,after,events);
+  const clock=elapsedTicks(before,after),observedEvents=clock?waveIntervalEvents(before,after,events):events;
+  nativeIntervalEvents(kind,before,after,observedEvents);
   assert.equal(before.status,'Running','Background interval must start with an active model');
   assert.equal(after.status,'Running','Use terminal ownership oracle for terminal intervals');
   validateModelObservation(before,oracle);validateModelObservation(after,oracle);
-  return {kind,elapsed_ms:after.t-before.t,ticks:after.tick-before.tick,events};
+  return {kind,elapsed_ms:after.t-before.t,ticks:after.tick-before.tick,events:observedEvents,...(clock?{clock,before,after}:{})};
 }
 export function validateExplicitPause({before,paused,returned,resumed,after,events,oracle}) {
   sameDocument(before,paused);sameDocument(paused,returned);sameDocument(returned,resumed);
@@ -1498,10 +1524,15 @@ export function validateExplicitPause({before,paused,returned,resumed,after,even
   // Unity can acknowledge focus while the tab is still hidden. The frozen
   // paused model sample need not follow visibility, but actual visible return
   // must precede the user's measured Resume. Counters stay bound above.
-  nativeIntervalEvents('hidden',paused,resumed,events);
-  elapsedTicks(resumed,after);
+  const clock=elapsedTicks(resumed,after),observedEvents=clock?waveIntervalEvents(paused,resumed,events):events;
+  nativeIntervalEvents('hidden',paused,resumed,observedEvents);
+  if(clock)for(const item of [paused,returned,resumed]){
+    assert.equal(item.scope,resumed.scope);assert.equal(item.rules,resumed.rules);
+    assert.ok(Number.isFinite(item.clockTimestamp) && item.clockTimestamp>=paused.clockTimestamp && item.clockTimestamp<=resumed.clockTimestamp);
+    assert.equal(item.clockPending,resumed.clockPending,'Pause and Resume preserve the admitted fractional carry');
+  }
   validateModelObservation(paused,oracle);validateModelObservation(after,oracle);
-  return {paused_ms:resumed.t-paused.t,resumed_ticks:after.tick-resumed.tick};
+  return {paused_ms:resumed.t-paused.t,resumed_ticks:after.tick-resumed.tick,...(clock?{clock,before,paused,returned,resumed,after,events:observedEvents}:{})};
 }
 export function validateTerminalOwnership({runId,beforeWallet,states,pending,claimed,controls}) {
   assert.ok(Number.isInteger(runId) && runId>0,'Terminal run identity absent');
@@ -3076,6 +3107,26 @@ export function lastStandDeploymentControl(state,layout) {
   return name;
 }
 
+export function validateKeyboardSubmit({name,prepared,state,layout,navigation,documentState}) {
+  assert.ok(prepared && state && layout && navigation && documentState,'Keyboard submit requires actual preparation and observations');
+  assert.ok(Number.isInteger(prepared.load) && prepared.load>0 && Number.isFinite(prepared.timeOrigin) && prepared.timeOrigin>0);
+  assert.equal(prepared.scope,'healthy');
+  for(const item of [state,layout,navigation])for(const key of ['load','timeOrigin','scope'])
+    assert.equal(item[key],prepared[key],'Keyboard submit document identity changed: '+key);
+  assert.equal(state.phase,prepared.phase);assert.equal(layout.phase,prepared.phase);
+  assert.equal(navigation.kind,'keydown');assert.equal(navigation.code,'Tab');
+  assert.ok(['unity-canvas','last-stand-return'].includes(navigation.target) && navigation.focused && !navigation.hidden,
+    'Keyboard navigation must belong to the visible focused document');
+  assert.ok([prepared.t,navigation.t,layout.t,documentState.t].every(Number.isFinite) &&
+    navigation.t>=prepared.t && layout.t>=navigation.t && documentState.t>=navigation.t,
+    'Keyboard selection must follow the actual final navigation edge');
+  assert.equal(documentState.timeOrigin,prepared.timeOrigin);assert.equal(documentState.focused,true);
+  assert.equal(layout.selection,name,'Keyboard focus moved away from the requested control before Enter');
+  const controls=[...layout.controls,...layout.shopControls,...layout.settingsControls]
+    .filter(item=>item.name===name && item.active && item.interactable);
+  assert.equal(controls.length,1,'Keyboard submit requires one currently enabled selected target');
+}
+
 // This lifecycle qualifies effects, mute and missed-event suppression. Select
 // its channel scope through ordinary controls before measuring audio; music's
 // behavior during a pause is separately qualified by the controls journey.
@@ -3583,14 +3634,24 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     };
     const gameClick=async(...args)=>(await armGameClick(...args))();
     const gameKey=async(name,action,predicate=()=>true)=>{
-      await geometry(name);await keyboardFocus(page.locator('#last-stand-return'));
+      const {layout:prepared}=await geometry(name),navigationStart=trace.length;
+      await keyboardFocus(page.locator('#last-stand-return'));
       await page.keyboard.press('Tab');
       check(await page.locator('#unity-canvas').evaluate(element=>document.activeElement===element),'native Tab enters actual Unity controls');
       const ordered=hudControls(layouts.at(-1)).filter(item=>item.active && item.interactable).sort((a,b)=>Math.abs(a.y-b.y)>.5?a.y-b.y:a.x-b.x);
       const index=ordered.findIndex(item=>item.name===name);check(index>=0,'keyboard target is actually enabled');
       await page.evaluate("window.__stInputArea='gameplay-keyboard'");
       const keys=[];for(let i=0;i<index;i++){await page.keyboard.press('Tab');keys.push('Tab');}
+      const navigation=trace.slice(navigationStart).findLast(item=>item.kind==='keydown' && item.code==='Tab');
+      check(navigation && Number.isFinite(navigation.t),'actual final keyboard navigation edge is observed');
+      // Await the first fresh projection, never re-navigate or wait for a wrong
+      // selection to become the requested target. The exact owner is checked below.
+      await until(layouts,0,item=>item.load===navigation.load && item.timeOrigin===navigation.timeOrigin &&
+        item.scope===navigation.scope && item.t>=navigation.t,8);
       await screenshot(`keyboard-focus-${name}-${report.screenshots.length}`);
+      const documentState=await page.evaluate(()=>({timeOrigin:performance.timeOrigin,t:performance.now(),
+        focused:!document.hidden && document.hasFocus() && document.activeElement===document.getElementById('unity-canvas')}));
+      validateKeyboardSubmit({name,prepared,state:states.at(-1),layout:layouts.at(-1),documentState,navigation});
       const start=states.length,encStart=encounters.length;
       await page.keyboard.down('Enter');await page.waitForTimeout(150);await page.keyboard.up('Enter');keys.push('Enter');
       const observed=await until(states,start,item=>item.action===action && predicate(item),8);

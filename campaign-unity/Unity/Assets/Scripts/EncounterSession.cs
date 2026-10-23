@@ -325,6 +325,7 @@ namespace SingedTerra.Encounter
             public int callbackSteps;
             public double terminalElapsed;
             public double selectedSpeed, effectiveSpeed, maximumSpeed;
+            public double clockTimestamp, clockPending;
             public bool manualPaused, menuPaused;
         }
         void Emit(string action)
@@ -339,6 +340,8 @@ namespace SingedTerra.Encounter
                 catchingUp = CatchingUp, callbackSteps = StepsThisCallback, terminalElapsed = TerminalElapsedSeconds,
                 selectedSpeed = SelectedSpeed, effectiveSpeed = EffectiveSpeed, maximumSpeed = MaximumSpeed,
                 manualPaused = ManualPaused, menuPaused = MenuPaused,
+                // Passive admission observations; -1 means no playable clock.
+                clockTimestamp = runClock?.LastTimestamp ?? -1, clockPending = runClock?.PendingSeconds ?? -1,
                 tick = model?.Tick ?? 0, hp = model?.Hull ?? 120, maxHp = model?.CurrentMaximumHull ?? 120,
                 spawned = model?.Spawned ?? 0, kills = model?.Kills ?? 0,
                 cannon = model?.CannonShots ?? 0, launcher = model?.LauncherShots ?? 0,

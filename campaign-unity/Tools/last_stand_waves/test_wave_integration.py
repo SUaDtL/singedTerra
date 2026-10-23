@@ -29,3 +29,6 @@ class WaveIntegrationTests(unittest.TestCase):
     def test_terminal_uncertainty_and_no_payout(self): self.case(self._testMethodName)
     def test_confirmed_receipts_survive_retry_and_terminal(self): self.case(self._testMethodName)
     def test_simultaneous_clear_death_receipt_and_retry(self): self.case(self._testMethodName)
+    def test_wave_boundary_preserves_selected_action(self): self.case(self._testMethodName)
+    def test_wave_save_failure_and_terminal_keep_focus_fallback(self): self.case(self._testMethodName)
+    def test_observed_clock_timestamp_and_pending(self): self.case(self._testMethodName)

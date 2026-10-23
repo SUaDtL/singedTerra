@@ -36,7 +36,7 @@ async function assertRenderedTargetsArePhysicalSize(page: Page): Promise<void> {
 }
 
 test.describe('T11 command-center production visual seam', () => {
-  test('keeps Last Stand loss disclosure visible beside its reachable launch action', async ({ page }, testInfo) => {
+  test('keeps Last Stand checkpoint guidance visible beside its reachable launch action', async ({ page }, testInfo) => {
     // This case owns its viewport matrix; the other outer projects would repeat it.
     test.skip(testInfo.project.name !== 'desktop-fine', 'The desktop project owns this explicit viewport matrix.');
     const unityRequests: string[] = [];
@@ -58,9 +58,9 @@ test.describe('T11 command-center production visual seam', () => {
       await page.locator('.command-center__library-items [data-command-item="last-stand"]').click();
       const disclosure = page.locator('[data-last-stand-loss-disclosure]');
       const launch = page.locator('[data-command-action="launch-last-stand"]');
-      await expect(disclosure, `${width}x${height} unfinished-run disclosure`).toBeVisible();
+      await expect(disclosure, `${width}x${height} checkpoint and rollback guidance`).toBeVisible();
       await expect(disclosure).toBeInViewport({ ratio: 1 });
-      await expect(disclosure).toHaveText('Leaving or reloading an unfinished run loses its progress without a reward. Saved upgrades and pending defeat rewards stay in this browser only after a successful save.');
+      await expect(disclosure).toHaveText('Returning or reloading keeps your last confirmed wave checkpoint and banked rewards. Resume starts paused at the unfinished wave; partial-wave upgrades and spending roll back together. Saves stay in this browser and do not sync with your account.');
       const overflow = await disclosure.evaluate((element) => ({
         x: element.scrollWidth - element.clientWidth,
         y: element.scrollHeight - element.clientHeight,

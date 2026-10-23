@@ -56,7 +56,11 @@ public static class LastStandWaveChecks
         var loop=UnityEngine.Object.FindFirstObjectByType<LastStandLoopController>();
         typeof(EncounterSession).GetField("focused",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(loop.Session,true);
         var system=UnityEngine.Object.FindFirstObjectByType<EventSystem>(FindObjectsInactive.Include);
-        Need(system,"imported EventSystem exists");system.gameObject.SetActive(true);system.enabled=true;EventSystem.current=system;
+        Need(system,"imported EventSystem exists");system.gameObject.SetActive(true);system.enabled=true;
+        // Batch edit-mode does not invoke this imported component's OnEnable.
+        typeof(EventSystem).GetMethod("OnEnable",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(system,null);
+        EventSystem.current=system;
+        Need(EventSystem.current==system,"actual imported EventSystem is registered");
         loop.RefreshControls();return loop;
     }
     static LastStandRunClock Clock(EncounterSession session)=>(LastStandRunClock)typeof(EncounterSession)
@@ -224,11 +228,147 @@ public static class LastStandWaveChecks
         }
         Debug.Log("ST_LS_WAVE_PASS test_simultaneous_clear_death_receipt_and_retry");
     }
+    static void PrepareFinalWaveEnemy(LastStandLoopController loop)
+    {
+        var model=loop.Session.Model;
+        int finalKill=LastStandWaveCatalog.ForWave(1,1).EnemyCount-1,budget=10000;
+        while((model.Kills<finalKill || model.ActiveCount==0) && model.Status==EncounterStatus.Running && budget-->0)
+            loop.Session.AdvanceAt(Clock(loop.Session).LastTimestamp+.05);
+        Need(model.Kills==finalKill && model.ActiveCount==1,"focus fixture reaches the actual last wave enemy");
+        foreach(var foe in model.Foes)if(foe.Alive)
+        {
+            typeof(EncounterFoe).GetProperty("Distance").SetValue(foe,1000);
+            typeof(EncounterFoe).GetProperty("Hull").SetValue(foe,1);
+        }
+        typeof(EncounterModel).GetField("nextCannon",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(model,model.Tick);
+    }
+    static UnityEngine.UI.Button ActiveButton(string name)
+    {
+        var button=GameObject.Find(name)?.GetComponent<UnityEngine.UI.Button>();
+        Need(button && button.IsActive() && button.IsInteractable(),"actual available control "+name);return button;
+    }
+    static void SubmitSelected(LastStandLoopController loop)
+    {
+        // Artificial batch timestamps must not turn the subsequent real Button
+        // Submit into a backwards clock. No gameplay or selection is reset.
+        typeof(LastStandRunClock).GetField("anchor",BindingFlags.Instance|BindingFlags.NonPublic)
+            .SetValue(Clock(loop.Session),Time.realtimeSinceStartupAsDouble);
+        ExecuteEvents.Execute(EventSystem.current.currentSelectedGameObject,
+            new BaseEventData(EventSystem.current),ExecuteEvents.submitHandler);
+    }
+    static void WaveBoundaryFocus()
+    {
+        foreach(string name in new[]{"SpeedRate","Menu","SpeedMinus"})
+        {
+            var store=new Store();var loop=Open(store);using var viewport=new Viewport(loop);
+            loop.Deploy();PrepareFinalWaveEnemy(loop);
+            var button=ActiveButton(name);EventSystem.current.SetSelectedGameObject(button.gameObject);
+            int tick=loop.Session.Model.Tick,committedTick=-1,changedWhileDraining=0;
+            bool committedBeforeDrain=false;
+            Application.LogCallback observe=(message,trace,type)=>{
+                if(!message.StartsWith("ST_LS_STATE ") || !message.Contains("\"action\":\"wave-committed\""))return;
+                committedTick=loop.Session.Model.Tick;
+                committedBeforeDrain=loop.Session.CatchingUp && loop.Progression.Checkpoint.CompletedWave==1 &&
+                    LastStandProgression.Load(store).Checkpoint.CompletedWave==1 && loop.Session.Model.Wave==2;
+            };
+            Action changed=()=>{if(loop.Session.CatchingUp)changedWhileDraining++;};
+            Application.logMessageReceived+=observe;loop.Changed+=changed;
+            try { loop.Session.AdvanceAt(Clock(loop.Session).LastTimestamp+.2); }
+            finally { Application.logMessageReceived-=observe;loop.Changed-=changed; }
+            Need(loop.Session.StepsThisCallback==4 && !loop.Session.CatchingUp && loop.Session.Model.Tick==tick+4,
+                "multi-step callback drains past the actual clear");
+            Need(committedBeforeDrain && committedTick==tick+1,"durable commit and exact boundary telemetry remain synchronous");
+            Need(EventSystem.current.currentSelectedGameObject==button.gameObject,
+                name+" focus survives a successful mid-callback wave clear; selected="+EventSystem.current.currentSelectedGameObject?.name);
+            Need(changedWhileDraining==0,"successful intermediate checkpoint does not publish transient HUD/observer state");
+            int submits=0;button.onClick.AddListener(()=>submits++);SubmitSelected(loop);
+            Need(submits==1 && !GameObject.Find("ShopClose"),"one Submit activates only the selected control, never Shop");
+            if(name=="SpeedRate")Need(loop.Session.ManualPaused && !loop.MenuOpen,"rate Submit only pauses");
+            if(name=="SpeedMinus")Need(loop.Session.SelectedSpeed==.5 && !loop.MenuOpen,"minus Submit only selects half speed");
+            if(name=="Menu")
+            {
+                Need(loop.MenuOpen && loop.Session.Paused,"Menu Submit opens the actual modal");
+                var selected=EventSystem.current.currentSelectedGameObject;
+                Need(selected && selected!=button.gameObject && selected.transform.IsChildOf(GameObject.Find("SettingsModal").transform),
+                    "a genuine modal still moves focus into its active controls");
+            }
+        }
+        Debug.Log("ST_LS_WAVE_PASS test_wave_boundary_preserves_selected_action");
+    }
+    static void WaveFocusFailureAndTerminal()
+    {
+        foreach(bool failSave in new[]{true,false})
+        {
+            var store=new Store();var loop=Open(store);using var viewport=new Viewport(loop);
+            loop.Deploy();PrepareFinalWaveEnemy(loop);
+            var button=ActiveButton("SpeedRate");EventSystem.current.SetSelectedGameObject(button.gameObject);
+            if(!failSave)
+            {
+                var model=loop.Session.Model;
+                typeof(EncounterModel).GetField("<Hull>k__BackingField",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(model,1);
+                typeof(EncounterModel).GetField("nextCannon",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(model,model.Tick+100);
+                typeof(EncounterModel).GetField("nextRepair",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(model,model.Tick+100);
+                foreach(var foe in model.Foes)if(foe.Alive)
+                { typeof(EncounterFoe).GetProperty("Distance").SetValue(foe,0);typeof(EncounterFoe).GetProperty("Damage").SetValue(foe,int.MaxValue); }
+            }
+            store.Reject=failSave;bool immediateError=false;
+            Action changed=()=>{if(loop.Phase=="save-error" && loop.Session.StepsThisCallback==1)
+                immediateError=loop.Session.CheckpointBlocked && ActiveButton("RetrySave") && Clock(loop.Session).PendingSeconds>.05;};
+            loop.Changed+=changed;
+            try { loop.Session.AdvanceAt(Clock(loop.Session).LastTimestamp+.2); }
+            finally { loop.Changed-=changed; }
+            if(failSave)Need(immediateError && loop.Phase=="save-error" && loop.Progression.Checkpoint.CompletedWave==0,
+                "failed checkpoint still immediately freezes and projects Retry Save");
+            else
+            {
+                Need(loop.Session.Model.Status==EncounterStatus.Defeated,"real terminal hit changes the phase");
+                loop.Session.AdvanceAt(Clock(loop.Session).LastTimestamp+1);
+                typeof(LastStandLoopController).GetMethod("Update",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(loop,null);
+                Need(loop.Phase=="result","real terminal flow reaches Continue");
+            }
+            var selected=EventSystem.current.currentSelectedGameObject;
+            Need(selected && selected!=button.gameObject && selected.GetComponent<UnityEngine.UI.Button>().IsActive() &&
+                selected.GetComponent<UnityEngine.UI.Button>().IsInteractable(),"genuine unavailable/phase transition retains safe focus fallback");
+        }
+        Debug.Log("ST_LS_WAVE_PASS test_wave_save_failure_and_terminal_keep_focus_fallback");
+    }
+    [Serializable] sealed class ClockState { public double clockTimestamp,clockPending; }
+    static ClockState ReadClockState(EncounterSession session)
+    {
+        string raw=null;
+        Application.LogCallback observe=(message,trace,type)=>{if(message.StartsWith("ST_ENC_STATE "))raw=message.Substring(13);};
+        Application.logMessageReceived+=observe;
+        try { typeof(EncounterSession).GetMethod("Emit",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(session,new object[]{"clock-check"}); }
+        finally { Application.logMessageReceived-=observe; }
+        Need(raw!=null && raw.Contains("\"clockTimestamp\":") && raw.Contains("\"clockPending\":"),
+            "actual serialized encounter telemetry carries both admitted clock fields");
+        return JsonUtility.FromJson<ClockState>(raw);
+    }
+    static void ClockTelemetry()
+    {
+        var loop=Open(new Store());var absent=ReadClockState(loop.Session);
+        Need(absent.clockTimestamp==-1 && absent.clockPending==-1,"no playable clock has explicit unavailable sentinels");
+        loop.Deploy();var clock=Clock(loop.Session);
+        loop.Session.AdvanceAt(clock.LastTimestamp+.075);
+        var partial=ReadClockState(loop.Session);
+        Need(Math.Abs(partial.clockTimestamp-clock.LastTimestamp)<1e-7 && Math.Abs(partial.clockPending-clock.PendingSeconds)<1e-7 &&
+            Math.Abs(partial.clockPending-.025)<1e-7,"timestamp and fractional carry come from the actual admitted clock");
+        loop.Session.TogglePauseAt(clock.LastTimestamp);
+        loop.Session.AdvanceAt(clock.LastTimestamp+20);
+        var paused=ReadClockState(loop.Session);
+        Need(Math.Abs(paused.clockTimestamp-clock.LastTimestamp)<1e-7 && Math.Abs(paused.clockPending-.025)<1e-7,
+            "paused wall time updates the clock anchor without consuming its carry");
+        loop.Session.TogglePauseAt(clock.LastTimestamp);loop.Session.AdvanceAt(clock.LastTimestamp+.025);
+        var resumed=ReadClockState(loop.Session);
+        Need(Math.Abs(resumed.clockTimestamp-clock.LastTimestamp)<1e-7 && Math.Abs(resumed.clockPending)<1e-7 && loop.Session.Model.Tick==2,
+            "resumed timestamp and carry identify exactly the next admitted step");
+        Debug.Log("ST_LS_WAVE_PASS test_observed_clock_timestamp_and_pending");
+    }
     public static void Run()
     {
         using var preferences=new LastStandTestPreferencesScope();
         var original=LastStandLoopController.StorageFactory;
-        try { ReceiptBoundaries();MutualReceipt();BoundaryRetryAndResume();NavigationAndAbandon();TerminalWrite(); }
+        try { WaveBoundaryFocus();WaveFocusFailureAndTerminal();ClockTelemetry();ReceiptBoundaries();MutualReceipt();BoundaryRetryAndResume();NavigationAndAbandon();TerminalWrite(); }
         finally { LastStandLoopController.StorageFactory=original;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }
     }
 }

@@ -315,7 +315,10 @@ namespace SingedTerra.LastStand
             waveSavePending=false;
             Notice=ReceiptNotice();
             Session.ContinueCommittedWave();
-            Refresh("wave-committed");
+            // Commit telemetry describes this exact boundary. The session will
+            // publish Changed after draining the callback; projecting the HUD
+            // here would temporarily disable focused controls for pending steps.
+            EmitState("wave-committed");
         }
         void ReconcileSessionChange()
         {
@@ -671,6 +674,11 @@ namespace SingedTerra.LastStand
             RefreshGarageSelections();
             SyncAudioAdmission();
             hud.Refresh(); Changed?.Invoke();
+            EmitState(action);
+        }
+        void EmitState(string action)
+        {
+            if (temporaryPurchaseInProgress || hud == null) return;
             Debug.Log("ST_LS_STATE " + JsonUtility.ToJson(new State { action = action, phase = Phase,
                 saveState = Progression.SaveState, saveError = Progression.SaveError ?? "", notice = Notice,
                 wallet = Progression.Wallet, level = Progression.CannonAttackLevel, nextCost = Progression.NextCost,

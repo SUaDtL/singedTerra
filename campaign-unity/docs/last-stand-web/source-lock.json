@@ -418,7 +418,7 @@
       },
       "Unity/Assets/Editor/LastStandWaveChecks.cs": {
         "mode": "lf-text",
-        "sha256": "b8ac7fe009341e3bc84fd555a3962c9221555410eeef801582d2e6588033f76f"
+        "sha256": "1fae8a206d6cf1016a06ac8d4cc6545c8a8246914b36090776a04f365e91f5a3"
       },
       "Unity/Assets/Editor/LastStandWaveChecks.cs.meta": {
         "mode": "lf-text",
@@ -1006,7 +1006,7 @@
       },
       "Unity/Assets/Scripts/EncounterSession.cs": {
         "mode": "lf-text",
-        "sha256": "b00eada445e193e0ab989e8d40797a5928dbbf1db68620c77570628684031615"
+        "sha256": "06d69107f704180e0e0b782f1dccac2c1ad4d2bfabb93e463d9a3981c01f0677"
       },
       "Unity/Assets/Scripts/EncounterSession.cs.meta": {
         "mode": "lf-text",
@@ -1086,7 +1086,7 @@
       },
       "Unity/Assets/Scripts/LastStandLoopController.cs": {
         "mode": "lf-text",
-        "sha256": "4d268cdff59ea97d3b7e59bd65ed738fcf70f6806b51a29b423573bc29ce4e50"
+        "sha256": "632d63710f8d9b7513d8d0f42ccdb81e16dc86c37fec02ee0ad4d54dff845814"
       },
       "Unity/Assets/Scripts/LastStandLoopController.cs.meta": {
         "mode": "lf-text",
@@ -13501,7 +13501,7 @@
         "sha256": "2973a6af930e142f62cde00076beda8a3cc3a66d9bfcde7a58ba7d4be2251c26"
       }
     },
-    "sha256": "cec4e93c7b5275de17e5ded560fe6aec0b663d90b981262d22f6e5992fcf3e03"
+    "sha256": "d9dceb2c61ac16ac3e77f65ea9642c6761880f159090031878fa84c22b70e870"
   },
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
@@ -83104,7 +83104,7 @@
     },
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
-  "receiptSha256": "bcd3c287558a17b7806d319990c9b4f02937867fba3fdadc1e386abb61885435",
+  "receiptSha256": "570d0fc626c8088b8216c44f23aaec66628546cc93c76bd0ca5e52250f21cc1d",
   "vendor": {
     "path": "Unity/Packages/com.unity.render-pipelines.universal",
     "version": "17.3.0",

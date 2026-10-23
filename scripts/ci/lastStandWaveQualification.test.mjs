@@ -69,6 +69,15 @@ test('wave matrix requires exact resume control and keeps earned post-abandon ga
     const copy=clone(reports);mutate(copy);assert.throws(()=>assertLastStandWaveMatrix(copy,expected));
   }
 });
+test('current matrix rejects missing admitted clock evidence instead of falling back to archived timing',()=>{
+  const {reports,expected}=matrixFixture();
+  for(const mutate of [e=>delete e.clock,e=>delete e.after.clockPending,e=>e.clock.elapsed_ms++,
+    e=>{delete e.resumed.clockTimestamp;delete e.after.clockTimestamp;delete e.resumed.wave;delete e.after.wave;},
+    e=>e.after.tick++,e=>e.after.clockTimestamp+=.05]){
+    const copy=clone(reports);mutate(copy[0].lifecycle.find(r=>r.kind==='explicit-pause').evidence);
+    assert.throws(()=>assertLastStandWaveMatrix(copy,expected));
+  }
+});
 function expectedFixture(){return {head,inputs:Object.fromEntries(LAST_STAND_JOURNEY_INPUTS.map(p=>[p,hash])),
   runtime:Object.fromEntries(WAVE_RUNTIME_KEYS.map(p=>[p,p==='build'?'inert-test-build':hash])),
   served:Object.fromEntries(Array.from({length:17},(_,i)=>[`file-${i}`,{sha256:hash,bytes:1}])),
@@ -92,6 +101,24 @@ function terminalFixture(mode){
   const layouts=[{...identity,phase:'settling',t:202,controls:[{name:'Claim',active:false,interactable:false}]}];
   return {kind:'wave-terminal',mode,evidence:{before,terminal,staged,result,saved,layouts},
     ...(mode==='hidden'?{interval:{begin:110,recovered:240,before:{...before}}}:{})};
+}
+function intervalFixture(kind='hidden'){
+  const pause=kind==='explicit-pause';
+  const id={load:kind==='hidden'?7:6,timeOrigin:7000,scope:'healthy'},model={...id,action:'tick',run:1,tick:0,
+    hp:120,kills:0,spawned:0,cannon:0,launcher:0,healed:0,closeHits:0,rangedHits:0,alive:0,wave:1,completedWave:0,
+    rules:'last-stand-waves-v1:playable-prototype-v1',status:'Running',paused:false,failed:false,catchingUp:false,
+    callbackSteps:1,selectedSpeed:1,effectiveSpeed:1,clockTimestamp:1,clockPending:0,terminalElapsed:0,fitting:'repair',tier:1};
+  const sample=(t,extra={})=>{const row={...model,t,...extra};return {...row,hull:row.hp,loop:{...id,t:t+1,action:'session',phase:'battle',runId:1,activeTier:1,cannonDamage:20,hull:row.hp}};};
+  const before=sample(100),paused=sample(100,{action:'pause',paused:true,reason:'user'}),
+    returned=sample(10100,{action:'visibility',paused:true,reason:'user',clockTimestamp:11}),
+    resumed=sample(10200,{action:'pause',clockTimestamp:11.1}),
+    after=sample(pause?10300:200,{tick:1,clockTimestamp:pause?11.15:1.05});
+  const events=[{...id,t:110,globalTarget:true,kind:kind==='blur'?'blur':'visibilitychange',hidden:kind!=='blur',focused:false},
+    {...id,t:pause?10150:190,globalTarget:true,kind:kind==='blur'?'focus':'visibilitychange',hidden:false,focused:true}];
+  const oracle={0:before,1:after};
+  const proof=pause?journey.validateExplicitPause({before,paused,returned,resumed,after,events,oracle}):
+    journey.validateBackgroundInterval({kind,before,after,events,oracle});
+  return {kind,evidence:proof};
 }
 function baseReport(expected,host='linux'){
   const rt=expected.runtime;
@@ -117,7 +144,7 @@ function lifeReport(expected,host='linux'){
   report.lifecycle=[resume,{kind:'checkpoint-abandon',before:clone(resume.saved),after:{...clone(resume.saved),checkpoint:null,lastFinalizedRunId:1}},
     {kind:'background-wave',saved:{version:4,credits:1,pendingDefeat:null,checkpoint:{runId:2,encounter:{completedWave:1,rulesVersion:'last-stand-waves-v1',tier:1}}},
       interval:{begin:100,recovered:200,before:{load:3,timeOrigin:3000,run:2,tick:0}},after:{t:210,load:3,timeOrigin:3000,run:2,tick:201,loop:{runId:2,wallet:1,activeTier:1}}},
-    {kind:'explicit-pause',evidence:{}},{kind:'hidden',evidence:{}},{kind:'no-replay-telemetry',cues:[]},foreground,hidden,
+    intervalFixture('explicit-pause'),intervalFixture(),{kind:'no-replay-telemetry',cues:[]},foreground,hidden,
     {kind:'terminal-reload',saved:clone(foreground.evidence.saved),state:{load:4,runId:0,pendingRunId:0,hasCheckpoint:false,wallet:4}}];
   return report;
 }
@@ -160,7 +187,7 @@ function companionFixture(){
   const expected=expectedFixture(),windows=lifeReport(expected,'win32'),linux=lifeReport(expected);
   for(const report of [windows,linux]){report.qualification.functional='pass';report.checks.push(...[...WAVE_ENTRY_CHECKS,...WAVE_RECOVERY_CHECKS].map(name=>({name,pass:true})));}
   windows.checks.push({name:'all five procedural cues admitted',pass:true,detail:['cannon','impact','destruction','defeat','purchase']});
-  windows.lifecycle.push({kind:'blur',evidence:{}});windows.audio=[{},{},{}];windows.motion={};windows.playable_capture={};windows.active_play_review={};
+  windows.lifecycle.push(intervalFixture('blur'));windows.audio=[{},{},{}];windows.motion={};windows.playable_capture={};windows.active_play_review={};
   windows.frame_timing={capture_active:Object.fromEntries(['first-foe-before-impact','first-hit-through-pause','resumed-before-focus-loss','resumed-after-focus-loss']
     .map(name=>[name,{p95_ms:10,p99_ms:20,max_ms:30}])),no_capture_active:{p95_ms:10}};
   const entry=windows.lifecycle.find(r=>r.kind==='wave-terminal'&&r.mode==='foreground'),e=entry.evidence;
@@ -234,9 +261,9 @@ test('current CLIs dispatch only the wave contract while historical exports stay
 test('raw wave verifier binds compiler streams, every native edge, oracle membership and actual screenshot pixels',t=>{
   const root=mkdtempSync(join(tmpdir(),'st-inert-wave-reader-'));t.after(()=>rmSync(root,{recursive:true}));mkdirSync(join(root,'wave-model-oracle'));
   const expected=expectedFixture(),report=baseReport(expected),sha=b=>createHash('sha256').update(b).digest('hex');
-  const raw=Buffer.from(profiles.map(key=>key.replaceAll(':',',')+',0,120,0,0,0,0,0,0,0,0,0,1,0,Running\r\n').join(''));
+  const raw=Buffer.from(profiles.flatMap(key=>[0,1].map(tick=>key.replaceAll(':',',')+`,${tick},120,0,0,0,0,0,0,0,0,0,1,0,Running\r\n`)).join(''));
   const empty=Buffer.alloc(0),driver=Buffer.from('inert fixture, never executed'),exe=Buffer.from('not an executable');
-  const model=report.wave_model;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
+  const model=report.wave_model;model.rows=48;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
   model.commands[0].stdoutSha256=sha(empty);model.commands[0].stderrSha256=sha(empty);model.commands[1].stdoutSha256=sha(raw);model.commands[1].stderrSha256=sha(empty);
   const put=(name,value)=>writeFileSync(join(root,name),typeof value==='object'&&!Buffer.isBuffer(value)?JSON.stringify(value):value);
   put('wave-model-oracle/binding.json',model);put('wave-model-oracle/commands.json',{inputs:model.inputs,commands:model.commands});
@@ -249,6 +276,25 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
     assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));put(path,original);
   }
   put('input-trace.json',[{area:'gameplay',kind:'pointerdown'}]);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));put('input-trace.json',[]);
+  for(const kind of ['explicit-pause','hidden']){
+    const record=intervalFixture(kind),e=record.evidence;
+    const endpoints=kind==='explicit-pause'?['before','paused','returned','resumed','after']:['before','after'];
+    const telemetry={states:endpoints.map(key=>e[key].loop),encounters:endpoints.map(key=>{
+      const {loop,hull,...row}=e[key];return row;
+    }),layouts:[]};
+    report.lifecycle=[record];put('runtime-telemetry.json',telemetry);put('input-trace.json',e.events);
+    assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+    for(const mutate of [v=>v.clock.elapsed_ms++,v=>v.after.clockTimestamp+=.05,v=>v.after.clockPending=.04,
+      v=>v.after.loop.load++,v=>v.events.pop(),v=>v.events[0].globalTarget=false]){
+      const broken=clone(record);mutate(broken.evidence);report.lifecycle=[broken];
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+    }
+    report.lifecycle=[record];const changed=clone(telemetry);changed.encounters.at(-1).clockTimestamp+=.05;
+    put('runtime-telemetry.json',changed);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+    put('runtime-telemetry.json',telemetry);put('input-trace.json',e.events.slice(0,1));
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+  }
+  report.lifecycle=[];put('runtime-telemetry.json',{states:[],encounters:[],layouts:[]});put('input-trace.json',[]);
   const png=Buffer.alloc(24);Buffer.from([137,80,78,71,13,10,26,10]).copy(png);png.write('IHDR',12);png.writeUInt32BE(44,16);png.writeUInt32BE(44,20);
   put('shot.png',png);report.screenshots=[{file:'shot.png',sha256:sha(png),viewport:{width:44,height:44}}];
   assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));report.screenshots[0].viewport.width=45;
