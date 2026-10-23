@@ -9,12 +9,16 @@ namespace SingedTerra.LastStand
     {
         const int Voices = 4;
         readonly AudioSource[] sources = new AudioSource[Voices];
-        AudioClip cannon, impact, destruction, defeat, purchase;
+        AudioClip cannon, impact, destruction, defeat, purchase, scattergun;
         LastStandMusic music;
         int cursor;
         bool initialized, unlocked, suspended, musicSuspended;
         bool focused, applicationPaused;
         float masterGain=1, effectsGain=1, musicGain=.2f;
+        public Func<string,LastStandAudioCue> CombatAdmission { private get; set; }
+        // Editor fixtures may supply the same synthetic clock as AdvanceAt.
+        // The shipped path always samples Unity's monotonic realtime clock.
+        internal Func<double> CombatClock = () => Time.realtimeSinceStartupAsDouble;
         public bool Unlocked => unlocked;
         public bool Suspended => suspended;
         public bool Muted { get; private set; }
@@ -35,6 +39,7 @@ namespace SingedTerra.LastStand
             destruction = Tone("Destruction", 95,.32f,.33f,5);
             defeat = Tone("Defeat", 190,.54f,.25f,4);
             purchase = Tone("Purchase", 520,.22f,.26f,1);
+            scattergun = Tone("Scattergun", 175,.17f,.30f,7);
             for (int i=0;i<Voices;i++)
             {
                 sources[i]=gameObject.AddComponent<AudioSource>();
@@ -102,12 +107,23 @@ namespace SingedTerra.LastStand
             musicSuspended=value; SyncMusic();
         }
         void Stop() { foreach(var source in sources)if(source)source.Stop(); }
-        void Play(AudioClip clip, string identity, bool preview=false)
+        void Play(AudioClip clip, string identity, bool preview=false, bool gesture=false)
         {
             bool admitted=preview?ForegroundAudio && !musicSuspended && effectsGain>0:CanPlay;
             if(!admitted || !clip)return;
-            var source=sources[cursor++%Voices]; source.Stop(); source.clip=clip; source.Play();
-            Debug.Log("ST_LS_AUDIO event="+identity);
+            var decision=preview || gesture ? null : CombatAdmission?.Invoke(identity);
+            if (!preview && !gesture && decision==null) return;
+            // Refuse an already stale attempt before touching an existing voice.
+            // Allocate its single witness before either clock sample.
+            if (decision==null || decision.Admit(CombatClock()))
+            {
+                var source=sources[cursor%Voices]; source.Stop(); source.clip=clip;
+                // Include source preparation in the final age. No allocation,
+                // serialization or logging intervenes between this check and Play.
+                if (decision==null || decision.Admit(CombatClock())) { source.Play(); cursor++; }
+            }
+            if (decision!=null) Debug.Log("ST_ENC_CALLBACK "+JsonUtility.ToJson(decision));
+            if (decision==null || decision.played) Debug.Log("ST_LS_AUDIO event="+identity);
         }
         public void PreviewEffect()
         {
@@ -122,12 +138,13 @@ namespace SingedTerra.LastStand
             {
                 case EncounterEventKind.Cannon: Play(cannon,"cannon"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.Launcher: Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
+                case EncounterEventKind.Scattergun: Play(scattergun,"scattergun"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.CloseHit:
                 case EncounterEventKind.RangedHit: Play(impact,"impact"); break;
             }
         }
         public void PlayDefeat() { Play(defeat,"defeat"); }
-        public void PlayPurchase() { Play(purchase,"purchase"); }
+        public void PlayPurchase() { Play(purchase,"purchase",gesture:true); }
         // Visibility callbacks own visibility only. The controller owns explicit
         // Pause/failure/catch-up suspension, which focus return must not clear.
         void OnApplicationFocus(bool value) { focused=value; if(!value)Stop(); SyncMusic(); }
@@ -137,7 +154,7 @@ namespace SingedTerra.LastStand
             Stop();
             if(music) { music.SetPlayback(false,0); Destroy(music); }
             foreach(var source in sources)if(source)Destroy(source);
-            foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase})if(clip)Destroy(clip);
+            foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase,scattergun})if(clip)Destroy(clip);
         }
     }
 }

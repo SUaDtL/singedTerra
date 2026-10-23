@@ -70,9 +70,13 @@ internal static class ShopVerticalChecks
         var tracks = tracksProperty.GetValue(null);
         var result = new List<object>();
         foreach (var track in (IEnumerable)tracks) result.Add(track);
-        Equal(result.Count, 6, "Exactly six tracks");
+        Equal(result.Count, 7, "Six preserved tracks plus explicit Scattergun Attack");
+        Equal(Text(result[6], "Key"), "scattergunAttack", "New stable track is appended, never reindexes historical slots");
         var list = tracks as IList;
         Require(list != null && list.IsReadOnly, "Callers cannot replace catalog definitions.");
+        // This historical suite retains its original six-track numeric oracles.
+        // The wave/economy suite covers the appended fitting and full seven-track snapshots.
+        result.RemoveAt(6);
         return result.ToArray();
     }
 
@@ -115,7 +119,7 @@ internal static class ShopVerticalChecks
                 }
             }
             Rejected(() => Call(definition, "EffectAt", -1, 20), "Negative total level");
-            Rejected(() => Call(definition, "EffectAt", 9, 20), "Above-cap total level");
+            Rejected(() => Call(definition, "EffectAt", (int)Get(definition, "TotalCap") + 1, 20), "Above-cap total level");
         }
         Equal(Call(tracks[0], "EffectAt", 0, 20), EncounterModel.CannonDamage, "Existing zero cannon damage");
         Equal(Call(tracks[1], "EffectAt", 0, 20), EncounterModel.LauncherDamage, "Existing zero launcher damage");
@@ -155,7 +159,7 @@ internal static class ShopVerticalChecks
             var next = cycle.Project(1, 0, LastStandFitting.Repair);
             Equal(next.CurrentEffectDescription, "0.95s between cannon shots", "Current fractional seconds");
             Equal(next.NextEffectDescription, "0.9s between cannon shots", "Next fractional seconds");
-            Equal(cycle.Project(3, 5, LastStandFitting.Repair).NextEffectDescription, "MAX", "Capped interval still has no next effect");
+            Equal(cycle.Project(3, cycle.TotalCap - 3, LastStandFitting.Repair).NextEffectDescription, "MAX", "Capped interval still has no next effect");
         }
         finally { CultureInfo.CurrentCulture = culture; }
     }
@@ -170,6 +174,7 @@ internal static class ShopVerticalChecks
         for (int i = 0; i < tracks.Length; i++)
         {
             var definition = tracks[i];
+            int cap=(int)Get(definition,"TotalCap"), permanentCap=(int)Get(definition,"PermanentCap");
             Equal(Call(definition, "IsEligible", launcher), i != 5, Keys[i] + " launcher eligibility");
             Equal(Call(definition, "IsEligible", repair), i != 1, Keys[i] + " repair eligibility");
             Rejected(() => Call(definition, "IsEligible", Enum.ToObject(fittingType, 99)), "Unknown fitting");
@@ -178,12 +183,12 @@ internal static class ShopVerticalChecks
             for (int permanent = 0; permanent <= 3; permanent++)
             {
                 var actual = (MechanicsShopTrack)Call(definition, "CreateTrack", permanent, 0);
-                Equal(actual.Cap, 8, "Every track has M=8");
-                for (int purchases = 0; purchases <= 8 - permanent; purchases++)
+                Equal(actual.Cap, cap, "Track-specific total cap");
+                for (int purchases = 0; purchases <= cap - permanent; purchases++)
                 {
                     Equal(actual.CurrentLevel, permanent + purchases, "Actual foundation level");
                     Equal(actual.RunPurchases, purchases, "Actual independent n");
-                    Equal(actual.RemainingPurchases, 8 - permanent - purchases, "Actual remaining levels");
+                    Equal(actual.RemainingPurchases, cap - permanent - purchases, "Actual remaining levels");
                     var projected = Call(definition, "Project", permanent, purchases, compatible);
                     Equal(Get(projected, "PermanentLevel"), permanent, "Projection P");
                     Equal(Get(projected, "RunPurchases"), purchases, "Projection n");
@@ -192,21 +197,21 @@ internal static class ShopVerticalChecks
                     Equal(Get(projected, "CurrentEffectDescription"), Call(definition, "DescribeEffect", actual.CurrentLevel), "Current effect is catalog-owned");
                     bool capped = actual.RemainingPurchases == 0;
                     Equal(Get(projected, "CanPurchase"), !capped, "Compatible cap eligibility");
-                    Equal(Get(projected, "NextPrice"), capped ? null : (object)(5 * (purchases + 1)), "Temporary price ignores P");
-                    Equal(Get(projected, "PriceDescription"), capped ? "MAX" : (5 * (purchases + 1)) + " Scrap", "Authoritative price description");
+                    Equal(Get(projected, "NextPrice"), capped ? null : (object)Price(purchases + 1), "Temporary price ignores P");
+                    Equal(Get(projected, "PriceDescription"), capped ? "MAX" : Price(purchases + 1) + " Scrap", "Authoritative price description");
                     Equal(Get(projected, "NextEffectDescription"), capped ? "MAX" : Call(definition, "DescribeEffect", actual.CurrentLevel + 1), "No nonexistent next effect at cap");
-                    Equal(Get(projected, "NextPermanentPrice"), permanent == 3 ? null : (object)(permanent + 1), "Permanent 1/2/3 Salvage price");
-                    Equal(Get(projected, "PermanentPriceDescription"), permanent == 3 ? "MAX" : (permanent + 1) + " Salvage", "Permanent price description");
+                    Equal(Get(projected, "NextPermanentPrice"), permanent == permanentCap ? null : (object)PermanentPrice(permanent + 1), "Permanent 1/2/3 Salvage price");
+                    Equal(Get(projected, "PermanentPriceDescription"), permanent == permanentCap ? "MAX" : PermanentPrice(permanent + 1) + " Salvage", "Permanent price description");
                     if (capped)
                     {
                         Require(!actual.TryPurchase(), "A ninth total level is refused.");
-                        Equal(actual.CurrentLevel, 8, "Cap refusal preserves level");
+                        Equal(actual.CurrentLevel, cap, "Cap refusal preserves level");
                         Equal(actual.RunPurchases, purchases, "Cap refusal preserves n");
                         Equal(Get(projected, "UnavailableReason"), "MAX", "Cap reason");
                     }
                     else
                     {
-                        Equal(actual.NextRunPrice, 5 * (purchases + 1), "Actual foundation uses catalog price");
+                        Equal(actual.NextRunPrice, Price(purchases + 1), "Actual foundation uses catalog price");
                         Require(actual.TryPurchase(), "Each allowed purchase increments exactly once.");
                     }
                     if (i == 1 || i == 5)
@@ -224,9 +229,9 @@ internal static class ShopVerticalChecks
             Equal(other.RunPurchases, 0, "Another track n stays independent");
             Equal(other.NextRunPrice, 5, "Another track first price remains 5");
             Rejected(() => Call(definition, "CreateTrack", -1, 0), "Negative P");
-            Rejected(() => Call(definition, "CreateTrack", 4, 0), "Above permanent cap P");
+            Rejected(() => Call(definition, "CreateTrack", permanentCap + 1, 0), "Above permanent cap P");
             Rejected(() => Call(definition, "CreateTrack", 0, -1), "Negative n");
-            Rejected(() => Call(definition, "CreateTrack", 3, 6), "Above remaining n cap");
+            Rejected(() => Call(definition, "CreateTrack", 3, cap - 2), "Above remaining n cap");
         }
         var catalog = tracks[0].GetType().Assembly.GetType("SingedTerra.LastStand.LastStandUpgradeCatalog");
         var lookup = catalog.GetMethod("TryGet", BindingFlags.Public | BindingFlags.Static);
@@ -245,7 +250,7 @@ internal static class ShopVerticalChecks
             Equal(Text(typed, "Id"), Ids[i], "Typed Get exact ID");
             Equal(Text(typed, "Key"), Keys[i], "Typed Get exact key");
         }
-        foreach (int invalidId in new[] { -1, 6, 99, int.MaxValue })
+        foreach (int invalidId in new[] { -1, 7, 99, int.MaxValue })
             RejectedParameter(() => CallStatic(typedLookup, Enum.ToObject(trackIdType, invalidId)), "id",
                 "Typed Get invalid id=" + invalidId);
         foreach (var unknown in new[] { null, "", "CannonAttack", "cannonAttack ", "unknown" })
@@ -253,6 +258,20 @@ internal static class ShopVerticalChecks
             object[] args = { unknown, null };
             Equal(lookup.Invoke(null, args), false, "Unknown/invalid key refused");
             Equal(args[1], null, "Unknown key returns no definition");
+        }
+    }
+
+    static int Price(int n) {long extra=Math.Max(0,n-8);return checked((int)(5L*n+extra*extra/40));}
+    static int PermanentPrice(int n) {long extra=Math.Max(0,n-3);return checked((int)(n+extra*extra/16));}
+    static void FillToCap(object ledger,int index)
+    {
+        Call(ledger,"ObserveAuthoritativeKills",LastStandShopState.MaximumUniqueKills);
+        int cap=LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)index).TotalCap;
+        while((int)Get(LedgerTrack(ledger,index),"CurrentLevel")<cap) {
+            int n=(int)Get(LedgerTrack(ledger,index),"RunPurchases");
+            var result=Call(ledger,"TryPurchase",PurchaseIntent(ledger,index));
+            Equal(Get(result,"Accepted"),true,"Funded purchase reaches declared extended cap");
+            Equal(Get(result,"ChargedScrap"),Price(n+1),"Extended purchase charges exact independent price");
         }
     }
 
@@ -264,6 +283,8 @@ internal static class ShopVerticalChecks
         var fittingType = assembly.GetType("SingedTerra.LastStand.LastStandFitting");
         var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>) });
         Require(constructor != null, "The ledger must freeze six permanent levels for an identified run and fitting.");
+        // Explicitly append zero for the new track to these preserved six-slot test inputs.
+        if(permanentLevels != null && permanentLevels.Length == 6) { var expanded = new int[7]; Array.Copy(permanentLevels, expanded, 6); permanentLevels = expanded; }
         try { return constructor.Invoke(new object[] { runId, Enum.Parse(fittingType, launcher ? "Launcher" : "Repair"), permanentLevels }); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
@@ -344,23 +365,24 @@ internal static class ShopVerticalChecks
                 string empty = LedgerFingerprint(ledger);
                 Require(!PurchaseLedgerLevel(ledger, i), "No funds means no purchase.");
                 Equal(LedgerFingerprint(ledger), empty, "Insufficient funds change no track, total or version");
-                Equal(Call(ledger, "ObserveAuthoritativeKills", 100), true, "Authoritative growth funds the ledger");
+                Equal(Call(ledger, "ObserveAuthoritativeKills", LastStandShopState.MaximumUniqueKills), true, "Authoritative growth funds the ledger");
+                int cap=(int)Get(definitions[i],"TotalCap");
                 int spent = 0;
                 int otherIndex = i == 0 ? 2 : 0;
-                for (int purchases = 0; purchases <= 8 - permanent; purchases++)
+                for (int purchases = 0; purchases <= cap - permanent; purchases++)
                 {
                     var view = LedgerTrack(ledger, i);
                     Equal(Get(view, "PermanentLevel"), permanent, Keys[i] + " frozen P");
                     Equal(Get(view, "RunPurchases"), purchases, Keys[i] + " independent n");
                     Equal(Get(view, "CurrentLevel"), permanent + purchases, Keys[i] + " P+n");
-                    Equal(Get(view, "RemainingPurchases"), 8 - permanent - purchases, Keys[i] + " remaining cap");
-                    bool capped = purchases == 8 - permanent;
-                    Equal(Get(view, "NextPrice"), capped ? null : (object)(5 * (purchases + 1)), "Ledger price ignores P");
-                    Equal(Get(view, "PriceDescription"), capped ? "MAX" : (5 * (purchases + 1)) + " Scrap", "Ledger uses catalog price text");
+                    Equal(Get(view, "RemainingPurchases"), cap - permanent - purchases, Keys[i] + " remaining cap");
+                    bool capped = purchases == cap - permanent;
+                    Equal(Get(view, "NextPrice"), capped ? null : (object)Price(purchases + 1), "Ledger price ignores P");
+                    Equal(Get(view, "PriceDescription"), capped ? "MAX" : Price(purchases + 1) + " Scrap", "Ledger uses catalog price text");
                     Equal(Get(view, "CurrentEffectDescription"), Call(definitions[i], "DescribeEffect", permanent + purchases), "Ledger uses catalog effect");
                     Equal(Get(ledger, "SpentScrap"), spent, "Spent is exactly successful charges");
-                    Equal(Get(ledger, "Scrap"), 300 - spent, "Balance conserves earned minus spent");
-                    Equal(Get(ledger, "EarnedScrap"), 300, "Purchasing never changes earned income");
+                    Equal(Get(ledger, "Scrap"), LastStandShopState.MaximumUniqueKills * 3 - spent, "Balance conserves earned minus spent");
+                    Equal(Get(ledger, "EarnedScrap"), LastStandShopState.MaximumUniqueKills * 3, "Purchasing never changes earned income");
                     Equal(Get(ledger, "Version"), 1 + purchases, "Only admitted mutations advance the version");
                     Equal(Get(LedgerTrack(ledger, otherIndex), "RunPurchases"), 0, "Other track n remains zero");
                     Equal(Get(LedgerTrack(ledger, otherIndex), "NextPrice"), 5, "Other track first price remains 5");
@@ -374,7 +396,7 @@ internal static class ShopVerticalChecks
                     else
                     {
                         Require(PurchaseLedgerLevel(ledger, i), "Each funded compatible level admits one debit and increment.");
-                        spent += 5 * (purchases + 1);
+                        spent += Price(purchases + 1);
                     }
                 }
                 Equal(Get(firstView, "RunPurchases"), 0, "Retained observation cannot mutate with the ledger");
@@ -396,7 +418,7 @@ internal static class ShopVerticalChecks
             Equal(LedgerFingerprint(ledger), before, "Incompatible refusal changes nothing");
         }
         RejectedParameter(() => ActualLedger(0, true, new int[6]), "runId", "Invalid run identity");
-        Rejected(() => ActualLedger(1, true, new[] { 0, 0, 4, 0, 0, 0 }), "Above permanent cap");
+        Rejected(() => ActualLedger(1, true, new[] { 0, 0, LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.HullCapacity).PermanentCap + 1, 0, 0, 0 }), "Above permanent cap");
         Rejected(() => ActualLedger(1, true, new[] { 0, -1, 0, 0, 0, 0 }), "Negative permanent level");
 
         var progressed = ActualLedger(22, true, new int[6]);
@@ -436,10 +458,10 @@ internal static class ShopVerticalChecks
             " spent=" + Get(progressed, "SpentScrap") + " version=" + Get(progressed, "Version"));
 
         RejectedConstructor(() => ActualLedger(23, 0, null), typeof(ArgumentNullException), "permanentLevels", "Null permanent snapshot");
-        foreach (int count in new[] { 0, 5, 7 })
+        foreach (int count in new[] { 0, 5, 6, 8 })
             RejectedConstructor(() => ActualLedger(23, 0, new int[count]), typeof(ArgumentException), "permanentLevels",
                 "Wrong permanent snapshot count=" + count);
-        RejectedConstructor(() => ActualLedger(23, 99, new int[6]), typeof(ArgumentOutOfRangeException), "fitting", "Undefined ledger fitting=99");
+        RejectedConstructor(() => ActualLedger(23, 99, new int[7]), typeof(ArgumentOutOfRangeException), "fitting", "Undefined ledger fitting=99");
     }
 
     static void LedgerUniqueKillIncome()
@@ -625,8 +647,9 @@ internal static class ShopVerticalChecks
                     RefusedPurchase(ledger, intent, "StaleVersion");
                     if (firstResult == null) firstResult = result;
                 }
+                FillToCap(ledger, i);
                 var capped = LedgerTrack(ledger, i);
-                Equal(Get(capped, "CurrentLevel"), 8, "Every track ends at the total cap");
+                Equal(Get(capped, "CurrentLevel"), LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)i).TotalCap, "Every track ends at the total cap");
                 Equal(Get(capped, "NextPrice"), null, "At cap there is no nonexistent next price");
                 Equal(Get(capped, "NextEffectDescription"), "MAX", "At cap there is no nonexistent next effect");
                 RefusedPurchase(ledger, PurchaseIntent(ledger, i), "AtCap");
@@ -654,7 +677,7 @@ internal static class ShopVerticalChecks
             RefusedPurchase(ledger, PurchaseIntent(ledger, 0, run), "WrongRun");
         foreach (int version in new[] { -1, 1, int.MaxValue })
             RefusedPurchase(ledger, PurchaseIntent(ledger, 0, null, version), "StaleVersion");
-        foreach (int unknown in new[] { -1, 6, 99, int.MaxValue })
+        foreach (int unknown in new[] { -1, 7, 99, int.MaxValue })
             RefusedPurchase(ledger, PurchaseIntent(ledger, unknown), "UnknownTrack");
         RefusedPurchase(ledger, PurchaseIntent(ledger, 5), "WrongFitting");
         RefusedPurchase(ledger, noFunds, "InsufficientScrap");
@@ -1050,6 +1073,8 @@ internal static class ShopVerticalChecks
                         " hull=" + beforeHull + "->" + model.Hull + " max=" + AppliedMaximumHull(model));
                 }
                 Require(applied, "Playable model admits actual defense projection.");
+                FillToCap(ledger, 2);
+                ApplyLedgerDefense(model, ledger);
                 RefusedPurchase(ledger, PurchaseIntent(ledger, 2), "AtCap");
                 int cappedHull = model.Hull;
                 Require(ApplyLedgerDefense(model, ledger), "Cap refresh retains the current projection.");
@@ -1286,6 +1311,7 @@ internal static class ShopVerticalChecks
                         " last=" + lastShot + " shot=" + model.Tick + " period=" + period);
                 }
                 Require(applied, "Playable model admits the numeric catalog period");
+                FillToCap(ledger, 4);
                 RefusedPurchase(ledger, PurchaseIntent(ledger, 4), "AtCap");
             }
 
@@ -1533,6 +1559,8 @@ internal static class ShopVerticalChecks
                     " restored=" + Effects[5][permanent + n] + " hull=" + model.Hull + " max=" + AppliedMaximumHull(model));
             }
             Require(applied, "Repair fitting admits the numeric catalog amount");
+            FillToCap(ledger, 5);
+            ApplyLedgerRepair(model, ledger);
             RefusedPurchase(ledger, PurchaseIntent(ledger, 5), "AtCap");
             string capped = model.Snapshot();
             Require(ApplyLedgerRepair(model, ledger), "Unchanged capped repair projection remains admissible");
@@ -1663,10 +1691,11 @@ internal static class ShopVerticalChecks
     {
         var cards = (IList)Get(view, "Cards");
         Require(cards.IsReadOnly, "The card collection cannot be replaced or reordered.");
-        Equal(cards.Count, 6, "Exactly six immutable cards in catalog order");
+        Equal(cards.Count, 7, "Six historical cards plus appended Scattergun Attack");
+        Equal(Get(cards[6], "Key"), "scattergunAttack", "Appended card preserves existing ordering");
         var result = new object[cards.Count];
         cards.CopyTo(result, 0);
-        foreach (object item in new[] { view, result[0], result[1], result[2], result[3], result[4], result[5] })
+        foreach (object item in new[] { view, result[0], result[1], result[2], result[3], result[4], result[5], result[6] })
         {
             foreach (var property in item.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 Require(property.GetSetMethod() == null, "Presentation exposes no public setter: " + property.Name);
@@ -1677,6 +1706,7 @@ internal static class ShopVerticalChecks
                     field.FieldType != typeof(LastStandProgression) && field.FieldType != typeof(MechanicsShopTrack),
                     "Copied presentation retains no callback or mutable owner: " + field.Name);
         }
+        Array.Resize(ref result, 6); // Preserve original card oracles; new fitting has dedicated wave tests.
         return result;
     }
 
@@ -1695,7 +1725,8 @@ internal static class ShopVerticalChecks
 
     static void PresentationCard(object card, int index, int permanent, int purchases, bool permanentMode, bool launcher)
     {
-        int level = permanent + purchases, cap = permanentMode ? 3 : 8;
+        var definition=LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)index);
+        int level = permanent + purchases, cap = permanentMode ? definition.PermanentCap : definition.TotalCap;
         bool capped = level == cap, applies = index != (launcher ? 5 : 1);
         Equal(Text(card, "TrackId"), Ids[index], "Card has the catalog typed identity");
         Equal(Get(card, "Key"), Keys[index], "Card has the catalog save key");
@@ -1709,12 +1740,12 @@ internal static class ShopVerticalChecks
         Equal(Get(card, "RemainingPurchases"), cap - level, "Card has context remaining levels");
         Equal(Get(card, "AppliesToFitting"), applies, "Card reports combat fitting applicability");
         Equal(Get(card, "IsDormant"), permanentMode && !applies, "Permanent dormant fitting is informational");
-        int? price = capped ? (int?)null : permanentMode ? permanent + 1 : 5 * (purchases + 1);
+        int? price = capped ? (int?)null : permanentMode ? PermanentPrice(permanent + 1) : Price(purchases + 1);
         Equal(Get(card, "NextPrice"), price, "Card has the exact context price");
         Equal(Get(card, "PriceDescription"), capped ? "MAX" : price + (permanentMode ? " Salvage" : " Scrap"), "Card names the correct currency");
         string effect = index == 3 ? "reduce hits by " + level + " (minimum 1 damage)" :
             index == 4 ? CycleSeconds[level] + "s between cannon shots" : Effects[index][level] + Units[index];
-        string next = capped ? "MAX" : index == 3 ? "reduce hits by " + (level + 1) + " (minimum 1 damage)" :
+        string next = capped ? "MAX" : level >= 8 ? definition.DescribeEffect(level + 1) : index == 3 ? "reduce hits by " + (level + 1) + " (minimum 1 damage)" :
             index == 4 ? CycleSeconds[level + 1] + "s between cannon shots" : Effects[index][level + 1] + Units[index];
         Equal(Get(card, "CurrentEffectDescription"), effect, "Card current effect is exact");
         Equal(Get(card, "NextEffectDescription"), next, "Card never invents an effect above its context cap");
@@ -1773,7 +1804,7 @@ internal static class ShopVerticalChecks
                     Equal(Text(view, "Lifecycle"), "Running", "View copies the actual lifecycle");
                     var cards = PresentationCards(view);
                     for (int i = 0; i < 6; i++) PresentationCard(cards[i], i, i == index ? permanent : 0, i == index ? n : 0, false, launcher);
-                    PresentationReason(cards[index], n == 8 - permanent ? "AtCap" : "None", n == 8 - permanent ? "MAX" : "Ready");
+                    PresentationReason(cards[index], "None", "Ready");
                     string retained = PresentationFingerprint(view);
                     if (n != 8 - permanent)
                     {
@@ -1781,6 +1812,8 @@ internal static class ShopVerticalChecks
                         Equal(PresentationFingerprint(view), retained, "Retained run view cannot follow mutable owner changes");
                     }
                 }
+                FillToCap(ledger,index);
+                PresentationReason(PresentationCards(Presentation("ProjectRun",ledger))[index],"AtCap","MAX");
             }
         foreach (bool launcher in new[] { false, true })
         {
@@ -1790,6 +1823,7 @@ internal static class ShopVerticalChecks
             var emptyCards = PresentationCards(emptyView);
             PresentationReason(emptyCards[0], "InsufficientScrap", "Not enough Scrap");
             PresentationReason(emptyCards[launcher ? 5 : 1], "WrongFitting", launcher ? "Requires repair fitting" : "Requires launcher fitting");
+            PresentationReason(((LastStandShopView)emptyView).Cards[6], "WrongFitting", "Requires scattergun fitting");
             Call(empty, "ObserveAuthoritativeKills", 2);
             Equal(PresentationFingerprint(emptyView), emptyCopy, "Retained wallet and cards cannot change when actual income arrives");
             var fundedView = Presentation("ProjectRun", empty);
@@ -1839,7 +1873,7 @@ internal static class ShopVerticalChecks
                 for (int i = 0; i < 6; i++)
                 {
                     PresentationCard(cards[i], i, permanent, 0, true, launcher);
-                    PresentationReason(cards[i], permanent == 3 ? "AtCap" : "None", permanent == 3 ? "MAX" : "Ready");
+                    PresentationReason(cards[i], "None", "Ready");
                 }
                 string frozen = PresentationFingerprint(view);
                 if (permanent < 3)

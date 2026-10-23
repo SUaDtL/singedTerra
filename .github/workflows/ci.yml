@@ -76,7 +76,7 @@ jobs:
       - name: Initialize Last Stand evidence root
         run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Scope and required-result regressions
-        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs
+        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs scripts/ci/lastStandWaveQualification.test.mjs scripts/ci/lastStandWaveJourney.test.mjs scripts/ci/lastStandWaveEvidence.test.mjs scripts/ci/lastStandHistoricalShop.test.mjs scripts/ci/lastStandMilestoneSetup.test.mjs scripts/ci/lastStandEndurance.test.mjs
       - name: Verify and select the complete browser matrix
         id: browser-matrix
         run: |
@@ -197,13 +197,13 @@ jobs:
       - name: Battle console responsive and interaction checks
         if: matrix.suite == 'product'
         run: npx playwright test -c playwright.product-completion.config.ts
-      - name: Last Stand tier progression journey
+      - name: Last Stand wave checkpoint journey
         if: matrix.suite == 'tier'
         env:
           VITE_BASE: /singedTerra/
           E2E_DENY_EXTERNAL_NETWORK: '1'
           LAST_STAND_QUALIFICATION_PROFILE: linux-functional
-        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand tier goals"
+        run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand earned waves"
       - name: Last Stand shared Campaigns journey
         if: matrix.suite == 'campaigns'
         env:

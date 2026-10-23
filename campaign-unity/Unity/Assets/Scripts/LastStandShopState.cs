@@ -3,6 +3,22 @@ using System.Collections.Generic;
 
 namespace SingedTerra.LastStand
 {
+    public sealed class LastStandShopCheckpoint
+    {
+        public const int Version=1;
+        public readonly int RunId,Fitting,PurchaseSequence,UniqueKills,EarnedScrap,SpentScrap,Scrap;
+        public readonly IReadOnlyList<int> PermanentLevels,RunPurchases;
+        public LastStandShopCheckpoint(int runId,int fitting,int purchaseSequence,int uniqueKills,int earnedScrap,int spentScrap,int scrap,
+            IReadOnlyList<int> permanentLevels,IReadOnlyList<int> runPurchases)
+        {
+            if(permanentLevels==null || runPurchases==null)throw new ArgumentNullException(nameof(permanentLevels));
+            RunId=runId;Fitting=fitting;PurchaseSequence=purchaseSequence;UniqueKills=uniqueKills;EarnedScrap=earnedScrap;SpentScrap=spentScrap;Scrap=scrap;
+            var permanent=new int[permanentLevels.Count];var temporary=new int[runPurchases.Count];
+            for(int n=0;n<permanent.Length;n++)permanent[n]=permanentLevels[n];
+            for(int n=0;n<temporary.Length;n++)temporary[n]=runPurchases[n];
+            PermanentLevels=Array.AsReadOnly(permanent);RunPurchases=Array.AsReadOnly(temporary);
+        }
+    }
     public enum LastStandShopPurchaseLifecycle { Running, Paused, CatchingUp, Defeated, Exited, Limit, Failed, Inactive }
     public enum LastStandShopPurchaseRefusal
     {
@@ -82,6 +98,38 @@ namespace SingedTerra.LastStand
                 tracks[index] = LastStandUpgradeCatalog.Tracks[index].CreateTrack(permanentLevels[index], 0);
             RunId = runId;
             Fitting = fitting;
+        }
+        public LastStandShopCheckpoint CaptureCheckpoint()
+        {
+            if(IsPurchaseTerminal)throw new InvalidOperationException("Finalized shop cannot resume.");
+            var permanent=new int[tracks.Length];var temporary=new int[tracks.Length];
+            for(int n=0;n<tracks.Length;n++){permanent[n]=tracks[n].PersistentLevel;temporary[n]=tracks[n].RunPurchases;}
+            return new LastStandShopCheckpoint(RunId,(int)Fitting,Version,UniqueKills,EarnedScrap,SpentScrap,Scrap,permanent,temporary);
+        }
+        public static LastStandShopState RestoreCheckpoint(LastStandShopCheckpoint s)
+        {
+            if(s==null || s.RunId<1 || s.PurchaseSequence<0 || s.UniqueKills<0 || s.UniqueKills>MaximumUniqueKills ||
+                s.EarnedScrap!=(long)s.UniqueKills*ScrapPerKill || s.SpentScrap<0 || s.Scrap<0 || (long)s.SpentScrap+s.Scrap!=s.EarnedScrap ||
+                s.PermanentLevels.Count!=LastStandUpgradeCatalog.Tracks.Count || s.RunPurchases.Count!=s.PermanentLevels.Count)
+                throw new ArgumentException("Invalid shop checkpoint accounting.");
+            var shop=new LastStandShopState(s.RunId,(LastStandFitting)s.Fitting,s.PermanentLevels);
+            long spent=0,purchases=0;
+            for(int n=0;n<shop.tracks.Length;n++) {
+                var definition=LastStandUpgradeCatalog.Tracks[n];
+                if(s.RunPurchases[n]>0 && !definition.IsEligible(shop.Fitting))throw new ArgumentException("Wrong fitting purchase.");
+                shop.tracks[n]=definition.CreateTrack(s.PermanentLevels[n],s.RunPurchases[n]);
+                for(int level=1;level<=s.RunPurchases[n];level++)spent+=definition.RunPrice(level);
+                purchases+=s.RunPurchases[n];
+            }
+            if(spent!=s.SpentScrap || purchases>s.PurchaseSequence)throw new ArgumentException("Checkpoint purchases do not match accounting.");
+            // Quotes belong to one live shop instance; none survives a reload.
+            // Rebase that volatile epoch after validating the durable paid
+            // levels, so a corrupt near-overflow epoch cannot break resume,
+            // income, purchasing or finalization. The validated purchase count
+            // keeps subsequent checkpoints consistent with the same ledger.
+            shop.Version=checked((int)purchases);shop.UniqueKills=s.UniqueKills;shop.EarnedScrap=s.EarnedScrap;shop.SpentScrap=s.SpentScrap;shop.Scrap=s.Scrap;
+            shop.PurchaseLifecycle=LastStandShopPurchaseLifecycle.Paused;
+            return shop;
         }
 
         // Returns a frozen catalog projection, never the ledger's mutable track.

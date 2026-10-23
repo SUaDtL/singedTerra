@@ -59,10 +59,10 @@ class WebEntryTests(unittest.TestCase):
             with self.subTest(scene=scene):
                 self.assertNotIn('last-stand-return', self.render(scene))
 
-    def test_last_stand_return_discloses_unfinished_run_loss(self):
+    def test_last_stand_return_discloses_paused_wave_checkpoint_resume(self):
         html = self.render('last-stand')
-        self.assertIn('Leaving or reloading an unfinished run loses its progress without a reward.', html)
-        self.assertIn('Saved upgrades and pending defeat rewards stay in this browser only after a successful save.', html)
+        self.assertIn('Return or reload safely: Resume Run restores your last saved wave, paused.', html)
+        self.assertIn('Only progress since that checkpoint is replayed. Saves and earned rewards stay in this browser.', html)
         self.assertIn('aria-describedby="last-stand-loss"', html)
         self.assertIn('id="last-stand-loss"', html)
         self.assertLess(html.index('id="last-stand-loss"'), html.index('id="unity-canvas"'))

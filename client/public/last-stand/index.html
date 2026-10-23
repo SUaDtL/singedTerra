@@ -28,13 +28,13 @@ canvas{height:calc(100vh - var(--nav-height))}
 <link rel="icon" href="TemplateData/favicon.ico">
 </head>
 <body>
-<nav id="last-stand-nav" aria-label="Last Stand navigation"><span>LAST STAND</span><a id="last-stand-return" href="../#campaigns/last-stand" aria-label="Return to Campaigns" aria-describedby="last-stand-loss"><span class="full" aria-hidden="true">← Return to Campaigns</span><span class="short" aria-hidden="true">← Campaigns</span></a><p id="last-stand-loss">Leaving or reloading an unfinished run loses its progress without a reward. Saved upgrades and pending defeat rewards stay in this browser only after a successful save.</p></nav>
+<nav id="last-stand-nav" aria-label="Last Stand navigation"><span>LAST STAND</span><a id="last-stand-return" href="../#campaigns/last-stand" aria-label="Return to Campaigns" aria-describedby="last-stand-loss"><span class="full" aria-hidden="true">← Return to Campaigns</span><span class="short" aria-hidden="true">← Campaigns</span></a><p id="last-stand-loss">Return or reload safely: Resume Run restores your last saved wave, paused. Only progress since that checkpoint is replayed. Saves and earned rewards stay in this browser.</p></nav>
 <canvas id="unity-canvas" width="1600" height="900" tabindex="0" aria-label="Interactive Last Stand"></canvas>
 <div id="loading"><h1>singedTerra</h1><span id="status">Loading Last Stand</span><progress id="progress" value="0" max="1"></progress><p id="error"></p><a id="retry" href="">Retry</a></div>
-<script src="Build/Web-20261022T074236Z-ae40a0.loader.js"></script>
+<script src="Build/Web-20261023T144559Z-97fac3.loader.js"></script>
 <script>
 const canvas=document.querySelector('#unity-canvas');
-const config={dataUrl:'Build/Web-20261022T074236Z-ae40a0.data',frameworkUrl:'Build/Web-20261022T074236Z-ae40a0.framework.js',codeUrl:'Build/Web-20261022T074236Z-ae40a0.wasm',streamingAssetsUrl:'StreamingAssets',companyName:'singedTerra',productName:'Last Stand Prototype',productVersion:'0.1-art01',matchWebGLToCanvasSize:true};
+const config={dataUrl:'Build/Web-20261023T144559Z-97fac3.data',frameworkUrl:'Build/Web-20261023T144559Z-97fac3.framework.js',codeUrl:'Build/Web-20261023T144559Z-97fac3.wasm',streamingAssetsUrl:'StreamingAssets',companyName:'singedTerra',productName:'Last Stand Prototype',productVersion:'0.1-art01',matchWebGLToCanvasSize:true};
 config.showBanner=(message,type)=>{console[type==='error'?'error':'warn'](message);if(type==='error')showError(message)};
 function showError(message){console.error('Last Stand load failed',message);document.querySelector('#loading').style.display='grid';document.querySelector('#status').textContent='Scene could not load';document.querySelector('#progress').style.display='none';const e=document.querySelector('#error');e.style.display='block';e.textContent='Last Stand could not start. Check your connection and try again.';document.querySelector('#retry').style.display='inline-flex'}
 // Register before Unity: native Return/Retry keep normal browser activation.

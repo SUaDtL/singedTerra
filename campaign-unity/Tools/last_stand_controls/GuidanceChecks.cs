@@ -84,11 +84,11 @@ internal static class GuidanceChecks
         Check(guidance.Tutorial == "" && guidance.Suggestion == "", "setup disabled prompts");
         string help = LastStandGuidance.Help;
         foreach (string concept in new[] { "Pause/Resume", "0.5", "1x", "research", "Scrap", "Claim", "Salvage",
-            "Cannon Attack", "Launcher Attack", "Hull Capacity", "Armor", "Cannon Cycle", "Field Repair",
-            "Tier 2", "Unfinished runs", "reload", "do not sync with your account", "Essential save errors" })
+            "Cannon Attack", "Launcher Attack", "Hull Capacity", "Armor", "Cannon Cycle", "Field Repair", "Scattergun Attack",
+            "Tier 2", "checkpoint", "roll back together", "starts paused", "reload", "does not sync with your account", "Essential save errors" })
             Check(Contains(help, concept), "explicit Help lost required concept: " + concept);
         Check(!LastStandNavigationPolicy.CanLeave("blocked", false), "guidance off cannot hide save refusal");
-        Check(LastStandNavigationPolicy.RequiresConfirmation(1), "guidance off cannot remove run-loss confirmation");
+        Check(LastStandNavigationPolicy.RequiresAbandonConfirmation(1), "guidance off cannot remove destructive abandonment confirmation");
     }
 
     private static void NavigationRequiresReadyNoncatchup()
@@ -104,10 +104,13 @@ internal static class GuidanceChecks
 
     private static void NavigationConfirmationTracksActiveRun()
     {
-        Check(!LastStandNavigationPolicy.RequiresConfirmation(0), "no active run does not require abandonment");
+        Check(!LastStandNavigationPolicy.RequiresAbandonConfirmation(0), "no active run does not require abandonment");
         foreach (int run in new[] { 1, 2, 500, int.MaxValue })
-            Check(LastStandNavigationPolicy.RequiresConfirmation(run), "active run must require confirmation: " + run);
-        Check(LastStandNavigationPolicy.RequiresConfirmation(-1), "unknown nonzero active state must fail safely");
+        {
+            Check(!LastStandNavigationPolicy.RequiresConfirmation(run), "ordinary navigation keeps checkpoint without destructive confirmation: " + run);
+            Check(LastStandNavigationPolicy.RequiresAbandonConfirmation(run), "active run abandonment requires confirmation: " + run);
+        }
+        Check(LastStandNavigationPolicy.RequiresAbandonConfirmation(-1), "unknown nonzero destructive state must fail safely");
     }
 
     public static int Main(string[] args)

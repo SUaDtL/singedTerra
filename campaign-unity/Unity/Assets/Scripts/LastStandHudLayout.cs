@@ -154,6 +154,9 @@ namespace SingedTerra.LastStand
         { return Project(width, height, phase, activeControls, null); }
 
         public static Projection Project(float width, float height, string phase, string[] activeControls, ShopPanelInput shop)
+        { return Project(width,height,phase,activeControls,shop,false); }
+
+        public static Projection Project(float width,float height,string phase,string[] activeControls,ShopPanelInput shop,bool waveReceipt)
         {
             if (float.IsNaN(width) || float.IsInfinity(width) || width <= 0 ||
                 float.IsNaN(height) || float.IsInfinity(height) || height <= 0)
@@ -164,11 +167,11 @@ namespace SingedTerra.LastStand
             foreach(string id in activeControls) { if(id=="Menu")floatingMenu=true;else dockControls.Add(id); }
             activeControls=dockControls.ToArray();
             int actionCount = activeControls.Length;
-            if (shop != null && shop.Open) return WithFloatingMenu(OpenShop(width,height,phase,activeControls,shop,actionCount,floatingMenu),floatingMenu,completeActionCount);
+            if (shop != null && shop.Open) return WithFloatingMenu(OpenShop(width,height,phase,activeControls,shop,actionCount,floatingMenu,waveReceipt),floatingMenu,completeActionCount);
             if((phase=="garage" || phase=="workshop") && Array.IndexOf(activeControls,"TierNext")>=0)
                 return WithFloatingMenu(Garage(width,height,activeControls,actionCount),floatingMenu,completeActionCount);
             if((phase=="battle" || phase=="settling") && Array.IndexOf(activeControls,"SpeedRate")>=0)
-                return WithFloatingMenu(Combat(width,height,activeControls,actionCount,floatingMenu),floatingMenu,completeActionCount);
+                return WithFloatingMenu(Combat(width,height,activeControls,actionCount,floatingMenu,waveReceipt),floatingMenu,completeActionCount);
 
             var slots = new List<Slot>();
             bool battle = phase == "battle" || phase == "settling";
@@ -225,7 +228,7 @@ namespace SingedTerra.LastStand
         // The field keeps one small rate control and a separate upgrade entry.
         // Settings owns audio/display; future wave information belongs in the
         // instrument card rather than another row of unrelated action buttons.
-        static Projection Combat(float width,float height,string[] controls,int actionCount,bool floatingMenu)
+        static Projection Combat(float width,float height,string[] controls,int actionCount,bool floatingMenu,bool waveReceipt)
         {
             var slots=new List<Slot>();
             bool shortBattle=width>=PortraitBreakpoint && height*.2f<Edge+BattleCardHeight;
@@ -256,7 +259,47 @@ namespace SingedTerra.LastStand
                     Control(slots,id,null,width-Edge-shopWidth,shopY,shopWidth,MinimumTargetSize);
                 }
             }
+            if(waveReceipt)
+            {
+                if(shortBattle)
+                {
+                    // Short landscape has no spare opaque area. Reuse the
+                    // secondary status/reward row while retaining every core
+                    // instrument, next milestone and input target.
+                    InlineReceipt(slots);
+                    return new Projection(width,height,slots,actionCount);
+                }
+                // A receipt is information, not another toolbar action. Wide
+                // views use the unused lower-left corner; portrait pairs it
+                // with the upgrade entry above the unchanged speed controls.
+                bool beside=left-Edge-Gap>=216;
+                float receiptY=beside?actionY:dockY-Gap-MinimumTargetSize;
+                float receiptWidth=beside?Math.Min(232,left-Edge-Gap):Math.Min(232,width-2*Edge-140-Gap);
+                Add(slots,"WaveReceiptPanel",null,"panel",Edge,receiptY,receiptWidth,MinimumTargetSize);
+                Text(slots,"WaveReceipt","WaveReceiptPanel",Edge+8,receiptY+4,receiptWidth-16,36,MinimumTextSize);
+            }
             return new Projection(width,height,slots,actionCount);
+        }
+
+        static void InlineReceipt(List<Slot> slots)
+        {
+            var first=slots.Find(s=>s.Id=="PhaseHeading").Bounds;
+            var last=slots.Find(s=>s.Id=="CannonDamage").Bounds;
+            slots.RemoveAll(s=>s.Id=="PhaseHeading" || s.Id=="CannonDamage");
+            if(first.Y<slots.Find(s=>s.Id=="HullValue").Bounds.Y)
+            {
+                // The narrow shop console already has four reading rows. Move
+                // remaining enemies beside the reward, and use its previous row
+                // for the receipt detail; hull, wave and next milestone stay put.
+                var remaining=slots.Find(s=>s.Id=="DisabledCount").Bounds;
+                slots.RemoveAll(s=>s.Id=="DisabledCount");
+                const float remainingWidth=92;
+                Text(slots,"DisabledCount","LastStandCard",first.X,first.Y,remainingWidth,LineHeight);
+                Text(slots,"WaveReceipt","LastStandCard",first.X+remainingWidth+Gap,first.Y,
+                    first.Width-remainingWidth-Gap,LineHeight);
+                Text(slots,"WaveReceiptDetail","LastStandCard",remaining.X,remaining.Y,first.Width,LineHeight);
+            }
+            else Text(slots,"WaveReceipt","LastStandCard",first.X,first.Y,last.X+last.Width-first.X,LineHeight);
         }
 
         // Garage preparation has its own hierarchy: the fixed-size selectors
@@ -365,7 +408,7 @@ namespace SingedTerra.LastStand
             return Math.Min(width - 2 * edge, Math.Min(desired, MaximumDockWidth));
         }
 
-        static Projection OpenShop(float width, float height, string phase, string[] controls, ShopPanelInput shop, int actionCount,bool floatingMenu)
+        static Projection OpenShop(float width, float height, string phase, string[] controls, ShopPanelInput shop, int actionCount,bool floatingMenu,bool waveReceipt)
         {
             bool battle = phase == "battle" || phase == "settling";
             bool shortLandscape = width >= PortraitBreakpoint && height < 360;
@@ -382,7 +425,16 @@ namespace SingedTerra.LastStand
             float regionLeft = side ? edge + panelWidth + Gap : 0;
             float regionWidth = width - regionLeft;
             var core = new List<Slot>();
-            if (battle) Battle(core, regionWidth, height, edge, padding, false, actionCount,floatingMenu);
+            if (battle)
+            {
+                // A narrow two-row console cannot fit the complete unlock text.
+                // Reuse the established portrait reading rows when a receipt is
+                // present; the shop viewport and all input targets stay fixed.
+                bool narrow=waveReceipt && regionWidth>=PortraitBreakpoint &&
+                    regionWidth<700 && edge+InstrumentCardHeight>height*.2f;
+                Battle(core,narrow?PortraitBreakpoint-1:regionWidth,height,edge,padding,false,actionCount,floatingMenu);
+                if(waveReceipt)InlineReceipt(core);
+            }
             else OpenCard(core, regionWidth, edge, shop.NoticeHeight,floatingMenu);
             Dock(core, regionWidth, height, controls, edge, padding, false,battle && (actionCount == 3 || actionCount == 4));
             var slots = new List<Slot>();

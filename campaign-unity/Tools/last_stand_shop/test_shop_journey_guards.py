@@ -29,9 +29,9 @@ def _current_control_fixture():
             'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext')
     shop = ('ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
             'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-            'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy')
+            'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy')
     settings = ('SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                 'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                 'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                 'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
@@ -1057,14 +1057,15 @@ process.exitCode=outcomes.some(row=>row.status==='fail')?1:0;
             with self.subTest(fault=fault), self.assertRaisesRegex(AssertionError, '^RECOVERY_FINAL_STEP_KILL:'):
                 verifier._verify_recovery_terminal_boundaries(report, records, False)
 
-    def test_current_progression_contract_rejects_unknown_or_inconsistent_tier_state(self):
+    def test_historical_v3_contract_rejects_wave_saves_and_inconsistent_tier_state(self):
         report, _ = self.terminal_fixture()
         valid = report['terminal_case']['result']['storage']['data']
-        self.assertTrue(verifier._current_progression_record(valid))
-        for fault in ('future-version', 'unknown-profile', 'invented-unlock', 'locked-selection',
+        self.assertTrue(verifier._historical_v3_progression_record(valid))
+        for fault in ('wave-version', 'future-version', 'unknown-profile', 'invented-unlock', 'locked-selection',
                       'temporary-state', 'bool-count', 'lost-record', 'wrong-tier', 'limit-reward'):
             value = deepcopy(valid)
-            if fault == 'future-version': value['version'] = 4
+            if fault == 'wave-version': value['version'] = 4
+            elif fault == 'future-version': value['version'] = 5
             elif fault == 'unknown-profile': value['tierRecords']['unknown'] = value['tierRecords'].pop('tier-goals-v1')
             elif fault == 'invented-unlock': value['tierRecords']['tier-goals-v1']['tierTwoUnlocked'] = True
             elif fault == 'locked-selection': value['selectedTier'] = 2
@@ -1074,13 +1075,13 @@ process.exitCode=outcomes.some(row=>row.status==='fail')?1:0;
             elif fault == 'wrong-tier': value['pendingDefeat']['tier'] = 2
             else: value['pendingDefeat']['isLimit'] = True
             with self.subTest(fault=fault):
-                self.assertFalse(verifier._current_progression_record(value))
+                self.assertFalse(verifier._historical_v3_progression_record(value))
 
     def test_terminal_contract_updates_independent_maxima_and_exact_goal_unlock(self):
         report, _ = self.terminal_fixture()
         prior = report['terminal_case']['before']['storage']['data']
         prior['tierRecords']['tier-goals-v1'].update(bestTicks1=1199, bestKills1=30)
-        result = verifier._terminal_progression_record(prior, 3, 1200, 4)
+        result = verifier._historical_v3_terminal_record(prior, 3, 1200, 4)
         self.assertEqual(result['tierRecords']['tier-goals-v1'], {'bestTicks1': 1200, 'bestKills1': 30,
                          'bestTicks2': 0, 'bestKills2': 0, 'tierTwoUnlocked': True})
         self.assertTrue(result['pendingDefeat']['unlockedTierTwo'])
@@ -1223,8 +1224,8 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,18);assert.equal(controls.shopControls.length,11);assert.equal(controls.settingsControls.length,35);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls].map(c=>c.name)).size,64);
+assert.equal(controls.controls.length,18);assert.equal(controls.shopControls.length,12);assert.equal(controls.settingsControls.length,37);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls].map(c=>c.name)).size,67);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');

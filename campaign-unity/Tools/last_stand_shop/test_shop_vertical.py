@@ -13,6 +13,10 @@ import tempfile
 import unittest
 import uuid
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+
+
 sys.dont_write_bytecode = True
 cache_dir = Path(__file__).with_name("__pycache__")
 cache_file = cache_dir / f"{Path(__file__).stem}.{sys.implementation.cache_tag}.pyc"
@@ -105,6 +109,7 @@ class ShopVerticalTests(unittest.TestCase):
         if presentation.exists():
             sources.append(presentation)
         sources.append(DRIVER)
+        sources = complete_sources(SCRIPTS, sources)
         argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
         argv.extend(str(source) for source in sources)
         cls.source_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}

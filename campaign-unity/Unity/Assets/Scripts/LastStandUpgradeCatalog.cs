@@ -4,18 +4,21 @@ using System.Globalization;
 
 namespace SingedTerra.LastStand
 {
-    public enum LastStandUpgradeTrackId { CannonAttack, LauncherAttack, HullCapacity, Armor, CannonCycle, FieldRepair }
+    public enum LastStandUpgradeTrackId { CannonAttack, LauncherAttack, HullCapacity, Armor, CannonCycle, FieldRepair, ScattergunAttack }
     public enum LastStandUpgradeCategory { Attack, Defense, Utility }
-    public enum LastStandUpgradeApplicability { All, Launcher, Repair }
-    public enum LastStandFitting { Launcher, Repair }
+    public enum LastStandUpgradeApplicability { All, Launcher, Repair, Scattergun }
+    public enum LastStandFitting { Launcher, Repair, Scattergun }
 
     // Pure definitions shared by combat projections, prices and card descriptions.
     // No currency, persistence, clock or presentation owner lives in the catalog.
     public static class LastStandUpgradeCatalog
     {
-        public const int TotalCap = 8, PermanentCap = 3, ScrapPriceStep = 5;
+        public const string EconomyVersion = "long-run-economy-v1";
+        public const int TotalCap = 5000, PermanentCap = 2500, ScrapPriceStep = 5;
+        public const int LegacyTotalCap = 8, LegacyPermanentCap = 3;
         public const int BaseCannonDamage = 20, CannonDamagePerLevel = 10;
         public const int BaseLauncherDamage = 12, LauncherDamagePerLevel = 4;
+        public const int BaseScattergunDamage = 9, ScattergunDamagePerLevel = 3;
         public const int BaseMaximumHull = 120, HullPerLevel = 15;
         public const int BaseCannonPeriod = 20, BaseRepairAmount = 3, RepairPeriod = 20;
 
@@ -33,6 +36,8 @@ namespace SingedTerra.LastStand
                 LastStandUpgradeCategory.Utility, LastStandUpgradeApplicability.All),
             new LastStandUpgradeDefinition(LastStandUpgradeTrackId.FieldRepair, "fieldRepair", "Field Repair",
                 LastStandUpgradeCategory.Utility, LastStandUpgradeApplicability.Repair),
+            new LastStandUpgradeDefinition(LastStandUpgradeTrackId.ScattergunAttack, "scattergunAttack", "Scattergun Attack",
+                LastStandUpgradeCategory.Attack, LastStandUpgradeApplicability.Scattergun),
         });
 
         public static LastStandUpgradeDefinition Get(LastStandUpgradeTrackId id)
@@ -62,6 +67,8 @@ namespace SingedTerra.LastStand
         public string Name { get; }
         public LastStandUpgradeCategory Category { get; }
         public LastStandUpgradeApplicability Applicability { get; }
+        public int TotalCap => Id == LastStandUpgradeTrackId.CannonCycle ? 16 : Id == LastStandUpgradeTrackId.Armor ? 1000 : LastStandUpgradeCatalog.TotalCap;
+        public int PermanentCap => Id == LastStandUpgradeTrackId.CannonCycle ? 12 : Id == LastStandUpgradeTrackId.Armor ? 500 : LastStandUpgradeCatalog.PermanentCap;
 
         internal LastStandUpgradeDefinition(LastStandUpgradeTrackId id, string key, string name,
             LastStandUpgradeCategory category, LastStandUpgradeApplicability applicability)
@@ -69,41 +76,56 @@ namespace SingedTerra.LastStand
 
         public MechanicsShopTrack CreateTrack(int persistentLevel, int runPurchases)
         {
-            if (persistentLevel < 0 || persistentLevel > LastStandUpgradeCatalog.PermanentCap)
+            if (persistentLevel < 0 || persistentLevel > PermanentCap)
                 throw new ArgumentOutOfRangeException(nameof(persistentLevel));
-            return new MechanicsShopTrack(LastStandUpgradeCatalog.TotalCap, persistentLevel, runPurchases,
-                index => checked(LastStandUpgradeCatalog.ScrapPriceStep * index));
+            return new MechanicsShopTrack(TotalCap, persistentLevel, runPurchases, RunPrice);
+        }
+        public int RunPrice(int purchaseIndex)
+        {
+            if(purchaseIndex<1 || purchaseIndex>TotalCap)throw new ArgumentOutOfRangeException(nameof(purchaseIndex));
+            long extra=Math.Max(0,purchaseIndex-8);
+            return checked((int)(5L*purchaseIndex+extra*extra/40));
+        }
+        public int PermanentPrice(int purchaseIndex)
+        {
+            if(purchaseIndex<1 || purchaseIndex>PermanentCap)throw new ArgumentOutOfRangeException(nameof(purchaseIndex));
+            long extra=Math.Max(0,purchaseIndex-3);
+            return checked((int)(purchaseIndex+extra*extra/16));
         }
 
         public bool IsEligible(LastStandFitting fitting)
         {
-            if (fitting != LastStandFitting.Launcher && fitting != LastStandFitting.Repair)
+            if (fitting != LastStandFitting.Launcher && fitting != LastStandFitting.Repair && fitting != LastStandFitting.Scattergun)
                 throw new ArgumentOutOfRangeException(nameof(fitting));
             return Applicability == LastStandUpgradeApplicability.All ||
                 (Applicability == LastStandUpgradeApplicability.Launcher && fitting == LastStandFitting.Launcher) ||
-                (Applicability == LastStandUpgradeApplicability.Repair && fitting == LastStandFitting.Repair);
+                (Applicability == LastStandUpgradeApplicability.Repair && fitting == LastStandFitting.Repair) ||
+                (Applicability == LastStandUpgradeApplicability.Scattergun && fitting == LastStandFitting.Scattergun);
         }
 
         // Armor returns applied damage for the supplied positive raw enemy hit.
         public int EffectAt(int totalLevel, int rawHit)
         {
-            if (totalLevel < 0 || totalLevel > LastStandUpgradeCatalog.TotalCap)
+            if (totalLevel < 0 || totalLevel > TotalCap)
                 throw new ArgumentOutOfRangeException(nameof(totalLevel));
+            int growth=Math.Max(0,totalLevel-8);
             switch (Id)
             {
                 case LastStandUpgradeTrackId.CannonAttack:
-                    return LastStandUpgradeCatalog.BaseCannonDamage + LastStandUpgradeCatalog.CannonDamagePerLevel * totalLevel;
+                    return LastStandUpgradeCatalog.BaseCannonDamage + LastStandUpgradeCatalog.CannonDamagePerLevel * totalLevel + growth*growth/5;
                 case LastStandUpgradeTrackId.LauncherAttack:
-                    return LastStandUpgradeCatalog.BaseLauncherDamage + LastStandUpgradeCatalog.LauncherDamagePerLevel * totalLevel;
+                    return LastStandUpgradeCatalog.BaseLauncherDamage + LastStandUpgradeCatalog.LauncherDamagePerLevel * totalLevel + growth*growth/8;
+                case LastStandUpgradeTrackId.ScattergunAttack:
+                    return LastStandUpgradeCatalog.BaseScattergunDamage + LastStandUpgradeCatalog.ScattergunDamagePerLevel * totalLevel + growth*growth/12;
                 case LastStandUpgradeTrackId.HullCapacity:
-                    return LastStandUpgradeCatalog.BaseMaximumHull + LastStandUpgradeCatalog.HullPerLevel * totalLevel;
+                    return LastStandUpgradeCatalog.BaseMaximumHull + LastStandUpgradeCatalog.HullPerLevel * totalLevel + growth*growth/2;
                 case LastStandUpgradeTrackId.Armor:
                     if (rawHit < 1) throw new ArgumentOutOfRangeException(nameof(rawHit));
                     return Math.Max(1, rawHit - totalLevel);
                 case LastStandUpgradeTrackId.CannonCycle:
                     return LastStandUpgradeCatalog.BaseCannonPeriod - totalLevel;
                 case LastStandUpgradeTrackId.FieldRepair:
-                    return LastStandUpgradeCatalog.BaseRepairAmount + totalLevel;
+                    return LastStandUpgradeCatalog.BaseRepairAmount + totalLevel + growth*growth/40;
                 default: throw new ArgumentOutOfRangeException(nameof(Id));
             }
         }
@@ -115,6 +137,7 @@ namespace SingedTerra.LastStand
             {
                 case LastStandUpgradeTrackId.CannonAttack:
                 case LastStandUpgradeTrackId.LauncherAttack: return effect + " damage";
+                case LastStandUpgradeTrackId.ScattergunAttack: return effect + " damage to up to 3 nearby targets";
                 case LastStandUpgradeTrackId.HullCapacity: return effect + " maximum hull";
                 case LastStandUpgradeTrackId.Armor:
                     return "reduce hits by " + totalLevel.ToString(CultureInfo.InvariantCulture) + " (minimum 1 damage)";
@@ -164,13 +187,13 @@ namespace SingedTerra.LastStand
             IsEligible = eligible;
             bool capped = RemainingPurchases == 0;
             NextPrice = capped ? (int?)null : track.NextRunPrice;
-            NextPermanentPrice = PermanentLevel == LastStandUpgradeCatalog.PermanentCap
-                ? (int?)null : PermanentLevel + 1;
+            NextPermanentPrice = PermanentLevel == definition.PermanentCap
+                ? (int?)null : definition.PermanentPrice(PermanentLevel + 1);
             CurrentEffectDescription = definition.DescribeEffect(CurrentLevel);
             NextEffectDescription = capped ? "MAX" : definition.DescribeEffect(CurrentLevel + 1);
             UnavailableReason = capped ? "MAX" : eligible ? String.Empty :
                 definition.Applicability == LastStandUpgradeApplicability.Launcher
-                    ? "Requires launcher fitting" : "Requires repair fitting";
+                    ? "Requires launcher fitting" : definition.Applicability == LastStandUpgradeApplicability.Repair ? "Requires repair fitting" : "Requires scattergun fitting";
         }
     }
 }

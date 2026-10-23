@@ -133,7 +133,13 @@ for (const fitting of ['repair', 'launcher']) for (const effects of baseline ? [
       }
     }
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('singedTerra.lastStand.prototype.v1')));
-    assert.equal(saved.credits, 0); assert.equal(saved.pendingDefeat, null);
+    if(baseline)assert.equal(saved.credits,0,'Archived pre-wave capture has no banked wave income');
+    else {
+      assert.equal(saved.version,4);assert.ok(saved.checkpoint?.encounter.completedWave>0,'Current capture completed a durable wave');
+      assert.ok(saved.credits>0,'Cleared waves bank income during the run');
+      assert.equal(saved.credits,state().wallet,'Stored wave income matches live wallet');
+    }
+    assert.equal(saved.pendingDefeat, null);
     assert.ok(Object.values(saved.permanentLevels).every(level => level === 0));
     assert.deepEqual(run.errors, []);
   } catch (error) { failure = error; }

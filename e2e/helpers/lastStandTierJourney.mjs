@@ -29,13 +29,19 @@ export function tierJourneyControlGeometry(layout, canvas) {
       assert.equal(layout.graphicsTruncated, false, 'Complete graphics required to qualify clipped controls');
       graphics ??= JSON.parse(layout.raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
       const viewportName = settingsContent ? 'SettingsViewport' : 'ShopViewport';
-      const viewport = graphics.find(g => g.path.endsWith('/' + viewportName) && g.active);
-      const graphic = graphics.find(g => g.path.endsWith('/' + item.name) && g.kind === 'Image' && g.active);
+      // The shared chamfered chrome is an Image subclass; decorative frames
+      // and text are not the control's hit surface or its clipping owner.
+      const surface = g => ['Image','LastStandConsoleSurface'].includes(g.kind) && g.active;
+      const viewports = graphics.filter(g => g.path.endsWith('/' + viewportName) && surface(g));
+      const matches = graphics.filter(g => g.path.endsWith('/' + item.name) && surface(g));
+      assert.equal(viewports.length,1,'One actual scroll viewport required');
+      assert.equal(matches.length,1,'One actual clipped control surface required');
+      const viewport = viewports[0], graphic = matches[0];
       assert.ok(viewport?.hasClip && graphic?.hasClip, 'Measured scroll viewport and control required');
       clip = graphic.clip;
       assert.deepEqual(clip, viewport.clip, 'Control must use the actual ' + (settingsContent ? 'settings' : 'shop') + ' viewport');
-      if (settingsContent) assert.ok(graphic.path.startsWith(viewport.path + '/SettingsContent/'),
-        'Clipped settings control belongs to the actual settings content');
+      assert.ok(graphic.path.startsWith(viewport.path + (settingsContent ? '/SettingsContent/' : '/ShopContent/')),
+        'Clipped control belongs to its actual scroll content');
       assert.ok(inside(clip, screen) && clip.width > 0 && clip.height > 0, 'Clip lies inside the Canvas');
       for (const key of ['x', 'y', 'width', 'height'])
         assert.ok(Math.abs(item[key] - graphic[key]) < .5, 'Control and graphic bounds agree: ' + item.name);

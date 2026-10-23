@@ -14,7 +14,7 @@ namespace SingedTerra.LastStand
         readonly Font font;
         readonly RectTransform root, card, dock;
         readonly RectTransform hullFill;
-        readonly Text heading, detail, status;
+        readonly Text heading, detail, status, waveReceipt, waveReceiptDetail;
         readonly Button deploy, claim, purchase, redeploy, retry, fitting, pause, mute, tier, effects;
         readonly Button menu, speedMinus, speedRate, speedPlus;
         readonly Button tierPrevious,tierNext,fittingPrevious,fittingNext;
@@ -79,12 +79,7 @@ namespace SingedTerra.LastStand
             texture.SetPixels32(pixels); texture.Apply(false,true); return texture;
         }
         LastStandConsoleFrame Frame(RectTransform parent, bool button = false)
-        {
-            var rect = Node("ConsoleFrame",parent); rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-            rect.gameObject.AddComponent<CanvasRenderer>();
-            var frame = rect.gameObject.AddComponent<LastStandConsoleFrame>(); frame.Initialize(button,metalGrain); return frame;
-        }
+        { return LastStandConsoleChrome.Frame(parent,metalGrain,button); }
 #if UNITY_WEBGL && !UNITY_EDITOR
         // Existing Unity Web SystemInfo import; no new JS/state/Canvas owner.
         [System.Runtime.InteropServices.DllImport("__Internal")]
@@ -118,8 +113,8 @@ namespace SingedTerra.LastStand
         }
         Button Action(string name, string label, Transform parent, UnityEngine.Events.UnityAction handler)
         {
-            var rect = Node(name,parent); var image = rect.gameObject.AddComponent<Image>();
-            nodes.Add(name,rect); image.color = Olive; image.sprite = metalSurface; image.type = Image.Type.Sliced;
+            var rect = Node(name,parent); var image = LastStandConsoleChrome.Surface(rect,metalSurface,true);
+            nodes.Add(name,rect); image.color = Olive;
             var frame = Frame(rect,true);
             var button = rect.gameObject.AddComponent<Button>(); button.targetGraphic = image;
             var colors = button.colors; colors.normalColor = colors.disabledColor = Color.white;
@@ -127,16 +122,13 @@ namespace SingedTerra.LastStand
             colors.pressedColor = new Color(.85f,.85f,.85f); colors.fadeDuration = .08f; button.colors = colors;
             button.onClick.AddListener(handler);
             var text = Label(name + "Text", rect, 17); text.text = label; text.alignment = TextAnchor.MiddleCenter;
-            var outline = rect.gameObject.AddComponent<Outline>(); outline.effectColor = Brass;
-            outline.effectDistance = new Vector2(2,-2); outline.enabled = false;
-            rect.gameObject.AddComponent<LastStandActionFeedback>().Initialize(button,text,outline,frame);
+            LastStandConsoleChrome.Feedback(button,text,frame);
             return button;
         }
         RectTransform Panel(string name, Transform parent, bool blocksPointer = false, bool framed = true)
         {
             var rect = Node(name,parent); nodes.Add(name,rect);
-            var image = rect.gameObject.AddComponent<Image>(); image.color = Graphite;
-            image.sprite = metalSurface; image.type = Image.Type.Sliced; image.raycastTarget = blocksPointer;
+            var image = LastStandConsoleChrome.Surface(rect,metalSurface,false,blocksPointer); image.color = Graphite;
             if (framed) Frame(rect);
             return rect;
         }
@@ -181,19 +173,22 @@ namespace SingedTerra.LastStand
             metalSurface.name = "LastStandConsoleSurface";
             root = Node("LastStandLoopHud",canvas.transform); root.anchorMin = Vector2.zero; root.anchorMax = Vector2.one;
             root.offsetMin = root.offsetMax = Vector2.zero;
-            card = Node("LastStandCard",root); var cardImage = card.gameObject.AddComponent<Image>(); cardImage.color = Graphite;
-            cardImage.sprite = metalSurface; cardImage.type = Image.Type.Sliced; cardImage.raycastTarget = false;
+            card = Node("LastStandCard",root); var cardImage = LastStandConsoleChrome.Surface(card,metalSurface,false,false); cardImage.color = Graphite;
             cardFrame = Frame(card);
             nodes.Add(card.name,card);
             heading = Label("PhaseHeading",card,29); heading.color = Brass; heading.fontStyle = FontStyle.Bold;
             detail = Label("PhaseDetail",card,18);
             status = Label("SaveStatus",card,15); status.color = Brass;
-            dock = Node("LastStandDock",root); var dockImage = dock.gameObject.AddComponent<Image>(); dockImage.color = Graphite;
-            dockImage.sprite = metalSurface; dockImage.type = Image.Type.Sliced; dockImage.raycastTarget = false;
+            dock = Node("LastStandDock",root); var dockImage = LastStandConsoleChrome.Surface(dock,metalSurface,false,false); dockImage.color = Graphite;
             dockFrame=Frame(dock);
             nodes.Add(dock.name,dock);
             var dockHeading = Label("DockHeading",dock,14); dockHeading.text = "FIELD CONTROLS";
             dockHeading.color = Brass; dockHeading.fontStyle = FontStyle.Bold;
+            var receiptPanel=Panel("WaveReceiptPanel",root);
+            waveReceipt=Label("WaveReceipt",receiptPanel,14);waveReceipt.color=Brass;
+            waveReceipt.alignment=TextAnchor.MiddleLeft;
+            waveReceiptDetail=Label("WaveReceiptDetail",card,14);waveReceiptDetail.color=Brass;
+            waveReceiptDetail.alignment=TextAnchor.MiddleLeft;
             fitting = Action("ToggleFitting","",dock,() => loop.OpenSelector("fitting"));
             deploy = Action("Deploy","DEPLOY",dock,loop.Deploy);
             claim = Action("Claim","CLAIM 1 SALVAGE",dock,loop.Claim);
@@ -252,7 +247,7 @@ namespace SingedTerra.LastStand
             var extra = new List<Button> { shopEntry, shopClose }; extra.AddRange(shopTabs);
             foreach (var controls in shopCards) extra.Add(controls.Buy);
             shopActions = extra.ToArray();
-            settings = new LastStandSettingsHud(loop,root,font);
+            settings = new LastStandSettingsHud(loop,root,font,metalGrain,metalSurface);
             var complete = new List<Button>(actions); complete.AddRange(shopActions); complete.AddRange(settings.Buttons); allActions = complete.ToArray();
             keyboard = root.gameObject.AddComponent<LastStandHudKeyboard>(); keyboard.Initialize(allActions,b => { RevealShopSelection(b); settings.Reveal(b); });
             keyboard.Escape = () => { if (loop.MenuOpen) loop.CloseMenu(); else loop.OpenMenu(); };
@@ -284,98 +279,68 @@ namespace SingedTerra.LastStand
         }
         Presentation ReadPresentation()
         {
-            string phase = loop.Phase;
-            var progress = loop.Progression;
-            var model = loop.Session.Model;
-            int runTier = LastStandTierCatalog.IsValid(progress.ActiveTier) ? progress.ActiveTier :
-                progress.PendingDefeat != null && LastStandTierCatalog.IsValid(progress.PendingDefeat.Tier) ? progress.PendingDefeat.Tier : progress.SelectedTier;
-            bool ready = progress.SaveState == "ready";
-            bool garage = phase == "garage", battle = phase == "battle", settling = phase == "settling", result = phase == "result", workshop = phase == "workshop";
-            bool garageCards=loop.GarageCardsVisible;
-            bool launcher = loop.GetComponent<SingedTerra.Art.TankPresentation>().showingLauncher;
-            string fittingName="Unavailable";
+            string phase=loop.Phase;var progress=loop.Progression;var model=loop.Session.Model;
+            int runTier=model?.Profile.Tier??progress.Checkpoint?.Tier??progress.SelectedTier;
+            bool ready=progress.SaveState=="ready",garage=phase=="garage",workshop=phase=="workshop";
+            bool battle=phase=="battle",settling=phase=="settling",result=phase=="result";
+            bool cards=loop.GarageCardsVisible,checkpoint=progress.HasCheckpoint;
+            string fittingName=loop.FittingId.ToUpperInvariant();
             foreach(var option in LastStandFittingCatalog.Options)if(option.Id==loop.FittingId)fittingName=option.Name;
-            bool canDeploy = ready && !loop.HasLockedTierPreview && loop.Session.CanRun && progress.PendingDefeat == null &&
-                progress.ActiveRunId == 0 && progress.NextRunId != int.MaxValue;
-            bool canPause = (battle || settling) && model != null && loop.Session.Failure == "" &&
-                !loop.Session.CatchingUp && (!loop.Session.Paused || loop.Session.CanRun);
-            var state = new Presentation { Phase = phase, Primary = garage ? "Deploy" : battle || settling ? "SpeedRate" : result ? "Claim" : workshop ? "Redeploy" : "RetrySave",
-                Active = new[] { false, garage, result, workshop&&!garageCards, workshop, !ready, false, false, false, false, true, battle || settling, battle || settling, battle || settling,
-                    garageCards&&!shopOpen,garageCards&&!shopOpen,garageCards&&!shopOpen,garageCards&&!shopOpen },
-                Available = new[] { loop.CanSelectLoadout, canDeploy, ready && progress.PendingDefeat != null &&
-                    progress.ActiveRunId == 0 && (progress.PendingDefeat.Reward == 0 || progress.Wallet != int.MaxValue),
-                    ready && progress.ActiveRunId == 0 && progress.PendingDefeat == null &&
-                    progress.NextCost != 0 && progress.Wallet >= progress.NextCost, canDeploy, true,
-                    canPause, true, loop.CanSelectLoadout, CanChangeEffects(),
-                    loop.CanOpenMenu, battle && canPause && loop.Session.SelectedSpeed > 0, canPause, battle && canPause && loop.Session.SelectedSpeed < loop.Session.MaximumSpeed,
-                    loop.CanSelectLoadout && loop.GarageTierSelection!=null && loop.GarageTierSelection.CanPrevious,
-                    loop.CanSelectLoadout && loop.GarageTierSelection!=null && loop.GarageTierSelection.CanNext,
-                    loop.CanSelectLoadout && loop.GarageFittingSelection!=null && loop.GarageFittingSelection.CanPrevious,
-                    loop.CanSelectLoadout && loop.GarageFittingSelection!=null && loop.GarageFittingSelection.CanNext },
-                Labels = new[] { "FITTING: " + fittingName.ToUpperInvariant(), canDeploy ? "DEPLOY" : "UNAVAILABLE",
-                    "CLAIM 1 SALVAGE", "BUY CANNON ATTACK", "REDEPLOY", "RETRY SAVE",
-                    canPause ? loop.Session.Paused ? "RESUME" : "PAUSE" : "WAIT", loop.Muted ? "SOUND OFF" : "SOUND ON",
-                    "TIER " + progress.SelectedTier,
-                    loop.Session.View.FullEffects ? "FX FULL" : "FX LOW", "Menu", "-",
-                    !canPause ? "WAIT" : loop.Session.Paused ? "0x\nPAUSED" : loop.Session.EffectiveSpeed.ToString("0.0") + "x", "+", "<", ">", "<", ">" } };
-            if(garageCards)
+            bool canDeploy=ready && loop.Session.CanRun && progress.PendingDefeat==null &&
+                (checkpoint || !loop.HasLockedTierPreview && progress.NextRunId!=int.MaxValue);
+            bool canPause=(battle||settling) && model!=null && !loop.Session.CheckpointBlocked && loop.Session.Failure=="" &&
+                !loop.Session.CatchingUp && (!loop.Session.Paused||loop.Session.CanRun);
+            bool canClaim=ready && result && !checkpoint;
+            var state=new Presentation {Phase=phase,Primary=garage?"Deploy":workshop?"Redeploy":result?"Claim":battle||settling?"SpeedRate":"RetrySave",
+                Active=new[]{false,garage,result,false,workshop,!ready,false,false,false,false,true,battle||settling,battle||settling,battle||settling,
+                    cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen},
+                Available=new[]{loop.CanSelectLoadout,canDeploy,canClaim,false,canDeploy,true,canPause,true,loop.CanSelectLoadout,CanChangeEffects(),
+                    loop.CanOpenMenu,battle&&canPause&&loop.Session.SelectedSpeed>0,canPause,battle&&canPause&&loop.Session.SelectedSpeed<loop.Session.MaximumSpeed,
+                    loop.CanSelectLoadout&&loop.GarageTierSelection!=null&&loop.GarageTierSelection.CanPrevious,
+                    loop.CanSelectLoadout&&loop.GarageTierSelection!=null&&loop.GarageTierSelection.CanNext,
+                    loop.CanSelectLoadout&&loop.GarageFittingSelection!=null&&loop.GarageFittingSelection.CanPrevious,
+                    loop.CanSelectLoadout&&loop.GarageFittingSelection!=null&&loop.GarageFittingSelection.CanNext},
+                Labels=new[]{"FITTING: "+fittingName,canDeploy?checkpoint?"RESUME RUN":"DEPLOY":"UNAVAILABLE",
+                    progress.PendingDefeat!=null && progress.PendingDefeat.Reward>0?"CLAIM LEGACY REWARD":"CONTINUE","UPGRADES",canDeploy?checkpoint?"RESUME RUN":"DEPLOY":"UNAVAILABLE","RETRY SAVE",
+                    canPause?loop.Session.Paused?"RESUME":"PAUSE":"WAIT",loop.Muted?"SOUND OFF":"SOUND ON","TIER "+runTier,
+                    loop.Session.View.FullEffects?"FX FULL":"FX LOW","Menu","-",!canPause?"WAIT":loop.Session.Paused?"0x\nPAUSED":loop.Session.EffectiveSpeed.ToString("0.0")+"x","+","<",">","<",">"}};
+            if(garage||workshop)
             {
-                state.Labels[1]=canDeploy?"DEPLOY":loop.HasLockedTierPreview?"LOCKED":"UNAVAILABLE";
-                state.Labels[4]=state.Labels[1];
+                state.Heading=checkpoint?"RESUME YOUR RUN":"LAST STAND";
+                state.Detail=checkpoint?"Tier "+progress.Checkpoint.Tier+" / Wave "+(progress.Checkpoint.CompletedWave+1)+
+                    "\nSaved hull "+progress.Checkpoint.Encounter.Hull+" / "+progress.Checkpoint.Encounter.MaximumHull+
+                    "\nFitting: "+fittingName+"\nResume starts paused. Menu > New Run abandons this checkpoint.":
+                    TierSummary(progress)+"\nFitting: "+fittingName+"\nSalvage "+progress.Wallet;
             }
-            if (garage)
+            else if(battle&&model!=null)
             {
-                state.Heading = "LAST STAND";
-                state.Detail = TierSummary(progress) + "\nFitting: " + (launcher ? "Auxiliary launcher" : "Field repair") +
-                    "\nCannon Attack " + progress.CannonAttackLevel + "/3 / Damage " + progress.CannonDamage +
-                    "\nSalvage " + progress.Wallet + " / Next " + (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString());
+                state.Heading=loop.Session.CatchingUp?"CATCHING UP":loop.Session.Paused?"BATTLE PAUSED":"CLEAR THE WAVE";
+                state.Detail=LastStandTierHudText.WaveProgress(runTier,model.Wave,model.RemainingWaveEnemies)+
+                    "\nHull "+model.Hull+" / "+model.CurrentMaximumHull+"\n"+LastStandTierHudText.NextMilestone(runTier,model.CompletedWave);
             }
-            else if (battle && model != null)
+            else if(result)
             {
-                state.Heading = loop.Session.CatchingUp ? "CATCHING UP" : loop.Session.Paused ? "BATTLE PAUSED" :
-                    LastStandTierHudText.BattleHeading(runTier,model.Tick);
-                state.Detail = "HULL  " + model.Hull + " / " + model.CurrentMaximumHull + "      TIME  " + (model.Tick / 20f).ToString("F1") + "s" +
-                    "\nDISABLED  " + model.Kills + "      CANNON  " + model.CurrentCannonDamage + " DAMAGE" +
-                    "\nFITTING  " + (model.HasLauncher ? "AUXILIARY LAUNCHER" : "FIELD REPAIR");
-            }
-            else if (result && progress.PendingDefeat != null)
-            {
-                var pending = progress.PendingDefeat;
-                state.Heading = pending.IsLimit ? "RUN LIMIT REACHED" : "LAST STAND ENDED";
-                state.Detail = LastStandTierHudText.Result(pending.Tier,pending.IsLimit,pending.ElapsedTicks,pending.Kills,
-                    pending.Reward,progress.Wallet,true,pending.NewBestTime,pending.NewBestKills,pending.UnlockedTierTwo);
-            }
-            else if (workshop)
-            {
-                state.Heading = "WORKSHOP  /  CANNON ATTACK";
-                state.Detail = TierSummary(progress) + "\nCannon Attack " + progress.CannonAttackLevel + "/3 / Damage " + progress.CannonDamage +
-                    "\nSalvage " + progress.Wallet + " / Cost " + (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString()) +
-                    "\nFitting: " + (launcher ? "Auxiliary launcher" : "Field repair");
+                state.Heading=progress.PendingDefeat!=null?"LEGACY RESULT":"RUN ENDED";
+                state.Detail=progress.PendingDefeat!=null?LastStandTierHudText.Result(progress.PendingDefeat.Tier,progress.PendingDefeat.IsLimit,
+                    progress.PendingDefeat.ElapsedTicks,progress.PendingDefeat.Kills,progress.PendingDefeat.Reward,progress.Wallet,true,false,false,false):
+                    "Completed-wave rewards are already banked.\nSalvage "+progress.Wallet+"\n"+LastStandTierHudText.WaveBest(progress.GetBestWave(runTier))+"\nUpgrade, choose a fitting and deploy again.";
             }
             else
             {
-                state.Heading = settling ? loop.Session.Paused ? "SETTLING PAUSED" : "LAST SHOT" :
-                    phase == "loading" ? "LOADING LOCAL SAVE" : "SAVE NEEDS ATTENTION";
-                state.Detail = settling ? "The final impact is settling…" : phase == "loading" ? "Waiting for local storage." :
-                    "Storage has not confirmed this change.\nRetry Save to check the existing record.";
+                state.Heading=settling?"LAST SHOT":"CHECKPOINT NOT CONFIRMED";
+                state.Detail=settling?"The final impact is settling…":"Combat is stopped at the save boundary.\nRetry Save before continuing. The last confirmed checkpoint is preserved.";
             }
-            bool limitResult = progress.PendingDefeat != null && progress.PendingDefeat.Reward == 0;
-            state.Labels[2] = state.Available[2] ? limitResult ? "CONTINUE" : "CLAIM 1 SALVAGE" : "CLAIM UNAVAILABLE";
-            state.Labels[3] = progress.NextCost == 0 ? "CANNON ATTACK MAX" : state.Available[3] ? "BUY CANNON ATTACK" : "PURCHASE UNAVAILABLE";
-            if(!garageCards)state.Labels[4] = canDeploy ? "REDEPLOY" : "UNAVAILABLE";
-            state.Status = ready ? "LOCAL SAVE READY\n" + (loop.Notice == "" ? "Unfinished runs earn no reward." : loop.Notice) : progress.SaveError;
-            if (ready && (garage || workshop) && !progress.TierTwoUnlocked && loop.Notice == "")
-                state.Status = "LOCAL SAVE READY\n" + LastStandTierHudText.LockReason;
-            if (ready && loop.Guidance.Suggestion != "") state.Status = "LOCAL SAVE READY\n" + loop.Guidance.Suggestion;
-            if(ready&&(garage||workshop)&&!canDeploy)state.Status="LOCAL SAVE READY\n"+DeploymentRefusal();
-            if (model != null)
+            state.Status=ready?(loop.Notice==""?"LOCAL SAVE READY / Completed rewards are banked.":loop.Notice):progress.SaveError;
+            if(ready&&progress.LastReceipt==null&&loop.Guidance.Suggestion!="")state.Status=loop.Guidance.Suggestion;
+            if(model!=null)
             {
-                state.HullFraction = Mathf.Clamp01(model.Hull / (float)model.CurrentMaximumHull);
-                state.Readouts.Add("HullValue","HULL  " + model.Hull + " / " + model.CurrentMaximumHull);
-                state.Readouts.Add("ElapsedTime",LastStandTierHudText.Progress(runTier,model.Tick));
-                state.Readouts.Add("DisabledCount","DISABLED  " + model.Kills);
-                state.Readouts.Add("CannonDamage","CANNON  " + model.CurrentCannonDamage + " DAMAGE");
-                state.Readouts.Add("Fitting","FITTING  " + (model.HasLauncher ? "AUXILIARY LAUNCHER" : "FIELD REPAIR"));
+                var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(runTier),model.Wave);
+                state.HullFraction=Mathf.Clamp01(model.Hull/(float)model.CurrentMaximumHull);
+                state.Readouts.Add("HullValue","HULL "+model.Hull+" / "+model.CurrentMaximumHull);
+                state.Readouts.Add("ElapsedTime","T"+runTier+" / WAVE "+model.Wave);
+                state.Readouts.Add("DisabledCount","LEFT "+model.RemainingWaveEnemies);
+                state.Readouts.Add("CannonDamage","NEXT +"+reward.RepeatableSalvage+" SALVAGE");
+                state.Readouts.Add("Fitting",LastStandTierHudText.NextMilestone(runTier,model.CompletedWave).ToUpperInvariant());
             }
             return state;
         }
@@ -385,12 +350,12 @@ namespace SingedTerra.LastStand
             if(loop.Progression.SaveState!="ready")return "Confirm the local save.";
             if(!loop.Session.CanRun)return "Return to this tab.";
             if(loop.Progression.PendingDefeat!=null)return "Claim the saved result.";
-            if(loop.Progression.ActiveRunId!=0)return "Run already reserved.";
+            if(loop.Progression.HasCheckpoint)return "Resume the saved checkpoint.";
             if(loop.Progression.NextRunId==int.MaxValue)return "Local run limit reached.";
             return "Deployment unavailable.";
         }
         static string TierSummary(LastStandProgression progress) => LastStandTierHudText.Goal(progress.SelectedTier) + "\n" +
-            LastStandTierHudText.Best(progress.GetBestTicks(progress.SelectedTier),progress.GetBestKills(progress.SelectedTier));
+            LastStandTierHudText.WaveBest(progress.GetBestWave(progress.SelectedTier));
         bool CanOpenRunShop()
         {
             var model = loop.Session?.Model; var shop = loop.Shop;
@@ -401,7 +366,7 @@ namespace SingedTerra.LastStand
         {
             var progress = loop.Progression;
             return (loop.Phase == "garage" || loop.Phase == "workshop") && loop.Session?.Model == null &&
-                progress != null && progress.ActiveRunId == 0 && progress.PendingDefeat == null;
+                progress != null && progress.PendingDefeat == null;
         }
         void OpenShop()
         {
@@ -474,7 +439,7 @@ namespace SingedTerra.LastStand
             if (!active || shopOpen && (mode != shopMode || run && owner.RunId != shopRunId))
             { shopOpen = false; shopRunId = 0; SetShopScrollOffset(0); purchaseFeedback = null; }
             shopMode = mode;
-            var fitting = loop.GetComponent<SingedTerra.Art.TankPresentation>().showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair;
+            var fitting = LastStandFittingCatalog.Parse(loop.FittingId);
             shopView = run ? LastStandShopPresentation.ProjectRun(owner) : permanent ?
                 LastStandShopPresentation.ProjectPermanent(loop.Progression,fitting) : null;
             shopEntry.gameObject.SetActive(active); StyleAction(shopEntry,false,active);
@@ -484,9 +449,9 @@ namespace SingedTerra.LastStand
             shopCurrency.text = (run ? "SCRAP  " : "SALVAGE  ") + (shopView?.Balance ?? 0);
             if (shopOpen && permanent)
             {
-                heading.text = "TIER " + loop.Progression.SelectedTier + " / GOAL " +
-                    LastStandTierCatalog.Get(loop.Progression.SelectedTier).GoalTicks / EncounterModel.TicksPerSecond + "s";
-                detail.text = LastStandTierHudText.Best(loop.Progression.GetBestTicks(loop.Progression.SelectedTier),loop.Progression.GetBestKills(loop.Progression.SelectedTier));
+                heading.text = "TIER " + loop.Progression.SelectedTier + " / PERMANENT UPGRADES";
+                detail.text = LastStandTierHudText.WaveBest(loop.Progression.GetBestWave(loop.Progression.SelectedTier))+
+                    "\n"+LastStandTierHudText.NextMilestone(loop.Progression.SelectedTier,loop.Progression.GetBestWave(loop.Progression.SelectedTier));
             }
             for (int i = 0; i < shopTabs.Length; i++) StyleAction(shopTabs[i],i == (int)shopCategory,shopOpen);
             foreach (var controls in shopCards)
@@ -548,6 +513,7 @@ namespace SingedTerra.LastStand
             var state = ReadPresentation(); keyboard.BeforeRefresh(state.Phase != projectedPhase); projectedPhase = state.Phase;
             bool garageCards=loop.GarageCardsVisible;
             heading.text = garageCards?"LAST STAND":state.Heading; detail.text = state.Detail; status.text = state.Status;
+            waveReceipt.text=loop.ConfirmedWaveReceipt;
             if(garageCards && loop.GarageTierSelection!=null && loop.GarageFittingSelection!=null)
             {
                 garageTierName.text=loop.GarageTierSelection.Current.Name.ToUpperInvariant();
@@ -555,7 +521,7 @@ namespace SingedTerra.LastStand
                 garageFittingName.text=loop.GarageFittingSelection.Current.Name.ToUpperInvariant();
                 garageFittingDescription.text=loop.GarageFittingSelection.Current.Description;
                 garageSave.text=loop.GarageIssue!=""?loop.GarageIssue:
-                    state.Available[1]?"SALVAGE "+loop.Progression.Wallet+"  |  LOCAL SAVE READY":
+                    state.Available[1]?"SALVAGE "+loop.Progression.Wallet+"  |  WAVE 1: +"+LastStandRewardCatalog.At(LastStandTierCatalog.Get(loop.Progression.SelectedTier),1).RepeatableSalvage:
                     "DEPLOY: "+DeploymentRefusal();
             }
             for (int i = 0; i < actions.Length; i++)
@@ -616,7 +582,8 @@ namespace SingedTerra.LastStand
             if (shopView != null) foreach (var cardView in shopView.Cards)
                 if (cardView.Category == shopCategory && cardView.AppliesToFitting) keys.Add(cardView.Key);
             var projection = LastStandHudLayout.Project(cssWidth,cssHeight,projectedPhase,active.ToArray(),
-                new LastStandHudLayout.ShopPanelInput(shopOpen,keys.ToArray(),shopScrollOffset));
+                new LastStandHudLayout.ShopPanelInput(shopOpen,keys.ToArray(),shopScrollOffset),
+                loop.Progression.SaveState=="ready" && loop.Progression.LastReceipt!=null);
             if (shopOpen)
             {
                 var measures = new Dictionary<string,LastStandHudLayout.Slot>();
@@ -632,7 +599,8 @@ namespace SingedTerra.LastStand
                 }
                 float notice = measures.ContainsKey("SaveStatus") ? MeasureText(status,measures["SaveStatus"],unitsX,unitsY) : 40;
                 projection = LastStandHudLayout.Project(cssWidth,cssHeight,projectedPhase,active.ToArray(),
-                    new LastStandHudLayout.ShopPanelInput(true,keys.ToArray(),shopScrollOffset,effects,refusals,contributions,notice));
+                    new LastStandHudLayout.ShopPanelInput(true,keys.ToArray(),shopScrollOffset,effects,refusals,contributions,notice),
+                    loop.Progression.SaveState=="ready" && loop.Progression.LastReceipt!=null);
             }
             shopScrollOffset = projection.ScrollOffset; shopMaximumScroll = projection.MaximumScrollOffset; shopUnitsY = unitsY;
             shopScroll.scrollSensitivity = 40 * unitsY;
@@ -642,6 +610,16 @@ namespace SingedTerra.LastStand
             {
                 bool visible = slots.TryGetValue(entry.Key,out var slot); entry.Value.gameObject.SetActive(visible);
                 if (!visible) continue;
+                if(entry.Key=="WaveReceipt")
+                {
+                    // Its short-landscape form lives in the existing instrument
+                    // row; other views use the separate noninteractive chrome.
+                    entry.Value.SetParent(nodes[slot.Parent],false);
+                    var lines=loop.ConfirmedWaveReceipt.Split('\n');
+                    waveReceipt.text=slots.ContainsKey("WaveReceiptDetail")?lines[0]:
+                        slot.Bounds.Height<36?loop.ConfirmedWaveReceipt.Replace("\n"," / "):loop.ConfirmedWaveReceipt;
+                    waveReceiptDetail.text=lines.Length>1?lines[1]:"";
+                }
                 var bounds = slot.Bounds; float x = bounds.X, y = bounds.Y;
                 if (slot.Parent != null) { var parent = slots[slot.Parent].Bounds; x -= parent.X; y -= parent.Y; }
                 Place(entry.Value,x*unitsX,y*unitsY,bounds.Width*unitsX,bounds.Height*unitsY);
@@ -898,6 +876,99 @@ namespace SingedTerra.LastStand
         }
     }
     // A bounded, non-interactive material layer under the live Unity labels.
+    // Shared by the gameplay HUD and every modal page. Images remain the
+    // semantic Button targets; only their visible material mesh is clipped.
+    static class LastStandConsoleChrome
+    {
+        public static Image Surface(RectTransform parent, Sprite material, bool action, bool blocksPointer = true)
+        {
+            var image = parent.gameObject.AddComponent<LastStandConsoleSurface>();
+            image.Initialize(action); image.sprite = material; image.raycastTarget = blocksPointer;
+            return image;
+        }
+        public static LastStandConsoleFrame Frame(RectTransform parent, Texture2D material, bool action = false)
+        {
+            var rect = new GameObject("ConsoleFrame",typeof(RectTransform),typeof(CanvasRenderer)).GetComponent<RectTransform>();
+            rect.SetParent(parent,false); rect.pivot = new Vector2(0,1);
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            var frame = rect.gameObject.AddComponent<LastStandConsoleFrame>(); frame.Initialize(action,material); return frame;
+        }
+        public static void Feedback(Button button, Text label, LastStandConsoleFrame frame)
+        {
+            var outline = button.gameObject.AddComponent<LastStandConsoleOutline>();
+            outline.effectColor = new Color(.91f,.69f,.33f); outline.effectDistance = new Vector2(2,-2); outline.enabled = false;
+            button.gameObject.AddComponent<LastStandActionFeedback>().Initialize(button,label,outline,frame);
+        }
+    }
+    static class LastStandConsoleGeometry
+    {
+        public static float Cut(Rect r, bool action)
+        { return Mathf.Min(action ? 6 : r.height <= 52 ? 2 : 9,Mathf.Min(r.width,r.height)/2); }
+        public static Vector2 Corner(Rect r, int point, float cut)
+        {
+            cut = Mathf.Clamp(cut,0,Mathf.Min(r.width,r.height)/2);
+            switch (point & 7)
+            {
+                case 0: return new Vector2(r.xMin+cut,r.yMax);
+                case 1: return new Vector2(r.xMax-cut,r.yMax);
+                case 2: return new Vector2(r.xMax,r.yMax-cut);
+                case 3: return new Vector2(r.xMax,r.yMin+cut);
+                case 4: return new Vector2(r.xMax-cut,r.yMin);
+                case 5: return new Vector2(r.xMin+cut,r.yMin);
+                case 6: return new Vector2(r.xMin,r.yMin+cut);
+                default: return new Vector2(r.xMin,r.yMax-cut);
+            }
+        }
+        public static void Face(VertexHelper mesh, Rect r, float cut, Color top, Color bottom)
+        {
+            if (r.width <= 0 || r.height <= 0) return;
+            int start = mesh.currentVertCount; var center = r.center;
+            mesh.AddVert(center,Color.Lerp(bottom,top,.5f),center/96);
+            for (int i=0;i<=8;i++)
+            {
+                var point = Corner(r,i,cut);
+                mesh.AddVert(point,Color.Lerp(bottom,top,(point.y-r.yMin)/r.height),point/96);
+                if (i>0) mesh.AddTriangle(start,start+i,start+i+1);
+            }
+        }
+        // Outline's displaced copies must stay in the same convex silhouette.
+        // This changes decoration only, never the rectangular pointer target.
+        public static void Confine(VertexHelper mesh, Rect r, float cut)
+        {
+            var vertex = UIVertex.simpleVert;
+            for (int i=0;i<mesh.currentVertCount;i++)
+            {
+                mesh.PopulateUIVertex(ref vertex,i); var p = vertex.position;
+                p.x = Mathf.Clamp(p.x,r.xMin,r.xMax); p.y = Mathf.Clamp(p.y,r.yMin,r.yMax);
+                float shift = Mathf.Max(0,cut-(p.x-r.xMin+r.yMax-p.y))/2; p.x+=shift; p.y-=shift;
+                shift = Mathf.Max(0,cut-(r.xMax-p.x+r.yMax-p.y))/2; p.x-=shift; p.y-=shift;
+                shift = Mathf.Max(0,cut-(p.x-r.xMin+p.y-r.yMin))/2; p.x+=shift; p.y+=shift;
+                shift = Mathf.Max(0,cut-(r.xMax-p.x+p.y-r.yMin))/2; p.x-=shift; p.y+=shift;
+                vertex.position = p; mesh.SetUIVertex(vertex,i);
+            }
+        }
+    }
+    sealed class LastStandConsoleSurface : Image
+    {
+        bool action;
+        public void Initialize(bool isAction) { action = isAction; SetVerticesDirty(); }
+        protected override void OnPopulateMesh(VertexHelper mesh)
+        {
+            mesh.Clear(); var r = rectTransform.rect;
+            LastStandConsoleGeometry.Face(mesh,r,LastStandConsoleGeometry.Cut(r,action),color,color);
+        }
+    }
+    sealed class LastStandConsoleOutline : Outline
+    {
+        public override void ModifyMesh(VertexHelper mesh)
+        {
+            if (!IsActive()) return;
+            base.ModifyMesh(mesh);
+            var r = graphic.rectTransform.rect;
+            LastStandConsoleGeometry.Confine(mesh,r,LastStandConsoleGeometry.Cut(r,true));
+        }
+    }
     // Bevels, worn brass, recessed readings and captive screws share one mesh
     // treatment. Meshes rebuild on dimensions/state changes, not every frame.
     sealed class LastStandConsoleFrame : MaskableGraphic
@@ -933,19 +1004,7 @@ namespace SingedTerra.LastStand
         static Rect Inset(Rect r, float x, float y)
         { return new Rect(r.x+x,r.y+y,Mathf.Max(0,r.width-2*x),Mathf.Max(0,r.height-2*y)); }
         static Vector2 Corner(Rect r, int point, float cut)
-        {
-            switch (point & 7)
-            {
-                case 0: return new Vector2(r.xMin+cut,r.yMax);
-                case 1: return new Vector2(r.xMax-cut,r.yMax);
-                case 2: return new Vector2(r.xMax,r.yMax-cut);
-                case 3: return new Vector2(r.xMax,r.yMin+cut);
-                case 4: return new Vector2(r.xMax-cut,r.yMin);
-                case 5: return new Vector2(r.xMin+cut,r.yMin);
-                case 6: return new Vector2(r.xMin,r.yMin+cut);
-                default: return new Vector2(r.xMin,r.yMax-cut);
-            }
-        }
+        { return LastStandConsoleGeometry.Corner(r,point,cut); }
         static void Quad(VertexHelper mesh, Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color color)
         {
             int start = mesh.currentVertCount;
@@ -956,16 +1015,7 @@ namespace SingedTerra.LastStand
         static void Box(VertexHelper mesh, Rect r, Color color)
         { Quad(mesh,new Vector2(r.xMin,r.yMax),new Vector2(r.xMax,r.yMax),new Vector2(r.xMax,r.yMin),new Vector2(r.xMin,r.yMin),color); }
         static void Face(VertexHelper mesh, Rect r, float cut, Color top, Color bottom)
-        {
-            int start = mesh.currentVertCount; var center = r.center;
-            mesh.AddVert(center,Color.Lerp(bottom,top,.5f),center/96);
-            for (int i = 0; i <= 8; i++)
-            {
-                var point = Corner(r,i,cut);
-                mesh.AddVert(point,Color.Lerp(bottom,top,(point.y-r.yMin)/r.height),point/96);
-                if (i > 0) mesh.AddTriangle(start,start+i,start+i+1);
-            }
-        }
+        { LastStandConsoleGeometry.Face(mesh,r,cut,top,bottom); }
         static void Ring(VertexHelper mesh, Rect outer, float width, float cut, Color top, Color bottom)
         {
             var inner = Inset(outer,width); float innerCut = Mathf.Max(0,cut-width);
@@ -1007,7 +1057,7 @@ namespace SingedTerra.LastStand
             mesh.Clear(); Rect r = rectTransform.rect; if (r.width < 14 || r.height < 14) return;
             Color rim = !available ? Metal : Rim;
             Color light = !available ? Metal : highlighted ? new Color(.81f,.69f,.45f,1) : EdgeLight;
-            float cut = action ? 6 : 9;
+            float cut = LastStandConsoleGeometry.Cut(r,action);
             if (!action && r.height <= 52)
             {
                 // The short-height layout reserves only two CSS pixels of
@@ -1029,10 +1079,10 @@ namespace SingedTerra.LastStand
                     float y = i % 2 == 0 ? r.yMax-3.5f : r.yMin+3;
                     Box(mesh,new Rect(x,y,Mathf.Min(9,r.xMax-x-10),.5f),new Color(.72f,.61f,.39f,.22f));
                 }
-                Screw(mesh,new Vector2(r.xMin+4.5f,r.yMax-4.5f),light,EdgeDark);
-                Screw(mesh,new Vector2(r.xMax-4.5f,r.yMax-4.5f),light,EdgeDark);
-                Screw(mesh,new Vector2(r.xMin+4.5f,r.yMin+4.5f),light,EdgeDark);
-                Screw(mesh,new Vector2(r.xMax-4.5f,r.yMin+4.5f),light,EdgeDark);
+                Screw(mesh,new Vector2(r.xMin+7,r.yMax-7),light,EdgeDark);
+                Screw(mesh,new Vector2(r.xMax-7,r.yMax-7),light,EdgeDark);
+                Screw(mesh,new Vector2(r.xMin+7,r.yMin+7),light,EdgeDark);
+                Screw(mesh,new Vector2(r.xMax-7,r.yMin+7),light,EdgeDark);
             }
             else
             {
@@ -1046,8 +1096,11 @@ namespace SingedTerra.LastStand
                 KeyBevel(mesh,Inset(r,5,1.5f),1,.5f,1,pressed ? rim : EdgeDark,pressed ? EdgeDark : rim);
                 Screw(mesh,new Vector2(r.xMin+3.5f,r.center.y),light,EdgeDark,1.3f);
                 Screw(mesh,new Vector2(r.xMax-3.5f,r.center.y),light,EdgeDark,1.3f);
+                if (highlighted && available)
+                    Ring(mesh,Inset(r,1),1.5f,cut-1,new Color(.96f,.82f,.5f,1),new Color(.96f,.82f,.5f,1));
             }
             if (instruments) { Instrument(mesh,r,hull); Instrument(mesh,r,timer); Instrument(mesh,r,disabled); }
+            LastStandConsoleGeometry.Confine(mesh,r,cut);
         }
     }
     // The dedicated Canvas has one transient focus owner. Availability and

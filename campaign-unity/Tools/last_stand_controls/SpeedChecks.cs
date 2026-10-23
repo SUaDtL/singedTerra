@@ -25,7 +25,17 @@ static class SpeedChecks
         Field(session, "art", new SingedTerra.Art.TankPresentation { showingLauncher = launcher });
         if (playable) Field(session, "loop", new LastStandLoopController());
         typeof(EncounterSession).GetProperty("View").SetValue(session, new EncounterView());
-        session.DeployAt(0);
+        if(playable)
+        {
+            var shop=new LastStandShopState(1,launcher?LastStandFitting.Launcher:LastStandFitting.Repair,
+                new int[LastStandUpgradeCatalog.Tracks.Count]);
+            // This scheduler fixture assumes an accepted boundary. Faults and
+            // durable writes belong to the actual controller integration suite.
+            session.WaveCleared+=model=>{shop.ObserveAuthoritativeKills(model.Kills);session.ContinueCommittedWave();};
+            UnityEngine.Time.realtimeSinceStartupAsDouble=0;
+            session.DeployReservedRun(shop);
+        }
+        else session.DeployAt(0);
         return session;
     }
     static void Drain(EncounterSession session, double now)
@@ -41,7 +51,8 @@ static class SpeedChecks
     static EncounterModel Reference(int ticks, bool launcher = false)
     {
         var model = new EncounterModel(launcher, EncounterProfile.ForTier(1), EncounterModel.CannonDamage);
-        while (model.Tick < ticks && model.Status == EncounterStatus.Running) model.Step();
+        while (model.Tick < ticks && model.Status == EncounterStatus.Running)
+        {model.Step();if(model.AwaitingWaveCommit && model.Status==EncounterStatus.Running)model.ContinueAfterCheckpoint();}
         return model;
     }
     static void HalfSpeed()
@@ -148,7 +159,7 @@ static class SpeedChecks
     {
         foreach (bool launcher in new[] { false, true })
         {
-            var reference = Reference(3600, launcher);
+            var reference = Reference(24000, launcher);
             Check(reference.Status != EncounterStatus.Running, "reference reaches terminal");
             double terminalWall = reference.Tick * .1;
             var session = Session(launcher);
@@ -167,6 +178,28 @@ static class SpeedChecks
             Check(session.Model.Snapshot() == terminal, "terminal model never steps again");
             Near(session.TerminalElapsedSeconds, .48, "settling remains bounded");
         }
+    }
+    static void CueCallbackLifetime()
+    {
+        var session=Session();double now=0;int stepped=0,terminal=0,ordinary=0;
+        session.Stepped+=model=>{
+            stepped++;var cue=session.PrepareCombatCue("impact");
+            Check(cue!=null && cue.Admit(now) && cue.tick==model.Tick && cue.steps==session.StepsThisCallback,
+                "Actual session binds cue to currently admitted step");
+        };
+        session.Changed+=()=>{
+            if(session.Model.Status!=EncounterStatus.Defeated){ordinary++;return;}
+            if(terminal>0)return;
+            terminal++;var fresh=session.PrepareCombatCue("defeat");
+            var delayed=session.PrepareCombatCue("defeat");
+            Check(fresh!=null && fresh.Admit(now) && fresh.run>0 && fresh.tick==session.Model.Tick,
+                "Terminal Changed retains current callback after clock Stop");
+            Check(!delayed.Admit(now+.501) && delayed.reason=="expired","Terminal persistence/presentation time counts before defeat playback");
+        };
+        while(session.Model.Status==EncounterStatus.Running){now+=.05;session.AdvanceAt(now);}
+        Check(terminal==1 && ordinary>0 && stepped>0,"Actual natural defeat reaches terminal callback");
+        Check(session.PrepareCombatCue("defeat")==null,"Completed callback cannot authorize future combat cues");
+        now+=.1;session.AdvanceAt(now);Check(session.PrepareCombatCue("defeat")==null,"Settling has no combat callback");
     }
     static void Legacy()
     {
@@ -191,6 +224,7 @@ static class SpeedChecks
         {
             switch (args[0])
             {
+                case "cue_callback_lifetime": CueCallbackLifetime(); break;
                 case "half_speed_weighted_combat_parity": HalfSpeed(); break;
                 case "rate_boundary_fraction_and_retained_debt": RateBoundary(); break;
                 case "pause_holds_resume_and_plus_from_zero": Holds(); break;
@@ -237,6 +271,7 @@ namespace SingedTerra.Art
     public class TankPresentation : UnityEngine.MonoBehaviour
     {
         public bool showingLauncher;
+        public string FittingId=>showingLauncher?"launcher":"repair";
         public bool EncounterActive;
         public bool BeginEncounter() { EncounterActive = true; return true; }
         public void EndEncounter() { EncounterActive = false; }

@@ -1,8 +1,13 @@
 """Compile and exercise the production tier catalog and combat profiles."""
 from pathlib import Path
+import sys
 import subprocess
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "Unity/Assets/Scripts"
 EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
@@ -17,6 +22,7 @@ class TierRulesTests(unittest.TestCase):
             sources = [SCRIPTS / name for name in (
                 "EncounterModel.cs", "EncounterProfile.cs", "LastStandTierCatalog.cs"
             )] + [Path(__file__).with_name("TierRulesChecks.cs")]
+            sources = complete_sources(SCRIPTS, sources)
             build = subprocess.run([str(MONO), str(CSC), "-nologo", f"-out:{executable}", *map(str, sources)],
                                    capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
             self.assertEqual(build.returncode, 0, build.stdout + build.stderr)

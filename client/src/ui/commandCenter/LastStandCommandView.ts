@@ -25,15 +25,15 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
   headline.textContent = 'Hold the line. Return stronger.';
   const description = document.createElement('p');
   description.className = 'last-stand-command__description';
-  description.textContent = 'Deploy into the field, survive until defeat, claim salvage, upgrade your cannon, and deploy again.';
+  description.textContent = 'Clear enemy waves, bank salvage and milestone unlocks, and build a stronger tank. Keep farming your tier or push into the next battlefield.';
   lead.append(eyebrow, headline, description);
 
   const briefing = document.createElement('dl');
   briefing.className = 'last-stand-command__briefing';
   for (const [term, value] of [
-    ['Assignment', 'Endure the assault'],
-    ['Progress', 'Salvage and permanent cannon upgrades'],
-    ['Save', 'Local save in this browser'],
+    ['Assignment', 'Defeat every enemy in each wave'],
+    ['Progress', 'Wave rewards, permanent upgrades and armaments'],
+    ['Save', 'Checkpoint after every completed wave'],
   ] as const) {
     const dt = document.createElement('dt');
     dt.textContent = term;
@@ -55,7 +55,7 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
   disclosure.id = `last-stand-loss-${++lastStandCommandViewId}`;
   disclosure.className = 'last-stand-command__loss';
   disclosure.dataset.lastStandLossDisclosure = '';
-  disclosure.textContent = 'Leaving or reloading an unfinished run loses its progress without a reward. Saved upgrades and pending defeat rewards stay in this browser only after a successful save.';
+  disclosure.textContent = 'Returning or reloading keeps your last confirmed wave checkpoint and banked rewards. Resume starts paused at the unfinished wave; partial-wave upgrades and spending roll back together. Saves stay in this browser and do not sync with your account.';
   launch.setAttribute('aria-describedby', disclosure.id);
 
   createPreparationFrame(document, {
@@ -71,8 +71,29 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
   });
   host.replaceChildren(root);
 
+  const refresh = () => {
+    launch.textContent = 'Launch Last Stand';
+    // This is a read-only entry hint. Unity remains the sole checkpoint
+    // validator and never resumes a run merely because this link was used.
+    try {
+      const raw = document.defaultView?.localStorage.getItem('singedTerra.lastStand.prototype.v1');
+      if (!raw || raw.length > 262144) return;
+      const save: unknown = JSON.parse(raw);
+      if (!save || typeof save !== 'object' || !('version' in save) || save.version !== 4 || !('checkpoint' in save)) return;
+      const checkpoint = save.checkpoint;
+      if (!checkpoint || typeof checkpoint !== 'object' || !('runId' in checkpoint) || !Number.isSafeInteger(checkpoint.runId) ||
+        Number(checkpoint.runId) < 1 || !('encounter' in checkpoint)) return;
+      const encounter = checkpoint.encounter;
+      if (!encounter || typeof encounter !== 'object' || !('tier' in encounter) || !('completedWave' in encounter) ||
+        !Number.isSafeInteger(encounter.tier) || Number(encounter.tier) < 1 || !Number.isSafeInteger(encounter.completedWave) ||
+        Number(encounter.completedWave) < 0 || Number(encounter.completedWave) >= 2147483647) return;
+      launch.textContent = `Resume Tier ${encounter.tier} · Wave ${Number(encounter.completedWave) + 1}`;
+    } catch { /* The game presents storage or validation errors after launch. */ }
+  };
+  refresh();
+
   return {
-    update: () => undefined,
+    update: refresh,
     focusDefault: () => launch.focus(),
     dispose: () => root.remove(),
   };
@@ -84,7 +105,7 @@ export function createLastStandCommandCategoryContribution<Context>(): CommandCa
     availability: () => true,
     provideItems: () => [{
       id: commandItemId('last-stand'),
-      summary: { label: 'Last Stand', description: 'Survive, salvage, upgrade, and redeploy.' },
+      summary: { label: 'Last Stand', description: 'Clear waves, bank rewards, and resume your campaign.' },
       availability: () => true,
       createView: (host) => createLastStandCommandView<Context>(host),
     }],

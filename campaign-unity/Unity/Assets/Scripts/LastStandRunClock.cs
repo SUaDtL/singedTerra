@@ -2,6 +2,37 @@ using System;
 
 namespace SingedTerra.LastStand
 {
+    // A combat cue is admitted at its own playback boundary, in the same
+    // monotonic clock domain as the model callback. Logging may follow later.
+    [Serializable] public sealed class LastStandAudioCue
+    {
+        public string action = "cue", cue, reason;
+        public int id, run, fromTick, tick, steps, ordinal;
+        public double timestamp, previousTimestamp, admittedAt;
+        public bool played;
+        bool eligible;
+        static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+        public static LastStandAudioCue Prepare(string cue, int id, int run, int fromTick, int tick,
+            int steps, int ordinal, double timestamp, double previousTimestamp, double priorPending, bool eligible)
+        {
+            return new LastStandAudioCue { cue=cue, id=id, run=run, fromTick=fromTick, tick=tick,
+                steps=steps, ordinal=ordinal, timestamp=timestamp, previousTimestamp=previousTimestamp,
+                eligible=eligible && id>0 && run>0 && ordinal>0 && steps>=1 && steps<=10 && tick==fromTick+steps &&
+                    Finite(priorPending) && priorPending>=0 && priorPending<.05 && timestamp-previousTimestamp<=.5 };
+        }
+        // This final clock check allocates nothing. The same precreated attempt
+        // also permits an early refusal without touching a currently playing voice.
+        public bool Admit(double now)
+        {
+            admittedAt=now;played=false;
+            if (!Finite(timestamp) || !Finite(previousTimestamp) || !Finite(now) ||
+                previousTimestamp<0 || timestamp<previousTimestamp || now<timestamp) reason="clock";
+            else if (!eligible) reason="callback";
+            else if (now-previousTimestamp>.5) reason="expired";
+            else { played=true; reason="played"; }
+            return played;
+        }
+    }
     // Same-document scheduling only. The session owns model steps and terminal
     // outcomes; progression/storage remain with their existing owners.
     public sealed class LastStandRunClock

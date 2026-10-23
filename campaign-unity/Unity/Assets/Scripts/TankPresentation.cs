@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using SingedTerra.LastStand;
 namespace SingedTerra.Art
 {
     // Art presentation only. No combat, inventory or persistent progression.
@@ -8,6 +9,35 @@ namespace SingedTerra.Art
         public Camera view;
         public Transform tank, turret, barrel, muzzle;
         public GameObject repairModule, launcherModule, flash;
+        public GameObject scattergunModule { get; private set; }
+        LastStandScattergunModule scattergun;
+        Renderer[] repairMeshes, launcherMeshes, scattergunMeshes;
+        public LastStandFitting Fitting { get; private set; }=LastStandFitting.Repair;
+        public GameObject ActiveFittingModule => Module(Fitting);
+        public Renderer[] ActiveFittingRenderers
+        {
+            get
+            {
+                switch(Fitting)
+                {
+                    case LastStandFitting.Repair:return repairMeshes;
+                    case LastStandFitting.Launcher:return launcherMeshes;
+                    case LastStandFitting.Scattergun:return scattergunMeshes;
+                    default:throw new ArgumentOutOfRangeException(nameof(Fitting));
+                }
+            }
+        }
+        public Vector3 ScattergunMuzzle => scattergun.MuzzlePosition;
+        GameObject Module(LastStandFitting fitting)
+        {
+            switch(fitting)
+            {
+                case LastStandFitting.Repair:return repairModule;
+                case LastStandFitting.Launcher:return launcherModule;
+                case LastStandFitting.Scattergun:return scattergunModule;
+                default:throw new ArgumentOutOfRangeException(nameof(fitting));
+            }
+        }
         public bool battlefield, showingLauncher, animate=true;
         public int previewCount;
         Vector3 barrelHome, recoilAxis;
@@ -25,8 +55,14 @@ namespace SingedTerra.Art
         public bool EncounterActive { get; private set; }
         public bool EncounterPaused { get; private set; }
         public event Action Changed;
-        void Start()
+        bool initialized;
+        void Start() { EnsureInitialized(); }
+        // Unity does not order these sibling Start callbacks. The HUD and any
+        // direct fitting consumer require complete module/rest-pose metadata;
+        // a later Start must not reset the fitting restored by the controller.
+        internal void EnsureInitialized()
         {
+            if(initialized)return;
             if(!view||!tank||!turret||!barrel||!muzzle||!repairModule||!launcherModule)
                 throw new InvalidOperationException("Incomplete tank presentation references");
             barrelHome=barrel.localPosition;turretHome=turret.localRotation;turretHomeWorld=turret.rotation;
@@ -37,7 +73,16 @@ namespace SingedTerra.Art
             if(inspectionForward.sqrMagnitude<.5f)throw new InvalidOperationException("No horizontal inspection axis");
             Application.targetFrameRate=60;
             if(!GetComponent<SingedTerra.LastStand.LastStandLoopController>())Application.runInBackground=false;
-            repairModule.SetActive(true);launcherModule.SetActive(false);
+            if(!scattergunModule)
+            {
+                scattergunModule=new GameObject("Attachment_Scattergun");
+                scattergun=scattergunModule.AddComponent<LastStandScattergunModule>();scattergun.Initialize(this);
+            }
+            repairMeshes=repairModule.GetComponentsInChildren<Renderer>(true);launcherMeshes=launcherModule.GetComponentsInChildren<Renderer>(true);
+            scattergunMeshes=scattergunModule.GetComponentsInChildren<Renderer>(true);
+            Fitting=LastStandFitting.Repair;showingLauncher=false;
+            repairModule.SetActive(true);launcherModule.SetActive(false);scattergunModule.SetActive(false);
+            initialized=true;
             flash.SetActive(false);SetView(false,true);Report("ready");
         }
         Vector3 cameraGoal,lookGoal;
@@ -45,7 +90,7 @@ namespace SingedTerra.Art
         Rect garageViewport;
         bool garageFraming;
         float garageAspect;
-        bool garageLauncher;
+        LastStandFitting garageFitting;
         Renderer[] garageMeshes;
         // Fit the authored tank into the space left by the garage cards without
         // cropping the world camera or changing the active encounter framing.
@@ -58,8 +103,8 @@ namespace SingedTerra.Art
                 float.IsInfinity(normalizedViewport.width) || float.IsInfinity(normalizedViewport.height) ||
                 normalizedViewport.xMin<0 || normalizedViewport.yMin<0 || normalizedViewport.xMax>1 || normalizedViewport.yMax>1 ||
                 normalizedViewport.width<=0 || normalizedViewport.height<=0)return;
-            if(garageFraming && garageViewport==normalizedViewport && Mathf.Approximately(garageAspect,view.aspect) && garageLauncher==showingLauncher)return;
-            garageViewport=normalizedViewport;garageFraming=true;garageAspect=view.aspect;garageLauncher=showingLauncher;
+            if(garageFraming && garageViewport==normalizedViewport && Mathf.Approximately(garageAspect,view.aspect) && garageFitting==Fitting)return;
+            garageViewport=normalizedViewport;garageFraming=true;garageAspect=view.aspect;garageFitting=Fitting;
             UpdateCameraGoal();view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);
         }
         public void RefreshReviewCamera()
@@ -136,16 +181,23 @@ namespace SingedTerra.Art
         public void ToggleAttachment()
         {
             // Legacy art-review shortcut; the playable UI selects explicit identities.
-            TrySelectFitting(showingLauncher ? "repair" : "launcher");
+            TrySelectFitting(Fitting==LastStandFitting.Repair ? "launcher" : "repair");
         }
-        public string FittingId => showingLauncher ? "launcher" : "repair";
+        public string FittingId => LastStandFittingCatalog.Id(Fitting);
         public bool TrySelectFitting(string id)
         {
-            if(EncounterActive || (id!="repair" && id!="launcher"))return false;
-            showingLauncher=id=="launcher";repairModule.SetActive(!showingLauncher);
-            launcherModule.SetActive(showingLauncher);Report("attachment");
+            if(EncounterActive)return false;
+            LastStandFitting selected;
+            try { selected=LastStandFittingCatalog.Parse(id); } catch(ArgumentException){return false;}
+            EnsureInitialized();
+            if(!Module(selected))return false;
+            Fitting=selected;showingLauncher=selected==LastStandFitting.Launcher;
+            repairModule.SetActive(selected==LastStandFitting.Repair);launcherModule.SetActive(selected==LastStandFitting.Launcher);
+            scattergunModule.SetActive(selected==LastStandFitting.Scattergun);Report("attachment");
             return true;
         }
+        public void PlayScattergunShot(Vector3 target)
+        { if(EncounterActive && Fitting==LastStandFitting.Scattergun)scattergun.Fire(target); }
         public void PreviewMotion()
         {
             if(EncounterActive||recoilTime>0)return;
@@ -159,6 +211,7 @@ namespace SingedTerra.Art
             encounterWasWide=battlefield;encounterWasAnimating=animate;
             SetView(true,true);EncounterActive=true;EncounterPaused=false;animate=false;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
+            scattergun.Clear();
             return true;
         }
         public void EndEncounter()
@@ -166,6 +219,7 @@ namespace SingedTerra.Art
             if(!EncounterActive)return;
             EncounterActive=false;EncounterPaused=false;animate=encounterWasAnimating;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
+            scattergun.RestoreMount();
             SetView(encounterWasWide,true);
         }
         public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
@@ -178,6 +232,7 @@ namespace SingedTerra.Art
         {
             if(!EncounterActive)return;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
+            scattergun.Clear();
         }
         // The session admits terminal time only after its pause/focus/failure guards.
         // Keep the camera, idle motion and committed encounter locked.
@@ -215,6 +270,7 @@ namespace SingedTerra.Art
         }
         void AdvanceShot(float dt)
         {
+            scattergun?.Advance(dt);
             bool wasRecoiling=recoilTime>0;
             if(recoilTime>0)recoilTime=Mathf.Max(0,recoilTime-dt);
             float kick=recoilTime>0?Mathf.Sin((1-recoilTime/.7f)*Mathf.PI)*.32f:0;
@@ -238,7 +294,7 @@ namespace SingedTerra.Art
         [Serializable] class State
         {
             public string action,view,attachment;
-            public bool motion,repairVisible,launcherVisible;
+            public bool motion,repairVisible,launcherVisible,scattergunVisible;
             public int previews,width,height;
             public float inspectionYaw;
             public bool callouts;
@@ -246,8 +302,9 @@ namespace SingedTerra.Art
         void Report(string action)
         {
             var state=new State{action=action,view=battlefield?"battlefield":"inspection",
-                attachment=showingLauncher?"launcher":"repair",motion=animate,
+                attachment=FittingId,motion=animate,
                 repairVisible=repairModule.activeSelf,launcherVisible=launcherModule.activeSelf,
+                scattergunVisible=scattergunModule && scattergunModule.activeSelf,
                 previews=previewCount,width=Screen.width,height=Screen.height,
                 inspectionYaw=InspectionYaw,callouts=ShowPartCallouts};
             Debug.Log("ST_ART_STATE "+JsonUtility.ToJson(state));Changed?.Invoke();

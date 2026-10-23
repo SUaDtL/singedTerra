@@ -10,13 +10,14 @@ internal static class TierRulesChecks
     {
         try
         {
-            var factory = typeof(EncounterProfile).GetMethod("ForTier", BindingFlags.Public | BindingFlags.Static);
+            var factory = typeof(EncounterProfile).GetMethod("ForTier", new[]{typeof(int)});
             Require(factory != null, "Playable encounter has no immutable tier profile selection.");
             var first = (EncounterProfile)factory.Invoke(null, new object[] { 1 });
             var second = (EncounterProfile)factory.Invoke(null, new object[] { 2 });
-            Require(first == EncounterProfile.PlayablePrototype && first.Id == "playable-prototype-v1", "Tier 1 retains shipped rules.");
-            Require(second.Id == LastStandTierCatalog.Get(2).EncounterProfileId && second.IsPlayable, "Tier 2 has its own playable identity.");
-            Require(first.Horizon == 3600 && second.Horizon == 3600, "Safety horizon remains unchanged.");
+            Require(first != EncounterProfile.PlayablePrototype && first.IsWaveBased && first.Id == LastStandWaveCatalog.RulesVersion+":"+LastStandTierCatalog.Get(1).EncounterProfileId, "Player tier uses versioned waves.");
+            Require(second.Id == LastStandWaveCatalog.RulesVersion+":"+LastStandTierCatalog.Get(2).EncounterProfileId && second.IsWaveBased, "Tier 2 has its own wave identity.");
+            Require(first.Horizon == int.MaxValue && second.Horizon == int.MaxValue, "Wave runs do not end at the old fixture horizon.");
+            Require(EncounterProfile.PlayablePrototype.Horizon == 3600 && EncounterProfile.PlayablePrototype.Id == "playable-prototype-v1" && !EncounterProfile.PlayablePrototype.IsWaveBased, "Historical playable oracle retains its explicit fixture.");
             for (int hull = 1; hull < 101; hull++)
                 Require(LastStandTierCatalog.EnemyHull(2, hull) == (hull * 5 + 3) / 4, "Exact ceiling scale, including odd hull.");
             try { factory.Invoke(null, new object[] { 3 }); throw new Exception("Unknown tier admitted."); }
@@ -24,10 +25,10 @@ internal static class TierRulesChecks
             // Repair fitting has no tick-one auxiliary shot, exposing initial hull.
             var a = new EncounterModel(false, first); var b = new EncounterModel(false, second);
             a.Step(); b.Step();
-            Require(a.Foes[0].MaximumHull == 30 && b.Foes[0].MaximumHull == 38 && b.Foes[0].Hull == 38,
-                "Tier 2 changes both initial and maximum hull at actual spawn.");
-            Require(a.Foes[0].Distance == b.Foes[0].Distance && a.Foes[0].Damage == b.Foes[0].Damage,
-                "Tier scaling changes no movement or attack rules.");
+            Require(a.Foes[0].MaximumHull == 30 && b.Foes[0].MaximumHull == 90 && b.Foes[0].Hull == 90,
+                "Tier 2 wave threat changes initial and maximum hull at actual spawn.");
+            Require(a.Foes[0].Distance == b.Foes[0].Distance && b.Foes[0].Damage == a.Foes[0].Damage*3,
+                "Wave threat scales damage while retaining movement.");
             var legacy = new EncounterModel(false); legacy.Step();
             var review = new EncounterModel(false, EncounterProfile.VisualReview); review.Step();
             Require(legacy.Foes[0].MaximumHull == 30 && review.Foes[0].MaximumHull == 30, "Legacy/review hull unchanged.");

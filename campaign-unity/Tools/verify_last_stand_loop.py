@@ -1,4 +1,11 @@
-"""One source-bound Last Stand Web build and normal-speed real-pointer loop."""
+"""Maintained Web entry plus explicitly historical v3 Shop report validators.
+
+The Web unittest delegates to the current wave journey. The v3 helpers below
+retain archived manual-Claim evidence guards; they cannot qualify v4 wave saves.
+Current player/Shop evidence: scripts/last-stand-first-session.mjs.
+Current storage faults: last_stand_waves/test_checkpoint_store.py and
+last_stand_shop/test_shop_persistence.py.
+"""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -31,16 +38,16 @@ SPEC = {'revision': 4, 'model_sha256': '0fce3f7b2eb7f6743b3b5c5960b8fdece577c884
 PLAN = {'revision': 6, 'model_sha256': 'f912cf6d951328966555e3c2f9511fcaca3bbefc5c21d04de7c896f1920a7304',
         'normative_sha256': 'b8a8dd6156609bb6c14d5ce45ce34c8fb4124d37af806b240741e90e640f00b1'}
 
-TIER_PROFILE = 'tier-goals-v1'
-SAVE_TRACKS = {'cannonAttack', 'launcherAttack', 'hullCapacity', 'armor', 'cannonCycle', 'fieldRepair'}
+LEGACY_TIER_PROFILE = 'tier-goals-v1'
+LEGACY_SAVE_TRACKS = {'cannonAttack', 'launcherAttack', 'hullCapacity', 'armor', 'cannonCycle', 'fieldRepair'}
 
 
-def _empty_tier_records():
-    return {TIER_PROFILE: {'bestTicks1': 0, 'bestKills1': 0, 'bestTicks2': 0, 'bestKills2': 0,
+def _empty_historical_tier_records():
+    return {LEGACY_TIER_PROFILE: {'bestTicks1': 0, 'bestKills1': 0, 'bestTicks2': 0, 'bestKills2': 0,
                            'tierTwoUnlocked': False}}
 
 
-def _current_progression_record(value):
+def _historical_v3_progression_record(value):
     """Closed v3 observation contract; unknown fields/profiles are not admitted."""
     integer = lambda number: type(number) is int and 0 <= number <= 2147483647
     if not isinstance(value, dict) or set(value) != {'version', 'credits', 'permanentLevels', 'nextRunId',
@@ -51,11 +58,11 @@ def _current_progression_record(value):
             or not integer(value['nextRunId']) or not integer(value['lastFinalizedRunId'])
             or not 0 <= value['lastFinalizedRunId'] < value['nextRunId']
             or type(value['selectedTier']) is not int or value['selectedTier'] not in (1, 2)
-            or not isinstance(levels, dict) or set(levels) != SAVE_TRACKS
+            or not isinstance(levels, dict) or set(levels) != LEGACY_SAVE_TRACKS
             or any(not integer(level) or level > 3 for level in levels.values())
-            or not isinstance(profiles, dict) or set(profiles) != {TIER_PROFILE}):
+            or not isinstance(profiles, dict) or set(profiles) != {LEGACY_TIER_PROFILE}):
         return False
-    records = profiles[TIER_PROFILE]
+    records = profiles[LEGACY_TIER_PROFILE]
     if (not isinstance(records, dict) or set(records) != {'bestTicks1', 'bestKills1', 'bestTicks2', 'bestKills2', 'tierTwoUnlocked'}
             or any(not integer(records[key]) for key in ('bestTicks1', 'bestKills1', 'bestTicks2', 'bestKills2'))
             or records['bestTicks1'] > 3600 or records['bestTicks2'] > 3600
@@ -76,7 +83,7 @@ def _current_progression_record(value):
         return (pending['profileVersion'] == '' and pending['reward'] == 1
                 and not any(pending[key] for key in ('isLimit', 'newBestTime', 'newBestKills', 'unlockedTierTwo')))
     tier = pending['tier']
-    if (tier not in (1, 2) or pending['profileVersion'] != TIER_PROFILE or tier != value['selectedTier']
+    if (tier not in (1, 2) or pending['profileVersion'] != LEGACY_TIER_PROFILE or tier != value['selectedTier']
             or tier == 2 and not records['tierTwoUnlocked'] or pending['elapsedTicks'] > 3600
             or pending['reward'] != (0 if pending['isLimit'] else 1)
             or pending['isLimit'] and pending['elapsedTicks'] != 3600):
@@ -88,32 +95,32 @@ def _current_progression_record(value):
                  and pending['elapsedTicks'] >= 1200 and pending['newBestTime']))
 
 
-def _migrated_progression_record(legacy):
+def _historical_v3_migrated_record(legacy):
     """Expected output for a declared legacy fixture, never live evidence."""
     value = json.loads(json.dumps(legacy))
     if value['version'] == 1:
         level = value.pop('permanentLevel')
-        value['permanentLevels'] = {key: level if key == 'cannonAttack' else 0 for key in SAVE_TRACKS}
-    value.update(version=3, selectedTier=1, tierRecords=_empty_tier_records())
+        value['permanentLevels'] = {key: level if key == 'cannonAttack' else 0 for key in LEGACY_SAVE_TRACKS}
+    value.update(version=3, selectedTier=1, tierRecords=_empty_historical_tier_records())
     if value['pendingDefeat'] is not None:
         value['pendingDefeat'].update(tier=0, profileVersion='', isLimit=False, newBestTime=False,
                                       newBestKills=False, unlockedTierTwo=False)
     return value
 
 
-def _terminal_progression_record(prior, run_id, ticks, kills):
-    """Expected ordinary terminal transaction from independently observed inputs."""
+def _historical_v3_terminal_record(prior, run_id, ticks, kills):
+    """Historical v3 manual-Claim terminal expectation from observed inputs."""
     value = json.loads(json.dumps(prior))
-    require(_current_progression_record(value), 'Terminal expectation requires a valid current save')
+    require(_historical_v3_progression_record(value), 'Historical terminal expectation requires a valid v3 save')
     tier = value['selectedTier']
-    records = value['tierRecords'][TIER_PROFILE]
+    records = value['tierRecords'][LEGACY_TIER_PROFILE]
     best_time, best_kills = ticks > records[f'bestTicks{tier}'], kills > records[f'bestKills{tier}']
     unlocked = tier == 1 and not records['tierTwoUnlocked'] and ticks >= 1200
     records[f'bestTicks{tier}'] = max(ticks, records[f'bestTicks{tier}'])
     records[f'bestKills{tier}'] = max(kills, records[f'bestKills{tier}'])
     records['tierTwoUnlocked'] |= unlocked
     value.update(nextRunId=run_id + 1, pendingDefeat={'runId': run_id, 'elapsedTicks': ticks, 'kills': kills,
-                 'reward': 1, 'tier': tier, 'profileVersion': TIER_PROFILE, 'isLimit': False,
+                 'reward': 1, 'tier': tier, 'profileVersion': LEGACY_TIER_PROFILE, 'isLimit': False,
                  'newBestTime': best_time, 'newBestKills': best_kills, 'unlockedTierTwo': unlocked})
     return value
 
@@ -421,7 +428,7 @@ def verify_shop_presentation_states(report, directory):
         require({k: v for k, v in event.items() if k not in ('load', 'emittedRaw')} == json.loads(event['emittedRaw'].split('ST_TEST_STORAGE ', 1)[1]),
                 'Storage observation differs from its raw emission')
     migrated = json.loads(report['migrated_storage']['raw'])
-    require(_current_progression_record(migrated) and migrated['credits'] == 1 and migrated['permanentLevels']['cannonAttack'] == 3
+    require(_historical_v3_progression_record(migrated) and migrated['credits'] == 1 and migrated['permanentLevels']['cannonAttack'] == 3
             and all(level == 0 for key, level in migrated['permanentLevels'].items() if key != 'cannonAttack'),
             'Actual migration did not retain only capped Cannon ownership')
     capped = report['capped_state']
@@ -625,9 +632,9 @@ def verify_shop_vertical(report):
                     'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext'},
                     'shopControls': {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'},
+                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy'},
                     'settingsControls': {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                     'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
@@ -760,14 +767,14 @@ def verify_shop_vertical(report):
         storage[item['label']] = item
         if item['data'] is not None:
             value = item['data']
-            require(_current_progression_record(value),
+            require(_historical_v3_progression_record(value),
                     'Saved Shop record contains temporary or invalid state')
     require(witnesses['initial_storage'] == storage.get('initial'), 'Detached initial storage')
     for witness_name, label in (('claim_before', 'claim-before'), ('claim_after', 'claim-after'),
                                ('permanent_after', 'permanent-after'), ('reload', 'reload')):
         require(label in storage and witnesses[witness_name] == storage[label]['data'], 'Detached saved witness: ' + label)
     claim_before, claim_after = witnesses['claim_before'], witnesses['claim_after']
-    expected_terminal = _terminal_progression_record(storage['initial']['data'], run_id, defeat['tick'], defeat['kills'])
+    expected_terminal = _historical_v3_terminal_record(storage['initial']['data'], run_id, defeat['tick'], defeat['kills'])
     require(claim_before == expected_terminal, 'Defeat records and reward were not naturally saved')
     expected_claim = dict(claim_before, credits=1, pendingDefeat=None, lastFinalizedRunId=run_id)
     require(claim_after == expected_claim, 'Manual Claim changed or awarded unexpected state')
@@ -1149,7 +1156,7 @@ def _verify_recovery_terminal_boundaries(report, records, native):
                    and accounting['finalScrap'] == 3 * len(killed) - spent,
                    'RECOVERY_FINAL_STEP_KILL: final kill was omitted or credited twice')
     prior = game['before']['storage']['data']
-    expected = _terminal_progression_record(prior, deploy['runId'], defeat['tick'], defeat['kills'])
+    expected = _historical_v3_terminal_record(prior, deploy['runId'], defeat['tick'], defeat['kills'])
     claimed = dict(expected, credits=prior['credits'] + 1, pendingDefeat=None, lastFinalizedRunId=deploy['runId'])
     _recovery_need(game['result']['storage']['data'] == expected and game['claimed']['storage']['data'] == claimed
                    and game['result']['state']['wallet'] == prior['credits']
@@ -1261,15 +1268,15 @@ def verify_shop_recovery(report, require_native=False):
                     'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext'}
                 expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy'}
+                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy'}
                 expected_settings_controls = {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                     'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
                     'ChoicePrevious', 'ChoiceNext'}
                 need(value['coordinates'] == 'top-left' and value['width'] > 0 and value['height'] > 0
-                     and len(value['controls']) == 18 and len(value['shopControls']) == 11 and len(value['settingsControls']) == 35
+                     and len(value['controls']) == 18 and len(value['shopControls']) == 12 and len(value['settingsControls']) == 37
                      and {control['name'] for control in value['controls']} == expected_controls
                      and {control['name'] for control in value['shopControls']} == expected_shop_controls
                      and {control['name'] for control in value['settingsControls']} == expected_settings_controls, 'Incomplete recovery controls')
@@ -1298,7 +1305,7 @@ def verify_shop_recovery(report, require_native=False):
                  for key in ('label', 'raw', 'load', 't', 'timeOrigin')) for event in records['storageEvents']), 'Detached storage snapshot witness')
         value = item['data']
         if value is not None and value.get('version') == 3:
-            need(_current_progression_record(value), 'Temporary, unknown or conflicting tier state persisted in storage')
+            need(_historical_v3_progression_record(value), 'Temporary, unknown or conflicting tier state persisted in storage')
         elif value is not None and value.get('version') == 2:
             need(set(value) == {'version', 'credits', 'permanentLevels', 'nextRunId', 'lastFinalizedRunId', 'pendingDefeat'}
                  and set(value['permanentLevels']) == keys
@@ -1378,7 +1385,7 @@ def verify_shop_recovery(report, require_native=False):
             need(failed_storage['raw'] == case['fixture'] and failure['wallet'] == 2 and failure['pendingRunId'] == 6
                  and _verify_recovery_permanent_levels(failed_shop) == {key: 1 if key == 'cannonAttack' else 0 for key in keys},
                  'Denied migration lost old wallet, pending reward or level')
-            desired = _migrated_progression_record(legacy)
+            desired = _historical_v3_migrated_record(legacy)
         else:
             snapshot(case['before'], label + ' before')
             prior = case['before']['storage']['data']
@@ -1401,7 +1408,7 @@ def verify_shop_recovery(report, require_native=False):
                 need(failure['runId'] == 0 and not failed_shop['hasActiveLedger'], 'Unconfirmed reservation created an active run')
             else:
                 game = report['gameplay']
-                desired = _terminal_progression_record(prior, game['deploy']['runId'], game['defeat']['tick'], game['defeat']['kills'])
+                desired = _historical_v3_terminal_record(prior, game['deploy']['runId'], game['defeat']['tick'], game['defeat']['kills'])
             need(failure_data == (prior if case['fault'] == 'denied' else desired), 'Actual failed storage bytes differ: ' + label)
         fault_events = [event for event in records['storageEvents'] if event['load'] == failure['load'] and event['mode'] == case['fault']
                         and event['t'] <= failed_storage['t']]
@@ -1468,7 +1475,7 @@ def verify_shop_recovery(report, require_native=False):
         witness(game[name], collection, 'gameplay ' + name)
     initial = game['initial']['storage']['data']
     need(initial == {'version': 3, 'credits': 0, 'permanentLevels': {key: 0 for key in keys}, 'nextRunId': 1,
-                     'lastFinalizedRunId': 0, 'selectedTier': 1, 'tierRecords': _empty_tier_records(),
+                     'lastFinalizedRunId': 0, 'selectedTier': 1, 'tierRecords': _empty_historical_tier_records(),
                      'pendingDefeat': None}, 'Gameplay did not begin with a fresh zero tier record')
     fixtures = [event for event in records['storageEvents'] if event['op'] == 'fixture']
     need(len(fixtures) == 5 and fixtures[-1]['actual'] is None and fixtures[-1]['load'] < game['deploy']['load']
@@ -1531,7 +1538,7 @@ def verify_shop_recovery(report, require_native=False):
          and accounting['uniqueKills'] == defeat['kills'] and accounting['earnedScrap'] == 3 * defeat['kills']
          and accounting['spentScrap'] == 5 and accounting['finalScrap'] == 3 * defeat['kills'] - 5, 'Recovery terminal accounting differs')
     result_data = game['result']['storage']['data']
-    need(result_data == _terminal_progression_record(initial, 1, defeat['tick'], defeat['kills']),
+    need(result_data == _historical_v3_terminal_record(initial, 1, defeat['tick'], defeat['kills']),
          'Ordinary defeat did not save independent records and exactly one manual reward')
     need(len(game['refreshes']) == 3, 'Missing repeated real terminal refreshes')
     for value in game['refreshes']:
@@ -1912,7 +1919,8 @@ def decoded_audio_energy(path, start_seconds, duration_seconds):
 class LastStandWebTests(unittest.TestCase):
     def test_defeat_buy_reload_redeploy(self):
         # The historical constants/build_once above remain immutable CP-01 helpers.
-        # Normal T-06 proof consumes the already exported production runtime.
+        # The stable unittest entry now delegates to the current wave journey;
+        # its historical method name does not select the v3 Shop-only runner.
         runner = ROOT.parent / 'scripts' / 'last-stand-playable-loop.mjs'
         completed = subprocess.run(['node', str(runner)], cwd=ROOT.parent,
                                    capture_output=True, text=True, timeout=1480 if os.name == 'nt' else 3880)

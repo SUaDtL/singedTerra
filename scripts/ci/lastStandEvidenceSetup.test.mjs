@@ -23,10 +23,14 @@ function fixture(t) {
   const owned = mkdtempSync(join(fixtureBase, 'st-ls-ci-setup-'));
   const checkout = join(owned, 'checkout');
   mkdirSync(join(checkout, 'campaign-unity'), { recursive: true });
-  mkdirSync(join(checkout, 'e2e/helpers'), { recursive: true });
   mkdirSync(join(checkout, 'scripts/ci'), { recursive: true });
-  copyFileSync(join(root, 'e2e/helpers/lastStandJourney.mjs'), join(checkout, 'e2e/helpers/lastStandJourney.mjs'));
-  copyFileSync(join(root, 'e2e/helpers/lastStandMatrix.mjs'), join(checkout, 'e2e/helpers/lastStandMatrix.mjs'));
+  // Import the real admission module with its complete static dependency chain.
+  // The empty campaign tree still proves setup creates only the evidence path.
+  for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/helpers/lastStandMatrix.mjs',
+    'e2e/helpers/lastStandWaveOracle.mjs', 'scripts/assets/verify-last-stand-source.mjs']) {
+    mkdirSync(dirname(join(checkout, path)), { recursive: true });
+    copyFileSync(join(root, path), join(checkout, path));
+  }
   if (existsSync(join(root, setupPath))) copyFileSync(join(root, setupPath), join(checkout, setupPath));
   const outside = join(owned, 'outside');
   mkdirSync(outside);

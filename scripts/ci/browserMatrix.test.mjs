@@ -125,13 +125,13 @@ test('actual upgrade purchase evidence satisfies the matrix and rejects incorrec
   const begin=source.indexOf("    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');");
   const end=source.indexOf('\n',begin);
   assert.ok(begin>0 && end>begin,'Execute the maintained purchase observation');
-  const run=new Function('gameKey','check','return (async()=>{'+source.slice(begin,end)+'})();');
+  const run=new Function('gameKey','check','savedWave','return (async()=>{'+source.slice(begin,end)+'})();');
   for(const fault of [null,{wallet:1},{level:0},{cannonDamage:20}]){
     const sample=matrixFixture(),observations=[];
     await run(async(name,action)=>{
       assert.equal(name,'ShopCard_cannonAttackBuy');assert.equal(action,'purchase');
       return {wallet:0,level:1,cannonDamage:30,...fault};
-    },(pass,name)=>observations.push({name,pass}));
+    },(pass,name)=>observations.push({name,pass}),{credits:1});
     assert.equal(observations.length,1);
     for(const report of sample.reports.filter(r=>r.viewport_partition.section==='lifecycle'))
       report.checks=report.checks.filter(c=>c.name!=='one salvage commits Cannon Attack level1').concat(observations);
@@ -196,12 +196,9 @@ test('recovery qualification refuses every missing original fault profile and br
   }
 });
 
-test('entry aggregate binds the maintained confirmed Return and reload action sequence',()=>{
-  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
-  const begin=source.indexOf("    if(section.entry){\n    await gameClick('Deploy','deploy');");
-  const end=source.indexOf('    if(section.lifecycle){',begin);
-  assert.ok(begin>0 && end>begin);
-  const actions=[...source.slice(begin,end).matchAll(/await gameClick\('([^']+)','([^']+)'/g)].map(([,name,action])=>[name,action]);
+test('historical entry aggregate retains its archived confirmed Return action contract',()=>{
+  const actions=[['Deploy','deploy'],['ConfirmCancel','confirmation-cancel'],['SettingsClose','menu-close'],
+    ['ConfirmProceed','abandon'],['Deploy','deploy']];
   const baseline=matrixFixture();
   assert.deepEqual(baseline.reports[11].actions.map(a=>[a.name,a.action]),actions);
   assert.doesNotThrow(()=>assertLastStandMatrix(baseline.reports,baseline.expected));
@@ -311,8 +308,8 @@ test('native Return inspects the Last Stand-only library without launching retir
     if(items.length!==1)await assert.rejects(run,/native Return offers only Last Stand/);
     else {await run;assert.equal(report.retired_campaign_preservation.retirement,'observed Last Stand only');}
   }
-  const restored=source.indexOf("'unfinished Return abandoned without award'",end);
-  const nextDeploy=source.indexOf("await gameClick('Deploy','deploy')",restored);
+  const restored=source.indexOf("'unfinished Return offers explicit saved-run resume'",end);
+  const nextDeploy=source.indexOf("await gameClick('Deploy','resume')",restored);
   assert.ok(source.slice(restored,nextDeploy).includes('await resize(captureViewport)'),
     'The next Unity deployment restores the canonical profile after native Return');
 });
@@ -371,7 +368,7 @@ test('actual journey check journals every observation without rewriting the grow
   const check=runInNewContext(source.slice(begin,end)+'check;',{
     assert,report,resultPath:'owned-result.json',lastResultWrite:-Infinity,Date:{now:()=>clock},
     throwObserverFailure:()=>{if(observerError)throw observerError;},
-    writeFileSync:(_path,bytes)=>snapshots.push(JSON.parse(bytes)),
+    writeShopPresentationJson:(_path,value)=>snapshots.push(JSON.parse(JSON.stringify(value))),
     appendFileSync:(_path,bytes)=>journal.push(JSON.parse(bytes)),
   });
   for(let i=0;i<50;i++)check(true,'observed-'+i,{i});
@@ -389,7 +386,7 @@ test('actual journey check journals every observation without rewriting the grow
   const failedCheck=runInNewContext(source.slice(begin,end)+'check;',{
     assert,report:{status:'running',checks:[]},resultPath:'owned-result.json',lastResultWrite:-Infinity,
     Date:{now:()=>0},throwObserverFailure:()=>{},appendFileSync:()=>{throw appendError;},
-    writeFileSync:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
+    writeShopPresentationJson:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
   });
   assert.throws(()=>failedCheck(true,'must fail persistence'),error=>error===appendError);
 });

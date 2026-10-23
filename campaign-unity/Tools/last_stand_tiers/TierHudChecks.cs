@@ -40,12 +40,19 @@ static class TierHudChecks
     }
     static void Text()
     {
-        Check(LastStandTierHudText.Goal(1)=="Tier 1 / Goal 60s" && LastStandTierHudText.Goal(2)=="Tier 2 / Goal 90s","catalog goals");
-        Check(!LastStandTierHudText.GoalMet(1,1199) && LastStandTierHudText.GoalMet(1,1200),"exact goal threshold");
-        Check(!LastStandTierHudText.GoalMet(2,1799) && LastStandTierHudText.GoalMet(2,1800),"second tier threshold");
-        Check(LastStandTierHudText.Progress(2,1799)=="T2 89/90s","honest completed simulated seconds");
+        Check(LastStandTierHudText.Goal(1)=="Tier 1 / Clear every enemy to advance" &&
+            LastStandTierHudText.Goal(2)=="Tier 2 / Clear every enemy to advance","wave completion explains its actual condition");
+        Check(!LastStandTierHudText.GoalMet(1,299) && LastStandTierHudText.GoalMet(1,300),"exact Tier 2 wave unlock threshold");
+        Check(!LastStandTierHudText.GoalMet(2,300) && !LastStandTierHudText.GoalMet(2,int.MaxValue),"no unauthored Tier 3 promotion");
+        Check(LastStandTierHudText.Progress(2,1799)=="T2 / WAVE 1799","live progress labels the wave rather than elapsed seconds");
+        Check(LastStandTierHudText.WaveBest(0)=="Best: no completed wave" &&
+            LastStandTierHudText.WaveBest(5000)=="Best: wave 5000","wave best never invents a completion");
+        Check(LastStandTierHudText.NextMilestone(1,99)=="Next milestone: wave 100" &&
+            LastStandTierHudText.NextMilestone(1,100)=="Next milestone: wave 200" &&
+            LastStandTierHudText.NextMilestone(2,10000)=="Keep farming repeatable wave rewards.","next milestone advances without implying a run ending");
+        Check(LastStandTierHudText.WaveProgress(1,300,2)=="T1 / WAVE 300 / 2 LEFT","remaining enemies stay distinct from completed waves");
         Check(LastStandTierHudText.Best(0,0)=="Best: no saved run","do not invent history");
-        Check(LastStandTierHudText.Best(3600,int.MaxValue).Contains("180.0s / 2147483647 disabled"),"independent saved records");
+        Check(LastStandTierHudText.Best(3600,int.MaxValue).Contains("Legacy best 180.0s / 2147483647 disabled"),"retained time and kill records are labeled historical");
         Check(LastStandTierHudText.Improvements(false,false)=="No new personal best","ties do not announce a new best");
         var saved=LastStandTierHudText.Result(1,false,1200,10,1,23,true,true,false,true);
         Check(saved.Contains("New best: time; T2 unlocked") && saved.Contains("Wallet  23 salvage") && saved.Contains("Earned salvage  1"),"saved result flags and wallet");
@@ -65,20 +72,13 @@ static class TierHudChecks
     }
     static void LiveGoal()
     {
-        var heading = typeof(LastStandTierHudText).GetMethod("BattleHeading");
-        Check(heading != null,"live goal heading must explain the run-end save boundary");
-        string Read(int tier,int ticks) => (string)heading.Invoke(null,new object[]{tier,ticks});
         foreach(var tier in new[]{1,2})
+        foreach(var wave in new[]{1,299,300,301,2000,5000,int.MaxValue})
         {
-            int threshold=LastStandTierCatalog.Get(tier).GoalTicks;
-            Check(Read(tier,threshold-1)=="HOLD THE POSITION","do not announce goal before its exact threshold");
-            foreach(var ticks in new[]{threshold,threshold+1,LastStandTierCatalog.HorizonTicks})
-            {
-                var text=Read(tier,ticks);
-                Check(text=="Goal met; saves at end","live goal explains future persistence");
-                Check(!text.Contains("saved") && !text.Contains("unlocked") && !text.Contains("best"),"live progress is not saved credit");
-                Check(text.Split('\n').Length==1 && text.Length<=25,"keep the live banner in one compact line");
-            }
+            var text=LastStandTierHudText.BattleHeading(tier,wave);
+            Check(text=="CLEAR WAVE "+wave,"live heading names the current uncleared wave");
+            Check(!text.Contains("saved") && !text.Contains("unlocked") && !text.Contains("best"),"live identity does not assert saved credit");
+            Check(text.Split('\n').Length==1 && text.Length<=25,"keep the live banner in one compact line");
         }
     }
     public static int Main(string[] args)

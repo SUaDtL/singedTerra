@@ -43,7 +43,7 @@ namespace SingedTerra.LastStand
             PermanentLevel = track.PermanentLevel;
             RunPurchases = mode == LastStandShopMode.Run ? track.RunPurchases : 0;
             CurrentLevel = track.CurrentLevel;
-            Cap = mode == LastStandShopMode.Run ? LastStandUpgradeCatalog.TotalCap : LastStandUpgradeCatalog.PermanentCap;
+            Cap = mode == LastStandShopMode.Run ? definition.TotalCap : definition.PermanentCap;
             RemainingPurchases = Cap - CurrentLevel;
             AppliesToFitting = track.IsEligible;
             IsDormant = mode == LastStandShopMode.Permanent && !AppliesToFitting;
@@ -62,8 +62,13 @@ namespace SingedTerra.LastStand
             switch (refusal)
             {
                 case LastStandShopCardRefusal.None: return "Ready";
-                case LastStandShopCardRefusal.WrongFitting: return applicability == LastStandUpgradeApplicability.Launcher
-                    ? "Requires launcher fitting" : "Requires repair fitting";
+                case LastStandShopCardRefusal.WrongFitting:
+                    switch(applicability) {
+                        case LastStandUpgradeApplicability.Launcher:return "Requires launcher fitting";
+                        case LastStandUpgradeApplicability.Repair:return "Requires repair fitting";
+                        case LastStandUpgradeApplicability.Scattergun:return "Requires scattergun fitting";
+                        default:throw new ArgumentOutOfRangeException(nameof(applicability));
+                    }
                 case LastStandShopCardRefusal.AtCap: return "MAX";
                 case LastStandShopCardRefusal.InsufficientScrap: return "Not enough Scrap";
                 case LastStandShopCardRefusal.CatchingUp: return "Catching up";

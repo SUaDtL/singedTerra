@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace SingedTerra.LastStand
@@ -11,6 +10,8 @@ namespace SingedTerra.LastStand
     {
         readonly LastStandLoopController loop;
         readonly Font font;
+        readonly Texture2D metalGrain;
+        readonly Sprite metalSurface;
         readonly RectTransform shade, panel, viewport, content;
         readonly Text title, body, choiceName;
         readonly ScrollRect scroll;
@@ -42,22 +43,27 @@ namespace SingedTerra.LastStand
         }
         Button Button(string name, string label, Transform parent, Action handler)
         {
-            var r = Node(name,parent); var image = r.gameObject.AddComponent<Image>(); image.color = new Color(.24f,.27f,.205f);
+            var r = Node(name,parent); var image = LastStandConsoleChrome.Surface(r,metalSurface,true); image.color = new Color(.24f,.27f,.205f);
+            var frame = LastStandConsoleChrome.Frame(r,metalGrain,true);
             var b = r.gameObject.AddComponent<Button>(); b.targetGraphic = image;
-            r.gameObject.AddComponent<LastStandSettingsSelection>().Initialize(b);
-            var colors = b.colors; colors.selectedColor = colors.highlightedColor = new Color(1.4f,1.3f,1.1f);
-            colors.disabledColor = new Color(.55f,.55f,.55f); b.colors = colors;
+            var colors = b.colors; colors.normalColor = colors.disabledColor = Color.white;
+            colors.selectedColor = colors.highlightedColor = new Color(1.10f,1.10f,1.06f);
+            colors.pressedColor = new Color(.85f,.85f,.85f); colors.fadeDuration = .08f; b.colors = colors;
             b.onClick.AddListener(() => handler());
             var t = Text(name + "Text",r,16); t.text = label; t.alignment = TextAnchor.MiddleCenter;
             t.rectTransform.anchorMin = Vector2.zero; t.rectTransform.anchorMax = Vector2.one;
             t.rectTransform.offsetMin = new Vector2(8,2); t.rectTransform.offsetMax = new Vector2(-8,-2);
+            LastStandConsoleChrome.Feedback(b,t,frame);
             controls.Add(name,b); buttons.Add(b); return b;
         }
-        public LastStandSettingsHud(LastStandLoopController owner, Transform parent, Font sharedFont)
+        public LastStandSettingsHud(LastStandLoopController owner, Transform parent, Font sharedFont,
+            Texture2D sharedMetal = null, Sprite sharedSurface = null)
         {
-            loop = owner; font = sharedFont;
+            loop = owner; font = sharedFont; metalGrain = sharedMetal; metalSurface = sharedSurface;
             shade = Node("SettingsModal",parent); shade.gameObject.AddComponent<Image>().color = new Color(0,0,0,.82f);
-            panel = Node("SettingsPanel",shade); panel.gameObject.AddComponent<Image>().color = new Color(.12f,.15f,.13f);
+            panel = Node("SettingsPanel",shade);
+            LastStandConsoleChrome.Surface(panel,metalSurface,false).color = new Color(.12f,.15f,.13f);
+            LastStandConsoleChrome.Frame(panel,metalGrain);
             title = Text("SettingsHeading",panel,22); title.color = Brass;
             choiceName = Text("SelectionName",panel,18);choiceName.alignment=TextAnchor.MiddleCenter;choiceName.color=Brass;
             close = Button("SettingsClose","CLOSE",panel,loop.CloseMenu);
@@ -68,7 +74,8 @@ namespace SingedTerra.LastStand
             {
                 string value = labels[i]; tabs[i] = Button("SettingsTab" + i,value,panel,() => { tab=value; ResetScroll(); loop.RefreshControls(); });
             }
-            viewport = Node("SettingsViewport",panel); viewport.gameObject.AddComponent<Image>().color = new Color(.09f,.11f,.10f);
+            viewport = Node("SettingsViewport",panel);
+            LastStandConsoleChrome.Surface(viewport,metalSurface,false).color = new Color(.09f,.11f,.10f);
             viewport.gameObject.AddComponent<RectMask2D>(); content = Node("SettingsContent",viewport);
             scroll = panel.gameObject.AddComponent<ScrollRect>(); scroll.viewport = viewport; scroll.content = content;
             scroll.horizontal = false; scroll.vertical = true; scroll.inertia = false; scroll.movementType = ScrollRect.MovementType.Clamped;
@@ -76,6 +83,8 @@ namespace SingedTerra.LastStand
             Button("MenuResume","RESUME / CLOSE",content,loop.CloseMenu);
             Button("MenuSettings","SETTINGS",content,() => loop.OpenMenu("settings"));
             Button("MenuHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
+            Button("MenuMilestones","WAVE MILESTONES",content,() => loop.OpenMenu("milestones"));
+            Button("MenuNewRun","NEW RUN",content,() => loop.RequestConfirmation("new-run"));
             Button("MenuAbandon","ABANDON RUN",content,() => loop.RequestConfirmation("abandon"));
             Button("MenuCampaigns","RETURN TO CAMPAIGNS",content,() => loop.RequestNavigation(false));
             Button("MenuAbout","ABOUT & CREDITS",content,() => loop.OpenMenu("about"));
@@ -156,7 +165,8 @@ namespace SingedTerra.LastStand
                 case "menu":
                     body.text = loop.Session.Model != null ? "Run paused. Closing this menu preserves a manual pause." : "LAST STAND";
                     if(loop.Guidance.Tutorial != "") body.text += "\n\n" + loop.Guidance.Tutorial;
-                    Show("MenuResume"); Show("MenuSettings"); Show("MenuHelp");
+                    Show("MenuResume"); Show("MenuSettings"); Show("MenuHelp"); Show("MenuMilestones");
+                    if(loop.Progression.HasCheckpoint)Show("MenuNewRun",enabled:canLeave);
                     Show("MenuAbandon",enabled:canLeave && loop.Progression.ActiveRunId != 0);
                     Show("MenuCampaigns",enabled:canLeave); Show("MenuAbout"); break;
                 case "settings":
@@ -184,20 +194,47 @@ namespace SingedTerra.LastStand
                     else
                     {
                         body.text += "\nGameplay save: " + loop.Progression.SaveState + ". " + (loop.Progression.SaveError ?? "") +
-                            "\nLast Stand progress stays in this browser. Signing in does not sync it. Leaving an unfinished run loses that run. Confirmed pending rewards stay saved.";
+                            "\nProgress stays in this browser; signing in does not sync it. Each cleared wave saves hull, upgrades, Scrap and cooldowns. Leaving or reloading restores the last checkpoint; partial-wave spending and upgrades roll back together. Resume starts paused, without closed-tab catch-up.";
                         Show("DataRetry",enabled:loop.Progression.SaveState != "ready");
                         Show("PreferencesRetry",enabled:loop.Preferences.CanRetry);
                         Show("DataAccount",enabled:canLeave); Show("SettingsDefaults");
                     }
                     Show("SettingsBack"); break;
                 case "help": body.text = LastStandGuidance.Help; Show("SettingsBack"); break;
+                case "milestones":
+                    int tier=loop.Session.Model?.Profile.Tier??loop.Progression.Checkpoint?.Tier??loop.Progression.SelectedTier;
+                    title.text="TIER "+tier+" MILESTONES";
+                    body.text="Every completed wave pays repeatable Salvage. Bonuses below are earned once per tier. Unlocking a tier never ends or moves your run.\n";
+                    foreach(var milestone in LastStandRewardCatalog.Milestones(LastStandTierCatalog.Get(tier)))
+                    {
+                        bool earned=loop.Progression.HasFirstClear(milestone.Id);
+                        body.text+="\nWAVE "+milestone.Wave+" / "+(earned?"EARNED":"UPCOMING")+"\nOne-time bonus: +"+milestone.FirstClearSalvage+" Salvage";
+                        if(milestone.UnlockTierId!=0)body.text+=" / Unlock Tier "+milestone.UnlockTierId;
+                        if(milestone.UnlockFittingId!=null)body.text+=" / Unlock "+milestone.UnlockFittingId;
+                        body.text+="\nRepeatable wave reward: +"+LastStandRewardCatalog.At(LastStandTierCatalog.Get(tier),milestone.Wave).RepeatableSalvage+" Salvage\n";
+                    }
+                    int legacyTicks=loop.Progression.GetBestTicks(tier),legacyKills=loop.Progression.GetBestKills(tier);
+                    if(legacyTicks>0||legacyKills>0)body.text+="\n"+LastStandTierHudText.Best(legacyTicks,legacyKills)+" (not wave credit)";
+                    Show("SettingsBack");break;
                 case "about":
                     body.text = "LAST STAND\nSinged Terra - " + Application.version + "\n\nOriginal tank, battlefield and interface work by the Singed Terra project.\nAmbient music and effects are generated from project-owned source. Music: Holding Ground, an original procedural ambient composition.\n\nOpen source under the repository MIT license. Local prototype progression is separate from account progression.";
                     Show("SettingsBack"); break;
                 case "confirm":
                     body.text = loop.Confirmation == "reset-settings" ? "Restore audio, display and guidance preferences to their defaults? Your upgrades, wallet, tiers and pending rewards are kept. The current run's speed and pause state are kept." :
-                        "This unfinished run will be abandoned without a reward. Temporary Scrap and run upgrades will be lost. Saved permanent progress is kept.";
-                    Show("ConfirmCancel"); Show("ConfirmProceed",loop.Confirmation == "reset-settings" ? "RESTORE SETTINGS" : "ABANDON AND CONTINUE",loop.Confirmation == "reset-settings" || canLeave); break;
+                        "Abandon this run and remove its checkpoint? Temporary Scrap and run upgrades will be lost. All completed-wave rewards, milestone unlocks and permanent upgrades are kept.";
+                    Show("ConfirmCancel"); Show("ConfirmProceed",loop.Confirmation == "reset-settings" ? "RESTORE SETTINGS" : loop.Confirmation=="new-run"?"ABANDON & START NEW":"ABANDON RUN",loop.Confirmation == "reset-settings" || canLeave); break;
+            }
+            foreach (var b in buttons)
+            {
+                bool available = b.interactable;
+                var label = b.GetComponentInChildren<Text>(true);
+                bool selectedTab = loop.MenuPage == "settings" && Array.IndexOf(tabs,b) >= 0 && label.text == tab;
+                b.GetComponent<Image>().color = !available ? new Color(.14f,.16f,.135f,1) :
+                    selectedTab ? Brass : new Color(.24f,.27f,.205f,1);
+                label.color = !available ? new Color(.76f,.75f,.67f,1) :
+                    selectedTab ? new Color(.055f,.068f,.064f,1) : Paper;
+                b.GetComponentInChildren<LastStandConsoleFrame>(true).SetAction(selectedTab,available);
+                b.GetComponent<LastStandActionFeedback>().Refresh();
             }
         }
         void VolumeRows(string name, int value)
@@ -282,11 +319,5 @@ namespace SingedTerra.LastStand
             else return;
             scroll.StopMovement();content.anchoredPosition=new Vector2(0,Mathf.Clamp(offset,0,maximum));
         }
-    }
-    public sealed class LastStandSettingsSelection : MonoBehaviour, ISelectHandler
-    {
-        Button button;
-        public void Initialize(Button value) { button=value; }
-        public void OnSelect(BaseEventData data) { GetComponentInParent<LastStandHudKeyboard>()?.Selected(button); }
     }
 }

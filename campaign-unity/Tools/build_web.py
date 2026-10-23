@@ -99,8 +99,9 @@ def main():
             'approved_artifacts':json.loads(a.approval_binding) if a.approval_binding else {},
             'android':False,'publish':False,'editor':str(editor)}
     if a.scene == 'last-stand':
-        require(set(record['approved_artifacts']) == {'ST-LS-LOOP-SPEC', 'ST-LS-LOOP-PLAN'},
-                'Supply the caller-observed native approval binding for Last Stand')
+        require(set(record['approved_artifacts']) in ({'ST-LS-LOOP-SPEC', 'ST-LS-LOOP-PLAN'},
+                {'ST-LS-WAVES-SPEC', 'ST-LS-WAVES-PLAN'}),
+                'Supply the caller-observed Last Stand spec/plan identity pair')
         for identity in record['approved_artifacts'].values():
             require(set(identity) == {'revision', 'model_sha256', 'normative_sha256'}
                     and type(identity['revision']) is int and identity['revision'] > 0

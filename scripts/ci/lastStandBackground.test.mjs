@@ -68,11 +68,24 @@ const callObserved=(x,options)=>actualCaller(x.encounters,x.states,1,
     waitForTimeout:async ms=>{x.waits++;x.now+=ms;if(x.onWait)x.onWait();},
   },journey.observeRuntimePair,options);
 
-function nativeWindowObservation(pid) {
+function nativeWindowObservation(pid, ownership=null) {
   assert.ok(Number.isInteger(pid) && pid>0,'Native window observation requires the owned browser PID');
+  if(ownership)assert.ok(ownership.pid===pid && ownership.root?.pid===pid && ownership.root.start &&
+    ownership.root.exe && ownership.profile,'Complete owned fixture identity required');
+  const encoded=Buffer.from(JSON.stringify(ownership)).toString('base64');
   // Read actual Win32 top-level window state without native activation or
   // document focus/visibility emulation. Player focus qualification stays T-11.
   const script=`$ErrorActionPreference='Stop'
+    $owner=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json
+    function Assert-OwnedFixture {
+      if($owner){
+        $live=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
+        if(-not $live -or $live.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $live.ExecutablePath -ne $owner.root.exe){throw 'Owned fixture process identity mismatch'}
+        $argument='--user-data-dir='+$owner.profile
+        if(-not ($live.CommandLine.Contains('"'+$argument+'"') -or $live.CommandLine.Split(' ').Contains($argument))){throw 'Owned fixture profile mismatch'}
+      }
+    }
+    Assert-OwnedFixture
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
@@ -81,6 +94,12 @@ using System.Text;
 public class LastStandNativeWindowProbe {
   public delegate bool EnumProc(IntPtr window, IntPtr parameter);
   [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
+  [StructLayout(LayoutKind.Sequential)] public struct MonitorInfo { public uint Size; public Rect Monitor, Work; public uint Flags; }
+  [DllImport("user32.dll", SetLastError=true)] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
+  [DllImport("user32.dll")] public static extern IntPtr GetThreadDpiAwarenessContext();
+  [DllImport("user32.dll")] public static extern bool AreDpiAwarenessContextsEqual(IntPtr first, IntPtr second);
+  [DllImport("user32.dll")] public static extern IntPtr MonitorFromWindow(IntPtr window, uint flags);
+  [DllImport("user32.dll", EntryPoint="GetMonitorInfoW", SetLastError=true)] public static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback, IntPtr parameter);
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr window, out uint pid);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr window);
@@ -89,31 +108,48 @@ public class LastStandNativeWindowProbe {
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr window, StringBuilder text, int count);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr window, StringBuilder text, int count);
   public static object[] Read(uint owner) {
+    var previous=SetThreadDpiAwarenessContext(new IntPtr(-4));
+    if(previous==IntPtr.Zero)throw new InvalidOperationException("Physical fixture context unavailable");
+    try {
+    if(!AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(),new IntPtr(-4)))throw new InvalidOperationException("Physical fixture context rejected");
     var windows = new List<object>();
-    EnumWindows((window, parameter) => {
+    bool complete=EnumWindows((window, parameter) => {
       uint pid; GetWindowThreadProcessId(window, out pid);
       if (pid == owner) {
+        if(windows.Count>=12)throw new InvalidOperationException("Owned fixture window observation overflow");
         Rect rect; bool measured = GetWindowRect(window, out rect);
+        var monitor=MonitorFromWindow(window,0); // No nearest-monitor fallback.
+        var info=new MonitorInfo { Size=(uint)Marshal.SizeOf(typeof(MonitorInfo)) };
+        bool monitorMeasured=monitor!=IntPtr.Zero && GetMonitorInfo(monitor,ref info);
         var kind = new StringBuilder(256); GetClassName(window, kind, kind.Capacity);
         var title = new StringBuilder(1024); GetWindowText(window, title, title.Capacity);
         windows.Add(new { hwnd = window.ToInt64().ToString(), pid = pid,
           visible = IsWindowVisible(window), minimized = IsIconic(window), measured = measured,
           kind = kind.ToString(), title = title.ToString(), left = rect.Left, top = rect.Top,
-          width = rect.Right - rect.Left, height = rect.Bottom - rect.Top });
+          width = rect.Right - rect.Left, height = rect.Bottom - rect.Top,
+          workarea = monitorMeasured ? new { left=info.Work.Left, top=info.Work.Top,
+            width=info.Work.Right-info.Work.Left, height=info.Work.Bottom-info.Work.Top } : null });
       }
       return true;
     }, IntPtr.Zero);
+    if(!complete)throw new InvalidOperationException("Incomplete owned fixture window observation");
     return windows.ToArray();
+    } finally {
+      if(SetThreadDpiAwarenessContext(previous)==IntPtr.Zero || !AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(),previous))
+        throw new InvalidOperationException("Physical fixture context restoration failed");
+    }
   }
 }
 '@
-    ConvertTo-Json -InputObject @([LastStandNativeWindowProbe]::Read(${pid})) -Compress`;
+    $windows=@([LastStandNativeWindowProbe]::Read(${pid}))
+    Assert-OwnedFixture
+    ConvertTo-Json -InputObject $windows -Depth 5 -Compress`;
   return JSON.parse(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',
     Buffer.from(script,'utf16le').toString('base64')],
     {encoding:'utf8',timeout:10_000,maxBuffer:1024*1024,windowsHide:true}));
 }
 
-async function placeOwnedInertWindow({native,page,report,role}) {
+async function placeOwnedInertWindow({native,page,report,role,output}) {
   // Fit this owned inert fixture to the current monitor rather than a retained
   // desktop's coordinates. Only geometry and real tab selection change; the
   // production native/document oracle stays strict.
@@ -131,18 +167,27 @@ async function placeOwnedInertWindow({native,page,report,role}) {
     assert.ok(targetInfo.type==='page' && targetInfo.targetId && targetInfo.browserContextId);
     record.before=await browserSession.send('Browser.getWindowForTarget',{targetId:targetInfo.targetId});
     assert.equal(record.before.bounds.windowState,'normal');
-    record.display=await page.evaluate(()=>({left:screen.availLeft,top:screen.availTop,
-      width:screen.availWidth,height:screen.availHeight}));
-    assert.ok(Object.values(record.display).every(Number.isInteger),'Measured available display required');
-    assert.ok(record.display.width>=640 && record.display.height>=480,'Display must fit the inert fixture');
+    const receipt=JSON.parse(readFileSync(join(output,'browser-profile.json'),'utf8'));
+    record.native_before=nativeWindowObservation(receipt.pid,receipt);
+    record.window=journey.bindOwnedNativeWindow({windows:record.native_before,dropped:0},record.before.bounds,receipt.pid);
+    record.display=record.window.workarea;
+    assert.ok(record.display && ['left','top','width','height'].every(key=>Number.isSafeInteger(record.display[key])) &&
+      record.display.width>0 && record.display.height>0 &&
+      Number.isSafeInteger(record.display.left+record.display.width) && Number.isSafeInteger(record.display.top+record.display.height),
+      'Measured safe native workarea required');
     const inset=role.endsWith('auxiliary')?40:20;
     record.requested={left:record.display.left+inset,top:record.display.top+inset,
-      width:Math.min(1300,record.display.width-inset*2),
-      height:Math.min(988,record.display.height-inset*2)};
+      width:Math.min(record.window.width,record.display.width-inset*2),
+      height:Math.min(record.window.height,record.display.height-inset*2)};
+    assert.ok(record.requested.width>=640 && record.requested.height>=480,'Native workarea must fit the inert fixture');
     await browserSession.send('Browser.setWindowBounds',{windowId:record.before.windowId,bounds:record.requested});
     record.after=await browserSession.send('Browser.getWindowForTarget',{targetId:targetInfo.targetId});
     assert.equal(record.after.windowId,record.before.windowId);
     for(const key of Object.keys(record.requested))assert.equal(record.after.bounds[key],record.requested[key]);
+    record.native_after=nativeWindowObservation(receipt.pid,receipt);
+    const after=journey.bindOwnedNativeWindow({windows:record.native_after,dropped:0},record.after.bounds,receipt.pid);
+    assert.equal(after.hwnd,record.window.hwnd,'Owned fixture HWND changed');
+    assert.deepEqual(after.workarea,record.display,'Owned fixture workarea changed');
     record.tab_before=await documentState();await page.bringToFront();record.tab_after=await documentState();
   } finally {for(const value of [session,browserSession])if(value)await value.detach();}
 }
@@ -246,7 +291,7 @@ async function assertPrecleanupWindowDiagnostics({faultOnly=false}={}) {
   console.log('ST_LS_PRECLEANUP_DIAGNOSTICS='+output);
   const report={window_failures:[],events:[],episodes:[],status:'running',fixture:
     'owned inert document; actual focus precondition; exact auxiliary activation rejects before cleanup'};
-  const begin=callerSource.indexOf('    const away=async(kind,ms)=>{');
+  const begin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney('));
   const end=callerSource.indexOf('    const saveAudio=',begin);
   assert.ok(begin>0 && end>begin,'Actual maintained away caller is required');
   const actualAway=new Function('native','page','observation','check','mark','noReplay','report','output',
@@ -343,7 +388,7 @@ async function assertPrecleanupWindowDiagnostics({faultOnly=false}={}) {
   try {
     native=await journey.ownedChrome(chromium,output);page=native.context.pages()[0];page.setDefaultTimeout(10_000);
     await page.goto('data:text/html,'+encodeURIComponent('<!doctype html><title>Owned precleanup diagnostics guard</title><button style="width:200px;height:100px">Inert focus target</button>'));
-    await placeOwnedInertWindow({native,page,report,role:'precleanup-original'});
+    await placeOwnedInertWindow({native,page,report,role:'precleanup-original',output});
     await journey.activateOwnedNativeWindow({native,page,report,kind:'setup',role:'precleanup-original'});
     if(!faultOnly)await episode(false);
     if(!process.env.LAST_STAND_PRECLEANUP_TARGET_ONLY)await episode(true);
@@ -455,6 +500,7 @@ async function assertOwnedCaptionExposureControls() {
       const args=params.split(',').filter(x=>x.trim()).map(part=>{
         const words=part.trim().split(/\s+/);return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
       }).join(', ');
+      if(line.includes('kernel32.dll'))return '  public static '+type+' '+name+'('+params+') { throw new InvalidOperationException("Kernel admission must not run in the direct Activate seam"); }';
       return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
     });
   assert.ok(replaced>=20 && !source.includes('[DllImport'),'All preparation externs must be inert');
@@ -538,6 +584,7 @@ async function assertPhysicalCaptionNativeSeamControls() {
       const args=params.split(',').filter(x=>x.trim()).map(part=>{
         const words=part.trim().split(/\s+/);return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
       }).join(', ');
+      if(line.includes('kernel32.dll'))return '  public static '+type+' '+name+'('+params+') { throw new InvalidOperationException("Kernel admission must not run in the direct Activate seam"); }';
       return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
     });
   assert.ok(replaced>=20 && !source.includes('[DllImport'),'All native externs must be inert in seam controls');
@@ -623,6 +670,7 @@ async function assertPhysicalCaptionDynamicSeamControls() {
       const args=params.split(',').filter(x=>x.trim()).map(part=>{
         const words=part.trim().split(/\s+/);return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
       }).join(', ');
+      if(line.includes('kernel32.dll'))return '  public static '+type+' '+name+'('+params+') { throw new InvalidOperationException("Kernel admission must not run in the direct Activate seam"); }';
       return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
     });
   assert.ok(replaced>=20 && !source.includes('[DllImport'),'All dynamic-control externs must be inert');
@@ -813,13 +861,12 @@ async function assertCurrentDeploymentHitSelection() {
 }
 
 async function assertOriginalNativeForegroundPreconditions() {
-  if(process.platform!=='win32')return;
   const focusedBegin=callerSource.indexOf('    const focused=async label=>{');
   const focusedEnd=callerSource.indexOf('    const screenshot=',focusedBegin);
-  const awayBegin=callerSource.indexOf('    const away=async(kind,ms)=>{');
+  const awayBegin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney('));
   const awayEnd=callerSource.indexOf('    const saveAudio=',awayBegin);
   assert.ok(focusedBegin>0 && focusedEnd>focusedBegin && awayBegin>0 && awayEnd>awayBegin);
-  const gateBegin=callerSource.indexOf('export async function ensureOwnedNativeForeground(');
+  const gateBegin=callerSource.indexOf('async function waitForOwnedNativeForeground(');
   const gateEnd=callerSource.indexOf('\nexport async function activateOwnedNativeWindow(',gateBegin);
   const outcomes=[],failures=[];
   const runCase=async(caller,fault)=>{
@@ -831,9 +878,9 @@ async function assertOriginalNativeForegroundPreconditions() {
     const report={},browser={},owner={root,profile:'explicit-inert-owned-profile',executable:'explicit-inert-executable'};
     const document={hidden:false,hasFocus:()=>focused,visibilityState:'visible'};
     const contextForVM={document,performance:{now:()=>time,timeOrigin:100000}};
-    const evaluate=async expression=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')()':expression,contextForVM);
+    const evaluate=async(expression,arg)=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')(arg)':expression,{...contextForVM,arg});
     const page={context:()=>native.context,isClosed:()=>false,bringToFront:async()=>{focused=true;},evaluate,
-      waitForFunction:async predicate=>assert.ok(await evaluate(predicate),'Honest inert document predicate'),
+      waitForFunction:async(predicate,arg)=>assert.ok(await evaluate(predicate,arg),'Honest inert document predicate'),
       waitForTimeout:async ms=>{time+=ms;}};
     const other={context:()=>native.context,isClosed:()=>closed,goto:async()=>{},bringToFront:async()=>{focused=false;},close:async()=>{closed=true;}};
     const session={send:async method=>{
@@ -855,21 +902,21 @@ async function assertOriginalNativeForegroundPreconditions() {
     // On broken source this dependency is never reached; actual caller admission
     // itself is the RED. On candidate source execute the new maintained gate.
     const ensure=gateBegin<0?async()=>{throw new Error('declared owned original establishment refusal');}:
-      new Function('assert','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
+      new Function('assert','process','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
         'bindOwnedNativeWindow','activateOwnedNativeWindow','retainWindowFailure','windowError',
         callerSource.slice(gateBegin,gateEnd).replace('export async function','async function')+'return ensureOwnedNativeForeground;')(
-        assert,registry,()=>root,()=>({foreground:{...foreground},windows:[window],dropped:0}),journey.bindOwnedNativeWindow,
+        assert,{platform:'win32'},registry,()=>root,()=>({foreground:{...foreground},windows:[window],dropped:0}),journey.bindOwnedNativeWindow,
         activate,(r,key,value)=>(r[key]??=[]).push(value),error=>({name:error.name,message:error.message}));
-    const focusedCaller=new Function('native','page','report','check','ensureOwnedNativeForeground',
+    const focusedCaller=new Function('process','native','page','report','check','ensureOwnedNativeForeground',
       callerSource.slice(focusedBegin,focusedEnd)+'return focused("inert native baseline");');
-    const awayCaller=new Function('native','page','observation','check','mark','noReplay','report','output',
+    const awayCaller=new Function('process','native','page','observation','check','mark','noReplay','report','output',
       'retainAwayFailure','cleanupAwayAuxiliary','activateOwnedNativeWindow','ensureOwnedNativeForeground','trace',
       callerSource.slice(awayBegin,awayEnd)+'return away("blur",10500);');
     const before={documentFocused:focused,documentHidden:document.hidden,nativeForeground:{...foreground}};
     let error;
     try{
-      if(caller==='focused')await focusedCaller(native,page,report,(ok,name)=>assert.ok(ok,name),ensure);
-      else await awayCaller(native,page,async()=>({inert:true}),(ok,name)=>assert.ok(ok,name),async()=>time,
+      if(caller==='focused')await focusedCaller({platform:'win32'},native,page,report,(ok,name)=>assert.ok(ok,name),ensure);
+      else await awayCaller({platform:'win32'},native,page,async()=>({inert:true}),(ok,name)=>assert.ok(ok,name),async()=>time,
         async()=>{},report,'explicit-inert-output',async()=>{},async({other})=>other?.close(),activate,ensure,[]);
     }catch(cause){error=cause;}
     const row={caller,fault,before,actualGate:gateBegin>=0,blocked:Boolean(error),error:error?.message,auxCreated,activations};
@@ -897,7 +944,7 @@ async function assertOwnedNativeForegroundDriver() {
   console.log('ST_LS_NATIVE_FOREGROUND='+output);
   const report={status:'running',fixture:'owned inert document; native foreground only; no gameplay/audio acceptance',
     events:[],snapshots:[],window_failures:[]};
-  const begin=callerSource.indexOf('    const away=async(kind,ms)=>{'),end=callerSource.indexOf('    const saveAudio=',begin);
+  const begin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney(')),end=callerSource.indexOf('    const saveAudio=',begin);
   assert.ok(begin>0 && end>begin,'Actual maintained away body required');
   writeFileSync(join(output,'actual-away-source.txt'),callerSource.slice(begin,end));
   const run=new Function('native','page','observation','check','mark','noReplay','report','output',
@@ -922,7 +969,7 @@ async function assertOwnedNativeForegroundDriver() {
     const goto=aux.goto.bind(aux);
     aux.goto=async(...args)=>{
       const result=await goto(...args);
-      await placeOwnedInertWindow({native,page:aux,report,role:'foreground-auxiliary'});
+      await placeOwnedInertWindow({native,page:aux,report,role:'foreground-auxiliary',output});
       return result;
     };
     const close=aux.close.bind(aux);
@@ -933,7 +980,7 @@ async function assertOwnedNativeForegroundDriver() {
     await page.setViewportSize({width:1280,height:720});
     await page.exposeFunction('__stNativeForegroundEvent',event=>{report.events.push(event);});
     await page.goto('data:text/html,'+encodeURIComponent('<!doctype html><title>Owned native foreground fixture</title><button style="width:200px;height:100px">Inert focus target</button><script>for(const kind of ["focus","blur","visibilitychange","pointerdown","pointerup"])addEventListener(kind,e=>window.__stNativeForegroundEvent({kind,hidden:document.hidden,focused:document.hasFocus(),trusted:e.isTrusted,t:performance.now(),timeOrigin:performance.timeOrigin}));</script>'));
-    await placeOwnedInertWindow({native,page,report,role:'foreground-original'});
+    await placeOwnedInertWindow({native,page,report,role:'foreground-original',output});
     await journey.activateOwnedNativeWindow({native,page,report,kind:'setup',role:'foreground-original'});
     await page.bringToFront();await page.mouse.click(40,40);
     await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10000});
@@ -1006,7 +1053,7 @@ async function assertNativeLaunchOptions() {
 
 async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve('scripts/ci/lastStandBackground.test.mjs'),'utf8')) {
   const begin=setupSource.indexOf('  const episode=async fault=>{'),end=setupSource.indexOf('    const activation=new Error(',begin);
-  const gateBegin=callerSource.indexOf('export async function ensureOwnedNativeForeground(');
+  const gateBegin=callerSource.indexOf('async function waitForOwnedNativeForeground(');
   const gateEnd=callerSource.indexOf('\nexport async function activateOwnedNativeWindow(',gateBegin);
   assert.ok(begin>0 && end>begin && gateBegin>0 && gateEnd>gateBegin,'Actual precleanup setup and maintained native gate required');
   const run=new Function('page','native','report','journey','observedPage','assert',
@@ -1019,10 +1066,10 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
     const window={...bounds,hwnd:'41002',pid:root.pid,kind:'Chrome_WidgetWin_1',measured:true,visible:true,minimized:false};
     const foreign={hwnd:'61002',pid:61001},report={},browser={},order=[];
     let foreground=fault==='already-foreground'?{hwnd:window.hwnd,pid:root.pid}:{...foreign};
-    let activations=0,gateCalls=0,domWaits=0,gateCompleted=false,error;
+    let activations=0,gateCalls=0,domWaits=0,nativeDocumentWaits=0,gateCompleted=false,error;
     const document={hidden:false,hasFocus:()=>true,visibilityState:'visible'};
-    const evaluate=async expression=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')()':expression,
-      {document,performance:{now:()=>1000,timeOrigin:100000}});
+    const evaluate=async(expression,arg)=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')(arg)':expression,
+      {document,performance:{now:()=>1000,timeOrigin:100000},arg});
     const session={send:async method=>{
       if(method==='Target.getTargetInfo')return {targetInfo:{type:'page',targetId:'inert-original-target',browserContextId:'inert-owned-context'}};
       if(method==='Browser.getWindowForTarget')return {windowId:41,bounds};
@@ -1033,12 +1080,13 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
     const registry=new WeakMap(fault==='wrong-browser-owner'?[]:[[browser,owner]]);
     const page={context:()=>fault==='wrong-page-owner'?{}:native.context,isClosed:()=>false,evaluate,
       bringToFront:async()=>{order.push('bringToFront');},mouse:{click:async(x,y)=>{assert.equal(x,40);assert.equal(y,40);order.push('click');}},
-      waitForFunction:async(predicate,arg,options)=>{domWaits++;order.push('dom-wait');assert.equal(options.timeout,10000);
-        assert.ok(await evaluate(predicate),'Honest inert DOM predicate');}};
-    const actualGate=new Function('assert','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
+      waitForFunction:async(predicate,arg,options)=>{
+        if(gateCompleted){domWaits++;order.push('dom-wait');}else{nativeDocumentWaits++;order.push('native-document-wait');}
+        assert.equal(options.timeout,10000);assert.ok(await evaluate(predicate,arg),'Honest inert DOM predicate');}};
+    const actualGate=new Function('assert','process','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
       'bindOwnedNativeWindow','activateOwnedNativeWindow','retainWindowFailure','windowError',
       callerSource.slice(gateBegin,gateEnd).replace('export async function','async function')+'return ensureOwnedNativeForeground;')(
-      assert,registry,()=>fault==='wrong-process-owner'?{...root,created:'wrong-process-epoch'}:root,
+      assert,{platform:'win32'},registry,()=>fault==='wrong-process-owner'?{...root,created:'wrong-process-epoch'}:root,
       ()=>({foreground:{...foreground},windows:[window],dropped:0}),journey.bindOwnedNativeWindow,
       async({native:target,page:targetPage,role})=>{
         assert.equal(target,native);assert.equal(targetPage,page);assert.equal(role,'precleanup-precondition');
@@ -1053,11 +1101,11 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
       ({hidden:document.hidden,focused:document.hasFocus()}))}),assert);}
     catch(cause){error=cause;}
     const positive=['already-foreground','activation-required'].includes(fault),record=report.native_foreground_preconditions?.at(-1);
-    const passed=positive?!error && gateCalls===1 && gateCompleted && domWaits===1 && record?.status==='verified' &&
+    const passed=positive?!error && gateCalls===1 && gateCompleted && domWaits===1 && nativeDocumentWaits===1 && record?.status==='verified' &&
       record.after.foreground.hwnd===window.hwnd && record.after.foreground.pid===root.pid &&
       order.indexOf('native-verified')<order.indexOf('dom-wait') && activations===(fault==='activation-required'?1:0):
       error?.name==='AssertionError' && gateCalls===1 && !gateCompleted && domWaits===0 && record?.status==='refused';
-    const row={fault,passed:Boolean(passed),error:error?.message,order,gateCalls,domWaits,activations,
+    const row={fault,passed:Boolean(passed),error:error?.message,order,gateCalls,domWaits,nativeDocumentWaits,activations,
       documentOnlyFocused:true,beforeNative:fault==='already-foreground'?{hwnd:window.hwnd,pid:root.pid}:foreign,afterNative:foreground};
     rows.push(row);if(!passed)failures.push(row);
   }
@@ -1065,6 +1113,95 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
     actualGate:callerSource.slice(gateBegin,gateEnd),fixture:'honest inert ownership/native/document records; actual gate and setup; no native PASS or gameplay claim'}));
   assert.equal(failures.length,0,'Actual precleanup setup must verify exact owned native admission before its DOM wait and reject false document-only admission');
 }
+
+test('native document readiness retains original caller admission controls',async()=>{
+  await assertPrecleanupNativeAdmission();
+  await assertOriginalNativeForegroundPreconditions();
+});
+
+test('native document readiness waits after one admitted activation and revalidates exact ownership',async()=>{
+  const gateBegin=callerSource.indexOf('export async function ensureOwnedNativeForeground(');
+  const helperBegin=callerSource.indexOf('async function waitForOwnedNativeForeground(');
+  const gateEnd=callerSource.indexOf('\nexport async function ownedChrome(',gateBegin);
+  const focusedBegin=callerSource.indexOf('    const focused=async label=>{');
+  const focusedEnd=callerSource.indexOf('    const screenshot=',focusedBegin);
+  assert.ok(gateBegin>0 && gateEnd>gateBegin && focusedBegin>0 && focusedEnd>focusedBegin);
+  const rows=[];
+  for(const entry of ['focused','auxiliary','already-foreground'])for(const fault of ['delayed-visible','never-visible',
+    'never-focused','new-document','hidden-again','reused-process','changed-target','changed-context','changed-window',
+    'changed-hwnd','foreign-foreground-pid','foreign-foreground-hwnd']) {
+    const root={pid:41001,ppid:41000,start:'inert-process-epoch',exe:'inert-browser.exe'};
+    const bounds={left:10,top:10,width:1044,height:788,windowState:'normal'};
+    const window={...bounds,hwnd:'41002',pid:root.pid,kind:'Chrome_WidgetWin_1',measured:true,visible:true,minimized:false};
+    const target={type:'page',targetId:'inert-selected-page',browserContextId:'inert-context'};
+    const report={},browser={},order=[];
+    let foreground=entry==='already-foreground'?{pid:root.pid,hwnd:window.hwnd}:{pid:61001,hwnd:'61002'};
+    let hidden=true,focused=true,t=8525,timeOrigin=100000,waited=false,activations=0,waits=0,detaches=0;
+    const document={get hidden(){return hidden;},hasFocus:()=>focused,get visibilityState(){return hidden?'hidden':'visible';}};
+    const evaluate=async(expression,arg)=>runInNewContext(typeof expression==='function'?'('+expression.toString()+')(arg)':expression,
+      {document,performance:{now:()=>t,get timeOrigin(){return timeOrigin;}},arg});
+    const session={send:async method=>{
+      if(method==='Target.getTargetInfo')return {targetInfo:{...target,
+        ...(waited&&fault==='changed-target'?{targetId:'foreign-page'}:{}),
+        ...(waited&&fault==='changed-context'?{browserContextId:'foreign-context'}:{})}};
+      if(method==='Browser.getWindowForTarget')return {windowId:waited&&fault==='changed-window'?99:41,bounds};
+      assert.fail('Unexpected inert CDP method '+method);
+    },detach:async()=>{detaches++;}};
+    const native={browser,context:{newCDPSession:async()=>session}};browser.newBrowserCDPSession=async()=>session;
+    const owner={root,profile:'inert-owned-profile',executable:root.exe,context:native.context};
+    const page={context:()=>native.context,isClosed:()=>false,evaluate,bringToFront:async()=>{order.push('tab-selection');},
+      waitForFunction:async(predicate,arg,options)=>{
+        waits++;assert.equal(options.timeout,10000,'Retain the existing action timeout');
+        if(waited){assert.ok(await evaluate(predicate,arg));return;}
+        order.push('wait-document');assert.equal(await evaluate(predicate,arg),false,'The initial sample is genuinely hidden');
+        waited=true;t=8992;hidden=fault==='never-visible';focused=fault!=='never-focused';
+        if(fault==='new-document')timeOrigin++;
+        if(!await evaluate(predicate,arg))throw new Error('inert document readiness timeout');
+        if(fault==='hidden-again')hidden=true;
+      }};
+    const snapshot=(observedOwner,activate)=>{
+      assert.equal(observedOwner,owner);
+      if(activate){activations++;order.push('physical-activation');foreground={pid:root.pid,hwnd:window.hwnd};return {accepted:true};}
+      order.push(waited?'native-recheck':'native-before');
+      return {dropped:0,windows:[{...window,...(waited&&fault==='changed-hwnd'?{hwnd:'41003'}:{})}],
+        foreground:waited&&fault==='foreign-foreground-pid'?{pid:61001,hwnd:window.hwnd}:
+          waited&&fault==='foreign-foreground-hwnd'?{pid:root.pid,hwnd:'61002'}:{...foreground}};
+    };
+    const actual=new Function('assert','process','ownedBrowserWindows','ownedProcessIdentity','ownedNativeWindowSnapshot',
+      'bindOwnedNativeWindow','assertOwnedNativeActivation','retainWindowFailure','windowError',
+      callerSource.slice(helperBegin>=0?helperBegin:gateBegin,gateEnd).replaceAll('export async function','async function')+
+      'return {ensureOwnedNativeForeground,activateOwnedNativeWindow};')(
+      assert,{platform:'win32'},new WeakMap([[browser,owner]]),()=>{
+        order.push(waited?'identity-recheck':'identity-before');return waited&&fault==='reused-process'?{...root,start:'reused-epoch'}:root;
+      },snapshot,journey.bindOwnedNativeWindow,result=>assert.equal(result.accepted,true),
+      (record,key,value)=>(record[key]??=[]).push(value),error=>({name:error.name,message:error.message}));
+    const focusedCaller=new Function('process','native','page','report','check','ensureOwnedNativeForeground',
+      callerSource.slice(focusedBegin,focusedEnd)+'return focused("inert delayed native visibility");');
+    let error;
+    try {
+      if(entry==='auxiliary')await actual.activateOwnedNativeWindow({native,page,report,kind:'blur',role:'auxiliary'});
+      else await focusedCaller({platform:'win32'},native,page,report,(ok,name)=>assert.ok(ok,name),actual.ensureOwnedNativeForeground);
+    }catch(cause){error=cause;}
+    const records=[...(report.native_activations??[]),...(report.native_foreground_preconditions??[])];
+    const row={entry,fault,activations,waits,detaches,order,error:error?.message};rows.push(row);
+    if(fault==='delayed-visible'){
+      assert.equal(error,undefined,`${entry}: delayed genuine visibility must be awaited after exact native admission`);
+      assert.ok(records.every(record=>record.status==='verified' && !record.document.hidden && record.document.focused));
+      for(const record of records){
+        assert.equal(record.document.timeOrigin,100000);assert.equal(record.after.foreground.pid,root.pid);
+        assert.equal(record.after.foreground.hwnd,window.hwnd);
+      }
+      assert.ok(order.lastIndexOf('identity-recheck')>order.indexOf('wait-document'));
+      assert.ok(order.lastIndexOf('native-recheck')>order.indexOf('wait-document'));
+    }else {
+      assert.ok(error,`${entry}/${fault}: document readiness cannot bypass exact ownership or foreground binding`);
+      assert.ok(records.every(record=>record.status==='refused'),`${entry}/${fault}: failed readiness must not publish verified records`);
+    }
+    assert.equal(activations,entry==='already-foreground'?0:1,'Never retry activation or send additional input');
+    assert.equal(detaches,entry==='focused'?4:2,'Every opened page/browser session is detached');
+  }
+  console.log('ST_LS_NATIVE_DOCUMENT_READINESS='+JSON.stringify({rows,fixture:'actual maintained callers with inert delayed document/native records; no browser or input'}));
+});
 
 test('Linux current-source qualification reaches fresh model compilation', () => {
   const begin=callerSource.indexOf('function qualifyCurrentEncounterSource(sources) {');
@@ -1216,10 +1353,11 @@ test('background guards reject frozen ticks and require separate native blur and
   const consoleBegin=callerSource.indexOf("    page.on('console', message => {");
   const consoleEnd=callerSource.indexOf("    page.on('pageerror'",consoleBegin);
   assert.ok(consoleBegin>0 && consoleEnd>consoleBegin);
-  let consoleHandler;const records={states:[],encounters:[],hits:[],layouts:[],cues:[]};
-  new Function('page','messages','load','scope','states','encounters','hits','layouts','cues','trace','retainRuntimeObservation',
+  let consoleHandler;const records={states:[],encounters:[],hits:[],layouts:[],cues:[],callbackRecords:[]};
+  new Function('page','messages','load','scope','states','encounters','hits','layouts','cues','trace','callbackRecords','retainRuntimeObservation','retainObserverFailure',
     callerSource.slice(consoleBegin,consoleEnd))({on:(name,handler)=>{consoleHandler=handler;}},[],1,'healthy',
-    records.states,records.encounters,records.hits,records.layouts,records.cues,[],journey.retainRuntimeObservation);
+    records.states,records.encounters,records.hits,records.layouts,records.cues,[],records.callbackRecords,
+    journey.retainRuntimeObservation,(_record,error)=>{throw error;});
   const emit=(tag,record,t=1000,timeOrigin=100000)=>consoleHandler({type:()=> 'log',location:()=>({}),
     text:()=> 'ST_TEST_RUNTIME '+JSON.stringify({t,timeOrigin,text:tag+JSON.stringify(record)})});
   emit('ST_ENC_STATE ',cadence.encounter(20));emit('ST_LS_STATE ',cadence.state(20),1000.01);
@@ -1305,8 +1443,27 @@ test('background guards reject duplicate terminal staging and manual Claim award
   const another={...ended,encounters:structuredClone(ended.encounters),states:structuredClone(ended.states)};
   another.encounters.at(-1).run=2;another.states.at(-1).sessionRun=2;
   await assert.rejects(async()=>callObserved(another,{status:'Defeated',minT:1000,run:1}),/coherent|pair|observation/i);
-  assert.match(callerSource,/actualTerminal=await observation\(/);
-  assert.doesNotMatch(callerSource,/actualTerminal=encounters/);
+  // Current wave runs finalize without a legacy PendingDefeat. Both real
+  // terminal callers must forward the fresh pre-terminal pair, observed result,
+  // stored envelope and raw streams to the source-bound terminal validator.
+  for(const [before,result,saved,proof,oracle] of [
+    ['terminalBefore','naturalResult','naturalSaved','naturalProof','terminalOracle'],
+    ['backgroundBefore','backgroundResult','backgroundFinal','backgroundProof','backgroundOracle'],
+  ]) {
+    assert.match(callerSource,new RegExp(`const ${before}=await observation\\(`));
+    assert.match(callerSource,new RegExp(`const ${result}=await until\\(states,`));
+    assert.match(callerSource,new RegExp(`const ${saved}=JSON\\.parse\\(await page\\.evaluate`));
+    const begin=callerSource.indexOf(`    const ${proof}=validateWaveTerminal(`);
+    const end=callerSource.indexOf(';',begin);
+    assert.ok(begin>0 && end>begin,'Actual maintained wave terminal proof caller required');
+    const inputs=Object.fromEntries([before,result,saved,'states','encounters','layouts',oracle].map(name=>[name,{name}]));
+    const invoke=new Function(...Object.keys(inputs),'validateWaveTerminal',
+      callerSource.slice(begin,end+1)+`return ${proof};`);
+    assert.deepEqual(invoke(...Object.values(inputs),value=>value),{
+      before:inputs[before],result:inputs[result],saved:inputs[saved],states:inputs.states,
+      encounters:inputs.encounters,layouts:inputs.layouts,oracle:inputs[oracle],
+    });
+  }
 });
 
 async function assertNativeAudioBoundaries() {
@@ -1314,7 +1471,7 @@ async function assertNativeAudioBoundaries() {
   assert.ok(begin>0 && end>begin,'Actual maintained away/noReplay caller required');
   const run=new Function('native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
     'energy','validateNoReplayAudio','validateAwayAudioReturn','reference','activateOwnedNativeWindow',
-    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind',
+    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind','callbackRecords',
     callerSource.slice(begin,end)+'return away(kind,6000);');
   const oracle=journey.readBoundEncounterOracle()['repair:20'];
   const identity={load:16,timeOrigin:100000,scope:'healthy'},loopRun=3,sessionRun=1;
@@ -1324,7 +1481,7 @@ async function assertNativeAudioBoundaries() {
     'wrong-cue-load','wrong-cue-origin','missing-loss','missing-return','element-loss','element-return',
     'stale-loss','wrong-boundary-load','wrong-boundary-origin','invalid-boundary-clock','short-real-unfocused-span'];
   for(const kind of ['blur','hidden'])for(const fault of cases) {
-    const trace=[],cues=[],states=[],encounters=[],report={lifecycle:[]},windows=[];
+    const trace=[],cues=[],states=[],encounters=[],callbackRecords=[],report={lifecycle:[]},windows=[];
     const before={...oracle[700],...identity,t:900,run:sessionRun,fitting:'repair',paused:false,
       loop:{runId:loopRun,cannonDamage:20}};
     let time=950,focused=true,hidden=false,closed=false,marks=0,auxClosed=0,auxCreated=0;
@@ -1352,6 +1509,11 @@ async function assertNativeAudioBoundaries() {
         cannonDamage:20,paused:false,muted:false,saveState:'ready'});
       if(fault!=='quiet-return')for(const tick of [855,875]) {
         const t=returned+(tick-842)*50+29;
+        const admission={...identity,id:tick,run:sessionRun,fromTick:tick-1,timestamp:t/1000,
+          previousTimestamp:t/1000-.05,elapsed:.05,priorPending:0,speed:1,focused:true,
+          applicationPaused:false,paused:false,failed:false};
+        callbackRecords.push({...admission,action:'begin',t:t-.1,tick:tick-1,steps:0,pending:.05,age:0},
+          {...admission,action:'end',t:t+1.1,tick,steps:1,pending:0,age:.0012});
         cues.push({t,...identity,text:'ST_LS_AUDIO event=cannon\n'},
           {t:t+.1,...identity,text:'ST_LS_AUDIO event='+(oracle[tick].kills>oracle[tick-1].kills?'destruction':'impact')+'\n'});
       }
@@ -1386,7 +1548,7 @@ async function assertNativeAudioBoundaries() {
     try {await run(native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
       report,'explicit-inert-output',trace,cues,states,encounters,identity.load,energy,journey.validateNoReplayAudio,
       journey.validateAwayAudioReturn,()=>oracle,async()=>{},async()=>{assert.ok(focused && !hidden);},async()=>{},
-      async({other,session})=>{await other?.close();await session?.detach();},kind);}
+      async({other,session})=>{await other?.close();await session?.detach();},kind,callbackRecords);}
     catch(cause){error=cause;}
     assert.equal(auxCreated,1);assert.equal(auxClosed,1);assert.ok(closed,'Actual maintained cleanup always executes');
     const reject=!['fresh-current','quiet-return'].includes(fault),boundary=report.lifecycle.at(-1)?.boundary;
@@ -1414,7 +1576,7 @@ async function assertNativeAudioTerminalReturns() {
     .replace(/^export /,'')+'return validateAwayAudioReturn;')(assert,journey.validateModelObservation);
   const run=new Function('native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
     'energy','validateNoReplayAudio','validateAwayAudioReturn','reference','activateOwnedNativeWindow',
-    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind',
+    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind','callbackRecords',
     callerSource.slice(begin,end)+'return away(kind,6000);');
   const oracle=journey.readBoundEncounterOracle()['repair:20'],terminalTick=Object.values(oracle).at(-1).tick;
   assert.equal(oracle[terminalTick].status,'Defeated');assert.equal(oracle[terminalTick].hp,0);
@@ -1426,7 +1588,7 @@ async function assertNativeAudioTerminalReturns() {
     'defeat-before-terminal','duplicate-staging','missing-staging','wrong-cue-load','wrong-cue-origin',
     'wrong-terminal-load','wrong-terminal-origin','invalid-terminal-elapsed','long-terminal-callback','wrong-terminal-step-count'];
   for(const kind of ['blur','hidden'])for(const fault of cases) {
-    const trace=[],cues=[],states=[],encounters=[],report={lifecycle:[]},windows=[];
+    const trace=[],cues=[],states=[],encounters=[],callbackRecords=[],report={lifecycle:[]},windows=[];
     const before={...oracle[terminalTick-130],...identity,t:900,run:sessionRun,fitting:'repair',paused:false,
       loop:{runId:loopRun,cannonDamage:20}};
     let time=950,focused=true,hidden=false,closed=false,marks=0,auxClosed=0,auxCreated=0;
@@ -1450,6 +1612,11 @@ async function assertNativeAudioTerminalReturns() {
         ...Array(weapons-killed+b.closeHits-a.closeHits+b.rangedHits-a.rangedHits).fill('impact')];
       names.forEach((name,i)=>cues.push({t:nextTime-1+i*.01,...identity,text:'ST_LS_AUDIO event='+name+'\n'}));
       const defeat={t:nextTime-.4,...identity,text:'ST_LS_AUDIO event=defeat\n'};cues.push(defeat);
+      const callback={...identity,id:1,run:sessionRun,fromTick:terminalTick-1,timestamp:(nextTime-1.1)/1000,
+        previousTimestamp:(nextTime-1.1)/1000-.05-tail,elapsed:.05+tail,priorPending:0,speed:1,
+        focused:true,applicationPaused:false,paused:false,failed:false};
+      callbackRecords.push({...callback,action:'begin',t:nextTime-1.1,tick:terminalTick-1,steps:0,pending:.05+tail,age:0},
+        {...callback,action:'end',t:nextTime+.1,tick:terminalTick,steps:1,pending:tail,age:.0012});
       encounters.push(terminal);states.push(staged);
       if(fault==='background-cue')cues.push({t:2000,...identity,text:'ST_LS_AUDIO event=defeat\n'});
       if(fault==='stale-terminal')terminal.t=returned-1;
@@ -1494,7 +1661,7 @@ async function assertNativeAudioTerminalReturns() {
     try {await run(native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
       report,'explicit-inert-output',trace,cues,states,encounters,identity.load,energy,journey.validateNoReplayAudio,
       selector,()=>oracle,async()=>{},async()=>{assert.ok(focused && !hidden);},async()=>{},
-      async({other,session})=>{await other?.close();await session?.detach();},kind);}
+      async({other,session})=>{await other?.close();await session?.detach();},kind,callbackRecords);}
     catch(cause){error=cause;}
     assert.equal(auxCreated,1);assert.equal(auxClosed,1);assert.ok(closed,'Actual maintained cleanup always executes');
     const reject=!['fresh-terminal','fresh-short-terminal-tail'].includes(fault),boundary=report.lifecycle.at(-1)?.boundary;
@@ -1733,3 +1900,231 @@ async function assertConfiguredRejoinBoundary() {
   await defaultFixturePreservation();
   await binderReadBoundaries();
 }
+
+
+test('inert placement uses the observed owned monitor instead of emulated screen dimensions',async()=>{
+  for(const origin of [{left:0,top:0},{left:-1280,top:-200}]){
+    const f=inertPlacementFixture({origin});await f.run();
+    assert.deepEqual(f.requests,[{left:origin.left+20,top:origin.top+20,width:1024,height:760}]);
+    assert.equal(f.screenReads,0,'Emulated page.screen must never authorize native placement');
+    assert.equal(f.probes,2);assert.equal(f.fronts,1);assert.equal(f.detaches,2);
+  }
+});
+test('inert placement rejects unsafe or mismatched ownership and geometry before tab activation',async()=>{
+  for(const fault of ['foreign','ambiguous','unmeasured','missing-workarea','small-workarea','unsafe-workarea',
+    'cdp-native-mismatch','post-size','post-window','post-native','post-monitor','stale-process']){
+    const f=inertPlacementFixture({fault});await assert.rejects(f.run(),undefined,fault);
+    assert.equal(f.fronts,0,fault+' must not activate the tab');assert.equal(f.detaches,2);
+    assert.equal(f.requests.length,fault.startsWith('post-')?1:0,fault+' mutation boundary');
+  }
+});
+function inertPlacementFixture({origin={left:0,top:0},fault}={}){
+  const root={pid:77,ppid:55,start:'exact-owned-start',exe:'owned-chrome'},receipt={pid:77,root,profile:'/inert-profile'};
+  const workarea={...origin,width:1064,height:800};
+  let bounds={left:origin.left+10,top:origin.top+10,width:1044,height:788,windowState:'normal'};
+  const f={requests:[],screenReads:0,probes:0,fronts:0,detaches:0},report={};
+  const session={send:async()=>({targetInfo:{type:'page',targetId:'owned-target',browserContextId:'owned-context'}}),detach:async()=>{f.detaches++;}};
+  const browserSession={send:async(method,args)=>{
+    if(method==='Browser.setWindowBounds'){
+      f.requests.push({...args.bounds});bounds={...bounds,...args.bounds,width:Math.min(args.bounds.width,1044)};
+      if(fault==='post-size')bounds.width--;return {};
+    }
+    return {windowId:fault==='post-window' && f.requests.length?2:1,bounds:{...bounds}};
+  },detach:async()=>{f.detaches++;}};
+  const native={context:{newCDPSession:async()=>session},browser:{newBrowserCDPSession:async()=>browserSession}};
+  const page={context:()=>native.context,isClosed:()=>false,url:()=> 'data:text/html,inert',bringToFront:async()=>{f.fronts++;},
+    evaluate:async fn=>{if(String(fn).includes('screen.')){f.screenReads++;return {left:0,top:0,width:1280,height:720};}
+      return {hidden:true,focused:false,visibility:'hidden',t:1,timeOrigin:2};}};
+  const probe=(pid,owner)=>{
+    f.probes++;assert.equal(pid,root.pid);assert.equal(JSON.stringify(owner),JSON.stringify(receipt));
+    if(fault==='stale-process')throw new Error('Owned process changed');
+    const item={...bounds,pid,hwnd:'444',kind:'Chrome_WidgetWin_1',visible:true,minimized:false,measured:true,workarea:{...workarea}};
+    if(fault==='foreign')item.pid++;
+    if(fault==='unmeasured')item.measured=false;
+    if(fault==='missing-workarea')delete item.workarea;
+    if(fault==='small-workarea')item.workarea.width=400;
+    if(fault==='unsafe-workarea')item.workarea.left=Number.MAX_SAFE_INTEGER;
+    if(fault==='cdp-native-mismatch' || fault==='post-native' && f.requests.length)item.width--;
+    if(fault==='post-monitor' && f.requests.length)item.workarea.left++;
+    return fault==='ambiguous'?[item,{...item,hwnd:'445'}]:[item];
+  };
+  const fn=runInNewContext('('+placeOwnedInertWindow.toString()+')',{
+    assert,journey,readFileSync:()=>JSON.stringify(receipt),join:(...p)=>p.join('/'),nativeWindowObservation:probe,
+  });
+  f.run=()=>fn({native,page,report,role:'foreground-original',output:'/inert-output'});return f;
+}
+
+test('inert placement native probe preserves physical context and exact process admission',()=>{
+  if(process.platform!=='win32')return;
+  let script;
+  const observe=new Function('assert','Buffer','execFileSync','return ('+nativeWindowObservation.toString()+');')(
+    assert,Buffer,(_exe,args)=>{script=Buffer.from(args.at(-1),'base64').toString('utf16le');return '[]';});
+  observe(77,{pid:77,root:{pid:77,start:'2026-10-23T00:00:00.0000000Z',exe:'C:\\owned\\chrome.exe'},profile:'C:\\owned\\profile'});
+  const nativeBlock=script.match(/    Add-Type -TypeDefinition @'\n([\s\S]+?)\n'@/);assert.ok(nativeBlock);
+  const bodies={
+    SetThreadDpiAwarenessContext:'if(context.ToInt64()==-4){if(Mode=="dpi-denied")return IntPtr.Zero;var old=Context;Context=context;return old;}Restores++;if(Mode=="restore-denied")return IntPtr.Zero;Context=context;return new IntPtr(-4);',
+    GetThreadDpiAwarenessContext:'return Mode=="dpi-mismatch" && Context.ToInt64()==-4?new IntPtr(-3):Context;',
+    AreDpiAwarenessContextsEqual:'return first==second;',
+    MonitorFromWindow:'if(flags!=0)throw new Exception("Monitor fallback forbidden");return Mode=="monitor-missing"?IntPtr.Zero:new IntPtr(9);',
+    GetMonitorInfo:'if(info.Size!=40)throw new Exception("Monitor structure mismatch");info.Work=new Rect {Left=-1280,Top=-200,Right=-216,Bottom=600};return Mode!="monitor-failure";',
+    EnumWindows:'callback(new IntPtr(444),IntPtr.Zero);return Mode!="enumeration-failure";',
+    GetWindowThreadProcessId:'pid=77;return 1;',IsWindowVisible:'return true;',IsIconic:'return false;',
+    GetWindowRect:'rect=new Rect {Left=-1270,Top=-190,Right=-226,Bottom=598};return true;',
+    GetClassName:'text.Append("Chrome_WidgetWin_1");return 18;',GetWindowText:'text.Append("Inert owned fixture");return 19;',
+  };
+  let replaced=0;
+  let source=nativeBlock[1].replace(/^  \[DllImport[^\n]+\] public static extern (.+?) (\w+)\((.*)\);$/gm,
+    (_line,type,name,params)=>{assert.ok(bodies[name],'Inert implementation required: '+name);replaced++;
+      return '  public static '+type+' '+name+'('+params+') { '+bodies[name]+' }';});
+  assert.equal(replaced,Object.keys(bodies).length);assert.ok(!source.includes('[DllImport'));
+  source=source.replace('public class LastStandNativeWindowProbe {','public class LastStandNativeWindowProbe {\npublic static string Mode; public static IntPtr Context; public static int Restores;');
+  const action=script.replace(nativeBlock[0],'');
+  const setup=["$ErrorActionPreference='Stop'",'function Get-CimInstance { param($ClassName,$Filter)',
+    ' $global:queries++'," $stamp=[DateTime]::Parse('2026-10-23T00:00:00.0000000Z').ToUniversalTime()",
+    " if($mode -eq 'identity-before' -or ($mode -eq 'identity-after' -and $global:queries -eq 2)){$stamp=$stamp.AddSeconds(1)}",
+    " $command='--user-data-dir=C:\\owned\\profile';if($mode -eq 'profile-mismatch'){$command='--user-data-dir=C:\\foreign\\profile'}",
+    " [pscustomobject]@{CreationDate=$stamp;ExecutablePath='C:\\owned\\chrome.exe';CommandLine=$command}",'}',
+    "Add-Type -TypeDefinition @'",source,"'@",'$rows=@()',
+    "foreach($mode in @('valid','dpi-denied','dpi-mismatch','restore-denied','monitor-missing','monitor-failure','identity-before','identity-after','profile-mismatch','enumeration-failure')){",
+    ' [LastStandNativeWindowProbe]::Mode=$mode;[LastStandNativeWindowProbe]::Context=[IntPtr](-2);[LastStandNativeWindowProbe]::Restores=0',
+    ' $global:queries=0;$answer=$null;$failure=$null',
+    ' try{$answer=& {'+action+'}}catch{$failure=$_.Exception.Message}',
+    ' $rows+=@{mode=$mode;answer=$answer;error=$failure;queries=$global:queries;restores=[LastStandNativeWindowProbe]::Restores;context=[LastStandNativeWindowProbe]::Context.ToInt64()}',
+    '}',"@{fixture='all native/provider calls inert';rows=$rows}|ConvertTo-Json -Depth 6 -Compress",
+  ].join('\n');
+  const result=JSON.parse(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',
+    '$taskScript=[Console]::In.ReadToEnd(); & ([ScriptBlock]::Create($taskScript))'],
+    {input:setup,encoding:'utf8',timeout:10000,maxBuffer:1024*1024,windowsHide:true}));
+  console.log('ST_LS_INERT_PLACEMENT_PROBE='+JSON.stringify(result));
+  for(const row of result.rows){
+    if(['valid','monitor-missing','monitor-failure'].includes(row.mode)){
+      assert.equal(row.error,null,row.mode);assert.equal(row.queries,2);
+      const windows=JSON.parse(row.answer);assert.ok(Array.isArray(windows),'Native probe must preserve its array contract');
+      const item=windows[0];
+      assert.equal(item.hwnd,'444');
+      if(row.mode==='valid')assert.deepEqual(item.workarea,{left:-1280,top:-200,width:1064,height:800});
+      else assert.equal(item.workarea,null,'Unavailable monitor must never become guessed coordinates');
+    }else assert.ok(row.error,row.mode+' must refuse');
+    assert.equal(row.restores,['dpi-denied','identity-before','profile-mismatch'].includes(row.mode)?0:1,row.mode);
+    assert.equal(row.context,row.mode==='restore-denied'?-4:-2,row.mode);
+  }
+});
+
+test('native activation pins process admission and keeps provider latency outside inserted input', () => {
+  if(process.platform!=='win32')return;
+  const begin=callerSource.indexOf('function ownedNativeWindowSnapshot(');
+  const end=callerSource.indexOf('// Passive observations precede',begin);
+  assert.ok(begin>=0 && end>begin);
+  let actualScript;
+  const makeCapture=clock=>new Function('assert','process','Buffer','powershell','uptime',
+    callerSource.slice(begin,end)+'return ownedNativeWindowSnapshot;')(
+      assert,{platform:'win32'},Buffer,script=>{actualScript=script;return '{}';},clock);
+  const owner={root:{pid:77,ppid:55,start:'2026-10-23T00:00:00.0000000Z',exe:'C:\\owned\\chrome.exe'},profile:'C:\\owned\\profile'};
+  for(const value of [-1,0,NaN,Infinity,Number.MAX_SAFE_INTEGER])assert.throws(()=>makeCapture(()=>value)(owner),/monotonic origin/);
+  const capture=makeCapture(()=>1000);
+  capture({root:{pid:77,ppid:55,start:'2026-10-23T00:00:00.0000000Z',exe:'C:\\owned\\chrome.exe'},
+    profile:'C:\\owned\\profile'},{hwnd:'444',left:20,top:30,width:800,height:600});
+  let source=actualScript.split("    Add-Type -TypeDefinition @'\n")[1]?.split("\n'@")[0];
+  assert.ok(source,'Actual emitted native source required');
+  let replaced=0;
+  source=source.replace(/^  \[DllImport[^\n]+\] public static extern (.+?) (\w+)\((.*)\);$/gm,
+    (line,type,name,params)=>{
+      replaced++;
+      const args=params.split(',').filter(x=>x.trim()).map(part=>{
+        const words=part.trim().split(/\s+/);
+        return (['out','ref'].includes(words[0])?words[0]+' ':'')+words.at(-1);
+      }).join(', ');
+      return '  public static '+type+' '+name+'('+params+') { return Seam.'+name+'('+args+'); }';
+    });
+  assert.ok(replaced>=20 && !source.includes('[DllImport'),'Every OS call must be inert');
+  const tick=String.fromCharCode(96);
+  let seam=assertPhysicalCaptionNativeSeamControls.toString().split('const seam='+tick)[1]?.split(tick+';')[0];
+  assert.ok(seam);
+  seam=seam.replace('public static string Mode;',
+    'public static int Opens, Closes, Checks; public static bool Pinned, Exited; public static string Mode;')
+    .replace('Mode=mode;Moves=', 'Mode=mode;Opens=Closes=Checks=0;Pinned=Exited=false;Moves=')
+    .replace('public static bool Identity()',[
+    'public static IntPtr OpenProcess(uint access, bool inherit, uint pid) {',
+    '  Opens++;if(access!=0x101000 || inherit || pid!=77)throw new InvalidOperationException("Unexpected process authority");',
+    '  if(Mode=="missing" || Mode=="access-denied")return IntPtr.Zero;Pinned=true;return new IntPtr(900);',
+    '}',
+    'public static bool CloseHandle(IntPtr handle) {',
+    '  if(handle!=new IntPtr(900) || !Pinned)throw new InvalidOperationException("Unexpected handle release");',
+    '  Closes++;Pinned=false;return true;',
+    '}',
+    'public static uint GetProcessId(IntPtr handle) { Checks++;if(Mode=="check-exception" && Checks>1)throw new InvalidOperationException("Injected kernel query failure");return Mode=="pid-mismatch"?88u:77u; }',
+    'public static bool GetProcessTimes(IntPtr handle, out long created, out long exited, out long kernel, out long user) {',
+    '  created=1000000+(Mode=="creation-drift" && Moves>0?1:0);exited=kernel=user=0;return Mode!="time-unavailable";',
+    '}',
+    'public static bool QueryFullProcessImageName(IntPtr handle, uint flags, StringBuilder image, ref int size) {',
+    '  image.Append(Mode=="exe-mismatch"?"C:\\\\foreign\\\\chrome.exe":"C:\\\\owned\\\\chrome.exe");',
+    '  size=image.Length;return Mode!="image-unavailable";',
+    '}',
+    'public static uint WaitForSingleObject(IntPtr handle, uint timeout) {',
+    '  if(timeout!=0 || handle!=new IntPtr(900) || !Pinned)throw new InvalidOperationException("Unbounded or unpinned wait");',
+    '  return Exited || Mode=="exit-before-admission" || (Mode=="exit-after-move" && Moves>0)?0u:258u;',
+    '}',
+    'public static ulong GetTickCount64() {',
+    '  return (ulong)(Mode=="budget-future"?999999:Mode=="budget-expired"?1009000:(Mode=="budget-after-move" && Moves>0 || Mode=="budget-after-down" && Downs>0)?1009000:1000100);',
+    '}',
+    'public static bool Identity()'].join('\n'));
+  source=source.slice(0,source.lastIndexOf('}'))+seam+'\n}';
+  const nativeBlock=actualScript.match(/    Add-Type -TypeDefinition @'\n[\s\S]+?\n'@/)[0];
+  const action=actualScript.replace(nativeBlock,'');
+  const setup=[
+    "$ErrorActionPreference='Stop'",
+    "$taskMode='valid';$global:taskQueries=0;$global:taskInsideDown=0;$global:taskQueryWithoutPin=0",
+    'function Get-CimInstance {',
+    '  param($ClassName,$Filter)',
+    '  $global:taskQueries++',
+    "  if($taskMode -eq 'provider-exception'){throw 'Injected CIM admission failure'}",
+    "  $kind='LastStandAwayWindowProbe+Seam' -as [type]",
+    '  if($kind){',
+    '    if([LastStandAwayWindowProbe+Seam]::Downs -gt [LastStandAwayWindowProbe+Seam]::Ups){$global:taskInsideDown++}',
+    '    if(-not [LastStandAwayWindowProbe+Seam]::Pinned){$global:taskQueryWithoutPin++}',
+    "    if($taskMode -eq 'exit-during-admission' -or $taskMode -eq 'pid-reuse'){[LastStandAwayWindowProbe+Seam]::Exited=$true}",
+    '  }else{$global:taskQueryWithoutPin++}',
+    "  $stamp=[DateTime]::Parse('2026-10-23T00:00:00.0000000Z').ToUniversalTime()",
+    "  if($taskMode -eq 'start-mismatch'){$stamp=$stamp.AddSeconds(1)}",
+    '  $command=\'"C:\\owned\\chrome.exe" --user-data-dir=C:\\owned\\profile\'',
+    '  if($taskMode -eq \'profile-mismatch\'){$command=\'"C:\\owned\\chrome.exe" --user-data-dir=C:\\foreign\\profile\'}',
+    "  [pscustomobject]@{ProcessId=77;CreationDate=$stamp;ExecutablePath='C:\\owned\\chrome.exe';CommandLine=$command}",
+    '}',
+  ].join('\n');
+  // Run actual emitted admission/control flow; every provider/native call is inert.
+  const script=setup+"\nAdd-Type -TypeDefinition @'\n"+source+"\n'@\n"+[
+    '$rows=@()',
+    "foreach($taskMode in @('valid','budget-after-down','missing','access-denied','exit-before-admission','provider-exception','check-exception','exit-during-admission','pid-reuse','pid-mismatch','start-mismatch','profile-mismatch','exe-mismatch','time-unavailable','image-unavailable','creation-drift','exit-after-move','budget-expired','budget-after-move','budget-future')){",
+    '  [LastStandAwayWindowProbe+Seam]::Reset($taskMode)',
+    '  $global:taskQueries=0;$global:taskInsideDown=0;$global:taskQueryWithoutPin=0;$answer=$null;$failure=$null',
+    '  try{$answer=& {'+action+'}|ConvertFrom-Json}catch{$failure=$_.Exception.Message}',
+    '  $rows+=@{mode=$taskMode;accepted=($answer.accepted -eq $true);reason=$answer.reason;error=$failure;',
+    '    providerCalls=$global:taskQueries;providerDuringDown=$global:taskInsideDown;providerWithoutPin=$global:taskQueryWithoutPin;',
+    '    opens=[LastStandAwayWindowProbe+Seam]::Opens;closes=[LastStandAwayWindowProbe+Seam]::Closes;',
+    '    pinned=[LastStandAwayWindowProbe+Seam]::Pinned;checks=[LastStandAwayWindowProbe+Seam]::Checks;',
+    '    moves=[LastStandAwayWindowProbe+Seam]::Moves;downs=[LastStandAwayWindowProbe+Seam]::Downs;ups=[LastStandAwayWindowProbe+Seam]::Ups}',
+    '}',
+    "@{fixture='actual emitted script with all OS/provider calls inert';rows=$rows}|ConvertTo-Json -Depth 5 -Compress",
+  ].join('\n');
+  const raw=execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',
+    '$taskScript=[Console]::In.ReadToEnd(); & ([ScriptBlock]::Create($taskScript))'],
+    {input:script,encoding:'utf8',timeout:10000,maxBuffer:4*1024*1024,windowsHide:true});
+  const evidence=JSON.parse(raw),good=evidence.rows[0];
+  console.log('ST_LS_PINNED_IDENTITY='+JSON.stringify(evidence));
+  assert.equal(good.accepted,true,'Valid exact admitted process must retain activation behavior');
+  assert.equal(good.providerDuringDown,0,'No potentially slow provider query may run with this call’s button held');
+  assert.equal(good.providerWithoutPin,0,'Full profile/start admission must occur while the kernel object is pinned');
+  assert.equal(good.providerCalls,1,'Only full admission uses the provider; later proofs use the same kernel handle');
+  assert.ok(good.checks>=5,'Fresh kernel identity checks must remain at existing input gates');
+  assert.equal(good.opens,1);assert.equal(good.closes,1);assert.equal(good.downs,1);assert.equal(good.ups,1);
+  const released=evidence.rows.find(row=>row.mode==='budget-after-down');
+  assert.ok(released.accepted && released.downs===1 && released.ups===1 && released.closes===1 && !released.pinned,'Budget expiry must never suppress an otherwise safe owned release');
+  for(const row of evidence.rows.slice(2)){
+    assert.equal(row.accepted,false,'Refuse '+row.mode);
+    assert.equal(row.downs,0,'Do not insert down for '+row.mode);
+    assert.equal(row.ups,0,'Do not send unowned up for '+row.mode);
+    assert.equal(row.pinned,false,'Release every successfully acquired handle for '+row.mode);
+    assert.equal(row.opens,1,'Never reacquire a replacement PID for '+row.mode);
+    assert.equal(row.closes,['missing','access-denied'].includes(row.mode)?0:1,'Close only an acquired handle for '+row.mode);
+  }
+});

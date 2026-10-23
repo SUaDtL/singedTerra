@@ -59,9 +59,9 @@ export function readShopControlObservation(raw) {
       'Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext']],
     ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
       'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
-      'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']],
+      'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy','ShopCard_scattergunAttackBuy']],
     ['settingsControls',['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3',
-      'MenuResume','MenuSettings','MenuHelp','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
+      'MenuResume','MenuSettings','MenuHelp','MenuMilestones','MenuNewRun','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
       'MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus',
       'DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp',
       'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed','ChoicePrevious','ChoiceNext']]];
@@ -227,8 +227,23 @@ async function bindShopPlayerRuntime(baseURL) {
   return {base,binding,before,documentaryPath};
 }
 
+export function assertHistoricalShopRuntime(receipt) {
+  assert.equal(receipt?.schema,'singedterra-last-stand-export/v2','Historical Shop requires an explicit export receipt');
+  assert.equal(receipt.status,'pass');assert.equal(receipt.complete,true);
+  assert.ok(receipt.sourceFiles && typeof receipt.sourceFiles==='object' && !Array.isArray(receipt.sourceFiles),
+    'Historical Shop requires an explicit source inventory');
+  assert.ok(Object.keys(receipt.sourceFiles).some(path=>path.endsWith('/EncounterModel.cs')),
+    'Historical Shop requires its actual combat source inventory');
+  assert.ok(!Object.keys(receipt.sourceFiles).some(path=>path.endsWith('/LastStandWaveCatalog.cs')),
+    'Historical v3/manual-Claim Shop journey cannot qualify current wave gameplay. '+
+    'Run node scripts/last-stand-first-session.mjs <fresh-evidence-directory> for current earned wave/Shop input evidence; '+
+    'run campaign-unity/Tools/last_stand_waves/test_checkpoint_store.py and '+
+    'campaign-unity/Tools/last_stand_shop/test_shop_persistence.py for current storage fault coverage.');
+}
+
 export async function runLastStandShopJourney({baseURL,chromium,fitting}) {
   assert.ok(['launcher','repair'].includes(fitting),'Unknown Shop fitting');
+  assertHistoricalShopRuntime(JSON.parse(readFileSync(resolve(ROOT,'campaign-unity/docs/last-stand-web/receipt-sanitized.json'),'utf8')));
   if(['background-storage','background-native'].includes(process.env.ST_SHOP_QUALIFICATION))
     return runShopRecoveryJourney({baseURL,chromium,fitting});
   const parent=admitEvidenceParent(process.env.ST_SHOP_TEST_EVIDENCE);
@@ -1275,15 +1290,16 @@ async function runShopRecoveryJourney({baseURL,chromium,fitting}) {
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, existsSync, rmSync, readdirSync, readlinkSync, realpathSync, lstatSync, openSync, writeSync, closeSync, renameSync, unlinkSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute, dirname } from 'node:path';
-import { tmpdir, release, arch } from 'node:os';
+import { tmpdir, release, arch, uptime } from 'node:os';
 import { gunzipSync } from 'node:zlib';
+import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const SAVE_KEY = 'singedTerra.lastStand.prototype.v1';
 const SELECTION_KEY = 'singedterra.command-center.selection.v1';
-const TITLE = 'Last Stand Campaigns journey preserves no-award exit and a stronger redeploy';
+const TITLE = 'Last Stand wave checkpoints survive Return and reload before a stronger redeploy';
 import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition, lastStandJourneySection, LAST_STAND_ENTRY_ROUTES} from './lastStandMatrix.mjs';
 export {lastStandViewportPartition} from './lastStandMatrix.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -1318,7 +1334,7 @@ const RUNTIME_PROBE = `(() => {
     const text = args.map(String).join(' ');
     const t = performance.now(), timeOrigin = performance.timeOrigin;
     original.apply(this,args);
-    if (['ST_ENC_STATE ','ST_LS_STATE ','ST_LS_HIT ','ST_LS_HUD_LAYOUT ','ST_LS_AUDIO event='].some(tag=>text.includes(tag)))
+    if (['ST_ENC_STATE ','ST_ENC_CALLBACK ','ST_LS_STATE ','ST_LS_HIT ','ST_LS_HUD_LAYOUT ','ST_LS_AUDIO event='].some(tag=>text.includes(tag)))
       original.call(console,'ST_TEST_RUNTIME '+JSON.stringify({t,timeOrigin,text}));
   };
 })();`;
@@ -1326,7 +1342,12 @@ const RUNTIME_PROBE = `(() => {
 // Associate loop records with the session run actually preceding them in this
 // console stream. Progression runId and EncounterSession.run are different
 // domains; their deploy records below establish the association, not equality.
-export function retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues}) {
+export function retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues,callbackRecords}) {
+  if(observation.text.includes('ST_ENC_CALLBACK ')) {
+    assert.ok(Array.isArray(callbackRecords),'Callback observations require their dedicated owner');
+    callbackRecords.push({...JSON.parse(observation.text.split('ST_ENC_CALLBACK ')[1].split('\n')[0]),
+      t:observation.t,timeOrigin:observation.timeOrigin,load,scope});
+  }
   for(const [tag,items] of [['ST_LS_STATE ',states],['ST_ENC_STATE ',encounters],['ST_LS_HIT ',hits],['ST_LS_HUD_LAYOUT ',layouts]]) {
     if(!observation.text.includes(tag))continue;
     const item={...JSON.parse(observation.text.split(tag)[1].split('\n')[0]),
@@ -1354,7 +1375,7 @@ export async function observeRuntimePair({encounters,states,load,clock,wait,chec
       (options.paused===undefined || item.paused===options.paused) && item.run===latest?.run && item.t>=(options.minT??0)) : latest;
     const deployment=encounters.findLast(item=>documentRecord(item) && item.run===encounter?.run && item.action==='deploy');
     const deployedState=deployment && states.find(item=>documentRecord(item) && item.sessionRun===deployment.run &&
-      item.action==='deploy' && item.tick===0 && item.t>=deployment.t && item.runId>0);
+      ['deploy','resume'].includes(item.action) && item.tick===deployment.tick && item.t>=deployment.t && item.runId>0);
     const state=states.findLast(item=>documentRecord(item) && item.sessionRun===encounter?.run && item.tick===encounter?.tick &&
       item.t>=encounter.t && loopRun(item)===loopRun(current));
     detail={options,now,latest,current,encounter,state,deployment,deployedState};
@@ -1385,7 +1406,8 @@ export async function observeRuntimePair({encounters,states,load,clock,wait,chec
 function sameDocument(before, after) {
   for (const item of [before,after]) {
     assert.ok(Number.isFinite(item?.t) && Number.isFinite(item.timeOrigin), 'Invalid observation clock');
-    assert.ok(Number.isInteger(item.tick) && item.tick>=0 && item.tick<=3600, 'Invalid observed tick');
+    const maximum=Number.isInteger(item.wave) && item.wave>0 ? 2147483647 : 3600;
+    assert.ok(Number.isSafeInteger(item.tick) && item.tick>=0 && item.tick<=maximum, 'Invalid observed tick');
   }
   assert.equal(after.load,before.load,'Background observation crossed documents');
   assert.equal(after.timeOrigin,before.timeOrigin,'Background observation clock changed');
@@ -1402,6 +1424,7 @@ function nativeIntervalEvents(kind,before,after,events) {
 }
 function elapsedTicks(before,after) {
   sameDocument(before,after);
+  if(isWaveObservation(before) || isWaveObservation(after))return validateAdmittedClock(before,after);
   const expected=(after.t-before.t)/50, actual=after.tick-before.tick;
   // Fractional carry at two observed fixed-step boundaries is below one tick.
   assert.ok(actual>0 && Math.abs(actual-expected)<=1.01, 'Background elapsed tick reconciliation differs');
@@ -1409,11 +1432,37 @@ function elapsedTicks(before,after) {
   assert.ok(Number.isInteger(after.callbackSteps) && after.callbackSteps>=0 && after.callbackSteps<=128,
     'Background callback step budget exceeded');
 }
+function isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || item?.rules?.startsWith('last-stand-waves-v1:');}
+export function validateAdmittedClock(before,after) {
+  sameDocument(before,after);
+  for(const item of [before,after]){
+    assert.match(item.rules??'',/^last-stand-waves-v1:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
+    assert.equal(item.scope,'healthy');assert.equal(item.status,'Running');
+    assert.equal(item.paused,false);assert.equal(item.catchingUp,false);assert.equal(item.failed,false);
+    assert.equal(item.selectedSpeed,1);assert.equal(item.effectiveSpeed,1);
+    assert.ok(Number.isFinite(item.clockTimestamp) && item.clockTimestamp>=0 &&
+      Number.isFinite(item.clockPending) && item.clockPending>=0 && item.clockPending<.05,
+      'Active wave observation requires its actual admitted clock and sub-step carry');
+    assert.ok(Number.isInteger(item.callbackSteps) && item.callbackSteps>=0 && item.callbackSteps<=128,
+      'Background callback step budget exceeded');
+  }
+  assert.equal(after.rules,before.rules);
+  const elapsed=after.clockTimestamp-before.clockTimestamp,ticks=after.tick-before.tick;
+  assert.ok(elapsed>0 && ticks>0 && Math.abs(ticks*.05-(elapsed+before.clockPending-after.clockPending))<=1e-6,
+    'Admitted elapsed time, fixed ticks and retained carry differ');
+  return {basis:'admitted-clock/v1',elapsed_ms:elapsed*1000,ticks,initial_carry:before.clockPending,final_carry:after.clockPending};
+}
+export function waveIntervalEvents(before,after,events) {
+  return events.filter(item=>item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope &&
+    item.globalTarget===true && ['blur','focus','visibilitychange'].includes(item.kind) && item.t>=before.t && item.t<=after.t);
+}
 const MODEL_FIELDS=['tick','hp','kills','spawned','cannon','launcher','healed','closeHits','rangedHits','alive','status'];
 export function validateModelObservation(observed,oracle) {
   assert.ok(oracle && Object.hasOwn(oracle,observed.tick),'Source-bound model oracle tick absent');
   const expected=oracle[observed.tick];
   for(const key of MODEL_FIELDS)assert.equal(observed[key],expected[key],'Source-bound model '+key+' differs');
+  if(Object.hasOwn(expected,'wave'))for(const key of ['wave','completedWave'])
+    assert.equal(observed[key],expected[key],'Source-bound wave '+key+' differs');
 }
 export function validateSettlingTransition({before,result,states,layouts,encounters,oracle}) {
   assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
@@ -1456,11 +1505,12 @@ export function validateSettlingTransition({before,result,states,layouts,encount
   return {before,terminal,staged:staged[0],result,layouts:observed};
 }
 export function validateBackgroundInterval({kind,before,after,events,oracle}) {
-  elapsedTicks(before,after);nativeIntervalEvents(kind,before,after,events);
+  const clock=elapsedTicks(before,after),observedEvents=clock?waveIntervalEvents(before,after,events):events;
+  nativeIntervalEvents(kind,before,after,observedEvents);
   assert.equal(before.status,'Running','Background interval must start with an active model');
   assert.equal(after.status,'Running','Use terminal ownership oracle for terminal intervals');
   validateModelObservation(before,oracle);validateModelObservation(after,oracle);
-  return {kind,elapsed_ms:after.t-before.t,ticks:after.tick-before.tick,events};
+  return {kind,elapsed_ms:after.t-before.t,ticks:after.tick-before.tick,events:observedEvents,...(clock?{clock,before,after}:{})};
 }
 export function validateExplicitPause({before,paused,returned,resumed,after,events,oracle}) {
   sameDocument(before,paused);sameDocument(paused,returned);sameDocument(returned,resumed);
@@ -1474,10 +1524,15 @@ export function validateExplicitPause({before,paused,returned,resumed,after,even
   // Unity can acknowledge focus while the tab is still hidden. The frozen
   // paused model sample need not follow visibility, but actual visible return
   // must precede the user's measured Resume. Counters stay bound above.
-  nativeIntervalEvents('hidden',paused,resumed,events);
-  elapsedTicks(resumed,after);
+  const clock=elapsedTicks(resumed,after),observedEvents=clock?waveIntervalEvents(paused,resumed,events):events;
+  nativeIntervalEvents('hidden',paused,resumed,observedEvents);
+  if(clock)for(const item of [paused,returned,resumed]){
+    assert.equal(item.scope,resumed.scope);assert.equal(item.rules,resumed.rules);
+    assert.ok(Number.isFinite(item.clockTimestamp) && item.clockTimestamp>=paused.clockTimestamp && item.clockTimestamp<=resumed.clockTimestamp);
+    assert.equal(item.clockPending,resumed.clockPending,'Pause and Resume preserve the admitted fractional carry');
+  }
   validateModelObservation(paused,oracle);validateModelObservation(after,oracle);
-  return {paused_ms:resumed.t-paused.t,resumed_ticks:after.tick-resumed.tick};
+  return {paused_ms:resumed.t-paused.t,resumed_ticks:after.tick-resumed.tick,...(clock?{clock,before,paused,returned,resumed,after,events:observedEvents}:{})};
 }
 export function validateTerminalOwnership({runId,beforeWallet,states,pending,claimed,controls}) {
   assert.ok(Number.isInteger(runId) && runId>0,'Terminal run identity absent');
@@ -1514,7 +1569,7 @@ export function validateNoReplayAudio({energy,cues}) {
 // A native return can precede its bookkeeping mark by several fresh model
 // callbacks. Admit those cues only against the current source-bound model;
 // the real away span and the gap before the first eligible cue remain silent.
-export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,cues,states,encounters,oracle}) {
+export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,cues,states,encounters,callbackRecords,oracle}) {
   assert.ok(['blur','hidden'].includes(kind) && Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) &&
     [before.t,begin,recovered,ms].every(Number.isFinite) && ms>0 && before.t<=begin && begin<recovered,
     'Invalid native audio interval identity/clock');
@@ -1543,58 +1598,117 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
   const observed=cues.filter(c=>current(c) && c.t>=loss.t+200 && c.t<=recovered);
   assert.ok(observed.every(c=>Number.isFinite(c.t)),'Invalid current audio cue clock');
   const returnCues=observed.filter(c=>c.t>=returned.t),callbacks=[];
-  if(returnCues.length) {
+  const waveRun=before.loop?.profileVersion==='last-stand-waves-v1';
+  // The current controller retains its wave profile after ReturnToInspection
+  // removes the model. Its finalized result has explicit absent-clock/run fields;
+  // it is a silent lifecycle boundary, never an archived combat callback lane.
+  const idleModel=item=>current(item) && item.run===before.run && item.status==='Fitting' &&
+    item.rules==='playable-prototype-v1' && item.tick===0 && item.wave===0 && item.completedWave===0 &&
+    item.locked===false && item.clockTimestamp===-1 && item.clockPending===-1 && item.callbackSteps===0 &&
+    item.paused===false && item.failed===false && item.catchingUp===false;
+  const idleLoop=item=>current(item) && item.sessionRun===before.run && item.profileVersion==='last-stand-waves-v1' &&
+    item.phase==='result' && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
+    item.activeTier===0 && item.hasCheckpoint===false && item.tick===0 && item.wave===0 && item.completedWave===0;
+  const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop) && before.loop.t>=before.t;
+  assert.equal(waveRun,typeof before.rules==='string' && before.rules.startsWith('last-stand-waves-v1:') || idleWaveResult,
+    'Native audio interval wave profile and model rules disagree');
+  if(idleWaveResult){
+    const during=item=>current(item) && item.t>=before.t && item.t<=recovered;
+    assert.ok(Array.isArray(callbackRecords) && !callbackRecords.some(during) && !cues.some(during) &&
+      encounters.filter(during).every(idleModel) && states.filter(during).every(idleLoop),
+      'Finalized idle result cannot admit combat callbacks, cues or an active lifecycle');
+  }
+  const attempts=waveRun?(callbackRecords??[]).filter(c=>current(c) && c.action==='cue' && c.t>=returned.t && c.t<=recovered):[];
+  const observations=waveRun?attempts:returnCues;
+  const playedByAttempt=new Map();
+  if(waveRun){
+    // A fully omitted silent group must not erase model events. Only fresh,
+    // foreground, non-indebted callbacks with an unmuted source state qualify
+    // for this obligation; old background debt is still deliberately discarded.
+    for(const begin of (callbackRecords??[]).filter(c=>current(c) && c.run===before.run && c.action==='begin' &&
+      c.t>=returned.t && c.t<=recovered && c.focused===true && c.applicationPaused===false && c.paused===false &&
+      c.failed===false && c.elapsed>=0 && c.elapsed<=.5 && c.priorPending>=0 && c.priorPending<.05)){
+      const end=callbackRecords.find(c=>current(c) && c.run===begin.run && c.id===begin.id && c.action==='end' && c.t<=recovered);
+      const prior=states.findLast(c=>current(c) && c.sessionRun===begin.run && c.tick===begin.fromTick && c.t<=begin.t);
+      const a=oracle[begin.fromTick],b=oracle[end?.tick];
+      if(end && end.steps>0 && end.steps<=10 && prior?.phase==='battle' && prior.muted===false && prior.saveState==='ready' && a && b &&
+        (b.cannon>a.cannon || b.launcher>a.launcher || (b.scattergun??0)>(a.scattergun??0) ||
+         b.closeHits>a.closeHits || b.rangedHits>a.rangedHits || b.status==='Defeated'))
+        assert.ok(attempts.some(c=>c.id===begin.id && c.run===begin.run),'Current-wave model callback is missing all cue decisions');
+    }
+    const played=attempts.filter(c=>c.played===true);
+    assert.equal(played.length,returnCues.length,'Current-wave playback requires one exact cue decision per played line');
+    for(const [i,attempt] of played.entries()){
+      const cue=returnCues[i],next=attempts[attempts.indexOf(attempt)+1];
+      assert.ok(cue.text.match(/^ST_LS_AUDIO event=(\w+)\s*$/)?.[1]===attempt.cue && cue.t>=attempt.t &&
+        (!next || cue.t<=next.t),'Played cue order/name differs from its playback decision');
+      playedByAttempt.set(attempt,cue);
+    }
+  }
+  if(observations.length) {
     const resumed=encounters.find(e=>current(e) && e.run===before.run && e.action==='visibility' &&
-      e.t>=modelFocusReturn.t && e.t<=returnCues[0].t && e.focused && !e.applicationPaused);
+      e.t>=modelFocusReturn.t && e.t<=observations[0].t && e.focused && !e.applicationPaused);
     assert.ok(resumed && !resumed.paused && !resumed.failed && !resumed.catchingUp,
       'Current reconciled foreground model boundary absent');
     validateModelObservation(resumed,oracle);
+    const finalizedWave=s=>s.runId===0 && s.pendingRunId===0 && s.hasCheckpoint===false &&
+      s.profileVersion===before.loop.profileVersion && s.activeTier===before.loop.activeTier && s.fittingId===before.fitting;
+    if(waveRun)assert.ok(before.wave>0 && before.rules?.startsWith(before.loop.profileVersion+':') && resumed.rules===before.rules,
+      'Current wave callback requires its exact model profile');
     const runLoops=states.filter(s=>current(s) && s.sessionRun===before.run &&
-      (s.runId || s.pendingRunId)===before.loop.runId && s.t<=recovered &&
+      (waveRun && s.action==='defeat-staged'?finalizedWave(s):(s.runId || s.pendingRunId)===before.loop.runId) && s.t<=recovered &&
       ['session','defeat-staged'].includes(s.action));
     const loops=runLoops.filter(s=>s.t>=resumed.t);
+    assert.ok(Array.isArray(callbackRecords),'Return cues require actual callback admission records');
+    const records=callbackRecords.filter(c=>current(c) && c.run===before.run && c.t<=recovered);
     const groups=new Map();
-    for(const cue of returnCues) {
-      const next=loops.find(s=>s.t>=cue.t),previous=next && loops.findLast(s=>s.t<cue.t);
-      const terminals=next?.action==='defeat-staged' && previous?encounters.filter(e=>current(e) &&
-        e.run===before.run && e.action==='terminal' && e.tick===next.tick && e.t>previous.t && e.t<=next.t):[];
-      const terminal=terminals[0];
-      // OnApplicationFocus emits Changed without advancing RunClock. A duplicate
-      // tick refresh cannot replace the preceding advancing callback's clock.
-      // Admit that earlier anchor only with current-run tick advancement proof.
-      let clockPrevious=previous;
-      if(previous){
-        let index=runLoops.indexOf(previous);
-        while(index>0 && runLoops[index-1].tick===previous.tick)index--;
-        clockPrevious=runLoops[index];
-        if(clockPrevious!==previous){
-          const prior=runLoops[index-1];
-          assert.ok(prior && prior.t<clockPrevious.t && prior.tick<clockPrevious.tick &&
-            clockPrevious.tick===resumed.tick && clockPrevious.t<resumed.t &&
-            clockPrevious.phase==='battle' && !clockPrevious.paused && !clockPrevious.muted &&
-            clockPrevious.saveState==='ready' && clockPrevious.cannonDamage===before.loop.cannonDamage &&
-            clockPrevious.hull===oracle[clockPrevious.tick]?.hp && clockPrevious.kills===oracle[clockPrevious.tick]?.kills,
-            'Return callback lacks an advancing current-run clock anchor');
-        }
-      }
-      assert.ok(next && previous && next.tick>previous.tick && previous.tick>=resumed.tick &&
-        (next.phase==='battle' || terminal && next.phase==='settling') && !next.paused && !next.muted && next.saveState==='ready' &&
-        // Cues precede the callback's state log. Keep the 500ms admission bound
-        // at emission, with an independent ten-step cap and one-step log tail.
-        next.cannonDamage===before.loop.cannonDamage && cue.t-clockPrevious.t<=500 &&
-        next.t-cue.t<=50 && (next.tick-previous.tick)*50<=500 &&
-        Math.abs((next.t-clockPrevious.t-(terminal?terminal.terminalElapsed*1000:0))/50-(next.tick-previous.tick))<=1.01,
+    for(const cue of observations) {
+      const admitted=records.findLast(c=>c.action==='begin' && c.t<=cue.t && (!waveRun || c.id===cue.id));
+      const ends=admitted?records.filter(c=>c.action==='end' && c.id===admitted.id):[];
+      const completed=ends[0];
+      assert.ok(admitted && completed && ends.length===1 && Number.isInteger(admitted.id) && admitted.id>0 &&
+        records.filter(c=>c.action==='begin' && c.id===admitted.id).length===1 &&
+        admitted.t>=returned.t && completed.t>=cue.t && completed.t>=admitted.t &&
+        !records.some(c=>c.action==='begin' && c.t>admitted.t && c.t<completed.t),
+        'Return cue lacks a unique current foreground callback');
+      for(const key of ['fromTick','timestamp','previousTimestamp','elapsed','priorPending','speed'])
+        assert.equal(completed[key],admitted[key],'Callback admission changed: '+key);
+      assert.ok([admitted.t,completed.t,admitted.timestamp,admitted.previousTimestamp,admitted.elapsed,
+        admitted.priorPending,admitted.pending,completed.pending,admitted.speed,admitted.age,completed.age].every(Number.isFinite) &&
+        admitted.previousTimestamp>=0 && admitted.elapsed>=0 && admitted.elapsed<=.5 && admitted.age>=0 && completed.age>=admitted.age &&
+        Math.abs(admitted.timestamp-admitted.previousTimestamp-admitted.elapsed)<1e-7 &&
+        admitted.priorPending>=0 && admitted.priorPending<.05 && admitted.speed>0 &&
+        admitted.pending>0 && admitted.pending<=admitted.priorPending+admitted.elapsed*admitted.speed+1e-7 &&
+        completed.pending>=0 && (completed.pending<.05 || oracle[completed.tick]?.status==='Defeated') &&
+        Number.isInteger(admitted.fromTick) && admitted.fromTick>=resumed.tick && admitted.tick===admitted.fromTick && admitted.steps===0 &&
+        Number.isInteger(completed.steps) && completed.steps>0 && completed.steps<=10 &&
+        completed.tick===admitted.fromTick+completed.steps &&
+        Math.abs(admitted.pending-completed.pending-completed.steps*.05)<1e-7 &&
+        (waveRun || (admitted.elapsed+admitted.age)*1000+cue.t-admitted.t<=500) &&
+        [admitted,completed].every(c=>c.focused===true && c.applicationPaused===false && c.paused===false && c.failed===false),
         'Return cue lacks a fresh eligible foreground model callback');
+      const previous=runLoops.findLast(s=>s.tick===admitted.fromTick && s.t<=admitted.t);
+      const next=loops.find(s=>s.tick===completed.tick && s.t>=cue.t && s.t<=completed.t);
+      const terminals=next?.action==='defeat-staged' && previous?encounters.filter(e=>current(e) &&
+        e.run===before.run && e.action==='terminal' && e.tick===next.tick && e.t>admitted.t && e.t<=next.t):[];
+      const terminal=terminals[0];
+      assert.ok(next && previous && next.tick>previous.tick && previous.tick>=resumed.tick &&
+        previous.phase==='battle' && !previous.paused && !previous.muted && previous.saveState==='ready' &&
+        previous.cannonDamage===before.loop.cannonDamage && previous.hull===oracle[previous.tick]?.hp &&
+        previous.kills===oracle[previous.tick]?.kills &&
+        (next.phase==='battle' || terminal && next.phase==='settling') && !next.paused && !next.muted && next.saveState==='ready' &&
+        next.cannonDamage===before.loop.cannonDamage,
+        'Return callback lacks current source-bound before/after model states');
       if(terminal) {
-        // AdvanceAt retains elapsed after the final combat step; staging moves
-        // the active progression run into PendingDefeat before PlayDefeat.
+        // AdvanceAt retains elapsed after the final combat step. Wave runs
+        // finalize before PlayDefeat; archived runs retain PendingDefeat.
         assert.ok(terminals.length===1 && previous.phase==='battle' && oracle[previous.tick]?.status==='Running' &&
           terminal.status==='Defeated' && terminal.focused && !terminal.applicationPaused && !terminal.paused &&
           !terminal.failed && !terminal.catchingUp && Number.isFinite(terminal.terminalElapsed) &&
           terminal.terminalElapsed>=0 && terminal.terminalElapsed<=.48 &&
           Number.isInteger(terminal.callbackSteps) && terminal.callbackSteps>0 && terminal.callbackSteps<=128 &&
           terminal.callbackSteps===next.tick-previous.tick && next.runId===0 && before.loop.runId>0 &&
-          next.pendingRunId===before.loop.runId &&
+          (waveRun?finalizedWave(next) && terminal.rules===before.rules && terminal.wave>0:next.pendingRunId===before.loop.runId) &&
           loops.filter(s=>s.action==='defeat-staged' && s.tick===next.tick).length===1,
           'Return defeat lacks a unique current eligible terminal/staging transition');
         validateModelObservation(terminal,oracle);
@@ -1604,25 +1718,50 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
         !admission.catchingUp,'Background/catch-up return cue observed');
       assert.ok(oracle[next.tick] && next.hull===oracle[next.tick].hp && next.kills===oracle[next.tick].kills,
         'Return callback differs from current source-bound model');
-      const group=groups.get(next)??{previous,next,terminal,cues:[]};group.cues.push(cue);groups.set(next,group);
+      const group=groups.get(admitted)??{previous,next,terminal,admitted,completed,cues:[],attempts:[]};
+      if(waveRun){
+        assert.ok(cue.run===before.run && Number.isInteger(cue.ordinal) && cue.ordinal===group.attempts.length+1 &&
+          (!cue.played || playedByAttempt.get(cue)?.t<=completed.t) &&
+          cue.fromTick===admitted.fromTick && cue.timestamp===admitted.timestamp && cue.previousTimestamp===admitted.previousTimestamp &&
+          Number.isInteger(cue.tick) && cue.tick>admitted.fromTick && cue.tick<=completed.tick &&
+          Number.isInteger(cue.steps) && cue.steps===cue.tick-admitted.fromTick &&
+          (!group.attempts.length || cue.tick>=group.attempts.at(-1).tick && cue.t>=group.attempts.at(-1).t) &&
+          Number.isFinite(cue.admittedAt) && cue.admittedAt>=0 && cue.admittedAt>=admitted.timestamp+admitted.age &&
+          cue.admittedAt<=completed.timestamp+completed.age &&
+          (!group.attempts.length || cue.admittedAt>=group.attempts.at(-1).admittedAt) &&
+          (cue.played===true && cue.reason==='played' && cue.admittedAt-cue.previousTimestamp<=.5 ||
+           cue.played===false && cue.reason==='expired' && cue.admittedAt-cue.previousTimestamp>.5),
+          'Invalid, stale or foreign current-wave cue decision');
+        group.attempts.push(cue);if(cue.played)group.cues.push(playedByAttempt.get(cue));
+      }else group.cues.push(cue);
+      groups.set(admitted,group);
     }
-    for(const {previous,next,terminal,cues:actual} of groups.values()) {
+    for(const {previous,next,terminal,admitted,completed,cues:actual,attempts:decisions} of groups.values()) {
       const expected=[];
       for(let tick=previous.tick+1;tick<=next.tick;tick++) {
         const a=oracle[tick-1],b=oracle[tick];assert.ok(a && b,'Return model event tick absent');
         const cannon=b.cannon-a.cannon,weapons=cannon+b.launcher-a.launcher,killed=b.kills-a.kills;
         assert.ok(cannon>=0 && weapons>=killed && killed>=0,'Invalid source-bound return model event counters');
-        expected.push(...Array(cannon).fill('cannon'),...Array(killed).fill('destruction'),
-          ...Array(weapons-killed+b.closeHits-a.closeHits+b.rangedHits-a.rangedHits).fill('impact'));
+        const tickNames=[...Array(cannon).fill('cannon'),...Array(killed).fill('destruction'),
+          ...Array(weapons-killed+b.closeHits-a.closeHits+b.rangedHits-a.rangedHits).fill('impact')];
+        if(waveRun){
+          // This maintained return lane qualifies repair/launcher model counters.
+          // A burst oracle must expose individual target events before it can qualify Scattergun audio.
+          assert.equal((b.scattergun??0)-(a.scattergun??0),0,'Return cue oracle lacks individual Scattergun target events');
+          const witnessed=decisions.filter(c=>c.tick===tick && c.cue!=='defeat').map(c=>c.cue);
+          assert.deepEqual(witnessed.sort(),[...tickNames].sort(),'Cue decision differs from its exact model tick');
+        }
+        expected.push(...tickNames);
       }
-      const names=actual.map(c=>c.text.match(/^ST_LS_AUDIO event=(\w+)\s*$/)?.[1]);
+      const names=waveRun?decisions.map(c=>c.cue):actual.map(c=>c.text.match(/^ST_LS_AUDIO event=(\w+)\s*$/)?.[1]);
+      const ordered=waveRun?decisions:actual;
       if(terminal) {
-        assert.ok(names.at(-1)==='defeat' && actual.at(-1).t>=terminal.t &&
-          actual.slice(0,-1).every(c=>c.t<=terminal.t), 'Return terminal cue ordering differs');
+        assert.ok(names.at(-1)==='defeat' && ordered.at(-1).t>=terminal.t &&
+          ordered.slice(0,-1).every(c=>c.t<=terminal.t), 'Return terminal cue ordering differs');
         expected.push('defeat');
       }
       assert.deepEqual(names.sort(),expected.sort(),'Unmatched, stale or duplicate background/return replay cue');
-      callbacks.push({from:previous.tick,to:next.tick,t:next.t,cues:actual});
+      callbacks.push({from:previous.tick,to:next.tick,t:next.t,admitted,completed,cues:actual,...(waveRun?{attempts:decisions}:{})});
     }
   }
   const end=returnCues[0]?.t??recovered;
@@ -1730,10 +1869,13 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
     reference:bytes(reference),actual:bytes(raw),canonical_sha256:hash(actual),
     rows:Object.values(profiles).reduce((count,profile)=>count+Object.keys(profile).length,0),fields_per_row:13}};
 }
+const ENCOUNTER_COMPILATION_SOURCES=Object.freeze(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
+  'LastStandWaveCatalog.cs','LastStandUpgradeCatalog.cs','MechanicsShopModel.cs','LastStandShopState.cs',
+  'LastStandRunClock.cs','LastStandSpeedPolicy.cs']);
 export function encounterCompilationSourceBinding() {
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
-  return {source_lf_sha256:Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>[name,
+  return {source_lf_sha256:Object.fromEntries(ENCOUNTER_COMPILATION_SOURCES.map(name=>[name,
     hash(readFileSync(join(ROOT,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n'))])),
     export_binding:{manifest_sha256:fileHash(manifestPath),receipt_sha256:manifest.source.receiptSha256,
       source_lock_sha256:manifest.source.sourceLockSha256,source_inventory_sha256:manifest.source.sourceInventorySha256,
@@ -1742,7 +1884,7 @@ export function encounterCompilationSourceBinding() {
 export function buildEncounterOracle(output) {
   const bound=readBoundEncounterOracle();
   const {mono,csc}=encounterOracleToolchain();
-  const sources=['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
+  const sources=ENCOUNTER_COMPILATION_SOURCES.map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
   for(const path of [mono,csc,...sources])assert.ok(existsSync(path),'Actual model oracle prerequisite absent: '+path);
   const directory=join(output,'model-oracle');mkdirSync(directory);
   const driver=join(directory,'Program.cs'),exe=join(directory,'EncounterOracle.exe');
@@ -1885,7 +2027,10 @@ export function removeOwnedProfile(profile) {
 }
 export function lastStandJourneyTimeBudget(host=process.platform,{served=false}={}) {
   assert.ok(['win32','linux'].includes(host),'Unsupported journey budget host');
-  const testMs=host==='win32'?1_200_000:3_600_000,startupMs=served?0:180_000;
+  // Native qualification reached the hidden natural terminal at 28.5 minutes,
+  // before loader/wasm and storage recovery matrices or final retention. Admit
+  // 40 minutes total; individual action, gameplay and media guards stay fixed.
+  const testMs=host==='win32'?2_400_000:3_600_000,startupMs=served?0:180_000;
   // Test/browser clocks start after webServer setup; the standalone owner
   // starts before it and must also admit owned-tree cleanup.
   // Software-rendered Linux Unity frames can occupy the page thread beyond
@@ -1897,60 +2042,101 @@ export function lastStandJourneyTimeBudget(host=process.platform,{served=false}=
 export function ownedSupervisorLifetimeLimit(host=process.platform) {
   return ['win32','linux'].includes(host)?lastStandJourneyTimeBudget(host).supervisorMs+10_000:640_000;
 }
-export function startOwnedSupervisor(child, output, profile, lifetimeMs=640_000) {
+export function publishOwnedSupervisorJson(path,value) {
+  const text=JSON.stringify(value,null,2),pending=`${path}.pending-${randomUUID()}`;
+  let fd,created=false;
+  try {
+    fd=openSync(pending,'wx');created=true;
+    writeFileSync(fd,text);closeSync(fd);fd=undefined;
+    renameSync(pending,path);
+  } catch(error) {
+    if(fd!==undefined)try{closeSync(fd);}catch{}
+    if(created)try{unlinkSync(pending);}catch{}
+    throw error;
+  }
+}
+export async function finishOwnedSupervisorCleanup(options,known) {
+  const cleanup={tree:await stopOwnedProcessTree(known)};
+  if(options.profile)removeOwnedProfile(options.profile);
+  else {
+    cleanup.profiles=[];
+    const scan=directory=>{for(const entry of readdirSync(directory,{withFileTypes:true})){
+      const path=join(directory,entry.name);if(entry.isSymbolicLink())throw new Error('Evidence symlink refused');
+      if(entry.isDirectory())scan(path);else if(entry.name==='browser-profile.json'){
+        const receipt=JSON.parse(readFileSync(path,'utf8'));
+        if(receipt.status==='removed' || !existsSync(receipt.profile))continue;
+        assert.ok(cleanup.tree.known.some(item=>sameProcess(item,receipt.root)),'Profile browser ownership not in supervised tree');
+        removeOwnedProfile(receipt.profile);cleanup.profiles.push({profile:receipt.profile,root:receipt.root,removed:true});
+      }
+    }};scan(options.output);
+  }
+  cleanup.profile_removed=options.profile?!existsSync(options.profile):null;return cleanup;
+}
+export function startOwnedSupervisor(child, output, profile, lifetimeMs=640_000, expectedRoot) {
   assert.ok(Number.isInteger(lifetimeMs) && lifetimeMs>0 && lifetimeMs<=ownedSupervisorLifetimeLimit(),'Invalid owned lifetime');
   admitEvidenceParent(output);
   assert.ok(Number.isInteger(child.pid) && child.pid>0,'Owned spawn did not return a PID');
   const table=processTable(),root=table.find(item=>item.pid===child.pid),owner=table.find(item=>item.pid===process.pid);
   assert.ok(root && owner,'Owned process exited before supervision admission');
   assert.equal(root.ppid,owner.pid,'Owned child ancestry mismatch');
+  assert.ok(typeof root.exe==='string' && root.exe.length>0 && typeof owner.exe==='string' && owner.exe.length>0,'Owned executable identity absent');
+  if(expectedRoot)assert.ok(sameProcess(root,expectedRoot),'Owned child identity changed before supervision admission');
   const id=randomUUID().slice(0,8),path=join(output,`supervisor-${id}.json`);
   const options={root,owner,profile,output,lifetimeMs,path,known:collectOwnedDescendants(table,[{...root,depth:0}])};
-  writeFileSync(path,JSON.stringify(options,null,2));
+  publishOwnedSupervisorJson(path,options);
   const watcher=spawn(process.execPath,[join(ROOT,'scripts/last-stand-playable-loop.mjs'),'--watch-owner',path],
     {detached:true,stdio:'ignore',windowsHide:true});watcher.unref();
   const resultPath=`${path}.result.json`,stopPath=`${path}.stop`;
   return {path,resultPath,root,stop:async()=>{
-    writeFileSync(stopPath,'stop');const deadline=Date.now()+35_000;
-    while(!existsSync(resultPath) && Date.now()<deadline)await delay(100);
-    assert.ok(existsSync(resultPath),'Owned supervisor result absent');
-    const result=JSON.parse(readFileSync(resultPath,'utf8'));
-    assert.equal(result.status,'stopped',`Owned cleanup failed: ${result.error}`);return result;
+    try {
+      writeFileSync(stopPath,'stop');const deadline=Date.now()+35_000;
+      while(!existsSync(resultPath) && Date.now()<deadline)await delay(100);
+      assert.ok(existsSync(resultPath),'Owned supervisor result absent');
+      const result=JSON.parse(readFileSync(resultPath,'utf8'));
+      assert.ok(sameProcess(result.root,options.root) && result.root.ppid===options.root.ppid,'Owned supervisor result root mismatch');
+      assert.ok(sameProcess(result.owner,options.owner) && result.owner.ppid===options.owner.ppid,'Owned supervisor result owner mismatch');
+      assert.equal(result.profile,options.profile,'Owned supervisor result profile mismatch');
+      assert.equal(result.status,'stopped',`Owned cleanup failed: ${result.error}`);
+      assert.ok(Array.isArray(result.tree?.remaining) && result.tree.remaining.length===0,'Owned supervisor result did not confirm complete cleanup');
+      if(profile)assert.equal(result.profile_removed,true,'Owned supervisor result did not confirm profile removal');
+      return result;
+    } catch(error) {
+      // The parent retains the original admitted identities even if the watcher
+      // cannot retain observations or publish a complete result. Failure stays
+      // failure after this bounded, identity-checked cleanup attempt.
+      try{error.fallback_cleanup=await finishOwnedSupervisorCleanup(options,options.known);}
+      catch(cleanup){error.cleanup_error=String(cleanup);}
+      throw error;
+    }
   }};
 }
 export async function watchOwnedProcess(options) {
   admitEvidenceParent(options.output);
   assert.ok(relative(options.output,options.path).startsWith('supervisor-'),'Supervisor receipt containment failed');
-  let known=options.known,reason='owner-exit';const begin=Date.now(),result={status:'running',root:options.root,owner:options.owner,profile:options.profile};
+  let known=options.known,reason='owner-exit',admitted=false,failure;const begin=Date.now(),result={status:'running',root:options.root,owner:options.owner,profile:options.profile};
   try {
     assert.equal(options.root.ppid,options.owner.pid,'Supervisor root was not created by its recorded owner');
     assert.ok(options.root.exe && options.owner.exe,'Owned executable identity absent');
     assert.ok(Number.isInteger(options.lifetimeMs) && options.lifetimeMs>0 && options.lifetimeMs<=ownedSupervisorLifetimeLimit(),'Invalid owned lifetime');
+    admitted=true;
     while(true){const table=processTable();known=collectOwnedDescendants(table,known);
-      writeFileSync(`${options.path}.observed.json`,JSON.stringify({known,observedAt:new Date().toISOString()},null,2));
+      publishOwnedSupervisorJson(`${options.path}.observed.json`,{known,observedAt:new Date().toISOString()});
       if(existsSync(`${options.path}.stop`)){reason='requested-stop';break;}
       if(!table.some(item=>sameProcess(item,options.owner)))break;
       if(!table.some(item=>sameProcess(item,options.root))){reason='root-exit';break;}
       if(Date.now()-begin>options.lifetimeMs){reason='timeout';break;}
       await delay(200);
     }
-    result.reason=reason;result.tree=await stopOwnedProcessTree(known);
-    if(options.profile)removeOwnedProfile(options.profile);
-    else {
-      result.profiles=[];
-      const scan=directory=>{for(const entry of readdirSync(directory,{withFileTypes:true})){
-        const path=join(directory,entry.name);if(entry.isSymbolicLink())throw new Error('Evidence symlink refused');
-        if(entry.isDirectory())scan(path);else if(entry.name==='browser-profile.json'){
-          const receipt=JSON.parse(readFileSync(path,'utf8'));
-          if(receipt.status==='removed' || !existsSync(receipt.profile))continue;
-          assert.ok(result.tree.known.some(item=>sameProcess(item,receipt.root)),'Profile browser ownership not in supervised tree');
-          removeOwnedProfile(receipt.profile);result.profiles.push({profile:receipt.profile,root:receipt.root,removed:true});
-        }
-      }};scan(options.output);
-    }
-    result.status='stopped';result.profile_removed=options.profile?!existsSync(options.profile):null;
-  } catch(error){result.status='failed';result.error=String(error);result.known=known;}
-  finally{writeFileSync(`${options.path}.result.json`,JSON.stringify(result,null,2));}
+  } catch(error){failure=error;result.status='failed';result.error=String(error);result.known=known;}
+  finally {
+    result.reason=reason;
+    if(admitted)try {
+      Object.assign(result,await finishOwnedSupervisorCleanup(options,known));
+      if(result.status!=='failed')result.status='stopped';
+    } catch(error){failure??=error;result.status='failed';result.error??=String(error);result.cleanup_error=String(error);result.known=known;}
+    try{publishOwnedSupervisorJson(`${options.path}.result.json`,result);}
+    catch(error){if(failure){failure.publication_error=String(error);throw failure;}throw error;}
+  }
 }
 
 export function nativeChromeArgs(profile, mode='native') {
@@ -1968,18 +2154,60 @@ function retainWindowFailure(report,key,value) {
 }
 function ownedNativeWindowSnapshot(owner, activation=null) {
   assert.equal(process.platform,'win32','Native HWND observation is unavailable on this host');
-  const encoded=Buffer.from(JSON.stringify({root:owner.root,profile:owner.profile,activation})).toString('base64');
+  const startedUptimeMs=Math.floor(uptime())*1000;
+  assert.ok(Number.isSafeInteger(startedUptimeMs) && startedUptimeMs>0,'Native subprocess monotonic origin unavailable');
+  const encoded=Buffer.from(JSON.stringify({root:owner.root,profile:owner.profile,activation,startedUptimeMs})).toString('base64');
   return JSON.parse(powershell(`$owner=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json
-    $current=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
-    if(-not $current -or $current.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $current.ExecutablePath -ne $owner.root.exe){throw 'Owned native process identity mismatch'}
-    $argument='--user-data-dir='+$owner.profile
-    if(-not ($current.CommandLine.Contains('"'+$argument+'"') -or $current.CommandLine.Split(' ').Contains($argument))){throw 'Owned native profile mismatch'}
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 public class LastStandAwayWindowProbe {
+
+  // One noninheritable kernel object stays pinned across full CIM admission.
+  // Later checks never reacquire a PID or invoke a provider while input is held.
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern bool CloseHandle(IntPtr handle);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern uint GetProcessId(IntPtr handle);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern bool GetProcessTimes(IntPtr handle, out long created, out long exited, out long kernel, out long user);
+  [DllImport("kernel32.dll", EntryPoint="QueryFullProcessImageNameW", CharSet=CharSet.Unicode, SetLastError=true)] public static extern bool QueryFullProcessImageName(IntPtr handle, uint flags, StringBuilder image, ref int size);
+  [DllImport("kernel32.dll", SetLastError=true)] public static extern uint WaitForSingleObject(IntPtr handle, uint timeout);
+  [DllImport("kernel32.dll")] public static extern ulong GetTickCount64();
+  public sealed class ProcessPin : IDisposable {
+    IntPtr handle; readonly uint pid; readonly string exe; long created;
+    ProcessPin(IntPtr value, uint processId, string executable) { handle=value;pid=processId;exe=executable; }
+    public static ProcessPin Open(uint pid, string exe) {
+      if (pid == 0 || String.IsNullOrEmpty(exe)) throw new InvalidOperationException("Missing owned kernel identity");
+      var handle=OpenProcess(0x101000, false, pid); // QUERY_LIMITED_INFORMATION | SYNCHRONIZE
+      if (handle == IntPtr.Zero) throw new InvalidOperationException("Owned process handle unavailable");
+      var pin=new ProcessPin(handle,pid,exe);
+      try {
+        long exited, kernel, user;
+        if (!GetProcessTimes(handle,out pin.created,out exited,out kernel,out user) || !pin.Check())
+          throw new InvalidOperationException("Owned kernel identity mismatch");
+        return pin;
+      } catch { pin.Dispose(); throw; }
+    }
+    public bool Check() {
+      long fresh, exited, kernel, user; var image=new StringBuilder(32768); int size=image.Capacity;
+      return handle != IntPtr.Zero && WaitForSingleObject(handle,0) == 258 && GetProcessId(handle) == pid &&
+        GetProcessTimes(handle,out fresh,out exited,out kernel,out user) && fresh == created &&
+        QueryFullProcessImageName(handle,0,image,ref size) && String.Equals(image.ToString(),exe,StringComparison.OrdinalIgnoreCase);
+    }
+    public void Dispose() {
+      if (handle == IntPtr.Zero) return;
+      if (!CloseHandle(handle)) throw new InvalidOperationException("Owned process handle release failed");
+      handle=IntPtr.Zero;
+    }
+  }
+  public static bool CanBeginInput(ulong startedUptimeMs) {
+    ulong now=GetTickCount64();
+    // Node/libuv uptime and this clock share GetTickCount64 on Windows.
+    // Floor at the parent is conservative and includes spawn/Add-Type/admission.
+    // Reserve at least two seconds of the unchanged ten-second subprocess bound.
+    return startedUptimeMs > 0 && now >= startedUptimeMs && now-startedUptimeMs < 8000;
+  }
   public delegate bool EnumProc(IntPtr window, IntPtr parameter);
   [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback, IntPtr parameter);
@@ -2108,7 +2336,7 @@ public class LastStandAwayWindowProbe {
     if (proof.hitTest == 2) proof.status = "proved"; // HTCAPTION only.
     return proof;
   }
-  public static object Activate(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity) {
+  public static object Activate(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, Func<bool> inputBudget = null) {
     var physical = new PhysicalProof(); IntPtr previous = IntPtr.Zero;
     try { previous = SetThreadDpiAwarenessContext(new IntPtr(-4)); }
     catch (EntryPointNotFoundException) {
@@ -2123,7 +2351,7 @@ public class LastStandAwayWindowProbe {
       if (GetWindowRect(new IntPtr(Int64.Parse(handle)), out rect)) physical.geometry = new Geometry {
         left = rect.Left, top = rect.Top, width = rect.Right-rect.Left, height = rect.Bottom-rect.Top };
       physical.desktop = PhysicalDesktop();
-      return ActivatePhysical(owner, handle, left, top, width, height, identity, physical);
+      return ActivatePhysical(owner, handle, left, top, width, height, identity, physical, inputBudget);
     } finally {
       if (previous != IntPtr.Zero) physical.restored = SetThreadDpiAwarenessContext(previous) != IntPtr.Zero &&
         AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), previous);
@@ -2163,8 +2391,8 @@ public class LastStandAwayWindowProbe {
     }, IntPtr.Zero);
     return observed && owned;
   }
-  static object ActivatePhysical(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical) {
-    var result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, false);
+  static object ActivatePhysical(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical, Func<bool> inputBudget) {
+    var result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, false, inputBudget);
     if (result.reason != "no-uncovered-owned-caption" || result.attempted) return result;
     var window = new IntPtr(Int64.Parse(handle));
     var preparation = new OwnedPresentationProof { normalProbes = result.probes };
@@ -2181,7 +2409,7 @@ public class LastStandAwayWindowProbe {
       preparation.applied = placed && identity() && PhysicalContext() && OwnedPresentationTree(owner, window) &&
         ValidWindow(owner, window, left, top, width, height, true) && SameGeometry(physical.desktop, PhysicalDesktop());
       if (!preparation.applied) result.reason = "owned-presentation-preparation-rejected";
-      else result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, true);
+      else result = ActivateCaption(owner, handle, left, top, width, height, identity, physical, true, inputBudget);
     } finally {
       // Restore only the same still-owned HWND. A refusal/error cannot become accepted activation.
       bool restoreAccepted = false;
@@ -2207,7 +2435,7 @@ public class LastStandAwayWindowProbe {
     }
     return result;
   }
-  static ActivationOutcome ActivateCaption(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical, bool prepared) {
+  static ActivationOutcome ActivateCaption(uint owner, string handle, int left, int top, int width, int height, Func<bool> identity, PhysicalProof physical, bool prepared, Func<bool> inputBudget) {
     var window = new IntPtr(Int64.Parse(handle)); var probes = new List<CaptionProof>();
     CaptionProof caption = null; bool placed = false, placementAttempted = false, attempted = false, balanced = true;
     uint sent = 0, cleanupSent = 0; int size = Marshal.SizeOf(typeof(Input)), expectedSize = IntPtr.Size == 8 ? 40 : 28;
@@ -2252,12 +2480,14 @@ public class LastStandAwayWindowProbe {
     if (caption.status != "proved") return finish("caption-changed-before-input", false);
     caption.keysClear = InputStateClear(out capture, out pressed); caption.capture = capture;
     if (!caption.keysClear) return finish("capture-or-held-input-before-input", false);
+    if (inputBudget != null && !inputBudget()) return finish("native-input-budget-exhausted", false);
     caption.rechecked = true; attempted = true;
     physical.moveSent = SendInput(1, move, size); sent = physical.moveSent;
     if (physical.moveSent != 1) return finish("native-move-count-rejected", false);
     // No button event is possible until the actual physical cursor and exact owned caption are re-proven after moving.
     physical.beforeDown = ReprovePhysical(owner, window, physical.geometry, physical, caption.x, caption.y, identity, false, "before-down");
     if (physical.beforeDown == null) return finish("post-move-physical-proof-rejected", false);
+    if (inputBudget != null && !inputBudget()) return finish("native-input-budget-exhausted", false);
     var down = new Input[1]; down[0].Data.Mouse.Flags = 2;
     physical.downSent = SendInput(1, down, size); sent += physical.downSent; balanced = physical.downSent == 0;
     if (physical.downSent != 1) return finish("native-down-count-rejected", false);
@@ -2302,16 +2532,21 @@ public class LastStandAwayWindowProbe {
   }
 }
 '@
-    if($owner.activation){
-      $a=$owner.activation
-      $identityCheck={
-        $live=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
-        if(-not $live -or $live.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $live.ExecutablePath -ne $owner.root.exe){return $false}
-        $profileArgument='--user-data-dir='+$owner.profile
-        return ($live.CommandLine.Contains('"'+$profileArgument+'"') -or $live.CommandLine.Split(' ').Contains($profileArgument))
-      }
-      [LastStandAwayWindowProbe]::Activate($owner.root.pid,$a.hwnd,$a.left,$a.top,$a.width,$a.height,[Func[bool]]$identityCheck)|ConvertTo-Json -Depth 8 -Compress
-    } else {[LastStandAwayWindowProbe]::Read($owner.root.pid)|ConvertTo-Json -Depth 5 -Compress}`));
+    $pin=[LastStandAwayWindowProbe+ProcessPin]::Open($owner.root.pid,$owner.root.exe)
+    try {
+      # The same live kernel object spans this exact start/exe/profile admission.
+    $current=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
+    if(-not $current -or $current.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $current.ExecutablePath -ne $owner.root.exe){throw 'Owned native process identity mismatch'}
+    $argument='--user-data-dir='+$owner.profile
+    if(-not ($current.CommandLine.Contains('"'+$argument+'"') -or $current.CommandLine.Split(' ').Contains($argument))){throw 'Owned native profile mismatch'}
+      if(-not $pin.Check()){throw 'Owned process exited or changed during admission'}
+      if($owner.activation){
+        $a=$owner.activation
+        $identityCheck={return $pin.Check()}
+        $inputBudget={return [LastStandAwayWindowProbe]::CanBeginInput($owner.startedUptimeMs)}
+        [LastStandAwayWindowProbe]::Activate($owner.root.pid,$a.hwnd,$a.left,$a.top,$a.width,$a.height,[Func[bool]]$identityCheck,[Func[bool]]$inputBudget)|ConvertTo-Json -Depth 8 -Compress
+      } else {[LastStandAwayWindowProbe]::Read($owner.root.pid)|ConvertTo-Json -Depth 5 -Compress}
+    } finally {$pin.Dispose()}`));
 }
 // Passive observations precede auxiliary cleanup. Each document is sampled in
 // sequence; native foreground is not an inference about document focus.
@@ -2437,6 +2672,35 @@ export function assertOwnedNativeActivation(result,window,pid) {
   assert.equal(result.snapshot.foreground?.pid,pid,'Owned native foreground PID verification failed');
   assert.equal(result.snapshot.foreground?.hwnd,window.hwnd,'Owned native foreground HWND verification failed');
 }
+async function waitForOwnedNativeForeground({owner,page,session,browserSession,record}) {
+  record.documentBefore=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
+    visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
+  assert.ok(Number.isFinite(record.documentBefore.timeOrigin) && record.documentBefore.timeOrigin>0 &&
+    Number.isFinite(record.documentBefore.t) && record.documentBefore.t>=0,'Owned document clock required');
+  // Native activation can precede Chrome's real visibilitychange. Observe the
+  // same document within the existing action bound; do not reactivate it.
+  await page.waitForFunction(origin=>performance.timeOrigin===origin && !document.hidden &&
+    document.visibilityState==='visible' && document.hasFocus(),record.documentBefore.timeOrigin,{timeout:10_000});
+  record.document=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
+    visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
+  assert.equal(record.document.timeOrigin,record.documentBefore.timeOrigin,'Owned document changed during foreground admission');
+  assert.ok(Number.isFinite(record.document.t) && record.document.t>=record.documentBefore.t,'Owned document clock regressed');
+  assert.ok(!record.document.hidden && record.document.visibility==='visible' && record.document.focused,
+    'Owned original document must be visible and focused');
+  assert.deepEqual(ownedProcessIdentity(owner.root.pid),owner.root,'Owned browser process identity mismatch');
+  const {targetInfo}=await session.send('Target.getTargetInfo');
+  assert.equal(targetInfo.type,'page','Owned foreground target type changed');
+  assert.equal(targetInfo.targetId,record.target.targetId,'Owned foreground target changed');
+  assert.equal(targetInfo.browserContextId,record.target.browserContextId,'Owned foreground browser context changed');
+  const currentWindow=await browserSession.send('Browser.getWindowForTarget',{targetId:targetInfo.targetId});
+  assert.deepEqual(currentWindow,record.cdp_window,'Owned foreground CDP window binding changed');
+  record.after=ownedNativeWindowSnapshot(owner);
+  const observed=bindOwnedNativeWindow(record.after,currentWindow.bounds,owner.root.pid);
+  assert.equal(observed.hwnd,record.window.hwnd,'Owned foreground HWND binding changed');
+  assert.equal(record.after.foreground?.pid,owner.root.pid,'Owned native foreground PID verification failed');
+  assert.equal(record.after.foreground?.hwnd,record.window.hwnd,'Owned native foreground HWND verification failed');
+}
+
 export async function ensureOwnedNativeForeground({native,page,report,kind,role}) {
   const record={kind,role,utc:new Date().toISOString(),status:'refused',activationNeeded:false};
   retainWindowFailure(report,'native_foreground_preconditions',record);
@@ -2459,15 +2723,7 @@ export async function ensureOwnedNativeForeground({native,page,report,kind,role}
     record.window=bindOwnedNativeWindow(record.before,record.cdp_window.bounds,owner.root.pid);
     record.activationNeeded=record.before.foreground?.pid!==owner.root.pid || record.before.foreground?.hwnd!==record.window.hwnd;
     if(record.activationNeeded)await activateOwnedNativeWindow({native,page,report,kind,role});
-    record.document=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
-      visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
-    assert.ok(!record.document.hidden && record.document.focused,'Owned original document must be visible and focused');
-    assert.deepEqual(ownedProcessIdentity(owner.root.pid),owner.root,'Owned browser process identity mismatch');
-    record.after=ownedNativeWindowSnapshot(owner);
-    const observed=bindOwnedNativeWindow(record.after,record.cdp_window.bounds,owner.root.pid);
-    assert.equal(observed.hwnd,record.window.hwnd,'Owned foreground HWND binding changed');
-    assert.equal(record.after.foreground?.pid,owner.root.pid,'Owned native foreground PID verification failed');
-    assert.equal(record.after.foreground?.hwnd,record.window.hwnd,'Owned native foreground HWND verification failed');
+    await waitForOwnedNativeForeground({owner,page,session,browserSession,record});
     record.status='verified';return record;
   } catch(error){record.error=windowError(error);throw error;}
   finally {
@@ -2499,8 +2755,7 @@ export async function activateOwnedNativeWindow({native,page,report,kind,role}) 
     record.activation=ownedNativeWindowSnapshot(owner,record.window);
     record.attempts=record.activation.attempted?1:0;
     assertOwnedNativeActivation(record.activation,record.window,owner.root.pid);
-    record.document=await page.evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),
-      visibility:document.visibilityState,t:performance.now(),timeOrigin:performance.timeOrigin}));
+    await waitForOwnedNativeForeground({owner,page,session,browserSession,record});
     record.status='verified';
     return record;
   } catch(error){record.error=windowError(error);throw error;}
@@ -2518,15 +2773,14 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
   const profile = mkdtempSync(join(tmpdir(), 'st-ls-chrome-'));
   const args = nativeChromeArgs(profile,mode);
   const child = spawn(executable, args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: process.platform !== 'win32' });
-  let log = '', browser, closed = false, supervisor;
+  let log = '', browser, closed = false, supervisor, ownedRoot;
   child.stdout.on('data', data => { log += data; });
   child.stderr.on('data', data => { log += data; });
   child.on('error', error => { log += String(error); });
   const receipt = status => writeFileSync(join(output, 'browser-profile.json'), JSON.stringify({
-    profile, status, pid: child.pid, root:supervisor?.root, executable, args, launch_mode:mode,
+    profile, status, pid: child.pid, root:supervisor?.root??ownedRoot, executable, args, launch_mode:mode,
     focus: mode==='shop-headless'?'headless actual document, noDefaults:true':'native default context, noDefaults:true',
     ownership: 'task-created process and temporary profile' }, null, 2));
-  receipt('active');
   const close = async () => {
     if (closed) return;
     try {
@@ -2534,7 +2788,8 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
       if(supervisor) {
         const cleanup=await supervisor.stop();writeFileSync(join(output,'browser-cleanup.json'),JSON.stringify(cleanup,null,2));
       } else {
-        if(child.pid && child.exitCode===null)await stopOwnedProcessTree([{...ownedProcessIdentity(child.pid),depth:0}]);
+        assert.ok(ownedRoot,'Owned startup child identity was not admitted');
+        await stopOwnedProcessTree([{...ownedRoot,depth:0}]);
         removeOwnedProfile(profile);
       }
       if(browser)await Promise.race([browser.close().catch(()=>{}),delay(2000)]);
@@ -2543,7 +2798,12 @@ export async function ownedChrome(chromium, output, mode='native', lifetimeMs=64
     finally{writeFileSync(join(output,'native-chrome.log'),log);}
   };
   try {
-    supervisor=startOwnedSupervisor(child,output,profile,lifetimeMs);
+    const candidate=ownedProcessIdentity(child.pid);
+    assert.equal(candidate.ppid,process.pid,'Owned child ancestry mismatch');
+    assert.ok(typeof candidate.exe==='string' && candidate.exe.length>0,'Owned executable identity absent');
+    ownedRoot=candidate;
+    receipt('active');
+    supervisor=startOwnedSupervisor(child,output,profile,lifetimeMs,ownedRoot);
     receipt('active');
     ownedBrowsers.add(close);
     const active = join(profile, 'DevToolsActivePort');
@@ -3003,15 +3263,84 @@ export async function retainJourneyOutcome(report, cleanup, persist, originalErr
   if(persistFailed)throw persistError;
 }
 
+export function persistLastStandJourneyEvidence(report,observations,write,diagnose=message=>console.error(message)) {
+  const {messages,failures,httpErrors,expectedFaults,observerFailures,
+    states,encounters,callbackRecords,hits,layouts,cues,trace,requests}=observations;
+  let firstError,failed=false;
+  const failure=(stage,error)=>{
+    if(!failed)firstError=error;failed=true;report.status='failed';
+    report.persist_error??=String(error);
+    (report.persistence_errors??=[]).push({stage,error:String(error),stack:error?.stack??String(error)});
+  };
+  const attempt=(stage,action)=>{try{action();}catch(error){failure(stage,error);}};
+  // Each independent record gets an attempt even when classification or an
+  // earlier write fails. Missing evidence always leaves a failed qualification.
+  attempt('browser-classification',()=>{report.browser_evidence=classifyBrowserEvidence(messages,failures,httpErrors,expectedFaults);});
+  if(observerFailures.length)attempt('observer-failures.json',()=>write('observer-failures.json',observerFailures));
+  for(const [name,data]of [
+    ['console.json',messages],['runtime-telemetry.json',{states,encounters,callbackRecords,hits,layouts,cues}],
+    ['input-trace.json',trace],['requests.json',{requests,failures,httpErrors}],['result.json',report],
+  ])attempt(name,()=>write(name,data));
+  if(failed){
+    // Full-report failure still gets a small independent diagnostic and stderr;
+    // neither claims that the missing raw records were retained successfully.
+    const brief=value=>value===undefined?undefined:String(value).slice(0,2000);
+    const compact=()=>({status:'failed',error:brief(report.error),cleanup_error:brief(report.cleanup_error),persist_error:brief(report.persist_error),
+      persistence_errors:report.persistence_errors.map(({stage,error,stack})=>({stage,error:error.slice(0,1000),stack:stack.slice(0,2000)}))});
+    attempt('persistence-failure.json',()=>write('persistence-failure.json',compact()));
+    attempt('stderr',()=>diagnose('LAST_STAND_LOOP_PERSISTENCE_FAILURE='+JSON.stringify(compact())));
+    throw firstError;
+  }
+}
+
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
-  'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs']);
+  'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs',
+  'e2e/helpers/lastStandWaveOracle.mjs','e2e/helpers/lastStandWaveJourney.mjs',
+  'scripts/ci/lastStandWaveQualification.mjs','scripts/ci/lastStandWaveMatrixResult.mjs']);
 
 export function lastStandQualificationProfile(name='windows-player',host=process.platform) {
   assert.ok(['windows-player','linux-functional'].includes(name),'Unknown Last Stand qualification profile');
   assert.equal(host,name==='windows-player'?'win32':'linux','Qualification profile is incompatible with the actual host');
   return Object.freeze({name,nativeMedia:name==='windows-player'});
+}
+
+export function lastStandDeploymentControl(state,layout) {
+  assert.ok(state && layout,'Deployment requires actual state and layout');
+  assert.ok(['garage','workshop'].includes(state.phase),'Deployment requires an inspection phase');
+  assert.equal(layout.phase,state.phase,'Deployment state and layout must agree');
+  assert.equal(state.saveState,'ready');assert.equal(typeof state.hasCheckpoint,'boolean');
+  assert.ok(Number.isInteger(state.load) && state.load>0 && Number.isFinite(state.timeOrigin) && state.timeOrigin>0);
+  assert.equal(state.scope,'healthy');
+  for(const key of ['load','timeOrigin','scope'])assert.equal(layout[key],state[key],'Deployment document identity must agree: '+key);
+  const name=state.phase==='garage'?'Deploy':'Redeploy';
+  const controls=layout.controls?.filter(item=>['Deploy','Redeploy'].includes(item.name) && item.active);
+  assert.equal(controls?.length,1,'Exactly one primary deployment control must be active');
+  assert.equal(controls[0].name,name,'Primary control must belong to the observed phase');
+  assert.equal(controls[0].interactable,true,'Primary deployment control must be enabled');
+  assert.equal(controls[0].label,state.hasCheckpoint?'RESUME RUN':'DEPLOY','Primary control must match checkpoint intent');
+  return name;
+}
+
+export function validateKeyboardSubmit({name,prepared,state,layout,navigation,documentState}) {
+  assert.ok(prepared && state && layout && navigation && documentState,'Keyboard submit requires actual preparation and observations');
+  assert.ok(Number.isInteger(prepared.load) && prepared.load>0 && Number.isFinite(prepared.timeOrigin) && prepared.timeOrigin>0);
+  assert.equal(prepared.scope,'healthy');
+  for(const item of [state,layout,navigation])for(const key of ['load','timeOrigin','scope'])
+    assert.equal(item[key],prepared[key],'Keyboard submit document identity changed: '+key);
+  assert.equal(state.phase,prepared.phase);assert.equal(layout.phase,prepared.phase);
+  assert.equal(navigation.kind,'keydown');assert.equal(navigation.code,'Tab');
+  assert.ok(['unity-canvas','last-stand-return'].includes(navigation.target) && navigation.focused && !navigation.hidden,
+    'Keyboard navigation must belong to the visible focused document');
+  assert.ok([prepared.t,navigation.t,layout.t,documentState.t].every(Number.isFinite) &&
+    navigation.t>=prepared.t && layout.t>=navigation.t && documentState.t>=navigation.t,
+    'Keyboard selection must follow the actual final navigation edge');
+  assert.equal(documentState.timeOrigin,prepared.timeOrigin);assert.equal(documentState.focused,true);
+  assert.equal(layout.selection,name,'Keyboard focus moved away from the requested control before Enter');
+  const controls=[...layout.controls,...layout.shopControls,...layout.settingsControls]
+    .filter(item=>item.name===name && item.active && item.interactable);
+  assert.equal(controls.length,1,'Keyboard submit requires one currently enabled selected target');
 }
 
 // This lifecycle qualifies effects, mute and missed-event suppression. Select
@@ -3053,6 +3382,103 @@ export function validateCancelledReturn({before,confirmed,cancelled,layout,saveB
   return {before,confirmed,cancelled,initialSelection:layout.selection};
 }
 
+export function isWaveResultFor(before,item) {
+  return item?.action==='result' && item.phase==='result' && item.sessionRun===before.run &&
+    item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope &&
+    Number.isFinite(item.t) && item.t>=before.t;
+}
+export function assertWaveStillHidden(before,begin,events) {
+  assert.ok(!events.some(item=>item.load===before.load && item.timeOrigin===before.timeOrigin &&
+    item.scope===before.scope && item.globalTarget===true && item.kind==='visibilitychange' &&
+    item.t>=begin && !item.hidden),'Hidden terminal wait observed a premature native visibility return');
+}
+export function validateHiddenWaveTerminal({interval,evidence,events=interval?.events}) {
+  const {before,terminal,staged,result}=evidence;
+  assert.ok(interval && Number.isFinite(interval.begin) && Number.isFinite(interval.recovered) &&
+    interval.before.t<=interval.begin && interval.begin<interval.recovered);
+  for(const key of ['load','timeOrigin','scope','run'])assert.equal(interval.before[key],before[key]);
+  assert.deepEqual(events,waveIntervalEvents(interval.before,{...interval.before,t:interval.recovered},events),
+    'Hidden terminal requires its exact bounded native visibility events');
+  assert.ok(events.every((event,index)=>Number.isFinite(event.t) && (!index || event.t>=events[index-1].t)));
+  const loss=events.find(item=>item.kind==='visibilitychange' && item.hidden && !item.focused);
+  const visible=loss && events.find(item=>item.t>loss.t && item.kind==='visibilitychange' && !item.hidden);
+  assert.ok(loss && visible && loss.t<=interval.begin && visible.t<=interval.recovered &&
+    loss.t<terminal.t && terminal.t<=staged.t && staged.t<=result.t && result.t<visible.t,
+    'Terminal, durable staging and exact result must finish before the first actual visibility return');
+  assert.ok(isWaveResultFor(before,result),'Hidden terminal requires the exact same-session result transition');
+  return {loss,visible};
+}
+export function validateWaveTerminal({before,result,saved,states,encounters,layouts,oracle}) {
+  assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
+    before.loop?.runId>0 && before.status==='Running' && before.loop.phase==='battle' &&
+    !before.paused && !before.failed && !before.catchingUp);
+  const {loop,hull,...encounterBefore}=before;
+  assert.deepEqual(encounters.find(item=>item.load===before.load && item.timeOrigin===before.timeOrigin &&
+    item.run===before.run && item.action===before.action && item.t===before.t),encounterBefore,'Actual pre-terminal observation required');
+  assert.deepEqual(states.find(item=>item.load===loop.load && item.timeOrigin===loop.timeOrigin &&
+    item.action===loop.action && item.t===loop.t),loop,'Actual pre-terminal loop state required');
+  assert.equal(loop.load,before.load);assert.equal(loop.timeOrigin,before.timeOrigin);assert.equal(loop.scope,before.scope);
+  assert.equal(loop.sessionRun,before.run);assert.equal(loop.tick,before.tick);assert.equal(hull,before.hp);
+  assert.equal(loop.hull,before.hp);assert.equal(loop.kills,before.kills);assert.equal(loop.saveState,'ready');
+  validateModelObservation(before,oracle);
+  const same=item=>item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope &&
+    Number.isFinite(item.t) && item.t>=before.t;
+  const terminals=encounters.filter(item=>same(item) && item.run===before.run && item.action==='terminal');
+  assert.equal(terminals.length,1,'Exactly one actual terminal tick required');
+  const terminal=terminals[0];validateModelObservation(terminal,oracle);
+  assert.equal(terminal.status,'Defeated');assert.equal(terminal.hp,0);
+  assert.ok(terminal.t>before.t && !terminal.paused && !terminal.failed && !terminal.catchingUp);
+  const run=states.filter(item=>same(item) && item.sessionRun===before.run);
+  const staged=run.filter(item=>item.action==='defeat-staged');
+  assert.equal(staged.length,1,'Exactly one durable terminal staging required');
+  const stage=staged[0];assert.equal(stage.phase,'settling');assert.equal(stage.tick,terminal.tick);
+  assert.equal(stage.kills,terminal.kills);assert.equal(stage.hull,0);assert.equal(stage.saveState,'ready');
+  assert.equal(stage.runId,0);assert.equal(stage.pendingRunId,0);assert.equal(stage.hasCheckpoint,false);
+  assert.ok(stage.t>=terminal.t && result.t>=stage.t && same(result));
+  assert.equal(result.action,'result');assert.equal(result.sessionRun,before.run);
+  assert.deepEqual(states.find(item=>same(item) && item.action==='result' && item.t===result.t),result,
+    'Actual same-session result required');
+  assert.equal(result.phase,'result');assert.equal(result.saveState,'ready');
+  assert.equal(result.runId,0);assert.equal(result.pendingRunId,0);assert.equal(result.hasCheckpoint,false);
+  assert.equal(result.wallet,stage.wallet);
+  assert.equal(saved?.version,4);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
+  assert.equal(saved.lastFinalizedRunId,before.loop.runId);assert.equal(saved.credits,stage.wallet);
+  const geometry=layouts.filter(item=>same(item) && item.phase==='settling' && item.t>=terminal.t && item.t<=result.t);
+  assert.ok(geometry.length && geometry.every(item=>!item.controls.some(c=>c.name==='Claim' && c.active && c.interactable)),
+    'No result acknowledgement before terminal feedback settles');
+  const latestBank=states.filter(item=>same(item) && item.sessionRun===before.run && item.t<=stage.t && item.action==='wave-committed').at(-1)??before.loop;
+  // A simultaneous final kill/death may bank that last cohort once in the same
+  // atomic transaction, but still requires its actual same-session bank record.
+  // Ordinary defeat cannot mint an additional death reward.
+  assert.equal(latestBank.completedWave,terminal.completedWave,'Terminal requires the final completed wave bank');
+  assert.equal(stage.wallet,latestBank.wallet,'Defeat cannot add a second wave reward');
+  assert.ok(!run.some(item=>item.action==='claim'),'Wave runs cannot create a legacy reward claim');
+  return {before,terminal,staged:stage,result,saved,layouts:geometry};
+}
+
+export function validateCheckpointResume({saved,resumed,stable,stored,observedClock}) {
+  assert.equal(saved?.version,4,'Current complete checkpoint envelope required');
+  const checkpoint=saved.checkpoint,e=checkpoint?.encounter;
+  assert.ok(checkpoint && e && e.hull>0,'A living saved boundary is required');
+  assert.deepEqual(stored,saved,'Resume cannot rewrite or reward its saved boundary');
+  for(const state of [resumed,stable]) {
+    assert.equal(state.phase,'battle');assert.equal(state.saveState,'ready');
+    assert.equal(state.runId,checkpoint.runId);assert.equal(state.activeTier,e.tier);
+    assert.equal(state.fittingId,['launcher','repair','scattergun'][e.fitting]);
+    assert.equal(state.profileVersion,e.rulesVersion);assert.equal(state.hasCheckpoint,true);
+    assert.equal(state.checkpointBlocked,false);assert.equal(state.checkpointWave,e.completedWave);
+    assert.equal(state.completedWave,e.completedWave);assert.equal(state.wave,e.completedWave+1);
+    assert.equal(state.tick,e.tick);assert.equal(state.hull,e.hull);assert.equal(state.kills,e.kills);
+    assert.equal(state.cannonDamage,e.committedCannonDamage);assert.equal(state.wallet,saved.credits);
+    assert.equal(state.pendingRunId,0);assert.equal(state.paused,true);assert.equal(state.speed,0);
+  }
+  assert.equal(resumed.action,'resume');assert.ok(stable.t>=resumed.t+1000 && observedClock?.t>=stable.t,
+    'Fresh actual state must remain paused after at least one real second');
+  assert.equal(resumed.load,stable.load);assert.equal(resumed.timeOrigin,stable.timeOrigin);
+  assert.equal(observedClock.timeOrigin,resumed.timeOrigin);
+  return {saved,resumed,stable,stored,observedClock};
+}
+
 export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
   const sectionName=process.env.LAST_STAND_JOURNEY_SECTION;
@@ -3080,7 +3506,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
       procedural_cues:player?'pending':'unexecuted-requires-windows',
       merge_ready:false} };
-  const states=[], encounters=[], hits=[], layouts=[], cues=[], messages=[], trace=[], failures=[], httpErrors=[], requests=[], expectedFaults=[];
+  const states=[], encounters=[], callbackRecords=[], hits=[], layouts=[], cues=[], messages=[], trace=[], failures=[], httpErrors=[], requests=[], expectedFaults=[];
   let native, page, motion, modelOracle, load=0, scope='healthy', fault, rejoin=false, rejoinBinding, originalError;
   const observerFailures=[];let observerError;
   const throwObserverFailure=()=>{if(observerError)throw observerError;};
@@ -3093,11 +3519,11 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     // screenshots/layouts. Failure and the existing finally retain full state.
     appendFileSync(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
     if(!condition || Date.now()-lastResultWrite>=1000) {
-      writeFileSync(resultPath,JSON.stringify(report,null,2));lastResultWrite=Date.now();
+      writeShopPresentationJson(resultPath,report);lastResultWrite=Date.now();
     }
     assert.ok(condition,name);
   };
-  const write = (name, data) => writeFileSync(join(output,name),JSON.stringify(data,null,2));
+  const write = (name, data) => writeShopPresentationJson(join(output,name),data);
   const retainObserverFailure=(record,error)=>{
     observerError??=error;originalError??=error;report.status='failed';
     report.error=`${originalError.name}: ${originalError.message}`;
@@ -3114,7 +3540,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
   try {
     const localBefore=packagedRuntimeSnapshot();report.packaged_before=localBefore;
     report.parent_artifact=await bindT21ServedParent(base);
-    modelOracle=buildEncounterOracle(output);
+    buildEncounterOracle(output); // Retain complete historical model parity separately.
+    const waveOracle=buildWaveOracle(output);modelOracle=waveOracle.profiles;report.wave_model=waveOracle.binding;
+    report.contract='last-stand-waves/v1';
     const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
     const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
     const receiptPath=join(ROOT,manifest.source.receipt);
@@ -3153,7 +3581,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       try{
         if(raw.startsWith('ST_TEST_RUNTIME ')) {
           const observation=JSON.parse(raw.slice('ST_TEST_RUNTIME '.length));
-          retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues});
+          retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues,callbackRecords});
         } else if(raw.startsWith('ST_TEST_INPUT ')) {
           trace.push({...JSON.parse(raw.slice('ST_TEST_INPUT '.length)),load,scope});
         }
@@ -3280,7 +3708,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     await openCampaigns(); await selected('last-stand');
     check(!requests.some(r=>r.url.includes('/last-stand/Build/')),'zero Unity runtime payload before ordinary launch');
     check(await page.locator('[data-last-stand-loss-disclosure]').innerText()===await page.locator('[data-last-stand-loss-disclosure]').textContent(), 'entry loss disclosure is rendered');
-    check((await page.locator('[data-last-stand-loss-disclosure]').innerText()).includes('without a reward'),'entry disclosure names no-award unfinished loss');
+    check((await page.locator('[data-last-stand-loss-disclosure]').innerText()).includes('last confirmed wave checkpoint'),'entry disclosure explains saved wave resume');
     check(await page.locator('[data-command-item="ash-road"]').count()===0,'retired campaign has no library entry');
     await goto('');await dismissSplash();await selected('last-stand');
     report.routes=[{name:'fresh Campaigns',selected:'last-stand'},{name:'remembered Last Stand',selected:'last-stand'}];
@@ -3448,14 +3876,24 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     };
     const gameClick=async(...args)=>(await armGameClick(...args))();
     const gameKey=async(name,action,predicate=()=>true)=>{
-      await geometry(name);await keyboardFocus(page.locator('#last-stand-return'));
+      const {layout:prepared}=await geometry(name),navigationStart=trace.length;
+      await keyboardFocus(page.locator('#last-stand-return'));
       await page.keyboard.press('Tab');
       check(await page.locator('#unity-canvas').evaluate(element=>document.activeElement===element),'native Tab enters actual Unity controls');
       const ordered=hudControls(layouts.at(-1)).filter(item=>item.active && item.interactable).sort((a,b)=>Math.abs(a.y-b.y)>.5?a.y-b.y:a.x-b.x);
       const index=ordered.findIndex(item=>item.name===name);check(index>=0,'keyboard target is actually enabled');
       await page.evaluate("window.__stInputArea='gameplay-keyboard'");
       const keys=[];for(let i=0;i<index;i++){await page.keyboard.press('Tab');keys.push('Tab');}
+      const navigation=trace.slice(navigationStart).findLast(item=>item.kind==='keydown' && item.code==='Tab');
+      check(navigation && Number.isFinite(navigation.t),'actual final keyboard navigation edge is observed');
+      // Await the first fresh projection, never re-navigate or wait for a wrong
+      // selection to become the requested target. The exact owner is checked below.
+      await until(layouts,0,item=>item.load===navigation.load && item.timeOrigin===navigation.timeOrigin &&
+        item.scope===navigation.scope && item.t>=navigation.t,8);
       await screenshot(`keyboard-focus-${name}-${report.screenshots.length}`);
+      const documentState=await page.evaluate(()=>({timeOrigin:performance.timeOrigin,t:performance.now(),
+        focused:!document.hidden && document.hasFocus() && document.activeElement===document.getElementById('unity-canvas')}));
+      validateKeyboardSubmit({name,prepared,state:states.at(-1),layout:layouts.at(-1),documentState,navigation});
       const start=states.length,encStart=encounters.length;
       await page.keyboard.down('Enter');await page.waitForTimeout(150);await page.keyboard.up('Enter');keys.push('Enter');
       const observed=await until(states,start,item=>item.action===action && predicate(item),8);
@@ -3469,9 +3907,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const energy=(begin,end,min=5)=>player?measureRenderedAudioEnergy(page,begin,end,check,min,{report,load,scope}):null;
     const observation=async options=>observeRuntimePair({encounters,states,load,check,options,
       clock:()=>page.evaluate(()=>({t:performance.now(),timeOrigin:performance.timeOrigin})),wait:ms=>page.waitForTimeout(ms)});
-    const reference=observed=>modelOracle[`${observed.fitting}:${observed.loop.cannonDamage}`];
+    const reference=observed=>modelOracle[`${observed.loop.activeTier}:${observed.fitting}:${observed.loop.cannonDamage}`];
     const noReplay=async(begin,end,interval)=>{
-      const selected=interval?validateAwayAudioReturn({...interval,cues,states,encounters,oracle:reference(interval.before)}):
+      const selected=interval?validateAwayAudioReturn({...interval,cues,states,encounters,callbackRecords,oracle:reference(interval.before)}):
         {begin,end,cues:cues.filter(item=>item.load===load && begin<=item.t && item.t<=end)};
       const measured=await energy(selected.begin,selected.end),observedCues=selected.cues;
       if(measured===null){
@@ -3482,7 +3920,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       const result=validateNoReplayAudio({energy:measured,cues:observedCues});report.lifecycle.push({kind:'no-replay',
         begin:selected.begin,end:selected.end,energy:result,cues:observedCues,boundary:selected.boundary});return result;
     };
-    const away=async(kind,ms)=>{
+    const away=async(kind,ms,{waitHidden}={})=>{
       const traceStart=trace.length;const before=await observation();let other,session,awayError;
       await page.bringToFront();
       await page.waitForFunction('!document.hidden && document.hasFocus()',null,{timeout:10000});
@@ -3498,11 +3936,12 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
         if(kind==='blur')await activateOwnedNativeWindow({native,page:other,report,kind,role:'auxiliary'});
         await page.waitForFunction(kind==='blur'?'!document.hidden && !document.hasFocus()':'document.hidden && !document.hasFocus()',null,{timeout:10000});
         const begin=await mark();await page.waitForTimeout(ms);
+        if(waitHidden){assert.equal(kind,'hidden');await waitHidden({before,begin});}
         await page.bringToFront();
         if(kind==='blur')await activateOwnedNativeWindow({native,page,report,kind,role:'original'});
         await page.waitForFunction('!document.hidden && document.hasFocus()');
         const recovered=await mark();await noReplay(begin+200,recovered,{kind,before,begin,recovered,ms,events:trace.slice(traceStart)});
-        return {before,begin,recovered};
+        return {before,begin,recovered,...(waitHidden?{events:waveIntervalEvents(before,{...before,t:recovered},trace.slice(traceStart))}:{})};
       } catch(error) {
         awayError=error;
         try {await retainAwayFailure({native,page,other,kind,report,output,error,
@@ -3565,45 +4004,46 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
         viewports:matrix.phaseViewports.map(item=>item.name),before,paused,returned};
       report.lifecycle.push(record);return record;
     };
-    // Two unfinished exits exercise native Return and ordinary reload without an award.
+    // Ordinary Return and reload preserve the checkpoint; only explicit
+    // abandon destroys it. Exercise both through the actual native controls.
     if(section.entry){
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
     const returnBefore=states.at(-1),returnSave=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
-    let returnStart=states.length;
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
-    const confirmedReturn=await until(states,returnStart,item=>item.action==='confirmation' && item.menu==='confirm',8);
-    const confirmationLayout=layouts.at(-1);
-    check(confirmationLayout.selection==='ConfirmCancel','native Return initially focuses Cancel for the unfinished run');
-    const cancelledReturn=await gameClick('ConfirmCancel','confirmation-cancel');
-    report.lifecycle.push({kind:'unfinished-return-cancel',evidence:validateCancelledReturn({before:returnBefore,
-      confirmed:confirmedReturn,cancelled:cancelledReturn,layout:confirmationLayout,saveBefore:returnSave,
-      saveAfter:await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)})});
-    await gameClick('SettingsClose','menu-close');
-    returnStart=states.length;
-    await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
-    await until(states,returnStart,item=>item.action==='confirmation' && item.menu==='confirm',8);
-    check(layouts.at(-1).selection==='ConfirmCancel','reopened native Return still defaults to Cancel');
-    const abandonedReturn=await gameClick('ConfirmProceed','abandon');
-    check(abandonedReturn.runId===0 && abandonedReturn.pendingRunId===0 && abandonedReturn.wallet===returnBefore.wallet,
-      'confirmed native Return abandons without reward',abandonedReturn);
     await page.locator('[data-last-stand-command-view]').waitFor();
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
+    check(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===returnSave,'ordinary Return preserves complete checkpoint');
     check(await ashBytes()===originalAsh,'retired campaign bytes preserved through native Last Stand Return');
     report.retired_campaign_preservation.native_return='observed unchanged';
     await selected('last-stand');
     const campaignItems=await page.locator('.command-center__library-items [data-command-item]').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
     check(campaignItems.length===1&&campaignItems[0]==='last-stand','native Return offers only Last Stand');
     report.retired_campaign_preservation.retirement='observed Last Stand only';
-    start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
+    start=states.length;await outerPointer(page.locator('[data-command-action]'));
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished Return abandoned without award',restored);
-    await resize(captureViewport);
-    await gameClick('Deploy','deploy');await page.waitForTimeout(1200);await liveBattleLayouts();
+    check(restored.hasCheckpoint && restored.runId===returnBefore.runId && restored.phase==='garage',
+      'unfinished Return offers explicit saved-run resume',restored);
+    await resize(captureViewport);await gameClick('Deploy','resume');
+    const checkpoint=JSON.parse(returnSave).checkpoint;
+    await page.waitForTimeout(1200);
+    check(states.at(-1).paused && states.at(-1).tick===checkpoint.encounter.tick,'Return resume waits paused at saved state');
+    await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');
+    const confirmation=states.at(-1),confirmationLayout=layouts.at(-1);
+    check(confirmationLayout.selection==='ConfirmCancel','new run initially focuses Cancel');
+    const cancelled=await gameClick('ConfirmCancel','confirmation-cancel');
+    check(cancelled.runId===restored.runId && cancelled.paused &&
+      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===returnSave,'Cancel preserves complete checkpoint');
+    report.lifecycle.push({kind:'new-run-cancel',confirmation,cancelled,layout:confirmationLayout,saved:returnSave});
+    await gameClick('SettingsClose','menu-close');
+    if(player){await gameClick('SpeedRate','session',item=>!item.paused);await liveBattleLayouts();}
+    const beforeReload=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished reload abandoned without award',restored);
-    if(player)report.lifecycle.push({kind:'live-battle-layout-abandonment',ready:restored});
-    check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'baseline repair fitting retained in its visible garage card');
+    check(restored.hasCheckpoint && ['garage','workshop'].includes(restored.phase) && restored.runId===returnBefore.runId &&
+      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===beforeReload,
+      'unfinished reload preserves complete checkpoint',restored);
+    await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');await gameClick('ConfirmProceed','abandon');
+    check(!states.at(-1).hasCheckpoint && states.at(-1).wallet===JSON.parse(beforeReload).credits,'confirmed new run keeps banked progress');
     }
     if(section.lifecycle){
     report.effects_only_audio=await configureEffectsOnlyJourneyAudio({click:gameClick,currentLayout:()=>layouts.at(-1),
@@ -3646,30 +4086,25 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       const after=await observation({minT:interval.recovered+500,run:interval.before.run});report.lifecycle.push({kind,evidence:validateBackgroundInterval({...interval,kind,after,events:trace,oracle:reference(after)})});
       awayWindows.push([kind,interval.begin,interval.recovered]);
     }
-    const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark(),defeatStart=states.length;
-    const settlingBefore=await observation();let defeatTime;
-    if(player){
-    const settlingClick=await armGameClick('SpeedRate','session',item=>item.paused && item.phase==='settling');
-    check(states.at(-1).phase==='battle','settling input is prepared while the actual battle is running');
-    await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);defeatTime=await mark();
-    const settlingPaused=await settlingClick();await focused('settling paused');await phaseMatrix('settling');
-    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'no Claim during actual settling');
-    const settlingResumed=await gameClick('SpeedRate','session',item=>!item.paused);await page.waitForTimeout(750);
-    report.lifecycle.push({kind:'settling-interaction',scope:'native-pause-five-viewports-resume',
-      paused:settlingPaused,resumed:settlingResumed,viewports:matrix.phaseViewports.map(item=>item.name)});
-    }else await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);
-    const result=await until(states,defeatStart,item=>item.phase==='result',8);
-    const transition=validateSettlingTransition({before:settlingBefore,result,states,layouts,encounters,oracle:reference(settlingBefore)});
-    check(true,'no Claim during actual settling',transition.layouts.map(item=>({t:item.t,phase:item.phase})));
-    report.lifecycle.push({kind:'settling-transition',scope:player?'interactive-five-viewports':'transient-functional-telemetry',evidence:transition});
-    check(result.pendingRunId>0 && result.wallet===0 && result.saveState==='ready','ordinary defeat successfully saved one pending award',result);
-    if(player)check((await energy(defeatTime-250,await mark())).maximum_rms>.0005,'real rendered defeat cue');await screenshot('02-defeat-pending');await phaseMatrix('result');
-    const record=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(record.pendingDefeat.reward===1,'pending defeat in actual browser-local storage');
+    const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark();
+    // First qualify a short earned boundary before the later natural terminal.
+    // The separate 10–12-hour endurance obligation is not implied by this run.
+    await page.waitForTimeout(16000);
+    await until(states,0,item=>item.load===load && item.completedWave>0 && item.saveState==='ready',60);
+    const captureEnd=await mark();
+    await gameKey('SpeedRate','session',item=>item.paused);
+    const savedWave=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const savedState=states.at(-1);
+    check(savedWave.version===4 && savedWave.checkpoint?.encounter.completedWave>0 && savedWave.pendingDefeat===null &&
+      savedWave.credits===savedState.wallet && savedState.checkpointWave===savedWave.checkpoint.encounter.completedWave,
+      'cleared waves atomically bank rewards and complete checkpoints',savedWave);
+    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),
+      'wave rewards require no manual Claim');
+    await screenshot('02-checkpoint');await phaseMatrix('checkpoint');
     if(player){
     const frames=await page.evaluate('window.__stFrameProbe.stop()');
     const active=[['first-foe-before-impact',motionStart,firstHit],['first-hit-through-pause',firstHit,pauseStart],
-      ['resumed-before-focus-loss',resumeStart,focusStartMs],['resumed-after-focus-loss',postFocus,defeatTime]];
+      ['resumed-before-focus-loss',resumeStart,focusStartMs],['resumed-after-focus-loss',postFocus,captureEnd]];
     write('animation-frame-timestamps.json',{clock:'page performance.now milliseconds',timestamps:frames,active_windows:active,
       nonactive_windows:[['explicit-pause',pauseStart,resumeStart],...awayWindows]});
     report.frame_timing={capture_active:Object.fromEntries(active.map(([name,begin,end])=>[name,frameTiming(frames,begin,end)])),
@@ -3677,7 +4112,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(Object.values(report.frame_timing.capture_active).every(item=>item.p95_ms<=50 && item.p99_ms<=100 && item.max_ms<=250),
       'active cadence: 50 ms p95, 100 ms p99, 250 ms maximum',report.frame_timing.capture_active);
     report.motion=await motion.encode();motion=null;
-    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstHit-500,firstHit+750],defeat:[defeatTime-250,defeatTime+750]});
+    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstHit-500,firstHit+750]});
     const offset=(firstAudio[0].started-motionStart)/1000,movie=join(output,'normal-speed-repair-with-audio.mp4');
     runTool('ffmpeg',['-hide_banner','-nostdin','-i',join(output,report.motion.file),...(offset>=0?['-itsoffset',offset.toFixed(3)]:['-ss',(-offset).toFixed(3)]),
       '-i',join(output,firstAudio[0].file),'-c:v','copy','-c:a','aac','-b:a','160k',movie]);
@@ -3687,7 +4122,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       'audio mux preserves real frame count and duration',streams);
     report.playable_capture={file:'normal-speed-repair-with-audio.mp4',sha256:fileHash(movie),audio_alignment_seconds:offset,
       video_frames:Number(video.nb_read_frames),video_duration_seconds:Number(video.duration),audio_source:firstAudio[0].file};
-    const reviewStart=(postFocus-motionStart)/1000,reviewDuration=(defeatTime+750-postFocus)/1000;
+    const reviewStart=(postFocus-motionStart)/1000,reviewDuration=(captureEnd+750-postFocus)/1000;
     check(reviewStart>=0 && reviewDuration>=15,'uninterrupted busy combat review segment');
     const reviewMovie=join(output,'active-play-review-with-audio.mp4');
     runTool('ffmpeg',['-hide_banner','-nostdin','-i',movie,'-ss',reviewStart.toFixed(3),'-t',reviewDuration.toFixed(3),
@@ -3697,25 +4132,40 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     report.active_play_review={file:'active-play-review-with-audio.mp4',sha256:fileHash(reviewMovie),source:report.playable_capture.file,
       start_seconds:reviewStart,duration_seconds:reviewDuration,encoded_frames:Number(reviewStream.nb_read_frames),edit:'single hard trim, passthrough timestamps'};
     }
-    start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('pending reload');
+    start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('checkpoint reload');
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.phase==='result' && restored.pendingRunId===result.pendingRunId,'successful pending defeat survives reload',restored);
-    const claimed=await gameClick('Claim','claim');check(claimed.phase==='workshop' && claimed.wallet===1 && claimed.level===0,'one Claim pays exactly one salvage',claimed);
-    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'Claim unavailable after one award');
-    for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('workshop');
+    check(['garage','workshop'].includes(restored.phase) && restored.hasCheckpoint && restored.runId===savedWave.checkpoint.runId,
+      'saved wave survives reload and awaits explicit Resume',restored);
+    await phaseMatrix('resume-ready');
+    const resumedCheckpoint=await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'resume');await page.waitForTimeout(1200);
+    await gameClick('Menu','menu');
+    const stableCheckpoint=states.at(-1),storedAfterResume=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const observedClock=await page.evaluate(()=>({t:performance.now(),timeOrigin:performance.timeOrigin}));
+    const resumeProof=validateCheckpointResume({saved:savedWave,resumed:resumedCheckpoint,stable:stableCheckpoint,stored:storedAfterResume,observedClock});
+    check(true,'Resume restores saved state paused without offline catch-up',resumeProof);
+    report.lifecycle.push({kind:'checkpoint-resume',...resumeProof});
+    await gameClick('SettingsClose','menu-close');await phaseMatrix('resumed');
+    await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');
+    check(layouts.at(-1).selection==='ConfirmCancel','abandon initially focuses Cancel');
+    await gameClick('ConfirmProceed','abandon');
+    const abandoned=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    check(abandoned.checkpoint===null && abandoned.lastFinalizedRunId===savedWave.checkpoint.runId &&
+      abandoned.credits===savedWave.credits && abandoned.pendingDefeat===null,'confirmed abandon keeps banked rewards and finalizes run');
+    report.lifecycle.push({kind:'checkpoint-abandon',before:savedWave,after:abandoned});
+    for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('garage-after-abandon');
     await resize(VIEWPORTS.find(item=>item.name==='compact'));const purchaseStart=await mark();
     await gameClick('ShopEntry','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     if(!layouts.at(-1).shopControls.some(item=>item.name==='ShopCard_cannonAttackBuy'&&item.active))
       await gameClick('ShopTabAttack','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopCard_cannonAttackBuy'&&control.active));
-    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
+    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===savedWave.credits-1 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
     await gameClick('ShopClose','hud-layout',item=>!item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
     await screenshot('05-purchased');if(player)await saveAudio('workshop',{purchase:[purchaseStart,await mark()]});
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
-    check(again.level===1 && again.wallet===0 && again.pendingRunId===0,'purchase reload retains permanent level and spent balance',again);
+    check(again.level===1 && again.wallet===savedWave.credits-1 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
-    await resize(captureViewport);const hitStart=hits.length;await gameClick('Deploy','deploy');
+    await resize(captureViewport);const hitStart=hits.length;await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
     const upgradedHit=await until(hits,hitStart,item=>item.cannonDamage===30,45);const noCaptureEnd=await mark();
     if(player){
@@ -3726,29 +4176,69 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     }
     check(upgradedHit.firstFoeHull===0 && upgradedHit.kills>=1,'same first foe one-hit defeated by real 30 damage',upgradedHit);
     await screenshot('07-upgraded-first-hit');
-    const terminalStart=states.length,terminalBefore=await observation();
-    const terminalOracle=reference(terminalBefore),expectedTerminal=Object.values(terminalOracle).at(-1);
-    check(expectedTerminal.status==='Defeated','actual upgraded model reference has a defeat terminal',expectedTerminal);
-    const interval=await away('hidden',(expectedTerminal.tick-terminalBefore.tick)*50+1500);
-    const backgroundResult=await until(states,terminalStart,item=>item.phase==='result',15);
-    const actualTerminal=await observation({status:'Defeated',minT:terminalBefore.t,run:terminalBefore.run});
-    validateModelObservation(actualTerminal,terminalOracle);
-    check(backgroundResult.pendingRunId>0 && backgroundResult.wallet===0 && backgroundResult.saveState==='ready',
-      'background terminal produces one persisted manual result',backgroundResult);
-    const backgroundPending=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(backgroundPending.pendingDefeat.elapsedTicks===actualTerminal.tick && backgroundPending.pendingDefeat.kills===actualTerminal.kills,
-      'background persisted outcome equals unchanged actual model',backgroundPending);
+    const nextBoundary=states.at(-1).completedWave+1;
+    const interval=await away('hidden',12000);
+    await until(states,0,item=>item.load===load && item.completedWave>=nextBoundary && item.saveState==='ready',60);
+    const afterBackground=await observation({minT:interval.recovered,run:interval.before.run});validateModelObservation(afterBackground,reference(afterBackground));
+    const backgroundSaved=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    check(backgroundSaved.checkpoint?.encounter.completedWave>=nextBoundary && backgroundSaved.credits===states.at(-1).wallet &&
+      backgroundSaved.pendingDefeat===null,'background wave rewards and checkpoint share one durable save');
+    report.lifecycle.push({kind:'background-wave',interval,after:afterBackground,saved:backgroundSaved});
+    await gameKey('SpeedRate','session',item=>item.paused);await phaseMatrix('background-checkpoint');
     const quietStart=await mark();await page.waitForTimeout(900);await noReplay(quietStart,await mark());
-    // Repeated real foreground returns cannot stage, Claim or begin another run.
+    await gameKey('SpeedRate','session',item=>!item.paused);
+    const terminalBefore=await observation(),terminalStart=states.length,terminalOracle=reference(terminalBefore);
+    const expectedTerminal=Object.values(terminalOracle).at(-1);
+    check(expectedTerminal.status==='Defeated','current wave oracle has a natural terminal');
+    let terminalPaused,terminalResumed;
+    if(player){
+      const prepared=await armGameClick('SpeedRate','session',item=>item.phase==='settling' && item.paused);
+      await until(states,terminalStart,item=>item.load===load && item.phase==='settling',
+        (expectedTerminal.tick-terminalBefore.tick)*.05+30);
+      terminalPaused=await prepared();await phaseMatrix('settling');
+      terminalResumed=await gameClick('SpeedRate','session',item=>item.phase==='settling' && !item.paused);
+    }
+    const naturalResult=await until(states,terminalStart,item=>isWaveResultFor(terminalBefore,item),
+      (expectedTerminal.tick-terminalBefore.tick)*.05+30);
+    const naturalSaved=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const naturalProof=validateWaveTerminal({before:terminalBefore,result:naturalResult,saved:naturalSaved,
+      states,encounters,layouts,oracle:terminalOracle});
+    report.lifecycle.push({kind:'wave-terminal',mode:'foreground',evidence:naturalProof,
+      ...(player?{interaction:{paused:terminalPaused,resumed:terminalResumed,viewports:matrix.phaseViewports.map(v=>v.name)}}:{})});
+    check(true,'natural defeat finalizes checkpoint without a second payout',naturalProof);
+    await phaseMatrix('result');
+    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750],
+      defeat:[naturalProof.staged.t-250,naturalProof.staged.t+750]});
+    const continued=await gameKey('Claim','continue');
+    check(continued.wallet===naturalSaved.credits && continued.pendingRunId===0 && !continued.hasCheckpoint,
+      'Continue cannot pay a second reward');
+    start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('terminal reload');
+    const finalReload=await until(states,start,item=>item.action==='ready',60);
+    check(!finalReload.hasCheckpoint && finalReload.runId===0 && finalReload.pendingRunId===0 &&
+      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===JSON.stringify(naturalSaved),
+      'finalized natural defeat cannot resume after reload');
+    report.lifecycle.push({kind:'terminal-reload',saved:naturalSaved,state:finalReload});
+    await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
+    const backgroundBefore=await observation(),backgroundOracle=reference(backgroundBefore);
+    const backgroundExpected=Object.values(backgroundOracle).at(-1),backgroundStart=states.length;
+    check(backgroundExpected.status==='Defeated','background actual wave model has natural terminal');
+    const terminalAway=await away('hidden',(backgroundExpected.tick-backgroundBefore.tick)*50+1500,{
+      waitHidden:({before,begin})=>until(states,backgroundStart,item=>{
+        assertWaveStillHidden(before,begin,trace);return isWaveResultFor(backgroundBefore,item);
+      },60)});
+    const backgroundResult=await until(states,backgroundStart,item=>isWaveResultFor(backgroundBefore,item),15);
+    const backgroundFinal=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const backgroundProof=validateWaveTerminal({before:backgroundBefore,result:backgroundResult,saved:backgroundFinal,
+      states,encounters,layouts,oracle:backgroundOracle});
+    validateHiddenWaveTerminal({interval:terminalAway,evidence:backgroundProof});
+    report.lifecycle.push({kind:'wave-terminal',mode:'hidden',interval:terminalAway,evidence:backgroundProof});
+    check(true,'background natural defeat finalizes checkpoint once without payout',backgroundProof);
+    const savedTerminalBytes=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
     for(let i=0;i<2;i++)await away('hidden',6000);
-    await phaseMatrix('background-result');
-    await gameKey('Claim','claim');const backgroundClaimed=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    const terminalStates=states.slice(terminalStart),firstStage=terminalStates.findIndex(item=>item.action==='defeat-staged');
-    report.lifecycle.push({kind:'background-terminal',interval,terminal:actualTerminal,
-      evidence:validateTerminalOwnership({runId:backgroundResult.pendingRunId,beforeWallet:0,states:terminalStates.slice(firstStage),
-        pending:backgroundPending,claimed:backgroundClaimed,controls:layouts.at(-1).controls})});
-    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'background Claim cannot award twice');
-    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750]});
+    check(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===savedTerminalBytes,
+      'repeated foreground returns cannot award or resurrect finalized run');
+    await phaseMatrix('background-result');await gameKey('Claim','continue');
+    report.qualification.natural_terminal='pass';
     const cueNames=messages.filter(item=>!item.text.startsWith('ST_TEST_RUNTIME ') && item.text.includes('ST_LS_AUDIO event='))
       .map(item=>item.text.split('ST_LS_AUDIO event=')[1].split('\n')[0]);
     if(player){
@@ -3867,11 +4357,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       if(motion)await motion.stop().catch(error=>{report.motion_cleanup_error=String(error);});
       if(native)await native.close();
     },()=>{
-      report.browser_evidence=classifyBrowserEvidence(messages,failures,httpErrors,expectedFaults);
-      if(observerFailures.length)write('observer-failures.json',observerFailures);
-      write('console.json',messages);write('runtime-telemetry.json',{states,encounters,hits,layouts,cues});write('input-trace.json',trace);
-      write('requests.json',{requests,failures,httpErrors});write('result.json',report);
-      console.log(`LAST_STAND_LOOP_EVIDENCE=${output}`);
+      try{persistLastStandJourneyEvidence(report,{messages,failures,httpErrors,expectedFaults,observerFailures,
+        states,encounters,callbackRecords,hits,layouts,cues,trace,requests},write,message=>console.error(message));}
+      finally{console.log(`LAST_STAND_LOOP_EVIDENCE=${output}`);}
     },originalError);}catch(error){throw originalError??error;}
     // A callback can arrive while cleanup awaits. Its first error still
     // wins after cleanup and persistence complete, even after a return.

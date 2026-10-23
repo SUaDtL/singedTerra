@@ -1,7 +1,6 @@
 using System;
-using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using SingedTerra.Encounter;
 
 namespace SingedTerra.LastStand
 {
@@ -11,8 +10,6 @@ namespace SingedTerra.LastStand
         public int ElapsedTicks { get; }
         public int Kills { get; }
         public int Reward { get; }
-        // Tier zero is a migrated pre-goal result. It remains claimable without
-        // pretending its old simulation was admitted under the new rules.
         public int Tier { get; }
         public string ProfileVersion { get; }
         public bool IsLimit { get; }
@@ -24,491 +21,248 @@ namespace SingedTerra.LastStand
         internal PendingDefeat(int runId, int elapsedTicks, int kills, int reward,
             int tier, string profile, bool isLimit, bool bestTime, bool bestKills, bool unlocked)
         {
-            RunId = runId; ElapsedTicks = elapsedTicks; Kills = kills; Reward = reward;
-            Tier = tier; ProfileVersion = profile; IsLimit = isLimit;
-            NewBestTime = bestTime; NewBestKills = bestKills; UnlockedTierTwo = unlocked;
+            RunId=runId; ElapsedTicks=elapsedTicks; Kills=kills; Reward=reward; Tier=tier;
+            ProfileVersion=profile; IsLimit=isLimit; NewBestTime=bestTime;
+            NewBestKills=bestKills; UnlockedTierTwo=unlocked;
         }
     }
 
-    // One local prototype record; never account or verified reward authority.
-    public sealed class LastStandProgression
+    public sealed class LastStandWaveReceipt
+    {
+        public int Wave { get; }
+        public int Salvage { get; }
+        public string MilestoneId { get; }
+        public string UnlockedFitting { get; }
+        public int UnlockedTier { get; }
+        internal LastStandWaveReceipt(int wave,int salvage,string milestone,string fitting,int tier)
+        { Wave=wave; Salvage=salvage; MilestoneId=milestone; UnlockedFitting=fitting; UnlockedTier=tier; }
+    }
+
+    // One local-only transaction owns both banked progression and the latest
+    // boundary checkpoint. It is not account or verified reward authority.
+    public sealed partial class LastStandProgression
     {
         public const string StorageKey = "singedTerra.lastStand.prototype.v1";
-        private const int MaximumLevel = LastStandUpgradeCatalog.PermanentCap;
-        private static readonly Regex SavePattern = new Regex(
-            @"\A[\x20\t\r\n]*\{[\x20\t\r\n]*""version""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""credits""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""permanentLevel""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""nextRunId""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""lastFinalizedRunId""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""pendingDefeat""[\x20\t\r\n]*:[\x20\t\r\n]*(?:null|\{[\x20\t\r\n]*""runId""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""elapsedTicks""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""kills""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*,[\x20\t\r\n]*""reward""[\x20\t\r\n]*:[\x20\t\r\n]*((?:0|[1-9][0-9]*))[\x20\t\r\n]*\})[\x20\t\r\n]*\}[\x20\t\r\n]*\z",
-            RegexOptions.CultureInvariant);
-
-        private const string JsonSpace = @"[\x20\t\r\n]*";
-        private const string JsonInteger = @"(?:0|[1-9][0-9]*)";
-        private static string JsonField(string name, string value) => JsonSpace + "\"" + name + "\"" +
-            JsonSpace + ":" + JsonSpace + value + JsonSpace;
-        private static string IntegerField(string name) => JsonField(name, "(?<" + name + ">" + JsonInteger + ")");
-        private static readonly string TrackField = "\"[A-Za-z]+\"" + JsonSpace + ":" + JsonSpace + JsonInteger + JsonSpace;
-        private static readonly Regex V2SavePattern = new Regex(@"\A" + JsonSpace + @"\{" +
-            IntegerField("version") + "," + IntegerField("credits") + "," +
-            JsonField("permanentLevels", @"\{(?<levels>" + JsonSpace + "(?:" + TrackField + "(?:," +
-                JsonSpace + TrackField + ")*)?)" + @"\}") + "," +
-            IntegerField("nextRunId") + "," + IntegerField("lastFinalizedRunId") + "," +
-            JsonField("pendingDefeat", @"(?:null|\{" + IntegerField("runId") + "," +
-                IntegerField("elapsedTicks") + "," + IntegerField("kills") + "," + IntegerField("reward") + @"\})") +
-            @"\}" + JsonSpace + @"\z", RegexOptions.CultureInvariant);
-        private static readonly Regex TrackValuePattern = new Regex("\"(?<key>[A-Za-z]+)\"" +
-            JsonSpace + ":" + JsonSpace + "(?<level>" + JsonInteger + ")", RegexOptions.CultureInvariant);
-        private static string BooleanField(string name) => JsonField(name, "(?<" + name + ">true|false)");
-        private static readonly Regex V3SavePattern = new Regex(@"\A" + JsonSpace + @"\{" +
-            IntegerField("version") + "," + IntegerField("credits") + "," +
-            JsonField("permanentLevels", @"\{(?<levels>" + JsonSpace + "(?:" + TrackField + "(?:," +
-                JsonSpace + TrackField + ")*)?)" + @"\}") + "," +
-            IntegerField("nextRunId") + "," + IntegerField("lastFinalizedRunId") + "," +
-            IntegerField("selectedTier") + "," +
-            JsonField("tierRecords", @"\{" + JsonField(LastStandTierCatalog.ProfileVersion, @"\{" +
-                IntegerField("bestTicks1") + "," + IntegerField("bestKills1") + "," +
-                IntegerField("bestTicks2") + "," + IntegerField("bestKills2") + "," +
-                BooleanField("tierTwoUnlocked") + @"\}") + @"\}") + "," +
-            JsonField("pendingDefeat", @"(?:null|\{" + IntegerField("runId") + "," +
-                IntegerField("elapsedTicks") + "," + IntegerField("kills") + "," + IntegerField("reward") + "," +
-                IntegerField("tier") + "," + JsonField("profileVersion", "\"(?<profileVersion>[a-zA-Z0-9-]*)\"") + "," +
-                BooleanField("isLimit") + "," + BooleanField("newBestTime") + "," +
-                BooleanField("newBestKills") + "," + BooleanField("unlockedTierTwo") + @"\})") +
-            @"\}" + JsonSpace + @"\z", RegexOptions.CultureInvariant);
-
-        private sealed class Record
+        sealed class TierRecord
         {
-            public int Wallet;
-            public int[] Levels = new int[LastStandUpgradeCatalog.Tracks.Count];
-            public int Level
-            {
-                get => Levels[(int)LastStandUpgradeTrackId.CannonAttack];
-                set => Levels[(int)LastStandUpgradeTrackId.CannonAttack] = value;
-            }
-            public int NextRunId;
-            public int FinalizedRunId;
+            internal int BestWave, LegacyTicks, LegacyKills;
+            internal bool Unlocked;
+            internal TierRecord Copy() => (TierRecord)MemberwiseClone();
+        }
+        sealed class Record
+        {
+            public int Wallet, NextRunId, FinalizedRunId, SelectedTier=1;
+            public int[] Levels=new int[LastStandUpgradeCatalog.Tracks.Count];
+            public string SelectedFitting="repair";
             public PendingDefeat Pending;
-            public int SelectedTier = 1;
-            public int[] BestTicks = new int[2];
-            public int[] BestKills = new int[2];
+            public LastStandRunCheckpoint Checkpoint;
+            public Dictionary<string,TierRecord> Tiers=new Dictionary<string,TierRecord>(StringComparer.Ordinal);
+            public HashSet<string> FirstClears=new HashSet<string>(StringComparer.Ordinal);
+            public HashSet<string> Fittings=new HashSet<string>(StringComparer.Ordinal) {"repair","launcher"};
+            // Historical parser output only, never the v4 tier storage shape.
+            public int[] BestTicks=new int[2], BestKills=new int[2];
             public bool TierTwoUnlocked;
-            public Record Copy() => new Record { Wallet = Wallet, Levels = (int[])Levels.Clone(),
-                NextRunId = NextRunId, FinalizedRunId = FinalizedRunId, Pending = Pending,
-                SelectedTier = SelectedTier, BestTicks = (int[])BestTicks.Clone(),
-                BestKills = (int[])BestKills.Clone(), TierTwoUnlocked = TierTwoUnlocked };
+            public int Level { get=>Levels[(int)LastStandUpgradeTrackId.CannonAttack]; set=>Levels[(int)LastStandUpgradeTrackId.CannonAttack]=value; }
+            public Record Copy()
+            {
+                var copy=(Record)MemberwiseClone();
+                copy.Levels=(int[])Levels.Clone();
+                copy.Tiers=new Dictionary<string,TierRecord>(StringComparer.Ordinal);
+                foreach(var pair in Tiers)copy.Tiers.Add(pair.Key,pair.Value.Copy());
+                copy.FirstClears=new HashSet<string>(FirstClears,StringComparer.Ordinal);
+                copy.Fittings=new HashSet<string>(Fittings,StringComparer.Ordinal);
+                return copy;
+            }
         }
-
-        private readonly ILastStandStorage storage;
-        private Record committed;
-        // Original storage bytes, including v1 schema/whitespace, are the
-        // conflict basis until the staged v3 candidate is confirmed.
-        private string committedRaw;
-        private Record candidate;
-        private Action afterCommit;
-        private int activeRunId;
-        private int activeDamage;
-        private int activeTier;
-        private string activeProfileVersion;
-
-        private LastStandProgression(ILastStandStorage storage)
-        {
-            this.storage = storage ?? throw new ArgumentNullException(nameof(storage));
-            SaveState = "blocked";
-        }
-
-        public int Wallet => committed == null ? 0 : committed.Wallet;
-        public int CannonAttackLevel => committed == null ? 0 : committed.Level;
-        public int CannonDamage => activeRunId != 0 ? activeDamage : 20 + 10 * CannonAttackLevel;
-        public int NextCost => CannonAttackLevel < MaximumLevel ? CannonAttackLevel + 1 : 0;
-        public int NextRunId => committed == null ? 0 : committed.NextRunId;
-        public int FinalizedRunId => committed == null ? 0 : committed.FinalizedRunId;
-        public PendingDefeat PendingDefeat => committed == null ? null : committed.Pending;
-        public int ActiveRunId => activeRunId;
-        public int SelectedTier => committed == null ? 1 : committed.SelectedTier;
-        public int ActiveTier => activeTier;
-        public string ActiveProfileVersion => activeProfileVersion;
-        public bool TierTwoUnlocked => committed != null && committed.TierTwoUnlocked;
+        readonly ILastStandStorage storage;
+        Record committed, candidate;
+        string committedRaw;
+        Action afterCommit;
+        LastStandProgression(ILastStandStorage storage)
+        { this.storage=storage??throw new ArgumentNullException(nameof(storage)); SaveState="blocked"; }
+        public int Wallet=>committed?.Wallet??0;
+        public int CannonAttackLevel=>committed?.Level??0;
+        public int CannonDamage=>Checkpoint?.Encounter.CannonDamage??
+            LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(CannonAttackLevel,1);
+        public int NextCost=>PermanentCost(LastStandUpgradeTrackId.CannonAttack);
+        public int NextRunId=>committed?.NextRunId??0;
+        public int FinalizedRunId=>committed?.FinalizedRunId??0;
+        public PendingDefeat PendingDefeat=>committed?.Pending;
+        public LastStandRunCheckpoint Checkpoint=>committed?.Checkpoint;
+        public bool HasCheckpoint=>Checkpoint!=null;
+        public int ActiveRunId=>Checkpoint?.RunId??0;
+        public int ActiveTier=>Checkpoint?.Tier??0;
+        public string ActiveProfileVersion=>Checkpoint?.RulesVersion;
+        public int SelectedTier=>committed?.SelectedTier??1;
+        public string SelectedFitting=>committed?.SelectedFitting??"repair";
+        public bool TierTwoUnlocked=>IsTierUnlocked(2);
         public string SaveState { get; private set; }
         public string SaveError { get; private set; }
+        public LastStandWaveReceipt LastReceipt { get; private set; }
+        bool Ready=>SaveState=="ready" && committed!=null && candidate==null;
 
-        public int GetBestTicks(int tier) => committed != null && LastStandTierCatalog.IsValid(tier)
-            ? committed.BestTicks[tier - 1] : 0;
-        public int GetBestKills(int tier) => committed != null && LastStandTierCatalog.IsValid(tier)
-            ? committed.BestKills[tier - 1] : 0;
-
-        public bool IsTierUnlocked(int tier)
+        public int GetBestWave(int tier)=>GetTier(tier)?.BestWave??0;
+        public int GetBestTicks(int tier)=>GetTier(tier)?.LegacyTicks??0;
+        public int GetBestKills(int tier)=>GetTier(tier)?.LegacyKills??0;
+        TierRecord GetTier(int tier)
         {
-            if(committed==null || !LastStandTierCatalog.IsValid(tier))return false;
-            var definition=LastStandTierCatalog.Get(tier);
-            return definition.RequiredTier==0 || GetBestTicks(definition.RequiredTier)>=definition.RequiredTicks;
+            if(committed==null || !LastStandTierCatalog.IsValid(tier))return null;
+            return committed.Tiers.TryGetValue(LastStandTierCatalog.Get(tier).Key,out var row)?row:null;
         }
-
-        public bool TrySelectTier(int tier)
-        {
-            if (!Ready || activeRunId != 0 || committed.Pending != null || !LastStandTierCatalog.IsValid(tier) ||
-                !IsTierUnlocked(tier)) return false;
-            if (tier == committed.SelectedTier) return true;
-            var next = committed.Copy();
-            next.SelectedTier = tier;
-            return Commit(next, null);
-        }
-
+        public bool IsTierUnlocked(int tier)=>GetTier(tier)?.Unlocked??false;
+        public bool IsFittingUnlocked(string fitting)=>committed!=null && committed.Fittings.Contains(fitting);
+        public bool HasFirstClear(string milestone)=>committed!=null && committed.FirstClears.Contains(milestone);
         public int GetPermanentLevel(LastStandUpgradeTrackId id)
-        {
-            var definition = LastStandUpgradeCatalog.Get(id);
-            return committed == null ? 0 : committed.Levels[(int)definition.Id];
-        }
+        { var definition=LastStandUpgradeCatalog.Get(id);return committed?.Levels[(int)definition.Id]??0; }
+        public int PermanentCost(LastStandUpgradeTrackId id)
+        { var definition=LastStandUpgradeCatalog.Get(id);int level=GetPermanentLevel(id);
+          return level>=definition.PermanentCap?0:definition.PermanentPrice(level+1); }
 
         public static LastStandProgression Load(ILastStandStorage storage)
+        { var result=new LastStandProgression(storage);result.Reload();return result; }
+        static void InitializeTiers(Record record,bool legacy)
         {
-            var model = new LastStandProgression(storage);
-            model.Reload();
-            return model;
+            foreach(var tier in LastStandTierCatalog.All)
+            {
+                if(record.Tiers.ContainsKey(tier.Key))continue;
+                record.Tiers.Add(tier.Key,new TierRecord {
+                    Unlocked=tier.RequiredTier==0 || legacy && tier.Id==2 && record.TierTwoUnlocked,
+                    LegacyTicks=legacy && tier.Id<=2?record.BestTicks[tier.Id-1]:0,
+                    LegacyKills=legacy && tier.Id<=2?record.BestKills[tier.Id-1]:0 });
+            }
         }
-
-        private bool Reload()
+        bool Reload()
         {
             try
             {
-                var value = storage.Read();
-                if (value == null)
+                string raw=storage.Read();
+                if(raw==null)
                 {
-                    candidate = new Record { NextRunId = 1 };
-                    return Retry();
+                    if(committed!=null) { Block("The saved record changed unexpectedly. Reload after resolving the conflict.");return false; }
+                    var fresh=new Record { NextRunId=1 };InitializeTiers(fresh,false);return Commit(fresh,null);
                 }
-                Record parsed;
-                bool requiresMigration;
-                if (!TryParse(value, out parsed, out requiresMigration))
-                {
-                    SaveState = "blocked";
-                    SaveError = "Saved Last Stand data is invalid or unsupported. Repair it before retrying.";
-                    return false;
-                }
-                committed = parsed;
-                committedRaw = value;
-                if (requiresMigration) return Commit(parsed.Copy(), null);
-                SaveState = "ready";
-                SaveError = null;
-                return true;
+                if(committed!=null && raw!=committedRaw)
+                { Block("The saved record changed unexpectedly. Reload after resolving the conflict.");return false; }
+                if(!TryParseSave(raw,out var parsed,out bool migrate))
+                { Block("Saved Last Stand data or checkpoint rules are invalid or unsupported. The original save has been preserved.");return false; }
+                committed=parsed;committedRaw=raw;
+                if(migrate)return Commit(parsed.Copy(),null);
+                SaveState="ready";SaveError=null;return true;
             }
-            catch (Exception)
-            {
-                SaveState = "blocked";
-                SaveError = "Local storage could not be read. Retry when available.";
-                return false;
-            }
+            catch(Exception)
+            { Block("Local storage could not be read. Retry when available.");return false; }
         }
-
+        public bool TrySelectTier(int tier)
+        {
+            if(!Ready || HasCheckpoint || committed.Pending!=null || !IsTierUnlocked(tier))return false;
+            if(tier==SelectedTier)return true;
+            var next=committed.Copy();next.SelectedTier=tier;return Commit(next,null);
+        }
+        public bool TrySelectFitting(string fitting)
+        {
+            if(!Ready || HasCheckpoint || committed.Pending!=null || !IsFittingUnlocked(fitting))return false;
+            if(fitting==SelectedFitting)return true;
+            var next=committed.Copy();next.SelectedFitting=fitting;return Commit(next,null);
+        }
         public bool TryDeploy()
         {
-            if (!Ready || activeRunId != 0 || committed.Pending != null || committed.NextRunId == int.MaxValue ||
-                !LastStandTierCatalog.IsValid(committed.SelectedTier) || committed.SelectedTier == 2 && !committed.TierTwoUnlocked)
-                return false;
-            var runId = committed.NextRunId;
-            var next = committed.Copy();
+            if(!Ready || HasCheckpoint || committed.Pending!=null || NextRunId==int.MaxValue ||
+                !IsTierUnlocked(SelectedTier) || !IsFittingUnlocked(SelectedFitting))return false;
+            var next=committed.Copy();
+            next.Checkpoint=LastStandRunCheckpoint.Start(next.NextRunId,next.SelectedTier,next.SelectedFitting,next.Levels);
             next.NextRunId++;
-            return Commit(next, () => {
-                activeRunId = runId; activeDamage = 20 + 10 * next.Level;
-                activeTier = next.SelectedTier; activeProfileVersion = LastStandTierCatalog.ProfileVersion;
-            });
+            return Commit(next,()=>LastReceipt=null);
         }
-
-        public bool TryStageDefeat(int elapsedTicks, int kills)
-            => TryStageTerminal(elapsedTicks, kills, false);
-
-        public bool TryStageLimit(int elapsedTicks, int kills)
-            => TryStageTerminal(elapsedTicks, kills, true);
-
-        private bool TryStageTerminal(int elapsedTicks, int kills, bool isLimit)
+        public bool TryCommitWave(EncounterModel model,LastStandShopState shop)
         {
-            if (!Ready || activeRunId == 0 || elapsedTicks < 0 || elapsedTicks > LastStandTierCatalog.HorizonTicks ||
-                kills < 0 || committed.Pending != null || !LastStandTierCatalog.IsValid(activeTier) ||
-                activeProfileVersion != LastStandTierCatalog.ProfileVersion ||
-                isLimit && elapsedTicks != LastStandTierCatalog.HorizonTicks)
-                return false;
-            var next = committed.Copy();
-            int index = activeTier - 1;
-            bool bestTime = elapsedTicks > next.BestTicks[index], bestKills = kills > next.BestKills[index];
-            bool unlocked = activeTier == 1 && !next.TierTwoUnlocked &&
-                elapsedTicks >= LastStandTierCatalog.Get(activeTier).GoalTicks;
-            if (bestTime) next.BestTicks[index] = elapsedTicks;
-            if (bestKills) next.BestKills[index] = kills;
-            next.TierTwoUnlocked |= unlocked;
-            next.Pending = new PendingDefeat(activeRunId, elapsedTicks, kills, isLimit ? 0 : 1,
-                activeTier, activeProfileVersion, isLimit, bestTime, bestKills, unlocked);
-            return Commit(next, ClearActiveRun);
+            if(!Ready || Checkpoint==null || model==null || shop==null ||
+                !model.AwaitingWaveCommit || model.CompletedWave!=Checkpoint.CompletedWave+1 ||
+                model.Profile.Tier!=Checkpoint.Tier || shop.RunId!=Checkpoint.RunId ||
+                model.Tick<=Checkpoint.Encounter.Tick || model.Kills<Checkpoint.Encounter.Kills)return false;
+            // Both snapshots validate their own conservation and boundary invariants.
+            var boundary=new LastStandRunCheckpoint(shop.RunId,model.CaptureCheckpoint(),shop.CaptureCheckpoint());
+            if(boundary.FittingId!=Checkpoint.FittingId)return false;
+            var next=committed.Copy();
+            var tier=LastStandTierCatalog.Get(boundary.Tier);
+            var reward=LastStandRewardCatalog.At(tier,boundary.CompletedWave);
+            bool first=reward.Milestone!=null && !next.FirstClears.Contains(reward.Milestone.Id);
+            long amount=(long)reward.RepeatableSalvage+(first?reward.FirstClearSalvage:0);
+            if(amount>int.MaxValue-next.Wallet)
+            { Block("Salvage storage is full. This wave has not been saved.");return false; }
+            next.Wallet+=(int)amount;
+            next.Tiers[tier.Key].BestWave=Math.Max(next.Tiers[tier.Key].BestWave,boundary.CompletedWave);
+            int unlockedTier=0;string unlockedFitting=null;
+            if(first)
+            {
+                next.FirstClears.Add(reward.Milestone.Id);
+                if(reward.Milestone.UnlockTierId!=0)
+                {
+                    unlockedTier=reward.Milestone.UnlockTierId;
+                    next.Tiers[LastStandTierCatalog.Get(unlockedTier).Key].Unlocked=true;
+                }
+                if(reward.Milestone.UnlockFittingId!=null)
+                {
+                    unlockedFitting=reward.Milestone.UnlockFittingId;
+                    next.Fittings.Add(unlockedFitting);
+                }
+            }
+            if(boundary.Encounter.Hull==0)
+            { next.FinalizedRunId=boundary.RunId;next.Checkpoint=null; }
+            else next.Checkpoint=boundary;
+            var receipt=new LastStandWaveReceipt(boundary.CompletedWave,(int)amount,
+                first?reward.Milestone.Id:null,unlockedFitting,unlockedTier);
+            return Commit(next,()=>LastReceipt=receipt);
         }
-
-        public bool TryStageNonDefeat()
+        public bool TryFinalizeRun()
         {
-            AbandonRun();
-            return false;
+            if(!Ready || !HasCheckpoint)return false;
+            var next=committed.Copy();next.FinalizedRunId=next.Checkpoint.RunId;next.Checkpoint=null;
+            return Commit(next,null);
         }
-
-        public void AbandonRun()
-        {
-            if (candidate != null) return;
-            ClearActiveRun();
-        }
-
-        private void ClearActiveRun()
-        {
-            activeRunId = 0;
-            activeDamage = 0;
-            activeTier = 0;
-            activeProfileVersion = null;
-        }
-
+        // Compatibility entry points finalize a new wave run without a death payout.
+        // Only the legacy parser may create PendingDefeat.
+        public bool TryStageDefeat(int elapsedTicks,int kills)=>elapsedTicks>=0 && kills>=0 && TryFinalizeRun();
+        public bool TryStageLimit(int elapsedTicks,int kills)=>false;
+        public bool TryStageNonDefeat()=>TryFinalizeRun();
+        public void AbandonRun() { TryFinalizeRun(); }
         public bool TryClaim()
         {
-            if (!Ready || activeRunId != 0 || committed.Pending == null ||
-                committed.Pending.Reward > int.MaxValue - committed.Wallet)
-                return false;
-            var next = committed.Copy();
-            next.Wallet += next.Pending.Reward;
-            next.FinalizedRunId = next.Pending.RunId;
-            next.Pending = null;
-            return Commit(next, null);
+            if(!Ready || HasCheckpoint || committed.Pending==null ||
+                committed.Pending.Reward>int.MaxValue-committed.Wallet)return false;
+            var next=committed.Copy();next.Wallet+=next.Pending.Reward;
+            next.FinalizedRunId=next.Pending.RunId;next.Pending=null;return Commit(next,null);
         }
-
-        public bool TryPurchase() => TryPurchase(LastStandUpgradeTrackId.CannonAttack);
-
+        public bool TryPurchase()=>TryPurchase(LastStandUpgradeTrackId.CannonAttack);
         public bool TryPurchase(LastStandUpgradeTrackId id)
         {
-            int index = (int)id;
-            if (index < 0 || index >= LastStandUpgradeCatalog.Tracks.Count) return false;
-            if (!Ready || activeRunId != 0 || committed.Pending != null || committed.Levels[index] == MaximumLevel)
-                return false;
-            int cost = committed.Levels[index] + 1;
-            if (committed.Wallet < cost) return false;
-            var next = committed.Copy();
-            next.Wallet -= cost;
-            next.Levels[index]++;
-            return Commit(next, null);
+            int index=(int)id;
+            if(!Ready || committed.Pending!=null || index<0 || index>=LastStandUpgradeCatalog.Tracks.Count)return false;
+            int cost=PermanentCost(id);
+            if(cost==0 || cost>Wallet)return false;
+            // Active runs keep the immutable deployment levels in their checkpoint.
+            var next=committed.Copy();next.Wallet-=cost;next.Levels[index]++;return Commit(next,null);
         }
-
-        private bool Ready => SaveState == "ready" && committed != null && candidate == null;
-        private bool Commit(Record next, Action completion)
-        {
-            candidate = next;
-            afterCommit = completion;
-            return Retry();
-        }
-
+        void Block(string error) { SaveState="blocked";SaveError=error; }
+        bool Commit(Record next,Action completion)
+        { candidate=next;afterCommit=completion;return Retry(); }
         public bool Retry()
         {
-            if (candidate == null) return Reload();
+            if(candidate==null)return Reload();
             try
             {
-                var desired = Serialize(candidate);
-                var existing = storage.Read();
-                if (existing != desired)
+                string desired=Serialize(candidate),existing=storage.Read();
+                if(existing!=desired)
                 {
-                    if (committed != null && existing != committedRaw ||
-                        committed == null && existing != null)
-                    {
-                        SaveState = "blocked";
-                        SaveError = "The saved record changed unexpectedly. Review it before retrying.";
-                        return false;
-                    }
+                    if(committed!=null && existing!=committedRaw || committed==null && existing!=null)
+                    { Block("The saved record changed unexpectedly. Reload after resolving the conflict.");return false; }
                     storage.Write(desired);
-                    if (storage.Read() != desired)
-                        throw new InvalidOperationException("Saved data did not match the requested record.");
+                    if(storage.Read()!=desired)throw new InvalidOperationException("Save readback mismatch.");
                 }
-                committed = candidate;
-                committedRaw = desired;
-                candidate = null;
-                var completion = afterCommit;
-                afterCommit = null;
-                completion?.Invoke();
-                SaveState = "ready";
-                SaveError = null;
-                return true;
+                committed=candidate;committedRaw=desired;candidate=null;
+                var complete=afterCommit;afterCommit=null;SaveState="ready";SaveError=null;complete?.Invoke();return true;
             }
-            catch (Exception)
-            {
-                SaveState = "retry";
-                SaveError = "The save was not confirmed. Retry to reconcile local storage.";
-                return false;
-            }
+            catch(Exception)
+            { SaveState="retry";SaveError="The save was not confirmed. Retry to reconcile local storage.";return false; }
         }
-
-        private static string Serialize(Record record)
-        {
-            var pending = record.Pending;
-            var pendingJson = pending == null ? "null" : "{\"runId\":" + pending.RunId +
-                ",\"elapsedTicks\":" + pending.ElapsedTicks + ",\"kills\":" + pending.Kills +
-                ",\"reward\":" + pending.Reward + ",\"tier\":" + pending.Tier +
-                ",\"profileVersion\":\"" + pending.ProfileVersion + "\",\"isLimit\":" + JsonBoolean(pending.IsLimit) +
-                ",\"newBestTime\":" + JsonBoolean(pending.NewBestTime) +
-                ",\"newBestKills\":" + JsonBoolean(pending.NewBestKills) +
-                ",\"unlockedTierTwo\":" + JsonBoolean(pending.UnlockedTierTwo) + "}";
-            var levels = new StringBuilder();
-            foreach (var track in LastStandUpgradeCatalog.Tracks)
-            {
-                if (levels.Length != 0) levels.Append(',');
-                levels.Append('"').Append(track.Key).Append("\":")
-                    .Append(record.Levels[(int)track.Id].ToString(CultureInfo.InvariantCulture));
-            }
-            return "{\"version\":3,\"credits\":" + record.Wallet +
-                ",\"permanentLevels\":{" + levels + "}" +
-                ",\"nextRunId\":" + record.NextRunId +
-                ",\"lastFinalizedRunId\":" + record.FinalizedRunId +
-                ",\"selectedTier\":" + record.SelectedTier +
-                ",\"tierRecords\":{\"" + LastStandTierCatalog.ProfileVersion + "\":{" +
-                "\"bestTicks1\":" + record.BestTicks[0] + ",\"bestKills1\":" + record.BestKills[0] +
-                ",\"bestTicks2\":" + record.BestTicks[1] + ",\"bestKills2\":" + record.BestKills[1] +
-                ",\"tierTwoUnlocked\":" + JsonBoolean(record.TierTwoUnlocked) + "}}" +
-                ",\"pendingDefeat\":" + pendingJson + "}";
-        }
-
-        private static string JsonBoolean(bool value) => value ? "true" : "false";
-
-        private static bool TryParse(string json, out Record record, out bool requiresMigration)
-        {
-            record = null;
-            requiresMigration = false;
-            if (json == null || json.Length > 4096) return false;
-            var match = V3SavePattern.Match(json);
-            if (!match.Success)
-            {
-                // Strict legacy parsing cannot credit records or unlocks. Preserve
-                // its exact original bytes as Retry's conflict basis.
-                bool legacyV1;
-                if (!TryParseLegacy(json, out record, out legacyV1)) return false;
-                requiresMigration = true;
-                return true;
-            }
-            string[] integerNames = { "version", "credits", "nextRunId", "lastFinalizedRunId", "selectedTier",
-                "bestTicks1", "bestKills1", "bestTicks2", "bestKills2", "runId", "elapsedTicks", "kills", "reward", "tier" };
-            foreach (string name in integerNames)
-            {
-                int ignored;
-                if (match.Groups[name].Success && !TryInteger(match.Groups[name].Value, out ignored)) return false;
-            }
-            int version = Value(match, "version"), nextRun = Value(match, "nextRunId");
-            int finalized = Value(match, "lastFinalizedRunId"), selectedTier = Value(match, "selectedTier");
-            if (version != 3 || nextRun < 1 || finalized >= nextRun || !LastStandTierCatalog.IsValid(selectedTier))
-                return false;
-            int[] levels;
-            if (!TryParseLevels(match.Groups["levels"].Value, out levels)) return false;
-            int[] ticks = { Value(match, "bestTicks1"), Value(match, "bestTicks2") };
-            int[] kills = { Value(match, "bestKills1"), Value(match, "bestKills2") };
-            bool unlocked = Flag(match, "tierTwoUnlocked");
-            if (ticks[0] > LastStandTierCatalog.HorizonTicks || ticks[1] > LastStandTierCatalog.HorizonTicks ||
-                unlocked != (ticks[0] >= LastStandTierCatalog.Get(1).GoalTicks) ||
-                !unlocked && (selectedTier != 1 || ticks[1] != 0 || kills[1] != 0)) return false;
-            PendingDefeat pending = null;
-            if (match.Groups["runId"].Success)
-            {
-                int run = Value(match, "runId"), elapsed = Value(match, "elapsedTicks"),
-                    disabled = Value(match, "kills"), reward = Value(match, "reward"), tier = Value(match, "tier");
-                string profile = match.Groups["profileVersion"].Value;
-                bool limit = Flag(match, "isLimit"), bestTime = Flag(match, "newBestTime"),
-                    bestKills = Flag(match, "newBestKills"), justUnlocked = Flag(match, "unlockedTierTwo");
-                if (run < 1 || run != nextRun - 1 || run <= finalized) return false;
-                if (tier == 0)
-                {
-                    if (profile != "" || reward != 1 || limit || bestTime || bestKills || justUnlocked) return false;
-                }
-                else
-                {
-                    if (!LastStandTierCatalog.IsValid(tier) || profile != LastStandTierCatalog.ProfileVersion ||
-                        selectedTier != tier || tier == 2 && !unlocked || elapsed > LastStandTierCatalog.HorizonTicks ||
-                        reward != (limit ? 0 : 1) || limit && elapsed != LastStandTierCatalog.HorizonTicks) return false;
-                    int index = tier - 1;
-                    if (ticks[index] < elapsed || kills[index] < disabled ||
-                        bestTime && (ticks[index] != elapsed || elapsed == 0) ||
-                        bestKills && (kills[index] != disabled || disabled == 0) ||
-                        justUnlocked && (tier != 1 || !unlocked || !bestTime || elapsed < LastStandTierCatalog.Get(1).GoalTicks)) return false;
-                }
-                pending = new PendingDefeat(run, elapsed, disabled, reward, tier, profile, limit,
-                    bestTime, bestKills, justUnlocked);
-            }
-            record = new Record { Wallet = Value(match, "credits"), Levels = levels, NextRunId = nextRun,
-                FinalizedRunId = finalized, SelectedTier = selectedTier, BestTicks = ticks, BestKills = kills,
-                TierTwoUnlocked = unlocked, Pending = pending };
-            return true;
-        }
-
-        private static int Value(Match match, string name) => int.Parse(match.Groups[name].Value, CultureInfo.InvariantCulture);
-        private static bool Flag(Match match, string name) => match.Groups[name].Value == "true";
-
-        private static bool TryParseLevels(string source, out int[] levels)
-        {
-            levels = new int[LastStandUpgradeCatalog.Tracks.Count];
-            var seen = new bool[levels.Length];
-            var tracks = TrackValuePattern.Matches(source);
-            if (tracks.Count != levels.Length) return false;
-            foreach (Match track in tracks)
-            {
-                LastStandUpgradeDefinition definition;
-                int level;
-                if (!LastStandUpgradeCatalog.TryGet(track.Groups["key"].Value, out definition) ||
-                    seen[(int)definition.Id] || !TryInteger(track.Groups["level"].Value, out level) || level > MaximumLevel)
-                    return false;
-                seen[(int)definition.Id] = true;
-                levels[(int)definition.Id] = level;
-            }
-            return true;
-        }
-
-        private static bool TryParseLegacy(string json, out Record record, out bool requiresMigration)
-        {
-            record = null;
-            requiresMigration = false;
-            if (json == null || json.Length > 2048) return false;
-            var match = SavePattern.Match(json);
-            var values = new int[10];
-            var levels = new int[LastStandUpgradeCatalog.Tracks.Count];
-            if (match.Success)
-            {
-                for (var i = 1; i <= 9; i++)
-                {
-                    if (match.Groups[i].Success && !TryInteger(match.Groups[i].Value, out values[i]))
-                        return false;
-                }
-                if (values[1] != 1 || values[3] > MaximumLevel) return false;
-                levels[(int)LastStandUpgradeTrackId.CannonAttack] = values[3];
-                requiresMigration = true;
-            }
-            else
-            {
-                match = V2SavePattern.Match(json);
-                if (!match.Success) return false;
-                string[] names = { "", "version", "credits", "", "nextRunId", "lastFinalizedRunId",
-                    "runId", "elapsedTicks", "kills", "reward" };
-                for (var i = 1; i <= 9; i++)
-                {
-                    if (i != 3 && match.Groups[names[i]].Success && !TryInteger(match.Groups[names[i]].Value, out values[i]))
-                        return false;
-                }
-                if (values[1] != 2) return false;
-                var seen = new bool[levels.Length];
-                var tracks = TrackValuePattern.Matches(match.Groups["levels"].Value);
-                if (tracks.Count != levels.Length) return false;
-                foreach (Match track in tracks)
-                {
-                    LastStandUpgradeDefinition definition;
-                    int level;
-                    if (!LastStandUpgradeCatalog.TryGet(track.Groups["key"].Value, out definition) ||
-                        seen[(int)definition.Id] || !TryInteger(track.Groups["level"].Value, out level) || level > MaximumLevel)
-                        return false;
-                    seen[(int)definition.Id] = true;
-                    levels[(int)definition.Id] = level;
-                }
-            }
-            if (values[4] < 1 || values[5] >= values[4]) return false;
-            PendingDefeat pending = null;
-            if (requiresMigration ? match.Groups[6].Success : match.Groups["runId"].Success)
-            {
-                if (values[6] < 1 || values[6] != values[4] - 1 || values[6] <= values[5] || values[9] != 1)
-                    return false;
-                pending = new PendingDefeat(values[6], values[7], values[8]);
-            }
-            record = new Record { Wallet = values[2], Levels = levels, NextRunId = values[4],
-                FinalizedRunId = values[5], Pending = pending };
-            return true;
-        }
-
-        private static bool TryInteger(string value, out int number) =>
-            int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out number);
     }
 }

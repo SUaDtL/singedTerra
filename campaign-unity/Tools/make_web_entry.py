@@ -63,8 +63,8 @@ def render_web_entry(build: Path, scene: str, root: Path) -> str:
                         '<a id="last-stand-return" href="../#campaigns/last-stand" aria-label="Return to Campaigns" aria-describedby="last-stand-loss">'
                         '<span class="full" aria-hidden="true">← Return to Campaigns</span>'
                         '<span class="short" aria-hidden="true">← Campaigns</span></a>'
-                        '<p id="last-stand-loss">Leaving or reloading an unfinished run loses its progress without a reward. '
-                        'Saved upgrades and pending defeat rewards stay in this browser only after a successful save.</p></nav>'
+                        '<p id="last-stand-loss">Return or reload safely: Resume Run restores your last saved wave, paused. '
+                        'Only progress since that checkpoint is replayed. Saves and earned rewards stay in this browser.</p></nav>'
                         if last_stand else '')
     text = text.replace('__RETRY_LINK__', '<a id="retry" href="">Retry</a>' if last_stand else '')
     text = text.replace('__BOOTSTRAP__', LAST_STAND_BOOTSTRAP if last_stand else LEGACY_BOOTSTRAP)

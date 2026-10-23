@@ -5,10 +5,15 @@ No Unity Editor or graphics process is launched. Presentation-only scaffolding
 lets the actual session own all simulation calls.
 """
 from pathlib import Path
+import sys
 import os
 import subprocess
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+
 
 PROJECT = Path(__file__).resolve().parents[2]
 EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
@@ -46,6 +51,7 @@ class SpeedTests(unittest.TestCase):
             temporary.write_text(value.replace(before, after), encoding="utf-8")
             sources[sources.index(actual)] = temporary
         sources.append(Path(__file__).with_name("SpeedChecks.cs"))
+        sources = complete_sources(SCRIPTS, sources)
         argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
         build = subprocess.run(argv + [str(path) for path in sources], capture_output=True,
                                text=True, encoding="utf-8-sig", timeout=60)
@@ -62,6 +68,9 @@ class SpeedTests(unittest.TestCase):
                                 text=True, encoding="utf-8-sig", timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
+
+    def test_cue_callback_lifetime(self):
+        self.case("cue_callback_lifetime")
 
     def test_half_speed_weighted_combat_parity(self):
         self.case("half_speed_weighted_combat_parity")
