@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { tierJourneyControlGeometry } from '../../e2e/helpers/lastStandTierJourney.mjs';
 
-function sample() {
+function sample(kind = 'LastStandConsoleSurface') {
   const clip = { x: 11, y: 107, width: 300, height: 148 };
   const buy = { name: 'ShopCard_fieldRepairBuy', x: 165, y: 299, width: 138, height: 44, active: true };
   const layout = { width: 844, height: 266, scrollOffset: 0, maximumScrollOffset: 100,
     controls: [], shopControls: [buy], graphicsTruncated: false };
-  const graphics = [{ path: 'ShopPanel/ShopViewport', active: true, hasClip: true, clip },
-    { ...buy, path: 'ShopPanel/ShopViewport/ShopContent/' + buy.name, kind: 'Image', hasClip: true, clip }];
+  const graphics = [{ path: 'ShopPanel/ShopViewport', kind, active: true, hasClip: true, clip },
+    { ...buy, path: 'ShopPanel/ShopViewport/ShopContent/' + buy.name, kind, hasClip: true, clip }];
   const run = () => tierJourneyControlGeometry({ ...layout, raw: 'ST_LS_HUD_LAYOUT ' + JSON.stringify({ graphics }) }, { width: 844, height: 266 });
   return { layout, graphics, buy, run };
 }
@@ -59,14 +59,14 @@ test('small targets and overlapping visible targets still fail', () => {
   assert.throws(overlap.run, /overlap/);
 });
 
-function settingsSample(dpr = 1) {
+function settingsSample(dpr = 1, kind = 'LastStandConsoleSurface') {
   const clip = { x: 28, y: 180, width: 334, height: 160 };
   const button = { name: 'SettingsBack', x: 36, y: 360, width: 318, height: 44, active: true, interactable: true };
   const background = { name: 'Menu', x: 36, y: 210, width: 68, height: 44, active: true, interactable: false };
   const layout = { width: 390 * dpr, height: 688 * dpr, controls: [background], shopControls: [], settingsControls: [button],
     scrollOffset: 0, maximumScrollOffset: 9999, settingsScrollOffset: 0, settingsMaximumScrollOffset: 80, graphicsTruncated: false };
-  const graphics = [{ path: 'SettingsModal/SettingsPanel/SettingsViewport', active: true, hasClip: true, clip },
-    { ...button, path: 'SettingsModal/SettingsPanel/SettingsViewport/SettingsContent/SettingsBack', kind: 'Image', hasClip: true, clip }];
+  const graphics = [{ path: 'SettingsModal/SettingsPanel/SettingsViewport', kind, active: true, hasClip: true, clip },
+    { ...button, path: 'SettingsModal/SettingsPanel/SettingsViewport/SettingsContent/SettingsBack', kind, hasClip: true, clip }];
   for (const rect of [clip, button, graphics[1], background])
     for (const key of ['x', 'y', 'width', 'height']) rect[key] *= dpr;
   const run = () => tierJourneyControlGeometry({ ...layout, raw: 'ST_LS_HUD_LAYOUT ' + JSON.stringify({ graphics }) }, { width: 390, height: 688 });
@@ -110,7 +110,26 @@ test('settings clipping requires matching real viewport, control and content evi
   const wrongMask = settingsSample(); wrongMask.graphics[1].clip = { ...wrongMask.clip, height: 200 };
   assert.throws(wrongMask.run, /actual settings viewport/);
   const wrongParent = settingsSample(); wrongParent.graphics[1].path = 'Unrelated/SettingsBack';
-  assert.throws(wrongParent.run, /actual settings content/);
+  assert.throws(wrongParent.run, /Clipped control belongs to its actual scroll content/);
   const wrongRect = settingsSample(); wrongRect.graphics[1].width -= 10;
   assert.throws(wrongRect.run, /bounds agree/);
+});
+
+test('scroll fixtures use actual Image or chamfered surface types for both viewport and control', () => {
+  for(const kind of ['Image','LastStandConsoleSurface'])for(const create of [()=>sample(kind),()=>settingsSample(1,kind)]){
+    const s=create();assert.equal(s.run()[0].full,false);
+  }
+});
+
+test('missing, decorative, inactive or duplicate surfaces cannot qualify a scroll target', () => {
+  for(const create of [sample,settingsSample])for(const index of [0,1])for(const change of [
+    s=>delete s.graphics[index].kind,
+    s=>s.graphics[index].kind='Text',
+    s=>s.graphics[index].kind='LastStandConsoleFrame',
+    s=>s.graphics[index].active=false,
+    s=>s.graphics.push({...s.graphics[index]}),
+  ]){
+    const s=create();change(s);
+    assert.throws(s.run,index===0?/One actual scroll viewport required/:/One actual clipped control surface required/);
+  }
 });

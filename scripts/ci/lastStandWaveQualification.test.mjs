@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {LAST_STAND_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandJourney.mjs';
+import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_ORACLE_SOURCES} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
@@ -15,6 +16,59 @@ import {assertCombinedWaveQualification,assertWaveBinding,verifyWaveFiles,WAVE_C
 const hash='a'.repeat(64),head='b'.repeat(40),clone=value=>structuredClone(value);
 const profiles=[1,2].flatMap(tier=>['repair','launcher','scattergun'].flatMap(fitting=>[20,30,40,50].map(d=>`${tier}:${fitting}:${d}`)));
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+// Reduced from the failed native checkpoint-reload capture: wallet 6, workshop,
+// inactive Deploy and active Redeploy both labelled RESUME RUN. Inert guards only.
+function deploymentFixture(phase='workshop',hasCheckpoint=true){
+  const state={load:19,timeOrigin:1792728632683.2,scope:'healthy',phase,saveState:'ready',wallet:6,hasCheckpoint};
+  const layout={load:state.load,timeOrigin:state.timeOrigin,scope:state.scope,phase,
+    controls:['Deploy','Redeploy'].map(name=>({name,label:hasCheckpoint?'RESUME RUN':'DEPLOY',
+      active:name===(phase==='garage'?'Deploy':'Redeploy'),interactable:true}))};
+  return {state,layout};
+}
+test('deployment control binds observed phase, checkpoint intent and the exact current layout',()=>{
+  assert.equal(typeof journey.lastStandDeploymentControl,'function');
+  for(const phase of ['garage','workshop'])for(const checkpoint of [true,false]){
+    const value=deploymentFixture(phase,checkpoint);
+    assert.equal(journey.lastStandDeploymentControl(value.state,value.layout),phase==='garage'?'Deploy':'Redeploy');
+  }
+  for(const mutate of [v=>v.layout.phase='garage',v=>v.layout.load++,v=>v.layout.timeOrigin++,v=>v.layout.scope='other',
+    v=>v.state.phase=v.layout.phase='battle',v=>v.state.saveState='failed',v=>v.state.hasCheckpoint='true',
+    v=>v.layout.controls.forEach(c=>c.active=true),v=>v.layout.controls.forEach(c=>c.active=false),
+    v=>{v.layout.controls[0].active=true;v.layout.controls[0].interactable=false;},
+    v=>v.layout.controls[1].interactable=false,v=>v.layout.controls[1].name='Deploy',v=>v.layout.controls[1].label='DEPLOY',
+    v=>v.layout.controls.push({...v.layout.controls[1]})]){
+    const value=deploymentFixture();mutate(value);assert.throws(()=>journey.lastStandDeploymentControl(value.state,value.layout));
+  }
+});
+test('actual earned checkpoint, purchase and terminal reload callers choose the observed primary control',async()=>{
+  const calls=[source.match(/const resumedCheckpoint=(await gameClick\([^;\n]+\));/),
+    source.match(/const hitStart=hits.length;(await gameClick\([^;\n]+\));/),
+    source.match(/kind:'terminal-reload',saved:naturalSaved,state:finalReload\}\);\n\s*(await gameClick\([^;\n]+\));/)];
+  for(const [index,match]of calls.entries()){
+    assert.ok(match,'Actual reload deployment caller required: '+index);
+    const invoke=new Function('gameClick','states','layouts','lastStandDeploymentControl',`return (async()=>${match[1]})();`);
+    for(const phase of ['garage','workshop']){
+      const value=deploymentFixture(phase,index===0),observed=[];
+      await invoke(async(...args)=>observed.push(args),[value.state],[value.layout],journey.lastStandDeploymentControl);
+      assert.deepEqual(observed,[[phase==='garage'?'Deploy':'Redeploy',index===0?'resume':'deploy']]);
+      value.layout.phase='battle';
+      await assert.rejects(invoke(()=>assert.fail('Mismatched layout must refuse before pointer input'),
+        [value.state],[value.layout],journey.lastStandDeploymentControl));
+    }
+  }
+});
+test('wave matrix requires exact resume control and keeps earned post-abandon garage distinct',()=>{
+  const {reports,expected}=matrixFixture();assert.doesNotThrow(()=>assertLastStandWaveMatrix(reports,expected));
+  const resume=rows=>rows.flatMap(r=>r.screenshots).find(s=>s.file.startsWith('resume-ready-'));
+  const abandoned=rows=>rows.flatMap(r=>r.screenshots).find(s=>s.file.startsWith('garage-after-abandon-'));
+  for(const mutate of [r=>resume(r).layout.controls[0].name='Deploy',r=>resume(r).layout.controls[0].active=false,
+    r=>resume(r).layout.controls.push({...resume(r).layout.controls[0]}),r=>resume(r).layout.scope='other',
+    r=>resume(r).state.wallet=0,r=>abandoned(r).state.hasCheckpoint=true,
+    r=>abandoned(r).layout.controls[0].name='Redeploy',
+    r=>{abandoned(r).state.phase=abandoned(r).layout.phase='workshop';}]){
+    const copy=clone(reports);mutate(copy);assert.throws(()=>assertLastStandWaveMatrix(copy,expected));
+  }
+});
 function expectedFixture(){return {head,inputs:Object.fromEntries(LAST_STAND_JOURNEY_INPUTS.map(p=>[p,hash])),
   runtime:Object.fromEntries(WAVE_RUNTIME_KEYS.map(p=>[p,p==='build'?'inert-test-build':hash])),
   served:Object.fromEntries(Array.from({length:17},(_,i)=>[`file-${i}`,{sha256:hash,bytes:1}])),
@@ -70,9 +124,11 @@ function lifeReport(expected,host='linux'){
 function capture(phase,viewport,file){
   const actual=['checkpoint','resumed','background-checkpoint'].includes(phase)?'battle':phase==='resume-ready'?'workshop':
     phase==='garage-after-abandon'?'garage':phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase;
+  const checkpoint=['resume-ready','checkpoint','resumed','background-checkpoint'].includes(phase);
   return {file,viewport:{width:viewport.width,height:viewport.height},sha256:hash,load:1,scope:phase.endsWith('-fault')?phase:'healthy',
-    state:{load:1,timeOrigin:1000,phase:actual,paused:true,hasCheckpoint:true,wallet:0},
-    layout:{load:1,timeOrigin:1000,phase:actual,controls:[{label:'RESUME RUN',active:true,interactable:true}]}};
+    state:{load:1,timeOrigin:1000,scope:'healthy',phase:actual,paused:true,hasCheckpoint:checkpoint,saveState:'ready',wallet:phase==='resume-ready'?1:0},
+    layout:{load:1,timeOrigin:1000,scope:'healthy',phase:actual,controls:[{name:actual==='workshop'?'Redeploy':'Deploy',
+      label:checkpoint?'RESUME RUN':'DEPLOY',active:true,interactable:true}]}};
 }
 function matrixFixture(){
   const expected=expectedFixture(),reports=Array.from({length:12},(_,i)=>{

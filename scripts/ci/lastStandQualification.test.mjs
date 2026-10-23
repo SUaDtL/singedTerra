@@ -768,7 +768,7 @@ test('explicit Pause admits model focus acknowledgement before visible return bu
 
 test('central workload budget separates web-server startup and bounds actual owners',()=>{
   assert.equal(typeof journey.lastStandJourneyTimeBudget,'function','Actual caller budget must be centralized');
-  for(const [host,testMs]of [['win32',1_200_000],['linux',3_600_000]]){
+  for(const [host,testMs]of [['win32',1_800_000],['linux',3_600_000]]){
     for(const served of [false,true]){
       const b=journey.lastStandJourneyTimeBudget(host,{served});
       assert.equal(b.testMs,testMs);assert.equal(b.startupMs,served?0:180_000);
@@ -824,7 +824,7 @@ test('actual maintained journey uses a finite host DOM allowance without changin
     const budget=journey.lastStandJourneyTimeBudget(host);
     assert.equal(budget.actionMs,observed);
     assert.ok(Number.isFinite(observed) && observed>0 && observed<budget.testMs);
-    assert.equal(budget.testMs,host==='linux'?3_600_000:1_200_000);
+    assert.equal(budget.testMs,host==='linux'?3_600_000:1_800_000);
   }
 });
 
@@ -893,7 +893,7 @@ test('qualification has a closed Windows default and rejects every incompatible 
 
 test('actual owned watcher admits the derived cleanup budget but retains a closed host bound',async()=>{
   const begin=source.indexOf('export async function watchOwnedProcess('),end=source.indexOf('\nexport function nativeChromeArgs',begin);
-  for(const [host,lifetime,expected]of [['win32',1_430_000,'stopped'],['win32',1_440_001,'failed'],
+  for(const [host,lifetime,expected]of [['win32',2_030_000,'stopped'],['win32',2_040_001,'failed'],
     ['linux',3_830_000,'stopped'],['linux',3_840_001,'failed'],['linux',640_000,'stopped']]){
     let record;
     const run=runInNewContext(source.slice(begin,end).replace('export async','async')+';watchOwnedProcess',{

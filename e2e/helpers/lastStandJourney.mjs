@@ -1925,7 +1925,10 @@ export function removeOwnedProfile(profile) {
 }
 export function lastStandJourneyTimeBudget(host=process.platform,{served=false}={}) {
   assert.ok(['win32','linux'].includes(host),'Unsupported journey budget host');
-  const testMs=host==='win32'?1_200_000:3_600_000,startupMs=served?0:180_000;
+  // Native wave qualification reached checkpoint reload after 13 minutes;
+  // two further ~253-second natural terminals, matrices and recovery need
+  // a bounded 30-minute total. Individual action and media guards stay fixed.
+  const testMs=host==='win32'?1_800_000:3_600_000,startupMs=served?0:180_000;
   // Test/browser clocks start after webServer setup; the standalone owner
   // starts before it and must also admit owned-tree cleanup.
   // Software-rendered Linux Unity frames can occupy the page thread beyond
@@ -3056,6 +3059,23 @@ export function lastStandQualificationProfile(name='windows-player',host=process
   return Object.freeze({name,nativeMedia:name==='windows-player'});
 }
 
+export function lastStandDeploymentControl(state,layout) {
+  assert.ok(state && layout,'Deployment requires actual state and layout');
+  assert.ok(['garage','workshop'].includes(state.phase),'Deployment requires an inspection phase');
+  assert.equal(layout.phase,state.phase,'Deployment state and layout must agree');
+  assert.equal(state.saveState,'ready');assert.equal(typeof state.hasCheckpoint,'boolean');
+  assert.ok(Number.isInteger(state.load) && state.load>0 && Number.isFinite(state.timeOrigin) && state.timeOrigin>0);
+  assert.equal(state.scope,'healthy');
+  for(const key of ['load','timeOrigin','scope'])assert.equal(layout[key],state[key],'Deployment document identity must agree: '+key);
+  const name=state.phase==='garage'?'Deploy':'Redeploy';
+  const controls=layout.controls?.filter(item=>['Deploy','Redeploy'].includes(item.name) && item.active);
+  assert.equal(controls?.length,1,'Exactly one primary deployment control must be active');
+  assert.equal(controls[0].name,name,'Primary control must belong to the observed phase');
+  assert.equal(controls[0].interactable,true,'Primary deployment control must be enabled');
+  assert.equal(controls[0].label,state.hasCheckpoint?'RESUME RUN':'DEPLOY','Primary control must match checkpoint intent');
+  return name;
+}
+
 // This lifecycle qualifies effects, mute and missed-event suppression. Select
 // its channel scope through ordinary controls before measuring audio; music's
 // behavior during a pause is separately qualified by the controls journey.
@@ -3813,7 +3833,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(['garage','workshop'].includes(restored.phase) && restored.hasCheckpoint && restored.runId===savedWave.checkpoint.runId,
       'saved wave survives reload and awaits explicit Resume',restored);
     await phaseMatrix('resume-ready');
-    const resumedCheckpoint=await gameClick('Deploy','resume');await page.waitForTimeout(1200);
+    const resumedCheckpoint=await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'resume');await page.waitForTimeout(1200);
     await gameClick('Menu','menu');
     const stableCheckpoint=states.at(-1),storedAfterResume=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const observedClock=await page.evaluate(()=>({t:performance.now(),timeOrigin:performance.timeOrigin}));
@@ -3841,7 +3861,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===savedWave.credits-1 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
-    await resize(captureViewport);const hitStart=hits.length;await gameClick('Deploy','deploy');
+    await resize(captureViewport);const hitStart=hits.length;await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
     const upgradedHit=await until(hits,hitStart,item=>item.cannonDamage===30,45);const noCaptureEnd=await mark();
     if(player){
@@ -3894,7 +3914,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===JSON.stringify(naturalSaved),
       'finalized natural defeat cannot resume after reload');
     report.lifecycle.push({kind:'terminal-reload',saved:naturalSaved,state:finalReload});
-    await gameClick('Deploy','deploy');
+    await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
     const backgroundBefore=await observation(),backgroundOracle=reference(backgroundBefore);
     const backgroundExpected=Object.values(backgroundOracle).at(-1),backgroundStart=states.length;
     check(backgroundExpected.status==='Defeated','background actual wave model has natural terminal');

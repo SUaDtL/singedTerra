@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {lastStandDeploymentControl} from '../../e2e/helpers/lastStandJourney.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertWaveBinding,assertWaveLifecycle,requireWaveChecks,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_CONTRACT} from './lastStandWaveQualification.mjs';
 
@@ -12,13 +13,17 @@ function runtimeCapture(capture,phase){
   assert.ok(capture.state&&capture.layout);assert.equal(capture.state.load,capture.load);assert.equal(capture.layout.load,capture.load);
   assert.ok(Number.isFinite(capture.state.timeOrigin)&&capture.state.timeOrigin>0);assert.equal(capture.layout.timeOrigin,capture.state.timeOrigin);
   if(phase==='resume-ready'){
-    assert.ok(['garage','workshop'].includes(capture.state.phase));assert.equal(capture.layout.phase,capture.state.phase);
+    assert.ok(Number.isInteger(capture.state.wallet) && capture.state.wallet>=0);
+    assert.equal(capture.state.phase,capture.state.wallet>0?'workshop':'garage','Reload uses the actual funded inspection phase');
     assert.equal(capture.state.hasCheckpoint,true);
-    assert.ok(capture.layout.controls?.some(c=>c.active&&c.interactable&&c.label==='RESUME RUN'),'Resume is offered on the actual checkpoint card');
+    lastStandDeploymentControl(capture.state,capture.layout);
   }else{
     const actual=['checkpoint','resumed','background-checkpoint'].includes(phase)?'battle':phase==='garage-after-abandon'?'garage':phase==='background-result'?'result':phase.startsWith('storage-')?'garage':phase;
     assert.equal(capture.state.phase,actual);assert.equal(capture.layout.phase,actual);
     if(['checkpoint','resumed','background-checkpoint'].includes(phase)){assert.equal(capture.state.paused,true);assert.equal(capture.state.hasCheckpoint,true);}
+    if(['garage','garage-after-abandon'].includes(phase)){
+      assert.equal(capture.state.hasCheckpoint,false);lastStandDeploymentControl(capture.state,capture.layout);
+    }
   }
 }
 export function assertLastStandWaveMatrix(reports,expected){
