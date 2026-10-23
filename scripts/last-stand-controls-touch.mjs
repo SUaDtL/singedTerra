@@ -36,7 +36,7 @@ try {
   const items=()=>layout?[...layout.controls,...layout.shopControls,...layout.settingsControls]:[];
   const point=async(c)=>{const box=await page.locator('#unity-canvas').boundingBox();return{x:box.x+(c.x+c.width/2)*box.width/layout.width,y:box.y+(c.y+c.height/2)*box.height/layout.height};};
   const swipe=async(down=false)=>{
-    const viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&g.kind==='Image');
+    const viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&['Image','LastStandConsoleSurface'].includes(g.kind));
     assert.ok(viewport);const p=await point(viewport),box=await page.locator('#unity-canvas').boundingBox();
     const distance=Math.min(180,viewport.height*box.height/layout.height*.55),start=p.y+(down?-distance/2:distance/2);
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:p.x,y:start}]});
@@ -46,7 +46,7 @@ try {
   const tap=async(name)=>{
     await until(()=>items().some(c=>c.name===name&&c.active&&c.interactable));
     for(let i=0;i<12;i++){
-      const c=items().find(c=>c.name===name),viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&g.kind==='Image');
+      const c=items().find(c=>c.name===name),viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&['Image','LastStandConsoleSurface'].includes(g.kind));
       if(viewport&&c.mode==='Settings'&&!['ChoicePrevious','ChoiceNext'].includes(name)&&!/^Settings(?:Close|Tab[0-3])$/.test(name)&&(c.y<viewport.y||c.y+c.height>viewport.y+viewport.height)){
         await swipe(c.y<viewport.y);continue;
       }

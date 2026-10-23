@@ -69,7 +69,7 @@ namespace SingedTerra.Art
 {
     public sealed class TankPresentation : Component { public Component view; }
 }
-namespace SingedTerra.Encounter { public enum EncounterEventKind { Cannon, Launcher, CloseHit, RangedHit } }
+namespace SingedTerra.Encounter { public enum EncounterEventKind { Cannon, Launcher, Repair, CloseHit, RangedHit, Scattergun } }
 public static class AudioSettingsChecks
 {
     static void Require(bool ok,string message) { if(!ok)throw new Exception(message); }
@@ -109,6 +109,23 @@ public static class AudioSettingsChecks
         audio.SetSuspended(false);Require(EffectPlays(audio)==2,"Resume does not replay cues");
         audio.ToggleMute();audio.PlayPurchase();Require(EffectPlays(audio)==2,"Muted audio refuses cues");
         audio.ToggleMute();audio.PlayPurchase();Require(EffectPlays(audio)==3,"New unmuted cue plays");
+    }
+    static void ScattergunFeedbackAndHolds()
+    {
+        var audio=Fixture();audio.PlayEvent(EncounterEventKind.Scattergun,8,true);
+        Require(EffectPlays(audio)==0,"Scattergun respects the initial gesture lock");
+        audio.UnlockFromGesture("test-click");audio.PlayEvent(EncounterEventKind.Scattergun,8,true);
+        Require(Debug.Logs.Contains("ST_LS_AUDIO event=scattergun") && Debug.Logs.Contains("ST_LS_AUDIO event=impact"),"distinct burst and actual impact cues route together");
+        var burst=Effects(audio).Single(s=>s.clip!=null && s.clip.name=="LastStand_Scattergun").clip;
+        Require(burst.Samples.Any(s=>Math.Abs(s)>.1f) && burst.Samples.All(s=>!float.IsNaN(s)&&Math.Abs(s)<=1),"Scattergun has finite non-silent unclipped PCM");
+        Debug.Logs.Clear();audio.PlayEvent(EncounterEventKind.Scattergun,8,false);
+        Require(Debug.Logs.Contains("ST_LS_AUDIO event=destruction"),"lethal scatter hit preserves destruction cue");
+        int before=EffectPlays(audio);audio.SetSuspended(true);audio.PlayEvent(EncounterEventKind.Scattergun,8,true);
+        Require(EffectPlays(audio)==before,"paused burst is refused");audio.SetSuspended(false);
+        audio.ToggleMute();audio.PlayEvent(EncounterEventKind.Scattergun,8,true);
+        Require(EffectPlays(audio)==before,"muted burst is refused");audio.ToggleMute();
+        Invoke(audio,"OnApplicationFocus",false);audio.PlayEvent(EncounterEventKind.Scattergun,8,true);
+        Require(EffectPlays(audio)==before,"hidden burst is refused");
     }
     static void InitializeDoesNotDuplicateSources()
     {
@@ -195,6 +212,7 @@ public static class AudioSettingsChecks
             switch(args[0])
             {
                 case "existing_effect_admission":ExistingEffectAdmission();break;
+                case "scattergun_feedback_and_holds":ScattergunFeedbackAndHolds();break;
                 case "initialize_does_not_duplicate_sources":InitializeDoesNotDuplicateSources();break;
                 case "master_and_channel_gains_change_active_sources":MasterAndChannelGainsChangeActiveSources();break;
                 case "music_requires_gesture_and_ignores_combat_pause":MusicRequiresGestureAndIgnoresCombatPause();break;

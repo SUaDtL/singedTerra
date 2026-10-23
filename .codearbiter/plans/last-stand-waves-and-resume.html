@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand wave campaign: implementation sprint plan · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-WAVES-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-waves-and-resume.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand wave campaign: implementation sprint plan</h1><p class="deck">Approved implementation sprint: scalable finite waves and economy, atomic resumable runs, lower-tier farming, Scattergun, shared menu chrome and source-bound qualification. Merge and publication remain separate.</p><div class="meta"><span>ST-LS-WAVES-PLAN</span><span>Revision 51 · schema 0.3.2</span><span>32 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-WAVES-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2>
+<!-- CA:BEGIN:PRE-OWNER -->
+<article class="record" id="PRE-OWNER" data-ca-symbol="PRE-OWNER" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-OWNER">PRE-OWNER</a><h3>Owner approves this concrete sprint</h3></div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Requirement</span>Owner approval to implement this revised sprint, as stated in the current conversation. Merge and publication require separate authority.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SPRINT-APPROVAL">SRC-SPRINT-APPROVAL</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-BASELINE">T-BASELINE</a></li><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-SAVE">T-SAVE</a></li><li><a href="#T-LIFECYCLE">T-LIFECYCLE</a></li><li><a href="#T-ARMAMENT">T-ARMAMENT</a></li><li><a href="#T-HUD">T-HUD</a></li><li><a href="#T-CHROME">T-CHROME</a></li><li><a href="#T-TUNE">T-TUNE</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li><li><a href="#T-ECONOMY">T-ECONOMY</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>7213b599568fb8f067675171a4e947b021154457e71d73ddd20b158d33da33f8</div><div class="field"><span class="label">Origin</span>user_statement</div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T01:12:56Z</div><div class="field"><span class="label">Source</span>Current conversation, latest user yes following approval-versus-pacing clarification</div><div class="field"><span class="label">Summary</span>Owner replied yes after the explicit clarification asking whether to approve and start the revised sprint including Scattergun.</div></div></div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>Owner approval to implement this revised sprint, as stated in the current conversation. Merge and publication require separate authority.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-BASELINE">T-BASELINE</a></li><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-SAVE">T-SAVE</a></li><li><a href="#T-LIFECYCLE">T-LIFECYCLE</a></li><li><a href="#T-ARMAMENT">T-ARMAMENT</a></li><li><a href="#T-HUD">T-HUD</a></li><li><a href="#T-CHROME">T-CHROME</a></li><li><a href="#T-TUNE">T-TUNE</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li><li><a href="#T-ECONOMY">T-ECONOMY</a></li></ul></div><div class="field"><span class="label">Title</span>Owner approves this concrete sprint</div></div></details></article>
+<!-- CA:END:PRE-OWNER -->
+
+<!-- CA:BEGIN:PRE-ARMAMENT -->
+<article class="record" id="PRE-ARMAMENT" data-ca-symbol="PRE-ARMAMENT" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-ARMAMENT">PRE-ARMAMENT</a><h3>Resolve armament scope</h3></div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Requirement</span>Include the owner-approved auxiliary Scattergun with complete playable and persistence behavior.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SPRINT-APPROVAL">SRC-SPRINT-APPROVAL</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-ARMAMENT">T-ARMAMENT</a></li><li><a href="#T-TUNE">T-TUNE</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>aafa531e6ac08506dac4532cf7b53bf93b0aa44d413a44f1ea718bcde10bc8d0</div><div class="field"><span class="label">Origin</span>user_statement</div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T01:12:57Z</div><div class="field"><span class="label">Source</span>Current conversation, latest user yes following approval-versus-pacing clarification</div><div class="field"><span class="label">Summary</span>Owner replied yes after the explicit clarification asking whether to approve and start the revised sprint including Scattergun.</div></div></div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>Include the owner-approved auxiliary Scattergun with complete playable and persistence behavior.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-ARMAMENT">T-ARMAMENT</a></li><li><a href="#T-TUNE">T-TUNE</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li></ul></div><div class="field"><span class="label">Title</span>Resolve armament scope</div></div></details></article>
+<!-- CA:END:PRE-ARMAMENT -->
+</section><section class="group" id="group-tasks"><a class="back" href="#main-content">Top</a><h2>Tasks</h2>
+<!-- CA:BEGIN:T-BASELINE -->
+<article class="record" id="T-BASELINE" data-ca-symbol="T-BASELINE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-BASELINE">T-BASELINE</a><h3>Diagnose and repair the recurring foreground audio check</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-FOUNDATION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-BASELINE">ST-LS-WAVES-SPEC#CR-BASELINE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Focused failure reproduces and passes after the bounded fix; genuine stale audio still fails.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FOUNDATION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</code></td></tr><tr><td>modify</td><td><code>e2e/helpers/lastStandJourney.mjs</code></td></tr><tr><td>modify</td><td><code>scripts/ci/lastStandQualification.test.mjs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Retain post-merge shard-3 artifact and compare cue emission, callback admission and state logging; establish whether the defect is product behavior or observation timing.</li><li>Add a deterministic failing regression. Repair the proven owner; emit callback IDs/admission timestamps only if needed for sound attribution.</li><li>Keep fresh-cue age and step bounds plus stale/backlog negative controls. Do not rerun away the defect.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;scripts/ci/lastStandQualification.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Callback/cue causality and existing stale-cue regressions pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>focus-only session refresh does not replace the actual advancing callback clock</li><li>callback reporting tail preserves admission, step, provenance and exact cue bounds</li><li>focus refresh retains the short callback budget, exact model cues and clock identity</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details></article>
+<!-- CA:END:T-BASELINE -->
+
+<!-- CA:BEGIN:T-RULES -->
+<article class="record" id="T-RULES" data-ca-symbol="T-RULES" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-RULES">T-RULES</a><h3>Define scalable wave, tier and reward catalogs</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-FOUNDATION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-WAVES">ST-LS-WAVES-SPEC#CR-WAVES</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-TIERS">ST-LS-WAVES-SPEC#CR-TIERS</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-REWARDS">ST-LS-WAVES-SPEC#CR-REWARDS</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Catalogs express both tiers and real future expansion without tier-specific save members; invalid definitions fail.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FOUNDATION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_waves</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Translate the owner scale correction into tier unlock, milestone, bounded wave-generator and reward definitions: provisional Tier 1 wave 300 unlock and continuing 2000-plus-wave farming; no 10/20-wave goals or fixed five-wave Salvage rule.</li><li>Define wave start/clear/intermission state, reward keys and snapshot contract before mutating gameplay persistence.</li><li>Add 18-tier/multi-fitting synthetic catalog checks without shipping 18 empty tiers.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_catalogs.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Catalog validity, finite rosters, reward keys and scalable selectors.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_finite_rosters_and_stable_reward_ids</li><li>test_eighteen_tiers_use_bounded_selection_and_keyed_records</li><li>test_invalid_catalogs_are_rejected</li><li>test_generator_scales_beyond_two_thousand_waves</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_catalogs.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T01:21:58Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>8043440272b5402080ffd2fb099432af208bbee5d757cc6ae4a04c2f2d6f0579</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>waves_engine agent report and production tests in Tools/last_stand_waves</div><div class="field"><span class="label">Summary</span>Agent reports four catalog checks passed after RED, covering18tierfixture/validation/rewards/longrangegeneration.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-RULES -->
+
+<!-- CA:BEGIN:T-COMBAT -->
+<article class="record" id="T-COMBAT" data-ca-symbol="T-COMBAT" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-COMBAT">T-COMBAT</a><h3>Implement finite cohorts and continuing wave combat</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-WAVES">ST-LS-WAVES-SPEC#CR-WAVES</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-TIERS">ST-LS-WAVES-SPEC#CR-TIERS</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>No empty-spawn-gap clear or overlapping waves; fixed-step outcomes match across speed/background scheduling; long-wave bounds hold.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Advance only when all scheduled enemies are admitted and defeated; stop at a save boundary before intermission/next wave.</li><li>Remove the normal playable time-limit ending while retaining bounded diagnostic and resource handling.</li><li>Provide deterministic capture/restore of meaningful model timers, counters, fitting/stat projections and generator state.</li><li>Use compact authored bands/generators with bounded per-wave cohorts and active-enemy counts; test 300/1000/2000/5000-plus wave states, long tick counters and resume parity without storing every past enemy.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_model.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Cohort clear, last-enemy edge, deterministic restore, pause/speed and high-wave bounds.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_unspawned_or_live_enemy_prevents_clear</li><li>test_pause_and_speed_preserve_wave_outcomes</li><li>test_long_run_has_bounded_state</li><li>test_simultaneous_last_kill_and_defeat</li><li>test_two_thousand_wave_checkpoint_and_numeric_bounds</li><li>test_five_thousand_wave_restore_and_bounded_state</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_model.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T01:35:18Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>d2edcff3551f1abcee850ef92032aa0169e57af96ceeb7564b4da758d078485a</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>waves_engine implementation report, current working tree</div><div class="field"><span class="label">Summary</span>7 owned pure model checks passed per waves_engine report; browser/integration and final balance pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-COMBAT -->
+
+<!-- CA:BEGIN:T-SAVE -->
+<article class="record" id="T-SAVE" data-ca-symbol="T-SAVE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-SAVE">T-SAVE</a><h3>Implement atomic rewards, checkpoints and legacy migration</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-REWARDS">ST-LS-WAVES-SPEC#CR-REWARDS</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-CHECKPOINT">ST-LS-WAVES-SPEC#CR-CHECKPOINT</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-STORAGE">ST-LS-WAVES-SPEC#CR-STORAGE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-ECONOMY">T-ECONOMY</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>A restored checkpoint exactly matches uninterrupted continuation; rewards appear once; failure preserves last complete state.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandStore.cs</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLegacySave.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandSaveJson.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_waves/test_checkpoint_store.py</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_waves/CheckpointStoreChecks.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Create the new versioned progression/checkpoint envelope and transaction reconciliation, preserving raw legacy bytes until success.</li><li>Commit initial and clear checkpoints with first-clear ledger and repeatable high-water marks; freeze at any unconfirmed boundary.</li><li>Restore full run state and roll back mid-wave purchase/spend together. Preserve original wallet, six levels, tiers, preferences and pending Claim.</li><li>Fault-test write/read uncertainty, preimage conflicts, future versions, malformed IDs and overflow.</li><li>Migrate existing upgrade investment to extended per-track bounds without refund/reinterpretation or loss; restore snapshots beyond wave 2000 and validate large counters.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_checkpoint_store.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Production C# atomic store and boundary restore, with migration, write/read faults, conflicts, milestones, terminal finalization and late-run size/parity. Consolidates the originally separate parity runner without duplicating checks.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_starting_checkpoint_survives_reload</li><li>test_legacy_migration_preserves_pending_claim_once</li><li>test_checkpoint_rewards_commit_once_under_write_faults</li><li>test_midwave_purchase_and_cost_roll_back_together</li><li>test_first_clear_rewards_and_unlocks_across_runs</li><li>test_future_or_conflicting_save_preserves_original_bytes</li><li>test_mutual_death_banks_and_finalizes_atomically</li><li>test_permanent_purchases_preserve_active_deployment_stats</li><li>test_five_thousand_wave_save_restore_and_bounded_size</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_checkpoint_store.py&#34;]</code></pre></div><div class="field"><span class="label">Command index</span>0</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>true</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Output excerpt</span>Ran 9 tests in 3.099s; OK</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T01:43:34Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>8301249bbc829b36814128995e1774ab4712c0892f18f3caf10092df2544f4f4</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>exec_command CheckpointStoreChecks working-tree run</div><div class="field"><span class="label">Summary</span>Nine production C# checks passed, including5001sequential durable boundaries and v1/v2/v3 migration. Browser integration remains pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_save_review.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T02:43:01Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>a976c5410146d82c0c2c0dd03e47075a91a4c0de3d3979099ff6cdab11b6d7ff</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Tools/last_stand_waves/test_save_review.py</div><div class="field"><span class="label">Summary</span>5 green after4 reproduced overflow failures; validated paid-level count rebases volatile quote epoch. Independent64-case fault review also passed.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_checkpoint_store.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T02:43:02Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>a976c5410146d82c0c2c0dd03e47075a91a4c0de3d3979099ff6cdab11b6d7ff</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Tools/last_stand_waves/test_checkpoint_store.py</div><div class="field"><span class="label">Summary</span>9 green after counter fix, including5001 sequential atomic waves and exact combat-state restore.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-SAVE -->
+
+<!-- CA:BEGIN:T-LIFECYCLE -->
+<article class="record" id="T-LIFECYCLE" data-ca-symbol="T-LIFECYCLE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-LIFECYCLE">T-LIFECYCLE</a><h3>Connect Resume, terminal saves and ordinary navigation</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-LOOP</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-CHECKPOINT">ST-LS-WAVES-SPEC#CR-CHECKPOINT</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-LIFECYCLE">ST-LS-WAVES-SPEC#CR-LIFECYCLE</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-STORAGE">ST-LS-WAVES-SPEC#CR-STORAGE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-SAVE">T-SAVE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Cancel, failed saves, reload after terminal, parent navigation and new-run selection all follow the durability contract.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-LOOP</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/make_web_entry.py</code></td></tr><tr><td>modify</td><td><code>client/src/ui/commandCenter/LastStandCommandView.ts</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Offer Resume with checkpoint tier/wave and explicit paused continuation; keep one resumable run.</li><li>Preserve run on normal Return/account navigation; use explicit confirmation for replacement or abandon.</li><li>Finalize defeat/abandon atomically so reload cannot resurrect a run, and update obsolete loss/Claim/help wording.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_resume_lifecycle.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Real controller lifecycle covers resume, return, cancel, defeat, abandon and blocked storage.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_normal_return_preserves_resumable_run</li><li>test_cancel_new_run_preserves_checkpoint</li><li>test_terminal_commit_prevents_zombie_resume</li><li>test_resume_waits_for_explicit_input</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_integration.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T02:43:02Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>b46ef8f0bd10c3b46c4d2094e511530447c0984109d36738b0ecf09fec3df1ed</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Tools/last_stand_waves/test_wave_integration.py</div><div class="field"><span class="label">Summary</span>3 imported-controller checks green, source unchanged; navigation menu reset RED fixed. Evidence editor-20261023T020756Z-f41d0b0d. Artificial clock, no elapsed endurance claim.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;node_modules/@playwright/test/cli.js&#34;,&#34;test&#34;,&#34;e2e/last-stand-playable-loop.spec.ts&#34;,&#34;--project=desktop-fine&#34;,&#34;--workers=1&#34;,&#34;--retries=0&#34;,&#34;--grep&#34;,&#34;earned waves&#34;,&#34;--output=campaign-unity/Evidence/waves-browser-startup-fixed&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T03:43:54Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>03fd6767dffe20511a3deedab9818d46c5d99b43fd37bac25ef2c5debb343e68</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/waves-browser-startup-fixed/.last-run.json</div><div class="field"><span class="label">Summary</span>Real fresh-player browser journey passed in 1.4 minutes: sequential wave reward, complete paused resume, partial-wave rollback, navigation, cancel and abandon; five viewports; zero runtime errors.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-LIFECYCLE -->
+
+<!-- CA:BEGIN:T-ARMAMENT -->
+<article class="record" id="T-ARMAMENT" data-ca-symbol="T-ARMAMENT" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-ARMAMENT">T-ARMAMENT</a><h3>Build the selected new armament milestone</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-EXPERIENCE</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-ARMAMENT">ST-LS-WAVES-SPEC#CR-ARMAMENT</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-REWARDS">ST-LS-WAVES-SPEC#CR-REWARDS</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-TIERS">ST-LS-WAVES-SPEC#CR-TIERS</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-SAVE">T-SAVE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>A locked fitting cannot equip; earning it unlocks a complete usable option that persists and restores correctly.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-EXPERIENCE</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterView.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandFittingCallout.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Only execute after the owner chooses the new-armament option; recommended Scattergun is a concrete proposal, not inherited approval.</li><li>Generalize fitting identity/capabilities, then implement short-range group damage and its own damage track without reinterpreting old upgrade IDs.</li><li>Create a readable tank module and audio/visual feedback, attach its callout and unlock through the actual first-clear transaction.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_armament.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Unlock/equip/save/combat/upgrade applicability and original-fitting parity.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_locked_armament_cannot_equip</li><li>test_unlock_survives_reload_without_auto_equip</li><li>test_scattergun_crowd_behavior_and_upgrade_applicability</li><li>test_existing_fittings_and_invested_tracks_preserved</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_armament_presentation.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T02:43:03Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>593d64ec4bbb6d74e7c283d14d64563af4cc952fc4d45a760df314591433bff1</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Tools/last_stand_waves/test_armament_presentation.py</div><div class="field"><span class="label">Summary</span>Earned wave100 fixture confirms unlock, visible Scattergun and attached callout in3 layouts; browser optional-armament and listening pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-wave-milestones.mjs&#34;,&#34;campaign-unity/Evidence/waves-planning/earned-milestones-candidate/manifest.json&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T03:43:55Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>593d64ec4bbb6d74e7c283d14d64563af4cc952fc4d45a760df314591433bff1</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/waves-milestones/2026-10-23T03-38-18-190Z/result.json</div><div class="field"><span class="label">Summary</span>All four real rendered 1x milestones passed after explicitly accelerated production-earned setup: repair/launcher at waves 100/300, exact durable rewards, visible receipts, Scattergun/Tier2 selection and deployment. This is not normal-player duration or endurance proof.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-ARMAMENT -->
+
+<!-- CA:BEGIN:T-HUD -->
+<article class="record" id="T-HUD" data-ca-symbol="T-HUD" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-HUD">T-HUD</a><h3>Present wave progress, milestones and resume clearly</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-EXPERIENCE</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-HUD">ST-LS-WAVES-SPEC#CR-HUD</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-TIERS">ST-LS-WAVES-SPEC#CR-TIERS</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-LIFECYCLE">ST-LS-WAVES-SPEC#CR-LIFECYCLE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-LIFECYCLE">T-LIFECYCLE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>All maintained profiles have readable labels, reachable 44px targets and correct focus; no recreated packed toolbar.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-EXPERIENCE</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandGuidance.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Add compact wave/cohort/next-reward information and a scrollable milestone detail pane; keep menu, speed and upgrades in their established regions.</li><li>Promote Resume when applicable and distinguish one-time versus repeatable rewards; preserve at most one locked-tier preview.</li><li>Update relevant Help and settings disclosures and honor guidance opt-outs.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_hud.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>HUD/controller state mapping, unlock labels, scalable selection and guidance rules.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_wave_remaining_and_milestone_labels</li><li>test_resume_hierarchy_and_guidance_opt_out</li><li>test_tier_preview_only_shows_next_authored_locked_tier</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details></article>
+<!-- CA:END:T-HUD -->
+
+<!-- CA:BEGIN:T-CHROME -->
+<article class="record" id="T-CHROME" data-ca-symbol="T-CHROME" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-CHROME">T-CHROME</a><h3>Unify menu chrome and fix the shared clipped outline</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-EXPERIENCE</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-CHROME">ST-LS-WAVES-SPEC#CR-CHROME</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-HUD">ST-LS-WAVES-SPEC#CR-HUD</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Rendered corners have no opaque rectangular patches, and all affected surfaces share working chrome.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-EXPERIENCE</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Locate shared frame/backing owners and replace inconsistent rectangular fill with matching clipped geometry; retain input/focus owners.</li><li>Apply brass/graphite treatment across Menu, Settings, Help, About and confirmation consumers.</li><li>Inspect every button state over both environments at desktop, portrait and short landscape; fix shared source, not screenshots or per-panel coverups.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_shared_chrome.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Shared outline geometry and imported-scene interaction guards; manual rendered inspection remains required.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_backing_and_frame_share_clipped_outline</li><li>test_all_menu_consumers_use_shared_chrome</li><li>test_focus_and_hit_targets_preserved</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_shared_chrome.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T02:43:03Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>e6cf6d5e6666839a10081da89ba0f492f0b3b3e376f60e318eefddd257ae0cc7</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Tools/last_stand_waves/test_shared_chrome.py</div><div class="field"><span class="label">Summary</span>Combined chrome/armament6 imported-scene markers green. Evidence editor-20261023T015851Z-fa3a47ed. Desktop/portrait browser captures inspected separately; full browser rerun pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-CHROME -->
+
+<!-- CA:BEGIN:T-TUNE -->
+<article class="record" id="T-TUNE" data-ca-symbol="T-TUNE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-TUNE">T-TUNE</a><h3>Calibrate the complete wave progression loop</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-QUALIFY</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-WAVES">ST-LS-WAVES-SPEC#CR-WAVES</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-TIERS">ST-LS-WAVES-SPEC#CR-TIERS</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-REWARDS">ST-LS-WAVES-SPEC#CR-REWARDS</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-ARMAMENT">ST-LS-WAVES-SPEC#CR-ARMAMENT</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-QUALIFY">ST-LS-WAVES-SPEC#CR-QUALIFY</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-HUD">T-HUD</a></li><li><a href="#T-ARMAMENT">T-ARMAMENT</a></li><li><a href="#T-ECONOMY">T-ECONOMY</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>A source-bound report demonstrates lower-tier farming viability, growth through 5000-plus waves and explicit early/midgame duration assumptions; synthetic high-tier checks are not shipped content.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-QUALIFY</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_waves</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Tools/last_stand_tiers/run_first_session_measurements.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Measure fresh, early-unlock, established and mature builds across both tiers, including target wave 300 and 1000/2000/5000-plus farming; report income per active minute, affordability and sustainable growth.</li><li>Compare identical builds for short higher-tier pushes versus deep lower-tier farming. Unlocking Tier 2 must not itself require switching or make Tier 1 automatically obsolete.</li><li>Use the owner midgame reference of about 5000 waves in 10-12 real hours at maxed 5x speed. Budget the overall 7.2-8.64 real seconds per wave; ideal linear scaling gives 36-43.2 simulation seconds per wave and a 50-60-hour equivalent at 1x for that same workload. Measure transitions/save overhead and early Tier 1 pacing independently. Do not turn these averages into timer-based wave completion or grant research unlocks in this sprint.</li><li>Use fast deterministic simulation for long-range balance plus representative rendered browser segments; retain actual checkpoints and restore scenarios at late waves.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_calibration.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Deterministic measured progression ranges and fitting comparisons, without claiming unrun human fun acceptance.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_fresh_fittings_can_reach_first_resource_milestone</li><li>test_upgrade_affordability_and_tier_progression_report</li><li>test_no_loadout_bypasses_checkpoint_rewards</li><li>test_same_build_push_versus_farm_report</li><li>test_two_thousand_wave_income_and_upgrade_depth</li><li>test_full_run_duration_includes_intermission</li><li>test_five_thousand_wave_pacing_budget_and_economy</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_balance.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T02:43:04Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>e702d69e8979922a3d82cad1fdfbfa2f108f86f8fcb4e90fdc17c3c80c1a8cb0</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Tools/last_stand_waves/test_balance.py</div><div class="field"><span class="label">Summary</span>4 checks green and69 numerical measurements. Synthetic Tier10 wave5000 future5x:10.28–10.53h. Actual10–12h endurance still pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-TUNE -->
+
+<!-- CA:BEGIN:T-QUALIFY -->
+<article class="record" id="T-QUALIFY" data-ca-symbol="T-QUALIFY" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-QUALIFY">T-QUALIFY</a><h3>Qualify the full rendered sprint candidate</h3><span class="badge">IN_PROGRESS</span></div><div class="field"><span class="label">Checkpoint</span>CP-QUALIFY</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-CHECKPOINT">ST-LS-WAVES-SPEC#CR-CHECKPOINT</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-STORAGE">ST-LS-WAVES-SPEC#CR-STORAGE</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-LIFECYCLE">ST-LS-WAVES-SPEC#CR-LIFECYCLE</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-HUD">ST-LS-WAVES-SPEC#CR-HUD</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-ARMAMENT">ST-LS-WAVES-SPEC#CR-ARMAMENT</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-CHROME">ST-LS-WAVES-SPEC#CR-CHROME</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-BASELINE">ST-LS-WAVES-SPEC#CR-BASELINE</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-QUALIFY">ST-LS-WAVES-SPEC#CR-QUALIFY</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-BASELINE">T-BASELINE</a></li><li><a href="#T-TUNE">T-TUNE</a></li><li><a href="#T-CHROME">T-CHROME</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>All criteria have actual evidence or explicit pending status; no stale export, weakened aggregate or hidden failing check.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-QUALIFY</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>e2e/helpers/lastStandJourney.mjs</code></td></tr><tr><td>modify</td><td><code>e2e/helpers/lastStandTierJourney.mjs</code></td></tr><tr><td>modify</td><td><code>scripts/ci/lastStandMatrixResult.mjs</code></td></tr><tr><td>inspect</td><td><code>campaign-unity/Tools/build_web.py</code></td></tr><tr><td>modify</td><td><code>client/public/last-stand</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs/LAST-STAND-ROADMAP.md</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Extend maintained real-browser journeys and aggregate together for wave completion, checkpoints, migration, unlocks, settings and fault recovery; retain old-game routing/compatibility tests.</li><li>Build/package a new Unity Web export and verify source/payload identity; inspect actual chrome and combat feedback on required viewports.</li><li>Run focused local checks, full exact-head hosted CI and CodeQL; independently review persistence/qualification changes. Keep source tests separate from real Windows/media acceptance.</li><li>Present the integrated candidate and pending checks for owner acceptance. Merge and publication require separate authority; verify actual post-merge/deployed identity if later authorized.</li><li>Partition qualification: fast deterministic 300/1000/2000/5000-plus progression and restore tests; representative real-browser boundary journeys; one dedicated 10-12-hour endurance observation on a stable candidate outside the per-viewport PR matrix. Measure memory growth, callback debt, audio continuity and checkpoint latency. Report actual elapsed observation and unfinished endurance separately; no recurring watcher is created by this plan.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;typecheck&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Strict client/shared types pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;scripts/ci/browserMatrix.test.mjs&#34;,&#34;scripts/ci/lastStandQualification.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Maintained browser report producer/consumer and negative controls agree.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>matrix qualification requires all actual branches, profiles and exact source/runtime bindings</li><li>entry aggregate binds the maintained confirmed Return and reload action sequence</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand-source.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>The delivered Unity Web export binds the intended source.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>IN_PROGRESS</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;build&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T03:43:53Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261023T033029Z-e9491d/result.json</div><div class="field"><span class="label">Summary</span>Fresh Unity export, package source/payload parity, strict types and Vite build passed with /singedTerra/ base.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_startup.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T03:43:56Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/waves-startup/editor-20261023T032842Z-04bf40a6</div><div class="field"><span class="label">Summary</span>Actual imported-scene reverse Start regression reproduced NullReferenceException, then 3/3 green with idempotent TankPresentation initialization. Armament3, wave integration5 and chrome3 green; fresh browser now observes ready on each load and zero exceptions.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;scripts/ci/ciWorkflow.test.mjs&#34;,&#34;scripts/ci/lastStandEndurance.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T03:43:56Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/waves-planning/endurance-review-ci-tests.log</div><div class="field"><span class="label">Summary</span>194/194 pure CI and endurance-accounting guards passed after independent review. Full ten-hour observation, native Windows/media journey and hosted CI remain pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-QUALIFY -->
+
+<!-- CA:BEGIN:T-ECONOMY -->
+<article class="record" id="T-ECONOMY" data-ca-symbol="T-ECONOMY" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-ECONOMY">T-ECONOMY</a><h3>Extend upgrade and reward depth for long farming runs</h3><span class="badge">REVIEW</span></div><div class="field"><span class="label">Checkpoint</span>CP-FOUNDATION</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-waves-and-resume.html#CR-REWARDS">ST-LS-WAVES-SPEC#CR-REWARDS</a></li><li><a href="../specs/last-stand-waves-and-resume.html#CR-TIERS">ST-LS-WAVES-SPEC#CR-TIERS</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Upgrade and reward curves support long progression without immediate saturation, deadlock, invalid stats or erasing existing investment.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-FOUNDATION</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve existing saves and unrelated edits. Before release revert only this task&#39;s scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Design versioned per-track cost/effect/cap curves with early investments preserved, useful attack/health growth and safe bounded utility effects.</li><li>Set repeatable earnings and first-clear amounts from affordability and farm-versus-push measurements. Remove assumptions that every track shares the prototype caps 3/8.</li><li>Compare current currencies and original fittings at early unlock and mature farming builds; keep full research, new currencies and higher-speed grants outside this scope.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_long_run_economy.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Long-run cost/effect bounds, migration value preservation and farm-versus-push reward behavior.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_existing_investments_preserved</li><li>test_long_run_cost_and_effect_bounds</li><li>test_lower_tier_farming_remains_viable_after_unlock</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>Implementation reported complete; verification and review are not assessed by this progress update.</div><div class="field"><span class="label">State</span>REVIEW</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_long_run_economy.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-23T01:35:17Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>c5f0f08c27d2d94353def298d1d717944cf0c51e4ea2cc21897bf1687116f097</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>waves_engine implementation report, current working tree</div><div class="field"><span class="label">Summary</span>3 owned pure model checks passed per waves_engine report; browser/integration and final balance pending.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-ECONOMY -->
+</section><section class="group" id="group-checkpoints"><a class="back" href="#main-content">Top</a><h2>Checkpoints</h2>
+<!-- CA:BEGIN:CP-FOUNDATION -->
+<article class="record" id="CP-FOUNDATION" data-ca-symbol="CP-FOUNDATION" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-FOUNDATION">CP-FOUNDATION</a><h3>Rules and baseline diagnosis</h3></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Exit</span>Rules and snapshot interfaces are explicit; the recurring audio failure has a reproduced cause and bounded fix. Long-run reward and upgrade curves are explicit and bounded.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-BASELINE">T-BASELINE</a></li><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-ECONOMY">T-ECONOMY</a></li></ul></div></article>
+<!-- CA:END:CP-FOUNDATION -->
+
+<!-- CA:BEGIN:CP-LOOP -->
+<article class="record" id="CP-LOOP" data-ca-symbol="CP-LOOP" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-LOOP">CP-LOOP</a><h3>Durable playable wave loop</h3></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#CP-FOUNDATION">CP-FOUNDATION</a></li></ul></div><div class="field"><span class="label">Exit</span>Finite waves and atomic progression resume correctly under faults and normal navigation.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-COMBAT">T-COMBAT</a></li><li><a href="#T-SAVE">T-SAVE</a></li><li><a href="#T-LIFECYCLE">T-LIFECYCLE</a></li></ul></div></article>
+<!-- CA:END:CP-LOOP -->
+
+<!-- CA:BEGIN:CP-EXPERIENCE -->
+<article class="record" id="CP-EXPERIENCE" data-ca-symbol="CP-EXPERIENCE" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-EXPERIENCE">CP-EXPERIENCE</a><h3>Progression payoff and coherent interface</h3></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#CP-LOOP">CP-LOOP</a></li></ul></div><div class="field"><span class="label">Exit</span>Selected content is playable; rewards, Resume and shared chrome are clear and usable.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-ARMAMENT">T-ARMAMENT</a></li><li><a href="#T-HUD">T-HUD</a></li><li><a href="#T-CHROME">T-CHROME</a></li></ul></div></article>
+<!-- CA:END:CP-EXPERIENCE -->
+
+<!-- CA:BEGIN:CP-QUALIFY -->
+<article class="record" id="CP-QUALIFY" data-ca-symbol="CP-QUALIFY" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-QUALIFY">CP-QUALIFY</a><h3>Calibrated integrated candidate</h3></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#CP-EXPERIENCE">CP-EXPERIENCE</a></li></ul></div><div class="field"><span class="label">Exit</span>Measured progression, real rendered journeys and source-bound delivery evidence are ready for review.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-TUNE">T-TUNE</a></li><li><a href="#T-QUALIFY">T-QUALIFY</a></li></ul></div></article>
+<!-- CA:END:CP-QUALIFY -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-PLAN-REVIEW -->
+<article class="record" id="SEC-PLAN-REVIEW" data-ca-symbol="SEC-PLAN-REVIEW" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-PLAN-REVIEW">SEC-PLAN-REVIEW</a><h3>Review boundary</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>All tasks are pending. This plan does not execute, commit, merge or publish. The selected new armament is conditional; the rest of planning is complete independently.</p></div></div></article>
+<!-- CA:END:SEC-PLAN-REVIEW -->
+
+<!-- CA:BEGIN:SEC-ORDER -->
+<article class="record" id="SEC-ORDER" data-ca-symbol="SEC-ORDER" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-ORDER">SEC-ORDER</a><h3>Execution and dependencies</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>First establish the wave/reward/checkpoint contract and diagnose the current audio regression. The shared chrome task can proceed independently once implementation is approved. Combat -&gt; atomic persistence -&gt; resume lifecycle -&gt; wave HUD form the critical gameplay path. Armament content follows combat/persistence and the owner choice; calibration and integrated qualification follow the complete experience.</p></div><div class="block"><p>Checkpoint groups describe useful demonstrations, not blanket scheduling locks: only task dependencies control independent work. Ship checkpoint schema and its readers/migration atomically. If the audio fix is delivered separately, retain its evidence and requalify only what later wave changes affect.</p></div></div></article>
+<!-- CA:END:SEC-ORDER -->
+
+<!-- CA:BEGIN:SEC-PLAN-CHECKS -->
+<article class="record" id="SEC-PLAN-CHECKS" data-ca-symbol="SEC-PLAN-CHECKS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-PLAN-CHECKS">SEC-PLAN-CHECKS</a><h3>Verification approach</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Proposed last_stand_waves Python tests will compile and exercise production C# owners through the repository&#39;s existing Unity/Mono approach. Proposed files are not claimed to exist or pass. Existing command entries are read from repository scripts; focused tests precede the full hosted matrix. Real scene/browser checks must validate rendering, focus, controls and sound beyond model-only fixtures.</p></div><div class="block"><p>Acceptance demo: deploy -&gt; clear milestone -&gt; earn and equip selected armament on a later run -&gt; buy run upgrade -&gt; close mid-wave -&gt; restore exact previous checkpoint -&gt; reach tier target -&gt; browse next environment -&gt; lose or abandon -&gt; confirm earned progress persists. Repeat save faults and UI paths with guidance disabled. Native host/media acceptance stays explicit.</p></div><div class="block"><p>Long-run qualification covers wave 300 unlock without promotion, viable lower-tier farming through 2000-plus waves, late checkpoint restore, bounded memory/numeric state and per-track economy depth. Fast model checks, real rendered segments and extended runtime observations make distinct claims.</p><div class="refs">References: <a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a> </div></div><div class="block"><p>The duration question is answered by the owner midgame reference: roughly Tier 10/wave 5000 over 10-12 hours at maxed 5x speed. Early Tier 1 duration remains measured tuning. Plan one dedicated elapsed-time endurance observation after fast tests; keep its evidence distinct from accelerated simulation, platform/media acceptance and deployed proof. Tier 10 is a scale reference, not added sprint content.</p><div class="refs">References: <a href="#SRC-MIDGAME-DURATION">SRC-MIDGAME-DURATION</a> <a href="#SRC-MAX-SPEED">SRC-MAX-SPEED</a> </div></div></div></article>
+<!-- CA:END:SEC-PLAN-CHECKS -->
+
+<!-- CA:BEGIN:SEC-PLAN-PRESERVE -->
+<article class="record" id="SEC-PLAN-PRESERVE" data-ca-symbol="SEC-PLAN-PRESERVE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-PLAN-PRESERVE">SEC-PLAN-PRESERVE</a><h3>Worktree and release boundary</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Keep the current shared checkout, unrelated dirty native artifacts and running localhost intact. Start implementation from the reviewed merged baseline using a new codex/ branch only after checking local/remote state; do not clean or stash unrelated work. No new worktree is required by this plan. Existing source tree matches merged main at planning time.</p></div></div></article>
+<!-- CA:END:SEC-PLAN-PRESERVE -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-PLAN -->
+<article class="record" id="SRC-PLAN" data-ca-symbol="SRC-PLAN" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-PLAN">SRC-PLAN</a><h3>Owner requests next sprint plan</h3></div><div class="field"><span class="label">Locator</span>Current conversation: Plan the next sprint</div><div class="field"><span class="label">Note</span>Planning only. Earlier requests require careful approval before execution; no new merge or publication authority is inferred.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-PLAN -->
+
+<!-- CA:BEGIN:SRC-OWNER -->
+<article class="record" id="SRC-OWNER" data-ca-symbol="SRC-OWNER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-OWNER">SRC-OWNER</a><h3>Settled wave, save and visual direction</h3></div><div class="field"><span class="label">Locator</span>Current conversation: waves, defeat the wave enemies, completed-wave resume, menu chrome and panel corners</div><div class="field"><span class="label">Note</span>Clear finite enemy groups. Resume hp/upgrades/resources/wave from the latest completed wave, losing at most unfinished-wave progress. Correct shared chrome and corners.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-OWNER -->
+
+<!-- CA:BEGIN:SRC-ROADMAP -->
+<article class="record" id="SRC-ROADMAP" data-ca-symbol="SRC-ROADMAP" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ROADMAP">SRC-ROADMAP</a><h3>Maintained Last Stand direction</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-ROADMAP.md, Owner direction update October 22</div><div class="field"><span class="label">Note</span>Last Stand is the sole campaign; runs continue beyond tier advancement targets; milestone and repeatable rewards are distinct.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ROADMAP -->
+
+<!-- CA:BEGIN:SRC-PREVIOUS -->
+<article class="record" id="SRC-PREVIOUS" data-ca-symbol="SRC-PREVIOUS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-PREVIOUS">SRC-PREVIOUS</a><h3>Native recorded decisions</h3></div><div class="field"><span class="label">Locator</span>ST-LS-UPGRADE-PAYOFF-SPEC: DEC-WAVE-CLEAR, DEC-WAVE-CHECKPOINT, SEC-WAVE-FOLLOWON</div><div class="field"><span class="label">Note</span>Read through the installed 0.20.7 engine at revision 13; exact tuning and additional armament content remain proposals.</div><div class="field"><span class="label">Type</span>decision_record</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-PREVIOUS -->
+
+<!-- CA:BEGIN:SRC-CODE -->
+<article class="record" id="SRC-CODE" data-ca-symbol="SRC-CODE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CODE">SRC-CODE</a><h3>Current simulation and progression owners</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs; LastStandProgression.cs; LastStandTierCatalog.cs; LastStandUpgradeCatalog.cs; LastStandSelection.cs</div><div class="field"><span class="label">Note</span>Endless timed spawning, a 3600-tick playable horizon, version 3 permanent progression, two tier-specific best arrays, two fitting variants and six upgrade tracks. No durable active-run checkpoint.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CODE -->
+
+<!-- CA:BEGIN:SRC-UI -->
+<article class="record" id="SRC-UI" data-ca-symbol="SRC-UI" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UI">SRC-UI</a><h3>Current controls and panel composition</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs; LastStandSettingsHud.cs; LastStandLoopController.cs; LastStandFittingCallout.cs</div><div class="field"><span class="label">Note</span>Preserve compact controls, separate floating Menu, tier environment preview and attached fitting callouts. Reuse semantic input/focus ownership; fix shared backing geometry.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-UI -->
+
+<!-- CA:BEGIN:SRC-CI -->
+<article class="record" id="SRC-CI" data-ca-symbol="SRC-CI" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CI">SRC-CI</a><h3>Observed post-merge delivery failure</h3></div><div class="field"><span class="label">Locator</span>CI run 39860057618, browser last-stand-3 job 120108361587</div><div class="field"><span class="label">Note</span>22 jobs passed. Foreground Return audio assertion failed at lastStandJourney.mjs:1580; aggregate consequently failed. CodeQL passed; Pages run 39862581846 skipped. Recurrence needs diagnosis; it is not proven harmless.</div><div class="field"><span class="label">Type</span>test_reference</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/actions/runs/39860057618</div></article>
+<!-- CA:END:SRC-CI -->
+
+<!-- CA:BEGIN:SRC-LONG-RUNS -->
+<article class="record" id="SRC-LONG-RUNS" data-ca-symbol="SRC-LONG-RUNS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a><h3>Owner corrects progression to hundreds and thousands of waves</h3></div><div class="field"><span class="label">Locator</span>Current conversation: much more waves; approximately 300 for an unlock and approximately 2000 before moving farming tiers</div><div class="field"><span class="label">Note</span>Owner uses The Tower as a scale comparison. This records desired Last Stand pacing, not verified factual unlock rules for another game. Hundreds of waves unlock an option; long lower-tier runs remain useful into thousands. Exact thresholds and duration remain proposed tuning.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-LONG-RUNS -->
+
+<!-- CA:BEGIN:SRC-MIDGAME-DURATION -->
+<article class="record" id="SRC-MIDGAME-DURATION" data-ca-symbol="SRC-MIDGAME-DURATION" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-MIDGAME-DURATION">SRC-MIDGAME-DURATION</a><h3>Owner supplies midgame farming duration reference</h3></div><div class="field"><span class="label">Locator</span>Current conversation: tier 10 to wave 5000 takes 10-12 hours in midgame; early Tier 1 duration not recalled</div><div class="field"><span class="label">Note</span>Owner-reported reference for long-run scale and pacing, not externally verified rules of another game. The exact upgraded speed is unspecified. Do not apply this duration to early Tier 1 wave 2000 or claim this sprint ships Tier 10.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-MIDGAME-DURATION -->
+
+<!-- CA:BEGIN:SRC-MAX-SPEED -->
+<article class="record" id="SRC-MAX-SPEED" data-ca-symbol="SRC-MAX-SPEED" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-MAX-SPEED">SRC-MAX-SPEED</a><h3>Owner clarifies the farming benchmark uses maxed 5x speed</h3></div><div class="field"><span class="label">Locator</span>Current conversation: with maxed speed at 5x</div><div class="field"><span class="label">Note</span>Clarifies the preceding midgame reference: roughly Tier 10 to wave 5000 in 10-12 real hours at maxed 5x speed. Early Tier 1 duration remains unprovided. This is a pacing clarification, not sprint implementation approval or authorization to add research.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-MAX-SPEED -->
+
+<!-- CA:BEGIN:SRC-SPRINT-APPROVAL -->
+<article class="record" id="SRC-SPRINT-APPROVAL" data-ca-symbol="SRC-SPRINT-APPROVAL" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-SPRINT-APPROVAL">SRC-SPRINT-APPROVAL</a><h3>Owner approves the revised sprint including Scattergun</h3></div><div class="field"><span class="label">Locator</span>Current conversation: yes, followed by yes after explicit approval-versus-pacing clarification</div><div class="field"><span class="label">Note</span>Approval to implement the revised sprint including Scattergun. Merge and publication remain separate. Ordinary recorded user statement, not an authenticated receipt.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-SPRINT-APPROVAL -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>dbc846047bb01b61215ecb30d93225a81b1eac8a</div><div class="field"><span class="label">Observed date</span>2026-10-22</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group" id="group-verification_inputs"><a class="back" href="#main-content">Top</a><h2>Verification inputs</h2><div class="fields"><div class="field"><span class="label">Exclude directories</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Roots</span><ul class="items"><li>campaign-unity/Unity/Assets</li><li>campaign-unity/Tools</li><li>e2e</li><li>scripts/ci</li><li>client/src/ui/commandCenter</li><li>client/public/last-stand</li><li>campaign-unity/docs</li></ul></div></div></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 19b7747a8c75a218ac1f0bdbdfd6945e3d215bb597fd6efc3b38fbe21b0c0872<br>Model SHA-256: dc9b0ffc341d1c18168cd86bd9d8f64e1e0e6a754b53496759053d2b33b58082</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-WAVES-PLAN",
+  "execution": {
+    "prerequisite_evidence": {},
+    "prerequisite_observations": {
+      "PRE-ARMAMENT": {
+        "definition_sha256": "aafa531e6ac08506dac4532cf7b53bf93b0aa44d413a44f1ea718bcde10bc8d0",
+        "origin": "user_statement",
+        "outcome": "satisfied",
+        "provenance": "caller_reported",
+        "recorded_at": "2026-10-23T01:12:57Z",
+        "source": "Current conversation, latest user yes following approval-versus-pacing clarification",
+        "summary": "Owner replied yes after the explicit clarification asking whether to approve and start the revised sprint including Scattergun."
+      },
+      "PRE-OWNER": {
+        "definition_sha256": "7213b599568fb8f067675171a4e947b021154457e71d73ddd20b158d33da33f8",
+        "origin": "user_statement",
+        "outcome": "satisfied",
+        "provenance": "caller_reported",
+        "recorded_at": "2026-10-23T01:12:56Z",
+        "source": "Current conversation, latest user yes following approval-versus-pacing clarification",
+        "summary": "Owner replied yes after the explicit clarification asking whether to approve and start the revised sprint including Scattergun."
+      }
+    },
+    "prerequisites": {
+      "PRE-ARMAMENT": "not_satisfied",
+      "PRE-OWNER": "not_satisfied"
+    },
+    "scopes": {},
+    "task_check_observations": {
+      "T-ARMAMENT": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_armament_presentation.py"
+          ],
+          "criterion_subject_sha256": "a46a636f8e30e0b2c27e2afa6b9264ffcb235b8c5c61156e34f72bdae4b7d786",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T02:43:03Z",
+          "recording_operation_id": "waves-checks-review-20261023-v2-4",
+          "scoped_inputs_sha256": "593d64ec4bbb6d74e7c283d14d64563af4cc952fc4d45a760df314591433bff1",
+          "source": "campaign-unity/Tools/last_stand_waves/test_armament_presentation.py",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "Earned wave100 fixture confirms unlock, visible Scattergun and attached callout in3 layouts; browser optional-armament and listening pending.",
+          "task_subject_sha256": "c5b3ea1ac1d1d8a9339fdca1aac5f313dbdf6346568fa22c53cca2078ac16dd0"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-wave-milestones.mjs",
+            "campaign-unity/Evidence/waves-planning/earned-milestones-candidate/manifest.json"
+          ],
+          "criterion_subject_sha256": "a46a636f8e30e0b2c27e2afa6b9264ffcb235b8c5c61156e34f72bdae4b7d786",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T03:43:55Z",
+          "recording_operation_id": "browser-qualification-c001af58-0beb-4f29-a017-0018107d3679",
+          "scoped_inputs_sha256": "593d64ec4bbb6d74e7c283d14d64563af4cc952fc4d45a760df314591433bff1",
+          "source": "campaign-unity/Evidence/waves-milestones/2026-10-23T03-38-18-190Z/result.json",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "All four real rendered 1x milestones passed after explicitly accelerated production-earned setup: repair/launcher at waves 100/300, exact durable rewards, visible receipts, Scattergun/Tier2 selection and deployment. This is not normal-player duration or endurance proof.",
+          "task_subject_sha256": "c5b3ea1ac1d1d8a9339fdca1aac5f313dbdf6346568fa22c53cca2078ac16dd0"
+        }
+      ],
+      "T-CHROME": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_shared_chrome.py"
+          ],
+          "criterion_subject_sha256": "1852feb5fb9185c841089077e02bc91996d52662b4cbba453e9adadd17da3450",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T02:43:03Z",
+          "recording_operation_id": "waves-checks-review-20261023-v2-3",
+          "scoped_inputs_sha256": "e6cf6d5e6666839a10081da89ba0f492f0b3b3e376f60e318eefddd257ae0cc7",
+          "source": "campaign-unity/Tools/last_stand_waves/test_shared_chrome.py",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "Combined chrome/armament6 imported-scene markers green. Evidence editor-20261023T015851Z-fa3a47ed. Desktop/portrait browser captures inspected separately; full browser rerun pending.",
+          "task_subject_sha256": "a910c7ee5c4f68e7087ced43167dac55527dcf13688726346e78445c74d3ae7a"
+        }
+      ],
+      "T-COMBAT": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_wave_model.py"
+          ],
+          "criterion_subject_sha256": "34c17fa2d711213f6283f39a89d82f44069059fe43fd6f056eebf2bd454e289c",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T01:35:18Z",
+          "recording_operation_id": "waves-exec-t-combat-core-green-20261022",
+          "scoped_inputs_sha256": "d2edcff3551f1abcee850ef92032aa0169e57af96ceeb7564b4da758d078485a",
+          "source": "waves_engine implementation report, current working tree",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "7 owned pure model checks passed per waves_engine report; browser/integration and final balance pending.",
+          "task_subject_sha256": "0ba1d30111e4dfb66c2bfeb3556970f1647e73cabd6ef50f96f0b90e2998d2b7"
+        }
+      ],
+      "T-ECONOMY": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_long_run_economy.py"
+          ],
+          "criterion_subject_sha256": "253adc13c41ee5dcab0f250ea748aa97dae0120bd39ed126c36f09283032dda3",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T01:35:17Z",
+          "recording_operation_id": "waves-exec-t-economy-core-green-20261022",
+          "scoped_inputs_sha256": "c5f0f08c27d2d94353def298d1d717944cf0c51e4ea2cc21897bf1687116f097",
+          "source": "waves_engine implementation report, current working tree",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "3 owned pure model checks passed per waves_engine report; browser/integration and final balance pending.",
+          "task_subject_sha256": "1f4a76aa8148bddcb4b13a70ded281e8e2f1e17d6ffe691bf8a1e300de9afcba"
+        }
+      ],
+      "T-LIFECYCLE": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_wave_integration.py"
+          ],
+          "criterion_subject_sha256": "668b2469aaab452b7c280314aebe29e951028825072df066399195408e107770",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T02:43:02Z",
+          "recording_operation_id": "waves-checks-review-20261023-v2-2",
+          "scoped_inputs_sha256": "b46ef8f0bd10c3b46c4d2094e511530447c0984109d36738b0ecf09fec3df1ed",
+          "source": "campaign-unity/Tools/last_stand_waves/test_wave_integration.py",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "3 imported-controller checks green, source unchanged; navigation menu reset RED fixed. Evidence editor-20261023T020756Z-f41d0b0d. Artificial clock, no elapsed endurance claim.",
+          "task_subject_sha256": "dcfc0f2a34e1c1ebb6459b1bf19fce1ac9ec06238935649167ebb0fcd9231fa4"
+        },
+        {
+          "argv": [
+            "node",
+            "node_modules/@playwright/test/cli.js",
+            "test",
+            "e2e/last-stand-playable-loop.spec.ts",
+            "--project=desktop-fine",
+            "--workers=1",
+            "--retries=0",
+            "--grep",
+            "earned waves",
+            "--output=campaign-unity/Evidence/waves-browser-startup-fixed"
+          ],
+          "criterion_subject_sha256": "668b2469aaab452b7c280314aebe29e951028825072df066399195408e107770",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T03:43:54Z",
+          "recording_operation_id": "browser-qualification-a26578c1-fac9-4270-ada3-247a8db24d5d",
+          "scoped_inputs_sha256": "03fd6767dffe20511a3deedab9818d46c5d99b43fd37bac25ef2c5debb343e68",
+          "source": "campaign-unity/Evidence/waves-browser-startup-fixed/.last-run.json",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "Real fresh-player browser journey passed in 1.4 minutes: sequential wave reward, complete paused resume, partial-wave rollback, navigation, cancel and abandon; five viewports; zero runtime errors.",
+          "task_subject_sha256": "dcfc0f2a34e1c1ebb6459b1bf19fce1ac9ec06238935649167ebb0fcd9231fa4"
+        }
+      ],
+      "T-QUALIFY": [
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "criterion_subject_sha256": "cd47b4f5c7963f6f83a491b75bc81566ab96f7d41a1b6fc93707fee052efc922",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T03:43:53Z",
+          "recording_operation_id": "browser-qualification-0acb83c1-0398-4bec-b77b-f89c2b2113a0",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261023T033029Z-e9491d/result.json",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "Fresh Unity export, package source/payload parity, strict types and Vite build passed with /singedTerra/ base.",
+          "task_subject_sha256": "a1efeb03ec801fdf50a92246645e982d364e03d45b3661b6b1ea950caab75ad4"
+        },
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_startup.py"
+          ],
+          "criterion_subject_sha256": "cd47b4f5c7963f6f83a491b75bc81566ab96f7d41a1b6fc93707fee052efc922",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T03:43:56Z",
+          "recording_operation_id": "browser-qualification-366c7f1b-565b-4e67-93b0-31646af63bec",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/waves-startup/editor-20261023T032842Z-04bf40a6",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "Actual imported-scene reverse Start regression reproduced NullReferenceException, then 3/3 green with idempotent TankPresentation initialization. Armament3, wave integration5 and chrome3 green; fresh browser now observes ready on each load and zero exceptions.",
+          "task_subject_sha256": "a1efeb03ec801fdf50a92246645e982d364e03d45b3661b6b1ea950caab75ad4"
+        },
+        {
+          "argv": [
+            "node",
+            "--test",
+            "scripts/ci/ciWorkflow.test.mjs",
+            "scripts/ci/lastStandEndurance.test.mjs"
+          ],
+          "criterion_subject_sha256": "cd47b4f5c7963f6f83a491b75bc81566ab96f7d41a1b6fc93707fee052efc922",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T03:43:56Z",
+          "recording_operation_id": "browser-qualification-86d28139-91c4-42cd-adb3-c08e6a7c6e30",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/waves-planning/endurance-review-ci-tests.log",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "194/194 pure CI and endurance-accounting guards passed after independent review. Full ten-hour observation, native Windows/media journey and hosted CI remain pending.",
+          "task_subject_sha256": "a1efeb03ec801fdf50a92246645e982d364e03d45b3661b6b1ea950caab75ad4"
+        }
+      ],
+      "T-RULES": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_catalogs.py"
+          ],
+          "criterion_subject_sha256": "dcaaaa601106428d89ed372a75ca30fd8f0955df958725a6bec5172f93e2bc4b",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T01:21:58Z",
+          "recording_operation_id": "waves-exec-rules-check-20261022",
+          "scoped_inputs_sha256": "8043440272b5402080ffd2fb099432af208bbee5d757cc6ae4a04c2f2d6f0579",
+          "source": "waves_engine agent report and production tests in Tools/last_stand_waves",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "Agent reports four catalog checks passed after RED, covering18tierfixture/validation/rewards/longrangegeneration.",
+          "task_subject_sha256": "329bcbb451d650cded35f8cf42b26339cf21988352277f02bbb8d5dab25a52de"
+        }
+      ],
+      "T-SAVE": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_checkpoint_store.py"
+          ],
+          "command_index": 0,
+          "criterion_subject_sha256": "06e9932e7f40fa83961e73a6cc0faa24c0ab94791eaee94c1c2890123c02e82e",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "output_excerpt": "Ran 9 tests in 3.099s; OK",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T01:43:34Z",
+          "recording_operation_id": "waves-exec-save-nine-green-20261022",
+          "scoped_inputs_sha256": "8301249bbc829b36814128995e1774ab4712c0892f18f3caf10092df2544f4f4",
+          "source": "exec_command CheckpointStoreChecks working-tree run",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "Nine production C# checks passed, including5001sequential durable boundaries and v1/v2/v3 migration. Browser integration remains pending.",
+          "task_subject_sha256": "cc2266ace175eee04146c5b50a66a5d0293f718d5e9e63cef934891d4e9c5dc0"
+        },
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_save_review.py"
+          ],
+          "criterion_subject_sha256": "06e9932e7f40fa83961e73a6cc0faa24c0ab94791eaee94c1c2890123c02e82e",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T02:43:01Z",
+          "recording_operation_id": "waves-checks-review-20261023-v2-0",
+          "scoped_inputs_sha256": "a976c5410146d82c0c2c0dd03e47075a91a4c0de3d3979099ff6cdab11b6d7ff",
+          "source": "campaign-unity/Tools/last_stand_waves/test_save_review.py",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "5 green after4 reproduced overflow failures; validated paid-level count rebases volatile quote epoch. Independent64-case fault review also passed.",
+          "task_subject_sha256": "cc2266ace175eee04146c5b50a66a5d0293f718d5e9e63cef934891d4e9c5dc0"
+        },
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_checkpoint_store.py"
+          ],
+          "criterion_subject_sha256": "06e9932e7f40fa83961e73a6cc0faa24c0ab94791eaee94c1c2890123c02e82e",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T02:43:02Z",
+          "recording_operation_id": "waves-checks-review-20261023-v2-1",
+          "scoped_inputs_sha256": "a976c5410146d82c0c2c0dd03e47075a91a4c0de3d3979099ff6cdab11b6d7ff",
+          "source": "campaign-unity/Tools/last_stand_waves/test_checkpoint_store.py",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "9 green after counter fix, including5001 sequential atomic waves and exact combat-state restore.",
+          "task_subject_sha256": "cc2266ace175eee04146c5b50a66a5d0293f718d5e9e63cef934891d4e9c5dc0"
+        }
+      ],
+      "T-TUNE": [
+        {
+          "argv": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_balance.py"
+          ],
+          "criterion_subject_sha256": "988ddcc0ec55830c37cfe6dc2d4281a311ae69a4a04857bcfc2ecab96b950c6a",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-23T02:43:04Z",
+          "recording_operation_id": "waves-checks-review-20261023-v2-5",
+          "scoped_inputs_sha256": "e702d69e8979922a3d82cad1fdfbfa2f108f86f8fcb4e90fdc17c3c80c1a8cb0",
+          "source": "campaign-unity/Tools/last_stand_waves/test_balance.py",
+          "source_normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+          "summary": "4 checks green and69 numerical measurements. Synthetic Tier10 wave5000 future5x:10.28–10.53h. Actual10–12h endurance still pending.",
+          "task_subject_sha256": "c5a70c209037054674f208e0edbec28d3a9ff7db1b0d29bd4413c1ae848dafcb"
+        }
+      ]
+    },
+    "tasks": {
+      "T-ARMAMENT": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-BASELINE": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-CHROME": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-COMBAT": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-ECONOMY": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-HUD": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-LIFECYCLE": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-QUALIFY": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "IN_PROGRESS"
+      },
+      "T-RULES": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-SAVE": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      },
+      "T-TUNE": {
+        "evidence_refs": [],
+        "reason": "Implementation reported complete; verification and review are not assessed by this progress update.",
+        "state": "REVIEW"
+      }
+    }
+  },
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "dc9b0ffc341d1c18168cd86bd9d8f64e1e0e6a754b53496759053d2b33b58082",
+    "normative_sha256": "19b7747a8c75a218ac1f0bdbdfd6945e3d215bb597fd6efc3b38fbe21b0c0872",
+    "symbol_count": 32
+  },
+  "kind": "plan",
+  "normative": {
+    "baseline": {
+      "commit": "dbc846047bb01b61215ecb30d93225a81b1eac8a",
+      "observed_date": "2026-10-22",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "checkpoints": [
+      {
+        "depends_on": [],
+        "exit": "Rules and snapshot interfaces are explicit; the recurring audio failure has a reproduced cause and bounded fix. Long-run reward and upgrade curves are explicit and bounded.",
+        "id": "CP-FOUNDATION",
+        "tasks": [
+          "T-BASELINE",
+          "T-RULES",
+          "T-ECONOMY"
+        ],
+        "title": "Rules and baseline diagnosis"
+      },
+      {
+        "depends_on": [
+          "CP-FOUNDATION"
+        ],
+        "exit": "Finite waves and atomic progression resume correctly under faults and normal navigation.",
+        "id": "CP-LOOP",
+        "tasks": [
+          "T-COMBAT",
+          "T-SAVE",
+          "T-LIFECYCLE"
+        ],
+        "title": "Durable playable wave loop"
+      },
+      {
+        "depends_on": [
+          "CP-LOOP"
+        ],
+        "exit": "Selected content is playable; rewards, Resume and shared chrome are clear and usable.",
+        "id": "CP-EXPERIENCE",
+        "tasks": [
+          "T-ARMAMENT",
+          "T-HUD",
+          "T-CHROME"
+        ],
+        "title": "Progression payoff and coherent interface"
+      },
+      {
+        "depends_on": [
+          "CP-EXPERIENCE"
+        ],
+        "exit": "Measured progression, real rendered journeys and source-bound delivery evidence are ready for review.",
+        "id": "CP-QUALIFY",
+        "tasks": [
+          "T-TUNE",
+          "T-QUALIFY"
+        ],
+        "title": "Calibrated integrated candidate"
+      }
+    ],
+    "criterion_dispositions": [],
+    "prerequisites": [
+      {
+        "id": "PRE-OWNER",
+        "kind": "decision",
+        "requirement": "Owner approval to implement this revised sprint, as stated in the current conversation. Merge and publication require separate authority.",
+        "source_refs": [
+          "SRC-SPRINT-APPROVAL"
+        ],
+        "task_refs": [
+          "T-BASELINE",
+          "T-RULES",
+          "T-COMBAT",
+          "T-SAVE",
+          "T-LIFECYCLE",
+          "T-ARMAMENT",
+          "T-HUD",
+          "T-CHROME",
+          "T-TUNE",
+          "T-QUALIFY",
+          "T-ECONOMY"
+        ],
+        "title": "Owner approves this concrete sprint"
+      },
+      {
+        "id": "PRE-ARMAMENT",
+        "kind": "decision",
+        "requirement": "Include the owner-approved auxiliary Scattergun with complete playable and persistence behavior.",
+        "source_refs": [
+          "SRC-SPRINT-APPROVAL"
+        ],
+        "task_refs": [
+          "T-ARMAMENT",
+          "T-TUNE",
+          "T-QUALIFY"
+        ],
+        "title": "Resolve armament scope"
+      }
+    ],
+    "retired_symbols": [],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "All tasks are pending. This plan does not execute, commit, merge or publish. The selected new armament is conditional; the rest of planning is complete independently.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-PLAN-REVIEW",
+        "title": "Review boundary"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "First establish the wave/reward/checkpoint contract and diagnose the current audio regression. The shared chrome task can proceed independently once implementation is approved. Combat -\u003e atomic persistence -\u003e resume lifecycle -\u003e wave HUD form the critical gameplay path. Armament content follows combat/persistence and the owner choice; calibration and integrated qualification follow the complete experience.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Checkpoint groups describe useful demonstrations, not blanket scheduling locks: only task dependencies control independent work. Ship checkpoint schema and its readers/migration atomically. If the audio fix is delivered separately, retain its evidence and requalify only what later wave changes affect.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-ORDER",
+        "title": "Execution and dependencies"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Proposed last_stand_waves Python tests will compile and exercise production C# owners through the repository's existing Unity/Mono approach. Proposed files are not claimed to exist or pass. Existing command entries are read from repository scripts; focused tests precede the full hosted matrix. Real scene/browser checks must validate rendering, focus, controls and sound beyond model-only fixtures.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Acceptance demo: deploy -\u003e clear milestone -\u003e earn and equip selected armament on a later run -\u003e buy run upgrade -\u003e close mid-wave -\u003e restore exact previous checkpoint -\u003e reach tier target -\u003e browse next environment -\u003e lose or abandon -\u003e confirm earned progress persists. Repeat save faults and UI paths with guidance disabled. Native host/media acceptance stays explicit.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-LONG-RUNS"
+            ],
+            "text": "Long-run qualification covers wave 300 unlock without promotion, viable lower-tier farming through 2000-plus waves, late checkpoint restore, bounded memory/numeric state and per-track economy depth. Fast model checks, real rendered segments and extended runtime observations make distinct claims.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-MIDGAME-DURATION",
+              "SRC-MAX-SPEED"
+            ],
+            "text": "The duration question is answered by the owner midgame reference: roughly Tier 10/wave 5000 over 10-12 hours at maxed 5x speed. Early Tier 1 duration remains measured tuning. Plan one dedicated elapsed-time endurance observation after fast tests; keep its evidence distinct from accelerated simulation, platform/media acceptance and deployed proof. Tier 10 is a scale reference, not added sprint content.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-PLAN-CHECKS",
+        "title": "Verification approach"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Keep the current shared checkout, unrelated dirty native artifacts and running localhost intact. Start implementation from the reviewed merged baseline using a new codex/ branch only after checking local/remote state; do not clean or stash unrelated work. No new worktree is required by this plan. Existing source tree matches merged main at planning time.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-PLAN-PRESERVE",
+        "title": "Worktree and release boundary"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-PLAN",
+        "locator": "Current conversation: Plan the next sprint",
+        "note": "Planning only. Earlier requests require careful approval before execution; no new merge or publication authority is inferred.",
+        "title": "Owner requests next sprint plan",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-OWNER",
+        "locator": "Current conversation: waves, defeat the wave enemies, completed-wave resume, menu chrome and panel corners",
+        "note": "Clear finite enemy groups. Resume hp/upgrades/resources/wave from the latest completed wave, losing at most unfinished-wave progress. Correct shared chrome and corners.",
+        "title": "Settled wave, save and visual direction",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-ROADMAP",
+        "locator": "campaign-unity/docs/LAST-STAND-ROADMAP.md, Owner direction update October 22",
+        "note": "Last Stand is the sole campaign; runs continue beyond tier advancement targets; milestone and repeatable rewards are distinct.",
+        "title": "Maintained Last Stand direction",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-PREVIOUS",
+        "locator": "ST-LS-UPGRADE-PAYOFF-SPEC: DEC-WAVE-CLEAR, DEC-WAVE-CHECKPOINT, SEC-WAVE-FOLLOWON",
+        "note": "Read through the installed 0.20.7 engine at revision 13; exact tuning and additional armament content remain proposals.",
+        "title": "Native recorded decisions",
+        "type": "decision_record",
+        "url": null
+      },
+      {
+        "id": "SRC-CODE",
+        "locator": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs; LastStandProgression.cs; LastStandTierCatalog.cs; LastStandUpgradeCatalog.cs; LastStandSelection.cs",
+        "note": "Endless timed spawning, a 3600-tick playable horizon, version 3 permanent progression, two tier-specific best arrays, two fitting variants and six upgrade tracks. No durable active-run checkpoint.",
+        "title": "Current simulation and progression owners",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-UI",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs; LastStandSettingsHud.cs; LastStandLoopController.cs; LastStandFittingCallout.cs",
+        "note": "Preserve compact controls, separate floating Menu, tier environment preview and attached fitting callouts. Reuse semantic input/focus ownership; fix shared backing geometry.",
+        "title": "Current controls and panel composition",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CI",
+        "locator": "CI run 39860057618, browser last-stand-3 job 120108361587",
+        "note": "22 jobs passed. Foreground Return audio assertion failed at lastStandJourney.mjs:1580; aggregate consequently failed. CodeQL passed; Pages run 39862581846 skipped. Recurrence needs diagnosis; it is not proven harmless.",
+        "title": "Observed post-merge delivery failure",
+        "type": "test_reference",
+        "url": "https://github.com/SUaDtL/singedTerra/actions/runs/39860057618"
+      },
+      {
+        "id": "SRC-LONG-RUNS",
+        "locator": "Current conversation: much more waves; approximately 300 for an unlock and approximately 2000 before moving farming tiers",
+        "note": "Owner uses The Tower as a scale comparison. This records desired Last Stand pacing, not verified factual unlock rules for another game. Hundreds of waves unlock an option; long lower-tier runs remain useful into thousands. Exact thresholds and duration remain proposed tuning.",
+        "title": "Owner corrects progression to hundreds and thousands of waves",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-MIDGAME-DURATION",
+        "locator": "Current conversation: tier 10 to wave 5000 takes 10-12 hours in midgame; early Tier 1 duration not recalled",
+        "note": "Owner-reported reference for long-run scale and pacing, not externally verified rules of another game. The exact upgraded speed is unspecified. Do not apply this duration to early Tier 1 wave 2000 or claim this sprint ships Tier 10.",
+        "title": "Owner supplies midgame farming duration reference",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-MAX-SPEED",
+        "locator": "Current conversation: with maxed speed at 5x",
+        "note": "Clarifies the preceding midgame reference: roughly Tier 10 to wave 5000 in 10-12 real hours at maxed 5x speed. Early Tier 1 duration remains unprovided. This is a pacing clarification, not sprint implementation approval or authorization to add research.",
+        "title": "Owner clarifies the farming benchmark uses maxed 5x speed",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-SPRINT-APPROVAL",
+        "locator": "Current conversation: yes, followed by yes after explicit approval-versus-pacing clarification",
+        "note": "Approval to implement the revised sprint including Scattergun. Merge and publication remain separate. Ordinary recorded user statement, not an authenticated receipt.",
+        "title": "Owner approves the revised sprint including Scattergun",
+        "type": "user_request",
+        "url": null
+      }
+    ],
+    "spec_ref": {
+      "artifact_id": "ST-LS-WAVES-SPEC",
+      "binding_mode": "draft_preview",
+      "normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8"
+    },
+    "summary": "Approved implementation sprint: scalable finite waves and economy, atomic resumable runs, lower-tier farming, Scattergun, shared menu chrome and source-bound qualification. Merge and publication remain separate.",
+    "tasks": [
+      {
+        "checkpoint": "CP-FOUNDATION",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-BASELINE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Focused failure reproduces and passes after the bounded fix; genuine stale audio still fails."
+        ],
+        "execution_scope": "CP-FOUNDATION",
+        "id": "T-BASELINE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs"
+          },
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandJourney.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "scripts/ci/lastStandQualification.test.mjs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Retain post-merge shard-3 artifact and compare cue emission, callback admission and state logging; establish whether the defect is product behavior or observation timing.",
+          "Add a deterministic failing regression. Repair the proven owner; emit callback IDs/admission timestamps only if needed for sound attribution.",
+          "Keep fresh-cue age and step bounds plus stale/backlog negative controls. Do not rerun away the defect."
+        ],
+        "title": "Diagnose and repair the recurring foreground audio check",
+        "verification": [
+          {
+            "argv": [
+              "node",
+              "--test",
+              "scripts/ci/lastStandQualification.test.mjs"
+            ],
+            "assertion": "Callback/cue causality and existing stale-cue regressions pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "focus-only session refresh does not replace the actual advancing callback clock",
+              "callback reporting tail preserves admission, step, provenance and exact cue bounds",
+              "focus refresh retains the short callback budget, exact model cues and clock identity"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-FOUNDATION",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-WAVES",
+          "ST-LS-WAVES-SPEC#CR-TIERS",
+          "ST-LS-WAVES-SPEC#CR-REWARDS"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Catalogs express both tiers and real future expansion without tier-specific save members; invalid definitions fail."
+        ],
+        "execution_scope": "CP-FOUNDATION",
+        "id": "T-RULES",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_waves"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Translate the owner scale correction into tier unlock, milestone, bounded wave-generator and reward definitions: provisional Tier 1 wave 300 unlock and continuing 2000-plus-wave farming; no 10/20-wave goals or fixed five-wave Salvage rule.",
+          "Define wave start/clear/intermission state, reward keys and snapshot contract before mutating gameplay persistence.",
+          "Add 18-tier/multi-fitting synthetic catalog checks without shipping 18 empty tiers."
+        ],
+        "title": "Define scalable wave, tier and reward catalogs",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_catalogs.py"
+            ],
+            "assertion": "Catalog validity, finite rosters, reward keys and scalable selectors.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_finite_rosters_and_stable_reward_ids",
+              "test_eighteen_tiers_use_bounded_selection_and_keyed_records",
+              "test_invalid_catalogs_are_rejected",
+              "test_generator_scales_beyond_two_thousand_waves"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-LOOP",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-WAVES",
+          "ST-LS-WAVES-SPEC#CR-TIERS"
+        ],
+        "depends_on": [
+          "T-RULES"
+        ],
+        "done_when": [
+          "No empty-spawn-gap clear or overlapping waves; fixed-step outcomes match across speed/background scheduling; long-wave bounds hold."
+        ],
+        "execution_scope": "CP-LOOP",
+        "id": "T-COMBAT",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Advance only when all scheduled enemies are admitted and defeated; stop at a save boundary before intermission/next wave.",
+          "Remove the normal playable time-limit ending while retaining bounded diagnostic and resource handling.",
+          "Provide deterministic capture/restore of meaningful model timers, counters, fitting/stat projections and generator state.",
+          "Use compact authored bands/generators with bounded per-wave cohorts and active-enemy counts; test 300/1000/2000/5000-plus wave states, long tick counters and resume parity without storing every past enemy."
+        ],
+        "title": "Implement finite cohorts and continuing wave combat",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_wave_model.py"
+            ],
+            "assertion": "Cohort clear, last-enemy edge, deterministic restore, pause/speed and high-wave bounds.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_unspawned_or_live_enemy_prevents_clear",
+              "test_pause_and_speed_preserve_wave_outcomes",
+              "test_long_run_has_bounded_state",
+              "test_simultaneous_last_kill_and_defeat",
+              "test_two_thousand_wave_checkpoint_and_numeric_bounds",
+              "test_five_thousand_wave_restore_and_bounded_state"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-LOOP",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-REWARDS",
+          "ST-LS-WAVES-SPEC#CR-CHECKPOINT",
+          "ST-LS-WAVES-SPEC#CR-STORAGE"
+        ],
+        "depends_on": [
+          "T-RULES",
+          "T-COMBAT",
+          "T-ECONOMY"
+        ],
+        "done_when": [
+          "A restored checkpoint exactly matches uninterrupted continuation; rewards appear once; failure preserves last complete state."
+        ],
+        "execution_scope": "CP-LOOP",
+        "id": "T-SAVE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLegacySave.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandSaveJson.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_waves/test_checkpoint_store.py"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_waves/CheckpointStoreChecks.cs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Create the new versioned progression/checkpoint envelope and transaction reconciliation, preserving raw legacy bytes until success.",
+          "Commit initial and clear checkpoints with first-clear ledger and repeatable high-water marks; freeze at any unconfirmed boundary.",
+          "Restore full run state and roll back mid-wave purchase/spend together. Preserve original wallet, six levels, tiers, preferences and pending Claim.",
+          "Fault-test write/read uncertainty, preimage conflicts, future versions, malformed IDs and overflow.",
+          "Migrate existing upgrade investment to extended per-track bounds without refund/reinterpretation or loss; restore snapshots beyond wave 2000 and validate large counters."
+        ],
+        "title": "Implement atomic rewards, checkpoints and legacy migration",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_checkpoint_store.py"
+            ],
+            "assertion": "Production C# atomic store and boundary restore, with migration, write/read faults, conflicts, milestones, terminal finalization and late-run size/parity. Consolidates the originally separate parity runner without duplicating checks.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_starting_checkpoint_survives_reload",
+              "test_legacy_migration_preserves_pending_claim_once",
+              "test_checkpoint_rewards_commit_once_under_write_faults",
+              "test_midwave_purchase_and_cost_roll_back_together",
+              "test_first_clear_rewards_and_unlocks_across_runs",
+              "test_future_or_conflicting_save_preserves_original_bytes",
+              "test_mutual_death_banks_and_finalizes_atomically",
+              "test_permanent_purchases_preserve_active_deployment_stats",
+              "test_five_thousand_wave_save_restore_and_bounded_size"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-LOOP",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-CHECKPOINT",
+          "ST-LS-WAVES-SPEC#CR-LIFECYCLE",
+          "ST-LS-WAVES-SPEC#CR-STORAGE"
+        ],
+        "depends_on": [
+          "T-SAVE"
+        ],
+        "done_when": [
+          "Cancel, failed saves, reload after terminal, parent navigation and new-run selection all follow the durability contract."
+        ],
+        "execution_scope": "CP-LOOP",
+        "id": "T-LIFECYCLE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/make_web_entry.py"
+          },
+          {
+            "action": "modify",
+            "path": "client/src/ui/commandCenter/LastStandCommandView.ts"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Offer Resume with checkpoint tier/wave and explicit paused continuation; keep one resumable run.",
+          "Preserve run on normal Return/account navigation; use explicit confirmation for replacement or abandon.",
+          "Finalize defeat/abandon atomically so reload cannot resurrect a run, and update obsolete loss/Claim/help wording."
+        ],
+        "title": "Connect Resume, terminal saves and ordinary navigation",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_resume_lifecycle.py"
+            ],
+            "assertion": "Real controller lifecycle covers resume, return, cancel, defeat, abandon and blocked storage.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_normal_return_preserves_resumable_run",
+              "test_cancel_new_run_preserves_checkpoint",
+              "test_terminal_commit_prevents_zombie_resume",
+              "test_resume_waits_for_explicit_input"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-EXPERIENCE",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-ARMAMENT",
+          "ST-LS-WAVES-SPEC#CR-REWARDS",
+          "ST-LS-WAVES-SPEC#CR-TIERS"
+        ],
+        "depends_on": [
+          "T-RULES",
+          "T-COMBAT",
+          "T-SAVE"
+        ],
+        "done_when": [
+          "A locked fitting cannot equip; earning it unlocks a complete usable option that persists and restores correctly."
+        ],
+        "execution_scope": "CP-EXPERIENCE",
+        "id": "T-ARMAMENT",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterView.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandFittingCallout.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Only execute after the owner chooses the new-armament option; recommended Scattergun is a concrete proposal, not inherited approval.",
+          "Generalize fitting identity/capabilities, then implement short-range group damage and its own damage track without reinterpreting old upgrade IDs.",
+          "Create a readable tank module and audio/visual feedback, attach its callout and unlock through the actual first-clear transaction."
+        ],
+        "title": "Build the selected new armament milestone",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_armament.py"
+            ],
+            "assertion": "Unlock/equip/save/combat/upgrade applicability and original-fitting parity.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_locked_armament_cannot_equip",
+              "test_unlock_survives_reload_without_auto_equip",
+              "test_scattergun_crowd_behavior_and_upgrade_applicability",
+              "test_existing_fittings_and_invested_tracks_preserved"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-EXPERIENCE",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-HUD",
+          "ST-LS-WAVES-SPEC#CR-TIERS",
+          "ST-LS-WAVES-SPEC#CR-LIFECYCLE"
+        ],
+        "depends_on": [
+          "T-LIFECYCLE"
+        ],
+        "done_when": [
+          "All maintained profiles have readable labels, reachable 44px targets and correct focus; no recreated packed toolbar."
+        ],
+        "execution_scope": "CP-EXPERIENCE",
+        "id": "T-HUD",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandGuidance.cs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Add compact wave/cohort/next-reward information and a scrollable milestone detail pane; keep menu, speed and upgrades in their established regions.",
+          "Promote Resume when applicable and distinguish one-time versus repeatable rewards; preserve at most one locked-tier preview.",
+          "Update relevant Help and settings disclosures and honor guidance opt-outs."
+        ],
+        "title": "Present wave progress, milestones and resume clearly",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_wave_hud.py"
+            ],
+            "assertion": "HUD/controller state mapping, unlock labels, scalable selection and guidance rules.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_wave_remaining_and_milestone_labels",
+              "test_resume_hierarchy_and_guidance_opt_out",
+              "test_tier_preview_only_shows_next_authored_locked_tier"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-EXPERIENCE",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-CHROME",
+          "ST-LS-WAVES-SPEC#CR-HUD"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Rendered corners have no opaque rectangular patches, and all affected surfaces share working chrome."
+        ],
+        "execution_scope": "CP-EXPERIENCE",
+        "id": "T-CHROME",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandLoopChecks.cs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Locate shared frame/backing owners and replace inconsistent rectangular fill with matching clipped geometry; retain input/focus owners.",
+          "Apply brass/graphite treatment across Menu, Settings, Help, About and confirmation consumers.",
+          "Inspect every button state over both environments at desktop, portrait and short landscape; fix shared source, not screenshots or per-panel coverups."
+        ],
+        "title": "Unify menu chrome and fix the shared clipped outline",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_shared_chrome.py"
+            ],
+            "assertion": "Shared outline geometry and imported-scene interaction guards; manual rendered inspection remains required.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_backing_and_frame_share_clipped_outline",
+              "test_all_menu_consumers_use_shared_chrome",
+              "test_focus_and_hit_targets_preserved"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-QUALIFY",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-WAVES",
+          "ST-LS-WAVES-SPEC#CR-TIERS",
+          "ST-LS-WAVES-SPEC#CR-REWARDS",
+          "ST-LS-WAVES-SPEC#CR-ARMAMENT",
+          "ST-LS-WAVES-SPEC#CR-QUALIFY"
+        ],
+        "depends_on": [
+          "T-HUD",
+          "T-ARMAMENT",
+          "T-ECONOMY"
+        ],
+        "done_when": [
+          "A source-bound report demonstrates lower-tier farming viability, growth through 5000-plus waves and explicit early/midgame duration assumptions; synthetic high-tier checks are not shipped content."
+        ],
+        "execution_scope": "CP-QUALIFY",
+        "id": "T-TUNE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_waves"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Tools/last_stand_tiers/run_first_session_measurements.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Measure fresh, early-unlock, established and mature builds across both tiers, including target wave 300 and 1000/2000/5000-plus farming; report income per active minute, affordability and sustainable growth.",
+          "Compare identical builds for short higher-tier pushes versus deep lower-tier farming. Unlocking Tier 2 must not itself require switching or make Tier 1 automatically obsolete.",
+          "Use the owner midgame reference of about 5000 waves in 10-12 real hours at maxed 5x speed. Budget the overall 7.2-8.64 real seconds per wave; ideal linear scaling gives 36-43.2 simulation seconds per wave and a 50-60-hour equivalent at 1x for that same workload. Measure transitions/save overhead and early Tier 1 pacing independently. Do not turn these averages into timer-based wave completion or grant research unlocks in this sprint.",
+          "Use fast deterministic simulation for long-range balance plus representative rendered browser segments; retain actual checkpoints and restore scenarios at late waves."
+        ],
+        "title": "Calibrate the complete wave progression loop",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_wave_calibration.py"
+            ],
+            "assertion": "Deterministic measured progression ranges and fitting comparisons, without claiming unrun human fun acceptance.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_fresh_fittings_can_reach_first_resource_milestone",
+              "test_upgrade_affordability_and_tier_progression_report",
+              "test_no_loadout_bypasses_checkpoint_rewards",
+              "test_same_build_push_versus_farm_report",
+              "test_two_thousand_wave_income_and_upgrade_depth",
+              "test_full_run_duration_includes_intermission",
+              "test_five_thousand_wave_pacing_budget_and_economy"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-QUALIFY",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-CHECKPOINT",
+          "ST-LS-WAVES-SPEC#CR-STORAGE",
+          "ST-LS-WAVES-SPEC#CR-LIFECYCLE",
+          "ST-LS-WAVES-SPEC#CR-HUD",
+          "ST-LS-WAVES-SPEC#CR-ARMAMENT",
+          "ST-LS-WAVES-SPEC#CR-CHROME",
+          "ST-LS-WAVES-SPEC#CR-BASELINE",
+          "ST-LS-WAVES-SPEC#CR-QUALIFY"
+        ],
+        "depends_on": [
+          "T-BASELINE",
+          "T-TUNE",
+          "T-CHROME"
+        ],
+        "done_when": [
+          "All criteria have actual evidence or explicit pending status; no stale export, weakened aggregate or hidden failing check."
+        ],
+        "execution_scope": "CP-QUALIFY",
+        "id": "T-QUALIFY",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandJourney.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandTierJourney.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "scripts/ci/lastStandMatrixResult.mjs"
+          },
+          {
+            "action": "inspect",
+            "path": "campaign-unity/Tools/build_web.py"
+          },
+          {
+            "action": "modify",
+            "path": "client/public/last-stand"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs/LAST-STAND-ROADMAP.md"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Extend maintained real-browser journeys and aggregate together for wave completion, checkpoints, migration, unlocks, settings and fault recovery; retain old-game routing/compatibility tests.",
+          "Build/package a new Unity Web export and verify source/payload identity; inspect actual chrome and combat feedback on required viewports.",
+          "Run focused local checks, full exact-head hosted CI and CodeQL; independently review persistence/qualification changes. Keep source tests separate from real Windows/media acceptance.",
+          "Present the integrated candidate and pending checks for owner acceptance. Merge and publication require separate authority; verify actual post-merge/deployed identity if later authorized.",
+          "Partition qualification: fast deterministic 300/1000/2000/5000-plus progression and restore tests; representative real-browser boundary journeys; one dedicated 10-12-hour endurance observation on a stable candidate outside the per-viewport PR matrix. Measure memory growth, callback debt, audio continuity and checkpoint latency. Report actual elapsed observation and unfinished endurance separately; no recurring watcher is created by this plan."
+        ],
+        "title": "Qualify the full rendered sprint candidate",
+        "verification": [
+          {
+            "argv": [
+              "npm",
+              "run",
+              "typecheck"
+            ],
+            "assertion": "Strict client/shared types pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "node",
+              "--test",
+              "scripts/ci/browserMatrix.test.mjs",
+              "scripts/ci/lastStandQualification.test.mjs"
+            ],
+            "assertion": "Maintained browser report producer/consumer and negative controls agree.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "matrix qualification requires all actual branches, profiles and exact source/runtime bindings",
+              "entry aggregate binds the maintained confirmed Return and reload action sequence"
+            ]
+          },
+          {
+            "argv": [
+              "node",
+              "scripts/assets/verify-last-stand-source.mjs"
+            ],
+            "assertion": "The delivered Unity Web export binds the intended source.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-FOUNDATION",
+        "criterion_refs": [
+          "ST-LS-WAVES-SPEC#CR-REWARDS",
+          "ST-LS-WAVES-SPEC#CR-TIERS"
+        ],
+        "depends_on": [
+          "T-RULES"
+        ],
+        "done_when": [
+          "Upgrade and reward curves support long progression without immediate saturation, deadlock, invalid stats or erasing existing investment."
+        ],
+        "execution_scope": "CP-FOUNDATION",
+        "id": "T-ECONOMY",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs"
+          }
+        ],
+        "rollback": "Preserve existing saves and unrelated edits. Before release revert only this task's scoped source changes; after writing the new save version require a forward-compatible repair, never load it with a destructive old parser.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "steps": [
+          "Design versioned per-track cost/effect/cap curves with early investments preserved, useful attack/health growth and safe bounded utility effects.",
+          "Set repeatable earnings and first-clear amounts from affordability and farm-versus-push measurements. Remove assumptions that every track shares the prototype caps 3/8.",
+          "Compare current currencies and original fittings at early unlock and mature farming builds; keep full research, new currencies and higher-speed grants outside this scope."
+        ],
+        "title": "Extend upgrade and reward depth for long farming runs",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_long_run_economy.py"
+            ],
+            "assertion": "Long-run cost/effect bounds, migration value preservation and farm-versus-push reward behavior.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_existing_investments_preserved",
+              "test_long_run_cost_and_effect_bounds",
+              "test_lower_tier_farming_remains_viable_after_unlock"
+            ]
+          }
+        ]
+      }
+    ],
+    "title": "Last Stand wave campaign: implementation sprint plan",
+    "verification_inputs": {
+      "exclude_directories": [],
+      "roots": [
+        "campaign-unity/Unity/Assets",
+        "campaign-unity/Tools",
+        "e2e",
+        "scripts/ci",
+        "client/src/ui/commandCenter",
+        "client/public/last-stand",
+        "campaign-unity/docs"
+      ]
+    }
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../specs/last-stand-waves-and-resume.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 51,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-waves-and-resume"
+}
+</script>
+</body></html>

@@ -380,24 +380,25 @@ function settlingFixture(){
     encounters:[encounter,terminal],layouts:[layout],oracle:{1:model,2:{...model,tick:2,hp:0,status:'Defeated'}}};
 }
 
-test('portable settling observes the real transient transition without a late pointer command',async()=>{
-  const begin=source.indexOf('    const hiddenStart=awayWindows[0][1]'),end=source.indexOf('    check(result.pendingRunId',begin);
-  assert.ok(begin>0 && end>begin);
-  const x=settlingFixture(),states=[x.states[0]],report={lifecycle:[]};
-  const run=new Function('player','awayWindows','mark','states','armGameClick','check','until','load','focused',
-    'phaseMatrix','gameClick','page','observation','report','layouts','encounters','reference','validateSettlingTransition',
-    'return(async()=>{'+source.slice(begin,end)+'return result;})()');
-  const until=async(items,_start,predicate)=>{
-    if(items.length===1)items.push(...x.states.slice(1));
-    return items.filter(predicate).at(-1);
-  };
-  const result=await run(false,[['hidden',10,20]],async()=>100,states,
-    async()=>async()=>{throw new Error('Portable pointer arrived after transient settling');},
-    (ok,name)=>assert.ok(ok,name),until,16,()=>{},()=>{throw new Error('Portable transient phase cannot promise paused matrix');},
-    ()=>{}, {waitForTimeout:async()=>{}},async()=>x.before,report,x.layouts,x.encounters,()=>x.oracle,
-    journey.validateSettlingTransition);
-  assert.equal(result.phase,'result');
-  assert.equal(report.lifecycle.find(item=>item.kind==='settling-transition').scope,'transient-functional-telemetry');
+test('portable wave settling observes the real transient transition without a late pointer command',async()=>{
+  const begin=source.indexOf('    const terminalBefore=await observation()'),end=source.indexOf("    await phaseMatrix('result');",begin);
+  assert.ok(begin>0&&end>begin);
+  const before={tick:10},naturalResult={phase:'result'},saved={version:4},states=[],encounters=[],layouts=[],report={lifecycle:[]};
+  const oracle={100:{tick:100,status:'Defeated'}};
+  const run=new Function('player','observation','states','reference','check','armGameClick','until','load',
+    'phaseMatrix','gameClick','page','SAVE_KEY','validateWaveTerminal','encounters','layouts','report',
+    'return(async()=>{'+source.slice(begin,end)+'return naturalResult;})()');
+  const result=await run(false,async()=>before,states,()=>oracle,(ok,name)=>assert.ok(ok,name),
+    ()=>assert.fail('Portable observer cannot issue a late settling pointer'),async()=>naturalResult,1,
+    ()=>assert.fail('Portable observer cannot promise a paused five-viewport interval'),()=>assert.fail('No late pointer'),
+    {evaluate:async()=>JSON.stringify(saved)},'save',(value)=>{
+      assert.equal(value.before,before);assert.equal(value.result,naturalResult);assert.deepEqual(value.saved,saved);
+      assert.equal(value.states,states);assert.equal(value.encounters,encounters);assert.equal(value.layouts,layouts);assert.equal(value.oracle,oracle);
+      return {before,result:naturalResult,saved};
+    },encounters,layouts,report);
+  assert.equal(result,naturalResult);assert.equal(report.lifecycle.length,1);
+  assert.equal(report.lifecycle[0].kind,'wave-terminal');assert.equal(report.lifecycle[0].mode,'foreground');
+  assert.equal(report.lifecycle[0].interaction,undefined,'Linux cannot claim Windows native settling interaction');
 });
 
 test('transient settling binds actual terminal, pre-staging layout and pending manual result',()=>{
@@ -425,6 +426,18 @@ test('transient settling refuses stale, missing, duplicate, claimable or automat
   }
 });
 
+function withCallbackRecords(x,elapsed,priorPending=0){
+  const previous=x.states.at(-2),next=x.states.at(-1),t=x.cues[0].t-.25;
+  const id={load:x.before.load,timeOrigin:x.before.timeOrigin,scope:x.before.scope};
+  const admission={...id,id:1,run:x.before.run,fromTick:previous.tick,timestamp:t/1000,
+    previousTimestamp:t/1000-elapsed,elapsed,priorPending,speed:1,focused:true,
+    applicationPaused:false,paused:false,failed:false};
+  const steps=next.tick-previous.tick,pending=steps*.05;
+  x.callbackRecords=[{...admission,action:'begin',t,tick:previous.tick,steps:0,pending,age:0},
+    {...admission,action:'end',t:next.t+.1,tick:next.tick,steps,pending:0,age:(next.t+.1-t)/1000}];
+  return x;
+}
+
 function focusAckFixture(){
   // Explicit inert events exercise the actual validator; these are not host evidence.
   const id={load:16,timeOrigin:100000,scope:'healthy'};
@@ -433,7 +446,7 @@ function focusAckFixture(){
     closeHits:0,rangedHits:0,alive:1,status:'Running'};
   const state={...id,sessionRun:1,runId:7,cannonDamage:20,action:'session',phase:'battle',
     paused:false,muted:false,saveState:'ready',hull:120,kills:0};
-  return {kind:'hidden',before:{...id,t:900,run:1,loop:{runId:7,cannonDamage:20}},
+  return withCallbackRecords({kind:'hidden',before:{...id,t:900,run:1,loop:{runId:7,cannonDamage:20}},
     begin:1250,recovered:7200,ms:6000,
     events:[event('visibilitychange',1000,false,true),event('focus',7000,true,true),
       event('visibilitychange',7010,true,false)],
@@ -442,7 +455,7 @@ function focusAckFixture(){
     states:[{...state,t:7030,tick:20},{...state,t:7080,tick:21}],
     cues:[{...id,t:7059,text:'ST_LS_AUDIO event=cannon\n'},
       {...id,t:7059.1,text:'ST_LS_AUDIO event=impact\n'}],
-    oracle:{20:model,21:{...model,tick:21,cannon:1}}};
+    oracle:{20:model,21:{...model,tick:21,cannon:1}}},.05);
 }
 
 test('hidden return admits the current model focus acknowledgement before coherent visibility',()=>{
@@ -461,7 +474,7 @@ function focusRefreshFixture(){
     {...state,t:7004,tick:20},{...state,t:7040,tick:25}];
   x.cues=x.cues.map(c=>({...c,t:c.t-44}));
   for(let tick=21;tick<=25;tick++)x.oracle[tick]={...model,tick,cannon:tick>=23?1:0};
-  return x;
+  return withCallbackRecords(x,.25);
 }
 
 test('focus-only session refresh does not replace the actual advancing callback clock',()=>{
@@ -483,7 +496,7 @@ function reportedCallbackTailFixture(){
   ].map(([tick,kills,cannon,alive])=>[tick,{...model,tick,kills,cannon,alive}]));
   const state={...id,sessionRun:1,runId:1,pendingRunId:0,cannonDamage:20,action:'session',
     phase:'battle',paused:false,muted:false,saveState:'ready',hull:120};
-  return {kind:'hidden',before:{...id,t:112320.30000000002,run:1,loop:{runId:1,cannonDamage:20}},
+  return withCallbackRecords({kind:'hidden',before:{...id,t:112320.30000000002,run:1,loop:{runId:1,cannonDamage:20}},
     begin:113957,recovered:120012,ms:6000,
     events:[event('blur',113938.19999999998,false,false),
       event('visibilitychange',113956.30000000002,false,true),
@@ -495,10 +508,10 @@ function reportedCallbackTailFixture(){
       {...state,t:119975.19999999998,tick:469,kills:7},
       {...state,t:120011.19999999998,tick:479,kills:8}],
     cues:[{...id,t:119978.4,text:'ST_LS_AUDIO event=cannon\n'},
-      {...id,t:119979.19999999998,text:'ST_LS_AUDIO event=destruction\n'}],oracle};
+      {...id,t:119979.19999999998,text:'ST_LS_AUDIO event=destruction\n'}],oracle},.49,.01);
 }
 
-test('recorded shard10 return cues remain eligible before bounded state reporting completes',()=>{
+test('recorded return shape with explicit admission remains eligible before state reporting completes',()=>{
   const x=reportedCallbackTailFixture();
   assert.ok(x.states[3].t-x.states[1].t>500,'Recorded post-callback log crosses the admission boundary');
   assert.ok(x.cues.every(c=>c.t-x.states[1].t<500),'Recorded cue emissions precede the unchanged boundary');
@@ -507,17 +520,83 @@ test('recorded shard10 return cues remain eligible before bounded state reportin
   assert.equal(result.cues.length,0);
 });
 
+function admittedCallbackFixture(){
+  // The retained CI failures have fresh cues followed by delayed render/HUD
+  // observations. These explicit callback records are inert regression input,
+  // not invented telemetry for either historical hosted execution.
+  const x=reportedCallbackTailFixture(),id={load:3,timeOrigin:1792565620753.3,scope:'healthy'};
+  const callback={...id,id:52,run:1,fromTick:469,timestamp:119.977,previousTimestamp:119.497,
+    elapsed:.48,priorPending:.02,speed:1,focused:true,applicationPaused:false,paused:false,failed:false};
+  x.callbackRecords=[{...callback,action:'begin',t:119977,tick:469,steps:0,pending:.5,age:0},
+    {...callback,action:'end',t:120101,tick:479,steps:10,pending:0,age:.124}];
+  x.states[3].t=120100;x.recovered=120110;
+  return x;
+}
+
+test('explicit callback admission accepts fresh cues despite delayed HUD reporting',()=>{
+  const x=admittedCallbackFixture();
+  assert.ok(x.states[3].t-x.cues[0].t>50,'The old state-log tail rejects this correctly admitted callback');
+  const result=journey.validateAwayAudioReturn(x);
+  assert.deepEqual(result.boundary.callbacks.map(c=>[c.from,c.to]),[[469,479]]);
+  assert.equal(result.cues.length,0);
+});
+
+test('callback telemetry stays separate from model state and retains the document emission clock',()=>{
+  const probe=source.match(/const RUNTIME_PROBE = `([\s\S]+?)`;/)?.[1];assert.ok(probe);
+  const output=[],context={performance:{now:()=>123.5,timeOrigin:100000},console:{log:text=>output.push(text)}};
+  runInNewContext(probe,context);
+  const callback=admittedCallbackFixture().callbackRecords[0];
+  context.console.log('ST_ENC_CALLBACK '+JSON.stringify(callback));
+  const observed=JSON.parse(output.find(s=>s.startsWith('ST_TEST_RUNTIME ')).slice('ST_TEST_RUNTIME '.length));
+  const records={states:[],encounters:[],hits:[],layouts:[],cues:[],callbackRecords:[]};
+  journey.retainRuntimeObservation(observed,7,'test-only',records);
+  assert.deepEqual(records.callbackRecords,[{...callback,t:123.5,timeOrigin:100000,load:7,scope:'test-only'}]);
+  assert.ok(['states','encounters','hits','layouts','cues'].every(key=>records[key].length===0));
+  assert.throws(()=>journey.retainRuntimeObservation(observed,7,'test-only',{...records,callbackRecords:undefined}));
+});
+
+test('explicit callback records reject stale admission, retained debt, missing provenance and oversized batches',()=>{
+  const faults=[
+    ['missing records',x=>delete x.callbackRecords],['empty records',x=>x.callbackRecords=[]],
+    ['missing completion',x=>x.callbackRecords.pop()],['duplicate completion',x=>x.callbackRecords.push({...x.callbackRecords[1]})],
+    ['duplicate admission',x=>x.callbackRecords.splice(1,0,{...x.callbackRecords[0]})],
+    ['foreign completion id',x=>x.callbackRecords[1].id++],['foreign completion load',x=>x.callbackRecords[1].load++],
+    ['foreign completion origin',x=>x.callbackRecords[1].timeOrigin++],['foreign completion run',x=>x.callbackRecords[1].run++],
+    ['foreign scope',x=>x.callbackRecords[0].scope='other'],['invalid id',x=>x.callbackRecords.forEach(c=>c.id=0)],
+    ['changed clock',x=>x.callbackRecords[1].timestamp++],['changed tick origin',x=>x.callbackRecords[1].fromTick++],
+    ['stale elapsed',x=>x.callbackRecords.forEach(c=>{c.elapsed=.501;c.previousTimestamp=c.timestamp-c.elapsed;})],
+    ['late emission',x=>x.callbackRecords[0].age=.03],
+    ['retained whole-step debt',x=>x.callbackRecords.forEach(c=>c.priorPending=.05)],
+    ['unspent foreground debt',x=>x.callbackRecords[1].pending=.05],
+    ['invented debt',x=>x.callbackRecords[0].pending=.6],['inconsistent steps',x=>x.callbackRecords[1].steps=9],
+    ['oversized batch',x=>{x.callbackRecords[1].steps=11;x.callbackRecords[1].tick=480;x.states[3].tick=480;
+      x.oracle[480]={...x.oracle[479],tick:480};}],
+    ['nonfinite elapsed',x=>x.callbackRecords.forEach(c=>c.elapsed=NaN)],
+    ['pre-visible callback',x=>x.callbackRecords[0].t=x.events.at(-1).t-1],
+    ['cue before admission',x=>x.callbackRecords[0].t=x.cues[0].t+.1],
+    ['cue after completion',x=>x.callbackRecords[1].t=x.cues[0].t-.1],
+    ['overlapping callback',x=>x.callbackRecords.splice(1,0,{...x.callbackRecords[0],id:53,t:x.cues[1].t+.1})],
+    ['background admission',x=>x.callbackRecords[0].focused=false],
+    ['background completion',x=>x.callbackRecords[1].applicationPaused=true],
+    ['paused callback',x=>x.callbackRecords[0].paused=true],['failed callback',x=>x.callbackRecords[1].failed=true],
+  ];
+  for(const [name,mutate] of faults){
+    const x=admittedCallbackFixture();mutate(x);
+    assert.throws(()=>journey.validateAwayAudioReturn(x),'Invalid '+name+' must fail');
+  }
+});
+
 test('callback reporting tail preserves admission, step, provenance and exact cue bounds',()=>{
   const faults=[
-    ['late cue',x=>{x.cues[0].t=x.states[1].t+500.1;x.cues[1].t=x.cues[0].t+.1;}],
-    ['delayed state',x=>{x.states[3].t=x.cues[0].t+50.1;x.recovered=x.states[3].t+1;}],
+    ['late cue',x=>{x.cues[0].t=x.callbackRecords[0].t+10.1;x.cues[1].t=x.cues[0].t+.1;}],
+    ['state outside callback',x=>{x.states[3].t=x.callbackRecords[1].t+.1;x.recovered=x.states[3].t+1;}],
     ['eleven steps',x=>{x.states[3].tick=480;x.oracle[480]={...x.oracle[479],tick:480};}],
-    ['foreign anchor load',x=>x.states[1].load++],
-    ['foreign anchor origin',x=>x.states[1].timeOrigin++],
-    ['foreign anchor run',x=>x.states[1].runId++],
-    ['inert anchor',x=>x.states[0].tick=x.states[1].tick],
-    ['missing anchor',x=>x.states.splice(1,1)],
-    ['stale anchor',x=>x.states[1].t-=1000],
+    ['foreign callback load',x=>x.callbackRecords[0].load++],
+    ['foreign callback origin',x=>x.callbackRecords[0].timeOrigin++],
+    ['foreign callback run',x=>x.callbackRecords[0].run++],
+    ['inert callback',x=>x.callbackRecords[1].steps=0],
+    ['missing callback',x=>x.callbackRecords.shift()],
+    ['stale admission',x=>x.callbackRecords.forEach(c=>{c.elapsed=.5001;c.previousTimestamp=c.timestamp-c.elapsed;})],
     ['background admission',x=>x.encounters[0].focused=false],
     ['catch-up admission',x=>x.encounters[0].catchingUp=true],
     ['muted callback',x=>x.states[3].muted=true],
@@ -532,9 +611,9 @@ test('callback reporting tail preserves admission, step, provenance and exact cu
 });
 
 test('focus refresh retains the short callback budget, exact model cues and clock identity',()=>{
-  const mutations=[x=>x.states[1].t=6400,x=>x.states[1].tick=19,
-    x=>x.states[1].load++,x=>x.states[1].timeOrigin++,x=>x.states[1].scope='stale',
-    x=>x.states[1].sessionRun++,x=>x.states[1].runId++,x=>x.states.shift(),
+  const mutations=[x=>x.callbackRecords.forEach(c=>c.previousTimestamp-=1),x=>x.callbackRecords[0].tick=19,
+    x=>x.callbackRecords[0].load++,x=>x.callbackRecords[0].timeOrigin++,x=>x.callbackRecords[0].scope='stale',
+    x=>x.callbackRecords[0].run++,x=>x.callbackRecords[1].run++,x=>x.callbackRecords=[],
     x=>x.states[3].tick=30,x=>x.states[3].muted=true,x=>x.states[3].paused=true,
     x=>x.states[3].saveState='blocked',x=>x.states[3].cannonDamage++,
     x=>x.encounters[0].catchingUp=true,
@@ -566,7 +645,7 @@ test('focus acknowledgement anchor preserves identity, latest focus and silent h
 
 async function battleLayoutFixture(player=false,fault,withMute=false){
   const begin=source.indexOf('    const battleLayouts=async()=>{');
-  const end=source.indexOf('    // Two unfinished exits',begin);
+  const end=source.indexOf('    // Ordinary Return and reload preserve the checkpoint',begin);
   const callBegin=source.indexOf("    if(player)check(sound.maximum_rms");
   const callEnd=source.indexOf(withMute?'    const pauseStart=':'    const changeSetting=',callBegin);
   const base={t:100,timeOrigin:10000,load:1,run:1,tick:10,hull:120,kills:0,terminalElapsed:0,
@@ -616,7 +695,7 @@ test('actual Linux mute and Pause preparation reuse the real paused layout inter
     'Original actual Resume/counter/time/model oracle remains mandatory');
 });
 
-test('actual Windows live layout inspection uses the existing unfinished run before no-award reload',async()=>{
+test('actual Windows live layout inspection uses the resumed run before checkpoint-preserving reload',async()=>{
   const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
   assert.ok(begin>0 && end>begin,'Separate actual live layout owner required');
   const call=source.indexOf('await liveBattleLayouts();',end),reload=source.indexOf('load++;await page.reload',call);
@@ -714,9 +793,9 @@ test('central workload budget separates web-server startup and bounds actual own
   const config=readFileSync(new URL('../../playwright.config.ts',import.meta.url),'utf8');
   assert.ok(config.includes('timeout: 180_000'),'Budget agrees with actual webServer startup allowance');
 });
-test('tier wrapper admits the host capture budget before starting its real journey',async()=>{
+test('wave wrapper admits the host capture budget before starting its real journey',async()=>{
   const spec=readFileSync(new URL('../../e2e/last-stand-playable-loop.spec.ts',import.meta.url),'utf8');
-  const begin=spec.indexOf("test('Last Stand tier goals unlock and survive reload'");
+  const begin=spec.indexOf("test('Last Stand earned waves and complete checkpoints survive reload'");
   const end=spec.indexOf("\ntest('Last Stand Campaigns journey",begin);
   assert.ok(begin>=0 && end>begin,'Actual tier wrapper required');
   for(const host of ['linux','win32']) {
@@ -725,7 +804,7 @@ test('tier wrapper admits the host capture budget before starting its real journ
       skip:condition=>assert.equal(condition,false),setTimeout:ms=>calls.push(['test',ms])});
     runInNewContext(spec.slice(begin,end),{test,
       lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget(host),
-      runLastStandTierJourney:async()=>{calls.push(['journey']);}});
+      runLastStandWaveJourney:async()=>{calls.push(['journey']);}});
     await callback({page:{setDefaultTimeout:ms=>calls.push(['action',ms])},baseURL:'http://127.0.0.1:4173/singedTerra/'},
       {project:{name:'desktop-fine'}});
     assert.deepEqual(calls,[['test',journey.lastStandJourneyTimeBudget(host).testMs],
@@ -943,7 +1022,7 @@ test('GitHub merge checkout requires the exact candidate and current base as its
 
 test('actual merge-parent collector refuses a blob before reading parent-like contents',()=>{
   const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
-  const begin=reader.search(/  (?:const|let) linuxParents=/),end=reader.indexOf('  const manifestPath=',begin);
+  const begin=reader.search(/  (?:const|let) linuxParents=/),end=reader.indexOf('  const result=assertCombinedWaveQualification(',begin);
   assert.ok(begin>0 && end>begin);
   const run=new Function('git','linuxCheckout','head','assert',reader.slice(begin,end)+'return linuxParents;');
   const calls=[];
@@ -959,4 +1038,60 @@ test('functional allocation keeps paused-time, manual Claim, purchase, save and 
     const value=fixture();value.linux.checks.find(item=>item.name===name).pass=false;
     assert.throws(()=>assertCombinedQualification(value),/assertion/);
   }
+});
+
+
+test('background wave caller awaits a post-return observation before collecting its checkpoint',async()=>{
+  const begin=source.indexOf('    const afterBackground=await observation('),end=source.indexOf('\n',begin);
+  assert.ok(begin>0&&end>begin,'Execute the maintained background checkpoint observation');
+  const interval={recovered:1000,before:{run:2}},stale={t:999,run:2,tick:200},fresh={t:1010,run:2,tick:201};
+  const run=new Function('observation','reference','validateModelObservation','interval',
+    'return(async()=>{'+source.slice(begin,end)+'return afterBackground;})();');
+  const observed=await run(async options=>options?.minT>=interval.recovered&&options.run===2?fresh:stale,
+    ()=>({201:fresh}),(state,oracle)=>assert.deepEqual(oracle[state.tick],state,'Pre-return cached sample cannot establish a post-return checkpoint'),interval);
+  assert.equal(observed,fresh);
+});
+
+
+function waveReturnTerminalFixture(kind='hidden'){
+  // Counter shape from retained current wave oracle Tier1/repair/30 ticks5078–5080.
+  // Timing is inert test data; this does not establish native/browser acceptance.
+  const x=focusAckFixture(),id={load:x.before.load,timeOrigin:x.before.timeOrigin,scope:x.before.scope};
+  const rule='last-stand-waves-v1',rules=rule+':playable-prototype-v1';
+  const row={tick:5078,hp:6,kills:65,spawned:66,cannon:222,launcher:0,scattergun:0,healed:264,
+    closeHits:1,rangedHits:45,alive:1,wave:11,completedWave:10,status:'Running'};
+  x.oracle={5078:row,5079:{...row,tick:5079},5080:{...row,tick:5080,hp:0,healed:267,rangedHits:46,status:'Defeated'}};
+  x.before={...x.before,...row,rules,loop:{...x.before.loop,cannonDamage:30,profileVersion:rule,activeTier:1},fitting:'repair'};
+  const base={...id,sessionRun:1,runId:7,pendingRunId:0,cannonDamage:30,profileVersion:rule,activeTier:1,fittingId:'repair',
+    action:'session',phase:'battle',paused:false,muted:false,saveState:'ready',hasCheckpoint:true,hull:6,kills:65};
+  x.states=[{...base,t:7020,tick:5078},{...base,t:7030,tick:5079},
+    {...base,t:7080,tick:5080,hull:0,action:'defeat-staged',phase:'settling',runId:0,pendingRunId:0,hasCheckpoint:false}];
+  x.encounters=[{...x.encounters[0],...row,rules},
+    {...id,...x.oracle[5080],rules,t:7059.05,run:1,action:'terminal',focused:true,applicationPaused:false,
+      catchingUp:false,paused:false,failed:false,callbackSteps:1,terminalElapsed:0}];
+  x.cues=[{...id,t:7059,text:'ST_LS_AUDIO event=impact\n'},{...id,t:7059.1,text:'ST_LS_AUDIO event=defeat\n'}];
+  x.kind=kind;
+  if(kind==='blur'){x.events=[{...x.events[0],kind:'blur',hidden:false},{...x.events[2],kind:'focus'}];x.encounters[0].t=7012;}
+  return withCallbackRecords(x,.05);
+}
+test('fresh current-wave terminal return cues bind finalized no-payout identity for blur and hidden returns',()=>{
+  for(const kind of ['blur','hidden']){
+    const x=waveReturnTerminalFixture(kind),result=journey.validateAwayAudioReturn(x);
+    assert.deepEqual(result.cues,[]);assert.deepEqual(result.boundary.callbacks.map(c=>[c.from,c.to]),[[5079,5080]]);
+    assert.equal(result.boundary.callbacks[0].cues.at(-1).text,'ST_LS_AUDIO event=defeat\n');
+  }
+});
+test('wave terminal identity branch cannot bypass source, checkpoint, event or callback freshness guards',()=>{
+  for(const mutate of [
+    x=>x.before.loop.profileVersion='tier-goals-v1',x=>x.states.at(-1).profileVersion='tier-goals-v1',
+    x=>x.states.at(-1).runId=8,x=>x.states.at(-1).pendingRunId=7,x=>x.states.at(-1).hasCheckpoint=true,
+    x=>x.states.at(-1).sessionRun++,x=>x.states.at(-1).activeTier++,x=>x.states.at(-1).fittingId='launcher',x=>x.encounters.at(-1).rules='other',
+    x=>x.encounters.at(-1).run++,x=>x.encounters.at(-1).hp=1,x=>x.encounters.at(-1).callbackSteps++,
+    x=>x.states.push({...x.states.at(-1),t:7080.05}),x=>x.cues.push({...x.cues.at(-1)}),
+    x=>x.cues[0].text='ST_LS_AUDIO event=cannon\n',x=>x.cues.push({...x.cues[0],t:2000}),
+    x=>x.callbackRecords.pop(),x=>x.callbackRecords[0].priorPending=.05,
+    x=>x.callbackRecords.forEach(c=>{c.elapsed=.501;c.previousTimestamp=c.timestamp-.501;}),
+    x=>x.callbackRecords[1].steps=11,x=>x.callbackRecords.forEach(c=>c.age=1),
+  ]){const x=waveReturnTerminalFixture();mutate(x);assert.throws(()=>{const value=journey.validateAwayAudioReturn(x);
+    journey.validateNoReplayAudio({energy:{samples:10,maximum_rms:0},cues:value.cues});},undefined,String(mutate));}
 });

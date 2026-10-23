@@ -19,7 +19,7 @@ namespace SingedTerra.Encounter
         readonly LineRenderer[] trails = new LineRenderer[12];
         readonly float[] life = new float[12];
         readonly List<Material> materials = new List<Material>();
-        Material closePaint, rangedPaint, rubber, health, shell, rocket, incoming, repair;
+        Material closePaint, rangedPaint, rubber, health, shell, rocket, incoming, repair, scatter;
         int nextTrail;
         public bool FullEffects { get; private set; } = true;
         public int VisibleUnits { get; private set; }
@@ -53,6 +53,7 @@ namespace SingedTerra.Encounter
             rocket = Paint(basis, new Color(1f,.38f,.12f));
             incoming = Paint(basis, new Color(.86f,.24f,.18f));
             repair = Paint(basis, new Color(.25f,.9f,.65f));
+            scatter = Paint(basis, new Color(1f,.70f,.40f));
             review=owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             if(review){reviewVisuals=new SingedTerra.VisualReview.ReviewCombatVisuals(review,owner,transform);review.Changed+=reviewVisuals.FaceCamera;}
             for (int i = 0; i < (review ? 0 : units.Length); i++)
@@ -110,9 +111,16 @@ namespace SingedTerra.Encounter
                 }
                 else if (e.Kind == EncounterEventKind.Launcher)
                     Trace(Center(launcherMeshes), target, rocket);
+                else if (e.Kind == EncounterEventKind.Scattergun)
+                {
+                    owner.PlayScattergunShot(target);
+                    var origin=owner.ScattergunMuzzle;
+                    var spread=Vector3.Cross(Vector3.up,target-origin).normalized*.16f;
+                    for(int pellet=-1;pellet<=1;pellet++)Trace(origin,target+spread*pellet,scatter);
+                }
                 else if (e.Kind == EncounterEventKind.Repair)
                     Trace(Center(repairMeshes), center, repair);
-                else Trace(target, center, incoming);
+                else if(e.Kind==EncounterEventKind.CloseHit || e.Kind==EncounterEventKind.RangedHit)Trace(target, center, incoming);
             }
             reviewVisuals?.Present(model);
         }

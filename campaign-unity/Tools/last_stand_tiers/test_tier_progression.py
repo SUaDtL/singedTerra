@@ -1,8 +1,13 @@
 """Exercise tier records against the compiled production transaction owner."""
 from pathlib import Path
+import sys
 import subprocess
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+
 
 PROJECT = Path(__file__).resolve().parents[2]
 EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
@@ -19,6 +24,7 @@ class TierProgressionTests(unittest.TestCase):
             "MechanicsShopModel.cs", "LastStandUpgradeCatalog.cs", "LastStandTierCatalog.cs",
             "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
         )] + [Path(__file__).with_name("TierProgressionChecks.cs")]
+        sources = complete_sources(SCRIPTS, sources)
         build = subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+",
             f"-out:{cls.executable}", *map(str, sources)], capture_output=True,
             text=True, encoding="utf-8-sig", timeout=60)

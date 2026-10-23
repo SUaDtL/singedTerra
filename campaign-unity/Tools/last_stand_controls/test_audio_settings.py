@@ -44,6 +44,9 @@ class AudioSettingsTests(unittest.TestCase):
     def test_existing_effect_admission(self):
         self.case("existing_effect_admission")
 
+    def test_scattergun_feedback_and_holds(self):
+        self.case("scattergun_feedback_and_holds")
+
     def test_initialize_does_not_duplicate_sources(self):
         self.case("initialize_does_not_duplicate_sources")
 

@@ -17,7 +17,7 @@ namespace SingedTerra.Encounter
         bool reconciling, terminalReported;
         double accumulated;
         double configuredSpeed = LastStandSpeedPolicy.InitialMaximum;
-        int run, lastReportSecond = -1;
+        int run, callbackSequence, lastReportSecond = -1;
         bool focused = true, applicationPaused;
         public EncounterModel Model => model;
         public LastStandShopState Shop { get; private set; }
@@ -39,8 +39,10 @@ namespace SingedTerra.Encounter
         public int StepsThisCallback { get; private set; }
         public double CallbackElapsedSeconds { get; private set; }
         public double TerminalElapsedSeconds { get; private set; }
+        public bool CheckpointBlocked { get; private set; }
         public event Action Changed;
         public event Action<EncounterModel> Stepped;
+        public event Action<EncounterModel> WaveCleared;
         public void Initialize(TankPresentation presentation, ArtHud hud, Canvas canvas, Font font)
         {
             art = presentation; focused = Application.isFocused;
@@ -58,42 +60,39 @@ namespace SingedTerra.Encounter
         // Shared and direct session deployments keep their original defaults.
         internal void DeployReservedRun(LastStandShopState shop, bool menuPaused = false)
         { StartAt(Time.realtimeSinceStartupAsDouble, shop, menuPaused); }
-        void StartAt(double timestamp, LastStandShopState shop, bool menuPaused = false)
+        internal void RestoreReservedRun(LastStandShopState shop, EncounterModel checkpoint, bool paused)
+        { StartAt(Time.realtimeSinceStartupAsDouble, shop, false, checkpoint, paused); }
+        void StartAt(double timestamp, LastStandShopState shop, bool menuPaused = false, EncounterModel checkpoint = null, bool startPaused = false)
         {
             if (model != null || !focused || applicationPaused) return;
             bool launcher = art.showingLauncher;
             if (!art.BeginEncounter()) return;
-            model = new EncounterModel(launcher, loop ? EncounterProfile.ForTier(loop.Progression.ActiveTier) : review ? EncounterProfile.VisualReview : EncounterProfile.Legacy,
-                loop ? loop.Progression.CannonDamage : EncounterModel.CannonDamage); run++; accumulated = 0;
+            model = checkpoint ?? (loop && shop != null ? EncounterModel.CreatePlayable(shop.Fitting, loop.Progression.ActiveTier, shop) :
+                new EncounterModel(launcher, review ? EncounterProfile.VisualReview : EncounterProfile.Legacy));
+            if (model.AwaitingWaveCommit) model.ContinueAfterCheckpoint();
+            run++; accumulated = 0; CheckpointBlocked = false;
             Shop = shop;
             if (Shop != null) ApplyShopProjection();
-            runClock = loop ? new LastStandRunClock(timestamp, model.Profile.Horizon, configuredSpeed, MaximumSpeed) : null;
+            runClock = loop ? new LastStandRunClock(timestamp, model.Profile.Horizon - model.Tick, configuredSpeed, MaximumSpeed) : null;
             if (menuPaused && runClock != null) runClock.SetMenuPaused(timestamp, true);
+            if (startPaused && runClock != null) runClock.Pause(timestamp);
             terminalReported = reconciling = false;
             StepsThisCallback = 0; CallbackElapsedSeconds = TerminalElapsedSeconds = 0;
-            Paused = runClock != null && runClock.Paused; Reason = Paused ? "menu" : ""; Failure = ""; lastReportSecond = -1;
+            Paused = runClock != null && runClock.Paused; Reason = startPaused ? "user" : Paused ? "menu" : ""; Failure = ""; lastReportSecond = -1;
             art.SetEncounterPaused(Paused);
             View.Clear(); View.Render(model); Emit("deploy");
             if (runClock != null && runClock.Failed) Fail("InvalidClock");
         }
         internal void ApplyShopProjection()
         {
-            int Level(LastStandUpgradeTrackId id) => Shop.GetTrack(id).CurrentLevel;
-            int Effect(LastStandUpgradeTrackId id) => LastStandUpgradeCatalog.Get(id).EffectAt(Level(id), 1);
-            int armorLevel = Level(LastStandUpgradeTrackId.Armor);
-            var armor = LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor);
-            model.TryApplyPlayableAttackProjection(Effect(LastStandUpgradeTrackId.CannonAttack),
-                model.HasLauncher ? Effect(LastStandUpgradeTrackId.LauncherAttack) : EncounterModel.LauncherDamage);
-            model.TryApplyPlayableDefenseProjection(Effect(LastStandUpgradeTrackId.HullCapacity),
-                rawHit => armor.EffectAt(armorLevel, rawHit));
-            model.TryApplyPlayableCannonPeriodProjection(Effect(LastStandUpgradeTrackId.CannonCycle));
-            if (!model.HasLauncher) model.TryApplyPlayableRepairProjection(Effect(LastStandUpgradeTrackId.FieldRepair));
+            model.ApplyShopProjection(Shop);
         }
         public void ReturnToInspection()
         {
             if (model == null) return;
             if (runClock != null) configuredSpeed = runClock.LastPositiveSpeed;
             model = null; Shop = null; runClock = null; accumulated = 0; Paused = false; Reason = ""; Failure = "";
+            CheckpointBlocked = false;
             terminalReported = reconciling = false;
             StepsThisCallback = 0; CallbackElapsedSeconds = TerminalElapsedSeconds = 0;
             View.Clear(); art.EndEncounter(); Emit("return");
@@ -138,7 +137,7 @@ namespace SingedTerra.Encounter
         }
         bool PrepareClockAction(double timestamp)
         {
-            if (!BackgroundContinuation || model == null || Failure != "" || CatchingUp || !CanRun) return false;
+            if (CheckpointBlocked || !BackgroundContinuation || model == null || Failure != "" || CatchingUp || !CanRun) return false;
             // An action cannot change the rate of already elapsed simulation.
             // Advance may trigger a terminal/controller transition, so recheck
             // the live owners before changing either pause cause.
@@ -197,13 +196,18 @@ namespace SingedTerra.Encounter
         public void AdvanceAt(double timestamp)
         {
             StepsThisCallback = 0; CallbackElapsedSeconds = 0;
-            if (!BackgroundContinuation || model == null || Failure != "") return;
-            double elapsed = timestamp - runClock.LastTimestamp;
+            if (CheckpointBlocked || !BackgroundContinuation || model == null || Failure != "") return;
+            double previousTimestamp = runClock.LastTimestamp, priorPending = runClock.PendingSeconds;
+            double elapsed = timestamp - previousTimestamp;
             if (!runClock.Observe(timestamp)) { Fail("InvalidClock"); return; }
             if (Paused) return;
             CallbackElapsedSeconds = elapsed;
             var current = model;
+            var callbackClock = runClock;
+            int callback = ++callbackSequence, fromTick = current.Tick;
+            bool reportCallback = current.Status == EncounterStatus.Running && callbackClock.CatchingUp;
             reconciling = !CanRun || runClock.PendingSeconds + 1e-9 >= 2 * LastStandRunClock.StepSeconds;
+            if (reportCallback) EmitCallback("begin", callback, fromTick, current, callbackClock, timestamp, previousTimestamp, priorPending);
             try
             {
                 if (current.Status != EncounterStatus.Running)
@@ -221,6 +225,11 @@ namespace SingedTerra.Encounter
                     Stepped?.Invoke(current);
                     if (model != current || Failure != "") return;
                     if (!reconciling) View.Present(current);
+                    if (current.AwaitingWaveCommit)
+                    {
+                        WaveCleared?.Invoke(current);
+                        if (current.AwaitingWaveCommit || CheckpointBlocked || model != current) break;
+                    }
                 }
                 if (current.Status != EncounterStatus.Running)
                 {
@@ -240,7 +249,51 @@ namespace SingedTerra.Encounter
                 else if (StepsThisCallback > 0) Changed?.Invoke();
             }
             catch (Exception exception) { Fail(exception.GetType().Name); }
-            finally { reconciling = false; }
+            finally
+            {
+                // This separate observation never invokes Changed or performs
+                // presentation work. Its clock belongs to admission, whereas
+                // the browser stamps actual cue and HUD emission independently.
+                if (reportCallback) EmitCallback("end", callback, fromTick, current, callbackClock, timestamp, previousTimestamp, priorPending);
+                reconciling = false;
+            }
+        }
+        public void HoldCheckpoint()
+        {
+            if (model == null) return;
+            CheckpointBlocked = true; Paused = true; Reason = "checkpoint-save";
+            runClock?.Stop(); art.SetEncounterPaused(true);
+        }
+        public void ContinueCommittedWave()
+        {
+            if (model == null) return;
+            if (model.Status == EncounterStatus.Running && model.AwaitingWaveCommit) model.ContinueAfterCheckpoint();
+            if (!CheckpointBlocked) return;
+            // A storage interruption is not offline simulation time. Retry
+            // reanchors and leaves an explicit manual pause for the player.
+            double now = Time.realtimeSinceStartupAsDouble;
+            runClock = new LastStandRunClock(now, model.Profile.Horizon - model.Tick, configuredSpeed, MaximumSpeed);
+            runClock.Pause(now); CheckpointBlocked = false; Paused = true; Reason = "user";
+            art.SetEncounterPaused(true);
+        }
+        [Serializable] sealed class CallbackState
+        {
+            public string action;
+            public int id, run, fromTick, tick, steps;
+            public double timestamp, previousTimestamp, elapsed, priorPending, pending, speed, age;
+            public bool focused, applicationPaused, paused, failed;
+        }
+        void EmitCallback(string action, int callback, int fromTick, EncounterModel current, LastStandRunClock clock,
+            double timestamp, double previousTimestamp, double priorPending)
+        {
+            Debug.Log("ST_ENC_CALLBACK " + JsonUtility.ToJson(new CallbackState
+            {
+                action = action, id = callback, run = run, fromTick = fromTick, tick = current.Tick,
+                steps = clock.StepsThisCallback, timestamp = timestamp, previousTimestamp = previousTimestamp,
+                elapsed = timestamp - previousTimestamp, priorPending = priorPending, pending = clock.PendingSeconds,
+                speed = clock.LastPositiveSpeed, age = Math.Max(0, Time.realtimeSinceStartupAsDouble - timestamp),
+                focused = focused, applicationPaused = applicationPaused, paused = Paused, failed = Failure != ""
+            }));
         }
         void Fail(string failure)
         {
@@ -266,6 +319,8 @@ namespace SingedTerra.Encounter
             public string action, rules, status, fitting, reason, summary;
             public int run, tick, hp, maxHp, spawned, kills, cannon, launcher, healed, closeHits, rangedHits;
             public int alive, visibleUnits, pool;
+            public int wave,completedWave,remainingWaveEnemies;
+            public bool awaitingWaveCommit,checkpointBlocked;
             public bool paused, focused, applicationPaused, locked, fullEffects, failed, catchingUp;
             public int callbackSteps;
             public double terminalElapsed;
@@ -278,7 +333,7 @@ namespace SingedTerra.Encounter
             {
                 action = action, rules = model?.Profile.Id ?? (loop ? EncounterProfile.PlayablePrototype.Id : review ? EncounterProfile.VisualReview.Id : EncounterModel.RulesVersion), run = run,
                 status = model == null ? "Fitting" : model.Status.ToString(),
-                fitting = (model == null ? art.showingLauncher : model.HasLauncher) ? "launcher" : "repair",
+                fitting = model == null ? art.FittingId : LastStandFittingCatalog.Id(model.Fitting),
                 reason = Reason, paused = Paused, focused = focused, applicationPaused = applicationPaused,
                 locked = art.EncounterActive, fullEffects = View.FullEffects, failed = Failure != "",
                 catchingUp = CatchingUp, callbackSteps = StepsThisCallback, terminalElapsed = TerminalElapsedSeconds,
@@ -289,6 +344,8 @@ namespace SingedTerra.Encounter
                 cannon = model?.CannonShots ?? 0, launcher = model?.LauncherShots ?? 0,
                 healed = model?.Restored ?? 0, closeHits = model?.CloseHits ?? 0, rangedHits = model?.RangedHits ?? 0,
                 alive = model?.ActiveCount ?? 0, visibleUnits = View.VisibleUnits, pool = View.PoolSize,
+                wave=model?.Wave??0,completedWave=model?.CompletedWave??0,remainingWaveEnemies=model?.RemainingWaveEnemies??0,
+                awaitingWaveCommit=model?.AwaitingWaveCommit??false,checkpointBlocked=CheckpointBlocked,
                 summary = model != null && model.Status != EncounterStatus.Running ? model.Summary : ""
             }));
             if (review) review.Report(action);

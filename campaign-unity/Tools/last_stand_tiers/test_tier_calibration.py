@@ -5,9 +5,14 @@ journey. Total-cap builds are numerical bounds, not earned builds.
 """
 import json
 from pathlib import Path
+import sys
 import subprocess
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+
 
 PROJECT = Path(__file__).resolve().parents[2]
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
@@ -28,6 +33,7 @@ class TierCalibrationTests(unittest.TestCase):
                     "EncounterModel.cs", "EncounterProfile.cs", "LastStandTierCatalog.cs",
                     "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs"
                 )] + [Path(__file__).with_name("TierCalibrationChecks.cs")]
+                sources = complete_sources(SCRIPTS, sources)
                 build = subprocess.run([str(MONO), str(CSC), "-nologo", f"-out:{executable}",
                                         *map(str, sources)], capture_output=True, text=True,
                                        encoding="utf-8-sig", timeout=60)
@@ -38,21 +44,21 @@ class TierCalibrationTests(unittest.TestCase):
                 if run.returncode:
                     raise AssertionError(run.stdout + run.stderr)
                 for line in run.stdout.splitlines():
-                    fitting, level, ticks, kills, hull, status = line.split(",")
+                    fitting, level, ticks, kills, hull, status, wave = line.split(",")
                     cls.measurements[tier, fitting, int(level)] = dict(
                         tier=tier, fitting=fitting, level=int(level), ticks=int(ticks),
-                        seconds=int(ticks) / 20, kills=int(kills), hull=int(hull), status=status)
+                        seconds=int(ticks) / 20, kills=int(kills), hull=int(hull), status=status, completed_wave=int(wave))
         print("CALIBRATION " + json.dumps(list(cls.measurements.values()), sort_keys=True), flush=True)
 
-    def test_goals_attainable_at_current_caps(self):
-        for tier, goal in ((1, 1200), (2, 1800)):
-            for fitting in ("repair", "launcher"):
+    def test_wave_advancement_attainable_at_current_per_track_caps(self):
+        for tier in (1, 2):
+            for fitting in ("repair", "launcher", "scattergun"):
                 with self.subTest(tier=tier, fitting=fitting):
-                    self.assertGreaterEqual(self.measurements[tier, fitting, 8]["ticks"], goal,
-                                            "Goal is not attainable even with all applicable tracks capped.")
+                    self.assertEqual(self.measurements[tier, fitting, 5000]["completed_wave"], 300)
+                    self.assertEqual(self.measurements[tier, fitting, 5000]["status"], "Running")
 
     def test_tier_two_harder_for_matched_builds(self):
-        for fitting in ("repair", "launcher"):
+        for fitting in ("repair", "launcher", "scattergun"):
             for level in (0, 3, 8):
                 with self.subTest(fitting=fitting, level=level):
                     easy = self.measurements[1, fitting, level]

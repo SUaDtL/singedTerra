@@ -3,112 +3,82 @@ using System.Globalization;
 using SingedTerra.Encounter;
 using SingedTerra.LastStand;
 
-// Measurement-only entry point: compile the production combat, catalog and
-// progression owners. No copied combat formulas, edited rules or browser save.
+// Actual first-run progression transactions. This benchmark buys the cheapest
+// eligible temporary track after each kill; it is not an in-game auto-buyer.
 internal static class FirstSessionMeasurements
 {
-    sealed class MemoryStorage : ILastStandStorage
+    sealed class MemoryStorage:ILastStandStorage
+    { string value;public string Read()=>value;public void Write(string next){value=next;} }
+    static void Require(bool condition,string message){if(!condition)throw new InvalidOperationException(message);}
+    static readonly LastStandUpgradeTrackId[] Priority={LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.HullCapacity,
+        LastStandUpgradeTrackId.CannonCycle,LastStandUpgradeTrackId.Armor,LastStandUpgradeTrackId.LauncherAttack,LastStandUpgradeTrackId.FieldRepair};
+    static void BuyRun(LastStandShopState shop,EncounterModel model)
     {
-        string value;
-        public string Read() => value;
-        public void Write(string next) { value = next; }
-    }
-
-    static void Require(bool condition, string message)
-    { if (!condition) throw new InvalidOperationException(message); }
-
-    static EncounterModel Measure(int tier, LastStandFitting fitting, string scenario,
-        int[] permanentLevels, int runLevel)
-    {
-        bool launcher = fitting == LastStandFitting.Launcher;
-        var model = new EncounterModel(launcher, EncounterProfile.ForTier(tier));
-        int Level(LastStandUpgradeTrackId id)
+        for(int count=0;count<100;count++)
         {
-            var definition = LastStandUpgradeCatalog.Get(id);
-            return definition.IsEligible(fitting)
-                ? definition.Project(permanentLevels[(int)id], runLevel, fitting).CurrentLevel : 0;
+            LastStandUpgradeTrackId? choice=null;int cheapest=int.MaxValue;
+            foreach(var id in Priority)
+            {
+                var row=shop.GetTrack(id);
+                if(row.CanPurchase && row.NextPrice.Value<=shop.Scrap && row.NextPrice.Value<cheapest)
+                {choice=id;cheapest=row.NextPrice.Value;}
+            }
+            if(!choice.HasValue)return;
+            Require(shop.TryPurchase(new LastStandShopPurchaseIntent(shop.RunId,shop.Version,choice.Value)).Accepted,"Measured run purchase must charge normally.");
+            model.ApplyShopProjection(shop);
         }
-        int Effect(LastStandUpgradeTrackId id) => LastStandUpgradeCatalog.Get(id).EffectAt(Level(id), 1);
-        int armorLevel = Level(LastStandUpgradeTrackId.Armor);
-        Require(model.TryApplyPlayableAttackProjection(Effect(LastStandUpgradeTrackId.CannonAttack),
-            launcher ? Effect(LastStandUpgradeTrackId.LauncherAttack) : EncounterModel.LauncherDamage), "attack projection");
-        Require(model.TryApplyPlayableDefenseProjection(Effect(LastStandUpgradeTrackId.HullCapacity),
-            raw => LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).EffectAt(armorLevel, raw)), "defense projection");
-        Require(model.TryApplyPlayableCannonPeriodProjection(Effect(LastStandUpgradeTrackId.CannonCycle)), "cannon period projection");
-        if (!launcher) Require(model.TryApplyPlayableRepairProjection(Effect(LastStandUpgradeTrackId.FieldRepair)), "repair projection");
-
-        int firstKill = 0, firstHit = 0, goalHull = -1, goalKills = -1;
-        int goal = LastStandTierCatalog.Get(tier).GoalTicks;
-        while (model.Status == EncounterStatus.Running)
+        throw new Exception("Purchase policy exceeded its bounded budget.");
+    }
+    static EncounterModel Measure(LastStandProgression progression,string scenario)
+    {
+        Require(progression.TryDeploy(),"Reserve the actual selected run before simulating.");
+        var model=progression.Checkpoint.RestoreModel();var shop=progression.Checkpoint.RestoreShop();
+        int firstKill=0,firstHit=0,oldKills=0,openingWallet=progression.Wallet;
+        while(model.Status==EncounterStatus.Running && model.CompletedWave<5001)
         {
             model.Step();
-            if (firstKill == 0 && model.Kills > 0) firstKill = model.Tick;
-            if (firstHit == 0 && model.CloseHits + model.RangedHits > 0) firstHit = model.Tick;
-            if (model.Tick == goal) { goalHull = model.Hull; goalKills = model.Kills; }
+            if(firstKill==0 && model.Kills>0)firstKill=model.Tick;
+            if(firstHit==0 && model.CloseHits+model.RangedHits>0)firstHit=model.Tick;
+            if(model.Kills!=oldKills)
+            {shop.ObserveAuthoritativeKills(model.Kills);oldKills=model.Kills;if(model.Status==EncounterStatus.Running)BuyRun(shop,model);}
+            if(model.AwaitingWaveCommit)
+            {
+                Require(progression.TryCommitWave(model,shop),"Actual clear banks one reward and exact boundary checkpoint.");
+                if(model.Status==EncounterStatus.Running && model.CompletedWave<5001)
+                    Require(model.ContinueAfterCheckpoint(),"Continue only after the durable wave commit.");
+            }
+            if(model.Tick>10000000)throw new Exception("Measurement exceeded its finite tick budget.");
         }
-        Console.WriteLine(string.Join(",", new object[] { "measurement", tier,
-            launcher ? "launcher" : "repair", scenario, model.Tick, model.Kills, model.Hull,
-            model.Status, firstKill, firstHit, goalHull, goalKills, model.CannonShots,
-            model.LauncherShots, model.Restored, model.CloseHits, model.RangedHits,
-            model.CurrentCannonDamage, model.CurrentMaximumHull, model.CurrentCannonPeriod,
-            model.CurrentLauncherDamage, model.CurrentRepairAmount }));
+        if(progression.HasCheckpoint)Require(progression.TryFinalizeRun(),"Finalize without a new death payout.");
+        Require(progression.PendingDefeat==null && !progression.TryClaim(),"New runs never manufacture legacy pending rewards.");
+        Console.WriteLine(string.Join(",",new object[]{"measurement",model.Profile.Tier,model.Fitting.ToString().ToLowerInvariant(),scenario,
+            model.Tick,model.Kills,model.Hull,model.Status,firstKill,firstHit,model.CompletedWave,progression.Wallet-openingWallet,
+            model.CannonShots,model.LauncherShots,model.Restored,model.CloseHits,model.RangedHits,model.CurrentCannonDamage,
+            model.CurrentMaximumHull,model.CurrentCannonPeriod,model.CurrentLauncherDamage,model.CurrentRepairAmount}));
         return model;
     }
-
-    static int[] Levels(int level)
-    {
-        var result = new int[LastStandUpgradeCatalog.Tracks.Count];
-        for (int i = 0; i < result.Length; i++) result[i] = level;
-        return result;
-    }
-
-    static int[] EarnFirstUpgrade(LastStandFitting fitting, EncounterModel firstRun)
-    {
-        var storage = new MemoryStorage();
-        var progression = LastStandProgression.Load(storage);
-        Require(progression.TryDeploy(), "fresh deployment");
-        Require(firstRun.Profile.Tier == progression.ActiveTier && firstRun.Status == EncounterStatus.Defeated,
-            "actual starter Tier 1 defeat required");
-        Require(progression.TryStageDefeat(firstRun.Tick, firstRun.Kills), "save actual model terminal result");
-        Require(progression.Wallet == 0 && progression.PendingDefeat.Reward == 1, "claim must remain manual");
-        Require(progression.TryClaim() && progression.Wallet == 1, "claim exactly one Salvage");
-        Require(progression.TryPurchase(LastStandUpgradeTrackId.CannonAttack) && progression.Wallet == 0,
-            "first cannon upgrade spends exactly one Salvage");
-        progression = LastStandProgression.Load(storage);
-        Require(progression.SaveState == "ready" && progression.TierTwoUnlocked, "reload confirmed earned profile");
-        var levels = new int[LastStandUpgradeCatalog.Tracks.Count];
-        foreach (var definition in LastStandUpgradeCatalog.Tracks)
-        {
-            levels[(int)definition.Id] = progression.GetPermanentLevel(definition.Id);
-            Require(levels[(int)definition.Id] == (definition.Id == LastStandUpgradeTrackId.CannonAttack ? 1 : 0),
-                "exactly one purchased level, no other upgrade");
-        }
-        Console.WriteLine("earned,{0},{1},{2},{3},{4},{5}",
-            fitting == LastStandFitting.Launcher ? "launcher" : "repair", firstRun.Tick, firstRun.Kills,
-            progression.CannonAttackLevel, progression.Wallet, progression.TierTwoUnlocked);
-        return levels;
-    }
-
     static int Main()
     {
-        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;
         try
         {
-            foreach (var fitting in new[] { LastStandFitting.Repair, LastStandFitting.Launcher })
+            foreach(string fitting in new[]{"repair","launcher"})
             {
-                var starter = Measure(1, fitting, "starter", Levels(0), 0);
-                var earned = EarnFirstUpgrade(fitting, starter);
-                Measure(2, fitting, "starter", Levels(0), 0);
-                foreach (int tier in new[] { 1, 2 })
-                {
-                    Measure(tier, fitting, "first_earned_cannon", earned, 0);
-                    Measure(tier, fitting, "permanent_cap_bound", Levels(LastStandUpgradeCatalog.PermanentCap), 0);
-                    Measure(tier, fitting, "total_cap_bound", Levels(LastStandUpgradeCatalog.PermanentCap),
-                        LastStandUpgradeCatalog.TotalCap - LastStandUpgradeCatalog.PermanentCap);
-                }
+                var storage=new MemoryStorage();var progression=LastStandProgression.Load(storage);
+                Require(progression.TrySelectFitting(fitting),"Select a real starting fitting.");
+                var first=Measure(progression,"starter");int banked=progression.Wallet;
+                Require(banked>=1 && progression.TryPurchase(LastStandUpgradeTrackId.CannonAttack),"Cleared-wave income funds the first permanent upgrade.");
+                progression=LastStandProgression.Load(storage);
+                Require(progression.CannonAttackLevel==1 && progression.Wallet==banked-1 && !progression.HasCheckpoint,
+                    "Reload confirms the permanent debit and completed run.");
+                foreach(var definition in LastStandUpgradeCatalog.Tracks)
+                    Require(progression.GetPermanentLevel(definition.Id)==(definition.Id==LastStandUpgradeTrackId.CannonAttack?1:0),
+                        "Exactly one permanent level was purchased; no other track was gifted.");
+                Console.WriteLine("earned,{0},{1},{2},{3},{4},{5}",fitting,first.Tick,first.Kills,progression.CannonAttackLevel,progression.Wallet,progression.TierTwoUnlocked);
+                Measure(progression,"first_earned_cannon");
             }
             return 0;
         }
-        catch (Exception exception) { Console.Error.WriteLine(exception); return 1; }
+        catch(Exception error){Console.Error.WriteLine(error);return 1;}
     }
 }

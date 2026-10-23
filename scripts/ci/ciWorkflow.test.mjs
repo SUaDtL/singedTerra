@@ -100,9 +100,9 @@ function assertLatencyAllocation(source) {
   assert.match(browser, /--shard=\$\{\{ matrix\.shard \}\}\/4/);
   assert.match(browser, /LAST_STAND_JOURNEY_SECTION: \$\{\{ matrix\.journey_section \}\}/);
   assert.match(browser, /LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}/);
-  assert.match(browser, /--grep "Last Stand tier goals"/);
+  assert.match(browser, /--grep "Last Stand earned waves"/);
   assert.match(browser, /--grep "Last Stand Campaigns journey"/);
-  assert.match(browser,/name: Last Stand tier progression journey\n        if: matrix\.suite == 'tier'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand tier goals"/);
+  assert.match(browser,/name: Last Stand wave checkpoint journey\n        if: matrix\.suite == 'tier'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand earned waves"/);
   const aggregate=job(source,'e2e');
   assert.match(aggregate,/pattern: playwright-last-stand-\[0-9\]\*-\$\{\{ github\.run_attempt \}\}/);
   assert.match(aggregate,/node scripts\/ci\/lastStandMatrixResult\.mjs "\$MATRIX_ROOT"/);
@@ -110,6 +110,17 @@ function assertLatencyAllocation(source) {
     assert.ok(aggregate.includes(`name: ${name}\n        if: needs.scope.outputs.docs_only == 'false'`));
 }
 test('15-minute CI partitions core, product, tier and every Campaigns viewport', () => assertLatencyAllocation(ci));
+
+test('required CI runs current wave gate and checkpoint reader regressions',()=>{
+  const check=source=>{
+    const scope=job(source,'scope'),run=scope.split('\n').find(line=>line.includes('run: node --test scripts/ci/changeScope.test.mjs'));
+    assert.ok(run);
+    for(const name of ['lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])assert.ok(run.includes(`scripts/ci/${name}.test.mjs`));
+  };
+  check(ci);
+  for(const name of ['lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])
+    assert.throws(()=>check(ci.replace(` scripts/ci/${name}.test.mjs`,'')));
+});
 
 test('required CI runs public parent configuration regressions', () => {
   const check = source => assert.match(job(source, 'scope'),
@@ -154,7 +165,7 @@ function assertWorkflow(source) {
   assert.match(browser,/matrix: \$\{\{ fromJSON\(needs\.scope\.outputs\.browser_matrix\) \}\}/);
   assert.ok(browser.includes(`if: matrix.suite == 'core'\n        run: npm run test:e2e -- --shard=\u0024{{ matrix.shard }}/4 --workers=2 --grep-invert "@live|@last-stand"`));
   assert.match(browser, /if: matrix\.suite == 'product'\n        run: npx playwright test -c playwright\.product-completion\.config\.ts/);
-  assert.match(browser,/name: Last Stand tier progression journey\n        if: matrix\.suite == 'tier'/);
+  assert.match(browser,/name: Last Stand wave checkpoint journey\n        if: matrix\.suite == 'tier'/);
   assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.suite == 'campaigns'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n          LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}\n          LAST_STAND_JOURNEY_SECTION: \$\{\{ matrix\.journey_section \}\}\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand Campaigns journey"/);
   assert.match(browser,/name: Upload Playwright artifacts\n        if: always\(\)/,'Successful Linux qualification evidence must survive the ephemeral runner');
   assert.match(browser, /name: playwright-\$\{\{ matrix\.lane \}\}-\$\{\{ github\.run_attempt \}\}/);
@@ -229,7 +240,7 @@ function assertLastStandSandbox(source) {
   const prepare=browser.indexOf('name: Prepare Last Stand browser sandbox');
   const initialize=browser.indexOf('run: node scripts/ci/prepareLastStandEvidence.mjs');
   assert.ok(initialize>=0 && initialize<prepare,'Evidence initialization must precede owned browser startup');
-  for(const consumer of ['name: Last Stand tier progression journey','name: Last Stand shared Campaigns journey'])
+  for(const consumer of ['name: Last Stand wave checkpoint journey','name: Last Stand shared Campaigns journey'])
     assert.ok(prepare<browser.indexOf(consumer),'Sandbox startup proof must precede '+consumer);
   assert.doesNotMatch(browser,/CHROME_DEVEL_SANDBOX|no-sandbox|apparmor_restrict_unprivileged_userns/);
 }

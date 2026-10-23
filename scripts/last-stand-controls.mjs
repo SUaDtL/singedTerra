@@ -90,7 +90,7 @@ for(const fitting of fittings) {
       await until(()=>items()?.some(c=>c.name===name&&c.active&&c.interactable));
       for(let attempt=0;attempt<16;attempt++) {
         const item=items().find(c=>c.name===name&&c.active&&c.interactable);
-        const viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&g.kind==='Image');
+        const viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&['Image','LastStandConsoleSurface'].includes(g.kind));
         if(viewport&&item.mode==='Settings'&&!['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3','ChoicePrevious','ChoiceNext'].includes(name)) {
           if(item.y<viewport.y||item.y+item.height>viewport.y+viewport.height) {
             await page.mouse.move(...Object.values(await point(viewport)));
@@ -322,11 +322,18 @@ for(const fitting of fittings) {
     run.accountRoute={url:page.url(),dialogVisible:true};
     latest=null; layout=null; callout=null; await page.goto(new URL('last-stand/',base).href); await until(()=>latest?.saveState==='ready',60);
     await click('Deploy'); const exitRun=latest.runId;
-    await page.getByRole('link',{name:/return to campaigns/i}).click(); await until(()=>latest.menu==='confirm');
-    assert.equal(raw().selection,'ConfirmCancel'); await click('ConfirmCancel'); assert.equal(latest.runId,exitRun);
-    await page.getByRole('link',{name:/return to campaigns/i}).click(); await until(()=>latest.menu==='confirm');
-    await click('ConfirmProceed'); await page.waitForURL(url=>!url.pathname.endsWith('/last-stand/'));
-    run.wrapperReturn={url:page.url(),cancelKeptRun:exitRun};
+    const reserved=await page.evaluate(()=>localStorage.getItem('singedTerra.lastStand.prototype.v1'));
+    const checkpoint=JSON.parse(reserved).checkpoint;
+    assert.ok(checkpoint && checkpoint.runId===exitRun,'Deploy reserved a durable checkpoint');
+    await page.getByRole('link',{name:/return to campaigns/i}).click();
+    await page.waitForURL(url=>!url.pathname.endsWith('/last-stand/'));
+    assert.equal(await page.evaluate(()=>localStorage.getItem('singedTerra.lastStand.prototype.v1')),reserved,'Return preserves the last committed wave');
+    const returnURL=page.url();latest=null;layout=null;callout=null;
+    await page.goto(new URL('last-stand/',base).href);await until(()=>latest?.saveState==='ready',60);
+    assert.equal(latest.phase,'garage','Reload never auto-starts combat');assert.equal(latest.hasCheckpoint,true);
+    await click('Deploy');await until(()=>latest.phase==='battle' && latest.paused);
+    assert.equal(latest.runId,exitRun);assert.equal(latest.tick,checkpoint.encounter.tick,'Explicit Resume restores the committed simulation tick');
+    run.wrapperReturn={url:returnURL,preservedRun:exitRun,resumedPaused:true,checkpointTick:checkpoint.encounter.tick};
     assert.deepEqual(run.consoleErrors,[],'No browser/Unity console errors during the normal journey');
     // Browser-enforced denied capability; response bytes stay unchanged.
     await page.route(new URL('last-stand/',base).href,async route=>{

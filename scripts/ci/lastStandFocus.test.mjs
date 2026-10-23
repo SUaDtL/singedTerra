@@ -173,21 +173,20 @@ test('native foreground refusal propagates before a DOM wait can proceed',async(
   assert.equal(waits,0,'A refused native prerequisite must not reach document waits');
 });
 
-test('settling pointer prerequisites complete before the brief phase begins',async()=>{
-  const begin=source.indexOf('    await until(states,defeatStart,');
-  const armed=source.lastIndexOf('    const settlingClick=',begin);
-  const end=source.indexOf("    check(!layouts.at(-1).controls",begin);
-  const caller=source.slice(armed>source.indexOf('const hiddenStart=')?armed:begin,end);
-  let clock=0,armedAt=null,paused=false;const calls=[];
-  const states=[{phase:'battle',load:7,run:3}];
-  const click=async()=>{assert.ok(clock<500,'Slow foreground preparation missed the actual settling phase');paused=true;calls.push('input');};
-  const prepare=async()=>{clock+=900;armedAt=clock;calls.push('prepare');return click;};
-  const run=new Function('until','states','defeatStart','mark','gameClick','armGameClick','focused','phaseMatrix','check','return (async()=>{'+caller+'})();');
-  await run(async()=>{clock=0;states.push({phase:'settling',load:7,run:3});calls.push('settling');},states,0,async()=>clock,
-    async()=>{await prepare();return click();},prepare,async()=>{assert.ok(paused,'Native verification follows the real paused acknowledgement');calls.push('native-after');},
-    async()=>{assert.ok(paused);calls.push('matrix');},(ok,message)=>assert.ok(ok,message));
-  assert.equal(armedAt,900);
-  assert.deepEqual(calls,['prepare','settling','input','native-after','matrix']);
+test('settling pointer prerequisites complete before the brief wave phase begins',async()=>{
+  const begin=source.indexOf("    if(player){\n      const prepared=await armGameClick('SpeedRate'"),end=source.indexOf('    const naturalResult=',begin);
+  assert.ok(begin>0&&end>begin,'Execute the maintained natural-terminal pointer preparation');
+  let clock=0,armedAt=null,paused=false;const calls=[],states=[];
+  const prepare=async()=>{clock+=900;armedAt=clock;calls.push('prepare');return async()=>{
+    assert.ok(clock<500,'Slow foreground preparation missed the actual settling phase');paused=true;calls.push('input');return {paused};
+  };};
+  const run=new Function('player','armGameClick','until','states','terminalStart','load','expectedTerminal','terminalBefore','phaseMatrix','gameClick',
+    'return(async()=>{let terminalPaused,terminalResumed;'+source.slice(begin,end)+'return {terminalPaused,terminalResumed};})();');
+  const result=await run(true,prepare,async()=>{clock=0;states.push({phase:'settling',load:7});calls.push('settling');},states,0,7,
+    {tick:5000},{tick:1000},async()=>{assert.ok(paused,'Actual matrix requires acknowledged Pause');calls.push('matrix');},
+    async()=>{assert.ok(paused);paused=false;calls.push('resume');return {paused};});
+  assert.equal(armedAt,900);assert.equal(result.terminalPaused.paused,true);assert.equal(result.terminalResumed.paused,false);
+  assert.deepEqual(calls,['prepare','settling','input','matrix','resume']);
 });
 
 test('prepared pointer follows the actual new control rectangle after the Shop entry disappears',async()=>{

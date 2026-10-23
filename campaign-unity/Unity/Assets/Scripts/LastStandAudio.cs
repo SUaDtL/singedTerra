@@ -9,7 +9,7 @@ namespace SingedTerra.LastStand
     {
         const int Voices = 4;
         readonly AudioSource[] sources = new AudioSource[Voices];
-        AudioClip cannon, impact, destruction, defeat, purchase;
+        AudioClip cannon, impact, destruction, defeat, purchase, scattergun;
         LastStandMusic music;
         int cursor;
         bool initialized, unlocked, suspended, musicSuspended;
@@ -35,6 +35,7 @@ namespace SingedTerra.LastStand
             destruction = Tone("Destruction", 95,.32f,.33f,5);
             defeat = Tone("Defeat", 190,.54f,.25f,4);
             purchase = Tone("Purchase", 520,.22f,.26f,1);
+            scattergun = Tone("Scattergun", 175,.17f,.30f,7);
             for (int i=0;i<Voices;i++)
             {
                 sources[i]=gameObject.AddComponent<AudioSource>();
@@ -122,6 +123,7 @@ namespace SingedTerra.LastStand
             {
                 case EncounterEventKind.Cannon: Play(cannon,"cannon"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.Launcher: Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
+                case EncounterEventKind.Scattergun: Play(scattergun,"scattergun"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.CloseHit:
                 case EncounterEventKind.RangedHit: Play(impact,"impact"); break;
             }
@@ -137,7 +139,7 @@ namespace SingedTerra.LastStand
             Stop();
             if(music) { music.SetPlayback(false,0); Destroy(music); }
             foreach(var source in sources)if(source)Destroy(source);
-            foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase})if(clip)Destroy(clip);
+            foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase,scattergun})if(clip)Destroy(clip);
         }
     }
 }

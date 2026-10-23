@@ -37,6 +37,115 @@ public static class LastStandLoopChecks
         Invoke(art,"Start");
         Invoke(art.GetComponent<ArtHud>(),"Start");
     }
+    // Geometry checks inspect the real imported HUD's generated triangles.
+    // They do not establish rendered pixel or device acceptance.
+    public static void RunChromeChecks()
+    {
+        using var preferencesScope = new LastStandTestPreferencesScope();
+        var factory = LastStandLoopController.StorageFactory;
+        try
+        {
+            LastStandLoopController.StorageFactory = () => new MemoryStorage();
+            EditorSceneManager.OpenScene(Playable,OpenSceneMode.Single);
+            InitializeScene();
+            var loop = UnityEngine.Object.FindFirstObjectByType<LastStandLoopController>();
+            // Batch edit-mode import does not run this scene owner's OnEnable.
+            // Enable the imported EventSystem, as the maintained input fixture does.
+            foreach (var events in Resources.FindObjectsOfTypeAll<EventSystem>())
+                if (events.gameObject.scene == loop.gameObject.scene)
+                { Invoke(events,"OnEnable"); EventSystem.current = events; break; }
+            Require(EventSystem.current,"actual scene EventSystem is enabled");
+            Focus(loop.Session); loop.RefreshControls();
+            var root = UnityEngine.Object.FindFirstObjectByType<Canvas>().transform.Find("LastStandLoopHud");
+            CheckChromeGraphic(root.Find("LastStandCard").GetComponent<Image>(),false);
+            foreach (var button in root.GetComponentsInChildren<Button>(true))
+            {
+                if (button.transform.IsChildOf(root.Find("SettingsModal"))) continue;
+                CheckChromeButton(button);
+            }
+            Debug.Log("ST_LS_CHROME_PASS test_backing_and_frame_share_clipped_outline");
+            foreach (var page in new[] { "menu", "settings", "help", "about", "confirm" })
+            {
+                loop.OpenMenu(page); loop.RefreshControls(); Canvas.ForceUpdateCanvases();
+                var panel = root.Find("SettingsModal/SettingsPanel");
+                Require(panel && panel.Find("ConsoleFrame"),page + " uses shared panel chrome");
+                CheckChromeGraphic(panel.GetComponent<Image>(),false);
+                CheckChromeGraphic(panel.Find("ConsoleFrame").GetComponent<Graphic>(),false);
+                foreach (var button in panel.GetComponentsInChildren<Button>(true)) CheckChromeButton(button);
+            }
+            Debug.Log("ST_LS_CHROME_PASS test_all_menu_consumers_use_shared_chrome");
+            loop.OpenMenu(); loop.RefreshControls(); Canvas.ForceUpdateCanvases();
+            var settings = root.Find("SettingsModal/SettingsPanel");
+            Button open = null;
+            foreach (var button in settings.GetComponentsInChildren<Button>(true)) if (button.name == "MenuSettings") open = button;
+            Require(open && open.IsInteractable(),"actual settings control remains available");
+            var target = open.targetGraphic;
+            Require(target && target.raycastTarget && target.rectTransform == open.transform,"same semantic rectangular target owner");
+            var bounds = target.rectTransform.rect;
+            var center = RectTransformUtility.WorldToScreenPoint(null,target.rectTransform.TransformPoint(bounds.center));
+            Require(target.Raycast(center,null),"native center hit remains admitted");
+            ExecuteEvents.Execute(open.gameObject,new BaseEventData(EventSystem.current),ExecuteEvents.submitHandler);
+            Require(loop.MenuPage == "settings","native Submit keeps the original settings callback");
+            loop.RequestConfirmation("reset-settings"); loop.RefreshControls();
+            Require(EventSystem.current.currentSelectedGameObject && EventSystem.current.currentSelectedGameObject.name == "ConfirmCancel",
+                "destructive confirmation still initially focuses Cancel");
+            Debug.Log("ST_LS_CHROME_PASS test_focus_and_hit_targets_preserved");
+        }
+        finally
+        {
+            LastStandLoopController.StorageFactory = factory;
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+        }
+    }
+    static void CheckChromeButton(Button button)
+    {
+        var rect = (RectTransform)button.transform;
+        var savedSize = rect.sizeDelta;
+        bool wasActive = button.gameObject.activeSelf, wasAvailable = button.interactable;
+        button.gameObject.SetActive(true);
+        var pointer = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
+        foreach (var size in new[] { new Vector2(44,44), new Vector2(92,44), new Vector2(220,52) })
+        {
+            rect.sizeDelta = size;
+            foreach (var state in new[] { "normal", "selected", "pressed", "disabled" })
+            {
+                button.interactable = state != "disabled";
+                ExecuteEvents.Execute(button.gameObject,pointer,ExecuteEvents.pointerUpHandler);
+                ExecuteEvents.Execute(button.gameObject,new BaseEventData(EventSystem.current),ExecuteEvents.deselectHandler);
+                if (state == "selected") ExecuteEvents.Execute(button.gameObject,new BaseEventData(EventSystem.current),ExecuteEvents.selectHandler);
+                if (state == "pressed") ExecuteEvents.Execute(button.gameObject,pointer,ExecuteEvents.pointerDownHandler);
+                var feedback = button.GetComponent("LastStandActionFeedback");
+                feedback?.GetType().GetMethod("Refresh").Invoke(feedback,null);
+                CheckChromeGraphic(button.GetComponent<Image>(),true);
+                var frame = button.transform.Find("ConsoleFrame");
+                Require(frame,button.name + " shares the console frame");
+                CheckChromeGraphic(frame.GetComponent<Graphic>(),true);
+            }
+        }
+        button.interactable = wasAvailable; rect.sizeDelta = savedSize; button.gameObject.SetActive(wasActive);
+    }
+    static void CheckChromeGraphic(Graphic graphic, bool action)
+    {
+        Require(graphic,"chrome graphic exists");
+        var rect = graphic.rectTransform.rect;
+        float cut = Mathf.Min(action ? 6 : rect.height <= 52 ? 2 : 9,Mathf.Min(rect.width,rect.height)/2);
+        using var mesh = new VertexHelper();
+        var populate = graphic.GetType().GetMethod("OnPopulateMesh",BindingFlags.Instance|BindingFlags.NonPublic,
+            null,new[] { typeof(VertexHelper) },null);
+        Require(populate != null,"real UI mesh population method");
+        populate.Invoke(graphic,new object[] { mesh });
+        foreach (var effect in graphic.GetComponents<BaseMeshEffect>()) if (effect.IsActive()) effect.ModifyMesh(mesh);
+        Require(mesh.currentVertCount > 0,graphic.name + " has actual material triangles");
+        var vertex = UIVertex.simpleVert;
+        for (int i=0;i<mesh.currentVertCount;i++)
+        {
+            mesh.PopulateUIVertex(ref vertex,i); var p = vertex.position;
+            float left=p.x-rect.xMin,right=rect.xMax-p.x,top=rect.yMax-p.y,bottom=p.y-rect.yMin;
+            Require(left>=-.001f && right>=-.001f && top>=-.001f && bottom>=-.001f &&
+                left+top>=cut-.001f && right+top>=cut-.001f && left+bottom>=cut-.001f && right+bottom>=cut-.001f,
+                graphic.transform.parent.name + "/" + graphic.name + " opaque chrome vertex stays inside the clipped outline at " + p);
+        }
+    }
     public static void Run()
     {
         using var preferencesScope = new LastStandTestPreferencesScope();
@@ -85,25 +194,28 @@ public static class LastStandLoopChecks
                 "playable garage has no inspection callout owner");
             Require(UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length==1,
                 "one camera audio listener");
-            if(launcher)art.ToggleAttachment();
-            Focus(loop.Session); loop.Deploy();
-            Require(loop.Session.Model!=null && loop.Session.Model.Profile.Id=="playable-prototype-v1" &&
-                loop.Session.Model.CommittedCannonDamage==20,"committed playable run");
+            Focus(loop.Session);loop.RefreshControls();if(launcher)loop.MoveGarageFitting(1);
+            loop.Deploy();
+            Require(loop.Session.Model!=null && loop.Session.Model.Profile.IsWaveBased &&
+                loop.Session.Model.Profile.Id==EncounterProfile.ForTier(1).Id && loop.Session.Model.HasLauncher==launcher &&
+                loop.Session.Model.CommittedCannonDamage==20,"committed wave run with selected fitting");
             var baseline=loop.Session.Model;
-            while(baseline.Status==EncounterStatus.Running)baseline.Step();
+            AdvanceNaturalDefeat(loop);
             Require(baseline.Status==EncounterStatus.Defeated,"both fittings naturally defeat");
-            Invoke(loop,"OnSessionChanged");
-            Require(loop.Phase=="settling" && loop.Progression.PendingDefeat!=null,"defeat staged by actual controller");
+            Require(loop.Phase=="settling" && loop.Progression.PendingDefeat==null && !loop.Progression.HasCheckpoint,
+                "defeat finalized without a second payout by actual controller");
+            int banked=loop.Progression.Wallet;Require(banked>0 && loop.Progression.GetBestWave(1)>0,"cleared waves banked before defeat");
             typeof(LastStandLoopController).GetField("settle",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(loop,0f);
             Invoke(loop,"Update");
             Require(loop.Phase=="result","result after settle");
             loop.Claim();
-            Require(loop.Phase=="workshop" && loop.Progression.Wallet==1,"one claim and workshop");
+            Require(loop.Phase=="workshop" && loop.Progression.Wallet==banked,"continue reaches workshop without another award");
             EditorSceneManager.OpenScene(Playable,OpenSceneMode.Single);
             InitializeScene();
             loop=UnityEngine.Object.FindFirstObjectByType<LastStandLoopController>();
             Focus(loop.Session);
-            Require(loop.Phase=="workshop" && loop.Progression.Wallet==1,"saved claim restores workshop after reload");
+            Require(loop.Phase=="workshop" && loop.Progression.Wallet==banked && !loop.Progression.HasCheckpoint,
+                "banked waves restore workshop without resurrecting defeated run");
             loop.Purchase();
             Require(loop.Progression.CannonDamage==30,"permanent purchase");
             loop.Redeploy();
@@ -112,7 +224,7 @@ public static class LastStandLoopChecks
             if(!launcher)
             {
                 bool baselineHit=false, upgradedHit=false;
-                var a=new EncounterModel(false,EncounterProfile.PlayablePrototype,20);
+                var a=new EncounterModel(false,EncounterProfile.ForTier(1),20);
                 while(a.Tick<80 && !baselineHit)
                 {
                     a.Step(); foreach(var e in a.Events)if(e.Kind==EncounterEventKind.Cannon)
@@ -128,8 +240,23 @@ public static class LastStandLoopChecks
             Require(UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length==1 &&
                 UnityEngine.Object.FindObjectsByType<EncounterSession>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length==1,
                 "one canvas and session");
-            upgraded=null; loop.Progression.AbandonRun();
+            loop.RequestConfirmation("abandon");loop.ConfirmAction();
+            Require(!loop.Progression.HasCheckpoint,"cleanup uses confirmed abandon");
         }
+    }
+    static void AdvanceNaturalDefeat(LastStandLoopController loop)
+    {
+        // Artificial Editor timestamps qualify session/controller behavior, not
+        // real elapsed browser duration or rendered media. Finite wave boundaries
+        // are acknowledged only by the actual controller and storage owner.
+        int budget=1000;
+        while(loop.Session.Model.Status==EncounterStatus.Running && budget-->0)
+        {
+            var clock=(LastStandRunClock)typeof(EncounterSession).GetField("runClock",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(loop.Session);
+            loop.Session.AdvanceAt(clock.LastTimestamp+6);
+            Require(loop.Session.Failure=="" && !loop.Session.CheckpointBlocked,"ordinary wave save remains confirmed");
+        }
+        Require(loop.Session.Model.Status==EncounterStatus.Defeated,"bounded ordinary fitting reaches natural defeat");
     }
     static void PauseTerminalUiAndAudioLifecycle()
     {
@@ -151,9 +278,8 @@ public static class LastStandLoopChecks
         loop.ToggleMute(); Require(loop.Muted && !loop.Audio.CanPlay,"mute admission");
         loop.ToggleMute(); Require(!loop.Muted && !loop.Audio.Suspended,"session unmute");
         var model=loop.Session.Model;
-        while(model.Status==EncounterStatus.Running)model.Step();
-        Invoke(loop,"OnSessionChanged");
-        Require(loop.Phase=="settling" && loop.Progression.PendingDefeat!=null && !loop.Audio.Suspended,
+        AdvanceNaturalDefeat(loop);
+        Require(loop.Phase=="settling" && !loop.Progression.HasCheckpoint && loop.Progression.PendingDefeat==null && !loop.Audio.Suspended,
             "saved terminal settles without muting sound");
         int tick=model.Tick; model.Step(); Require(model.Tick==tick,"terminal combat does not step");
         Invoke(loop,"Update");
@@ -195,9 +321,9 @@ public static class LastStandLoopChecks
     }
     static void SameTickLauncherKillKeepsImpactCue()
     {
-        var model=new EncounterModel(true,EncounterProfile.PlayablePrototype,20);
+        var model=new EncounterModel(true,EncounterProfile.ForTier(1),20);
         bool found=false;
-        while(model.Status==EncounterStatus.Running && !found)
+        while(model.Status==EncounterStatus.Running && model.Tick<100000 && !found)
         {
             model.Step();
             foreach(var first in model.Events)
@@ -209,6 +335,7 @@ public static class LastStandLoopChecks
                     "cannon impact and launcher destruction retain event-time outcome");
                 found=true; break;
             }
+            if(model.AwaitingWaveCommit && model.Status==EncounterStatus.Running)model.ContinueAfterCheckpoint();
         }
         Require(found,"approved launcher profile reaches same-tick finishing shot");
     }

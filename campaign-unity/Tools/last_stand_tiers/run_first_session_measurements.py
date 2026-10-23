@@ -1,16 +1,22 @@
 """Run bounded first-session measurements using actual compiled production owners.
 
 This is numerical source evidence, not a timed browser journey or owner acceptance.
-The first upgrade uses an in-memory production defeat/Claim/purchase/reload cycle;
-the cap cases are deliberately numerical bounds, not assertions of earned levels.
+The first upgrade uses committed wave income and the production purchase/reload
+cycle. Temporary purchases follow the declared cheapest-eligible benchmark policy.
+Long-run bounds and future 5x projections are measured by last_stand_waves/measure_balance.py.
 """
 import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import sys
 import subprocess
 import tempfile
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+
 
 PROJECT = Path(__file__).resolve().parents[2]
 REPO = PROJECT.parent
@@ -23,7 +29,7 @@ SOURCE_NAMES = (
 )
 FIELDS = (
     "tier", "fitting", "scenario", "ticks", "kills", "hull", "status",
-    "first_kill_tick", "first_incoming_hit_tick", "hull_at_goal", "kills_at_goal",
+    "first_kill_tick", "first_incoming_hit_tick", "completed_waves", "banked_salvage",
     "cannon_shots", "launcher_shots", "hull_restored", "close_hits", "ranged_hits",
     "cannon_damage", "maximum_hull", "cannon_period_ticks", "launcher_damage", "repair_amount",
 )
@@ -53,6 +59,7 @@ def measure(editor):
     compiler = editor / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
     sources = [SCRIPTS / name for name in SOURCE_NAMES] + [Path(__file__).with_suffix(".py"),
               Path(__file__).with_name("FirstSessionMeasurements.cs")]
+    sources = complete_sources(SCRIPTS, sources)
     before = hashes(sources)
     with tempfile.TemporaryDirectory(prefix="st-first-session-measurements-") as folder:
         executable = Path(folder) / "FirstSessionMeasurements.exe"
@@ -68,7 +75,7 @@ def measure(editor):
             item = {key: value if key in ("fitting", "scenario", "status") else int(value)
                     for key, value in zip(FIELDS, values)}
             item["seconds"] = item["ticks"] / 20
-            item["goal_reached"] = item["hull_at_goal"] >= 0
+            item["advancement_wave_reached"] = item["completed_waves"] >= 300
             measurements.append(item)
         elif record == "earned" and len(values) == 6:
             earned.append(dict(fitting=values[0], tier_one_ticks=int(values[1]),
@@ -76,13 +83,14 @@ def measure(editor):
                                remaining_salvage=int(values[4]), tier_two_unlocked=values[5] == "True"))
         else:
             raise RuntimeError(f"Unexpected measurement output: {line}")
-    if len(measurements) != 16 or len(earned) != 2:
+    if len(measurements) != 4 or len(earned) != 2:
         raise RuntimeError("Missing scenarios or production purchase proofs.")
     return {
-        "schema": "last-stand-first-session-measurements-v1",
+        "schema": "last-stand-first-session-measurements-v2",
         "measured_at_utc": datetime.now(timezone.utc).isoformat(),
         "git_head": run(["git", "rev-parse", "HEAD"], cwd=REPO).strip(),
         "editor": str(editor), "scope": "compiled production model; no browser timing or player acceptance",
+        "policy": "After each kill buy the cheapest eligible run track; ties prefer cannon, hull, cadence, armor, then fitting. Persist each actual wave boundary. Buy one permanent Cannon Attack level between measured runs.",
         "sources": before, "earned_upgrade_proofs": earned,
         "measurements": sorted(measurements, key=lambda item: (item["tier"], item["fitting"], item["scenario"])),
         "raw_output": raw.splitlines(),

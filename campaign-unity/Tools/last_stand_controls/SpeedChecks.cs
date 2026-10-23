@@ -25,7 +25,17 @@ static class SpeedChecks
         Field(session, "art", new SingedTerra.Art.TankPresentation { showingLauncher = launcher });
         if (playable) Field(session, "loop", new LastStandLoopController());
         typeof(EncounterSession).GetProperty("View").SetValue(session, new EncounterView());
-        session.DeployAt(0);
+        if(playable)
+        {
+            var shop=new LastStandShopState(1,launcher?LastStandFitting.Launcher:LastStandFitting.Repair,
+                new int[LastStandUpgradeCatalog.Tracks.Count]);
+            // This scheduler fixture assumes an accepted boundary. Faults and
+            // durable writes belong to the actual controller integration suite.
+            session.WaveCleared+=model=>{shop.ObserveAuthoritativeKills(model.Kills);session.ContinueCommittedWave();};
+            UnityEngine.Time.realtimeSinceStartupAsDouble=0;
+            session.DeployReservedRun(shop);
+        }
+        else session.DeployAt(0);
         return session;
     }
     static void Drain(EncounterSession session, double now)
@@ -41,7 +51,8 @@ static class SpeedChecks
     static EncounterModel Reference(int ticks, bool launcher = false)
     {
         var model = new EncounterModel(launcher, EncounterProfile.ForTier(1), EncounterModel.CannonDamage);
-        while (model.Tick < ticks && model.Status == EncounterStatus.Running) model.Step();
+        while (model.Tick < ticks && model.Status == EncounterStatus.Running)
+        {model.Step();if(model.AwaitingWaveCommit && model.Status==EncounterStatus.Running)model.ContinueAfterCheckpoint();}
         return model;
     }
     static void HalfSpeed()
@@ -148,7 +159,7 @@ static class SpeedChecks
     {
         foreach (bool launcher in new[] { false, true })
         {
-            var reference = Reference(3600, launcher);
+            var reference = Reference(24000, launcher);
             Check(reference.Status != EncounterStatus.Running, "reference reaches terminal");
             double terminalWall = reference.Tick * .1;
             var session = Session(launcher);
@@ -237,6 +248,7 @@ namespace SingedTerra.Art
     public class TankPresentation : UnityEngine.MonoBehaviour
     {
         public bool showingLauncher;
+        public string FittingId=>showingLauncher?"launcher":"repair";
         public bool EncounterActive;
         public bool BeginEncounter() { EncounterActive = true; return true; }
         public void EndEncounter() { EncounterActive = false; }

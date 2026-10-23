@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { chromium } from '@playwright/test';
-import { runLastStandTierJourney } from '../e2e/helpers/lastStandTierJourney.mjs';
+import { runLastStandWaveJourney } from '../e2e/helpers/lastStandWaveJourney.mjs';
 
 const baseURL = process.env.E2E_LIVE_URL ?? 'http://127.0.0.1:4173/singedTerra/';
 const output = resolve(process.argv[2] ?? 'campaign-unity/Evidence/first-session-polish/first-session-' + new Date().toISOString().replace(/[:.]/g, '-'));
@@ -20,7 +20,7 @@ for (const fitting of ['repair', 'launcher']) {
       outputPath: name => { assert.equal(name, name.split(/[\\/]/).at(-1)); return join(directory, name); },
       attach: async (name, value) => { attachments.push({ name, path: value.path, contentType: value.contentType }); },
     };
-    await runLastStandTierJourney({ page, baseURL, testInfo: evidenceSink, fitting, firstSession: true });
+    await runLastStandWaveJourney({ page, baseURL, testInfo: evidenceSink, fitting });
     observations.push({ fitting, status: 'pass', attachments });
     console.log('FIRST_SESSION_PASS=' + fitting);
   } catch (error) {

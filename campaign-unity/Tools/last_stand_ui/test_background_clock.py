@@ -12,6 +12,10 @@ import sys
 import tempfile
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+
+
 sys.dont_write_bytecode = True
 cache_dir = Path(__file__).with_name("__pycache__")
 cache_file = cache_dir / f"{Path(__file__).stem}.{sys.implementation.cache_tag}.pyc"
@@ -43,6 +47,7 @@ class BackgroundClockTests(unittest.TestCase):
         sources = [SCRIPTS / "EncounterModel.cs", SCRIPTS / "EncounterProfile.cs", SCRIPTS / "LastStandTierCatalog.cs", DRIVER]
         sources.append(SCRIPTS / ("EncounterSession.cs" if baseline else "LastStandRunClock.cs"))
         sources.append(SCRIPTS / "LastStandSpeedPolicy.cs")
+        sources = complete_sources(SCRIPTS, sources)
         command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
         if baseline:
             command.append("-define:ST_CLOCK_BASELINE")

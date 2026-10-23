@@ -22,15 +22,30 @@ describe('Last Stand campaign entry', () => {
 });
 
 describe('LastStandCommandView', () => {
-  it('discloses unfinished-run loss before launch', () => {
+  it('explains checkpoint rollback, paused resume and local-only saves before launch', () => {
     const host = document.createElement('div');
     const view = createLastStandCommandView(host);
     const disclosure = host.querySelector<HTMLElement>('[data-last-stand-loss-disclosure]')!;
-    expect(disclosure?.textContent).toContain('Leaving or reloading an unfinished run loses its progress without a reward.');
-    expect(disclosure?.textContent).toContain('Saved upgrades and pending defeat rewards stay in this browser only after a successful save.');
+    expect(disclosure?.textContent).toContain('last confirmed wave checkpoint and banked rewards');
+    expect(disclosure?.textContent).toContain('Resume starts paused');
+    expect(disclosure?.textContent).toContain('upgrades and spending roll back together');
+    expect(disclosure?.textContent).toContain('do not sync with your account');
     expect(disclosure?.hidden).toBe(false);
     expect(host.querySelector('a')?.getAttribute('aria-describedby')).toBe(disclosure?.id);
     expect(host.textContent).not.toContain('Stored locally on this device');
     view.dispose();
+  });
+  it('offers a read-only checkpoint hint and never changes save bytes', () => {
+    const key='singedTerra.lastStand.prototype.v1';
+    const raw=JSON.stringify({version:4,checkpoint:{runId:7,encounter:{tier:2,completedWave:300}}});
+    localStorage.setItem(key,raw);
+    try {
+      const host=document.createElement('div'),view=createLastStandCommandView(host);
+      expect(host.querySelector('a')?.textContent).toBe('Resume Tier 2 · Wave 301');
+      expect(localStorage.getItem(key)).toBe(raw);
+      localStorage.setItem(key,'invalid');view.update({});
+      expect(host.querySelector('a')?.textContent).toBe('Launch Last Stand');
+      expect(localStorage.getItem(key)).toBe('invalid');view.dispose();
+    } finally { localStorage.removeItem(key); }
   });
 });

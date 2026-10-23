@@ -9,6 +9,38 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The current in-repo visual scope is
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
+## Wave sprint candidate — October 23, 2026
+
+The owner approved the [waves and resume specification](../../.codearbiter/specs/last-stand-waves-and-resume.html)
+and its [implementation plan](../../.codearbiter/plans/last-stand-waves-and-resume.html).
+The candidate replaces timed tier goals with finite enemy groups. Clearing Tier 1
+wave 300 unlocks Tier 2 without ending the run or moving the player. Milestones
+provide one-time bonuses; each cleared wave also pays repeatable Salvage.
+Tier 1 wave 100 unlocks the auxiliary Scattergun. The original launcher and field
+repair remain available. Only the two authored tiers are playable.
+
+Version 4 saves bank each wave's rewards and complete run checkpoint together.
+Resume restores hull, wave, fitting, upgrades, resources and combat state, initially
+paused. Closing the page rolls back only unfinished-wave progress; an open hidden
+tab retains the existing background-continuation behavior. Explicit abandon
+finalizes the run, while ordinary Return preserves it. Existing permanent progress
+and pending legacy rewards migrate without inventing wave history. Current wave
+runs need no manual reward claim.
+
+The Menu and its child pages now use the shared console chrome, including matched
+chamfered backing corners. Confirmed wave receipts name the earned Salvage and any
+unlock, including when tutorial and purchase suggestions are disabled. The HUD
+retains separate Menu, speed and upgrade controls.
+
+The pacing reference is a mature 5,000-wave farming run taking 10–12 real hours
+at a future researched 5x speed. The shipped controls remain pause, 0.5x and 1x;
+research and higher speeds are later work. Production-model calibration includes
+earned purchase trajectories and 5,000-plus-wave comparisons. Accelerated
+simulations and imported milestone fixtures do not establish elapsed-time endurance.
+Current browser qualification, the dedicated 10–12-hour observation, exact-head
+hosted CI, owner media acceptance, merge and deployment are tracked separately in
+the plan. The older delivery observations below retain their historical scope.
+
 ## Owner direction update — October 22, 2026
 
 The owner accepted the current player-controls sprint and garage/combat layout in

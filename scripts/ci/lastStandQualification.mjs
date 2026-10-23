@@ -8,6 +8,8 @@ import { dirname, resolve, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { LAST_STAND_JOURNEY_INPUTS, admitEncounterOracleOutput, encounterOraclePackage, encounterCompilationSourceBinding, validateSettlingTransition } from '../../e2e/helpers/lastStandJourney.mjs';
 
+import {assertCombinedWaveQualification,currentWaveExpected,verifyWaveFiles} from './lastStandWaveQualification.mjs';
+
 const root=resolve(import.meta.dirname,'../..');
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const read=path=>JSON.parse(readFileSync(path,'utf8'));
@@ -105,7 +107,7 @@ function assertSettlingPngDimensions(bytes,viewport){
   assert.equal(bytes.readUInt32BE(16),viewport.width,'Actual settling PNG width differs');
   assert.equal(bytes.readUInt32BE(20),viewport.height,'Actual settling PNG height differs');
 }
-function verifyFiles(path,report) {
+export function verifyFiles(path,report) {
   const directory=dirname(resolve(path));
   const verify=item=>{
     assert.ok(item && item.file===basename(item.file),'Evidence reference must be a file within its result directory');
@@ -144,6 +146,8 @@ function verifyFiles(path,report) {
   assert.equal(digest(raw),model.output_sha256);assert.equal(model.commands[1].stdout_sha256,model.output_sha256);
   const reference=encounterOraclePackage(),profiles=admitEncounterOracleOutput(raw,reference,reference.source_lf_sha256).profiles;
   const telemetry=read(resolve(directory,'runtime-telemetry.json'));
+  if(report.contract==='last-stand-waves/v1')verifyWaveFiles(path,report);
+  else {
   const recorded=report.lifecycle.find(item=>item.kind==='settling-transition').evidence;
   const actual=validateSettlingTransition({before:recorded.before,result:recorded.result,...telemetry,
     oracle:profiles[`${recorded.before.fitting}:${recorded.before.loop.cannonDamage}`]});
@@ -159,6 +163,7 @@ function verifyFiles(path,report) {
     for(const state of [interaction.paused,interaction.resumed,...shots.map(item=>item.state)])
       assert.deepEqual(telemetry.states.find(item=>item.load===state.load && item.timeOrigin===state.timeOrigin &&
         item.action===state.action && item.t===state.t),state,'Settling interaction differs from actual runtime telemetry');
+  }
   }
   for(const [i,command]of model.commands.entries())for(const stream of ['stdout','stderr']){
     assert.equal(command[stream],(i===0?'compile':'run')+'.'+stream+'.txt','Fixed contained model stream required');
@@ -180,15 +185,8 @@ if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).
     assert.equal(git(['cat-file','-t',linuxCheckout]),'commit','Linux checkout must be a commit object');
     linuxParents=git(['show','-s','--no-show-signature','--format=%P',linuxCheckout]).split(' ');
   }
-  const manifestPath=resolve(root,'client/public/last-stand/asset-manifest.json'),manifest=read(manifestPath);
-  const runtime={manifest_sha256:digest(readFileSync(manifestPath)),receipt_sha256:manifest.source.receiptSha256,
-    source_lock_sha256:manifest.source.sourceLockSha256,source_inventory_sha256:manifest.source.sourceInventorySha256,
-    wrapper_sha256:manifest.wrapperSha256,build:manifest.source.build};
-  const served=Object.fromEntries(Object.entries({...manifest.files,'index.html':manifest.wrapperSha256}).map(([path,sha256])=>{
-    const bytes=readFileSync(resolve(root,'client/public/last-stand',path));assert.equal(digest(bytes),sha256);
-    return [path,{sha256,bytes:bytes.length}];
-  }));
-  const result=assertCombinedQualification({windows,linux,head,inputs:currentQualificationInputs(),runtime,served,baseHead,linuxParents});
+  const result=assertCombinedWaveQualification({windows,linux,head,inputs:currentQualificationInputs(),
+    ...currentWaveExpected(root),baseHead,linuxParents});
   verifyFiles(windowsPath,windows);verifyFiles(linuxPath,linux);
   console.log(JSON.stringify({...result,windows_result_sha256:digest(readFileSync(windowsPath)),linux_result_sha256:digest(readFileSync(linuxPath))}));
 }

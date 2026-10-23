@@ -96,11 +96,15 @@ static class SelectionChecks
     }
     static void FittingCatalog()
     {
-        Require(LastStandFittingCatalog.Options.Select(o => o.Id).SequenceEqual(new[] { "repair", "launcher" }), "real catalog contains only the two implemented fittings");
-        Require(LastStandFittingCatalog.Options.All(o => o.Unlocked && !string.IsNullOrWhiteSpace(o.Description)), "available fittings provide actual descriptions");
+        Require(LastStandFittingCatalog.Options.Select(o => o.Id).SequenceEqual(new[] { "repair", "launcher", "scattergun" }), "real catalog contains the three implemented fitting identities");
+        Require(LastStandFittingCatalog.Options.All(o => !string.IsNullOrWhiteSpace(o.Description)) &&
+            LastStandFittingCatalog.Options.Take(2).All(o=>o.Unlocked) && !LastStandFittingCatalog.Options[2].Unlocked,
+            "original fittings remain available and new milestone fitting provides its locked description");
         var selector = new LastStandSelection(LastStandFittingCatalog.Options, "repair", false);
         Require(selector.Current.Name == "Field Repair", "current fitting name is explicit");
         Require(selector.Move(1) && selector.Current.Name == "Auxiliary Launcher", "next fitting has explicit identity and name");
+        Require(selector.Move(1) && selector.Current.Id=="scattergun" && !selector.Current.Unlocked,"new fitting is a locked preview before its milestone");
+        Reject<ArgumentException>(()=>selector.Reset("scattergun"),"locked Scattergun cannot be selected");
         Require(!selector.Move(1), "real fitting catalog has a bounded endpoint");
     }
     public static int Main(string[] args)

@@ -1,8 +1,12 @@
 """Production tier text and pure geometry checks; rendered UI proof remains separate."""
 from pathlib import Path
+import sys
 import subprocess
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
 
 PROJECT = Path(__file__).resolve().parents[2]
 EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
@@ -18,6 +22,7 @@ class TierHudTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "TierHudChecks.exe"
         sources = [SCRIPTS / name for name in ("LastStandTierCatalog.cs", "LastStandTierHudText.cs", "LastStandHudLayout.cs")]
         sources.append(Path(__file__).with_name("TierHudChecks.cs"))
+        sources = complete_sources(SCRIPTS, sources)
         build = subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}", *map(str, sources)],
                                capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
         if build.returncode:
@@ -40,7 +45,7 @@ class TierHudTests(unittest.TestCase):
     def test_tier_text_reports_saved_and_unsaved_outcomes(self):
         self.case("text")
 
-    def test_live_goal_explains_run_end_save_without_claiming_credit(self):
+    def test_live_wave_heading_never_claims_saved_credit(self):
         self.case("live-goal")
 
 

@@ -59,9 +59,9 @@ export function readShopControlObservation(raw) {
       'Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext']],
     ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
       'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
-      'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy']],
+      'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy','ShopCard_scattergunAttackBuy']],
     ['settingsControls',['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3',
-      'MenuResume','MenuSettings','MenuHelp','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
+      'MenuResume','MenuSettings','MenuHelp','MenuMilestones','MenuNewRun','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
       'MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus',
       'DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp',
       'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed','ChoicePrevious','ChoiceNext']]];
@@ -227,8 +227,23 @@ async function bindShopPlayerRuntime(baseURL) {
   return {base,binding,before,documentaryPath};
 }
 
+export function assertHistoricalShopRuntime(receipt) {
+  assert.equal(receipt?.schema,'singedterra-last-stand-export/v2','Historical Shop requires an explicit export receipt');
+  assert.equal(receipt.status,'pass');assert.equal(receipt.complete,true);
+  assert.ok(receipt.sourceFiles && typeof receipt.sourceFiles==='object' && !Array.isArray(receipt.sourceFiles),
+    'Historical Shop requires an explicit source inventory');
+  assert.ok(Object.keys(receipt.sourceFiles).some(path=>path.endsWith('/EncounterModel.cs')),
+    'Historical Shop requires its actual combat source inventory');
+  assert.ok(!Object.keys(receipt.sourceFiles).some(path=>path.endsWith('/LastStandWaveCatalog.cs')),
+    'Historical v3/manual-Claim Shop journey cannot qualify current wave gameplay. '+
+    'Run node scripts/last-stand-first-session.mjs <fresh-evidence-directory> for current earned wave/Shop input evidence; '+
+    'run campaign-unity/Tools/last_stand_waves/test_checkpoint_store.py and '+
+    'campaign-unity/Tools/last_stand_shop/test_shop_persistence.py for current storage fault coverage.');
+}
+
 export async function runLastStandShopJourney({baseURL,chromium,fitting}) {
   assert.ok(['launcher','repair'].includes(fitting),'Unknown Shop fitting');
+  assertHistoricalShopRuntime(JSON.parse(readFileSync(resolve(ROOT,'campaign-unity/docs/last-stand-web/receipt-sanitized.json'),'utf8')));
   if(['background-storage','background-native'].includes(process.env.ST_SHOP_QUALIFICATION))
     return runShopRecoveryJourney({baseURL,chromium,fitting});
   const parent=admitEvidenceParent(process.env.ST_SHOP_TEST_EVIDENCE);
@@ -1279,11 +1294,12 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, ex
 import { resolve, join, relative, isAbsolute, dirname } from 'node:path';
 import { tmpdir, release, arch } from 'node:os';
 import { gunzipSync } from 'node:zlib';
+import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const SAVE_KEY = 'singedTerra.lastStand.prototype.v1';
 const SELECTION_KEY = 'singedterra.command-center.selection.v1';
-const TITLE = 'Last Stand Campaigns journey preserves no-award exit and a stronger redeploy';
+const TITLE = 'Last Stand wave checkpoints survive Return and reload before a stronger redeploy';
 import {LAST_STAND_VIEWPORTS as VIEWPORTS, lastStandViewportPartition, lastStandJourneySection, LAST_STAND_ENTRY_ROUTES} from './lastStandMatrix.mjs';
 export {lastStandViewportPartition} from './lastStandMatrix.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -1318,7 +1334,7 @@ const RUNTIME_PROBE = `(() => {
     const text = args.map(String).join(' ');
     const t = performance.now(), timeOrigin = performance.timeOrigin;
     original.apply(this,args);
-    if (['ST_ENC_STATE ','ST_LS_STATE ','ST_LS_HIT ','ST_LS_HUD_LAYOUT ','ST_LS_AUDIO event='].some(tag=>text.includes(tag)))
+    if (['ST_ENC_STATE ','ST_ENC_CALLBACK ','ST_LS_STATE ','ST_LS_HIT ','ST_LS_HUD_LAYOUT ','ST_LS_AUDIO event='].some(tag=>text.includes(tag)))
       original.call(console,'ST_TEST_RUNTIME '+JSON.stringify({t,timeOrigin,text}));
   };
 })();`;
@@ -1326,7 +1342,12 @@ const RUNTIME_PROBE = `(() => {
 // Associate loop records with the session run actually preceding them in this
 // console stream. Progression runId and EncounterSession.run are different
 // domains; their deploy records below establish the association, not equality.
-export function retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues}) {
+export function retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues,callbackRecords}) {
+  if(observation.text.includes('ST_ENC_CALLBACK ')) {
+    assert.ok(Array.isArray(callbackRecords),'Callback observations require their dedicated owner');
+    callbackRecords.push({...JSON.parse(observation.text.split('ST_ENC_CALLBACK ')[1].split('\n')[0]),
+      t:observation.t,timeOrigin:observation.timeOrigin,load,scope});
+  }
   for(const [tag,items] of [['ST_LS_STATE ',states],['ST_ENC_STATE ',encounters],['ST_LS_HIT ',hits],['ST_LS_HUD_LAYOUT ',layouts]]) {
     if(!observation.text.includes(tag))continue;
     const item={...JSON.parse(observation.text.split(tag)[1].split('\n')[0]),
@@ -1354,7 +1375,7 @@ export async function observeRuntimePair({encounters,states,load,clock,wait,chec
       (options.paused===undefined || item.paused===options.paused) && item.run===latest?.run && item.t>=(options.minT??0)) : latest;
     const deployment=encounters.findLast(item=>documentRecord(item) && item.run===encounter?.run && item.action==='deploy');
     const deployedState=deployment && states.find(item=>documentRecord(item) && item.sessionRun===deployment.run &&
-      item.action==='deploy' && item.tick===0 && item.t>=deployment.t && item.runId>0);
+      ['deploy','resume'].includes(item.action) && item.tick===deployment.tick && item.t>=deployment.t && item.runId>0);
     const state=states.findLast(item=>documentRecord(item) && item.sessionRun===encounter?.run && item.tick===encounter?.tick &&
       item.t>=encounter.t && loopRun(item)===loopRun(current));
     detail={options,now,latest,current,encounter,state,deployment,deployedState};
@@ -1385,7 +1406,8 @@ export async function observeRuntimePair({encounters,states,load,clock,wait,chec
 function sameDocument(before, after) {
   for (const item of [before,after]) {
     assert.ok(Number.isFinite(item?.t) && Number.isFinite(item.timeOrigin), 'Invalid observation clock');
-    assert.ok(Number.isInteger(item.tick) && item.tick>=0 && item.tick<=3600, 'Invalid observed tick');
+    const maximum=Number.isInteger(item.wave) && item.wave>0 ? 2147483647 : 3600;
+    assert.ok(Number.isSafeInteger(item.tick) && item.tick>=0 && item.tick<=maximum, 'Invalid observed tick');
   }
   assert.equal(after.load,before.load,'Background observation crossed documents');
   assert.equal(after.timeOrigin,before.timeOrigin,'Background observation clock changed');
@@ -1414,6 +1436,8 @@ export function validateModelObservation(observed,oracle) {
   assert.ok(oracle && Object.hasOwn(oracle,observed.tick),'Source-bound model oracle tick absent');
   const expected=oracle[observed.tick];
   for(const key of MODEL_FIELDS)assert.equal(observed[key],expected[key],'Source-bound model '+key+' differs');
+  if(Object.hasOwn(expected,'wave'))for(const key of ['wave','completedWave'])
+    assert.equal(observed[key],expected[key],'Source-bound wave '+key+' differs');
 }
 export function validateSettlingTransition({before,result,states,layouts,encounters,oracle}) {
   assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
@@ -1514,7 +1538,7 @@ export function validateNoReplayAudio({energy,cues}) {
 // A native return can precede its bookkeeping mark by several fresh model
 // callbacks. Admit those cues only against the current source-bound model;
 // the real away span and the gap before the first eligible cue remain silent.
-export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,cues,states,encounters,oracle}) {
+export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,cues,states,encounters,callbackRecords,oracle}) {
   assert.ok(['blur','hidden'].includes(kind) && Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) &&
     [before.t,begin,recovered,ms].every(Number.isFinite) && ms>0 && before.t<=begin && begin<recovered,
     'Invalid native audio interval identity/clock');
@@ -1549,52 +1573,65 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     assert.ok(resumed && !resumed.paused && !resumed.failed && !resumed.catchingUp,
       'Current reconciled foreground model boundary absent');
     validateModelObservation(resumed,oracle);
+    const waveRun=before.loop.profileVersion==='last-stand-waves-v1';
+    const finalizedWave=s=>s.runId===0 && s.pendingRunId===0 && s.hasCheckpoint===false &&
+      s.profileVersion===before.loop.profileVersion && s.activeTier===before.loop.activeTier && s.fittingId===before.fitting;
+    if(waveRun)assert.ok(before.wave>0 && before.rules?.startsWith(before.loop.profileVersion+':') && resumed.rules===before.rules,
+      'Current wave callback requires its exact model profile');
     const runLoops=states.filter(s=>current(s) && s.sessionRun===before.run &&
-      (s.runId || s.pendingRunId)===before.loop.runId && s.t<=recovered &&
+      (waveRun && s.action==='defeat-staged'?finalizedWave(s):(s.runId || s.pendingRunId)===before.loop.runId) && s.t<=recovered &&
       ['session','defeat-staged'].includes(s.action));
     const loops=runLoops.filter(s=>s.t>=resumed.t);
+    assert.ok(Array.isArray(callbackRecords),'Return cues require actual callback admission records');
+    const records=callbackRecords.filter(c=>current(c) && c.run===before.run && c.t<=recovered);
     const groups=new Map();
     for(const cue of returnCues) {
-      const next=loops.find(s=>s.t>=cue.t),previous=next && loops.findLast(s=>s.t<cue.t);
-      const terminals=next?.action==='defeat-staged' && previous?encounters.filter(e=>current(e) &&
-        e.run===before.run && e.action==='terminal' && e.tick===next.tick && e.t>previous.t && e.t<=next.t):[];
-      const terminal=terminals[0];
-      // OnApplicationFocus emits Changed without advancing RunClock. A duplicate
-      // tick refresh cannot replace the preceding advancing callback's clock.
-      // Admit that earlier anchor only with current-run tick advancement proof.
-      let clockPrevious=previous;
-      if(previous){
-        let index=runLoops.indexOf(previous);
-        while(index>0 && runLoops[index-1].tick===previous.tick)index--;
-        clockPrevious=runLoops[index];
-        if(clockPrevious!==previous){
-          const prior=runLoops[index-1];
-          assert.ok(prior && prior.t<clockPrevious.t && prior.tick<clockPrevious.tick &&
-            clockPrevious.tick===resumed.tick && clockPrevious.t<resumed.t &&
-            clockPrevious.phase==='battle' && !clockPrevious.paused && !clockPrevious.muted &&
-            clockPrevious.saveState==='ready' && clockPrevious.cannonDamage===before.loop.cannonDamage &&
-            clockPrevious.hull===oracle[clockPrevious.tick]?.hp && clockPrevious.kills===oracle[clockPrevious.tick]?.kills,
-            'Return callback lacks an advancing current-run clock anchor');
-        }
-      }
-      assert.ok(next && previous && next.tick>previous.tick && previous.tick>=resumed.tick &&
-        (next.phase==='battle' || terminal && next.phase==='settling') && !next.paused && !next.muted && next.saveState==='ready' &&
-        // Cues precede the callback's state log. Keep the 500ms admission bound
-        // at emission, with an independent ten-step cap and one-step log tail.
-        next.cannonDamage===before.loop.cannonDamage && cue.t-clockPrevious.t<=500 &&
-        next.t-cue.t<=50 && (next.tick-previous.tick)*50<=500 &&
-        Math.abs((next.t-clockPrevious.t-(terminal?terminal.terminalElapsed*1000:0))/50-(next.tick-previous.tick))<=1.01,
+      const admitted=records.findLast(c=>c.action==='begin' && c.t<=cue.t);
+      const ends=admitted?records.filter(c=>c.action==='end' && c.id===admitted.id):[];
+      const completed=ends[0];
+      assert.ok(admitted && completed && ends.length===1 && Number.isInteger(admitted.id) && admitted.id>0 &&
+        records.filter(c=>c.action==='begin' && c.id===admitted.id).length===1 &&
+        admitted.t>=returned.t && completed.t>=cue.t && completed.t>=admitted.t &&
+        !records.some(c=>c.action==='begin' && c.t>admitted.t && c.t<completed.t),
+        'Return cue lacks a unique current foreground callback');
+      for(const key of ['fromTick','timestamp','previousTimestamp','elapsed','priorPending','speed'])
+        assert.equal(completed[key],admitted[key],'Callback admission changed: '+key);
+      assert.ok([admitted.t,completed.t,admitted.timestamp,admitted.previousTimestamp,admitted.elapsed,
+        admitted.priorPending,admitted.pending,completed.pending,admitted.speed,admitted.age,completed.age].every(Number.isFinite) &&
+        admitted.previousTimestamp>=0 && admitted.elapsed>=0 && admitted.elapsed<=.5 && admitted.age>=0 && completed.age>=admitted.age &&
+        Math.abs(admitted.timestamp-admitted.previousTimestamp-admitted.elapsed)<1e-7 &&
+        admitted.priorPending>=0 && admitted.priorPending<.05 && admitted.speed>0 &&
+        admitted.pending>0 && admitted.pending<=admitted.priorPending+admitted.elapsed*admitted.speed+1e-7 &&
+        completed.pending>=0 && (completed.pending<.05 || oracle[completed.tick]?.status==='Defeated') &&
+        Number.isInteger(admitted.fromTick) && admitted.fromTick>=resumed.tick && admitted.tick===admitted.fromTick && admitted.steps===0 &&
+        Number.isInteger(completed.steps) && completed.steps>0 && completed.steps<=10 &&
+        completed.tick===admitted.fromTick+completed.steps &&
+        Math.abs(admitted.pending-completed.pending-completed.steps*.05)<1e-7 &&
+        (admitted.elapsed+admitted.age)*1000+cue.t-admitted.t<=500 &&
+        [admitted,completed].every(c=>c.focused===true && c.applicationPaused===false && c.paused===false && c.failed===false),
         'Return cue lacks a fresh eligible foreground model callback');
+      const previous=runLoops.findLast(s=>s.tick===admitted.fromTick && s.t<=admitted.t);
+      const next=loops.find(s=>s.tick===completed.tick && s.t>=cue.t && s.t<=completed.t);
+      const terminals=next?.action==='defeat-staged' && previous?encounters.filter(e=>current(e) &&
+        e.run===before.run && e.action==='terminal' && e.tick===next.tick && e.t>admitted.t && e.t<=next.t):[];
+      const terminal=terminals[0];
+      assert.ok(next && previous && next.tick>previous.tick && previous.tick>=resumed.tick &&
+        previous.phase==='battle' && !previous.paused && !previous.muted && previous.saveState==='ready' &&
+        previous.cannonDamage===before.loop.cannonDamage && previous.hull===oracle[previous.tick]?.hp &&
+        previous.kills===oracle[previous.tick]?.kills &&
+        (next.phase==='battle' || terminal && next.phase==='settling') && !next.paused && !next.muted && next.saveState==='ready' &&
+        next.cannonDamage===before.loop.cannonDamage,
+        'Return callback lacks current source-bound before/after model states');
       if(terminal) {
-        // AdvanceAt retains elapsed after the final combat step; staging moves
-        // the active progression run into PendingDefeat before PlayDefeat.
+        // AdvanceAt retains elapsed after the final combat step. Wave runs
+        // finalize before PlayDefeat; archived runs retain PendingDefeat.
         assert.ok(terminals.length===1 && previous.phase==='battle' && oracle[previous.tick]?.status==='Running' &&
           terminal.status==='Defeated' && terminal.focused && !terminal.applicationPaused && !terminal.paused &&
           !terminal.failed && !terminal.catchingUp && Number.isFinite(terminal.terminalElapsed) &&
           terminal.terminalElapsed>=0 && terminal.terminalElapsed<=.48 &&
           Number.isInteger(terminal.callbackSteps) && terminal.callbackSteps>0 && terminal.callbackSteps<=128 &&
           terminal.callbackSteps===next.tick-previous.tick && next.runId===0 && before.loop.runId>0 &&
-          next.pendingRunId===before.loop.runId &&
+          (waveRun?finalizedWave(next) && terminal.rules===before.rules && terminal.wave>0:next.pendingRunId===before.loop.runId) &&
           loops.filter(s=>s.action==='defeat-staged' && s.tick===next.tick).length===1,
           'Return defeat lacks a unique current eligible terminal/staging transition');
         validateModelObservation(terminal,oracle);
@@ -1604,9 +1641,9 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
         !admission.catchingUp,'Background/catch-up return cue observed');
       assert.ok(oracle[next.tick] && next.hull===oracle[next.tick].hp && next.kills===oracle[next.tick].kills,
         'Return callback differs from current source-bound model');
-      const group=groups.get(next)??{previous,next,terminal,cues:[]};group.cues.push(cue);groups.set(next,group);
+      const group=groups.get(admitted)??{previous,next,terminal,admitted,completed,cues:[]};group.cues.push(cue);groups.set(admitted,group);
     }
-    for(const {previous,next,terminal,cues:actual} of groups.values()) {
+    for(const {previous,next,terminal,admitted,completed,cues:actual} of groups.values()) {
       const expected=[];
       for(let tick=previous.tick+1;tick<=next.tick;tick++) {
         const a=oracle[tick-1],b=oracle[tick];assert.ok(a && b,'Return model event tick absent');
@@ -1622,7 +1659,7 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
         expected.push('defeat');
       }
       assert.deepEqual(names.sort(),expected.sort(),'Unmatched, stale or duplicate background/return replay cue');
-      callbacks.push({from:previous.tick,to:next.tick,t:next.t,cues:actual});
+      callbacks.push({from:previous.tick,to:next.tick,t:next.t,admitted,completed,cues:actual});
     }
   }
   const end=returnCues[0]?.t??recovered;
@@ -1730,10 +1767,13 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
     reference:bytes(reference),actual:bytes(raw),canonical_sha256:hash(actual),
     rows:Object.values(profiles).reduce((count,profile)=>count+Object.keys(profile).length,0),fields_per_row:13}};
 }
+const ENCOUNTER_COMPILATION_SOURCES=Object.freeze(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
+  'LastStandWaveCatalog.cs','LastStandUpgradeCatalog.cs','MechanicsShopModel.cs','LastStandShopState.cs',
+  'LastStandRunClock.cs','LastStandSpeedPolicy.cs']);
 export function encounterCompilationSourceBinding() {
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
-  return {source_lf_sha256:Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>[name,
+  return {source_lf_sha256:Object.fromEntries(ENCOUNTER_COMPILATION_SOURCES.map(name=>[name,
     hash(readFileSync(join(ROOT,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n'))])),
     export_binding:{manifest_sha256:fileHash(manifestPath),receipt_sha256:manifest.source.receiptSha256,
       source_lock_sha256:manifest.source.sourceLockSha256,source_inventory_sha256:manifest.source.sourceInventorySha256,
@@ -1742,7 +1782,7 @@ export function encounterCompilationSourceBinding() {
 export function buildEncounterOracle(output) {
   const bound=readBoundEncounterOracle();
   const {mono,csc}=encounterOracleToolchain();
-  const sources=['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs'].map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
+  const sources=ENCOUNTER_COMPILATION_SOURCES.map(name=>join(ROOT,'campaign-unity/Unity/Assets/Scripts',name));
   for(const path of [mono,csc,...sources])assert.ok(existsSync(path),'Actual model oracle prerequisite absent: '+path);
   const directory=join(output,'model-oracle');mkdirSync(directory);
   const driver=join(directory,'Program.cs'),exe=join(directory,'EncounterOracle.exe');
@@ -3006,7 +3046,9 @@ export async function retainJourneyOutcome(report, cleanup, persist, originalErr
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
-  'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs']);
+  'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs',
+  'e2e/helpers/lastStandWaveOracle.mjs','e2e/helpers/lastStandWaveJourney.mjs',
+  'scripts/ci/lastStandWaveQualification.mjs','scripts/ci/lastStandWaveMatrixResult.mjs']);
 
 export function lastStandQualificationProfile(name='windows-player',host=process.platform) {
   assert.ok(['windows-player','linux-functional'].includes(name),'Unknown Last Stand qualification profile');
@@ -3053,6 +3095,77 @@ export function validateCancelledReturn({before,confirmed,cancelled,layout,saveB
   return {before,confirmed,cancelled,initialSelection:layout.selection};
 }
 
+export function validateWaveTerminal({before,result,saved,states,encounters,layouts,oracle}) {
+  assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
+    before.loop?.runId>0 && before.status==='Running' && before.loop.phase==='battle' &&
+    !before.paused && !before.failed && !before.catchingUp);
+  const {loop,hull,...encounterBefore}=before;
+  assert.deepEqual(encounters.find(item=>item.load===before.load && item.timeOrigin===before.timeOrigin &&
+    item.run===before.run && item.action===before.action && item.t===before.t),encounterBefore,'Actual pre-terminal observation required');
+  assert.deepEqual(states.find(item=>item.load===loop.load && item.timeOrigin===loop.timeOrigin &&
+    item.action===loop.action && item.t===loop.t),loop,'Actual pre-terminal loop state required');
+  assert.equal(loop.load,before.load);assert.equal(loop.timeOrigin,before.timeOrigin);assert.equal(loop.scope,before.scope);
+  assert.equal(loop.sessionRun,before.run);assert.equal(loop.tick,before.tick);assert.equal(hull,before.hp);
+  assert.equal(loop.hull,before.hp);assert.equal(loop.kills,before.kills);assert.equal(loop.saveState,'ready');
+  validateModelObservation(before,oracle);
+  const same=item=>item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope &&
+    Number.isFinite(item.t) && item.t>=before.t;
+  const terminals=encounters.filter(item=>same(item) && item.run===before.run && item.action==='terminal');
+  assert.equal(terminals.length,1,'Exactly one actual terminal tick required');
+  const terminal=terminals[0];validateModelObservation(terminal,oracle);
+  assert.equal(terminal.status,'Defeated');assert.equal(terminal.hp,0);
+  assert.ok(terminal.t>before.t && !terminal.paused && !terminal.failed && !terminal.catchingUp);
+  const run=states.filter(item=>same(item) && item.sessionRun===before.run);
+  const staged=run.filter(item=>item.action==='defeat-staged');
+  assert.equal(staged.length,1,'Exactly one durable terminal staging required');
+  const stage=staged[0];assert.equal(stage.phase,'settling');assert.equal(stage.tick,terminal.tick);
+  assert.equal(stage.kills,terminal.kills);assert.equal(stage.hull,0);assert.equal(stage.saveState,'ready');
+  assert.equal(stage.runId,0);assert.equal(stage.pendingRunId,0);assert.equal(stage.hasCheckpoint,false);
+  assert.ok(stage.t>=terminal.t && result.t>=stage.t && same(result));
+  assert.equal(result.action,'result');assert.equal(result.sessionRun,before.run);
+  assert.deepEqual(states.find(item=>same(item) && item.action==='result' && item.t===result.t),result,
+    'Actual same-session result required');
+  assert.equal(result.phase,'result');assert.equal(result.saveState,'ready');
+  assert.equal(result.runId,0);assert.equal(result.pendingRunId,0);assert.equal(result.hasCheckpoint,false);
+  assert.equal(result.wallet,stage.wallet);
+  assert.equal(saved?.version,4);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
+  assert.equal(saved.lastFinalizedRunId,before.loop.runId);assert.equal(saved.credits,stage.wallet);
+  const geometry=layouts.filter(item=>same(item) && item.phase==='settling' && item.t>=terminal.t && item.t<=result.t);
+  assert.ok(geometry.length && geometry.every(item=>!item.controls.some(c=>c.name==='Claim' && c.active && c.interactable)),
+    'No result acknowledgement before terminal feedback settles');
+  const latestBank=states.filter(item=>same(item) && item.sessionRun===before.run && item.t<=stage.t && item.action==='wave-committed').at(-1)??before.loop;
+  // A simultaneous final kill/death may bank that last cohort once in the same
+  // atomic transaction, but still requires its actual same-session bank record.
+  // Ordinary defeat cannot mint an additional death reward.
+  assert.equal(latestBank.completedWave,terminal.completedWave,'Terminal requires the final completed wave bank');
+  assert.equal(stage.wallet,latestBank.wallet,'Defeat cannot add a second wave reward');
+  assert.ok(!run.some(item=>item.action==='claim'),'Wave runs cannot create a legacy reward claim');
+  return {before,terminal,staged:stage,result,saved,layouts:geometry};
+}
+
+export function validateCheckpointResume({saved,resumed,stable,stored,observedClock}) {
+  assert.equal(saved?.version,4,'Current complete checkpoint envelope required');
+  const checkpoint=saved.checkpoint,e=checkpoint?.encounter;
+  assert.ok(checkpoint && e && e.hull>0,'A living saved boundary is required');
+  assert.deepEqual(stored,saved,'Resume cannot rewrite or reward its saved boundary');
+  for(const state of [resumed,stable]) {
+    assert.equal(state.phase,'battle');assert.equal(state.saveState,'ready');
+    assert.equal(state.runId,checkpoint.runId);assert.equal(state.activeTier,e.tier);
+    assert.equal(state.fittingId,['launcher','repair','scattergun'][e.fitting]);
+    assert.equal(state.profileVersion,e.rulesVersion);assert.equal(state.hasCheckpoint,true);
+    assert.equal(state.checkpointBlocked,false);assert.equal(state.checkpointWave,e.completedWave);
+    assert.equal(state.completedWave,e.completedWave);assert.equal(state.wave,e.completedWave+1);
+    assert.equal(state.tick,e.tick);assert.equal(state.hull,e.hull);assert.equal(state.kills,e.kills);
+    assert.equal(state.cannonDamage,e.committedCannonDamage);assert.equal(state.wallet,saved.credits);
+    assert.equal(state.pendingRunId,0);assert.equal(state.paused,true);assert.equal(state.speed,0);
+  }
+  assert.equal(resumed.action,'resume');assert.ok(stable.t>=resumed.t+1000 && observedClock?.t>=stable.t,
+    'Fresh actual state must remain paused after at least one real second');
+  assert.equal(resumed.load,stable.load);assert.equal(resumed.timeOrigin,stable.timeOrigin);
+  assert.equal(observedClock.timeOrigin,resumed.timeOrigin);
+  return {saved,resumed,stable,stored,observedClock};
+}
+
 export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRecord, entrypoint, profileName }) {
   const qualification=lastStandQualificationProfile(profileName),player=qualification.nativeMedia;
   const sectionName=process.env.LAST_STAND_JOURNEY_SECTION;
@@ -3080,7 +3193,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       native_blur:player?'pending':'unexecuted-requires-windows',capture_cadence:player?'pending':'unexecuted-requires-windows',
       procedural_cues:player?'pending':'unexecuted-requires-windows',
       merge_ready:false} };
-  const states=[], encounters=[], hits=[], layouts=[], cues=[], messages=[], trace=[], failures=[], httpErrors=[], requests=[], expectedFaults=[];
+  const states=[], encounters=[], callbackRecords=[], hits=[], layouts=[], cues=[], messages=[], trace=[], failures=[], httpErrors=[], requests=[], expectedFaults=[];
   let native, page, motion, modelOracle, load=0, scope='healthy', fault, rejoin=false, rejoinBinding, originalError;
   const observerFailures=[];let observerError;
   const throwObserverFailure=()=>{if(observerError)throw observerError;};
@@ -3114,7 +3227,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
   try {
     const localBefore=packagedRuntimeSnapshot();report.packaged_before=localBefore;
     report.parent_artifact=await bindT21ServedParent(base);
-    modelOracle=buildEncounterOracle(output);
+    buildEncounterOracle(output); // Retain complete historical model parity separately.
+    const waveOracle=buildWaveOracle(output);modelOracle=waveOracle.profiles;report.wave_model=waveOracle.binding;
+    report.contract='last-stand-waves/v1';
     const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
     const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
     const receiptPath=join(ROOT,manifest.source.receipt);
@@ -3153,7 +3268,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       try{
         if(raw.startsWith('ST_TEST_RUNTIME ')) {
           const observation=JSON.parse(raw.slice('ST_TEST_RUNTIME '.length));
-          retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues});
+          retainRuntimeObservation(observation,load,scope,{states,encounters,hits,layouts,cues,callbackRecords});
         } else if(raw.startsWith('ST_TEST_INPUT ')) {
           trace.push({...JSON.parse(raw.slice('ST_TEST_INPUT '.length)),load,scope});
         }
@@ -3280,7 +3395,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     await openCampaigns(); await selected('last-stand');
     check(!requests.some(r=>r.url.includes('/last-stand/Build/')),'zero Unity runtime payload before ordinary launch');
     check(await page.locator('[data-last-stand-loss-disclosure]').innerText()===await page.locator('[data-last-stand-loss-disclosure]').textContent(), 'entry loss disclosure is rendered');
-    check((await page.locator('[data-last-stand-loss-disclosure]').innerText()).includes('without a reward'),'entry disclosure names no-award unfinished loss');
+    check((await page.locator('[data-last-stand-loss-disclosure]').innerText()).includes('last confirmed wave checkpoint'),'entry disclosure explains saved wave resume');
     check(await page.locator('[data-command-item="ash-road"]').count()===0,'retired campaign has no library entry');
     await goto('');await dismissSplash();await selected('last-stand');
     report.routes=[{name:'fresh Campaigns',selected:'last-stand'},{name:'remembered Last Stand',selected:'last-stand'}];
@@ -3469,9 +3584,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const energy=(begin,end,min=5)=>player?measureRenderedAudioEnergy(page,begin,end,check,min,{report,load,scope}):null;
     const observation=async options=>observeRuntimePair({encounters,states,load,check,options,
       clock:()=>page.evaluate(()=>({t:performance.now(),timeOrigin:performance.timeOrigin})),wait:ms=>page.waitForTimeout(ms)});
-    const reference=observed=>modelOracle[`${observed.fitting}:${observed.loop.cannonDamage}`];
+    const reference=observed=>modelOracle[`${observed.loop.activeTier}:${observed.fitting}:${observed.loop.cannonDamage}`];
     const noReplay=async(begin,end,interval)=>{
-      const selected=interval?validateAwayAudioReturn({...interval,cues,states,encounters,oracle:reference(interval.before)}):
+      const selected=interval?validateAwayAudioReturn({...interval,cues,states,encounters,callbackRecords,oracle:reference(interval.before)}):
         {begin,end,cues:cues.filter(item=>item.load===load && begin<=item.t && item.t<=end)};
       const measured=await energy(selected.begin,selected.end),observedCues=selected.cues;
       if(measured===null){
@@ -3565,45 +3680,46 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
         viewports:matrix.phaseViewports.map(item=>item.name),before,paused,returned};
       report.lifecycle.push(record);return record;
     };
-    // Two unfinished exits exercise native Return and ordinary reload without an award.
+    // Ordinary Return and reload preserve the checkpoint; only explicit
+    // abandon destroys it. Exercise both through the actual native controls.
     if(section.entry){
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
     const returnBefore=states.at(-1),returnSave=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
-    let returnStart=states.length;
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
-    const confirmedReturn=await until(states,returnStart,item=>item.action==='confirmation' && item.menu==='confirm',8);
-    const confirmationLayout=layouts.at(-1);
-    check(confirmationLayout.selection==='ConfirmCancel','native Return initially focuses Cancel for the unfinished run');
-    const cancelledReturn=await gameClick('ConfirmCancel','confirmation-cancel');
-    report.lifecycle.push({kind:'unfinished-return-cancel',evidence:validateCancelledReturn({before:returnBefore,
-      confirmed:confirmedReturn,cancelled:cancelledReturn,layout:confirmationLayout,saveBefore:returnSave,
-      saveAfter:await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)})});
-    await gameClick('SettingsClose','menu-close');
-    returnStart=states.length;
-    await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
-    await until(states,returnStart,item=>item.action==='confirmation' && item.menu==='confirm',8);
-    check(layouts.at(-1).selection==='ConfirmCancel','reopened native Return still defaults to Cancel');
-    const abandonedReturn=await gameClick('ConfirmProceed','abandon');
-    check(abandonedReturn.runId===0 && abandonedReturn.pendingRunId===0 && abandonedReturn.wallet===returnBefore.wallet,
-      'confirmed native Return abandons without reward',abandonedReturn);
     await page.locator('[data-last-stand-command-view]').waitFor();
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
+    check(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===returnSave,'ordinary Return preserves complete checkpoint');
     check(await ashBytes()===originalAsh,'retired campaign bytes preserved through native Last Stand Return');
     report.retired_campaign_preservation.native_return='observed unchanged';
     await selected('last-stand');
     const campaignItems=await page.locator('.command-center__library-items [data-command-item]').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
     check(campaignItems.length===1&&campaignItems[0]==='last-stand','native Return offers only Last Stand');
     report.retired_campaign_preservation.retirement='observed Last Stand only';
-    start=states.length;await outerPointer(page.getByRole('link',{name:'Launch Last Stand',exact:true}));
+    start=states.length;await outerPointer(page.locator('[data-command-action]'));
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished Return abandoned without award',restored);
-    await resize(captureViewport);
-    await gameClick('Deploy','deploy');await page.waitForTimeout(1200);await liveBattleLayouts();
+    check(restored.hasCheckpoint && restored.runId===returnBefore.runId && restored.phase==='garage',
+      'unfinished Return offers explicit saved-run resume',restored);
+    await resize(captureViewport);await gameClick('Deploy','resume');
+    const checkpoint=JSON.parse(returnSave).checkpoint;
+    await page.waitForTimeout(1200);
+    check(states.at(-1).paused && states.at(-1).tick===checkpoint.encounter.tick,'Return resume waits paused at saved state');
+    await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');
+    const confirmation=states.at(-1),confirmationLayout=layouts.at(-1);
+    check(confirmationLayout.selection==='ConfirmCancel','new run initially focuses Cancel');
+    const cancelled=await gameClick('ConfirmCancel','confirmation-cancel');
+    check(cancelled.runId===restored.runId && cancelled.paused &&
+      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===returnSave,'Cancel preserves complete checkpoint');
+    report.lifecycle.push({kind:'new-run-cancel',confirmation,cancelled,layout:confirmationLayout,saved:returnSave});
+    await gameClick('SettingsClose','menu-close');
+    if(player){await gameClick('SpeedRate','session',item=>!item.paused);await liveBattleLayouts();}
+    const beforeReload=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.wallet===0 && restored.pendingRunId===0 && restored.phase==='garage','unfinished reload abandoned without award',restored);
-    if(player)report.lifecycle.push({kind:'live-battle-layout-abandonment',ready:restored});
-    check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'baseline repair fitting retained in its visible garage card');
+    check(restored.hasCheckpoint && ['garage','workshop'].includes(restored.phase) && restored.runId===returnBefore.runId &&
+      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===beforeReload,
+      'unfinished reload preserves complete checkpoint',restored);
+    await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');await gameClick('ConfirmProceed','abandon');
+    check(!states.at(-1).hasCheckpoint && states.at(-1).wallet===JSON.parse(beforeReload).credits,'confirmed new run keeps banked progress');
     }
     if(section.lifecycle){
     report.effects_only_audio=await configureEffectsOnlyJourneyAudio({click:gameClick,currentLayout:()=>layouts.at(-1),
@@ -3646,30 +3762,25 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       const after=await observation({minT:interval.recovered+500,run:interval.before.run});report.lifecycle.push({kind,evidence:validateBackgroundInterval({...interval,kind,after,events:trace,oracle:reference(after)})});
       awayWindows.push([kind,interval.begin,interval.recovered]);
     }
-    const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark(),defeatStart=states.length;
-    const settlingBefore=await observation();let defeatTime;
-    if(player){
-    const settlingClick=await armGameClick('SpeedRate','session',item=>item.paused && item.phase==='settling');
-    check(states.at(-1).phase==='battle','settling input is prepared while the actual battle is running');
-    await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);defeatTime=await mark();
-    const settlingPaused=await settlingClick();await focused('settling paused');await phaseMatrix('settling');
-    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'no Claim during actual settling');
-    const settlingResumed=await gameClick('SpeedRate','session',item=>!item.paused);await page.waitForTimeout(750);
-    report.lifecycle.push({kind:'settling-interaction',scope:'native-pause-five-viewports-resume',
-      paused:settlingPaused,resumed:settlingResumed,viewports:matrix.phaseViewports.map(item=>item.name)});
-    }else await until(states,defeatStart,item=>item.load===load && item.phase==='settling',110);
-    const result=await until(states,defeatStart,item=>item.phase==='result',8);
-    const transition=validateSettlingTransition({before:settlingBefore,result,states,layouts,encounters,oracle:reference(settlingBefore)});
-    check(true,'no Claim during actual settling',transition.layouts.map(item=>({t:item.t,phase:item.phase})));
-    report.lifecycle.push({kind:'settling-transition',scope:player?'interactive-five-viewports':'transient-functional-telemetry',evidence:transition});
-    check(result.pendingRunId>0 && result.wallet===0 && result.saveState==='ready','ordinary defeat successfully saved one pending award',result);
-    if(player)check((await energy(defeatTime-250,await mark())).maximum_rms>.0005,'real rendered defeat cue');await screenshot('02-defeat-pending');await phaseMatrix('result');
-    const record=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(record.pendingDefeat.reward===1,'pending defeat in actual browser-local storage');
+    const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark();
+    // First qualify a short earned boundary before the later natural terminal.
+    // The separate 10–12-hour endurance obligation is not implied by this run.
+    await page.waitForTimeout(16000);
+    await until(states,0,item=>item.load===load && item.completedWave>0 && item.saveState==='ready',60);
+    const captureEnd=await mark();
+    await gameKey('SpeedRate','session',item=>item.paused);
+    const savedWave=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const savedState=states.at(-1);
+    check(savedWave.version===4 && savedWave.checkpoint?.encounter.completedWave>0 && savedWave.pendingDefeat===null &&
+      savedWave.credits===savedState.wallet && savedState.checkpointWave===savedWave.checkpoint.encounter.completedWave,
+      'cleared waves atomically bank rewards and complete checkpoints',savedWave);
+    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),
+      'wave rewards require no manual Claim');
+    await screenshot('02-checkpoint');await phaseMatrix('checkpoint');
     if(player){
     const frames=await page.evaluate('window.__stFrameProbe.stop()');
     const active=[['first-foe-before-impact',motionStart,firstHit],['first-hit-through-pause',firstHit,pauseStart],
-      ['resumed-before-focus-loss',resumeStart,focusStartMs],['resumed-after-focus-loss',postFocus,defeatTime]];
+      ['resumed-before-focus-loss',resumeStart,focusStartMs],['resumed-after-focus-loss',postFocus,captureEnd]];
     write('animation-frame-timestamps.json',{clock:'page performance.now milliseconds',timestamps:frames,active_windows:active,
       nonactive_windows:[['explicit-pause',pauseStart,resumeStart],...awayWindows]});
     report.frame_timing={capture_active:Object.fromEntries(active.map(([name,begin,end])=>[name,frameTiming(frames,begin,end)])),
@@ -3677,7 +3788,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(Object.values(report.frame_timing.capture_active).every(item=>item.p95_ms<=50 && item.p99_ms<=100 && item.max_ms<=250),
       'active cadence: 50 ms p95, 100 ms p99, 250 ms maximum',report.frame_timing.capture_active);
     report.motion=await motion.encode();motion=null;
-    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstHit-500,firstHit+750],defeat:[defeatTime-250,defeatTime+750]});
+    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstHit-500,firstHit+750]});
     const offset=(firstAudio[0].started-motionStart)/1000,movie=join(output,'normal-speed-repair-with-audio.mp4');
     runTool('ffmpeg',['-hide_banner','-nostdin','-i',join(output,report.motion.file),...(offset>=0?['-itsoffset',offset.toFixed(3)]:['-ss',(-offset).toFixed(3)]),
       '-i',join(output,firstAudio[0].file),'-c:v','copy','-c:a','aac','-b:a','160k',movie]);
@@ -3687,7 +3798,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       'audio mux preserves real frame count and duration',streams);
     report.playable_capture={file:'normal-speed-repair-with-audio.mp4',sha256:fileHash(movie),audio_alignment_seconds:offset,
       video_frames:Number(video.nb_read_frames),video_duration_seconds:Number(video.duration),audio_source:firstAudio[0].file};
-    const reviewStart=(postFocus-motionStart)/1000,reviewDuration=(defeatTime+750-postFocus)/1000;
+    const reviewStart=(postFocus-motionStart)/1000,reviewDuration=(captureEnd+750-postFocus)/1000;
     check(reviewStart>=0 && reviewDuration>=15,'uninterrupted busy combat review segment');
     const reviewMovie=join(output,'active-play-review-with-audio.mp4');
     runTool('ffmpeg',['-hide_banner','-nostdin','-i',movie,'-ss',reviewStart.toFixed(3),'-t',reviewDuration.toFixed(3),
@@ -3697,23 +3808,38 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     report.active_play_review={file:'active-play-review-with-audio.mp4',sha256:fileHash(reviewMovie),source:report.playable_capture.file,
       start_seconds:reviewStart,duration_seconds:reviewDuration,encoded_frames:Number(reviewStream.nb_read_frames),edit:'single hard trim, passthrough timestamps'};
     }
-    start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('pending reload');
+    start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('checkpoint reload');
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.phase==='result' && restored.pendingRunId===result.pendingRunId,'successful pending defeat survives reload',restored);
-    const claimed=await gameClick('Claim','claim');check(claimed.phase==='workshop' && claimed.wallet===1 && claimed.level===0,'one Claim pays exactly one salvage',claimed);
-    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'Claim unavailable after one award');
-    for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('workshop');
+    check(['garage','workshop'].includes(restored.phase) && restored.hasCheckpoint && restored.runId===savedWave.checkpoint.runId,
+      'saved wave survives reload and awaits explicit Resume',restored);
+    await phaseMatrix('resume-ready');
+    const resumedCheckpoint=await gameClick('Deploy','resume');await page.waitForTimeout(1200);
+    await gameClick('Menu','menu');
+    const stableCheckpoint=states.at(-1),storedAfterResume=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const observedClock=await page.evaluate(()=>({t:performance.now(),timeOrigin:performance.timeOrigin}));
+    const resumeProof=validateCheckpointResume({saved:savedWave,resumed:resumedCheckpoint,stable:stableCheckpoint,stored:storedAfterResume,observedClock});
+    check(true,'Resume restores saved state paused without offline catch-up',resumeProof);
+    report.lifecycle.push({kind:'checkpoint-resume',...resumeProof});
+    await gameClick('SettingsClose','menu-close');await phaseMatrix('resumed');
+    await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');
+    check(layouts.at(-1).selection==='ConfirmCancel','abandon initially focuses Cancel');
+    await gameClick('ConfirmProceed','abandon');
+    const abandoned=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    check(abandoned.checkpoint===null && abandoned.lastFinalizedRunId===savedWave.checkpoint.runId &&
+      abandoned.credits===savedWave.credits && abandoned.pendingDefeat===null,'confirmed abandon keeps banked rewards and finalizes run');
+    report.lifecycle.push({kind:'checkpoint-abandon',before:savedWave,after:abandoned});
+    for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('garage-after-abandon');
     await resize(VIEWPORTS.find(item=>item.name==='compact'));const purchaseStart=await mark();
     await gameClick('ShopEntry','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     if(!layouts.at(-1).shopControls.some(item=>item.name==='ShopCard_cannonAttackBuy'&&item.active))
       await gameClick('ShopTabAttack','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopCard_cannonAttackBuy'&&control.active));
-    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===0 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
+    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===savedWave.credits-1 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
     await gameClick('ShopClose','hud-layout',item=>!item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
     await screenshot('05-purchased');if(player)await saveAudio('workshop',{purchase:[purchaseStart,await mark()]});
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
-    check(again.level===1 && again.wallet===0 && again.pendingRunId===0,'purchase reload retains permanent level and spent balance',again);
+    check(again.level===1 && again.wallet===savedWave.credits-1 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
     await resize(captureViewport);const hitStart=hits.length;await gameClick('Deploy','deploy');
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
@@ -3726,29 +3852,65 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     }
     check(upgradedHit.firstFoeHull===0 && upgradedHit.kills>=1,'same first foe one-hit defeated by real 30 damage',upgradedHit);
     await screenshot('07-upgraded-first-hit');
-    const terminalStart=states.length,terminalBefore=await observation();
-    const terminalOracle=reference(terminalBefore),expectedTerminal=Object.values(terminalOracle).at(-1);
-    check(expectedTerminal.status==='Defeated','actual upgraded model reference has a defeat terminal',expectedTerminal);
-    const interval=await away('hidden',(expectedTerminal.tick-terminalBefore.tick)*50+1500);
-    const backgroundResult=await until(states,terminalStart,item=>item.phase==='result',15);
-    const actualTerminal=await observation({status:'Defeated',minT:terminalBefore.t,run:terminalBefore.run});
-    validateModelObservation(actualTerminal,terminalOracle);
-    check(backgroundResult.pendingRunId>0 && backgroundResult.wallet===0 && backgroundResult.saveState==='ready',
-      'background terminal produces one persisted manual result',backgroundResult);
-    const backgroundPending=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(backgroundPending.pendingDefeat.elapsedTicks===actualTerminal.tick && backgroundPending.pendingDefeat.kills===actualTerminal.kills,
-      'background persisted outcome equals unchanged actual model',backgroundPending);
+    const nextBoundary=states.at(-1).completedWave+1;
+    const interval=await away('hidden',12000);
+    await until(states,0,item=>item.load===load && item.completedWave>=nextBoundary && item.saveState==='ready',60);
+    const afterBackground=await observation({minT:interval.recovered,run:interval.before.run});validateModelObservation(afterBackground,reference(afterBackground));
+    const backgroundSaved=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    check(backgroundSaved.checkpoint?.encounter.completedWave>=nextBoundary && backgroundSaved.credits===states.at(-1).wallet &&
+      backgroundSaved.pendingDefeat===null,'background wave rewards and checkpoint share one durable save');
+    report.lifecycle.push({kind:'background-wave',interval,after:afterBackground,saved:backgroundSaved});
+    await gameKey('SpeedRate','session',item=>item.paused);await phaseMatrix('background-checkpoint');
     const quietStart=await mark();await page.waitForTimeout(900);await noReplay(quietStart,await mark());
-    // Repeated real foreground returns cannot stage, Claim or begin another run.
+    await gameKey('SpeedRate','session',item=>!item.paused);
+    const terminalBefore=await observation(),terminalStart=states.length,terminalOracle=reference(terminalBefore);
+    const expectedTerminal=Object.values(terminalOracle).at(-1);
+    check(expectedTerminal.status==='Defeated','current wave oracle has a natural terminal');
+    let terminalPaused,terminalResumed;
+    if(player){
+      const prepared=await armGameClick('SpeedRate','session',item=>item.phase==='settling' && item.paused);
+      await until(states,terminalStart,item=>item.load===load && item.phase==='settling',
+        (expectedTerminal.tick-terminalBefore.tick)*.05+30);
+      terminalPaused=await prepared();await phaseMatrix('settling');
+      terminalResumed=await gameClick('SpeedRate','session',item=>item.phase==='settling' && !item.paused);
+    }
+    const naturalResult=await until(states,terminalStart,item=>item.load===load && item.phase==='result',
+      (expectedTerminal.tick-terminalBefore.tick)*.05+30);
+    const naturalSaved=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const naturalProof=validateWaveTerminal({before:terminalBefore,result:naturalResult,saved:naturalSaved,
+      states,encounters,layouts,oracle:terminalOracle});
+    report.lifecycle.push({kind:'wave-terminal',mode:'foreground',evidence:naturalProof,
+      ...(player?{interaction:{paused:terminalPaused,resumed:terminalResumed,viewports:matrix.phaseViewports.map(v=>v.name)}}:{})});
+    check(true,'natural defeat finalizes checkpoint without a second payout',naturalProof);
+    await phaseMatrix('result');
+    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750],
+      defeat:[naturalProof.staged.t-250,naturalProof.staged.t+750]});
+    const continued=await gameKey('Claim','continue');
+    check(continued.wallet===naturalSaved.credits && continued.pendingRunId===0 && !continued.hasCheckpoint,
+      'Continue cannot pay a second reward');
+    start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('terminal reload');
+    const finalReload=await until(states,start,item=>item.action==='ready',60);
+    check(!finalReload.hasCheckpoint && finalReload.runId===0 && finalReload.pendingRunId===0 &&
+      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===JSON.stringify(naturalSaved),
+      'finalized natural defeat cannot resume after reload');
+    report.lifecycle.push({kind:'terminal-reload',saved:naturalSaved,state:finalReload});
+    await gameClick('Deploy','deploy');
+    const backgroundBefore=await observation(),backgroundOracle=reference(backgroundBefore);
+    const backgroundExpected=Object.values(backgroundOracle).at(-1),backgroundStart=states.length;
+    check(backgroundExpected.status==='Defeated','background actual wave model has natural terminal');
+    const terminalAway=await away('hidden',(backgroundExpected.tick-backgroundBefore.tick)*50+1500);
+    const backgroundResult=await until(states,backgroundStart,item=>item.load===load && item.phase==='result',15);
+    const backgroundFinal=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
+    const backgroundProof=validateWaveTerminal({before:backgroundBefore,result:backgroundResult,saved:backgroundFinal,
+      states,encounters,layouts,oracle:backgroundOracle});
+    report.lifecycle.push({kind:'wave-terminal',mode:'hidden',interval:terminalAway,evidence:backgroundProof});
+    check(true,'background natural defeat finalizes checkpoint once without payout',backgroundProof);
+    const savedTerminalBytes=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
     for(let i=0;i<2;i++)await away('hidden',6000);
-    await phaseMatrix('background-result');
-    await gameKey('Claim','claim');const backgroundClaimed=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    const terminalStates=states.slice(terminalStart),firstStage=terminalStates.findIndex(item=>item.action==='defeat-staged');
-    report.lifecycle.push({kind:'background-terminal',interval,terminal:actualTerminal,
-      evidence:validateTerminalOwnership({runId:backgroundResult.pendingRunId,beforeWallet:0,states:terminalStates.slice(firstStage),
-        pending:backgroundPending,claimed:backgroundClaimed,controls:layouts.at(-1).controls})});
-    check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),'background Claim cannot award twice');
-    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750]});
+    check(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===savedTerminalBytes,
+      'repeated foreground returns cannot award or resurrect finalized run');
+    await phaseMatrix('background-result');await gameKey('Claim','continue');
+    report.qualification.natural_terminal='pass';
     const cueNames=messages.filter(item=>!item.text.startsWith('ST_TEST_RUNTIME ') && item.text.includes('ST_LS_AUDIO event='))
       .map(item=>item.text.split('ST_LS_AUDIO event=')[1].split('\n')[0]);
     if(player){
@@ -3869,7 +4031,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     },()=>{
       report.browser_evidence=classifyBrowserEvidence(messages,failures,httpErrors,expectedFaults);
       if(observerFailures.length)write('observer-failures.json',observerFailures);
-      write('console.json',messages);write('runtime-telemetry.json',{states,encounters,hits,layouts,cues});write('input-trace.json',trace);
+      write('console.json',messages);write('runtime-telemetry.json',{states,encounters,callbackRecords,hits,layouts,cues});write('input-trace.json',trace);
       write('requests.json',{requests,failures,httpErrors});write('result.json',report);
       console.log(`LAST_STAND_LOOP_EVIDENCE=${output}`);
     },originalError);}catch(error){throw originalError??error;}

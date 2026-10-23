@@ -94,7 +94,37 @@ namespace SingedTerra.LastStand
                 new LastStandSelectionOption("repair", "Field Repair",
                     "Repairs hull during the run. Choose sustain alongside the automatic cannon."),
                 new LastStandSelectionOption("launcher", "Auxiliary Launcher",
-                    "Adds an independently firing launcher alongside the automatic cannon.")
+                    "Adds an independently firing launcher alongside the automatic cannon."),
+                new LastStandSelectionOption("scattergun", "Auxiliary Scattergun",
+                    "Hits up to three nearby enemies per burst alongside the automatic cannon. Unlock by clearing Tier 1 wave 100.", false)
             });
+        public static string Id(LastStandFitting fitting)
+        {
+            switch(fitting)
+            {
+                case LastStandFitting.Repair: return "repair";
+                case LastStandFitting.Launcher: return "launcher";
+                case LastStandFitting.Scattergun: return "scattergun";
+                default: throw new ArgumentOutOfRangeException(nameof(fitting));
+            }
+        }
+        public static LastStandFitting Parse(string id)
+        {
+            switch(id)
+            {
+                case "repair": return LastStandFitting.Repair;
+                case "launcher": return LastStandFitting.Launcher;
+                case "scattergun": return LastStandFitting.Scattergun;
+                default: throw new ArgumentException("Unknown fitting identity.",nameof(id));
+            }
+        }
+        public static IReadOnlyList<LastStandSelectionOption> OptionsFor(Func<string,bool> isUnlocked)
+        {
+            if(isUnlocked==null)throw new ArgumentNullException(nameof(isUnlocked));
+            var result=new List<LastStandSelectionOption>();
+            foreach(var option in Options)
+                result.Add(new LastStandSelectionOption(option.Id,option.Name,option.Description,option.Unlocked || isUnlocked(option.Id)));
+            return result.AsReadOnly();
+        }
     }
 }

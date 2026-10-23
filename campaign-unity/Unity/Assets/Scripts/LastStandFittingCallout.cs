@@ -12,7 +12,6 @@ namespace SingedTerra.LastStand
         TankPresentation art;
         RectTransform card, layer, leader, connector, endpoint;
         RectTransform[] brackets;
-        Renderer[] repairMeshes, launcherMeshes;
         readonly Vector3[] cardCorners = new Vector3[4];
         readonly Vector2[] projectedBounds = new Vector2[8];
         public float PixelRatio { get; set; } = 1;
@@ -51,8 +50,6 @@ namespace SingedTerra.LastStand
             leader = Graphic("FittingLeader"); connector = Graphic("FittingConnector"); endpoint = Graphic("FittingAnchor");
             brackets = new RectTransform[8];
             for (int i = 0; i < brackets.Length; i++) brackets[i] = Graphic("FittingHighlight" + i);
-            repairMeshes = art.repairModule ? art.repairModule.GetComponentsInChildren<Renderer>(true) : new Renderer[0];
-            launcherMeshes = art.launcherModule ? art.launcherModule.GetComponentsInChildren<Renderer>(true) : new Renderer[0];
             Refresh(false);
         }
         bool Local(Vector2 screen, out Vector2 point)
@@ -90,8 +87,8 @@ namespace SingedTerra.LastStand
                 !art.view || !art.view.isActiveAndEnabled || !canvas ||
                 !canvas.isActiveAndEnabled || !card || !card.gameObject.activeInHierarchy ||
                 (canvas.renderMode != RenderMode.ScreenSpaceOverlay && !canvas.worldCamera)) return;
-            var module = art.showingLauncher ? art.launcherModule : art.repairModule;
-            var meshes = art.showingLauncher ? launcherMeshes : repairMeshes;
+            var module = art.ActiveFittingModule;
+            var meshes = art.ActiveFittingRenderers;
             if (!module || !module.activeInHierarchy || !ActiveBounds(meshes,out var bounds)) return;
             var camera = art.view;
             var center = camera.WorldToScreenPoint(bounds.center);

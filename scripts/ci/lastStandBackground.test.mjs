@@ -1216,10 +1216,11 @@ test('background guards reject frozen ticks and require separate native blur and
   const consoleBegin=callerSource.indexOf("    page.on('console', message => {");
   const consoleEnd=callerSource.indexOf("    page.on('pageerror'",consoleBegin);
   assert.ok(consoleBegin>0 && consoleEnd>consoleBegin);
-  let consoleHandler;const records={states:[],encounters:[],hits:[],layouts:[],cues:[]};
-  new Function('page','messages','load','scope','states','encounters','hits','layouts','cues','trace','retainRuntimeObservation',
+  let consoleHandler;const records={states:[],encounters:[],hits:[],layouts:[],cues:[],callbackRecords:[]};
+  new Function('page','messages','load','scope','states','encounters','hits','layouts','cues','trace','callbackRecords','retainRuntimeObservation','retainObserverFailure',
     callerSource.slice(consoleBegin,consoleEnd))({on:(name,handler)=>{consoleHandler=handler;}},[],1,'healthy',
-    records.states,records.encounters,records.hits,records.layouts,records.cues,[],journey.retainRuntimeObservation);
+    records.states,records.encounters,records.hits,records.layouts,records.cues,[],records.callbackRecords,
+    journey.retainRuntimeObservation,(_record,error)=>{throw error;});
   const emit=(tag,record,t=1000,timeOrigin=100000)=>consoleHandler({type:()=> 'log',location:()=>({}),
     text:()=> 'ST_TEST_RUNTIME '+JSON.stringify({t,timeOrigin,text:tag+JSON.stringify(record)})});
   emit('ST_ENC_STATE ',cadence.encounter(20));emit('ST_LS_STATE ',cadence.state(20),1000.01);
@@ -1305,8 +1306,27 @@ test('background guards reject duplicate terminal staging and manual Claim award
   const another={...ended,encounters:structuredClone(ended.encounters),states:structuredClone(ended.states)};
   another.encounters.at(-1).run=2;another.states.at(-1).sessionRun=2;
   await assert.rejects(async()=>callObserved(another,{status:'Defeated',minT:1000,run:1}),/coherent|pair|observation/i);
-  assert.match(callerSource,/actualTerminal=await observation\(/);
-  assert.doesNotMatch(callerSource,/actualTerminal=encounters/);
+  // Current wave runs finalize without a legacy PendingDefeat. Both real
+  // terminal callers must forward the fresh pre-terminal pair, observed result,
+  // stored envelope and raw streams to the source-bound terminal validator.
+  for(const [before,result,saved,proof,oracle] of [
+    ['terminalBefore','naturalResult','naturalSaved','naturalProof','terminalOracle'],
+    ['backgroundBefore','backgroundResult','backgroundFinal','backgroundProof','backgroundOracle'],
+  ]) {
+    assert.match(callerSource,new RegExp(`const ${before}=await observation\\(`));
+    assert.match(callerSource,new RegExp(`const ${result}=await until\\(states,`));
+    assert.match(callerSource,new RegExp(`const ${saved}=JSON\\.parse\\(await page\\.evaluate`));
+    const begin=callerSource.indexOf(`    const ${proof}=validateWaveTerminal(`);
+    const end=callerSource.indexOf(';',begin);
+    assert.ok(begin>0 && end>begin,'Actual maintained wave terminal proof caller required');
+    const inputs=Object.fromEntries([before,result,saved,'states','encounters','layouts',oracle].map(name=>[name,{name}]));
+    const invoke=new Function(...Object.keys(inputs),'validateWaveTerminal',
+      callerSource.slice(begin,end+1)+`return ${proof};`);
+    assert.deepEqual(invoke(...Object.values(inputs),value=>value),{
+      before:inputs[before],result:inputs[result],saved:inputs[saved],states:inputs.states,
+      encounters:inputs.encounters,layouts:inputs.layouts,oracle:inputs[oracle],
+    });
+  }
 });
 
 async function assertNativeAudioBoundaries() {
@@ -1314,7 +1334,7 @@ async function assertNativeAudioBoundaries() {
   assert.ok(begin>0 && end>begin,'Actual maintained away/noReplay caller required');
   const run=new Function('native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
     'energy','validateNoReplayAudio','validateAwayAudioReturn','reference','activateOwnedNativeWindow',
-    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind',
+    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind','callbackRecords',
     callerSource.slice(begin,end)+'return away(kind,6000);');
   const oracle=journey.readBoundEncounterOracle()['repair:20'];
   const identity={load:16,timeOrigin:100000,scope:'healthy'},loopRun=3,sessionRun=1;
@@ -1324,7 +1344,7 @@ async function assertNativeAudioBoundaries() {
     'wrong-cue-load','wrong-cue-origin','missing-loss','missing-return','element-loss','element-return',
     'stale-loss','wrong-boundary-load','wrong-boundary-origin','invalid-boundary-clock','short-real-unfocused-span'];
   for(const kind of ['blur','hidden'])for(const fault of cases) {
-    const trace=[],cues=[],states=[],encounters=[],report={lifecycle:[]},windows=[];
+    const trace=[],cues=[],states=[],encounters=[],callbackRecords=[],report={lifecycle:[]},windows=[];
     const before={...oracle[700],...identity,t:900,run:sessionRun,fitting:'repair',paused:false,
       loop:{runId:loopRun,cannonDamage:20}};
     let time=950,focused=true,hidden=false,closed=false,marks=0,auxClosed=0,auxCreated=0;
@@ -1352,6 +1372,11 @@ async function assertNativeAudioBoundaries() {
         cannonDamage:20,paused:false,muted:false,saveState:'ready'});
       if(fault!=='quiet-return')for(const tick of [855,875]) {
         const t=returned+(tick-842)*50+29;
+        const admission={...identity,id:tick,run:sessionRun,fromTick:tick-1,timestamp:t/1000,
+          previousTimestamp:t/1000-.05,elapsed:.05,priorPending:0,speed:1,focused:true,
+          applicationPaused:false,paused:false,failed:false};
+        callbackRecords.push({...admission,action:'begin',t:t-.1,tick:tick-1,steps:0,pending:.05,age:0},
+          {...admission,action:'end',t:t+1.1,tick,steps:1,pending:0,age:.0012});
         cues.push({t,...identity,text:'ST_LS_AUDIO event=cannon\n'},
           {t:t+.1,...identity,text:'ST_LS_AUDIO event='+(oracle[tick].kills>oracle[tick-1].kills?'destruction':'impact')+'\n'});
       }
@@ -1386,7 +1411,7 @@ async function assertNativeAudioBoundaries() {
     try {await run(native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
       report,'explicit-inert-output',trace,cues,states,encounters,identity.load,energy,journey.validateNoReplayAudio,
       journey.validateAwayAudioReturn,()=>oracle,async()=>{},async()=>{assert.ok(focused && !hidden);},async()=>{},
-      async({other,session})=>{await other?.close();await session?.detach();},kind);}
+      async({other,session})=>{await other?.close();await session?.detach();},kind,callbackRecords);}
     catch(cause){error=cause;}
     assert.equal(auxCreated,1);assert.equal(auxClosed,1);assert.ok(closed,'Actual maintained cleanup always executes');
     const reject=!['fresh-current','quiet-return'].includes(fault),boundary=report.lifecycle.at(-1)?.boundary;
@@ -1414,7 +1439,7 @@ async function assertNativeAudioTerminalReturns() {
     .replace(/^export /,'')+'return validateAwayAudioReturn;')(assert,journey.validateModelObservation);
   const run=new Function('native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
     'energy','validateNoReplayAudio','validateAwayAudioReturn','reference','activateOwnedNativeWindow',
-    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind',
+    'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind','callbackRecords',
     callerSource.slice(begin,end)+'return away(kind,6000);');
   const oracle=journey.readBoundEncounterOracle()['repair:20'],terminalTick=Object.values(oracle).at(-1).tick;
   assert.equal(oracle[terminalTick].status,'Defeated');assert.equal(oracle[terminalTick].hp,0);
@@ -1426,7 +1451,7 @@ async function assertNativeAudioTerminalReturns() {
     'defeat-before-terminal','duplicate-staging','missing-staging','wrong-cue-load','wrong-cue-origin',
     'wrong-terminal-load','wrong-terminal-origin','invalid-terminal-elapsed','long-terminal-callback','wrong-terminal-step-count'];
   for(const kind of ['blur','hidden'])for(const fault of cases) {
-    const trace=[],cues=[],states=[],encounters=[],report={lifecycle:[]},windows=[];
+    const trace=[],cues=[],states=[],encounters=[],callbackRecords=[],report={lifecycle:[]},windows=[];
     const before={...oracle[terminalTick-130],...identity,t:900,run:sessionRun,fitting:'repair',paused:false,
       loop:{runId:loopRun,cannonDamage:20}};
     let time=950,focused=true,hidden=false,closed=false,marks=0,auxClosed=0,auxCreated=0;
@@ -1450,6 +1475,11 @@ async function assertNativeAudioTerminalReturns() {
         ...Array(weapons-killed+b.closeHits-a.closeHits+b.rangedHits-a.rangedHits).fill('impact')];
       names.forEach((name,i)=>cues.push({t:nextTime-1+i*.01,...identity,text:'ST_LS_AUDIO event='+name+'\n'}));
       const defeat={t:nextTime-.4,...identity,text:'ST_LS_AUDIO event=defeat\n'};cues.push(defeat);
+      const callback={...identity,id:1,run:sessionRun,fromTick:terminalTick-1,timestamp:(nextTime-1.1)/1000,
+        previousTimestamp:(nextTime-1.1)/1000-.05-tail,elapsed:.05+tail,priorPending:0,speed:1,
+        focused:true,applicationPaused:false,paused:false,failed:false};
+      callbackRecords.push({...callback,action:'begin',t:nextTime-1.1,tick:terminalTick-1,steps:0,pending:.05+tail,age:0},
+        {...callback,action:'end',t:nextTime+.1,tick:terminalTick,steps:1,pending:tail,age:.0012});
       encounters.push(terminal);states.push(staged);
       if(fault==='background-cue')cues.push({t:2000,...identity,text:'ST_LS_AUDIO event=defeat\n'});
       if(fault==='stale-terminal')terminal.t=returned-1;
@@ -1494,7 +1524,7 @@ async function assertNativeAudioTerminalReturns() {
     try {await run(native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
       report,'explicit-inert-output',trace,cues,states,encounters,identity.load,energy,journey.validateNoReplayAudio,
       selector,()=>oracle,async()=>{},async()=>{assert.ok(focused && !hidden);},async()=>{},
-      async({other,session})=>{await other?.close();await session?.detach();},kind);}
+      async({other,session})=>{await other?.close();await session?.detach();},kind,callbackRecords);}
     catch(cause){error=cause;}
     assert.equal(auxCreated,1);assert.equal(auxClosed,1);assert.ok(closed,'Actual maintained cleanup always executes');
     const reject=!['fresh-terminal','fresh-short-terminal-tail'].includes(fault),boundary=report.lifecycle.at(-1)?.boundary;

@@ -103,7 +103,7 @@ namespace SingedTerra.VisualReview
             foreach(var e in model.Events)
             {
                 if(e.Kind==EncounterEventKind.Repair)continue;
-                bool outgoing=e.Kind==EncounterEventKind.Cannon||e.Kind==EncounterEventKind.Launcher;
+                bool outgoing=e.Kind==EncounterEventKind.Cannon||e.Kind==EncounterEventKind.Launcher||e.Kind==EncounterEventKind.Scattergun;
                 var foe=model.Foes[e.Slot];Vector3 position=Position(foe)+Vector3.up*.7f;
                 if(outgoing)
                 {
@@ -117,6 +117,8 @@ namespace SingedTerra.VisualReview
                     }
                     if(full&&e.Kind==EncounterEventKind.Cannon)
                         Emit(tank.muzzle.position,.10f,.25f,.85f,new Color(1f,.82f,.43f),settings.flashMaterial,false,Vector3.zero);
+                    if(full&&e.Kind==EncounterEventKind.Scattergun)
+                        Emit(tank.ScattergunMuzzle,.08f,.20f,.62f,new Color(1f,.70f,.40f),settings.flashMaterial,false,Vector3.zero);
                 }
                 else
                 {
