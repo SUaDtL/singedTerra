@@ -5,6 +5,20 @@ import {runInNewContext} from 'node:vm';
 import {ENDURANCE_POLICY,parseEnduranceArguments,newEnduranceLedger,accountEnduranceObservation,
   enduranceVerdict,appendBounded} from '../last-stand-wave-endurance.mjs';
 import * as endurance from '../last-stand-wave-endurance.mjs';
+import {assertDependencyFreeWaveGuards} from './lastStandDependencyFreeFixture.mjs';
+
+test('endurance guards import and execute in a checkout without installed Playwright',()=>{
+  assertDependencyFreeWaveGuards(`
+    const {parseEnduranceArguments,newEnduranceLedger,accountEnduranceObservation,enduranceVerdict}=
+      await import('./scripts/last-stand-wave-endurance.mjs');
+    assert.equal(parseEnduranceArguments(['manifest','output','--smoke']).mode,'smoke');
+    const ledger=newEnduranceLedger();
+    for(const atMs of [0,1000])accountEnduranceObservation(ledger,{atMs,timeOrigin:1,stateAgeMs:0,
+      tick:atMs/50,runId:1,phase:'battle',paused:false,speed:1});
+    assert.equal(ledger.activeMs,1000);assert.equal(ledger.observedSimulationMs,1000);
+    assert.equal(enduranceVerdict('smoke',ledger).enduranceQualified,false);
+  `);
+});
 
 const observed=(atMs,changes={})=>({atMs,timeOrigin:12345,stateAgeMs:0,tick:Math.floor(atMs/50),runId:2,
   phase:'battle',paused:false,speed:1,...changes});

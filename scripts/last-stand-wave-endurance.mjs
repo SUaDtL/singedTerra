@@ -6,7 +6,6 @@ import {appendFileSync,existsSync,mkdirSync,readFileSync,writeFileSync} from 'no
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {performance} from 'node:perf_hooks';
-import {chromium} from '@playwright/test';
 import {admitMilestoneFixtures} from './last-stand-wave-milestones.mjs';
 import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
   fetchBoundRuntime,assertServedBytes,readShopControlObservation} from '../e2e/helpers/lastStandJourney.mjs';
@@ -225,6 +224,7 @@ async function main(){
   let browser,context,page,cdp,latest,layout,latestAt=0,readyObserved=false,interrupted=false,completed=false,observerError,started,previousRun=0;
   const onSignal=()=>{interrupted=true;};process.once('SIGINT',onSignal);process.once('SIGTERM',onSignal);persist();
   try {
+    const {chromium}=await import('@playwright/test');
     browser=await chromium.launch({headless:true,chromiumSandbox:true});
     browser.on('disconnected',()=>{if(!completed&&!interrupted)observerError??=new Error('Owned browser disconnected');});
     context=await browser.newContext({viewport:{width:1366,height:768},proxy:{server:'http://127.0.0.1:9',bypass:'127.0.0.1,localhost'}});

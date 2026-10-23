@@ -5,6 +5,15 @@ import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
 import {MILESTONE_FIXTURE_SOURCES,admitMilestoneFixtures} from '../last-stand-wave-milestones.mjs';
+import {assertDependencyFreeWaveGuards} from './lastStandDependencyFreeFixture.mjs';
+
+test('milestone guard imports and executes in a checkout without installed Playwright',()=>{
+  assertDependencyFreeWaveGuards(`
+    const {MILESTONE_FIXTURE_SOURCES,admitMilestoneFixtures}=await import('./scripts/last-stand-wave-milestones.mjs');
+    assert.ok(MILESTONE_FIXTURE_SOURCES.includes('campaign-unity/Unity/Assets/Scripts/EncounterModel.cs'));
+    assert.throws(()=>admitMilestoneFixtures({schema:'untrusted'},'unused'),{code:'ERR_ASSERTION'});
+  `);
+});
 
 // Inert bytes exercise manifest rejection only; they are never fed to Unity.
 test('milestone setup requires complete source closure and four unique contained byte-bound fixtures',()=>{

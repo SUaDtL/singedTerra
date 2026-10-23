@@ -6,7 +6,6 @@ import {createHash} from 'node:crypto';
 import {mkdirSync,readFileSync,writeFileSync,realpathSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from '@playwright/test';
 import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
   fetchBoundRuntime,assertServedBytes,readShopControlObservation} from '../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../e2e/helpers/lastStandTierJourney.mjs';
@@ -64,6 +63,7 @@ const inputs=['scripts/last-stand-wave-milestones.mjs','e2e/helpers/lastStandWav
 const hashes=()=>Object.fromEntries(inputs.map(path=>[path,hash(readFileSync(resolve(root,path)))]));
 const report={status:'running',scope:'Real rendered 1x milestone, unlock and fitting behavior after accelerated production-earned setup; no normal-player duration, native media or endurance claim.',
   seeded:true,normalSpeed:true,host:process.platform,fixtureManifest:manifestPath,fixtureSha256:hash(fixtureBytes),inputs:hashes(),packaged,cases:[]};
+const {chromium}=await import('@playwright/test');
 const browser=await chromium.launch({headless:true,chromiumSandbox:true,proxy:{server:'http://127.0.0.1:9',bypass:'127.0.0.1,localhost'}});
 try {
   for(const fixture of fixtures.cases){
