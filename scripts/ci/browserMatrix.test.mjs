@@ -368,7 +368,7 @@ test('actual journey check journals every observation without rewriting the grow
   const check=runInNewContext(source.slice(begin,end)+'check;',{
     assert,report,resultPath:'owned-result.json',lastResultWrite:-Infinity,Date:{now:()=>clock},
     throwObserverFailure:()=>{if(observerError)throw observerError;},
-    writeFileSync:(_path,bytes)=>snapshots.push(JSON.parse(bytes)),
+    writeShopPresentationJson:(_path,value)=>snapshots.push(JSON.parse(JSON.stringify(value))),
     appendFileSync:(_path,bytes)=>journal.push(JSON.parse(bytes)),
   });
   for(let i=0;i<50;i++)check(true,'observed-'+i,{i});
@@ -386,7 +386,7 @@ test('actual journey check journals every observation without rewriting the grow
   const failedCheck=runInNewContext(source.slice(begin,end)+'check;',{
     assert,report:{status:'running',checks:[]},resultPath:'owned-result.json',lastResultWrite:-Infinity,
     Date:{now:()=>0},throwObserverFailure:()=>{},appendFileSync:()=>{throw appendError;},
-    writeFileSync:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
+    writeShopPresentationJson:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
   });
   assert.throws(()=>failedCheck(true,'must fail persistence'),error=>error===appendError);
 });
