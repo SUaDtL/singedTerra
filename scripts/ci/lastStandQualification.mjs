@@ -146,7 +146,7 @@ export function verifyFiles(path,report) {
   assert.equal(digest(raw),model.output_sha256);assert.equal(model.commands[1].stdout_sha256,model.output_sha256);
   const reference=encounterOraclePackage(),profiles=admitEncounterOracleOutput(raw,reference,reference.source_lf_sha256).profiles;
   const telemetry=read(resolve(directory,'runtime-telemetry.json'));
-  if(report.contract==='last-stand-waves/v1')verifyWaveFiles(path,report);
+  if(report.contract?.startsWith('last-stand-waves/'))verifyWaveFiles(path,report);
   else {
   const recorded=report.lifecycle.find(item=>item.kind==='settling-transition').evidence;
   const actual=validateSettlingTransition({before:recorded.before,result:recorded.result,...telemetry,

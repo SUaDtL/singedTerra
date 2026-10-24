@@ -622,23 +622,31 @@ def verify_shop_vertical(report):
         fields = json.loads(payload[:boundary] + '}')
         headers = {'phase', 'coordinates', 'selection', 'width', 'height', 'pixelRatio',
                    'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset',
-                   'controls', 'shopControls', 'settingsControls'}
-        require(set(fields) == headers and fields['coordinates'] == 'top-left'
+                   'controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls'}
+        tails = {'researchScrollOffset', 'researchMaximumScrollOffset', 'historyScrollOffset', 'historyMaximumScrollOffset'}
+        require(set(fields) - tails == headers and fields['coordinates'] == 'top-left'
                 and isinstance(fields['phase'], str) and isinstance(fields['selection'], str), 'Invalid controls header')
+        complete = json.loads(payload)
+        require(set(complete) == headers | tails | {'graphics'} and isinstance(complete['graphics'], list), 'Unexpected diagnostic tail')
+        fields.update({key: complete[key] for key in tails})
         require(all(type(fields[key]) in (int, float) and math.isfinite(fields[key]) and fields[key] >= 0
-                    for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset'))
+                    for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset', *tails))
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
         expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext'},
-                    'shopControls': {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry'},
+                    'shopControls': {'ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy'},
+                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy'},
                     'settingsControls': {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                     'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
-                    'ChoicePrevious', 'ChoiceNext'}}
+                    'ChoicePrevious', 'ChoiceNext'},
+                    'researchControls': {'ResearchClose', 'ResearchFilter', 'ResearchBack',
+                        *('ResearchProject-' + key for key in ('gameSpeed','salvageRecovery','researchSpeed','scrapLogistics')),
+                        *('Research' + action + str(slot) for slot in (0,1) for action in ('Start','Queue','Switch','Suspend','RemoveQueued'))},
+                    'historyControls': {'RunHistoryClose','RunHistoryTier'}}
         for key, names in expected.items():
             values = fields[key]
             require(isinstance(values, list) and len(values) == len(names)
@@ -650,21 +658,7 @@ def verify_shop_vertical(report):
                         and all(type(item[name]) in (int, float) and math.isfinite(item[name]) for name in ('x', 'y', 'width', 'height'))
                         and min(item['width'], item['height']) >= 0
                         and type(item['active']) is bool and type(item['interactable']) is bool, 'Malformed control field')
-        truncated = False
-        try:
-            complete = json.loads(payload)
-            require(set(complete) == headers | {'graphics'} and isinstance(complete['graphics'], list), 'Unexpected diagnostic tail')
-        except json.JSONDecodeError as error:
-            suffix = payload[error.pos:]
-            incomplete_literal = error.msg == 'Expecting value' and suffix in ('t', 'tr', 'tru', 'f', 'fa', 'fal', 'fals', 'n', 'nu', 'nul')
-            incomplete_number = (error.msg == 'Expecting value' and suffix == '-') or (
-                error.msg == "Expecting ',' delimiter" and suffix in ('.', 'e', 'E', 'e+', 'e-', 'E+', 'E-')
-                and error.pos > 0 and payload[error.pos - 1].isdigit())
-            require(len(raw) == 8190 and error.pos > boundary and (error.pos == len(payload)
-                    or error.msg == 'Unterminated string starting at' or incomplete_literal or incomplete_number),
-                    'Unexpected HUD truncation shape')
-            truncated = True
-        return dict(fields, observationScope='complete-controls-only', graphicsTruncated=truncated, raw=raw)
+        return dict(fields, observationScope='complete-controls-only', graphicsTruncated=False, raw=raw)
 
     tags = {'ST_LS_SHOP_STATE ': 'shopStates', 'ST_LS_SHOP_PURCHASE ': 'purchases',
             'ST_LS_SHOP_COMBAT ': 'combat', 'ST_LS_STATE ': 'states',
@@ -1265,21 +1259,26 @@ def verify_shop_recovery(report, require_native=False):
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
                 expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext'}
-                expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry'}
+                expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy'}
+                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy'}
                 expected_settings_controls = {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                     'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
                     'ChoicePrevious', 'ChoiceNext'}
-                need(value['coordinates'] == 'top-left' and value['width'] > 0 and value['height'] > 0
-                     and len(value['controls']) == 18 and len(value['shopControls']) == 12 and len(value['settingsControls']) == 37
-                     and {control['name'] for control in value['controls']} == expected_controls
-                     and {control['name'] for control in value['shopControls']} == expected_shop_controls
-                     and {control['name'] for control in value['settingsControls']} == expected_settings_controls, 'Incomplete recovery controls')
+                expected_research_controls = {'ResearchClose','ResearchFilter','ResearchBack',
+                    *('ResearchProject-' + key for key in ('gameSpeed','salvageRecovery','researchSpeed','scrapLogistics')),
+                    *('Research' + action + str(slot) for slot in (0,1) for action in ('Start','Queue','Switch','Suspend','RemoveQueued'))}
+                expected_history_controls = {'RunHistoryClose','RunHistoryTier'}
+                expected_sets = {'controls': expected_controls, 'shopControls': expected_shop_controls,
+                    'settingsControls': expected_settings_controls, 'researchControls': expected_research_controls,
+                    'historyControls': expected_history_controls}
+                need(all(isinstance(value.get(key), list) and len(value[key]) == len(expected)
+                    and {control['name'] for control in value[key]} == expected for key, expected in expected_sets.items()),
+                    'Incomplete recovery controls')
             value.update({field: observation[field] for field in ('seq', 'load', 't', 'timeOrigin', 'order', 'documentHidden', 'documentFocused')})
             derived[key].append(value)
     need(all(records[key] == value for key, value in derived.items()), 'Recovery witness differs from raw runtime emission')

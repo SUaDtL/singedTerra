@@ -81,8 +81,8 @@ static class WaveModelChecks
                     var shop=new LastStandShopState(9,LastStandFitting.Repair,new int[LastStandUpgradeCatalog.Tracks.Count]);
                     shop.ObserveAuthoritativeKills(10);Check(shop.TryPurchase(new LastStandShopPurchaseIntent(9,shop.Version,LastStandUpgradeTrackId.HullCapacity)).Accepted,"Purchase.");
                     var ledger=shop.CaptureCheckpoint();var restored=LastStandShopState.RestoreCheckpoint(ledger);
-                    Check(!restored.ObserveAuthoritativeKills(10) && restored.Scrap==25,"No replay income.");
-                    Check(restored.EarnedScrap==30 && restored.SpentScrap==5 && restored.GetTrack(LastStandUpgradeTrackId.HullCapacity).RunPurchases==1,"Whole ledger restores.");
+                    Check(!restored.ObserveAuthoritativeKills(10) && restored.Scrap==26,"No replay income after the v2 four-Scrap Hull purchase.");
+                    Check(restored.EarnedScrap==30 && restored.SpentScrap==4 && restored.GetTrack(LastStandUpgradeTrackId.HullCapacity).RunPurchases==1,"Whole ledger restores.");
                     var tank=EncounterModel.CreatePlayable(LastStandFitting.Repair,1,restored);
                     Set(tank,"<Hull>k__BackingField",10);
                     var tankCopy=EncounterModel.RestoreCheckpoint(tank.Profile,tank.Fitting,tank.CaptureCheckpoint());

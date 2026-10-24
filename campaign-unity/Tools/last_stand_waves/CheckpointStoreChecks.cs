@@ -35,7 +35,7 @@ static class CheckpointStoreChecks
         var store = new Store { Raw = "{\"version\":1,\"credits\":7,\"permanentLevel\":2,\"nextRunId\":2,\"lastFinalizedRunId\":0,\"pendingDefeat\":{\"runId\":1,\"elapsedTicks\":80,\"kills\":2,\"reward\":1}}" };
         var p = LastStandProgression.Load(store);
         Check(p.Wallet == 7 && p.CannonAttackLevel == 2 && p.PendingDefeat != null, "legacy investment and claim preserved");
-        Check(store.Raw.Contains("\"version\":4"), "legacy migrates to atomic version 4 envelope");
+        Check(store.Raw.Contains("\"version\":5"), "legacy migrates to atomic version 5 envelope");
         Check(p.TryClaim() && p.Wallet == 8 && !p.TryClaim(), "legacy claim exactly once");
         Check(LastStandProgression.Load(store).Wallet == 8, "claim reload unchanged");
         const string six="\"cannonAttack\":3,\"launcherAttack\":2,\"hullCapacity\":1,\"armor\":2,\"cannonCycle\":3,\"fieldRepair\":1";
@@ -45,7 +45,7 @@ static class CheckpointStoreChecks
         {
             var old=new Store {Raw=legacy,FailBeforeWrite=true};var migrated=LastStandProgression.Load(old);
             Check(migrated.SaveState=="retry" && old.Raw==legacy,"migration failure preserves exact source bytes");
-            old.FailBeforeWrite=false;Check(migrated.Retry() && old.Raw.Contains("\"version\":4"),"migration retry commits envelope");
+            old.FailBeforeWrite=false;Check(migrated.Retry() && old.Raw.Contains("\"version\":5"),"migration retry commits envelope");
             Check(migrated.Wallet==12 && migrated.GetPermanentLevel(LastStandUpgradeTrackId.LauncherAttack)==2 &&
                 migrated.GetPermanentLevel(LastStandUpgradeTrackId.CannonCycle)==3 && migrated.GetPermanentLevel(LastStandUpgradeTrackId.FieldRepair)==1,
                 "all legacy tracks retain investment");
@@ -142,7 +142,7 @@ static class CheckpointStoreChecks
     static void Invalid()
     {
         var store=Strong();var p=LastStandProgression.Load(store);p.TryDeploy();string good=store.Raw;
-        foreach(string bad in new[]{good.Replace("\"version\":4","\"version\":99"),
+        foreach(string bad in new[]{good.Replace("\"version\":5","\"version\":99"),
             good.Replace(LastStandWaveCatalog.RulesVersion,"future-rules"),
             good.Replace("\"credits\":100000","\"credits\":2147483648"),
             good.Replace("\"credits\":100000","\"credits\":100000,\"credits\":2"),

@@ -84,6 +84,8 @@ namespace SingedTerra.LastStand
             Button("MenuSettings","SETTINGS",content,() => loop.OpenMenu("settings"));
             Button("MenuHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
             Button("MenuMilestones","WAVE MILESTONES",content,() => loop.OpenMenu("milestones"));
+            Button("MenuResearch","RESEARCH LAB",content,loop.OpenResearch);
+            Button("MenuHistory","RUN HISTORY",content,loop.OpenHistory);
             Button("MenuNewRun","NEW RUN",content,() => loop.RequestConfirmation("new-run"));
             Button("MenuAbandon","ABANDON RUN",content,() => loop.RequestConfirmation("abandon"));
             Button("MenuCampaigns","RETURN TO CAMPAIGNS",content,() => loop.RequestNavigation(false));
@@ -140,7 +142,8 @@ namespace SingedTerra.LastStand
         }
         public void Refresh()
         {
-            shade.gameObject.SetActive(loop.MenuOpen); if (!loop.MenuOpen) { previousPage=""; return; }
+            bool visiblePage=loop.MenuOpen && loop.MenuPage!="research" && loop.MenuPage!="history";
+            shade.gameObject.SetActive(visiblePage); if (!visiblePage) { previousPage=""; return; }
             if (previousPage != loop.MenuPage) { ResetScroll(); previousPage=loop.MenuPage; }
             foreach (var b in buttons) b.gameObject.SetActive(false);
             close.gameObject.SetActive(true); visible.Clear();
@@ -166,6 +169,8 @@ namespace SingedTerra.LastStand
                     body.text = loop.Session.Model != null ? "Run paused. Closing this menu preserves a manual pause." : "LAST STAND";
                     if(loop.Guidance.Tutorial != "") body.text += "\n\n" + loop.Guidance.Tutorial;
                     Show("MenuResume"); Show("MenuSettings"); Show("MenuHelp"); Show("MenuMilestones");
+                    Show("MenuResearch",loop.Progression.GetBestWave(1)>=25?"RESEARCH LAB":"RESEARCH LAB - T1 WAVE 25");
+                    Show("MenuHistory");
                     if(loop.Progression.HasCheckpoint)Show("MenuNewRun",enabled:canLeave);
                     Show("MenuAbandon",enabled:canLeave && loop.Progression.ActiveRunId != 0);
                     Show("MenuCampaigns",enabled:canLeave); Show("MenuAbout"); break;
@@ -187,7 +192,9 @@ namespace SingedTerra.LastStand
                     }
                     else if (tab == "Gameplay")
                     {
-                        body.text += "\nLast running speed: " + loop.Session.LastPositiveSpeed.ToString("0.0") + "x. Current cap: 1x. Higher speeds will require research.\nEssential status, errors and confirmations remain visible.";
+                        body.text += "\nLast running speed: " + loop.Session.LastPositiveSpeed.ToString("0.0") +
+                            "x. Research cap: "+(1+.5*loop.ResearchSnapshot.completedRanks[(int)LastStandResearchTrackId.GameSpeed]).ToString("0.0")+
+                            "x. Research raises the cap; you choose the running speed.\nEssential status, errors and confirmations remain visible.";
                         Show("TutorialTips",p.TutorialTips ? "TUTORIAL TIPS: ON" : "TUTORIAL TIPS: OFF");
                         Show("PurchaseSuggestions",p.PurchaseSuggestions ? "PURCHASE SUGGESTIONS: ON" : "PURCHASE SUGGESTIONS: OFF"); Show("GameplayHelp");
                     }
@@ -200,7 +207,9 @@ namespace SingedTerra.LastStand
                         Show("DataAccount",enabled:canLeave); Show("SettingsDefaults");
                     }
                     Show("SettingsBack"); break;
-                case "help": body.text = LastStandGuidance.Help; Show("SettingsBack"); break;
+                case "help": body.text = LastStandGuidance.Help+
+                    "\n\nRESEARCH & FARMING\nTemporary Scrap buys upgrades for this run. Persistent Salvage funds both Mechanics Shop starting upgrades and Lab research. Research uses real time, including while closed; combat speed changes combat only. Switching research keeps elapsed progress and refunds the paid Salvage; resuming pays that cost again.\nRun History compares repeatable Salvage per real active hour, with milestone bonuses shown separately. Comparisons disclose short runs, changing upgrades and checkpoint measurement limits.";
+                    Show("SettingsBack"); break;
                 case "milestones":
                     int tier=loop.Session.Model?.Profile.Tier??loop.Progression.Checkpoint?.Tier??loop.Progression.SelectedTier;
                     title.text="TIER "+tier+" MILESTONES";
@@ -241,7 +250,7 @@ namespace SingedTerra.LastStand
         { Show(name+"Minus",name.ToUpperInvariant()+" " + value + "%  -",value>0); Show(name+"Plus",name.ToUpperInvariant()+" " + value + "%  +",value<100); }
         public void Layout(float width, float height, float unitsX, float unitsY)
         {
-            if (!loop.MenuOpen) return;
+            if (!loop.MenuOpen || loop.MenuPage=="research" || loop.MenuPage=="history") return;
             scaleX=unitsX; scaleY=unitsY;
             Place(shade,0,0,width*unitsX,height*unitsY);
             if(loop.SelectionOpen)

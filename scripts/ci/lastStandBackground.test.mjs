@@ -10,6 +10,11 @@ import { tmpdir } from 'node:os';
 import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 
+// A clean checkout has no ignored journey evidence directories. Initialize the
+// fixed repository-owned parent; the production admission still proves its
+// canonical containment before compiling or retaining any evidence.
+mkdirSync(resolve(import.meta.dirname,'../../campaign-unity/Evidence/last-stand-playable-loop/t06'),{recursive:true});
+
 // Candidate uses the production journey; the RED adapter executes the frozen
 // original journey assertions. Fixtures are negative controls, never gameplay.
 const journey = await import(process.env.LAST_STAND_BACKGROUND_BASELINE_MODULE
@@ -46,7 +51,8 @@ const callerURL=process.env.LAST_STAND_OBSERVATION_SOURCE
   : process.env.LAST_STAND_GUARD_MODULE
     ? pathToFileURL(resolve(process.env.LAST_STAND_GUARD_MODULE))
     : new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url);
-const callerSource=readFileSync(callerURL,'utf8');
+const callerBytes=readFileSync(callerURL);
+const callerSource=callerBytes.toString('utf8').replace(/\r\n/g,'\n');
 const callerDeclarations=[...callerSource.matchAll(/\n[ \t]*const observation\s*=\s*async\s+options\s*=>/g)];
 assert.equal(callerDeclarations.length,1,'Unique actual production async observation caller is required');
 const callerBegin=callerDeclarations[0].index;
@@ -213,7 +219,7 @@ async function assertOwnedNativeStartup() {
   const fixtureURL=`http://127.0.0.1:${server.address().port}/native-startup`;
   const digest=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
   const report={host:process.platform,node:{path:process.execPath,version:process.version,sha256:digest(process.execPath)},
-    source_sha256:createHash('sha256').update(callerSource).digest('hex'),
+    source_sha256:createHash('sha256').update(callerBytes).digest('hex'),
     method:'maintained ownedChrome, isolated inert loopback document, actual owned Win32 HWND oracle; document diagnostics only',
     requests:[],deniedRequests:[],serverRequests,observations:[],status:'running'};
   let native,page,original,pageSession,browserSession;

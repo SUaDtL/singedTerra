@@ -66,17 +66,30 @@ public static class LastStandShopChecks
             while (Session.CatchingUp) Session.AdvanceAt(target);
         }
     }
-    static string Save(int[] levels, int nextRunId = 7, int wallet = 20)
+    static string Save(int[] levels, int nextRunId = 7, int wallet = 20, bool allFittings = false)
     {
-        var fields = new List<string>();
-        for (int i = 0; i < LastStandUpgradeCatalog.Tracks.Count; i++)
-            fields.Add("\"" + LastStandUpgradeCatalog.Tracks[i].Key + "\":" + levels[i]);
-        // Ordinary shop scenarios start with current-schema data. Historical
-        // migration scenarios supply their explicit versioned fixtures below.
-        return "{\"version\":3,\"credits\":" + wallet + ",\"permanentLevels\":{" + String.Join(",", fields) +
-            "},\"nextRunId\":" + nextRunId + ",\"lastFinalizedRunId\":0,\"selectedTier\":1," +
-            "\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0," +
-            "\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}";
+        // Build a complete current-schema fixture through the real serializer.
+        // Historical migration cases below continue supplying explicit old JSON.
+        var storage = new MemoryStorage();
+        var progression = LastStandProgression.Load(storage);
+        var record = typeof(LastStandProgression).GetField("committed", Private).GetValue(progression);
+        var snapshot = new int[LastStandUpgradeCatalog.Tracks.Count];
+        Array.Copy(levels, snapshot, Math.Min(levels.Length, snapshot.Length));
+        record.GetType().GetField("Levels").SetValue(record, snapshot);
+        record.GetType().GetField("Wallet").SetValue(record, wallet);
+        record.GetType().GetField("NextRunId").SetValue(record, nextRunId);
+        if(allFittings)
+        {
+            ((HashSet<string>)record.GetType().GetField("Fittings").GetValue(record)).Add("scattergun");
+            var tiers=(System.Collections.IDictionary)record.GetType().GetField("Tiers").GetValue(record);
+            var tier=tiers[LastStandTierCatalog.Get(1).Key];
+            tier.GetType().GetField("BestWave",BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public).SetValue(tier,100);
+            var clears=(HashSet<string>)record.GetType().GetField("FirstClears").GetValue(record);
+            foreach(var milestone in LastStandRewardCatalog.Milestones(LastStandTierCatalog.Get(1)))
+                if(milestone.Wave<=100)clears.Add(milestone.Id);
+        }
+        return (string)typeof(LastStandProgression).GetMethod("Serialize", BindingFlags.Static | BindingFlags.NonPublic)
+            .Invoke(null, new[] { record });
     }
     static void Require(bool value, string label)
     { if (!value) throw new InvalidOperationException("Last Stand shop deployment check failed: " + label); }
@@ -99,8 +112,9 @@ public static class LastStandShopChecks
         foreach (var track in LastStandUpgradeCatalog.Tracks)
         {
             var actual = shop.GetTrack(track.Id);
-            Require(actual.PermanentLevel == levels[(int)track.Id] && actual.RunPurchases == 0 &&
-                actual.CurrentLevel == levels[(int)track.Id] && actual.NextPrice == 5,
+            int expected = (int)track.Id < levels.Length ? levels[(int)track.Id] : 0;
+            Require(actual.PermanentLevel == expected && actual.RunPurchases == 0 &&
+                actual.CurrentLevel == expected && actual.NextPrice == shop.GetDefinition(track.Id).RunPrice(1),
                 "exact frozen P, zero n and independent first price for " + track.Key);
         }
     }
@@ -474,9 +488,12 @@ public static class LastStandShopChecks
     {
         foreach (var track in LastStandUpgradeCatalog.Tracks)
         {
-            if (track.Id == LastStandUpgradeTrackId.LauncherAttack && !launcher ||
-                track.Id == LastStandUpgradeTrackId.FieldRepair && launcher) continue;
+            if (!track.IsEligible(launcher?LastStandFitting.Launcher:LastStandFitting.Repair)) continue;
             var f = new Fixture(launcher, new int[6]); var shop = Funded(f); var model = f.Session.Model;
+            // The current tracks have distinct prices; this owner-arranged
+            // balance isolates old-stat ordering from affordability.
+            shop.ObserveAuthoritativeKills(20);
+            int beforeScrap=shop.Scrap,price=track.RunPrice(1);
             var intent = Intent(shop, track.Id);
             int oldHull = model.Hull, oldFoeHull = model.Foes[0].Hull, oldShots = model.CannonShots, notifications = 0;
             bool oldShot = false;
@@ -492,7 +509,7 @@ public static class LastStandShopChecks
             f.Loop.Changed += () =>
             {
                 notifications++;
-                Require(shop.Scrap == 1 && shop.SpentScrap == 5 && shop.GetTrack(track.Id).RunPurchases == 1,
+                Require(shop.Scrap == beforeScrap-price && shop.SpentScrap == price && shop.GetTrack(track.Id).RunPurchases == 1,
                     "controller observer sees debit and track as one completed purchase");
                 Require(model.CurrentCannonDamage == (track.Id == LastStandUpgradeTrackId.CannonAttack ? 30 : 20) &&
                     model.CurrentMaximumHull == (track.Id == LastStandUpgradeTrackId.HullCapacity ? 135 : 120) &&
@@ -502,7 +519,7 @@ public static class LastStandShopChecks
                     "one refresh observes the matching actual combat projections");
             };
             var result = Buy(f, intent, f.Timestamp + 20 * LastStandRunClock.StepSeconds);
-            Require(result.Accepted && result.ChargedScrap == 5 && oldShot && model.Tick == 25 && notifications == 1 &&
+            Require(result.Accepted && result.ChargedScrap == price && oldShot && model.Tick == 25 && notifications == 1 &&
                 model.Foes[0].Hull == oldFoeHull - 20 && Shop(f.Session) == shop && f.Session.Model == model &&
                 shop.Version == intent.Version + 1 && f.Loop.Progression.Wallet == 20 && f.Storage.Writes == 1,
                 "settled buy charges once after old-stat shot and synchronously refreshes the same run");
@@ -646,9 +663,9 @@ public static class LastStandShopChecks
         if (failed) EditorApplication.Exit(1);
     }
     // Imported ordinary controls and the same real owner, never a UI economy.
-    static readonly string[] ShopIds = { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
+    static readonly string[] ShopIds = { "ShopEntry", "ShopClose", "ShopQuantity", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
         "ShopCard_cannonAttackBuy", "ShopCard_launcherAttackBuy", "ShopCard_hullCapacityBuy", "ShopCard_armorBuy",
-        "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy" };
+        "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy", "ShopCard_scattergunAttackBuy", "ShopCard_scrapYieldBuy" };
     sealed class ShopUiFixture : IDisposable
     {
         public readonly Fixture Game;
@@ -750,8 +767,9 @@ public static class LastStandShopChecks
         Require(f.Game.Art.showingLauncher==launcher && f.Game.Loop.FittingId==(launcher ? "launcher" : "repair"),
             "ordinary inline arrow equips the explicit fitting identity");
         Require(f.Game.Loop.MenuPage=="" && f.Game.Session.Model==null &&
-            f.Game.Storage.Writes==writes && f.Game.Loop.Progression.Wallet==wallet,
-            "inline fitting never opens a modal, deploys, purchases or saves progression");
+            f.Game.Storage.Writes==writes+1 && f.Game.Loop.Progression.Wallet==wallet &&
+            f.Game.Loop.Progression.SelectedFitting==(launcher?"launcher":"repair"),
+            "inline fitting saves its selection once without deploying or buying");
         if(reopen)f.Click("ShopEntry");
     }
     static void FittedCardVisibility()
@@ -794,7 +812,7 @@ public static class LastStandShopChecks
         {
             if (run) Funded(f.Game);
             f.Refresh(); f.Click("ShopEntry"); f.Click("ShopTabDefense");
-            Require(f.Text("ShopCard_hullCapacityLevels").text == "Level 0 / " + (run ? "8" : "3"),
+            Require(f.Text("ShopCard_hullCapacityLevels").text == "Level 0 / " + (run ? LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.HullCapacity).TotalCap : LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.HullCapacity).PermanentCap),
                 "plain upgrade level instead of internal P/RUN/L bookkeeping");
             Require(f.Text("ShopCard_hullCapacityCurrentEffect").text.Contains("120") &&
                 f.Text("ShopCard_hullCapacityCurrentEffect").text.Contains("135"), "current and next effects read as one delta");
@@ -842,7 +860,8 @@ public static class LastStandShopChecks
                 {
                     if (card.Category != category || !card.AppliesToFitting) continue;
                     var label = f.Text("ShopCard_" + card.Key + "CurrentEffect");
-                    Require(label.text == card.CurrentEffectDescription + " to " + card.NextEffectDescription,
+                    Require(label.text.Contains(card.CurrentEffectDescription) && label.text.Contains(card.NextEffectDescription) &&
+                        (card.PurchaseQuantity>0?label.text.Contains(" to "):label.text.Contains("Next level: ")),
                         "visible plain-language effect transition preserves exact catalog values and units: " + card.Key);
                     label.font.RequestCharactersInTexture("to",label.fontSize,label.fontStyle);
                     foreach (char separator in "to")
@@ -917,10 +936,112 @@ public static class LastStandShopChecks
                 "actual nested card Button identity " + definition.Key);
         }
     }
+    static string ResearchSprintSave()
+    {
+        var storage=new MemoryStorage{Value=Save(new int[8],wallet:1000,allFittings:true)};
+        var progression=LastStandProgression.Load(storage);
+        var record=typeof(LastStandProgression).GetField("committed",Private).GetValue(progression);
+        var tiers=(System.Collections.IDictionary)record.GetType().GetField("Tiers").GetValue(record);
+        var tier=tiers[LastStandTierCatalog.Get(1).Key];
+        tier.GetType().GetField("BestWave",BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public).SetValue(tier,100);
+        return (string)typeof(LastStandProgression).GetMethod("Serialize",BindingFlags.Static|BindingFlags.NonPublic)
+            .Invoke(null,new[]{record});
+    }
+    static void ProgressionModalTargets(ShopUiFixture f,string rootName,params string[] required)
+    {
+        var panel=f.Root.Find(rootName+"Modal/"+rootName+"Panel");
+        Require(panel && panel.gameObject.activeInHierarchy,"actual progression modal visible "+rootName);
+        var screen=CanvasBounds(f);
+        foreach(string id in required)
+        {
+            var button=f.Button(id);var target=f.Bounds((RectTransform)button.transform);
+            Require(button.IsActive() && button.transform.IsChildOf(panel) && target.width>=43.99f && target.height>=43.99f &&
+                screen.Contains(target.min) && screen.Contains(target.max),"reachable scoped progression control "+id);
+        }
+        foreach(var button in f.Root.GetComponentsInChildren<Button>(false))
+            if(button.IsInteractable())Require(button.transform.IsChildOf(panel),"modal focus excludes background control "+button.name);
+        bool hasChrome=false;foreach(var component in panel.GetComponentsInChildren<Component>(true))
+            if(component && component.GetType().Name=="LastStandConsoleFrame")hasChrome=true;
+        Require(hasChrome,"progression modal uses shared console chrome");
+        f.Camera.Render();Canvas.ForceUpdateCanvases();
+    }
+    static void ResearchSprintSurfaces()
+    {
+        foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
+        using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=ResearchSprintSave()}))
+        {
+            ShopInventory(f);int wallet=f.Game.Loop.Progression.Wallet,writes=f.Game.Storage.Writes;
+            f.Click("ResearchEntry");
+            ProgressionModalTargets(f,"Research","ResearchClose","ResearchFilter");
+            Require(f.Game.Loop.MenuPage=="research" && f.Game.Loop.ResearchSnapshot.slots.Length==2,
+                "garage route opens two-slot Lab");
+            var first=LastStandResearchCatalog.Tracks[0];f.Click("ResearchProject-"+first.Key);
+            var start=f.Button("ResearchStart0");
+            // Reveal via the same scoped keyboard owner used by ordinary Tab.
+            start.Select();f.Refresh();
+            Require(start.IsInteractable(),"unlocked first Lab offers funded project start");
+            writes=f.Game.Storage.Writes;
+            f.Click(start.name);
+            var research=f.Game.Loop.ResearchSnapshot;
+            Require(research.slots[0].active!=null && research.slots[0].active.track==first.Id &&
+                f.Game.Loop.Progression.Wallet==wallet-first.Cost(1) && f.Game.Storage.Writes==writes+1,
+                "Lab start charges the shared Salvage wallet exactly once");
+            f.Click("ResearchClose");writes=f.Game.Storage.Writes;f.Game.Loop.OpenHistory();f.Refresh();
+            ProgressionModalTargets(f,"RunHistory","RunHistoryClose","RunHistoryTier");
+            Require(f.Game.Loop.RunHistorySnapshot.Recent.Count==0 && f.Game.Loop.RunHistorySnapshot.Current==null &&
+                f.Game.Storage.Writes==writes,"opening empty history never creates or finalizes a run");
+            f.Click("RunHistoryClose");Require(f.Game.Loop.MenuPage=="","history close returns to garage");
+        }
+    }
+    static void BulkSprintSurfaces()
+    {
+        foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
+        using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=ResearchSprintSave()}))
+        {
+            f.Click("ShopEntry");int wallet=f.Game.Loop.Progression.Wallet,writes=f.Game.Storage.Writes;
+            foreach(var quantity in new[]{LastStandBulkQuantity.One,LastStandBulkQuantity.Ten,LastStandBulkQuantity.Hundred,LastStandBulkQuantity.Max})
+            {
+                Require(f.Game.Loop.ShopQuantity==quantity,"quantity selector preserves 1/10/100/Max order");
+                var selector=f.Button("ShopQuantity");var bounds=f.Bounds((RectTransform)selector.transform);var screen=CanvasBounds(f);
+                // Camera/Canvas projection produces 43.99994 for an authored
+                // 44px target at 390px width. Match the existing .01px geometry
+                // tolerance while retaining full screen containment.
+                Require(bounds.width>=43.99f && bounds.height>=43.99f && screen.Contains(bounds.min) && screen.Contains(bounds.max),
+                    "bulk selector stays reachable: profile="+profile+" quantity="+quantity+" bounds="+bounds.ToString("F5")+" canvas="+screen.ToString("F5"));
+                string label=selector.GetComponentInChildren<Text>(true).text;
+                Require(label.Contains("1") && label.Contains("10") && label.Contains("100") && label.Contains("MAX"),"all quantity choices remain discoverable");
+                PermanentCards(f,LastStandUpgradeCategory.Attack);
+                f.Click("ShopQuantity");
+            }
+            Require(f.Game.Loop.Progression.Wallet==wallet && f.Game.Storage.Writes==writes,"quote exploration never spends Salvage");
+            f.Click("ShopQuantity");
+            var quote=f.Game.Loop.Progression.QuotePermanent(LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.Ten);
+            f.Click("ShopCard_cannonAttackBuy");
+            Require(quote.Quantity==10 && f.Game.Loop.Progression.CannonAttackLevel==quote.ResultLevel &&
+                f.Game.Loop.Progression.Wallet==wallet-quote.Cost && f.Game.Storage.Writes==writes+1,
+                "one bulk click commits the displayed count and aggregate debit once");
+            PermanentCards(f,LastStandUpgradeCategory.Attack);
+        }
+    }
+    public static void RunResearchSprint()
+    {
+        bool failed=false;using(var preferencesScope=new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED");var factory=LastStandLoopController.StorageFactory;
+            bool background=Application.runInBackground;
+            try
+            {
+                NamedIncome("test_research_lab_history_modal_surfaces",ResearchSprintSurfaces,ref failed);
+                NamedIncome("test_research_bulk_shop_surfaces",BulkSprintSurfaces,ref failed);
+            }
+            finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
+        }
+        if(failed)EditorApplication.Exit(1);
+    }
     static void ShopCards(ShopUiFixture f, LastStandUpgradeCategory category)
     {
-        var view = LastStandShopPresentation.ProjectRun(Shop(f.Game.Session));
-        Require(f.Text("ShopHeading").text == "SHOP / THIS RUN" && f.Text("ShopCurrency").text == "SCRAP  " + view.Balance,
+        var view = LastStandShopPresentation.ProjectRun(Shop(f.Game.Session),f.Game.Loop.ShopQuantity);
+        Require(f.Text("ShopHeading").text == "THIS RUN" && f.Text("ShopCurrency").text == "SCRAP  " + view.Balance,
             "Scrap purchase lifetime and balance from actual run");
         int visible = 0;
         foreach (var card in view.Cards)
@@ -933,15 +1054,26 @@ public static class LastStandShopChecks
                 "Level " + card.CurrentLevel + " / " + card.Cap && f.Text(id + "NextEffect").text ==
                 "Permanent " + card.PermanentLevel + "  /  This run " + card.RunPurchases,
                 "plain combined level and exact permanent/run contributions " + card.Key);
-            Require(f.Text(id + "CurrentEffect").text == card.CurrentEffectDescription +
-                (card.NextPrice.HasValue ? " to " + card.NextEffectDescription : "") && f.Text(id + "Price").text == card.PriceDescription,
-                "actual exact effects and price " + card.Key);
-            Require(f.Text(id + "Refusal").text == card.Reason && button.IsInteractable() == card.CanPurchase,
-                "actual typed eligibility and refusal " + card.Key);
+            CardQuote(f,card,view.CurrencyName);
         }
         int expected = category == LastStandUpgradeCategory.Defense ? 2 :
-            category == LastStandUpgradeCategory.Attack ? (f.Game.Art.showingLauncher ? 2 : 1) : (f.Game.Art.showingLauncher ? 1 : 2);
+            category == LastStandUpgradeCategory.Attack ? (f.Game.Art.showingLauncher ? 2 : 1) : (f.Game.Art.showingLauncher ? 2 : 3);
         Require(visible == expected, "exact fitting-applicable catalog cards per category");
+    }
+    static void CardQuote(ShopUiFixture f,LastStandShopCard card,string currency)
+    {
+        string id="ShopCard_"+card.Key;
+        string effect=card.CurrentEffectDescription+(card.PurchaseQuantity>0?
+            " to "+card.ResultEffectDescription+"\n+"+card.PurchaseQuantity+" levels -> level "+card.ResultLevel:
+            card.NextPrice.HasValue?"\nNext level: "+card.NextEffectDescription+" / "+card.PriceDescription:"");
+        Require(f.Text(id+"CurrentEffect").text==effect && f.Text(id+"Price").text==card.QuotedCost+" "+currency,
+            "exact current effect, affordable aggregate price and resulting level "+card.Key);
+        string reason=card.Refusal==LastStandShopCardRefusal.None?card.QuotedCost.ToString("N0")+" "+currency+" total":card.Reason;
+        var button=f.Button(id+"Buy");
+        Require(f.Text(id+"Refusal").text==reason && button.IsInteractable()==card.CanPurchase,
+            "aggregate quote retains current typed admission "+card.Key);
+        Require(button.GetComponentInChildren<Text>(true).text==(card.Refusal==LastStandShopCardRefusal.AtCap?"MAX":"BUY x"+card.PurchaseQuantity),
+            "purchase action states the actual count or gold cap "+card.Key);
     }
     static Button ShopRaycast(ShopUiFixture f, Vector2 position)
     {
@@ -959,7 +1091,7 @@ public static class LastStandShopChecks
             "actual opaque console and native vertical mask/content ScrollRect");
         var panelBounds = f.Bounds(panel); var screen = CanvasBounds(f);
         Require(screen.Contains(panelBounds.min) && screen.Contains(panelBounds.max), "panel lies in actual available Canvas");
-        foreach (string id in new[] { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility", "Menu" })
+        foreach (string id in new[] { "ShopEntry", "ShopClose", "ShopQuantity", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility", "Menu" })
         {
             Require(f.Button(id).IsActive(),"required open Shop fixed control "+id);
             var bounds = f.Bounds((RectTransform)f.Button(id).transform);
@@ -1155,11 +1287,11 @@ public static class LastStandShopChecks
         using (var f = new ShopUiFixture(false, new Vector2Int(1366,664)))
         {
             var shop = Funded(f.Game); f.Game.Session.TogglePauseAt(f.Game.Timestamp);
-            Require(shop.ObserveAuthoritativeKills(100), "owner-arranged cap fixture funds are valid");
+            Require(shop.ObserveAuthoritativeKills(LastStandShopState.MaximumUniqueKills), "owner-arranged cap fixture funds are valid");
             for (int i = 0; i < LastStandUpgradeCatalog.TotalCap; i++)
                 Require(Buy(f.Game, Intent(shop, LastStandUpgradeTrackId.CannonAttack), f.Game.Timestamp).Accepted, "actual owner buys each cap level");
             f.Refresh(); f.Click("ShopEntry");
-            Require(f.Text("ShopCard_cannonAttackPrice").text == "MAX" && f.Text("ShopCard_cannonAttackRefusal").text == "MAX" &&
+            Require(f.Button("ShopCard_cannonAttackBuy").GetComponentInChildren<Text>(true).text == "MAX" && f.Text("ShopCard_cannonAttackRefusal").text == "MAX" &&
                 !f.Button("ShopCard_cannonAttackBuy").IsInteractable(), "exact cap/MAX refusal from immutable projection");
         }
     }
@@ -1286,8 +1418,8 @@ public static class LastStandShopChecks
     {
         var progress = f.Game.Loop.Progression;
         var view = LastStandShopPresentation.ProjectPermanent(progress,
-            f.Game.Art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair);
-        Require(f.Text("ShopHeading").text == "SHOP / PERMANENT" && f.Text("ShopCurrency").text == "SALVAGE  " + progress.Wallet,
+            f.Game.Art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair,f.Game.Loop.ShopQuantity);
+        Require(f.Text("ShopHeading").text == (progress.HasCheckpoint?"NEXT DEPLOY":"PERMANENT") && f.Text("ShopCurrency").text == "SALVAGE  " + progress.Wallet,
             "Salvage purchase lifetime and only committed balance");
         int visible = 0;
         foreach (var card in view.Cards)
@@ -1298,14 +1430,10 @@ public static class LastStandShopChecks
             visible++;
             Require(f.Text(id + "Title").text == card.Name && f.Text(id + "Levels").text ==
                 "Level " + card.PermanentLevel + " / " + card.Cap, "verified permanent level without run currency " + card.Key);
-            Require(f.Text(id + "CurrentEffect").text == card.CurrentEffectDescription +
-                (card.NextPrice.HasValue ? " to " + card.NextEffectDescription : "") &&
-                f.Text(id + "Price").text == card.PriceDescription, "permanent exact current/next effect and P price " + card.Key);
-            Require(f.Text(id + "Refusal").text == card.Reason && button.IsInteractable() == card.CanPurchase,
-                "permanent typed refusal and saved admission " + card.Key);
+            CardQuote(f,card,view.CurrencyName);
         }
         int expected = category == LastStandUpgradeCategory.Defense ? 2 :
-            category == LastStandUpgradeCategory.Attack ? (f.Game.Art.showingLauncher ? 2 : 1) : (f.Game.Art.showingLauncher ? 1 : 2);
+            category == LastStandUpgradeCategory.Attack ? (f.Game.Art.showingLauncher ? 2 : 1) : (f.Game.Art.showingLauncher ? 2 : 3);
         Require(visible == expected, "permanent exact fitting-applicable cards per category");
     }
     static void PermanentGeometry(ShopUiFixture f)
@@ -1350,36 +1478,60 @@ public static class LastStandShopChecks
     static void WorkshopPricesAndNextRun(bool launcher)
     {
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664),
-            new MemoryStorage { Value = Save(new int[6], wallet: 50) }))
+            new MemoryStorage { Value = Save(new int[8], wallet: 1000, allFittings: true) }))
         {
-            f.Click("ShopEntry"); int wallet = 50, writes = 0;
+            f.Click("ShopEntry"); int wallet = 1000;
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
             {
-                if (!definition.IsEligible(f.Game.Art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair))
-                    SelectUiFitting(f,!f.Game.Art.showingLauncher);
-                f.Click("ShopTab" + definition.Category);
-                for (int p = 0; p < 3; p++)
+                string wanted=definition.Applicability==LastStandUpgradeApplicability.Scattergun?"scattergun":
+                    definition.Applicability==LastStandUpgradeApplicability.Launcher?"launcher":"repair";
+                if(f.Game.Loop.FittingId!=wanted)
                 {
-                    PermanentCards(f, definition.Category);
-                    Require(f.Text("ShopCard_" + definition.Key + "Price").text == (p + 1) + " Salvage",
-                        "real permanent exact independent P+1 price " + definition.Key);
-                    f.Click("ShopCard_" + definition.Key + "Buy"); wallet -= p + 1; writes++;
-                    Require(f.Game.Loop.Progression.Wallet == wallet && f.Game.Storage.SuccessfulWrites == writes &&
-                        f.Game.Loop.Progression.GetPermanentLevel(definition.Id) == p + 1 && f.Game.Session.Model == null,
-                        "one real verified purchase charges only requested P once " + definition.Key);
+                    f.Click("ShopClose");
+                    for(int step=0;step<3 && f.Game.Loop.FittingId!=wanted;step++)f.Click("FittingNext");
+                    Require(f.Game.Loop.FittingId==wanted,"current catalog fitting can be selected");
+                    f.Click("ShopEntry");
                 }
-                PermanentCards(f, definition.Category);
-                var capped = f.Button("ShopCard_" + definition.Key + "Buy"); capped.onClick.Invoke();
-                Require(!capped.IsInteractable() && f.Text("ShopCard_" + definition.Key + "Price").text == "MAX" &&
-                    f.Game.Storage.Writes == writes && f.Game.Loop.Progression.Wallet == wallet, "cap three direct stale activation cannot debit " + definition.Key);
+                f.Click("ShopTab" + definition.Category);
+                for (int level = 0; level < 3; level++)
+                {
+                    int cost=definition.PermanentPrice(level+1),writes=f.Game.Storage.SuccessfulWrites;
+                    Require(f.Text("ShopCard_"+definition.Key+"Price").text==cost+" Salvage",
+                        "current economy per-track permanent price "+definition.Key);
+                    f.Click("ShopCard_"+definition.Key+"Buy"); wallet-=cost;
+                    Require(f.Game.Loop.Progression.Wallet==wallet && f.Game.Storage.SuccessfulWrites==writes+1 &&
+                        f.Game.Loop.Progression.GetPermanentLevel(definition.Id)==level+1 && f.Game.Session.Model==null,
+                        "one verified selected upgrade debit "+definition.Key);
+                }
+                Require(f.Button("ShopCard_"+definition.Key+"Buy").IsInteractable() &&
+                    f.Text("ShopCard_"+definition.Key+"Levels").text=="Level 3 / "+definition.PermanentCap,
+                    "early level three remains below its actual cap "+definition.Key);
             }
             var reloaded = LastStandProgression.Load(f.Game.Storage);
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
-                Require(reloaded.GetPermanentLevel(definition.Id) == 3, "all six verified levels survive reload " + definition.Key);
-            f.Click("ShopClose"); SelectUiFitting(f,!launcher); f.Click("Redeploy");
-            Fresh(Shop(f.Game.Session), 7, !launcher, new[] { 3,3,3,3,3,3 });
-            Require(f.Game.Session.Model.CommittedCannonDamage == 50 && !f.Button("ShopClose").IsActive(),
-                "next deployment uses committed baseline and invalidates permanent panel");
+                Require(reloaded.GetPermanentLevel(definition.Id)==3,"all eight verified levels survive reload "+definition.Key);
+            f.Click("ShopClose");
+            string selected=launcher?"repair":"launcher";
+            for(int step=0;step<3 && f.Game.Loop.FittingId!=selected;step++)f.Click("FittingNext");
+            f.Click("Redeploy");
+            Fresh(Shop(f.Game.Session),7,!launcher,new[] {3,3,3,3,3,3,3,3});
+            Require(f.Game.Session.Model.CommittedCannonDamage==50 && !f.Button("ShopClose").IsActive(),
+                "next deployment uses the verified baseline and closes permanent cards");
+        }
+        var caps=new int[LastStandUpgradeCatalog.Tracks.Count];
+        foreach(var definition in LastStandUpgradeCatalog.Tracks)caps[(int)definition.Id]=definition.PermanentCap;
+        using(var f=new ShopUiFixture(launcher,new Vector2Int(1366,664),new MemoryStorage{Value=Save(caps,wallet:1000)}))
+        {
+            f.Click("ShopEntry");int writes=f.Game.Storage.Writes;
+            foreach(var definition in LastStandUpgradeCatalog.Tracks)
+            {
+                if(!definition.IsEligible(launcher?LastStandFitting.Launcher:LastStandFitting.Repair))continue;
+                f.Click("ShopTab"+definition.Category);var button=f.Button("ShopCard_"+definition.Key+"Buy");
+                button.onClick.Invoke();f.Refresh();
+                Require(!button.IsInteractable() && button.GetComponentInChildren<Text>(true).text=="MAX" &&
+                    f.Game.Storage.Writes==writes && f.Game.Loop.Progression.Wallet==1000,
+                    "actual cap refuses even stale direct activation "+definition.Key);
+            }
         }
     }
     static void WorkshopClaimAndSaveErrors(bool launcher)
@@ -1395,7 +1547,7 @@ public static class LastStandShopChecks
                 f.Button("ShopEntry").IsActive(), "only manual verified Claim opens post-Claim permanent admission");
             f.Click("ShopEntry"); f.Click("ShopTabDefense"); f.Click("ShopCard_armorBuy");
             Require(f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.Armor) == 1 &&
-                f.Game.Loop.Progression.Wallet == wallet && f.Game.Storage.Writes == writes + 2,
+                f.Game.Loop.Progression.Wallet == wallet + 1 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).PermanentPrice(1) && f.Game.Storage.Writes == writes + 2,
                 "post-Claim actual permanent purchase uses Salvage exactly once");
         }
         foreach (bool readFailure in new[] { false, true })
@@ -1407,15 +1559,15 @@ public static class LastStandShopChecks
             f.Click("ShopCard_fieldRepairBuy");
             Require(f.Game.Loop.Progression.SaveState == "retry" && f.Game.Loop.Progression.Wallet == 20 &&
                 f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.FieldRepair) == 0 &&
-                f.Text("ShopCard_fieldRepairLevels").text == "Level 0 / 3" && f.Text("ShopCurrency").text == "SALVAGE  20" &&
+                f.Text("ShopCard_fieldRepairLevels").text == "Level 0 / " + LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).PermanentCap && f.Text("ShopCurrency").text == "SALVAGE  20" &&
                 f.Text("SaveStatus").text.Contains(f.Game.Loop.Progression.SaveError), "unconfirmed non-Cannon write preserves honest committed card, wallet and error");
             Require(!f.Button("ShopCard_fieldRepairBuy").IsInteractable() && !f.Button("Redeploy").IsInteractable() &&
                 !f.Button("Purchase").IsInteractable() && f.Button("RetrySave").IsInteractable(), "unconfirmed write blocks destructive actions and exposes manual Retry Save");
             f.Game.Storage.FailWrite = f.Game.Storage.FailReadBack = false; f.Click("RetrySave");
-            Require(f.Game.Loop.Progression.Wallet == 19 && f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.FieldRepair) == 1 &&
+            Require(f.Game.Loop.Progression.Wallet == 20 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).PermanentPrice(1) && f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.FieldRepair) == 1 &&
                 f.Game.Storage.SuccessfulWrites == 1 && f.Game.Loop.Notice.Contains("Field Repair"), "retry reconciles chosen non-Cannon candidate once with confirmed feedback");
             int attempts = f.Game.Storage.Writes; f.Game.Loop.RetrySave(); f.Refresh();
-            Require(f.Game.Storage.Writes == attempts && f.Game.Loop.Progression.Wallet == 19 &&
+            Require(f.Game.Storage.Writes == attempts && f.Game.Loop.Progression.Wallet == 20 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).PermanentPrice(1) &&
                 f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.FieldRepair) == 1, "repeated manual retry never charges a second purchase");
             PermanentCards(f, LastStandUpgradeCategory.Utility);
         }
@@ -1441,7 +1593,7 @@ public static class LastStandShopChecks
             f.Click("ShopEntry"); f.Click("ShopTabDefense");
             f.Game.Storage.BeforeWrite = () => typed.Invoke(f.Game.Loop, new object[] { LastStandUpgradeTrackId.CannonAttack });
             f.Click("ShopCard_armorBuy"); f.Game.Storage.BeforeWrite = null;
-            Require(f.Game.Storage.SuccessfulWrites == 1 && f.Game.Loop.Progression.Wallet == 19 &&
+            Require(f.Game.Storage.SuccessfulWrites == 1 && f.Game.Loop.Progression.Wallet == 20 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).PermanentPrice(1) &&
                 f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.Armor) == 1 &&
                 f.Game.Loop.Progression.CannonAttackLevel == 0, "reentrant permanent activation cannot replace the chosen transaction");
             f.Click("ShopClose"); f.Click("Redeploy"); var model = f.Game.Session.Model; string snapshot = model.Snapshot();
@@ -1519,11 +1671,11 @@ public static class LastStandShopChecks
         string json = CaptureShop(f);
         Require(json != null, "committed-state change produces a semantic observation");
         var observed = JsonUtility.FromJson<CommittedObservation>(json);
-        Require(observed.permanentLevels != null && observed.permanentLevels.Length == 6,
-            "actual serialized ShopObservation includes all six committed permanentLevels");
-        for (int i = 0; i < 6; i++) Require(observed.permanentLevels[i] == expected[i],
+        Require(observed.permanentLevels != null && observed.permanentLevels.Length == LastStandUpgradeCatalog.Tracks.Count,
+            "actual serialized ShopObservation includes all current committed permanentLevels");
+        for (int i = 0; i < observed.permanentLevels.Length; i++) Require(observed.permanentLevels[i] == (i<expected.Length?expected[i]:0),
             "committed observation catalog-ID level " + i);
-        Require(observed.cards != null && (absentCards ? observed.cards.Length == 0 : observed.cards.Length == 6),
+        Require(observed.cards != null && (absentCards ? observed.cards.Length == 0 : observed.cards.Length == LastStandUpgradeCatalog.Tracks.Count),
             "committed levels are independent of the actual present or absent cards");
         Require(observed.phase == f.Game.Loop.Phase && observed.salvage == f.Game.Loop.Progression.Wallet &&
             observed.tick == (f.Game.Session.Model?.Tick ?? -1), "existing observation fields remain truthful");
@@ -1532,8 +1684,8 @@ public static class LastStandShopChecks
     }
     static void CommittedObservationCatalogAndDedup()
     {
-        string[] keys = { "cannonAttack", "launcherAttack", "hullCapacity", "armor", "cannonCycle", "fieldRepair" };
-        Require(LastStandUpgradeCatalog.Tracks.Count == keys.Length, "committed observation six catalog identities");
+        string[] keys = { "cannonAttack", "launcherAttack", "hullCapacity", "armor", "cannonCycle", "fieldRepair", "scattergunAttack", "scrapYield" };
+        Require(LastStandUpgradeCatalog.Tracks.Count == keys.Length, "committed observation eight stable catalog identities");
         using (var f = new ShopUiFixture(false, new Vector2Int(1366,664)))
         {
             var zero = new int[6]; CommittedLevels(f, zero, false);
@@ -1541,7 +1693,7 @@ public static class LastStandShopChecks
             {
                 var track = LastStandUpgradeCatalog.Tracks[i];
                 Require((int)track.Id == i && track.Key == keys[i], "committed observation stable catalog order " + keys[i]);
-                var expected = new int[6]; expected[i] = 3;
+                var expected = new int[keys.Length]; expected[i] = 3;
                 f.Game.Storage.Value = Save(expected);
                 Require(f.Game.Loop.Progression.Retry(), "real progression reloads the committed basis vector");
                 // Keep the prior card projection deliberately unchanged. The
@@ -1825,7 +1977,7 @@ public static class LastStandShopChecks
             NativeFocusOrder(f);
             input.Events.SetSelectedGameObject(buy.gameObject); input.Render(); SelectedCardVisible(f,buy);
             input.Activate(buy.name, mode);
-            Require(buys == 1 && f.Game.Loop.Progression.Wallet == 19 &&
+            Require(buys == 1 && f.Game.Loop.Progression.Wallet == 20 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).PermanentPrice(1) &&
                 f.Game.Loop.Progression.CannonAttackLevel == 1 && f.Game.Storage.Writes == writes+1,
                 "keyboard pointer touch equivalent permanent intent charges verified owner once");
             Require(input.Events.currentSelectedGameObject == buy.gameObject,
@@ -2272,7 +2424,7 @@ public static class LastStandShopChecks
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664), storage))
         {
             var p = f.Game.Loop.Progression;
-            Require(storage.SuccessfulWrites == 1 && storage.Value.Contains("\"version\":3") && p.Wallet == 8 && p.NextRunId == 7 &&
+            Require(storage.SuccessfulWrites == 1 && storage.Value.Contains("\"version\":5") && p.Wallet == 8 && p.NextRunId == 7 &&
                 p.FinalizedRunId == 5 && p.PendingDefeat.RunId == 6 && p.PendingDefeat.ElapsedTicks == 33 && p.PendingDefeat.Kills == 4 &&
                 p.CannonAttackLevel == 2 && f.Game.Session.Model == null && !f.Button("ShopEntry").IsActive(),
                 "integration imported old-save migration preserves exact pending entitlements without auto-Claim or deploy");
@@ -2283,23 +2435,23 @@ public static class LastStandShopChecks
             IntegrationClick(f,"ShopEntry"); IntegrationClick(f,"ShopTabDefense"); storage.FailReadBack = true;
             IntegrationClick(f,"ShopCard_armorBuy"); string desired = storage.Value;
             Require(p.SaveState == "retry" && p.Wallet == 9 && p.GetPermanentLevel(LastStandUpgradeTrackId.Armor) == 0 &&
-                desired.Contains("\"armor\":1") && desired.Contains("\"credits\":8") && !f.Button("Deploy").IsInteractable() &&
+                desired.Contains("\"armor\":1") && desired.Contains("\"credits\":5") && !f.Button("Deploy").IsInteractable() &&
                 !f.Button("ShopCard_armorBuy").IsInteractable() && f.Button("RetrySave").IsInteractable(),
                 "integration uncertain Armor write retains committed card/wallet and blocks destructive input");
-            storage.FailReadBack = false; string foreign = desired.Replace("\"credits\":8", "\"credits\":7"); storage.Value = foreign;
+            storage.FailReadBack = false; string foreign = desired.Replace("\"credits\":5", "\"credits\":4"); storage.Value = foreign;
             int writes = storage.Writes; IntegrationClick(f,"RetrySave"); f.Game.Loop.RetrySave(); f.Refresh();
             Require(p.SaveState == "blocked" && p.Wallet == 9 && p.GetPermanentLevel(LastStandUpgradeTrackId.Armor) == 0 &&
                 storage.Value == foreign && storage.Writes == writes && p.SaveError.Contains("changed unexpectedly"),
                 "integration repeated retry preserves exact foreign bytes and unpublished candidate entitlements");
             storage.Value = desired; f.Game.Loop.RetrySave(); f.Game.Loop.RetrySave(); f.Refresh();
-            Require(p.SaveState == "ready" && p.Wallet == 8 && p.GetPermanentLevel(LastStandUpgradeTrackId.Armor) == 1 &&
+            Require(p.SaveState == "ready" && p.Wallet == 5 && p.GetPermanentLevel(LastStandUpgradeTrackId.Armor) == 1 &&
                 p.FinalizedRunId == 6 && p.NextRunId == 7 && storage.Writes == writes && storage.SuccessfulWrites == 3,
                 "integration confirming exact already-written candidate publishes one debit without another write or Claim");
             PermanentCards(f,LastStandUpgradeCategory.Defense);
         }
         using (var reload = new ShopUiFixture(launcher, new Vector2Int(1366,664), storage))
         {
-            Require(reload.Game.Loop.Progression.Wallet == 8 && reload.Game.Loop.Progression.PendingDefeat == null &&
+            Require(reload.Game.Loop.Progression.Wallet == 5 && reload.Game.Loop.Progression.PendingDefeat == null &&
                 reload.Game.Loop.Progression.FinalizedRunId == 6 && storage.SuccessfulWrites == 3,
                 "integration fresh imported reload retains exact migrated/claimed/confirmed entitlements");
             IntegrationClick(reload,"Redeploy"); Fresh(Shop(reload.Game.Session),7,launcher,new[] {2,0,0,1,0,0});

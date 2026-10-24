@@ -50,7 +50,7 @@ class WebEntryTests(unittest.TestCase):
         self.assertIn('id="error"', html)
         self.assertIn('id="retry"', html)
         self.assertIn("typeof createUnityInstance !== 'function'", html)
-        self.assertIn('Promise.resolve()', html)
+        self.assertIn('acquireLastStandSave().then(()=>createUnityInstance', html)
         self.assertNotIn('e.textContent=String(message)', html)
         self.assertLess(html.index('id="last-stand-return"'), html.index('id="unity-canvas"'))
 

@@ -104,7 +104,7 @@ public static class LastStandHudChecks
     static bool IsInlineArrow(string id) => id=="TierPrevious"||id=="TierNext"||id=="FittingPrevious"||id=="FittingNext";
     static bool ExpectedGarageCards(LastStandLoopController loop) => (loop.Phase=="garage"||loop.Phase=="workshop") &&
         loop.Progression.SaveState=="ready" && loop.Progression.ActiveRunId==0 && loop.Progression.PendingDefeat==null && loop.Session.Model==null;
-    static string CorePath(string id) => id=="Menu" ? id : id=="TierPrevious"||id=="TierNext" ? "GarageTierCard/"+id :
+    static string CorePath(string id) => id=="Menu"||id=="ResearchEntry" ? id : id=="TierPrevious"||id=="TierNext" ? "GarageTierCard/"+id :
         id=="FittingPrevious"||id=="FittingNext" ? "GarageFittingCard/"+id : "LastStandDock/"+id;
     static void AssertInlineGarageFields(LastStandLoopController loop,RectTransform root)
     {
@@ -468,7 +468,7 @@ public static class LastStandHudChecks
         foreach (string id in CoreControlIds)
         {
             var button = f.Button(id);
-            bool expected = id == "Deploy" || id == "Menu" ||
+            bool expected = id == "Deploy" || id == "Menu" || id == "ResearchEntry" && f.Loop.GarageCardsVisible ||
                 IsInlineArrow(id)&&f.Loop.GarageCardsVisible ||
                 (id == "RetrySave" && f.Loop.Progression.SaveState != "ready");
             Require(button.gameObject.activeInHierarchy == expected, "actual garage control inventory " + id+
@@ -871,7 +871,7 @@ public static class LastStandHudChecks
     [Serializable] sealed class RuntimeControl
     { public string name,label; public float x,y,width,height; public bool active,interactable; }
     [Serializable] sealed class RuntimeLayout
-    { public string phase,coordinates; public int width,height; public RuntimeControl[] controls,shopControls,settingsControls; }
+    { public string phase,coordinates; public int width,height; public RuntimeControl[] controls,shopControls,settingsControls,researchControls,historyControls; }
     static Button RuntimeButton(string id)
     { return FindOrdinaryButton(runtimeRoot,id); }
     static void AssertRuntimeReport(string state)
@@ -883,7 +883,7 @@ public static class LastStandHudChecks
         Require(report.width == Screen.width && report.height == Screen.height && report.width > 0 && report.height > 0,
             "runtime actual Screen dimensions " + state);
         var ids=CoreControlIds;
-        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exactly eighteen stable core control identities " + state);
+        Require(report.controls != null && report.controls.Length == ids.Length, "runtime exact stable core control identities " + state);
         var seen = new HashSet<string>(); var corners = new Vector3[4];
         for (int i = 0; i < ids.Length; i++)
         {
@@ -901,7 +901,7 @@ public static class LastStandHudChecks
         }
         AssertOrdinaryInventory(runtimeRoot,"runtime " + state);
         Require(report.shopControls != null && report.shopControls.Length == ShopControlIds.Length,
-            "runtime exact eleven added ordinary shop controls " + state);
+            "runtime exact ordinary shop controls " + state);
         for (int i = 0; i < ShopControlIds.Length; i++)
         {
             var control = report.shopControls[i]; var button = FindOrdinaryButton(runtimeRoot,ShopControlIds[i]);
@@ -916,7 +916,7 @@ public static class LastStandHudChecks
                 "runtime actual shop top-left bounds " + control.name);
         }
         Require(report.settingsControls!=null && report.settingsControls.Length==ModalControlIds.Length,
-            "runtime exact thirty-five modal controls "+state);
+            "runtime exact settings modal controls "+state);
         for(int i=0;i<ModalControlIds.Length;i++)
         {
             var control=report.settingsControls[i];var button=FindOrdinaryButton(runtimeRoot,ModalControlIds[i]);
@@ -1354,12 +1354,12 @@ public static class LastStandHudChecks
     static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects", "SpeedMinus", "SpeedRate", "SpeedPlus",
         "TierPrevious","TierNext","FittingPrevious","FittingNext" };
     static readonly string[] CoreControlIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects",
-        "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "TierPrevious","TierNext","FittingPrevious","FittingNext" };
-    static readonly string[] ShopControlIds = { "ShopEntry", "ShopClose", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
+        "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "TierPrevious","TierNext","FittingPrevious","FittingNext","ResearchEntry" };
+    static readonly string[] ShopControlIds = { "ShopEntry", "ShopClose", "ShopQuantity", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
         "ShopCard_cannonAttackBuy", "ShopCard_launcherAttackBuy", "ShopCard_hullCapacityBuy", "ShopCard_armorBuy",
-        "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy" };
+        "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy", "ShopCard_scattergunAttackBuy", "ShopCard_scrapYieldBuy" };
     static readonly string[] ModalControlIds = { "SettingsClose", "ChoicePrevious", "ChoiceNext", "SettingsTab0", "SettingsTab1", "SettingsTab2", "SettingsTab3",
-        "MenuResume", "MenuSettings", "MenuHelp", "MenuAbandon", "MenuCampaigns", "MenuAbout", "SettingsBack", "SettingsMute",
+        "MenuResume", "MenuSettings", "MenuHelp", "MenuMilestones", "MenuResearch", "MenuHistory", "MenuNewRun", "MenuAbandon", "MenuCampaigns", "MenuAbout", "SettingsBack", "SettingsMute",
         "MasterMinus", "MasterPlus", "EffectsMinus", "EffectsPlus", "EffectsSample", "MusicEnabled", "MusicMinus", "MusicPlus",
         "DisplayQuality", "DisplayEffects", "DisplayFullscreen", "TutorialTips", "PurchaseSuggestions", "GameplayHelp", "DataRetry", "PreferencesRetry",
         "DataAccount", "SettingsDefaults", "ConfirmCancel", "ConfirmProceed" };
@@ -1372,14 +1372,26 @@ public static class LastStandHudChecks
     internal static void AssertOrdinaryInventory(RectTransform root, string state)
     {
         var core = new HashSet<string>(CoreControlIds); var shop = new HashSet<string>(ShopControlIds);var modal=new HashSet<string>(ModalControlIds);
-        Require(core.Count==18 && shop.Count==11 && modal.Count==35,"exact stable core18/shop11/modal35 sets "+state);
+        Require(core.Count==19 && shop.Count==14 && modal.Count==39,"exact stable core19/shop14/modal39 sets "+state);
+        var research=new HashSet<string>{"ResearchClose","ResearchFilter","ResearchBack"};
+        Require(LastStandResearchCatalog.Tracks.Count==4 && LastStandResearchCatalog.SlotCount==2,"current Lab catalog and slot bounds");
+        foreach(var track in LastStandResearchCatalog.Tracks)Require(research.Add("ResearchProject-"+track.Key),"unique Lab catalog key");
+        for(int slot=0;slot<LastStandResearchCatalog.SlotCount;slot++)
+            foreach(string action in new[]{"Start","Queue","Switch","Suspend","RemoveQueued"})research.Add("Research"+action+slot);
+        var history=new HashSet<string>{"RunHistoryClose","RunHistoryTier"};
+        int expectedCount=core.Count+shop.Count+modal.Count+research.Count+history.Count;
         foreach (string id in CoreControlIds)
             Require(root.Find(CorePath(id)).GetComponent<Button>() == FindOrdinaryButton(root,id),
                 "exact approved core control path " + id + " " + state);
-        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length==64,"exact sixty-four ordinary Buttons "+state);
+        var all = root.GetComponentsInChildren<Button>(true); Require(all.Length==expectedCount,"exact catalog-derived ordinary Button count "+state);
         foreach (var button in all)
-            Require(core.Remove(button.name) || shop.Remove(button.name) || modal.Remove(button.name),"unique complete ordinary Button union " + button.name + " " + state);
-        Require(core.Count==0 && shop.Count==0 && modal.Count==0,"complete exact core18/shop11/modal35 sets "+state);
+        {
+            bool lab=research.Remove(button.name),runHistory=history.Remove(button.name);
+            if(lab)Require(button.transform.IsChildOf(root.Find("ResearchModal/ResearchPanel")),"Lab control belongs to its modal "+button.name);
+            if(runHistory)Require(button.transform.IsChildOf(root.Find("RunHistoryModal/RunHistoryPanel")),"history control belongs to its modal "+button.name);
+            Require(core.Remove(button.name) || shop.Remove(button.name) || modal.Remove(button.name) || lab || runHistory,"unique complete ordinary Button union " + button.name + " " + state);
+        }
+        Require(core.Count==0 && shop.Count==0 && modal.Count==0 && research.Count==0 && history.Count==0,"complete ordinary control registry "+state);
     }
     static readonly string[] InputStates = { "garage", "battle", "paused", "settling", "result", "workshop", "capped", "blocked", "save-error" };
     public static void RunInput()

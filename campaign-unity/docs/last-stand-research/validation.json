@@ -1,0 +1,53 @@
+{
+  "schema": "last-stand-research-validation/v1",
+  "observedDate": "2026-10-24",
+  "status": "implementation-ready-with-qualification-pending",
+  "scope": "Research/farming changes stacked on the unmerged wave/resume candidate PR 543. This is not a merge or deployment receipt.",
+  "spec": {
+    "artifactId": "ST-LS-RESEARCH-SPEC",
+    "revision": 8,
+    "normativeSha256": "0ca61d010e4d78612c2884d3e23f06f618c22e3630975db18755db1e5e1edce0"
+  },
+  "export": {
+    "build": "Web-20261024T064150Z-beffd6",
+    "sourceInventorySha256": "63e067f942e829fb00198d04b630447a1fc21d36ed0151ea81eaa427a6c15063",
+    "receipt": "../last-stand-web/receipt-sanitized.json",
+    "sourceLock": "../last-stand-web/source-lock.json",
+    "status": "passed"
+  },
+  "checks": [
+    {"name": "Research, economy, save codec, migration, ownership, clock, history and qualification fixtures", "command": "python -m unittest discover -s campaign-unity/Tools/last_stand_research -p test_*.py", "passed": 57, "seconds": 65.809},
+    {"name": "Speed/session regressions, including failed research save retaining the wave hold", "passed": 10},
+    {"name": "Actual Unity imported-scene research startup and boundary recovery", "passed": 4},
+    {"name": "Actual Unity Lab/history and bulk controls at desktop, portrait and short landscape sizes", "passed": 2},
+    {"name": "Actual Unity shared panel chrome", "passed": 3},
+    {"name": "Endurance, research journey and current wave evidence guards", "passed": 47},
+    {"name": "Selected Background, Focus and combined qualification guards excluding the native Chrome case", "passed": 116},
+    {"name": "Production typecheck, Vite build and packaged-source admission", "command": "npm run build", "environment": {"VITE_BASE": "/singedTerra/"}, "status": "passed"}
+  ],
+  "review": {
+    "scope": "Research/economy persistence and verification seams",
+    "status": "no-actionable-findings",
+    "negativeControls": [
+      "Removing writer ownership is detected by the production profile tests.",
+      "Removing compare-and-swap is detected when a stale second writer would replace the shared wallet winner."
+    ],
+    "numericUnityCoverage": "unmeasured",
+    "authCrypto": "No actionable finding in the reviewed source, fixtures, storage bridge or generated-runtime changes. Unkeyed SHA256 is confined to build/source/fixture provenance.",
+    "secrets": "Gitleaks 8.30.1 staged scan and complete-file scan of 131 changed files found no leaks. A synthetic token-shaped negative control was detected."
+  },
+  "visualObservation": "Garage and locked Lab inspected in the in-app browser. This is a limited visual check, not the full funded-research journey or owner acceptance.",
+  "economy": {
+    "stageReport": "upgrade-economy-report.json",
+    "periodicBulkReport": "periodic-bulk-report.json",
+    "boundary": "Production-model projections with declared development investments and purchase policies. Not measured elapsed gameplay, ordinary earned mature progression, native audio, or final balance."
+  },
+  "pending": [
+    "Execute the source-bound funded-research/browser journey, including closed completion, both slots, bulk spending, all speed steps and two-tab ownership.",
+    "Rerun the single Background guard containing owned native Chrome after the source-byte hashing correction.",
+    "Observe ten actual active hours at the real 5x setting after the source is frozen; no current endurance run has started.",
+    "Complete affected native/background/audio qualification and human farming-cadence assessment.",
+    "Verify the new PR exact-head hosted CI separately; predecessor PR 543 CI does not cover this sprint.",
+    "Merge, publication and deployed live-host verification require their own authority and evidence."
+  ]
+}

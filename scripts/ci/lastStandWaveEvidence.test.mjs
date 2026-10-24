@@ -4,10 +4,40 @@ import {readFileSync} from 'node:fs';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {validateWaveTerminal,validateCheckpointResume} from '../../e2e/helpers/lastStandJourney.mjs';
+import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 
 // Inert observations test rejection. They never qualify a browser or grant saves.
 const clone=x=>structuredClone(x);
-const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+test('current idle wave save accepts only clock metadata changes and rejects historical or altered progression',()=>{
+ const before={...idleWaveFields(),credits:2,permanentLevels:{cannonAttack:0},checkpoint:{runId:1,wave:1},pendingDefeat:null};
+ const after=clone(before);after.revision+=2;after.research.revision+=2;after.research.lastObservedUtcMilliseconds+=15001;
+ assert.equal(journey.assertWaveSavePreserved(before,after),true);
+ assert.equal(journey.assertWaveSavePreserved(before,clone(before)),true);
+ for(const mutate of [v=>v.version=4,v=>delete v.research,v=>v.revision=before.revision-1,
+  v=>v.research.revision=0,v=>v.research.revision+=10,v=>v.research.lastObservedUtcMilliseconds=999,
+  v=>v.research.completedRanks.gameSpeed=1,v=>v.research.nextProjectIdentity++,v=>v.research.completionSequence++,
+  v=>v.research.slots[0].active={identity:1},v=>v.research.slots[1].queued={identity:1},
+  v=>v.research.partials.scrapLogistics={},v=>v.credits++,v=>v.permanentLevels.cannonAttack++,
+  v=>v.checkpoint.wave++,v=>v.history.current.closedMilliseconds++,v=>v.extra='unexplained']){
+  const broken=clone(after);mutate(broken);assert.throws(()=>journey.assertWaveSavePreserved(before,broken),undefined,String(mutate));
+ }
+});
+test('abandon records one bounded final history entry without rewards, time loss or aggregate inflation',()=>{
+ const before={...idleWaveFields(),credits:2,lastFinalizedRunId:0,checkpoint:{runId:1},pendingDefeat:null};
+ const after=abandonedWaveSave(before),final=after.history.recent.at(-1);
+ final.pausedMilliseconds+=1000;final.closedMilliseconds+=2000;final.activeMilliseconds+=50;final.speedMilliseconds[1]+=50;
+ after.history.lifetime.activeMilliseconds+=50;after.history.tiers[0].activeMilliseconds+=50;
+ assert.equal(journey.validateWaveAbandonSave({before,after}),true);
+ for(const mutate of [v=>v.credits++,v=>v.revision=before.revision,v=>v.history.current=clone(before.history.current),
+  v=>v.history.recent.push(clone(v.history.recent[0])),v=>v.history.lastFinalizedRunId++,
+  v=>v.history.recent[0].finishReason='defeat',v=>v.history.recent[0].highestClearedWave++,
+  v=>v.history.recent[0].repeatableSalvage++,v=>v.history.recent[0].endContext='different build',
+  v=>v.history.recent[0].activeMilliseconds=0,v=>v.history.recent[0].speedMilliseconds[1]++,
+  v=>v.history.lifetime.runs++,v=>v.history.lifetime.milestoneSalvage++,v=>v.history.tiers[0].repeatableSalvage++]){
+  const broken=clone(after);mutate(broken);assert.throws(()=>journey.validateWaveAbandonSave({before,after:broken}),undefined,String(mutate));
+ }
+});
 test('actual foreground and background collectors select the current result transition instead of a later session row',async()=>{
  const before={load:6,timeOrigin:1000,scope:'healthy',run:1,t:10},result={...before,t:100,action:'result',phase:'result',sessionRun:1};
  const rows=[result,{...result,t:102,action:'session'},{...result,t:104,sessionRun:2},{...result,t:105,timeOrigin:2000}];
@@ -82,7 +112,7 @@ function terminal(){
  const staged={...state,t:201,action:'defeat-staged',phase:'settling',runId:0,tick:2,hull:0,hasCheckpoint:false};
  const result={...staged,t:800,action:'result',phase:'result',tick:0};
  const layout={...id,t:200.5,phase:'settling',controls:[{name:'Claim',active:false,interactable:false}]};
- return {before:{...row,hull:10,loop:state},result,saved:{version:4,checkpoint:null,pendingDefeat:null,lastFinalizedRunId:3,credits:5},
+ return {before:{...row,hull:10,loop:state},result,saved:{...idleWaveFields({runId:3,finalized:true}),checkpoint:null,pendingDefeat:null,lastFinalizedRunId:3,credits:5},
   states:[state,staged,result],encounters:[row,end],layouts:[layout],oracle:{1:row,2:end}};
 }
 test('natural wave terminal proof rejects changed identities, fabricated rows and duplicate payout',()=>{
@@ -97,7 +127,7 @@ test('natural wave terminal proof rejects changed identities, fabricated rows an
 });
 test('resume evidence requires fresh paused state, same document and immutable saved state',()=>{
  const e={hull:90,tick:250,kills:6,tier:1,fitting:1,rulesVersion:'last-stand-waves-v1',completedWave:1,committedCannonDamage:20};
- const saved={version:4,credits:1,checkpoint:{runId:3,encounter:e}};
+ const saved={...idleWaveFields({runId:3}),credits:1,checkpoint:{runId:3,encounter:e}};
  const resumed={load:3,timeOrigin:100,t:1000,action:'resume',phase:'battle',saveState:'ready',runId:3,activeTier:1,fittingId:'repair',
   profileVersion:e.rulesVersion,hasCheckpoint:true,checkpointBlocked:false,checkpointWave:1,completedWave:1,wave:2,
   tick:250,hull:90,kills:6,cannonDamage:20,wallet:1,pendingRunId:0,paused:true,speed:0};

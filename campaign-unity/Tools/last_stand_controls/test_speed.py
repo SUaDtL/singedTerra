@@ -87,6 +87,12 @@ class SpeedTests(unittest.TestCase):
     def test_future_policy_fixture_and_horizon(self):
         self.case("future_policy_fixture_and_horizon")
 
+    def test_earned_cap_preserves_debt_pause_and_preference(self):
+        self.case("earned_cap_preserves_debt_pause_and_preference")
+
+    def test_save_hold_during_clock_action(self):
+        self.case("save_hold_during_clock_action")
+
     def test_terminal_settling_uses_wall_seconds(self):
         self.case("terminal_settling_uses_wall_seconds")
 

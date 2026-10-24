@@ -135,13 +135,13 @@ internal static class TierProgressionChecks
     {
         const string oldPending="{\"runId\":8,\"elapsedTicks\":3600,\"kills\":2147483647,\"reward\":1}";
         var s=new TierStorage {Value=" \r\n"+V1(oldPending)+"\t"};var m=LastStandProgression.Load(s);
-        Require(m.SaveState=="ready" && s.Value.StartsWith("{\"version\":4,"),"Legacy migration writes strict v4.");
+        Require(m.SaveState=="ready" && s.Value.StartsWith("{\"version\":5,"),"Legacy migration writes strict v5.");
         Require(m.Wallet==17 && m.CannonAttackLevel==2 && m.NextRunId==9 && m.FinalizedRunId==6 && !Unlocked(m) &&
             Best(m,false,1)==0 && Best(m,true,1)==0 && m.GetBestWave(1)==0 && m.PendingDefeat.Tier==0 && m.PendingDefeat.Reward==1,
             "Legacy pending result preserves value without inventing tier or wave history.");
         Require(m.TryClaim() && !m.TryClaim() && m.Wallet==18 && !Unlocked(m),"Legacy reward is claimable exactly once without wave credit.");
         string valid=s.Value;
-        foreach(string value in new[]{valid.Replace("\"version\":4","\"version\":5"),
+        foreach(string value in new[]{valid.Replace("\"version\":5","\"version\":6"),
             valid.Replace("\"selectedTier\":1","\"selectedTier\":2"),
             valid.Replace("\"bestWave\":0","\"bestWave\":10"),
             valid.Replace("\"legacyTicks\":0","\"legacyTicks\":3601"),

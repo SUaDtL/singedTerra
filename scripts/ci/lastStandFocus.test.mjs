@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { tierJourneyControlGeometry } from '../../e2e/helpers/lastStandTierJourney.mjs';
 
-const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 
 function ownedStartupFixture({ready=false,missing=false}={}) {
   const begin=source.indexOf('export async function ownedChrome(');

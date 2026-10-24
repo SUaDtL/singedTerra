@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
 
 sys.dont_write_bytecode = True
 cache_dir = Path(__file__).with_name("__pycache__")
@@ -40,8 +42,7 @@ class LastStandModelTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "LastStandModelTests.exe"
         build = subprocess.run(
             [str(MONO), str(CSC), "-nologo", f"-out:{cls.executable}",
-             str(MODEL), str(STORE), str(CATALOG), str(TRACK),
-             str(MODEL.with_name("LastStandTierCatalog.cs")), str(MODEL.with_name("LastStandRunClock.cs")), str(MODEL.with_name("LastStandSpeedPolicy.cs")), str(DRIVER)],
+             *map(str, complete_sources(MODEL.parent, [MODEL, STORE, CATALOG, TRACK, DRIVER]))],
             capture_output=True, text=True, encoding="utf-8-sig", timeout=60,
         )
         if build.returncode:
@@ -59,19 +60,19 @@ class LastStandModelTests(unittest.TestCase):
         return run.stdout.strip()
 
     def test_defeat_reward_idempotence(self):
-        self.assertEqual(self.case("defeat"), "True,True,True,False,1,0,1")
+        self.assertEqual(self.case("defeat"), "PASS defeat")
 
     def test_non_defeat_no_reward(self):
-        self.assertEqual(self.case("excluded"), "True,True,0,False,0,False")
+        self.assertEqual(self.case("excluded"), "PASS excluded")
 
     def test_upgrade_prices_cap_and_next_run(self):
-        self.assertEqual(self.case("upgrade"), "20,20,1,30,1,2,40,3,50,False,3,0,False,False,0,0")
+        self.assertEqual(self.case("upgrade"), "PASS upgrade")
 
     def test_save_shape_and_reload(self):
-        self.assertEqual(self.case("reload"), "2,0,1,7,4,True;True;blocked;False,blocked;blocked,blocked")
+        self.assertEqual(self.case("reload"), "PASS reload")
 
     def test_storage_failure_retry(self):
-        self.assertEqual(self.case("failure"), "False,0,True,True,1,False,1,blocked,False")
+        self.assertEqual(self.case("failure"), "PASS failure")
 
     def test_uncertain_write_reconciliation(self):
-        self.assertEqual(self.case("uncertain"), "False,0,True,1,False,1,False,True,True,1")
+        self.assertEqual(self.case("uncertain"), "PASS uncertain")

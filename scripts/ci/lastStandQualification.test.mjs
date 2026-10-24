@@ -7,7 +7,7 @@ import { dirname, resolve, basename } from 'node:path';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import { assertCombinedQualification } from './lastStandQualification.mjs';
 
-const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 
 function keyboardSubmitFixture(){
   const identity={load:3,timeOrigin:1000,scope:'healthy'},prepared={...identity,t:10,phase:'battle'};
@@ -926,8 +926,8 @@ test('offline reader checks retained compiler bytes and fixed streams using pure
   const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('\nif(process.argv[1]',begin);
   const bytes=Buffer.from('explicit inert byte fixture'),sha=createHash('sha256').update(bytes).digest('hex');
   const binding={sources:'explicit current fixture'},reference={source_lf_sha256:{'inert.cs':sha}};
-  for(const fault of ['none','stream-escape','driver','executable','run-output']){
-    let parity=0;const settling=settlingFixture(),evidence=journey.validateSettlingTransition(settling);
+  for(const fault of ['none','stream-escape','driver','executable','run-output','wave-current','wave-stale']){
+    let parity=0,waveReads=0;const settling=settlingFixture(),evidence=journey.validateSettlingTransition(settling);
     const model={host:'linux',fresh_host_compilation:true,output_sha256:sha,source_binding:binding,
       inputs:{'/explicit-inert/Program.cs':sha},exe_sha256:sha,
       commands:[0,1].map(i=>({exit:0,error:null,launch_file_sha256:sha,stdout:(i?'run':'compile')+'.stdout.txt',
@@ -940,12 +940,16 @@ test('offline reader checks retained compiler bytes and fixed streams using pure
       assert,dirname,resolve,basename,read:path=>path.endsWith('runtime-telemetry.json')?settling:model,readFileSync:()=>bytes,digest:()=>sha,
       encounterCompilationSourceBinding:()=>binding,encounterOraclePackage:()=>reference,
       validateSettlingTransition:journey.validateSettlingTransition,
+      verifyWaveFiles:(_path,report)=>{waveReads++;assert.equal(report.contract,'last-stand-waves/v2','Stale wave contract rejected by current verifier');},
       admitEncounterOracleOutput:(_raw,bundle,sources)=>{parity++;assert.equal(bundle,reference);assert.equal(sources,reference.source_lf_sha256);
         return {profiles:{'repair:20':settling.oracle}};},
     });
     const call=()=>run('/explicit-inert/result.json',{qualification:{profile:'linux-functional',host:'linux'},screenshots:[],
+      ...(fault.startsWith('wave-')?{contract:fault==='wave-current'?'last-stand-waves/v2':'last-stand-waves/v1'}:{}),
       lifecycle:[{kind:'settling-transition',evidence}]});
     if(fault==='none'){assert.doesNotThrow(call);assert.equal(parity,1);}
+    else if(fault==='wave-current'){assert.doesNotThrow(call);assert.equal(waveReads,1,'Current wave report must reach its actual verifier dispatch');}
+    else if(fault==='wave-stale'){assert.throws(call,/Stale wave contract/);assert.equal(waveReads,1,'Old wave report cannot bypass current wave rejection');}
     else assert.throws(call,'Inert stale/escaped compiler bytes must refuse: '+fault);
   }
 });

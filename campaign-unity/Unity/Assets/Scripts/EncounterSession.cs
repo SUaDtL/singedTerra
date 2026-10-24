@@ -31,7 +31,8 @@ namespace SingedTerra.Encounter
         public string Failure { get; private set; } = "";
         public bool CanRun => focused && !applicationPaused;
         public bool BackgroundContinuation => loop && runClock != null;
-        public double MaximumSpeed => LastStandSpeedPolicy.InitialMaximum;
+        public double MaximumSpeed { get; private set; } = LastStandSpeedPolicy.InitialMaximum;
+        public double StepWallMilliseconds(int speedIndex)=>runClock?.StepWallMilliseconds(speedIndex)??0;
         public double LastPositiveSpeed => runClock?.LastPositiveSpeed ?? configuredSpeed;
         public double SelectedSpeed => runClock?.SelectedSpeed ?? configuredSpeed;
         public double EffectiveSpeed => Paused ? 0 : runClock?.EffectiveSpeed ?? configuredSpeed;
@@ -47,6 +48,7 @@ namespace SingedTerra.Encounter
         public event Action Changed;
         public event Action<EncounterModel> Stepped;
         public event Action<EncounterModel> WaveCleared;
+        public Func<bool> BeforeAdvance;
         public void Initialize(TankPresentation presentation, ArtHud hud, Canvas canvas, Font font)
         {
             art = presentation; focused = Application.isFocused;
@@ -119,19 +121,25 @@ namespace SingedTerra.Encounter
         public bool ConfigureSpeed(double speed)
         {
             if (model != null) return false;
-            configuredSpeed = LastStandSpeedPolicy.RestorePositive(speed);
+            configuredSpeed = LastStandSpeedPolicy.RestorePositive(speed,MaximumSpeed);
             return true;
         }
         public bool TrySetSpeed(double speed) => TrySetSpeedAt(Time.realtimeSinceStartupAsDouble, speed);
         public bool TrySetSpeedAt(double timestamp, double speed)
         {
-            if (!LastStandSpeedPolicy.Allows(speed) || !PrepareClockAction(timestamp)) return false;
+            if (!LastStandSpeedPolicy.Allows(speed,MaximumSpeed) || !PrepareClockAction(timestamp)) return false;
             if (!runClock.SetSpeed(timestamp, speed))
             { if (runClock.Failed) Fail("InvalidClock"); return false; }
             configuredSpeed = runClock.LastPositiveSpeed;
             PublishClockAction("speed"); return true;
         }
         public bool TrySetMenuPaused(bool paused) => TrySetMenuPausedAt(Time.realtimeSinceStartupAsDouble, paused);
+        public bool GrantMaximumSpeed(double maximum)
+        {
+            if(!LastStandSpeedPolicy.IsValidMaximum(maximum) || maximum<MaximumSpeed)return false;
+            if(runClock!=null && !runClock.GrantMaximum(maximum))return false;
+            MaximumSpeed=maximum;return true;
+        }
         public bool TrySetMenuPausedAt(double timestamp, bool paused)
         {
             if (!PrepareClockAction(timestamp)) return false;
@@ -146,7 +154,7 @@ namespace SingedTerra.Encounter
             // Advance may trigger a terminal/controller transition, so recheck
             // the live owners before changing either pause cause.
             AdvanceAt(timestamp);
-            return BackgroundContinuation && model != null && Failure == "" && !CatchingUp;
+            return BackgroundContinuation && model != null && Failure == "" && !CheckpointBlocked && !CatchingUp;
         }
         void PublishClockAction(string action)
         {
@@ -201,6 +209,7 @@ namespace SingedTerra.Encounter
         {
             StepsThisCallback = 0; CallbackElapsedSeconds = 0;
             if (CheckpointBlocked || !BackgroundContinuation || model == null || Failure != "") return;
+            if(BeforeAdvance!=null && !BeforeAdvance())return;
             double previousTimestamp = runClock.LastTimestamp, priorPending = runClock.PendingSeconds;
             double elapsed = timestamp - previousTimestamp;
             if (!runClock.Observe(timestamp)) { Fail("InvalidClock"); return; }

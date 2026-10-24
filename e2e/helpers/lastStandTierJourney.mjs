@@ -15,20 +15,26 @@ export function tierJourneyControlGeometry(layout, canvas) {
   const screen = { x: 0, y: 0, width: layout.width, height: layout.height };
   const backgroundControls = [...layout.controls, ...layout.shopControls];
   const settingsControls = (layout.settingsControls ?? []).filter(item => item.active);
+  const researchControls = (layout.researchControls ?? []).filter(item => item.active);
+  const historyControls = (layout.historyControls ?? []).filter(item => item.active);
   const settingsOpen = settingsControls.length > 0;
-  if (settingsOpen) assert.ok(backgroundControls.every(item => !item.interactable),
-    'Modal settings must disable every underlying control');
-  const controls = settingsOpen ? settingsControls : backgroundControls.filter(item => item.active);
+  const researchOpen=researchControls.length>0,historyOpen=historyControls.length>0;
+  assert.ok(Number(settingsOpen)+Number(researchOpen)+Number(historyOpen)<=1,'Exactly one progression/settings modal owns input');
+  if (settingsOpen||researchOpen||historyOpen) assert.ok(backgroundControls.every(item => !item.interactable),
+    'Modal must disable every underlying control');
+  const controls = settingsOpen ? settingsControls : researchOpen?researchControls:historyOpen?historyControls:backgroundControls.filter(item => item.active);
   let graphics;
   const projected = controls.map(item => {
     assert.ok(item.width * canvas.width / layout.width >= 43.99 && item.height * canvas.height / layout.height >= 43.99,
       '44 CSS pixel target: ' + item.name);
     let clip = screen;
     const settingsContent = settingsOpen && !['SettingsClose','ChoicePrevious','ChoiceNext'].includes(item.name) && !/^SettingsTab[0-3]$/.test(item.name);
-    if (settingsContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
+    const researchContent=researchOpen&&!['ResearchClose','ResearchFilter','ResearchBack'].includes(item.name);
+    if (settingsContent || researchContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
       assert.equal(layout.graphicsTruncated, false, 'Complete graphics required to qualify clipped controls');
       graphics ??= JSON.parse(layout.raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
-      const viewportName = settingsContent ? 'SettingsViewport' : 'ShopViewport';
+      const viewportName = settingsContent ? 'SettingsViewport' : researchContent?
+        item.name.startsWith('ResearchProject-')?'ResearchListViewport':'ResearchDetailViewport':'ShopViewport';
       // The shared chamfered chrome is an Image subclass; decorative frames
       // and text are not the control's hit surface or its clipping owner.
       const surface = g => ['Image','LastStandConsoleSurface'].includes(g.kind) && g.active;
@@ -39,14 +45,15 @@ export function tierJourneyControlGeometry(layout, canvas) {
       const viewport = viewports[0], graphic = matches[0];
       assert.ok(viewport?.hasClip && graphic?.hasClip, 'Measured scroll viewport and control required');
       clip = graphic.clip;
-      assert.deepEqual(clip, viewport.clip, 'Control must use the actual ' + (settingsContent ? 'settings' : 'shop') + ' viewport');
-      assert.ok(graphic.path.startsWith(viewport.path + (settingsContent ? '/SettingsContent/' : '/ShopContent/')),
+      assert.deepEqual(clip, viewport.clip, 'Control must use its actual scroll viewport');
+      const contentName=viewportName.replace(/Viewport$/,'Content');
+      assert.ok(graphic.path.startsWith(viewport.path + '/'+contentName+'/'),
         'Clipped control belongs to its actual scroll content');
       assert.ok(inside(clip, screen) && clip.width > 0 && clip.height > 0, 'Clip lies inside the Canvas');
       for (const key of ['x', 'y', 'width', 'height'])
         assert.ok(Math.abs(item[key] - graphic[key]) < .5, 'Control and graphic bounds agree: ' + item.name);
-      const scrollOffset = settingsContent ? layout.settingsScrollOffset : layout.scrollOffset;
-      const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : layout.maximumScrollOffset;
+      const scrollOffset = settingsContent ? layout.settingsScrollOffset : researchContent?layout.researchScrollOffset:layout.scrollOffset;
+      const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : researchContent?layout.researchMaximumScrollOffset:layout.maximumScrollOffset;
       assert.ok(Number.isFinite(scrollOffset) && Number.isFinite(maximumScrollOffset) && maximumScrollOffset >= 0 &&
         scrollOffset >= 0 && scrollOffset <= maximumScrollOffset + .5, 'Finite bounded actual scroll range');
       assert.ok(item.x >= clip.x - .5 && item.x + item.width <= clip.x + clip.width + .5 && item.height <= clip.height + .5,
@@ -54,7 +61,10 @@ export function tierJourneyControlGeometry(layout, canvas) {
       // Layout's scroll offsets are CSS units; emitted rectangles are backing pixels.
       const scale = layout.height / canvas.height;
       const offset = scrollOffset * scale, maximum = maximumScrollOffset * scale;
-      assert.ok(item.y + offset >= clip.y - .5 &&
+      // The Lab has independent list/detail scroll owners but reports the
+      // selected pane's offset. Each actual target still requires measured
+      // clipping here, and the browser journey proves reach with wheel input.
+      if(!researchContent)assert.ok(item.y + offset >= clip.y - .5 &&
         item.y + offset - maximum + item.height <= clip.y + clip.height + .5,
         'Complete control target must be reachable in the real scroll range');
     } else assert.ok(inside(item, screen), 'Control outside Canvas: ' + item.name);
