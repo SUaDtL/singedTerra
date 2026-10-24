@@ -59,7 +59,7 @@ Both workspace packages are `private: true`.
 | **Dependency audit** | `npm run audit:deps` | `npm audit --audit-level=high` across runtime and build/test dependencies; the primary CI job runs it after `npm ci` |
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
 | Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` after successful main-push CI completion (no CLI script) |
-| Secrets scan | `python "<active-codearbiter-plugin-root>/hooks/preview.py" secrets` | codeArbiter's state-free scanner over staged, unstaged, and untracked changed files; the host resolves the active plugin root before invocation. |
+| Secrets scan | `gitleaks git --pre-commit --staged --redact --no-banner` | Scan the explicitly staged change with Gitleaks (verified locally with 8.30.1). Stage every intended new/modified file before this check; unstaged and untracked work is not covered. codeArbiter 0.21.0 removed the former `preview.py` scanner. |
 | Backend release proposal check | `npm run backend:release:check` | Credential-free validation of the pinned CLI, manifest, migration/config/function inventory, and release-source identity. It does not deploy. |
 | Deploy backend | `npm run deploy:backend` | Validates first, then uses the lockfile-pinned CLI to run `db push --linked --yes`, `config push --yes`, and the manifest's explicit function list. It is credentialed and is not a production-approval path. |
 | Deploy all | `npm run deploy` | Alias for the backend command only. Client publication is the Pages workflow after an approved merge to `main`. |
