@@ -12,10 +12,11 @@ static class ShopLayoutChecks
     static readonly int[,] Profiles = { {1920,976}, {1366,664}, {720,516}, {390,688}, {844,266} };
     static readonly int[,] OuterProfiles = { {1920,1080}, {1366,768}, {720,640}, {390,844}, {844,390} };
     static readonly string[] Keys = { "cannonAttack", "launcherAttack", "hullCapacity", "armor", "cannonCycle", "fieldRepair" };
-    static readonly string[] BattleControls = { "Pause", "ToggleMute", "ShopEntry" };
-    static readonly string[] PermanentControls = { "ToggleFitting", "Redeploy", "RetrySave", "ToggleMute", "ShopEntry" };
-    static readonly string[] RecoveryControls = { "ToggleFitting", "Purchase", "Redeploy", "RetrySave", "ToggleMute", "ShopEntry" };
-    static readonly string[] ReadyGarageControls = { "ToggleFitting", "Deploy", "ToggleMute", "ShopEntry" };
+    static readonly string[] BattleControls = { "Menu", "SpeedRate", "ShopEntry" };
+    static readonly string[] ClosedBattleControls = { "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "ShopEntry" };
+    static readonly string[] PermanentControls = { "Redeploy", "Menu", "ShopEntry" };
+    static readonly string[] RecoveryControls = { "Redeploy", "RetrySave", "Menu", "ShopEntry" };
+    static readonly string[] ReadyGarageControls = { "Deploy", "Menu", "TierPrevious", "TierNext", "FittingPrevious", "FittingNext", "ShopEntry", "ResearchEntry" };
     const double Tolerance = .002;
 
     static void Require(bool condition, string reason)
@@ -100,6 +101,13 @@ static class ShopLayoutChecks
         {
             var a=p.Slots[i]; var b=p.Slots[j];
             if (Ancestor(p,a.Id,b) || Ancestor(p,b.Id,a)) continue;
+            // GaragePreview is a camera framing region, not painted UI. The
+            // garage dock is transparent and the Shop entry deliberately lives
+            // at root above the dock material; keep testing all target pairs.
+            if(a.Kind=="preview" || b.Kind=="preview")continue;
+            bool garage=p.Slots.Any(s=>s.Id=="GarageTierCard");
+            if(garage && (a.Id=="LastStandDock"||b.Id=="LastStandDock"))continue;
+            if(a.Id=="LastStandDock" && Contains(a.Bounds,b.Bounds) || b.Id=="LastStandDock" && Contains(b.Bounds,a.Bounds))continue;
             Require(!Intersects(Visible(p,a),Visible(p,b)), "Visible overlap " + a.Id + "/" + b.Id);
         }
     }
@@ -132,53 +140,31 @@ static class ShopLayoutChecks
 
     static void ClosedConsole(int width, int height, List<string> chromeViolations)
     {
-        var old = LastStandHudLayout.Project(width,height,"battle",new[] { "Pause", "ToggleMute" });
-        var explicitClosed = Project(width,height,"battle",new[] { "Pause", "ToggleMute" },false,0);
-        Require(old.Slots.Count == explicitClosed.Slots.Count, "Explicit closed flow changes old slot count.");
-        foreach (var slot in old.Slots)
-            Require(Equal(slot.Bounds,Find(explicitClosed,slot.Id).Bounds), "Closed two-action geometry changed.");
-        Console.Error.WriteLine("TWO_ACTION_GEOMETRY " + width + "x" + height + " " + string.Join(";",
-            old.Slots.Select(s => s.Id + ":" + s.Parent + ":" + s.Kind + ":" + s.Bounds.X + "," + s.Bounds.Y + "," +
-                s.Bounds.Width + "," + s.Bounds.Height + ":" + s.FontSize)));
-        ClosedBattleGeometry(explicitClosed,width,height,chromeViolations);
-        var third = Project(width,height,"battle",BattleControls,false,0);
-        Fit(third,width,height);
-        ClosedBattleGeometry(third,width,height,chromeViolations);
-        if (width >= 1000)
-        {
-            var card = Find(third,"LastStandCard").Bounds;
-            var dock = Find(third,"LastStandDock").Bounds;
-            Require(Math.Abs(card.Y-dock.Y) < Tolerance && card.Y > height*.75,
-                "A third action disables the wide bottom command console.");
-            Require(!Intersects(card,dock), "The third entry overlaps the command console.");
-        }
+        var normal=LastStandHudLayout.Project(width,height,"battle",ClosedBattleControls);
+        var explicitClosed=Project(width,height,"battle",ClosedBattleControls,false,0);
+        Require(normal.Slots.Count==explicitClosed.Slots.Count,"Explicit closed flow changes current slot count.");
+        foreach(var slot in normal.Slots)Require(Equal(slot.Bounds,Find(explicitClosed,slot.Id).Bounds),"Explicit closed geometry changed.");
+        Fit(explicitClosed,width,height);ClosedBattleGeometry(explicitClosed,width,height,chromeViolations);
+        foreach(string id in ClosedBattleControls)Find(explicitClosed,id);
+        Require(!Intersects(Find(explicitClosed,"LastStandCard").Bounds,Find(explicitClosed,"LastStandDock").Bounds),
+            "Speed controls overlap the battle instruments.");
+        Require(!Intersects(Find(explicitClosed,"ShopEntry").Bounds,Find(explicitClosed,"SpeedRate").Bounds),
+            "Run upgrades overlap the compact speed control.");
     }
 
     static void ClosedReadyGarage(int width, int height)
     {
-        var p = Project(width,height,"garage",ReadyGarageControls,false,0);
-        var card = Find(p,"LastStandCard").Bounds;
-        var dock = Find(p,"LastStandDock").Bounds;
-        Console.Error.WriteLine("READY_GARAGE_GEOMETRY " + width + "x" + height + " actions=" + p.ActionCount +
-            " card=" + card.X + "," + card.Y + "," + card.Width + "," + card.Height +
-            " dock=" + dock.X + "," + dock.Y + "," + dock.Width + "," + dock.Height);
-        // The imported garage's original side-loadout/tank-space contract.
-        Require(Math.Abs(card.X - 12) < .2 && card.Width <= 440.2,
-            "Closed ready-garage side loadout keeps tank space " + width + "x" + height);
-        Require(!Intersects(card,dock), "Ready-garage dock overlaps its side loadout.");
-        Require(p.ActionCount == ReadyGarageControls.Length && !p.ShopOpen, "Ready garage loses its actual closed control inventory.");
-        Fit(p,width,height);
-        foreach (string id in ReadyGarageControls)
+        var p=Project(width,height,"garage",ReadyGarageControls,false,0);Fit(p,width,height);
+        Require(p.ActionCount==ReadyGarageControls.Length&&!p.ShopOpen,"Ready garage loses its actual control inventory.");
+        foreach(string id in ReadyGarageControls)
         {
-            var control = Find(p,id);
-            Require(Contains(dock,control.Bounds) && !Intersects(card,control.Bounds), "Ready-garage control obscures loadout: " + id);
-            Require(control.Bounds.Width >= 44 && control.Bounds.Height >= 44, "Ready-garage target below 44px: " + id);
+            var control=Find(p,id);Require(control.Bounds.Width>=44&&control.Bounds.Height>=44,"Ready-garage target below44px: "+id);
+            Require(Contains(new LastStandHudLayout.Bounds(0,0,width,height),control.Bounds),"Ready-garage control offscreen: "+id);
         }
-        foreach (var text in p.Slots.Where(s => s.Kind == "text"))
-            Require(text.FontSize >= 14 && text.Bounds.Height >= text.FontSize, "Ready-garage text below 14px: " + text.Id);
-        Require(Find(p,"PhaseHeading").Bounds.Height >= 26, "Ready garage loses its readable heading line.");
-        foreach (string id in new[] { "PhaseDetail", "SaveStatus" })
-            Require(Find(p,id).Bounds.Height >= 5 * 20, "Ready garage loses five readable detail/status lines: " + id);
+        Find(p,"GarageTierCard");Find(p,"GarageFittingCard");Find(p,"GarageSave");
+        Require(Find(p,"GaragePreview").Bounds.Width>0&&Find(p,"GaragePreview").Bounds.Height>0,"Garage preserves a tank preview.");
+        foreach(var text in p.Slots.Where(s=>s.Kind=="text"))Require(text.FontSize>=14&&text.Bounds.Height>=text.FontSize,"Garage text below readable geometry: "+text.Id);
+        Require(Find(p,"Deploy").Bounds.Height>=56,"Deploy remains the dominant garage action.");
     }
 
     static void ClosedRecovery(int width, int height)
@@ -195,7 +181,7 @@ static class ShopLayoutChecks
         foreach (string id in RecoveryControls)
         {
             var control = Find(p,id);
-            Require(Contains(dock,control.Bounds) && !Intersects(card,control.Bounds), "Recovery control obscures save inspection: " + id);
+            Require((id=="Menu" || Contains(dock,control.Bounds)) && !Intersects(card,control.Bounds), "Recovery control obscures save inspection: " + id);
             Require(control.Bounds.Width >= 44 && control.Bounds.Height >= 44, "Recovery target below 44px: " + id);
         }
         foreach (var text in p.Slots.Where(s => s.Kind == "text"))
@@ -211,7 +197,7 @@ static class ShopLayoutChecks
         Find(first,"ShopPanel");
         Require(Property<bool>(first,"ShopOpen"), "Shop open input was ignored.");
         Require(Property<int>(first,"ActionCount") == controls.Length, "Dock does not reserve actual action count.");
-        foreach (string id in new[] {"ShopHeading","ShopCurrency","ShopTabAttack","ShopTabDefense","ShopTabUtility","ShopClose","ShopViewport","ShopContent"})
+        foreach (string id in new[] {"ShopHeading","ShopCurrency","ShopTabAttack","ShopTabDefense","ShopTabUtility","ShopClose","ShopQuantity","ShopViewport","ShopContent"})
             Find(first,id);
         Require(Find(first,"ShopViewport").Kind == "mask", "Scroll viewport has no explicit mask contract.");
         var viewport = Find(first,"ShopViewport").Bounds;
@@ -227,7 +213,7 @@ static class ShopLayoutChecks
         {
             Fit(p,width,height);
             SameFixedSlots(first,p);
-            foreach (string id in controls.Concat(new[] {"ShopClose"}))
+            foreach (string id in controls.Concat(new[] {"ShopClose","ShopQuantity"}))
             {
                 var control = Find(p,id);
                 Require(!Ancestor(p,"ShopViewport",control), "Required control scrolls away: " + id);
@@ -347,7 +333,7 @@ static class ShopLayoutChecks
     {
         foreach (string phase in new[] { "garage", "workshop", "battle" })
         {
-            var p = Project(1280,616,phase,phase == "battle" ? BattleControls : ReadyGarageControls,
+            var p = Project(1280,616,phase,phase == "battle" ? BattleControls : PermanentControls,
                 true,0,new[] { "hullCapacity", "armor" });
             var viewport = Find(p,"ShopViewport").Bounds;
             foreach (string key in new[] { "hullCapacity", "armor" })
@@ -403,9 +389,19 @@ static class ShopLayoutChecks
             }
             foreach (var slot in p.Slots.Where(slot => slot.Kind == "text"))
                 Require(slot.FontSize >= 14,"Short landscape retains readable text " + slot.Id);
-            Require(Find(p,"PhaseHeading").Bounds.Height >= 52,"Short landscape retains both heading lines.");
-            foreach (string id in new[] {"PhaseDetail","SaveStatus"})
-                Require(Find(p,id).Bounds.Height >= 100,"Short landscape retains every reserved line " + id);
+            if (controls == ReadyGarageControls)
+            {
+                Require(Find(p,"PhaseHeading").Bounds.Height >= 44,"Inline garage retains its single heading.");
+                Require(Find(p,"GarageTierDetail").Bounds.Height >= 32,"Inline garage retains both tier detail lines.");
+                Require(Find(p,"GarageFittingDescription").Bounds.Height >= 44,"Inline garage retains fitting details.");
+                Require(Find(p,"GarageSave").Bounds.Height >= 20,"Inline garage retains its save status.");
+            }
+            else
+            {
+                Require(Find(p,"PhaseHeading").Bounds.Height >= 52,"Short landscape retains both recovery heading lines.");
+                foreach (string id in new[] {"PhaseDetail","SaveStatus"})
+                    Require(Find(p,id).Bounds.Height >= 100,"Short landscape retains every reserved line " + id);
+            }
         }
     }
 

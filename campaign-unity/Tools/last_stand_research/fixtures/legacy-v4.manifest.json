@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "source_commit": "a17e2ff5cbe5d0bc765f57a55edb4f9404000150",
+  "generated_by": "ResearchLegacyV4Fixture.cs",
+  "generator_sha256": "41bf784427a215d1832dda7025e72f47fa24776d416d2303d754ebbd4e1ca82b",
+  "source_sha256": {
+    "MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7",
+    "LastStandUpgradeCatalog.cs": "600b6740990ad1aad5bd7584d1b8270f78f70e250802e740b84f953acf536de0",
+    "LastStandTierCatalog.cs": "0a132ecc34122b42d48e2ad49c0ffc4f570e2914f775c4042ee32320861c0086",
+    "LastStandProgression.cs": "a2dcc99a1a476e89b7d2a1894078d975d5e6ce9822422096c11e91d4ff11f676",
+    "LastStandStore.cs": "ed7ea5a56584743106801ca8271d7a27254c34048ce8be0a38ec16bbca19d2f5",
+    "LastStandRunClock.cs": "feb970fe742724cdca010b9493a1d4c5128d3e235134cb26f548409746a349a5",
+    "LastStandSpeedPolicy.cs": "7c8f705d5d64e2ff753c256d11fb9436cabfb05a9e486d9064459b083a5ddfab",
+    "EncounterModel.cs": "ab3162835db64d356e3d3ab18ba106daf4fba9aa708889282c16fdee98904ab3",
+    "EncounterProfile.cs": "f563565b5799510df593231a583b4875587b185e19dd861e44c072f0f2200fb9",
+    "LastStandShopState.cs": "595d6d46b6983f400f14322e9f7cf283bcb34294ef138f2d71df5d52e8e24eff",
+    "LastStandWaveCatalog.cs": "6c3af62aca1f31b4599194978303b481c42f5e8c301d65d594ffd3246a930edb",
+    "LastStandRewardCatalog.cs": "4a16c47078a0cf7b278fde880ac09537c1f3dfefb3858f1b95f88fe90172a0b9",
+    "LastStandSaveJson.cs": "560869c812d92690d3299e47d1d0d4f9733b54d424e8be1db6016d5fadd54ff3",
+    "LastStandRunCheckpoint.cs": "477c5c9022094e9eb250389a1383b6463c41849268bdd2d7fc1a6878198d863c",
+    "LastStandProgressionSave.cs": "c245283ca2c8dd206d3d0218086c6dc1942a40056a16849503fdbe16b85999b2",
+    "LastStandLegacySave.cs": "6340d5c57922364307487b45221763cea0bc707d6cf5edbbd2edf1f4bd0bdf69",
+    "LastStandSelection.cs": "df8bee8aaf3c7687ee32248fdcb0eacc8c86a7df08b5ffdbba90479d551b7d79"
+  },
+  "files_sha256": {
+    "legacy-v4.json": "e1721668c02b117a32d3b6f64b3af6035d85f5192ca35922065d193697deee42",
+    "legacy-v4.snapshot": "955716a0b2ffca99be6312aabf3c8c73b399285c4ece478d1b82331459a7f978"
+  },
+  "fixture_scope": "An explicit max-investment old-profile cohort clears 100 waves and buys 13 Cannon Attack run upgrades using the original production model/shop/profile owners. This is a compatibility fixture, not earned progression or balance evidence.",
+  "regeneration": "Set ST_RESEARCH_REGENERATE_V4=1 when running test_research_profile.py to compile the pinned old owner and compare its generated fixture with these immutable files.",
+  "generator_hash_normalization": "CRLF to LF"
+}

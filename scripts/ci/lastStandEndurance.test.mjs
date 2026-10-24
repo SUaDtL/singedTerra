@@ -26,6 +26,23 @@ const complete=()=>({...newEnduranceLedger(),activeMs:ENDURANCE_POLICY.activeTar
   elapsedMs:ENDURANCE_POLICY.activeTargetMs+1000,observedSimulationMs:ENDURANCE_POLICY.activeTargetMs,samples:36001});
 const proof={completed:true,finalBindingsVerified:true,storageLatencyVerified:true};
 
+test('researched 5x counts real hours and rejects missing entitlement or covert acceleration',()=>{
+  assert.equal(parseEnduranceArguments(['fixture','output','--endurance','--research']).research,true);
+  const ledger=newEnduranceLedger(5);
+  for(let seconds=0;seconds<=60;seconds++)accountEnduranceObservation(ledger,
+    observed(seconds*1000,{speed:5,tick:seconds*100}));
+  assert.equal(ledger.activeMs,60000);assert.equal(ledger.observedSimulationMs,300000);
+  assert.throws(()=>accountEnduranceObservation(ledger,observed(61000,{speed:1,tick:6100})));
+  const fast=newEnduranceLedger(5);accountEnduranceObservation(fast,observed(0,{speed:5,tick:0}));
+  assert.throws(()=>{for(let seconds=1;seconds<30;seconds++)accountEnduranceObservation(fast,
+    observed(seconds*1000,{speed:5,tick:seconds*200}));},/real elapsed|acceleration/);
+  const five={...complete(),expectedSpeed:5,observedSimulationMs:ENDURANCE_POLICY.activeTargetMs*5};
+  assert.equal(enduranceVerdict('endurance',five,proof).enduranceQualified,true);
+  five.activeMs/=5;five.elapsedMs/=5;
+  assert.equal(enduranceVerdict('endurance',five,proof).enduranceQualified,false,'Two hours at 5x is not ten real hours');
+  assert.throws(()=>newEnduranceLedger(10));
+});
+
 test('one-shot endurance admission cannot be shortened with smoke duration or ambiguous flags',()=>{
   assert.equal(parseEnduranceArguments(['fixture','output','--endurance']).mode,'endurance');
   assert.deepEqual(parseEnduranceArguments(['fixture','output','--smoke','--smoke-seconds=45']),

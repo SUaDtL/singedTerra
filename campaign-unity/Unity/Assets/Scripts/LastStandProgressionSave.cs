@@ -15,20 +15,21 @@ namespace SingedTerra.LastStand
         static int Number(Dictionary<string,object> map,string key)=>LastStandSaveJson.Integer(map[key]);
         static string Text(Dictionary<string,object> map,string key)=>LastStandSaveJson.String(map[key]);
         static bool Bool(Dictionary<string,object> map,string key)=>LastStandSaveJson.Boolean(map[key]);
-        static Dictionary<string,object> LevelsJson(IReadOnlyList<int> levels)
+        static Dictionary<string,object> LevelsJson(IReadOnlyList<int> levels,string economy=null)
         {
             var result=Map();
-            foreach(var track in LastStandUpgradeCatalog.Tracks)result.Add(track.Key,levels[(int)track.Id]);
+            foreach(var track in LastStandUpgradeCatalog.ForEconomy(economy??LastStandUpgradeCatalog.EconomyVersion).Tracks)result.Add(track.Key,levels[(int)track.Id]);
             return result;
         }
-        static int[] ReadLevels(object value,bool permanent)
+        static int[] ReadLevels(object value,bool permanent,string economy=null)
         {
             var map=LastStandSaveJson.Object(value);
-            if(map.Count!=LastStandUpgradeCatalog.Tracks.Count)throw new FormatException("Missing upgrade tracks.");
+            var catalog=LastStandUpgradeCatalog.ForEconomy(economy??LastStandUpgradeCatalog.EconomyVersion);
+            if(map.Count!=catalog.Tracks.Count)throw new FormatException("Missing upgrade tracks.");
             var result=new int[map.Count];
             foreach(var pair in map)
             {
-                if(!LastStandUpgradeCatalog.TryGet(pair.Key,out var definition))throw new FormatException("Unknown upgrade track.");
+                if(!catalog.TryGet(pair.Key,out var definition))throw new FormatException("Unknown upgrade track.");
                 int level=LastStandSaveJson.Integer(pair.Value);
                 if(level>(permanent?definition.PermanentCap:definition.TotalCap))throw new FormatException("Invalid upgrade level.");
                 result[(int)definition.Id]=level;
@@ -60,7 +61,9 @@ namespace SingedTerra.LastStand
                 tiers.Add(tier.Key,Map("bestWave",row.BestWave,"legacyTicks",row.LegacyTicks,
                     "legacyKills",row.LegacyKills,"unlocked",row.Unlocked));
             }
-            return LastStandSaveJson.Write(Map("version",4,"credits",record.Wallet,
+            return LastStandSaveJson.Write(Map("version",5,"credits",record.Wallet,
+                "revision",record.Revision,"recoveryRemainder",record.RecoveryRemainder,
+                "research",ResearchJson(record.Research),"history",HistoryJson(record.History),
                 "permanentLevels",LevelsJson(record.Levels),"nextRunId",record.NextRunId,
                 "lastFinalizedRunId",record.FinalizedRunId,"selectedTier",record.SelectedTier,
                 "selectedFitting",record.SelectedFitting,"tierRecords",tiers,
@@ -80,10 +83,14 @@ namespace SingedTerra.LastStand
                     if(!TryParseLegacyVersions(raw,out record,out migrate))return false;
                     InitializeTiers(record,true);migrate=true;return true;
                 }
-                if(version!=4)return false;
-                LastStandSaveJson.Fields(map,"version","credits","permanentLevels","nextRunId","lastFinalizedRunId",
-                    "selectedTier","selectedFitting","tierRecords","firstClears","unlockedFittings","pendingDefeat","checkpoint");
-                var parsed=new Record { Wallet=Number(map,"credits"),Levels=ReadLevels(map["permanentLevels"],true),
+                if(version!=4 && version!=5)return false;
+                var fields=new List<string>{"version","credits","permanentLevels","nextRunId","lastFinalizedRunId",
+                    "selectedTier","selectedFitting","tierRecords","firstClears","unlockedFittings","pendingDefeat","checkpoint"};
+                if(version==5)fields.AddRange(new[]{"revision","recoveryRemainder","research","history"});
+                LastStandSaveJson.Fields(map,fields.ToArray());
+                var levels=ReadLevels(map["permanentLevels"],true,version==4?LastStandUpgradeCatalog.LegacyEconomyVersion:LastStandUpgradeCatalog.EconomyVersion);
+                if(version==4)Array.Resize(ref levels,LastStandUpgradeCatalog.Tracks.Count);
+                var parsed=new Record { Wallet=Number(map,"credits"),Levels=levels,
                     NextRunId=Number(map,"nextRunId"),FinalizedRunId=Number(map,"lastFinalizedRunId"),
                     SelectedTier=Number(map,"selectedTier"),SelectedFitting=Text(map,"selectedFitting"),
                     FirstClears=ReadStrings(map["firstClears"]),Fittings=ReadStrings(map["unlockedFittings"]) };
@@ -124,9 +131,23 @@ namespace SingedTerra.LastStand
                     if(parsed.Pending!=null || cp.RunId!=parsed.NextRunId-1 || cp.RunId<=parsed.FinalizedRunId ||
                         cp.Tier!=parsed.SelectedTier || cp.FittingId!=parsed.SelectedFitting || cp.Encounter.Hull==0 ||
                         cp.CompletedWave>parsed.Tiers[LastStandTierCatalog.Get(cp.Tier).Key].BestWave)return false;
-                    foreach(var track in LastStandUpgradeCatalog.Tracks)
+                    foreach(var track in LastStandUpgradeCatalog.ForEconomy(cp.Shop.EconomyVersion).Tracks)
                         if(cp.Shop.PermanentLevels[(int)track.Id]>parsed.Levels[(int)track.Id])return false;
                 }
+                if(version==5)
+                {
+                    parsed.Revision=LastStandSaveJson.LongInteger(map["revision"]);
+                    parsed.RecoveryRemainder=Number(map,"recoveryRemainder");
+                    if(parsed.Revision<1 || parsed.RecoveryRemainder>=LastStandResearchCatalog.MultiplierDenominator)return false;
+                    parsed.Research=ReadResearch(map["research"]);parsed.History=ReadHistory(map["history"]);
+                    if(!parsed.Research.IsAvailableFor(parsed.Tiers[LastStandTierCatalog.Get(1).Key].BestWave))return false;
+                    var history=parsed.History.Snapshot();var current=history.Current;
+                    if(history.LastFinalizedRunId!=parsed.FinalizedRunId || (current==null)!=(parsed.Checkpoint==null))return false;
+                    if(current!=null && (current.RunId!=parsed.Checkpoint.RunId || current.Tier!=parsed.Checkpoint.Tier ||
+                        current.Fitting!=parsed.Checkpoint.FittingId || current.EconomyVersion!=parsed.Checkpoint.Shop.EconomyVersion ||
+                        current.HighestClearedWave!=parsed.Checkpoint.CompletedWave))return false;
+                }
+                else migrate=true;
                 record=parsed;return true;
             }
             catch(Exception error) when(error is FormatException || error is ArgumentException || error is KeyNotFoundException ||
@@ -171,9 +192,11 @@ namespace SingedTerra.LastStand
                 "nextRepairTick",e.NextRepairTick,"nextScattergunTick",e.NextScattergunTick,"lastCannonShotTick",e.LastCannonShotTick,
                 "cannonDamage",e.CannonDamage,"launcherDamage",e.LauncherDamage,"scattergunDamage",e.ScattergunDamage,
                 "cannonPeriod",e.CannonPeriod,"repairAmount",e.RepairAmount,"armorLevel",e.ArmorLevel,"committedCannonDamage",e.CommittedCannonDamage),
-                "shop",Map("version",LastStandShopCheckpoint.Version,"runId",s.RunId,"fitting",s.Fitting,
+                "shop",Map("version",LastStandShopCheckpoint.Version,"economyVersion",s.EconomyVersion,
+                    "baseEarnedScrap",s.BaseEarnedScrap,"bonusEarnedScrap",s.BonusEarnedScrap,"incomeRemainder",s.IncomeRemainder,
+                    "runId",s.RunId,"fitting",s.Fitting,
                     "purchaseSequence",s.PurchaseSequence,"uniqueKills",s.UniqueKills,"earnedScrap",s.EarnedScrap,
-                    "spentScrap",s.SpentScrap,"scrap",s.Scrap,"permanentLevels",LevelsJson(s.PermanentLevels),"runPurchases",LevelsJson(s.RunPurchases)));
+                    "spentScrap",s.SpentScrap,"scrap",s.Scrap,"permanentLevels",LevelsJson(s.PermanentLevels,s.EconomyVersion),"runPurchases",LevelsJson(s.RunPurchases,s.EconomyVersion)));
         }
         static LastStandRunCheckpoint ReadCheckpoint(object value)
         {
@@ -184,16 +207,21 @@ namespace SingedTerra.LastStand
                 "spawned","kills","cannonShots","launcherShots","scattergunShots","restored","closeHits","rangedHits",
                 "nextSpawnTick","nextCannonTick","nextLauncherTick","nextRepairTick","nextScattergunTick","lastCannonShotTick",
                 "cannonDamage","launcherDamage","scattergunDamage","cannonPeriod","repairAmount","armorLevel","committedCannonDamage");
-            LastStandSaveJson.Fields(s,"version","runId","fitting","purchaseSequence","uniqueKills","earnedScrap","spentScrap","scrap","permanentLevels","runPurchases");
-            if(Number(e,"version")!=EncounterCheckpoint.Version || Number(s,"version")!=LastStandShopCheckpoint.Version)
+            int schema=Number(s,"version");
+            var shopFields=new List<string>{"version","runId","fitting","purchaseSequence","uniqueKills","earnedScrap","spentScrap","scrap","permanentLevels","runPurchases"};
+            if(schema==LastStandShopCheckpoint.Version)shopFields.AddRange(new[]{"economyVersion","baseEarnedScrap","bonusEarnedScrap","incomeRemainder"});
+            LastStandSaveJson.Fields(s,shopFields.ToArray());
+            if(Number(e,"version")!=EncounterCheckpoint.Version || schema!=LastStandShopCheckpoint.Version && schema!=LastStandShopCheckpoint.LegacyVersion)
                 throw new FormatException("Unsupported checkpoint schema.");
             var encounter=new EncounterCheckpoint(Text(e,"rulesVersion"),Number(e,"tier"),Number(e,"fitting"),Number(e,"wave"),Number(e,"completedWave"),Number(e,"tick"),
                 Number(e,"hull"),Number(e,"maximumHull"),Number(e,"spawned"),Number(e,"kills"),Number(e,"cannonShots"),Number(e,"launcherShots"),Number(e,"scattergunShots"),
                 Number(e,"restored"),Number(e,"closeHits"),Number(e,"rangedHits"),Number(e,"nextSpawnTick"),Number(e,"nextCannonTick"),Number(e,"nextLauncherTick"),
                 Number(e,"nextRepairTick"),Number(e,"nextScattergunTick"),Number(e,"lastCannonShotTick"),Number(e,"cannonDamage"),Number(e,"launcherDamage"),
                 Number(e,"scattergunDamage"),Number(e,"cannonPeriod"),Number(e,"repairAmount"),Number(e,"armorLevel"),Number(e,"committedCannonDamage"));
+            string economy=schema==LastStandShopCheckpoint.LegacyVersion?LastStandUpgradeCatalog.LegacyEconomyVersion:Text(s,"economyVersion");
             var shop=new LastStandShopCheckpoint(Number(s,"runId"),Number(s,"fitting"),Number(s,"purchaseSequence"),Number(s,"uniqueKills"),
-                Number(s,"earnedScrap"),Number(s,"spentScrap"),Number(s,"scrap"),ReadLevels(s["permanentLevels"],true),ReadLevels(s["runPurchases"],false));
+                Number(s,"earnedScrap"),Number(s,"spentScrap"),Number(s,"scrap"),ReadLevels(s["permanentLevels"],true,economy),ReadLevels(s["runPurchases"],false,economy),
+                economy,schema==1?Number(s,"earnedScrap"):Number(s,"baseEarnedScrap"),schema==1?0:Number(s,"bonusEarnedScrap"),schema==1?0:Number(s,"incomeRemainder"),schema);
             return new LastStandRunCheckpoint(Number(p,"runId"),encounter,shop);
         }
     }

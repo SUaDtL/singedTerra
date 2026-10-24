@@ -117,7 +117,7 @@ namespace SingedTerra.Encounter
         public static EncounterModel CreatePlayable(LastStandFitting fitting,int tier,LastStandShopState shop)
         {
             if(shop==null)throw new ArgumentNullException(nameof(shop));
-            int committed=LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(shop.GetTrack(LastStandUpgradeTrackId.CannonAttack).PermanentLevel,1);
+            int committed=shop.GetDefinition(LastStandUpgradeTrackId.CannonAttack).EffectAt(shop.GetTrack(LastStandUpgradeTrackId.CannonAttack).PermanentLevel,1);
             var model=new EncounterModel(fitting,EncounterProfile.ForTier(tier),committed);
             model.ApplyShopProjection(shop);return model;
         }
@@ -125,14 +125,14 @@ namespace SingedTerra.Encounter
         {
             if(shop==null || shop.Fitting!=Fitting || !Profile.IsPlayable)throw new ArgumentException("Shop/model fitting mismatch.");
             Func<LastStandUpgradeTrackId,int> level=id=>shop.GetTrack(id).CurrentLevel;
-            TryApplyPlayableAttackProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(level(LastStandUpgradeTrackId.CannonAttack),1),
-                LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.LauncherAttack).EffectAt(level(LastStandUpgradeTrackId.LauncherAttack),1));
+            TryApplyPlayableAttackProjection(shop.GetDefinition(LastStandUpgradeTrackId.CannonAttack).EffectAt(level(LastStandUpgradeTrackId.CannonAttack),1),
+                shop.GetDefinition(LastStandUpgradeTrackId.LauncherAttack).EffectAt(level(LastStandUpgradeTrackId.LauncherAttack),1));
             int armor=level(LastStandUpgradeTrackId.Armor);
-            TryApplyPlayableDefenseProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.HullCapacity).EffectAt(level(LastStandUpgradeTrackId.HullCapacity),1),raw=>Math.Max(1,raw-armor));
+            TryApplyPlayableDefenseProjection(shop.GetDefinition(LastStandUpgradeTrackId.HullCapacity).EffectAt(level(LastStandUpgradeTrackId.HullCapacity),1),raw=>Math.Max(1,raw-armor));
             TryApplyPlayableArmorProjection(armor);
-            TryApplyPlayableCannonPeriodProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonCycle).EffectAt(level(LastStandUpgradeTrackId.CannonCycle),1));
-            if(HasRepair)TryApplyPlayableRepairProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).EffectAt(level(LastStandUpgradeTrackId.FieldRepair),1));
-            if(HasScattergun)TryApplyPlayableScattergunProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.ScattergunAttack).EffectAt(level(LastStandUpgradeTrackId.ScattergunAttack),1));
+            TryApplyPlayableCannonPeriodProjection(shop.GetDefinition(LastStandUpgradeTrackId.CannonCycle).EffectAt(level(LastStandUpgradeTrackId.CannonCycle),1));
+            if(HasRepair)TryApplyPlayableRepairProjection(shop.GetDefinition(LastStandUpgradeTrackId.FieldRepair).EffectAt(level(LastStandUpgradeTrackId.FieldRepair),1));
+            if(HasScattergun)TryApplyPlayableScattergunProjection(shop.GetDefinition(LastStandUpgradeTrackId.ScattergunAttack).EffectAt(level(LastStandUpgradeTrackId.ScattergunAttack),1));
         }
         public bool TryApplyPlayableArmorProjection(int level)
         {

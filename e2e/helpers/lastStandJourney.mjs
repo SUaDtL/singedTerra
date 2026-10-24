@@ -39,55 +39,55 @@ export function writeShopPresentationJson(path,value){
   try{visit(value);flush();}finally{closeSync(fd);}
 }
 
-// Unity's current diagnostic log can cut the later graphics array at 8190
-// characters. Only its complete preceding controls are useful to this journey.
-// This is explicitly not a layout/graphics qualification or a repaired raw log.
+// Admit the complete current controls and scroll fields without repairing a
+// truncated Unity log. Geometry qualification additionally checks raw graphics.
 export function readShopControlObservation(raw) {
   const tag='ST_LS_HUD_LAYOUT ';
   assert.ok(typeof raw==='string' && raw.startsWith(tag),'Expected actual HUD control emission');
   const payload=raw.slice(tag.length),boundary=payload.indexOf(',"graphics":[');
   assert.ok(boundary>0,'Complete controls must precede the graphics array');
-  const fields=JSON.parse(payload.slice(0,boundary)+'}');
+  const prefix=JSON.parse(payload.slice(0,boundary)+'}');
   const header=['phase','coordinates','selection','width','height','pixelRatio','scrollOffset','maximumScrollOffset',
-    'settingsScrollOffset','settingsMaximumScrollOffset','controls','shopControls','settingsControls'];
-  assert.deepEqual(Object.keys(fields).sort(),header.sort(),'Exact complete controls header');
+    'settingsScrollOffset','settingsMaximumScrollOffset','controls','shopControls','settingsControls','researchControls','historyControls'];
+  const tail=['researchScrollOffset','researchMaximumScrollOffset','historyScrollOffset','historyMaximumScrollOffset'];
+  assert.deepEqual(Object.keys(prefix).filter(key=>!tail.includes(key)).sort(),[...header].sort(),'Exact complete controls header');
+  // Research/history offsets follow graphics in the Unity record. A truncated
+  // packet cannot qualify those panes: keep the raw failure rather than infer it.
+  const complete=JSON.parse(payload);
+  assert.deepEqual(Object.keys(complete).sort(),[...header,'graphics',...tail].sort(),'Exact current HUD observation');
+  assert.ok(Array.isArray(complete.graphics),'Complete observed graphics required');
+  const fields={...prefix,...Object.fromEntries(tail.map(key=>[key,complete[key]]))};
   assert.ok(fields.coordinates==='top-left' && typeof fields.phase==='string' && typeof fields.selection==='string');
-  for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset','settingsScrollOffset','settingsMaximumScrollOffset'])
+  for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset','settingsScrollOffset','settingsMaximumScrollOffset',...tail])
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
   const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects',
-      'Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext']],
-    ['shopControls',['ShopEntry','ShopClose','ShopTabAttack','ShopTabDefense','ShopTabUtility',
-      'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy',
-      'ShopCard_armorBuy','ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy','ShopCard_scattergunAttackBuy']],
+      'Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext','ResearchEntry']],
+    ['shopControls',['ShopEntry','ShopClose','ShopQuantity','ShopTabAttack','ShopTabDefense','ShopTabUtility',
+      'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy','ShopCard_armorBuy',
+      'ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy','ShopCard_scattergunAttackBuy','ShopCard_scrapYieldBuy']],
     ['settingsControls',['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3',
-      'MenuResume','MenuSettings','MenuHelp','MenuMilestones','MenuNewRun','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
+      'MenuResume','MenuSettings','MenuHelp','MenuMilestones','MenuResearch','MenuHistory','MenuNewRun','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
       'MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus',
       'DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp',
-      'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed','ChoicePrevious','ChoiceNext']]];
+      'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed','ChoicePrevious','ChoiceNext']],
+    ['researchControls',['ResearchClose','ResearchFilter','ResearchBack',
+      ...['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'].map(key=>'ResearchProject-'+key),
+      ...[0,1].flatMap(slot=>['Start','Queue','Switch','Suspend','RemoveQueued'].map(action=>'Research'+action+slot))]],
+    ['historyControls',['RunHistoryClose','RunHistoryTier']]];
+  const allNames=new Set();
   for(const [key,expected]of names) {
     const items=fields[key];assert.ok(Array.isArray(items) && items.length===expected.length,'Complete '+key);
     assert.deepEqual(items.map(item=>item.name).sort(),expected.sort(),'Unique known '+key);
     for(const item of items) {
+      assert.ok(!allNames.has(item.name),'Control identity appears in one owner');allNames.add(item.name);
       assert.deepEqual(Object.keys(item).sort(),['name','label','accessibleLabel','mode','trackKey','x','y','width','height','active','interactable'].sort());
       for(const name of ['name','label','accessibleLabel','mode','trackKey'])assert.equal(typeof item[name],'string');
       for(const name of ['x','y','width','height'])assert.ok(Number.isFinite(item[name]),'Finite control bounds');
       assert.ok(item.width>=0 && item.height>=0 && typeof item.active==='boolean' && typeof item.interactable==='boolean');
     }
   }
-  let graphicsTruncated=false;
-  try {
-    const complete=JSON.parse(payload);
-    assert.ok(Array.isArray(complete.graphics),'Observed graphics tail is an array');
-    assert.deepEqual(Object.keys(complete).sort(),[...header,'graphics'].sort());
-  } catch(error) {
-    if(!(error instanceof SyntaxError))throw error;
-    const position=/ at position (\d+)(?: |$)/.exec(error.message);
-    assert.ok(raw.length===8190 && (error.message==='Unexpected end of JSON input' ||
-      position && Number(position[1])===payload.length),'Unexpected HUD truncation shape');
-    graphicsTruncated=true;
-  }
-  return {...fields,observationScope:'complete-controls-only',graphicsTruncated,raw};
+  return {...fields,observationScope:'complete-controls-only',graphicsTruncated:false,raw};
 }
 
 // Use the catalog card's actual inline arrow and observe the equipped identity.
@@ -1870,7 +1870,7 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
     rows:Object.values(profiles).reduce((count,profile)=>count+Object.keys(profile).length,0),fields_per_row:13}};
 }
 const ENCOUNTER_COMPILATION_SOURCES=Object.freeze(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
-  'LastStandWaveCatalog.cs','LastStandUpgradeCatalog.cs','MechanicsShopModel.cs','LastStandShopState.cs',
+  'LastStandWaveCatalog.cs','LastStandUpgradeCatalog.cs','LastStandEconomyCatalog.cs','MechanicsShopModel.cs','LastStandShopState.cs',
   'LastStandRunClock.cs','LastStandSpeedPolicy.cs']);
 export function encounterCompilationSourceBinding() {
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
@@ -3408,6 +3408,59 @@ export function validateHiddenWaveTerminal({interval,evidence,events=interval?.e
   assert.ok(isWaveResultFor(before,result),'Hidden terminal requires the exact same-session result transition');
   return {loss,visible};
 }
+// These ordinary-player journeys never fund research. Only its idle clock and
+// transaction revisions may advance during Return, reload or explicit Resume.
+// A funded project needs the separate research journey's completion evidence.
+export function assertIdleWaveSave(saved) {
+  assert.equal(saved?.version,5,'Current wave/profile envelope required');
+  assert.ok(Number.isSafeInteger(saved.revision)&&saved.revision>0);
+  const r=saved.research;assert.equal(r?.version,1);assert.equal(r.catalogVersion,'research-v1');
+  assert.ok(Number.isSafeInteger(r.revision)&&r.revision>=0);
+  assert.ok(Number.isSafeInteger(r.lastObservedUtcMilliseconds)&&r.lastObservedUtcMilliseconds>=0);
+  assert.equal(r.nextProjectIdentity,1);assert.equal(r.completionSequence,0);
+  const empty=Object.fromEntries(['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'].map(key=>[key,0]));
+  assert.deepEqual(r.completedRanks,empty,'Ordinary wave qualification uses no research grants');
+  assert.deepEqual(r.partials,Object.fromEntries(Object.keys(empty).map(key=>[key,null])));
+  assert.deepEqual(r.slots,[{active:null,queued:null},{active:null,queued:null}]);
+  assert.equal(saved.history?.version,1);
+}
+export function assertWaveSavePreserved(before,after) {
+  assertIdleWaveSave(before);assertIdleWaveSave(after);
+  assert.ok(after.revision>=before.revision,'Profile revision cannot roll back');
+  assert.ok(after.research.revision>=before.research.revision,'Research revision cannot roll back');
+  assert.ok(after.research.lastObservedUtcMilliseconds>=before.research.lastObservedUtcMilliseconds,'Qualification requires a stable host clock');
+  assert.ok(after.research.revision-before.research.revision<=after.revision-before.revision);
+  const project=r=>{const {revision,lastObservedUtcMilliseconds,...rest}=r;return rest;};
+  assert.deepEqual(project(after.research),project(before.research),'Idle clock cannot alter research');
+  assert.deepEqual({...after,revision:before.revision,research:before.research},before,
+    'Clock reconciliation cannot rewrite the checkpoint, history, wallet, upgrades or unlocks');
+  return true;
+}
+export function validateWaveAbandonSave({before,after}) {
+  assertIdleWaveSave(before);assertIdleWaveSave(after);assert.ok(before.checkpoint);
+  assert.equal(after.checkpoint,null);assert.equal(after.lastFinalizedRunId,before.checkpoint.runId);
+  assert.ok(after.revision>before.revision,'Finalization is a durable transaction');
+  const prior=before.history,current=prior.current,history=after.history,final=history.recent?.at(-1);
+  assert.ok(current&&final);assert.equal(current.runId,before.checkpoint.runId);
+  assert.equal(history.current,null);assert.equal(history.lastFinalizedRunId,current.runId);
+  assert.equal(final.finishReason,'abandon');assert.equal(final.runId,current.runId);
+  const measured=['activeMilliseconds','pausedMilliseconds','closedMilliseconds','speedMilliseconds'];
+  const stable=record=>Object.fromEntries(Object.entries(record).filter(([key])=>!measured.includes(key)&&key!=='finishReason'));
+  assert.deepEqual(stable(final),stable(current),'Abandon cannot change banked history or frozen build context');
+  for(const key of measured.slice(0,3))assert.ok(Number.isSafeInteger(final[key])&&final[key]>=current[key]);
+  assert.equal(final.speedMilliseconds.length,10);
+  final.speedMilliseconds.forEach((value,index)=>assert.ok(Number.isSafeInteger(value)&&value>=current.speedMilliseconds[index]));
+  assert.equal(final.speedMilliseconds.reduce((sum,value)=>sum+value,0),final.activeMilliseconds);
+  assert.deepEqual(history.recent,[...prior.recent,final].slice(-20),'Append exactly one bounded run summary');
+  const aggregate=(old,tier)=>({tier,runs:(old?.runs??0)+1,bestWave:Math.max(old?.bestWave??0,final.highestClearedWave),
+    ...Object.fromEntries(['activeMilliseconds','repeatableSalvage','milestoneSalvage','researchBonusSalvage'].map(key=>[key,(old?.[key]??0)+final[key]]))});
+  assert.deepEqual(history.lifetime,aggregate(prior.lifetime,0));
+  const tiers=prior.tiers.map(row=>row.tier===final.tier?aggregate(row,row.tier):row);
+  if(!prior.tiers.some(row=>row.tier===final.tier))tiers.push(aggregate(null,final.tier));
+  assert.deepEqual(history.tiers,tiers,'Finalization updates only the matching tier aggregate');
+  assertWaveSavePreserved(before,{...after,checkpoint:before.checkpoint,lastFinalizedRunId:before.lastFinalizedRunId,history:before.history});
+  return true;
+}
 export function validateWaveTerminal({before,result,saved,states,encounters,layouts,oracle}) {
   assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
     before.loop?.runId>0 && before.status==='Running' && before.loop.phase==='battle' &&
@@ -3441,7 +3494,7 @@ export function validateWaveTerminal({before,result,saved,states,encounters,layo
   assert.equal(result.phase,'result');assert.equal(result.saveState,'ready');
   assert.equal(result.runId,0);assert.equal(result.pendingRunId,0);assert.equal(result.hasCheckpoint,false);
   assert.equal(result.wallet,stage.wallet);
-  assert.equal(saved?.version,4);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
+  assertIdleWaveSave(saved);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
   assert.equal(saved.lastFinalizedRunId,before.loop.runId);assert.equal(saved.credits,stage.wallet);
   const geometry=layouts.filter(item=>same(item) && item.phase==='settling' && item.t>=terminal.t && item.t<=result.t);
   assert.ok(geometry.length && geometry.every(item=>!item.controls.some(c=>c.name==='Claim' && c.active && c.interactable)),
@@ -3457,10 +3510,10 @@ export function validateWaveTerminal({before,result,saved,states,encounters,layo
 }
 
 export function validateCheckpointResume({saved,resumed,stable,stored,observedClock}) {
-  assert.equal(saved?.version,4,'Current complete checkpoint envelope required');
+  assertIdleWaveSave(saved);
   const checkpoint=saved.checkpoint,e=checkpoint?.encounter;
   assert.ok(checkpoint && e && e.hull>0,'A living saved boundary is required');
-  assert.deepEqual(stored,saved,'Resume cannot rewrite or reward its saved boundary');
+  assertWaveSavePreserved(saved,stored);
   for(const state of [resumed,stable]) {
     assert.equal(state.phase,'battle');assert.equal(state.saveState,'ready');
     assert.equal(state.runId,checkpoint.runId);assert.equal(state.activeTier,e.tier);
@@ -3542,7 +3595,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     report.parent_artifact=await bindT21ServedParent(base);
     buildEncounterOracle(output); // Retain complete historical model parity separately.
     const waveOracle=buildWaveOracle(output);modelOracle=waveOracle.profiles;report.wave_model=waveOracle.binding;
-    report.contract='last-stand-waves/v1';
+    report.contract='last-stand-waves/v2';
     const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
     const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
     const receiptPath=join(ROOT,manifest.source.receipt);
@@ -4012,7 +4065,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
     await page.locator('[data-last-stand-command-view]').waitFor();
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
-    check(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===returnSave,'ordinary Return preserves complete checkpoint');
+    check(assertWaveSavePreserved(JSON.parse(returnSave),JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY))),'ordinary Return preserves complete checkpoint');
     check(await ashBytes()===originalAsh,'retired campaign bytes preserved through native Last Stand Return');
     report.retired_campaign_preservation.native_return='observed unchanged';
     await selected('last-stand');
@@ -4032,7 +4085,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(confirmationLayout.selection==='ConfirmCancel','new run initially focuses Cancel');
     const cancelled=await gameClick('ConfirmCancel','confirmation-cancel');
     check(cancelled.runId===restored.runId && cancelled.paused &&
-      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===returnSave,'Cancel preserves complete checkpoint');
+      assertWaveSavePreserved(JSON.parse(returnSave),JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY))),'Cancel preserves complete checkpoint');
     report.lifecycle.push({kind:'new-run-cancel',confirmation,cancelled,layout:confirmationLayout,saved:returnSave});
     await gameClick('SettingsClose','menu-close');
     if(player){await gameClick('SpeedRate','session',item=>!item.paused);await liveBattleLayouts();}
@@ -4040,7 +4093,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.hasCheckpoint && ['garage','workshop'].includes(restored.phase) && restored.runId===returnBefore.runId &&
-      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===beforeReload,
+      assertWaveSavePreserved(JSON.parse(beforeReload),JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY))),
       'unfinished reload preserves complete checkpoint',restored);
     await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');await gameClick('ConfirmProceed','abandon');
     check(!states.at(-1).hasCheckpoint && states.at(-1).wallet===JSON.parse(beforeReload).credits,'confirmed new run keeps banked progress');
@@ -4090,12 +4143,13 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     // First qualify a short earned boundary before the later natural terminal.
     // The separate 10–12-hour endurance obligation is not implied by this run.
     await page.waitForTimeout(16000);
-    await until(states,0,item=>item.load===load && item.completedWave>0 && item.saveState==='ready',60);
+    await until(states,0,item=>item.load===load && item.completedWave>=2 && item.saveState==='ready',90);
     const captureEnd=await mark();
     await gameKey('SpeedRate','session',item=>item.paused);
     const savedWave=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const savedState=states.at(-1);
-    check(savedWave.version===4 && savedWave.checkpoint?.encounter.completedWave>0 && savedWave.pendingDefeat===null &&
+    assertIdleWaveSave(savedWave);
+    check(savedWave.version===5 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
       savedWave.credits===savedState.wallet && savedState.checkpointWave===savedWave.checkpoint.encounter.completedWave,
       'cleared waves atomically bank rewards and complete checkpoints',savedWave);
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),
@@ -4149,21 +4203,20 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(layouts.at(-1).selection==='ConfirmCancel','abandon initially focuses Cancel');
     await gameClick('ConfirmProceed','abandon');
     const abandoned=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(abandoned.checkpoint===null && abandoned.lastFinalizedRunId===savedWave.checkpoint.runId &&
-      abandoned.credits===savedWave.credits && abandoned.pendingDefeat===null,'confirmed abandon keeps banked rewards and finalizes run');
+    check(validateWaveAbandonSave({before:savedWave,after:abandoned}),'confirmed abandon keeps banked rewards and finalizes run');
     report.lifecycle.push({kind:'checkpoint-abandon',before:savedWave,after:abandoned});
     for(const viewport of matrix.viewports)await resize(viewport);await phaseMatrix('garage-after-abandon');
     await resize(VIEWPORTS.find(item=>item.name==='compact'));const purchaseStart=await mark();
     await gameClick('ShopEntry','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     if(!layouts.at(-1).shopControls.some(item=>item.name==='ShopCard_cannonAttackBuy'&&item.active))
       await gameClick('ShopTabAttack','hud-layout',item=>item.shopControls.some(control=>control.name==='ShopCard_cannonAttackBuy'&&control.active));
-    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===savedWave.credits-1 && bought.level===1 && bought.cannonDamage===30,'one salvage commits Cannon Attack level1',bought);
+    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===savedWave.credits-2 && bought.level===1 && bought.cannonDamage===30,'two salvage commits Cannon Attack level1',bought);
     await gameClick('ShopClose','hud-layout',item=>!item.shopControls.some(control=>control.name==='ShopClose'&&control.active));
     await page.waitForTimeout(600);if(player)check((await energy(purchaseStart,await mark())).maximum_rms>.0005,'rendered purchase cue measured');
     await screenshot('05-purchased');if(player)await saveAudio('workshop',{purchase:[purchaseStart,await mark()]});
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
-    check(again.level===1 && again.wallet===savedWave.credits-1 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
+    check(again.level===1 && again.wallet===savedWave.credits-2 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
     await resize(captureViewport);const hitStart=hits.length;await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
@@ -4215,9 +4268,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('terminal reload');
     const finalReload=await until(states,start,item=>item.action==='ready',60);
     check(!finalReload.hasCheckpoint && finalReload.runId===0 && finalReload.pendingRunId===0 &&
-      await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===JSON.stringify(naturalSaved),
+      assertWaveSavePreserved(naturalSaved,JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY))),
       'finalized natural defeat cannot resume after reload');
-    report.lifecycle.push({kind:'terminal-reload',saved:naturalSaved,state:finalReload});
+    report.lifecycle.push({kind:'terminal-reload',saved:JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)),state:finalReload});
     await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
     const backgroundBefore=await observation(),backgroundOracle=reference(backgroundBefore);
     const backgroundExpected=Object.values(backgroundOracle).at(-1),backgroundStart=states.length;
@@ -4235,7 +4288,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(true,'background natural defeat finalizes checkpoint once without payout',backgroundProof);
     const savedTerminalBytes=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
     for(let i=0;i<2;i++)await away('hidden',6000);
-    check(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)===savedTerminalBytes,
+    check(assertWaveSavePreserved(JSON.parse(savedTerminalBytes),JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY))),
       'repeated foreground returns cannot award or resurrect finalized run');
     await phaseMatrix('background-result');await gameKey('Claim','continue');
     report.qualification.natural_terminal='pass';

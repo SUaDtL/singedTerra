@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {appendFileSync,existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
-import {resolve} from 'node:path';
+import {appendFileSync,existsSync,mkdirSync,readFileSync,writeFileSync,realpathSync} from 'node:fs';
+import {resolve,dirname,relative,isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {performance} from 'node:perf_hooks';
 import {admitMilestoneFixtures} from './last-stand-wave-milestones.mjs';
@@ -21,22 +21,25 @@ export function parseEnduranceArguments(args){
   assert.ok(manifest && output && !manifest.startsWith('--') && !output.startsWith('--'));
   assert.equal(flags.filter(flag=>['--endurance','--smoke'].includes(flag)).length,1,'Choose exactly one observation mode');
   assert.equal(new Set(flags).size,flags.length,'No repeated flags');
-  assert.ok(flags.every(flag=>['--endurance','--smoke'].includes(flag)||/^--smoke-seconds=\d+$/.test(flag)),'Unknown endurance option');
+  assert.ok(flags.every(flag=>['--endurance','--smoke','--research'].includes(flag)||/^--smoke-seconds=\d+$/.test(flag)),'Unknown endurance option');
   const seconds=flags.filter(flag=>flag.startsWith('--smoke-seconds='));assert.ok(seconds.length<=1);
   const mode=flags.includes('--smoke')?'smoke':'endurance';
   assert.ok(mode==='smoke'||seconds.length===0,'Smoke duration cannot shorten endurance');
   const smokeSeconds=seconds.length?Number(seconds[0].split('=')[1]):120;
   assert.ok(Number.isSafeInteger(smokeSeconds)&&smokeSeconds>=30&&smokeSeconds<=600,'Smoke is a bounded 30–600 second diagnostic');
-  return {manifest,output,mode,smokeSeconds};
+  return {manifest,output,mode,smokeSeconds,...(flags.includes('--research')?{research:true}:{})};
 }
 
 // Observation accounting only. These helpers neither advance nor mutate the game.
-export function newEnduranceLedger(){return {previous:null,elapsedMs:0,activeMs:0,pausedMs:0,endedMs:0,unknownMs:0,
+export function newEnduranceLedger(expectedSpeed=1){
+  assert.ok([1,5].includes(expectedSpeed),'Observation must declare shipped 1x or researched 5x');
+  return {expectedSpeed,previous:null,elapsedMs:0,activeMs:0,pausedMs:0,endedMs:0,unknownMs:0,
   observedSimulationMs:0,simulationLeadAllowanceMs:0,simulationTransitionAllowanceMs:0,runClock:null,samples:0,documentTimeOrigin:null,
   lastProgressAt:0,lastTick:null,lastRunId:null};}
 export function accountEnduranceObservation(ledger,next){
   for(const key of ['atMs','timeOrigin','stateAgeMs','tick','runId'])assert.ok(Number.isFinite(next[key])&&next[key]>=0,'Finite observation '+key);
-  assert.ok(next.speed===0||next.speed===1,'Only shipped paused/1x speeds are admitted');
+  const speed=ledger.expectedSpeed;
+  assert.ok(next.speed===0||next.speed===speed,'Only paused or the declared actual speed is admitted');
   if(ledger.documentTimeOrigin===null)ledger.documentTimeOrigin=next.timeOrigin;
   assert.equal(next.timeOrigin,ledger.documentTimeOrigin,'The observed document cannot reload or change');
   assert.ok(next.stateAgeMs<=ENDURANCE_POLICY.maximumStateAgeMs,'Live state observation is stale');
@@ -46,7 +49,7 @@ export function accountEnduranceObservation(ledger,next){
       // The session emits a state at least once per simulation second. Allow the
       // baseline's observed age plus one fixed emission/transport interval. This
       // allowance is granted once per genuine run, never once per sample.
-      const allowanceMs=next.stateAgeMs+ENDURANCE_POLICY.maximumTickLeadMs;
+      const allowanceMs=(next.stateAgeMs+ENDURANCE_POLICY.maximumTickLeadMs)*speed;
       ledger.runClock={runId:next.runId,tick:next.tick,atMs:next.atMs,allowanceMs,activeMs:0,transitionAllowanceMs:0};
       ledger.simulationLeadAllowanceMs+=allowanceMs;
     }
@@ -55,7 +58,7 @@ export function accountEnduranceObservation(ledger,next){
   if(prior){
     const delta=next.atMs-prior.atMs;
     assert.ok(delta>=0&&delta<=ENDURANCE_POLICY.maximumSampleGapMs,'Unobserved clock gap cannot count as gameplay or sleep through qualification');
-    const active=value=>value.phase==='battle'&&!value.paused&&value.speed===1;
+    const active=value=>value.phase==='battle'&&!value.paused&&value.speed===speed;
     const bucket=active(prior)&&active(next)&&prior.runId===next.runId?'activeMs':
       prior.phase==='battle'&&next.phase==='battle'&&(prior.paused||next.paused)?'pausedMs':
       prior.phase!=='battle'&&next.phase!=='battle'?'endedMs':'unknownMs';
@@ -67,13 +70,13 @@ export function accountEnduranceObservation(ledger,next){
       else if(active(prior)||active(next)){
         // At most one bounded sample interval around an observed transition.
         // Fully paused/ended intervals never buy future simulation time.
-        ledger.runClock.transitionAllowanceMs+=delta;ledger.simulationTransitionAllowanceMs+=delta;
+        ledger.runClock.transitionAllowanceMs+=delta*speed;ledger.simulationTransitionAllowanceMs+=delta*speed;
       }
     }
     if(active(next)&&active(prior)&&next.runId===prior.runId&&next.tick===prior.tick)
       assert.ok(next.atMs-ledger.lastProgressAt<ENDURANCE_POLICY.maximumStallMs,'Active game stopped advancing');
   }
-  if(next.runId>0)assert.ok((next.tick-ledger.runClock.tick)*50<=ledger.runClock.activeMs+
+  if(next.runId>0)assert.ok((next.tick-ledger.runClock.tick)*50<=ledger.runClock.activeMs*speed+
     ledger.runClock.transitionAllowanceMs+ledger.runClock.allowanceMs,
     'Simulation acceleration exceeds observed active real elapsed time plus bounded transition and baseline allowances');
   if(next.tick!==ledger.lastTick||next.runId!==ledger.lastRunId)ledger.lastProgressAt=next.atMs;
@@ -84,7 +87,7 @@ export function enduranceVerdict(mode,ledger,{completed=false,finalBindingsVerif
   assert.ok(['smoke','endurance'].includes(mode));
   const qualified=mode==='endurance'&&completed&&!interrupted&&errors===0&&finalBindingsVerified&&
     ledger.activeMs>=ENDURANCE_POLICY.activeTargetMs&&ledger.elapsedMs<=ENDURANCE_POLICY.wallLimitMs&&
-    ledger.observedSimulationMs>=ledger.activeMs*.95&&ledger.observedSimulationMs<=ledger.activeMs+
+    ledger.observedSimulationMs>=ledger.activeMs*ledger.expectedSpeed*.95&&ledger.observedSimulationMs<=ledger.activeMs*ledger.expectedSpeed+
       ledger.simulationTransitionAllowanceMs+ledger.simulationLeadAllowanceMs&&
     storageLatencyVerified&&ledger.samples>=ENDURANCE_POLICY.activeTargetMs/ENDURANCE_POLICY.maximumSampleGapMs;
   return {enduranceQualified:qualified,status:errors?'failed':interrupted?'interrupted':qualified?'pass':
@@ -186,12 +189,43 @@ const inputHashes=()=>Object.fromEntries(inputPaths.map(path=>[path,sha(readFile
 const compactState=state=>Object.fromEntries(['phase','saveState','runId','activeTier','wave','completedWave','checkpointWave','hasCheckpoint',
   'checkpointBlocked','tick','hull','kills','wallet','paused','speed','fittingId'].map(key=>[key,state?.[key]??null]));
 
+export function admitResearchFixtures(fixtures,manifestPath,sourceRoot=root){
+  assert.equal(fixtures.schema,'last-stand-research-qualification-fixtures/v1');
+  assert.equal(fixtures.storageKey,saveKey);
+  assert.ok(Object.keys(fixtures.sourceSha256??{}).length>=20,'Production and fixture source closure required');
+  for(const [path,digest]of Object.entries(fixtures.sourceSha256)){
+    const location=resolve(sourceRoot,path),rel=relative(sourceRoot,location);
+    assert.ok(!isAbsolute(path)&&!rel.startsWith('..')&&!isAbsolute(rel),'Source must stay in checkout');
+    assert.match(digest,/^[a-f0-9]{64}$/);assert.equal(sha(readFileSync(location)),digest,'Fixture source changed: '+path);
+  }
+  const directory=realpathSync(dirname(manifestPath));
+  for(const fixture of fixtures.cases??[]){
+    assert.ok(/^[a-z0-9-]+$/.test(fixture.id));
+    assert.equal(fixture.savePath,fixture.id+'.json','Fixture uses its named sibling file');
+    const location=resolve(directory,fixture.savePath);assert.equal(realpathSync(location),location);
+    assert.equal(sha(readFileSync(location)),fixture.saveSha256,'Fixture bytes changed');
+    const save=JSON.parse(readFileSync(location));assert.equal(save.version,5);
+    if(fixture.id==='mature-5x'){
+      assert.equal(fixture.requestedSpeed,5);assert.equal(save.research.completedRanks.gameSpeed,8,'Five times speed must be earned in fixture');
+      assert.equal(save.checkpoint,null,'Mature fixture deploys through rendered input');
+      assert.equal(fixture.qualificationPurchasePolicy?.intervalRealSeconds,900);
+      assert.equal(fixture.qualificationPurchasePolicy?.quantity,'Max');
+      assert.equal(fixture.qualificationPurchasePolicy?.intentsPerInterval,1);
+      assert.deepEqual(fixture.qualificationPurchasePolicy?.trackOrder,
+        ['cannonAttack','hullCapacity','scrapYield','cannonAttack','cannonCycle','launcherAttack','armor']);
+    }
+  }
+  assert.equal(fixtures.cases?.filter(item=>item.id==='mature-5x').length,1);
+}
+
 async function main(){
   const options=parseEnduranceArguments(process.argv.slice(2));
   const manifestPath=resolve(options.manifest),manifestBytes=readFileSync(manifestPath),fixtures=JSON.parse(manifestBytes);
-  admitMilestoneFixtures(fixtures,manifestPath);
-  const fixture=fixtures.cases.find(item=>item.fitting==='repair'&&item.targetWave===300);assert.ok(fixture);
-  const saveBytes=readFileSync(fixture.savePath);assert.equal(sha(saveBytes),fixture.saveSha256);
+  const admitFixtures=options.research?admitResearchFixtures:admitMilestoneFixtures;
+  admitFixtures(fixtures,manifestPath);
+  const fixture=fixtures.cases.find(item=>options.research?item.id==='mature-5x':item.fitting==='repair'&&item.targetWave===300);assert.ok(fixture);
+  const saveBytes=readFileSync(options.research?resolve(dirname(manifestPath),fixture.savePath):fixture.savePath);assert.equal(sha(saveBytes),fixture.saveSha256);
+  const expectedSpeed=options.research?5:1;
   const output=resolve(options.output);assert.ok(!existsSync(output),'An observation never overwrites existing evidence');
   for(const name of ['verify-last-stand-source.mjs','verify-last-stand.mjs'])
     execFileSync(process.execPath,[resolve(root,'scripts/assets',name)],{cwd:root,encoding:'utf8'});
@@ -200,13 +234,18 @@ async function main(){
   const runtimeBytes=readFileSync(runtimePath),runtime=JSON.parse(runtimeBytes),sources=inputHashes();
   const checkSourceBindings=()=>{assert.deepEqual(inputHashes(),sources,'Runner input source changed');
     assert.equal(sha(readFileSync(runtimePath)),sha(runtimeBytes),'Packaged runtime manifest changed');
-    assert.equal(sha(readFileSync(manifestPath)),sha(manifestBytes),'Fixture manifest changed');admitMilestoneFixtures(fixtures,manifestPath);};
+    assert.equal(sha(readFileSync(manifestPath)),sha(manifestBytes),'Fixture manifest changed');admitFixtures(fixtures,manifestPath);};
   const verifyServed=async()=>{for(const [path,digest]of Object.entries({...runtime.files,'index.html':runtime.wrapperSha256}))
     assertServedBytes(await fetchBoundRuntime(base,path),digest);};
   await verifyServed();mkdirSync(output,{recursive:true});
-  const ledger=newEnduranceLedger(),report={schema:'last-stand-real-elapsed-endurance/v1',status:'running',enduranceQualified:false,
-    mode:options.mode,policy:ENDURANCE_POLICY,seeded:true,normalSpeed:true,command:[process.execPath,...process.argv.slice(1)],
-    scope:'One long-lived headless Chromium document with real elapsed gameplay at shipped 1x. Accelerated production-earned initial save; rendered Continue/redeploy after natural defeat. No purchases, clock changes, offline simulation, 5x farming-duration, native media or physical-device claim.',
+  const ledger=newEnduranceLedger(expectedSpeed),report={schema:'last-stand-real-elapsed-endurance/v1',status:'running',enduranceQualified:false,
+    mode:options.mode,policy:ENDURANCE_POLICY,seeded:true,normalSpeed:!options.research,expectedSpeed,
+    purchasePolicy:options.research?{...fixture.qualificationPurchasePolicy,
+      firstPurchaseRealSeconds:options.mode==='smoke'?30:900,
+      note:options.mode==='smoke'?'Early rendered purchase diagnostic; cannot qualify endurance.':'Measured fifteen-minute cadence.'}:null,
+    command:[process.execPath,...process.argv.slice(1)],
+    scope:options.research?'One headless Chromium document, ten real active hours at researched 5x from a declared mature development profile. Rendered purchases and speed controls only; no time acceleration beyond the actual game setting. No native audio or physical-device claim.':
+      'One long-lived headless Chromium document with real elapsed gameplay at shipped 1x. Accelerated production-earned initial save; rendered Continue/redeploy after natural defeat. No purchases, clock changes, offline simulation, 5x farming-duration, native media or physical-device claim.',
     startedAt:new Date().toISOString(),fixtureManifest:manifestPath,fixtureSha256:sha(manifestBytes),saveSha256:fixture.saveSha256,
     inputs:sources,packaged,host:process.platform,ledger,actions:[],actionsTotal:0,actionsDropped:0,errors:[],errorsTotal:0,errorsDropped:0,
     callback:{count:0,maximumSteps:0,maximumElapsedSeconds:0,maximumPendingSeconds:0},audioCueTelemetry:{events:0,byName:{}},
@@ -221,7 +260,7 @@ async function main(){
   const persist=()=>writeFileSync(resultPath,JSON.stringify(report,null,2));
   const recordError=error=>{const message=String(error);report.errorsTotal++;report.errorsDropped+=appendBounded(report.errors,
     {at:new Date().toISOString(),error:message.slice(0,4000),truncated:message.length>4000},ENDURANCE_POLICY.maximumErrors);};
-  let browser,context,page,cdp,latest,layout,latestAt=0,readyObserved=false,interrupted=false,completed=false,observerError,started,previousRun=0;
+  let browser,context,page,cdp,latest,layout,shop,latestAt=0,readyObserved=false,interrupted=false,completed=false,observerError,started,previousRun=0;
   const onSignal=()=>{interrupted=true;};process.once('SIGINT',onSignal);process.once('SIGTERM',onSignal);persist();
   try {
     const {chromium}=await import('@playwright/test');
@@ -238,6 +277,7 @@ async function main(){
       if(text.length>2*1024*1024)throw new Error('Telemetry exceeds the bounded observer input');
       if(text.startsWith('ST_LS_STATE ')){latest=JSON.parse(text.slice(12));latestAt=performance.now();readyObserved||=isEnduranceReadyObservation(latest);}
       else if(text.startsWith('ST_LS_HUD_LAYOUT '))layout=readShopControlObservation(text);
+      else if(text.startsWith('ST_LS_SHOP_STATE '))shop=JSON.parse(text.slice(17));
       else if(text.startsWith('ST_ENC_CALLBACK ')){const event=JSON.parse(text.slice(16));report.callback.count++;
         report.callback.maximumSteps=Math.max(report.callback.maximumSteps,event.steps??0);
         report.callback.maximumElapsedSeconds=Math.max(report.callback.maximumElapsedSeconds,event.elapsed??0);
@@ -266,12 +306,60 @@ async function main(){
       report.actionsTotal++;report.actionsDropped+=appendBounded(report.actions,{at:new Date().toISOString(),name,x,y,input},ENDURANCE_POLICY.maximumActions);
     };
     await page.goto(new URL('last-stand/',base).href);await until(()=>readyObserved&&latest?.saveState==='ready',60);
-    assert.equal(latest.checkpointWave,299);await resumeEarnedCheckpoint(layout,click);await until(()=>latest?.phase==='battle'&&latest.paused);
-    assert.equal(latest.tick,JSON.parse(saveBytes).checkpoint.encounter.tick);
-    await click('SpeedRate');await until(()=>latest?.phase==='battle'&&!latest.paused&&latest.speed===1);
+    if(options.research){
+      assert.equal(latest.hasCheckpoint,false);await resumeEarnedCheckpoint(layout,click);await until(()=>latest?.phase==='battle'&&!latest.paused);
+      for(let rate=1.5;rate<=5;rate+=.5){await click('SpeedPlus');await until(()=>latest.speed===rate);}
+    }else{
+      assert.equal(latest.checkpointWave,299);await resumeEarnedCheckpoint(layout,click);await until(()=>latest?.phase==='battle'&&latest.paused);
+      assert.equal(latest.tick,JSON.parse(saveBytes).checkpoint.encounter.tick);
+      await click('SpeedRate');await until(()=>latest?.phase==='battle'&&!latest.paused&&latest.speed===1);
+    }
     cdp=await context.newCDPSession(page);await cdp.send('Performance.enable');
     started=performance.now();report.observationStartedAt=new Date().toISOString();
     let nextSummary=0,nextScreenshot=0,lastCheckpoint=null;
+    let nextPurchaseActiveMs=options.research&&options.mode==='smoke'?30000:900000,purchaseCursor=0;
+    const periodicPurchase=async()=>{
+      const policy=fixture.qualificationPurchasePolicy;
+      await click('ShopEntry');await until(()=>shop?.open&&shop.mode==='Run');
+      try{
+        let skipped=0;
+        while(skipped<policy.trackOrder.length){
+          const card=shop.cards.find(item=>item.key===policy.trackOrder[purchaseCursor%policy.trackOrder.length]);
+          assert.ok(card,'Declared policy track exists in actual run');
+          if(card.level<card.cap)break;
+          purchaseCursor++;skipped++;
+        }
+        if(skipped===policy.trackOrder.length)return;
+        for(let n=0;n<4;n++){
+          const quantity=layout.shopControls.find(item=>item.name==='ShopQuantity');
+          if(quantity?.label?.includes('[MAX]'))break;
+          await click('ShopQuantity');
+        }
+        assert.ok(layout.shopControls.find(item=>item.name==='ShopQuantity')?.label?.includes('[MAX]'),'Actual Max quantity selected');
+        const key=policy.trackOrder[purchaseCursor%policy.trackOrder.length];
+        let card=shop.cards.find(item=>item.key===key);
+        await click('ShopTab'+card.category);await until(()=>shop.category===card.category);
+        card=shop.cards.find(item=>item.key===key);
+        if(!card.canPurchase){assert.equal(card.refusal,'InsufficientScrap');return;}
+        const before={n:card.n,spent:shop.spentScrap};
+        // A live kill may invalidate the displayed version between pointer
+        // down/up. Retry a freshly rendered quote at most twice; never replay
+        // an accepted debit or invoke a game method from the observer.
+        for(let attempt=0;attempt<3;attempt++){
+          await click('ShopCard_'+key+'Buy');await page.waitForTimeout(100);
+          const after=shop.cards.find(item=>item.key===key);
+          if(after.n>before.n){
+            assert.ok(shop.spentScrap>before.spent);
+            report.periodicPurchases??=[];
+            assert.ok(report.periodicPurchases.length<64,'Bounded fifteen-minute purchase record');
+            report.periodicPurchases.push({atActiveMs:ledger.activeMs,key,quantity:after.n-before.n,
+              cost:shop.spentScrap-before.spent,runId:latest.runId,tick:latest.tick});
+            purchaseCursor++;return;
+          }
+        }
+        throw new Error('Rendered periodic purchase remained stale after bounded retries');
+      }finally{if(shop?.open)await click('ShopClose');}
+    };
     const summary=async(final=false)=>{
       checkSourceBindings();assert.ok(report.summaries<ENDURANCE_POLICY.maximumSummaries,'Bounded minute summary count');
       const probe=await page.evaluate(()=>window.__stEnduranceProbe.snapshot());
@@ -281,7 +369,7 @@ async function main(){
         storageLatency.readbacks.unconfirmed===0&&!storageLatency.pending;
       const metrics=await cdp.send('Performance.getMetrics');const values=Object.fromEntries(metrics.metrics.map(item=>[item.name,item.value]));
       const raw=await page.evaluate(key=>localStorage.getItem(key),saveKey);assert.ok(raw&&raw.length<128*1024,'Bounded saved checkpoint');
-      const saved=JSON.parse(raw);assert.equal(saved.version,4);assert.equal(saved.pendingDefeat,null,'Current runs never create legacy Claim rewards');
+      const saved=JSON.parse(raw);assert.equal(saved.version,5);assert.equal(saved.pendingDefeat,null,'Current runs never create legacy Claim rewards');
       if(saved.checkpoint){assert.equal(saved.checkpoint.encounter.rulesVersion,'last-stand-waves-v1');
         if(lastCheckpoint?.runId===saved.checkpoint.runId)assert.ok(saved.checkpoint.encounter.completedWave>=lastCheckpoint.wave,'Committed checkpoint cannot go backwards');
         lastCheckpoint={runId:saved.checkpoint.runId,wave:saved.checkpoint.encounter.completedWave};}
@@ -311,10 +399,13 @@ async function main(){
       if(options.mode==='smoke'?ledger.elapsedMs>=options.smokeSeconds*1000:ledger.activeMs>=ENDURANCE_POLICY.activeTargetMs){completed=true;break;}
       assert.ok(ledger.elapsedMs<ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
       if(now-started>=nextSummary){await summary();nextSummary+=ENDURANCE_POLICY.summaryEveryMs;}
+      if(options.research&&ledger.activeMs>=nextPurchaseActiveMs&&latest.phase==='battle'&&!latest.paused){
+        await periodicPurchase();nextPurchaseActiveMs+=900000;
+      }
       if(latest.phase==='result'){await click('Claim');await until(()=>latest?.phase==='workshop');}
       if(['garage','workshop'].includes(latest.phase)){
         assert.equal(latest.hasCheckpoint,false,'Unexpected resumable run cannot be silently replaced');
-        await click(latest.phase==='garage'?'Deploy':'Redeploy');await until(()=>latest?.phase==='battle'&&!latest.paused&&latest.speed===1);
+        await click(latest.phase==='garage'?'Deploy':'Redeploy');await until(()=>latest?.phase==='battle'&&!latest.paused&&latest.speed===expectedSpeed);
       }
       await page.waitForTimeout(1000);
     }

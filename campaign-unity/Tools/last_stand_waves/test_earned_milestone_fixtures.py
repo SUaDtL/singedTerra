@@ -19,7 +19,7 @@ class EarnedMilestoneFixtureTests(unittest.TestCase):
             with self.subTest(fitting=case["fitting"], wave=case["targetWave"]):
                 before, after = json.loads(case["save"]), json.loads(case["expectedSave"])
                 target = case["targetWave"]
-                self.assertEqual(before["version"], 4)
+                self.assertEqual(before["version"], 5)
                 self.assertEqual(before["checkpoint"]["encounter"]["completedWave"], target - 1)
                 self.assertEqual(after["checkpoint"]["encounter"]["completedWave"], target)
                 self.assertEqual(after["checkpoint"]["runId"], before["checkpoint"]["runId"])
@@ -50,7 +50,11 @@ class EarnedMilestoneFixtureTests(unittest.TestCase):
             for case in (row for row in self.report["cases"] if row["fitting"] == fitting):
                 self.assertEqual(sum(case["permanentLevels"].values()), case["totalPermanentPurchases"])
                 self.assertGreater(case["totalPermanentSpend"], 0)
-                self.assertLessEqual(case["totalPermanentSpend"], trajectory[0]["closingWallet"])
+                prior_runs = [row for row in trajectory if row["run"] < case["trajectoryRun"]]
+                self.assertTrue(all(row["status"] == "Defeated" for row in prior_runs))
+                earned_before_deployment = sum(row["closingWallet"] - row["openingWallet"] for row in prior_runs)
+                self.assertLessEqual(case["totalPermanentSpend"], earned_before_deployment,
+                                     "Permanent investment must be funded before the fixture run starts.")
                 before = json.loads(case["save"])
                 self.assertEqual(before["credits"], case["totalEarnedSalvage"] - case["totalPermanentSpend"])
                 self.assertEqual(before["checkpoint"]["shop"]["spentScrap"], case["runPurchaseSpend"])

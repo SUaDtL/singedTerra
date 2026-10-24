@@ -17,7 +17,7 @@ CHECKS = Path(__file__).with_name("SelectionChecks.cs")
 
 def compile_checks(executable, source=SOURCE):
     dependencies = [SOURCE.parent / name for name in (
-        "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs", "LastStandTierCatalog.cs",
+        "LastStandUpgradeCatalog.cs", "LastStandEconomyCatalog.cs", "MechanicsShopModel.cs", "LastStandTierCatalog.cs",
         "LastStandWaveCatalog.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs")]
     return subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+",
                            f"-out:{executable}", str(source), *[str(p) for p in dependencies], str(CHECKS)],
