@@ -119,6 +119,12 @@
       "command": "npm run build",
       "outcome": "pass",
       "note": "Includes strict typecheck, source/package admission and production Vite build after refreshing the export."
+    },
+    {
+      "command": "npm run check",
+      "outcome": "pass",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/engine-followup.log",
+      "note": "Full engine check after preserving the two bad-clipping checks with current shared error messages."
     }
   ],
   "review": {
@@ -245,7 +251,31 @@
     "outcome": "failure",
     "classification": "pass",
     "reason": "Linux Mono file sharing is process-local; wave oracle omitted LastStandSelection.cs; dependency audit found vulnerable development tools.",
-    "repair": "Explicit OS range lock plus protected local ownership; complete hashed oracle inputs; independently reviewed Vitest 5.0.5 and Undici 8.12.3 closure. New exact-head Linux/browser CI required."
+    "repair": "Explicit OS range lock plus protected local ownership; complete hashed oracle inputs; independently reviewed Vitest 5.0.5 and Undici 8.12.3 closure. New exact-head Linux/browser CI required.",
+    "leaseRepairLinuxProof": {
+      "head": "7bdb9cc295816d954b413ccf6e23d82c33a19c33",
+      "run": 40211282180,
+      "job": 121222970501,
+      "step": "Verify Last Stand pure architecture regressions",
+      "outcome": "success",
+      "source": "Completed GitHub job log: all 37 architecture regressions passed on Linux; browser job later failed separately."
+    }
+  },
+  "hostedCiCurrent": {
+    "head": "7bdb9cc295816d954b413ccf6e23d82c33a19c33",
+    "run": 40211282180,
+    "outcome": "failure",
+    "passed": [
+      "CI classification, Edge runtime and Edge function jobs",
+      "All four core browser shards, product browser, tier browser and Last Stand shard 11",
+      "37 pure architecture regressions on hosted Linux"
+    ],
+    "failures": [
+      "Engine: two stale expected clipping diagnostic strings; corrected in fde5a046 with unchanged malformed-mask fixtures and full local npm run check passing.",
+      "Eleven Last Stand browser shards: driver requires MenuAbandon fully visible before scrolling its actual settings viewport. Driver fix remains pending; guards are intact."
+    ],
+    "manualMenuObservation": "At 1280x720, ordinary wheel input exposes Abandon Run; clicking opens confirmation; Cancel preserves paused wave 7 and hull120/120. This is a rendered observation, not an automated driver pass.",
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/menu-before-scroll.png; menu-after-scroll.png; menu-confirmation.png"
   },
   "remaining": [
     "Android module installation, actual APK and real device lifecycle/storage/audio/performance qualification",
