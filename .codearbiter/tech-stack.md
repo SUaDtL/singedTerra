@@ -74,9 +74,9 @@ Three test layers, by runtime:
   fastForward, strata, audioEdges, …).
 - **Edge Functions** — Deno `*.test.ts` (`npm run check:edge` → `deno test`), covering the pure
   referee logic (validate/authorize/coerce/reap) extracted from the handlers.
-- **Client (DOM + fetch)** — **Vitest** `5.0.0` with the **jsdom** environment (`npm run test:client`),
+- **Client (DOM + fetch)** — **Vitest** `5.0.5` with the **jsdom** environment (`npm run test:client`),
   giving the DOM- and `fetch`-heavy client code (Lobby, HUD, NetworkClient) a seam the tsx harnesses
-  cannot reach. **Coverage:** `@vitest/coverage-v8` `5.0.0` via
+  cannot reach. **Coverage:** `@vitest/coverage-v8` `5.0.5` via
   `npm run coverage:client` — this is the command the
   `/ca:refactor` Phase-2 gate reads. Added 2026-07-03 to unblock the client refactor backlog
   (#85/#87/#91); vitest/vite/esbuild are dev-only (not in the shipped bundle).
