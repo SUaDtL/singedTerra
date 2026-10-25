@@ -78,29 +78,31 @@ replace or weaken that packaging contract.
 
 ## Delivery state on 2026-10-25
 
-Build receipts below describe their recorded source inventories. The packaged
-WebGL release uses source inventory
-`cf8a8c748c0f5f2f041063663491bca0dba5590d554dd8107c5e652c68c2413e`.
-The Windows release and first browser journey used inventory
-`984c3cb12ed6a2274de7889079c44bb2e55149f3bf0e8b48c8accb9a1f1cccaf`;
-the only subsequent source changes remove trailing whitespace from Unity metadata.
-Runtime code is unchanged. No public
-release, store submission, merge, deployment or live-host qualification is claimed.
+Build receipts below describe their recorded source inventories. A hosted Linux
+failure exposed process-local file-sharing behavior in Mono. Native storage now
+uses an explicit OS range lock and a process registry that protects its lifetime.
+Save format and checkpoint semantics are unchanged. Windows release and WebGL
+were rebuilt after that repair; earlier interaction results remain historical.
+No public release, store submission, merge, deployment or live-host qualification
+is claimed.
 
 | Target | Measured or observed evidence | Remaining proof |
 | --- | --- | --- |
-| WebGL | Final release export passed in [build-webgl-20261025T100855Z-3d64fe](../Evidence/last-stand-architecture/build-webgl-20261025T100855Z-3d64fe/result.json), then the [original export receipt](../Evidence/last-stand-playable-loop/t05/build-20261025T100855Z-3d64fe/result.json) was admitted and packaged. Production typecheck/build passed. In-app browser checks exercised tier/environment preview, settings, a live purchase, wave clears and reload/resume on the prior package with identical runtime code. | Funded/offline research, two-tab ownership, native/background/audio, endurance and exact-candidate hosted CI retain their separate qualification obligations. |
-| Windows | Development build reported `Succeeded`, `174,822,523` bytes: [development receipt](../Evidence/last-stand-architecture/build-windows-20261025T093538Z-2a6afe/result.json). Release configuration also succeeded, `112,304,539` bytes: [release receipt](../Evidence/last-stand-architecture/build-windows-20261025T095347Z-01cfb8/result.json). Both use x64 Mono, scene `LastStandPrototype`, version `1.0`. Actual menu, settings, purchase and checkpoint-relaunch checks passed in both configurations; the development session also cleared five waves. | Hardware audio, performance, abnormal termination and endurance remain unmeasured. |
+| WebGL | Release export passed in [build-webgl-20261025T161237Z-583e89](../Evidence/last-stand-architecture/build-webgl-20261025T161237Z-583e89/result.json), then the [original export receipt](../Evidence/last-stand-playable-loop/t05/build-20261025T161237Z-583e89/result.json) was admitted and packaged. Production typecheck/build passed. Earlier browser checks exercised tier/environment preview, settings, purchase, wave clears and reload/resume. | Funded/offline research, two-tab ownership, native/background/audio, endurance and exact-candidate hosted CI retain their separate qualification obligations. |
+| Windows | Rebuilt release reported `Succeeded`, `112,305,051` bytes: [release receipt](../Evidence/last-stand-architecture/build-windows-20261025T161123Z-81ff23/result.json). Uses x64 Mono, scene `LastStandPrototype`, version `1.0`. Rendered resume, run shop, settings and process-restart checks passed after the lease repair. Earlier development and release journeys also exercised purchases; the development session cleared five waves. | Hardware audio, performance, abnormal termination and endurance remain unmeasured. The older development build does not qualify the new lease implementation. |
 | Android | Existing SDK reused; Java 17 and NDK r27c installed at the explicit paths below. The Android module installer has a verified Unity signature. After the owner's popup update, a new installation attempt still returned Windows' operation-canceled error; the module remains absent. | Unity Android module installation, source-bound APK build, installation on a declared real device and all native interaction/lifecycle/performance qualification. No APK success is claimed. |
 
 Eight focused build/preflight checks pass. They cover source/toolchain/scene/
 configuration rejection, modified/missing/extra artifact rejection, incomplete
-Windows module variants, missing Android tools and wrong NDK version. Eleven
+Windows module variants, missing Android tools and wrong NDK version. Fourteen
 native file/process tests pass independently of PlayerPrefs, including surviving
 writer contention, stale profile/settings protection, real Windows junction
 refusal with unchanged target bytes and compiled guard-removal negative controls.
-The maintained pure runner passed 33 checks under Roslyn (16.819 seconds) and mcs
-(12.958 seconds). Six invalid imported-scene configurations were rejected by the
+The maintained pure runner passed 37 checks under Roslyn (18.217 seconds) and mcs
+(13.942 seconds). The lease checks include an independent OS-lock holder,
+same-process observer disposal and a compiled lock-removal negative control.
+The wave oracle also compiles its complete hashed source list with real Mono.
+Six invalid imported-scene configurations were rejected by the
 actual Unity build hook without saving the temporary scenes. The focused
 BattleShop check passed after correcting its legacy test funding fixture.
 These local checks do not establish Android filesystem behavior.
@@ -115,6 +117,9 @@ funded-research, long-session, physical audio or device qualification.
 After metadata cleanup and repackaging, the executing agent reloaded the final
 package and used its rendered Resume Run and Run Upgrades controls. The same
 paused wave 7, hull 120/120, Cannon Attack level 1 and 103 Scrap were restored.
+The lease-repair package `Web-20261025T161237Z-583e89` passed the same rendered
+checkpoint and run-shop recheck. The temporary browser viewport was reset;
+the existing preview at port 4174 remains the only game server.
 
 The Windows development-player follow-up used rendered native input, with no
 save seeding. It cleared five waves, bought one Cannon Attack level, then exited
@@ -132,6 +137,21 @@ wave 6 restored both the prior level 1 and its 85 Scrap on relaunch, consistent
 with completed-wave recovery. Music Off persisted separately and was restored
 to On. The release player was closed after these checks. This does not establish
 live-combat or performance parity between the two configurations.
+
+After the lease repair, release `LastStand-windows-20261025T161123Z-81ff23`
+resumed the existing checkpoint paused at wave 6 with hull 120/120, 85 Scrap
+and Cannon Attack level 1. Music Off was saved, the process exited, and relaunch
+restored both the checkpoint and that preference. The original On preference
+was restored and the player closed. Screenshots are retained as
+`native-followup-20261025/lease-release-*.png` in the evidence directory above.
+
+Hosted CI on `1c56a7b1` passed classification, then exposed the native Mono lease
+defect, an omitted `LastStandSelection.cs` wave-oracle input and dependency
+advisories. All three received scoped repairs. The reviewed development-tool
+closure updates Vitest/coverage to 5.0.5 and Undici to 8.12.3 without changing
+runtime dependencies or jsdom. Audit reports zero vulnerabilities; 2,405 client
+tests and typecheck pass. Current hosted Linux and full CI results remain a
+separate obligation recorded on the PR.
 
 The owner reported approving the popup. Subsequent read-only firewall inspection
 found two enabled Allow/Public rules for the development executable. The agent

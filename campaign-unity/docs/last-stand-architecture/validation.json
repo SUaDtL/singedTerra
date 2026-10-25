@@ -3,20 +3,123 @@
   "date": "2026-10-25",
   "implementationBase": "07dc13c0ea0b31af973b24402ea9bdedfb8cc815",
   "qualification": "partial",
-  "finalPlayerSourceInventorySha256": "cf8a8c748c0f5f2f041063663491bca0dba5590d554dd8107c5e652c68c2413e",
+  "finalPlayerSourceInventorySha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc",
   "localChecks": [
-    {"command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py", "passed": 33, "failed": 0, "seconds": 16.819, "host": "Windows Roslyn"},
-    {"command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py", "passed": 33, "failed": 0, "seconds": 12.958, "host": "Windows Mono/mcs, explicit compiler override"},
-    {"suite": "last_stand_research", "passed": 62, "failed": 0, "seconds": 137.874},
-    {"suite": "last_stand_waves/test_wave_model.py", "passed": 10, "failed": 0, "seconds": 9.422},
-    {"suite": "last_stand_controls/test_menu.py", "casesPassed": 19, "failed": 0},
-    {"suite": "Unity UI foundation and actual observation emitter", "outcome": "pass", "scope": "Desktop, portrait and short landscape; four emitted garage/settings/research/history packets accepted by JS and Python decoders; malformed packets refused."},
-    {"suite": "LastStandContentValidationChecks.Run", "refusalCasesPassed": 6, "seconds": 8.705, "savedSceneUnchanged": true},
-    {"suite": "LastStandShopChecks.RunBattleShop", "outcome": "pass", "seconds": 14.858},
-    {"command": "node --test scripts/ci/ciWorkflow.test.mjs", "passed": 188, "failed": 0, "seconds": 0.633},
-    {"command": "node --test scripts/ci/browserMatrix.test.mjs scripts/ci/lastStandEvidenceSetup.test.mjs scripts/ci/ciWorkflow.test.mjs", "passed": 214, "failed": 0, "seconds": 0.780022, "origin": "coverage agent", "note": "Includes isolated shared-contract admission, current purchase funding and CRLF source extraction. Both edited files passed node --check; independent review found no weakened assertions."},
-    {"suite": "All 20 Node test files selected by the CI scope job", "passed": 436, "failed": 0, "skipped": 0, "seconds": 6.6670022, "origin": "coverage agent", "note": "Includes dependency-free milestone/endurance imports and explicit LF/CRLF serializer extraction cases. Production assertions and runtime code are unchanged."},
-    {"command": "npm run build", "environment": {"VITE_BASE": "/singedTerra/"}, "outcome": "pass", "includes": ["source/export admission", "strict TypeScript", "production bundle"]}
+    {
+      "command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
+      "passed": 37,
+      "failed": 0,
+      "seconds": 18.217,
+      "host": "Windows Roslyn",
+      "origin": "foundation_baseline tool outputs",
+      "note": "Includes independent OS range-lock and observer-disposal regressions plus real wave-oracle compile. Linux GREEN is still separate."
+    },
+    {
+      "command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
+      "passed": 37,
+      "failed": 0,
+      "seconds": 13.942,
+      "host": "Windows Mono/mcs, explicit compiler override",
+      "origin": "foundation_baseline tool outputs",
+      "note": "Includes independent OS range-lock and observer-disposal regressions plus real wave-oracle compile. Linux GREEN is still separate."
+    },
+    {
+      "suite": "last_stand_research",
+      "passed": 62,
+      "failed": 0,
+      "seconds": 137.874
+    },
+    {
+      "suite": "last_stand_waves/test_wave_model.py",
+      "passed": 10,
+      "failed": 0,
+      "seconds": 9.422
+    },
+    {
+      "suite": "last_stand_controls/test_menu.py",
+      "casesPassed": 19,
+      "failed": 0
+    },
+    {
+      "suite": "Unity UI foundation and actual observation emitter",
+      "outcome": "pass",
+      "scope": "Desktop, portrait and short landscape; four emitted garage/settings/research/history packets accepted by JS and Python decoders; malformed packets refused."
+    },
+    {
+      "suite": "LastStandContentValidationChecks.Run",
+      "refusalCasesPassed": 6,
+      "seconds": 8.705,
+      "savedSceneUnchanged": true
+    },
+    {
+      "suite": "LastStandShopChecks.RunBattleShop",
+      "outcome": "pass",
+      "seconds": 14.858
+    },
+    {
+      "command": "node --test scripts/ci/ciWorkflow.test.mjs",
+      "passed": 188,
+      "failed": 0,
+      "seconds": 0.633
+    },
+    {
+      "command": "node --test scripts/ci/browserMatrix.test.mjs scripts/ci/lastStandEvidenceSetup.test.mjs scripts/ci/ciWorkflow.test.mjs",
+      "passed": 214,
+      "failed": 0,
+      "seconds": 0.780022,
+      "origin": "coverage agent",
+      "note": "Includes isolated shared-contract admission, current purchase funding and CRLF source extraction. Both edited files passed node --check; independent review found no weakened assertions."
+    },
+    {
+      "suite": "All 20 Node test files selected by the CI scope job",
+      "passed": 436,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 6.6670022,
+      "origin": "coverage agent",
+      "note": "Includes dependency-free milestone/endurance imports and explicit LF/CRLF serializer extraction cases. Production assertions and runtime code are unchanged."
+    },
+    {
+      "command": "npm run build",
+      "environment": {
+        "VITE_BASE": "/singedTerra/"
+      },
+      "outcome": "pass",
+      "includes": [
+        "source/export admission",
+        "strict TypeScript",
+        "production bundle"
+      ]
+    },
+    {
+      "command": "npm run coverage --workspace @singedterra/client",
+      "passed": 2405,
+      "filesPassed": 246,
+      "failed": 0,
+      "seconds": 70.47,
+      "coverage": {
+        "statements": 91.72,
+        "branches": 84.79,
+        "functions": 91.3,
+        "lines": 94.91
+      },
+      "toolVersion": "vitest 5.0.5"
+    },
+    {
+      "command": "npm run audit:deps",
+      "outcome": "pass",
+      "vulnerabilities": 0
+    },
+    {
+      "command": "node --import tsx scripts/checks/dependency_contract.mjs",
+      "outcome": "pass",
+      "assertions": 15
+    },
+    {
+      "command": "npm run build",
+      "outcome": "pass",
+      "note": "Includes strict typecheck, source/package admission and production Vite build after refreshing the export."
+    }
   ],
   "review": {
     "security": "PASS; no unresolved findings",
@@ -24,29 +127,101 @@
     "numericUnityCoverage": "unmeasured; no Unity/C#/Python coverage command is declared"
   },
   "builds": [
-    {"target": "webgl", "configuration": "release", "outcome": "pass", "stamp": "20261025T100855Z-3d64fe", "packaged": true, "note": "Rebuilt after trailing-whitespace cleanup in Unity metadata; runtime code unchanged from browser journey."},
-    {"target": "windows", "configuration": "development", "outcome": "pass", "stamp": "20261025T093538Z-2a6afe", "reportedBytes": 174822523, "note": "Precedes the final Editor-only validation additions; runtime source is unchanged."},
-    {"target": "windows", "configuration": "release", "outcome": "pass", "stamp": "20261025T095347Z-01cfb8", "reportedBytes": 112304539, "sourceInventorySha256": "984c3cb12ed6a2274de7889079c44bb2e55149f3bf0e8b48c8accb9a1f1cccaf"},
-    {"target": "android", "configuration": "development", "outcome": "blocked", "preflightExit": 2, "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. After the owner's popup update, the new installer attempt returned operation canceled at 2026-10-25T15:39:36Z. Module remains absent; owner interaction with Unity administrator prompt is pending."}
+    {
+      "target": "webgl",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T100855Z-3d64fe",
+      "packaged": true,
+      "note": "Rebuilt after trailing-whitespace cleanup in Unity metadata; runtime code unchanged from browser journey.",
+      "supersededByLeaseRepair": true
+    },
+    {
+      "target": "windows",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261025T093538Z-2a6afe",
+      "reportedBytes": 174822523,
+      "note": "Precedes the final Editor-only validation additions; runtime source is unchanged."
+    },
+    {
+      "target": "windows",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T095347Z-01cfb8",
+      "reportedBytes": 112304539,
+      "sourceInventorySha256": "984c3cb12ed6a2274de7889079c44bb2e55149f3bf0e8b48c8accb9a1f1cccaf",
+      "supersededByLeaseRepair": true
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "blocked",
+      "preflightExit": 2,
+      "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. After the owner's popup update, the new installer attempt returned operation canceled at 2026-10-25T15:39:36Z. Module remains absent; owner interaction with Unity administrator prompt is pending."
+    },
+    {
+      "target": "windows",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T161123Z-81ff23",
+      "sourceInventorySha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc",
+      "packaged": false,
+      "note": "Rebuilt after the native lease repair."
+    },
+    {
+      "target": "webgl",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T161237Z-583e89",
+      "sourceInventorySha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc",
+      "packaged": true,
+      "note": "Rebuilt after the native lease repair."
+    }
   ],
   "browserJourney": {
     "package": "Web-20261025T095204Z-3f937d",
     "host": "Codex in-app browser",
     "url": "http://127.0.0.1:4174/singedTerra/last-stand/",
     "input": "Rendered controls through CUA; no save seeding or game-method injection",
-    "verified": ["Locked Tier 2 preview switches environment and refuses deployment", "Shared menu and settings", "Cannon Attack purchase costs five Scrap and grants one run level", "Actual wave clears and rewards", "Reload offers wave 7; resume is paused with hull120/120, attack level1 and103 Scrap", "Ambient Music Off persists across reload; original On setting restored"],
+    "verified": [
+      "Locked Tier 2 preview switches environment and refuses deployment",
+      "Shared menu and settings",
+      "Cannon Attack purchase costs five Scrap and grants one run level",
+      "Actual wave clears and rewards",
+      "Reload offers wave 7; resume is paused with hull 120/120, attack level1 and103 Scrap",
+      "Ambient Music Off persists across reload; original On setting restored"
+    ],
     "leftPaused": true,
-    "finalPackageRecheck": {"package": "Web-20261025T100855Z-3d64fe", "verified": "Reload and rendered Resume Run restored paused wave7, hull120/120, Cannon Attack level1 and103 Scrap; run shop opened successfully.", "evidence": "campaign-unity/Evidence/architecture-foundations/browser-final-package.png"}
+    "finalPackageRecheck": {
+      "package": "Web-20261025T100855Z-3d64fe",
+      "verified": "Reload and rendered Resume Run restored paused wave7, hull 120/120, Cannon Attack level1 and103 Scrap; run shop opened successfully.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/browser-final-package.png"
+    },
+    "leaseRepairPackageRecheck": {
+      "package": "Web-20261025T161237Z-583e89",
+      "verified": "Rendered Resume Run restores paused wave 7,hull 120/120,103 Scrap,Cannon Attack level 1; run shop opens. Temporary 1024x768 viewport reset.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/web-lease-refresh.png"
+    }
   },
   "nativeJourney": {
     "date": "2026-10-25",
     "package": "LastStand-windows-20261025T093538Z-2a6afe",
     "configuration": "development",
     "input": "Rendered controls through CUA; no save seeding",
-    "verified": ["Menu and settings", "Live wave clears and Cannon Attack purchase", "Process exit and relaunch", "Paused wave6 with hull120/120, Cannon Attack level1,85Scrap and5bankedSalvage", "Music Off persisted through restart; original On restored"],
-    "unfinishedWaveReplay": "97Scrap before exit becomes85Scrap at the completed-wave checkpoint; twelve unfinished-wave Scrap are replayed.",
+    "verified": [
+      "Menu and settings",
+      "Live wave clears and Cannon Attack purchase",
+      "Process exit and relaunch",
+      "Paused wave6 with hull 120/120, Cannon Attack level1,85 Scrap and5bankedSalvage",
+      "Music Off persisted through restart; original On restored"
+    ],
+    "unfinishedWaveReplay": "97Scrap before exit becomes85 Scrap at the completed-wave checkpoint; twelve unfinished-wave Scrap are replayed.",
     "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/result.json",
-    "nativeSaveSlots": {"inspected": 4, "checksumsValid": 4},
+    "nativeSaveSlots": {
+      "inspected": 4,
+      "checksumsValid": 4
+    },
     "firewall": "Owner reported handling popup; read-only inspection found Allow/Public rules for development executable. No agent firewall changes."
   },
   "nativeReleaseJourney": {
@@ -54,16 +229,23 @@
     "package": "LastStand-windows-20261025T095347Z-01cfb8",
     "configuration": "release",
     "input": "Rendered controls through CUA at 1024 by 768; no save seeding",
-    "verified": ["Resume paused at wave 6 with hull 120/120, 85 Scrap and Cannon Attack level 1", "Menu, settings and run shop controls", "Purchase level 2 for ten Scrap", "Exit before wave completion restores both checkpoint level 1 and 85 Scrap", "Music Off persists independently; original On restored"],
+    "verified": [
+      "Resume paused at wave 6 with hull 120/120, 85 Scrap and Cannon Attack level 1",
+      "Menu, settings and run shop controls",
+      "Purchase level 2 for ten Scrap",
+      "Exit before wave completion restores both checkpoint level 1 and 85 Scrap",
+      "Music Off persists independently; original On restored"
+    ],
     "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/release-result.json",
     "closedAfterCheck": true
   },
   "hostedCiFollowup": {
-    "head": "9a8f8fb13dcc885041824c0ab0c85be548daf861",
-    "run": 40208844715,
+    "head": "1c56a7b12afe724bcf642cbcc05f65feb8afa30e",
+    "run": 40209320859,
     "outcome": "failure",
-    "reason": "The first fixture repair passed, then dependency-free milestone/endurance checkouts lacked the same JSON contract and Linux LF extraction commented out the serializer test bridge.",
-    "repair": "Dependency-free closure repaired and source fragments joined with real newlines; all 436 scope tests pass locally, including both line-ending variants. A new exact-head hosted result is required."
+    "classification": "pass",
+    "reason": "Linux Mono file sharing is process-local; wave oracle omitted LastStandSelection.cs; dependency audit found vulnerable development tools.",
+    "repair": "Explicit OS range lock plus protected local ownership; complete hashed oracle inputs; independently reviewed Vitest 5.0.5 and Undici 8.12.3 closure. New exact-head Linux/browser CI required."
   },
   "remaining": [
     "Android module installation, actual APK and real device lifecycle/storage/audio/performance qualification",
@@ -73,5 +255,29 @@
     "Eight historical journey-guard cases lack their external ST_SHOP_BACKGROUND_RECORD, ST_SHOP_GUARD_RECORD or ST_SHOP_OBSERVER_OUTPUT_ROOT fixtures;39 other cases passed",
     "Exact-head hosted CI, merge, publication, deployment and live-host proof"
   ],
-  "published": false
+  "published": false,
+  "nativeLeaseRepairJourney": {
+    "package": "LastStand-windows-20261025T161123Z-81ff23",
+    "configuration": "release",
+    "input": "Rendered CUA; no save seeding",
+    "verified": [
+      "Existing checkpoint resumes paused wave 6,hull 120/120,85 Scrap,Cannon Attack level 1",
+      "Menu,settings,runshop",
+      "Music Off persists through process exit and relaunch",
+      "Original On setting restored; player closed"
+    ],
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/lease-release-*.png"
+  },
+  "dependencyRepair": {
+    "review": "foundation_security preinstall and actual-lock PASS",
+    "scope": "16 development package updates, removal of siginfo and stackback; jsdom and runtime dependencies unchanged",
+    "vitest": "5.0.5",
+    "coverage": "5.0.5",
+    "undici": "8.12.3",
+    "registrySignaturesAndIntegrity": "verified for changed closure",
+    "slsa": "available source provenance inspected; no independent Sigstore verification",
+    "lockSha256": "1e84d98866085828ea6f14a40782997f53cd5179879590fb21a89161f8333d29",
+    "installedWithScripts": false,
+    "auditVulnerabilities": 0
+  }
 }
