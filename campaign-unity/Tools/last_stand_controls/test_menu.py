@@ -55,12 +55,9 @@ class MenuControllerTests(unittest.TestCase):
             env=env, capture_output=True, text=True, timeout=30)
         if ownership.returncode:
             raise RuntimeError("An existing Unity Editor owns this project; refusing a concurrent launch.")
-        source_paths = sorted(PROJECT.glob("Assets/Scripts/LastStand*.cs")) + [
-            PROJECT / "Assets/Scripts/EncounterSession.cs", PROJECT / "Assets/Scripts/TankPresentation.cs",
-            PROJECT / "Assets/Scripts/ArtHud.cs", PROJECT / "Assets/Scripts/BattlefieldReview.cs",
-            PROJECT / "Assets/Editor/LastStandControlsChecks.cs", PROJECT / "Assets/Scenes/LastStandPrototype.unity",
-            PROJECT / "Assets/Editor/LastStandTestPreferencesScope.cs",
-        ]
+        source_paths = sorted(set((PROJECT / "Assets/Scripts").rglob("*.cs")) |
+                              set((PROJECT / "Assets/Editor").rglob("*.cs")) |
+                              {PROJECT / "Assets/Scenes/LastStandPrototype.unity"})
         hashes = subprocess.run(["node", "-e", HASH_SCRIPT], input=json.dumps([str(p) for p in source_paths]),
                                 capture_output=True, text=True, cwd=ROOT, timeout=30, check=True)
         argv = [str(UNITY), "-batchmode", "-nographics", "-quit", "-projectPath", str(PROJECT),
@@ -78,6 +75,13 @@ class MenuControllerTests(unittest.TestCase):
             raise
         cls.exit_code = process.returncode
         cls.content = cls.log_path.read_text(encoding="utf-8", errors="replace") if cls.log_path.exists() else ""
+        after_paths = sorted(set((PROJECT / "Assets/Scripts").rglob("*.cs")) |
+                             set((PROJECT / "Assets/Editor").rglob("*.cs")) |
+                             {PROJECT / "Assets/Scenes/LastStandPrototype.unity"})
+        after = subprocess.run(["node", "-e", HASH_SCRIPT], input=json.dumps([str(p) for p in after_paths]),
+                               capture_output=True, text=True, cwd=ROOT, timeout=30, check=True)
+        if json.loads(hashes.stdout) != json.loads(after.stdout):
+            raise RuntimeError("Controls source changed during the owned Editor launch")
         cls.extra_output = stdout + stderr
         (folder / "result.json").write_text(json.dumps({"exit": cls.exit_code, "stdout": stdout,
             "stderr": stderr, "passed": [name for name in CASES if "ST_LS_CONTROLS_PASS " + name in cls.content]}, indent=2), encoding="utf-8")

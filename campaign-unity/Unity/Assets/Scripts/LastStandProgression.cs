@@ -269,7 +269,7 @@ namespace SingedTerra.LastStand
         bool OwnsStorage()
         {
             if(storage is ILastStandStorageOwnership owner && !owner.CanWrite)
-            { Block("This tab cannot save. Another Last Stand tab may own this profile, or this browser does not support save ownership. Close the other tab and reload here.");return false; }
+            { Block(storage is ILastStandStorageDiagnostics diagnostics ? diagnostics.OwnershipError : "This tab cannot save. Another Last Stand tab may own this profile, or this browser does not support save ownership. Close the other tab and reload here.");return false; }
             return true;
         }
         bool Commit(Record next,Action completion)

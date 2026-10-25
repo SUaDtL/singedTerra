@@ -1,0 +1,48 @@
+{
+  "schema": "singedterra-last-stand-foundation-validation/v1",
+  "date": "2026-10-25",
+  "implementationBase": "07dc13c0ea0b31af973b24402ea9bdedfb8cc815",
+  "qualification": "partial",
+  "finalPlayerSourceInventorySha256": "cf8a8c748c0f5f2f041063663491bca0dba5590d554dd8107c5e652c68c2413e",
+  "localChecks": [
+    {"command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py", "passed": 33, "failed": 0, "seconds": 16.819, "host": "Windows Roslyn"},
+    {"command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py", "passed": 33, "failed": 0, "seconds": 12.958, "host": "Windows Mono/mcs, explicit compiler override"},
+    {"suite": "last_stand_research", "passed": 62, "failed": 0, "seconds": 137.874},
+    {"suite": "last_stand_waves/test_wave_model.py", "passed": 10, "failed": 0, "seconds": 9.422},
+    {"suite": "last_stand_controls/test_menu.py", "casesPassed": 19, "failed": 0},
+    {"suite": "Unity UI foundation and actual observation emitter", "outcome": "pass", "scope": "Desktop, portrait and short landscape; four emitted garage/settings/research/history packets accepted by JS and Python decoders; malformed packets refused."},
+    {"suite": "LastStandContentValidationChecks.Run", "refusalCasesPassed": 6, "seconds": 8.705, "savedSceneUnchanged": true},
+    {"suite": "LastStandShopChecks.RunBattleShop", "outcome": "pass", "seconds": 14.858},
+    {"command": "node --test scripts/ci/ciWorkflow.test.mjs", "passed": 188, "failed": 0, "seconds": 0.633},
+    {"command": "npm run build", "environment": {"VITE_BASE": "/singedTerra/"}, "outcome": "pass", "includes": ["source/export admission", "strict TypeScript", "production bundle"]}
+  ],
+  "review": {
+    "security": "PASS; no unresolved findings",
+    "coverageAudit": "PASS; containment mutations, pure CI discovery and actual scene-validation negatives resolved the findings",
+    "numericUnityCoverage": "unmeasured; no Unity/C#/Python coverage command is declared"
+  },
+  "builds": [
+    {"target": "webgl", "configuration": "release", "outcome": "pass", "stamp": "20261025T100855Z-3d64fe", "packaged": true, "note": "Rebuilt after trailing-whitespace cleanup in Unity metadata; runtime code unchanged from browser journey."},
+    {"target": "windows", "configuration": "development", "outcome": "pass", "stamp": "20261025T093538Z-2a6afe", "reportedBytes": 174822523, "note": "Precedes the final Editor-only validation additions; runtime source is unchanged."},
+    {"target": "windows", "configuration": "release", "outcome": "pass", "stamp": "20261025T095347Z-01cfb8", "reportedBytes": 112304539, "sourceInventorySha256": "984c3cb12ed6a2274de7889079c44bb2e55149f3bf0e8b48c8accb9a1f1cccaf"},
+    {"target": "android", "configuration": "development", "outcome": "blocked", "preflightExit": 2, "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. UAC installation cancelled; owner unavailable."}
+  ],
+  "browserJourney": {
+    "package": "Web-20261025T095204Z-3f937d",
+    "host": "Codex in-app browser",
+    "url": "http://127.0.0.1:4174/singedTerra/last-stand/",
+    "input": "Rendered controls through CUA; no save seeding or game-method injection",
+    "verified": ["Locked Tier 2 preview switches environment and refuses deployment", "Shared menu and settings", "Cannon Attack purchase costs five Scrap and grants one run level", "Actual wave clears and rewards", "Reload offers wave 7; resume is paused with hull120/120, attack level1 and103 Scrap", "Ambient Music Off persists across reload; original On setting restored"],
+    "leftPaused": true,
+    "finalPackageRecheck": {"package": "Web-20261025T100855Z-3d64fe", "verified": "Reload and rendered Resume Run restored paused wave7, hull120/120, Cannon Attack level1 and103 Scrap; run shop opened successfully.", "evidence": "campaign-unity/Evidence/architecture-foundations/browser-final-package.png"}
+  },
+  "remaining": [
+    "Android module installation, actual APK and real device lifecycle/storage/audio/performance qualification",
+    "Windows player controls and save/relaunch: protected firewall dialog blocks automation; no permission granted",
+    "Funded/offline research browser journey, two-tab ownership and native/background/audio qualification inherited from PR544",
+    "Ten actual active hours at researched5x; no endurance observation started",
+    "Eight historical journey-guard cases lack their external ST_SHOP_BACKGROUND_RECORD, ST_SHOP_GUARD_RECORD or ST_SHOP_OBSERVER_OUTPUT_ROOT fixtures;39 other cases passed",
+    "Exact-head hosted CI, merge, publication, deployment and live-host proof"
+  ],
+  "published": false
+}

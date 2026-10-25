@@ -1,13 +1,13 @@
 """Production model presentation and garage geometry checks; no renderer claim."""
 from pathlib import Path
-import subprocess
+import sys
 import tempfile
 import unittest
 
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
+sys.path.insert(0, str(PROJECT / "Tools"))
+from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import compile_csharp, run_csharp
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 
 
@@ -18,19 +18,19 @@ class ResearchPresentationTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "PresentationChecks.exe"
         source = [SCRIPTS / f"LastStand{name}.cs" for name in
                   ("ResearchPresentation", "ResearchState", "ResearchCatalog", "ResearchClock", "HudLayout")]
-        result = subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}",
-                                 *map(str, source), str(Path(__file__).with_name("PresentationChecks.cs"))],
-                                capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
-        if result.returncode:
+        try:
+            cls.build = compile_csharp(cls.executable, complete_sources(SCRIPTS, source) +
+                [Path(__file__).with_name("PresentationChecks.cs")])
+        except Exception:
             cls.output.cleanup()
-            raise AssertionError("Compilation failed:\n" + result.stdout + result.stderr)
+            raise
+
 
     @classmethod
     def tearDownClass(cls): cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 

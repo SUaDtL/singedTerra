@@ -6,12 +6,26 @@ using System.Runtime.InteropServices;
 namespace SingedTerra.LastStand
 {
     // Fixed browser capabilities only: no credentials, arbitrary URLs or scripts.
-    public sealed class LastStandBrowserBridge : MonoBehaviour
+    public sealed class LastStandBrowserBridge : MonoBehaviour, ILastStandPlatform
     {
         LastStandLoopController loop;
         public bool Fullscreen { get; private set; }
         public bool FullscreenAvailable { get; private set; }
         public string FullscreenStatus { get; private set; } = "Fullscreen unavailable on this host.";
+        // Web callbacks retain their established object/method identities. Game
+        // views depend on capabilities instead of the browser transport.
+        public bool CanNavigate
+        {
+            get
+            {
+#if UNITY_WEBGL || UNITY_EDITOR
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
+        public bool CanOpenAccount => CanNavigate;
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] static extern void LastStandBrowser_Initialize();
         [DllImport("__Internal")] static extern void LastStandBrowser_Fullscreen();
@@ -22,6 +36,10 @@ namespace SingedTerra.LastStand
             loop = owner;
 #if UNITY_WEBGL && !UNITY_EDITOR
             LastStandBrowser_Initialize();
+#elif !UNITY_EDITOR
+            FullscreenAvailable = !Application.isMobilePlatform;
+            Fullscreen = Screen.fullScreen;
+            FullscreenStatus = FullscreenAvailable ? (Fullscreen ? "Fullscreen on" : "Fullscreen off") : "Display mode is managed by this device.";
 #endif
         }
         public void RequestReturn(string ignored) { loop.RequestNavigation(false); }
@@ -48,6 +66,12 @@ namespace SingedTerra.LastStand
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             LastStandBrowser_Fullscreen();
+#elif !UNITY_EDITOR
+            if (!FullscreenAvailable) return;
+            Screen.fullScreen = !Screen.fullScreen;
+            Fullscreen = Screen.fullScreen;
+            FullscreenStatus = Fullscreen ? "Fullscreen on" : "Fullscreen off";
+            loop.RefreshControls();
 #endif
         }
         public void Navigate(bool account)

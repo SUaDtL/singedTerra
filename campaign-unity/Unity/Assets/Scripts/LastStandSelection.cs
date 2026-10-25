@@ -87,43 +87,54 @@ namespace SingedTerra.LastStand
         }
     }
 
+    public sealed class LastStandFittingDefinition
+    {
+        readonly string description;
+        public LastStandFitting Mechanic { get; }
+        public string Id { get; }
+        public string Name { get; }
+        public string Description => description+(InitiallyUnlocked?"":" Unlock by clearing Tier "+UnlockTier+" wave "+UnlockWave+".");
+        public int UnlockTier { get; }
+        public int UnlockWave { get; }
+        public bool InitiallyUnlocked => UnlockTier==0;
+        public LastStandFittingDefinition(LastStandFitting mechanic,string id,string name,string description,int unlockTier=0,int unlockWave=0)
+        {
+            // Validate exactly the text and identity consumed by selectors.
+            new LastStandSelectionOption(id,name,description);
+            if(!Enum.IsDefined(typeof(LastStandFitting),mechanic)||unlockTier<0||unlockWave<0||(unlockTier==0)!=(unlockWave==0))
+                throw new ArgumentException("Invalid fitting mechanic or unlock.");
+            Mechanic=mechanic;Id=id;Name=name;this.description=description;UnlockTier=unlockTier;UnlockWave=unlockWave;
+            new LastStandSelectionOption(id,name,Description);
+        }
+        public LastStandSelectionOption Option(bool unlocked)=>new LastStandSelectionOption(Id,Name,Description,InitiallyUnlocked||unlocked);
+    }
+
     public static class LastStandFittingCatalog
     {
-        public static IReadOnlyList<LastStandSelectionOption> Options { get; } =
-            Array.AsReadOnly(new[] {
-                new LastStandSelectionOption("repair", "Field Repair",
-                    "Repairs hull during the run. Choose sustain alongside the automatic cannon."),
-                new LastStandSelectionOption("launcher", "Auxiliary Launcher",
-                    "Adds an independently firing launcher alongside the automatic cannon."),
-                new LastStandSelectionOption("scattergun", "Auxiliary Scattergun",
-                    "Hits up to three nearby enemies per burst alongside the automatic cannon. Unlock by clearing Tier 1 wave 100.", false)
-            });
+        public static IReadOnlyList<LastStandFittingDefinition> Definitions { get; } = Array.AsReadOnly(new[] {
+            new LastStandFittingDefinition(LastStandFitting.Repair,"repair","Field Repair",
+                "Repairs hull during the run. Choose sustain alongside the automatic cannon."),
+            new LastStandFittingDefinition(LastStandFitting.Launcher,"launcher","Auxiliary Launcher",
+                "Adds an independently firing launcher alongside the automatic cannon."),
+            new LastStandFittingDefinition(LastStandFitting.Scattergun,"scattergun","Auxiliary Scattergun",
+                "Hits up to three nearby enemies per burst alongside the automatic cannon.",1,100)
+        });
+        public static IReadOnlyList<LastStandSelectionOption> Options { get; } = OptionsFor(_=>false);
         public static string Id(LastStandFitting fitting)
         {
-            switch(fitting)
-            {
-                case LastStandFitting.Repair: return "repair";
-                case LastStandFitting.Launcher: return "launcher";
-                case LastStandFitting.Scattergun: return "scattergun";
-                default: throw new ArgumentOutOfRangeException(nameof(fitting));
-            }
+            foreach(var definition in Definitions)if(definition.Mechanic==fitting)return definition.Id;
+            throw new ArgumentOutOfRangeException(nameof(fitting));
         }
         public static LastStandFitting Parse(string id)
         {
-            switch(id)
-            {
-                case "repair": return LastStandFitting.Repair;
-                case "launcher": return LastStandFitting.Launcher;
-                case "scattergun": return LastStandFitting.Scattergun;
-                default: throw new ArgumentException("Unknown fitting identity.",nameof(id));
-            }
+            foreach(var definition in Definitions)if(String.Equals(definition.Id,id,StringComparison.Ordinal))return definition.Mechanic;
+            throw new ArgumentException("Unknown fitting identity.",nameof(id));
         }
         public static IReadOnlyList<LastStandSelectionOption> OptionsFor(Func<string,bool> isUnlocked)
         {
             if(isUnlocked==null)throw new ArgumentNullException(nameof(isUnlocked));
             var result=new List<LastStandSelectionOption>();
-            foreach(var option in Options)
-                result.Add(new LastStandSelectionOption(option.Id,option.Name,option.Description,option.Unlocked || isUnlocked(option.Id)));
+            foreach(var definition in Definitions)result.Add(definition.Option(isUnlocked(definition.Id)));
             return result.AsReadOnly();
         }
     }

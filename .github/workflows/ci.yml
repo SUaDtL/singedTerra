@@ -182,6 +182,9 @@ jobs:
           ffprobe -version
           /usr/bin/mono --version
           /usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version
+      - name: Verify Last Stand pure architecture regressions
+        if: matrix.suite == 'campaigns'
+        run: python3 -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py
       - name: Initialize Last Stand evidence root
         if: matrix.suite == 'campaigns' || matrix.suite == 'tier'
         run: node scripts/ci/prepareLastStandEvidence.mjs

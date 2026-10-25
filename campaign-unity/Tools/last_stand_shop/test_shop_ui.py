@@ -71,7 +71,7 @@ class ShopUiTests(unittest.TestCase):
         log = evidence / "unity-editor.log"
         argv = [str(UNITY), "-batchmode", "-nographics", "-quit", "-projectPath", str(PROJECT),
                 "-executeMethod", "LastStandShopChecks." + method, "-logFile", str(log)]
-        if method in ("RunInput", "RunRenderFollowup", "RunCompactScroll", "RunCompactReading"):
+        if method in ("RunInput", "RunRenderFollowup", "RunCompactScroll", "RunCompactReading", "RunFirstSessionClarity"):
             argv.remove("-nographics")  # Real rendered raycast/mask input fixture.
         startup = None
         if os.name == "nt":
@@ -150,6 +150,11 @@ class ShopUiTests(unittest.TestCase):
 
     def test_settle_pause_focus_close_and_stale_input(self):
         self.settle_case()
+
+    def test_permanent_notification_reentry_is_one_purchase(self):
+        code, log = self.run_checks("RunPermanentNotificationReentry")
+        self.assertEqual(code, 0, log[-10000:])
+        self.assertIn("ST_LS_SHOP_PASS " + self._testMethodName, log)
 
     def test_battle_shop_tabs_live_cards_and_refusal_feedback(self):
         self.exit_code, self.log = self.run_checks("RunBattleShop")

@@ -17,31 +17,32 @@ namespace SingedTerra.LastStand
             if(seconds>=60)return (seconds/60)+"m "+(seconds%60)+"s";
             return seconds+"s";
         }
-        public static string Category(LastStandResearchTrackId track) => track==LastStandResearchTrackId.GameSpeed ? "Combat" :
-            track==LastStandResearchTrackId.ResearchSpeed ? "Research" : "Economy";
-        public static string Effect(LastStandResearchTrackId track,int rank)
+        public static string Category(LastStandResearchTrackId track,LastStandResearchDefinitions definitions=null)
+            => (definitions??LastStandResearchCatalog.Definitions).Get(track).Category;
+        public static string Effect(LastStandResearchTrackId track,int rank,LastStandResearchDefinitions definitions=null)
         {
-            double value=LastStandResearchCatalog.Get(track).EffectNumerator(rank)/100.0;
+            var definition=(definitions??LastStandResearchCatalog.Definitions).Get(track);
+            double value=definition.EffectNumerator(rank)/100.0;
             string number=value.ToString("0.00",CultureInfo.InvariantCulture)+"x";
-            switch(track)
+            switch(definition.Effect)
             {
-                case LastStandResearchTrackId.GameSpeed:return "Combat speed cap: "+value.ToString("0.0",CultureInfo.InvariantCulture)+"x";
-                case LastStandResearchTrackId.ResearchSpeed:return "Other research works at "+number+" base speed. Does not accelerate itself.";
-                case LastStandResearchTrackId.SalvageRecovery:return number+" repeatable wave Salvage; one-time milestones unchanged.";
+                case LastStandResearchEffect.GameSpeed:return "Combat speed cap: "+value.ToString("0.0",CultureInfo.InvariantCulture)+"x";
+                case LastStandResearchEffect.ResearchSpeed:return "Other research works at "+number+" base speed. Does not accelerate itself.";
+                case LastStandResearchEffect.Salvage:return number+" repeatable wave Salvage; one-time milestones unchanged.";
                 default:return number+" combat Scrap, multiplying Workshop Scrap Yield.";
             }
         }
-        public static string Project(LastStandResearchProjectSnapshot project,bool queued=false)
+        public static string Project(LastStandResearchProjectSnapshot project,bool queued=false,LastStandResearchDefinitions definitions=null)
         {
             if(project==null)return queued?"Queue empty":"Idle";
-            string text=LastStandResearchCatalog.Get(project.track).Name+" "+project.rank;
+            string text=(definitions??LastStandResearchCatalog.Definitions).Get(project.track).Name+" "+project.rank;
             if(project.durationMilliseconds==0)return text+" - funded, starts after active research";
             long remaining=Math.Max(0,project.durationMilliseconds-project.earnedMilliseconds);
             return text+" - "+Duration(remaining)+(queued?" left when resumed":" remaining");
         }
-        public static string TrackState(LastStandResearchSnapshot snapshot,LastStandResearchTrackId track)
+        public static string TrackState(LastStandResearchSnapshot snapshot,LastStandResearchTrackId track,LastStandResearchDefinitions definitions=null)
         {
-            var definition=LastStandResearchCatalog.Get(track);int rank=snapshot.completedRanks[(int)track];
+            var definition=(definitions??LastStandResearchCatalog.Definitions).Get(track);int rank=snapshot.Rank(track,definitions);
             if(rank==definition.MaximumRank)return "COMPLETE";
             for(int i=0;i<snapshot.slots.Length;i++)
             {
@@ -49,29 +50,29 @@ namespace SingedTerra.LastStand
                 if(slot.active!=null && slot.active.track==track)return "ACTIVE - LAB "+(i+1);
                 if(slot.queued!=null && slot.queued.track==track)return "QUEUED - LAB "+(i+1);
             }
-            return snapshot.partials[(int)track]!=null?"SUSPENDED - TIME SAVED":rank>0?"RANK "+rank+" COMPLETE":"AVAILABLE";
+            return snapshot.Partial(track,definitions)!=null?"SUSPENDED - TIME SAVED":rank>0?"RANK "+rank+" COMPLETE":"AVAILABLE";
         }
         public static LastStandResearchIntent Intent(LastStandResearchSnapshot snapshot,int slot,
-            LastStandResearchTrackId track,LastStandResearchAction action)
+            LastStandResearchTrackId track,LastStandResearchAction action,LastStandResearchDefinitions definitions=null)
         {
             if(snapshot==null || slot<0 || slot>=snapshot.slots.Length)throw new ArgumentException("Invalid displayed research slot.");
-            var row=snapshot.slots[slot];int rank=snapshot.completedRanks[(int)track]+1;
+            var row=snapshot.slots[slot];int rank=snapshot.Rank(track,definitions)+1;
             if(action==LastStandResearchAction.Queue && row.active!=null && row.active.track==track)rank++;
             return new LastStandResearchIntent {Slot=slot,Track=track,Rank=rank,Action=action,
                 ExpectedRevision=snapshot.revision,ExpectedActiveIdentity=row.active?.identity??0,
                 ExpectedQueuedIdentity=row.queued?.identity??0};
         }
-        public static bool CanSubmit(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent,long wallet,int bestWave)
+        public static bool CanSubmit(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent,long wallet,int bestWave,LastStandResearchDefinitions definitions=null)
         {
-            return LastStandResearchState.TryRestore(snapshot,out var state) && state.TryApply(intent,wallet,bestWave,out _);
+            return LastStandResearchState.TryRestore(snapshot,definitions??LastStandResearchCatalog.Definitions,out var state) && state.TryApply(intent,wallet,bestWave,out _);
         }
-        public static string Quote(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent)
+        public static string Quote(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent,LastStandResearchDefinitions definitions=null)
         {
-            var definition=LastStandResearchCatalog.Get(intent.Track);
+            var definition=(definitions??LastStandResearchCatalog.Definitions).Get(intent.Track);
             if(intent.Rank>definition.MaximumRank)return "All ranks completed or funded.";
-            var partial=snapshot.partials[(int)intent.Track];if(partial!=null && partial.rank!=intent.Rank)partial=null;
+            var partial=snapshot.Partial(intent.Track,definitions);if(partial!=null && partial.rank!=intent.Rank)partial=null;
             long cost=partial?.chargedCost??definition.Cost(intent.Rank);
-            long duration=partial?.durationMilliseconds??definition.DurationMilliseconds(intent.Rank,snapshot.completedRanks[(int)LastStandResearchTrackId.ResearchSpeed]);
+            long duration=partial?.durationMilliseconds??definition.DurationAtSpeedNumerator(intent.Rank,(definitions??LastStandResearchCatalog.Definitions).EffectNumerator(snapshot.completedRanks,LastStandResearchEffect.ResearchSpeed));
             long earned=partial?.earnedMilliseconds??0;
             return "Rank "+intent.Rank+": "+cost.ToString("N0",CultureInfo.InvariantCulture)+" Salvage | "+Duration(duration-earned)+
                 (partial!=null?" remaining; repays refunded cost":" real time")+

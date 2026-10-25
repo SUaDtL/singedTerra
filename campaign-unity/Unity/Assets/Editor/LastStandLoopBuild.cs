@@ -36,6 +36,26 @@ public static class LastStandLoopBuild
             return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
     }
 
+    // The same saved production scene and behavioral checks feed every player target.
+    public static UniversalRenderPipelineAsset PreparePlayerScene()
+    {
+        Require(File.Exists(ScenePath), "Saved Last Stand scene missing");
+        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        EncounterChecks.Run();
+        LastStandLoopChecks.Run();
+        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var review = UnityEngine.Object.FindFirstObjectByType<BattlefieldReview>();
+        Require(review && review.reviewPipeline is UniversalRenderPipelineAsset, "Saved Last Stand review pipeline missing");
+        return (UniversalRenderPipelineAsset)review.reviewPipeline;
+    }
+
+    public static BuildOptions PlayerOptions(string configuration)
+    {
+        if (configuration == "development") return BuildOptions.Development;
+        if (configuration == "release") return BuildOptions.None;
+        throw new InvalidOperationException("Expected development or release build configuration");
+    }
+
     public static void BuildWeb()
     {
         Require(Application.unityVersion == "6000.3.24f1", "Unexpected editor version");
@@ -47,12 +67,9 @@ public static class LastStandLoopBuild
         string webSettingsBefore = Digest(WebSettingsPath);
         byte[] graphicsSnapshot = File.ReadAllBytes(GraphicsPath);
         byte[] webSettingsSnapshot = File.ReadAllBytes(WebSettingsPath);
-        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-        EncounterChecks.Run();
-        LastStandLoopChecks.Run();
-        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-        var review = UnityEngine.Object.FindFirstObjectByType<BattlefieldReview>();
-        Require(review && review.reviewPipeline is UniversalRenderPipelineAsset, "Saved Last Stand review pipeline missing");
+        var pipeline = PreparePlayerScene();
+        string configuration = Environment.GetEnvironmentVariable("ST_LS_BUILD_CONFIGURATION") ?? "release";
+        var options = PlayerOptions(configuration);
 
         string output = Environment.GetEnvironmentVariable("ST_ART_WEB_OUTPUT");
         Require(!string.IsNullOrWhiteSpace(output) && Path.IsPathRooted(output), "Set ST_ART_WEB_OUTPUT to a fresh absolute output directory");
@@ -81,7 +98,7 @@ public static class LastStandLoopBuild
         try
         {
             EditorGraphicsSettings.SetRenderPipelineGlobalSettingsAsset<UniversalRenderPipeline>(webSettings);
-            QualitySettings.renderPipeline = review.reviewPipeline;
+            QualitySettings.renderPipeline = pipeline;
             Require(EditorGraphicsSettings.GetRenderPipelineGlobalSettingsAsset<UniversalRenderPipeline>() == webSettings,
                 "WebGL global settings were not selected");
 #pragma warning disable 618
@@ -92,7 +109,7 @@ public static class LastStandLoopBuild
             WebDebugSettingsStripped = false;
             StripWebDebugSettings = true;
             report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] { ScenePath }, locationPathName = output,
-                target = BuildTarget.WebGL, options = BuildOptions.None });
+                target = BuildTarget.WebGL, options = options });
 #pragma warning disable 618
             rendererRefStayedCleared = webRenderer.debugShaders.hdrDebugViewPS == null;
 #pragma warning restore 618
@@ -127,6 +144,7 @@ public static class LastStandLoopBuild
         Require(Digest(GraphicsPath) == graphicsBefore && Digest(QualityPath) == qualityBefore,
             "Build changed saved project graphics settings");
         Require(Digest(WebSettingsPath) == webSettingsBefore, "Build changed saved WebGL resource settings");
-        Debug.Log("ST_LS_WEB_BUILD_PASS bytes=" + report.summary.totalSize + " path=" + output);
+        Debug.Log("ST_LS_WEB_BUILD_PASS configuration=" + configuration + " options=" + options
+            + " bytes=" + report.summary.totalSize + " path=" + output);
     }
 }

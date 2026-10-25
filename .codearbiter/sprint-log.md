@@ -4990,3 +4990,14 @@ The fresh R07 review found no remaining CPU defect but identified a supported sa
 - Final fresh Unity export Web-20261021T091010Z-594a77 and production build passed. Both fittings in full/reduced modes passed normal-speed captures and five paused viewport round trips per run. Native Windows and human visual/motion/listening acceptance remain pending.
 - Independent reviews found no remaining blocking issue in presentation, HUD, capture cleanup or strict control inventories. Final progression journey and exact-head hosted CI are recorded separately when available.
 - Final progression: repair and launcher fresh-storage journeys both passed against the new export, including manual Claim, purchase/reload, tier unlock and stronger redeploy across five viewports. T-COMBAT is REVIEW; no native or owner acceptance is claimed.
+
+
+## 2026-10-25 Last Stand release foundation implementation - confidence: high - intent: owner-approved extensible game sprint
+
+- Reused the research/farming worktree and branched from PR #544 at 07dc13c0ea0b31af973b24402ea9bdedfb8cc815. Existing wave/research candidate branches remain intact.
+- Hoisted shared UI, application transitions, typed content, observation contracts and pure-test execution. Preserved v5 saves, retained run economies and progression through frozen characterization and actual domain/UI checks.
+- Added native redundant-file persistence with writer leases and safe ownership reacquisition. Actual Windows process, interrupted-write, junction and compiled guard-removal tests passed; Android filesystem behavior remains unmeasured.
+- Both Windows configurations and the final WebGL release built. Packaged source admission and production build passed; the single preview remains port4174. Rendered browser input verified purchase, wave rewards, settings and paused checkpoint resume after reload.
+- Reviewed Android tools reuse the existing SDK. Approved NDK/Java/command-line components installed; Unity module installation stopped at cancelled UAC, and the owner is unavailable. No elevation retry or firewall permission was attempted after that stop. Native player interaction remains blocked by the protected Windows dialog.
+- Review findings resolved within scope: permanent-purchase publication remains inside the reentrancy guard; storage waiters reacquire before authoritative read; CI now runs all pure architecture checks; actual scene validation rejects missing/duplicate bindings.
+- Partial qualification is retained in ST-LS-ARCH-PLAN and docs/LAST-STAND-RELEASE-READINESS.md. Existing funded research/native/endurance obligations remain open; no merge, publication or release-ready claim. No new low-confidence decision or out-of-scope set-aside was harvested.

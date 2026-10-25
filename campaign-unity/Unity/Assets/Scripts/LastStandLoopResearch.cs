@@ -5,87 +5,47 @@ namespace SingedTerra.LastStand
 {
     public sealed partial class LastStandLoopController
     {
-        LastStandResearchClock researchClock;
+        LastStandResearchCoordinator research;
         LastStandRunHistory liveHistory;
         double researchPollAt,historyObservedAt,pausedMillisecondsRemainder;
-        double nextResearchCompletionAt=double.PositiveInfinity;
         readonly double[] activeMillisecondsRemainders=new double[10];
-        long closedMilliseconds;
-        bool researchSavePending;
-        int[] announcedResearchRanks;
-        string researchCompletionNotice="";
-        public LastStandResearchSnapshot ResearchSnapshot
-        {
-            get
-            {
-                var committed=Progression?.ResearchSnapshot;
-                if(committed==null || !SampleResearch(out var time) ||
-                    !Progression.TryPreviewResearch(time,out var preview) || preview.completionSequence!=committed.completionSequence)return committed;
-                // Timers may interpolate between durable heartbeats. Actions
-                // still name the last displayed committed owner revision.
-                preview.revision=committed.revision;return preview;
-            }
-        }
-        public bool ResearchCanAct=>Progression?.SaveState=="ready" && !researchSavePending;
-        public string ResearchStatus { get; private set; }="";
-        public LastStandHistorySnapshot RunHistorySnapshot=>
+        public LastStandResearchSnapshot ResearchSnapshot => research?.Snapshot;
+        public bool ResearchCanAct => research!=null && research.CanAct && !runs.ResearchPending;
+        public string ResearchStatus => research?.Status ?? "";
+        public LastStandHistorySnapshot RunHistorySnapshot =>
             liveHistory?.Current!=null && Progression.HasCheckpoint?liveHistory.Snapshot():Progression?.HistorySnapshot;
-        static long ResearchUtc()=>DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         void InitializeResearch()
         {
-            var snapshot=Progression.ResearchSnapshot;
-            if(snapshot==null)return;
-            long now=ResearchUtc();
-            announcedResearchRanks=(int[])snapshot.completedRanks.Clone();
-            closedMilliseconds=Math.Max(0,now-snapshot.lastObservedUtcMilliseconds);
-            researchClock=new LastStandResearchClock(snapshot.lastObservedUtcMilliseconds);
-            // Reconcile before the first displayed balance/entitlement. The
-            // pending transaction retains its clock sample across save retry.
-            ReconcileResearch(false);
+            if(research==null)
+            {
+                research=new LastStandResearchCoordinator(Progression,new LastStandUnityTime());
+                research.Confirmed+=()=>Session.GrantMaximumSpeed(Progression.MaximumGameSpeed);
+            }
+            if(!research.Initialize() && Progression.SaveState!="ready")ResearchSaveFailed();
         }
-        bool SampleResearch(out LastStandResearchTime sample)
+        bool EnsureResearchInitialized()
         {
-            sample=null;
-            return researchClock!=null && researchClock.TrySample(ResearchUtc(),Time.realtimeSinceStartupAsDouble,out sample);
-        }
-        void ResearchConfirmed(LastStandResearchTime sample)
-        {
-            researchClock.Commit(sample);
-            var snapshot=Progression.ResearchSnapshot;
-            var completed=new System.Collections.Generic.List<string>();
-            for(int n=0;n<snapshot.completedRanks.Length;n++)
-                if(announcedResearchRanks!=null && snapshot.completedRanks[n]>announcedResearchRanks[n])
-                    completed.Add(LastStandResearchCatalog.Get((LastStandResearchTrackId)n).Name+" rank "+snapshot.completedRanks[n]);
-            announcedResearchRanks=(int[])snapshot.completedRanks.Clone();
-            if(completed.Count>0)researchCompletionNotice="Completed: "+string.Join("; ",completed)+".";
-            long remaining=long.MaxValue;
-            foreach(var slot in snapshot.slots)
-                if(slot.active!=null)remaining=Math.Min(remaining,slot.active.durationMilliseconds-slot.active.earnedMilliseconds);
-            nextResearchCompletionAt=remaining==long.MaxValue?double.PositiveInfinity:
-                sample.monotonic+(remaining-sample.fractionalMilliseconds)/1000d;
-            Session.GrantMaximumSpeed(Progression.MaximumGameSpeed);
-            ResearchStatus=(researchCompletionNotice!=""?researchCompletionNotice:"Research saved.")+
-                (sample.ClockAnomaly?" Clock changed. Research used nonnegative elapsed time.":"");
+            if(research==null || !research.Initialized)InitializeResearch();
+            return research!=null && research.Initialized && Progression.SaveState=="ready";
         }
         bool ReconcileResearchBenefits()
         {
             if(!ResearchCanAct)return false;
-            // Cheap on every combat callback; allocate/commit only when a
-            // funded completion is due. Unity Update order cannot delay a
-            // benefit until after its kill payout, wave reward or speed action.
-            return Time.realtimeSinceStartupAsDouble<nextResearchCompletionAt || ReconcileResearch(false);
+            bool result=research.ReconcileBenefits();
+            if(!result && Progression.SaveState!="ready")ResearchSaveFailed();
+            return result;
         }
         bool ReconcileResearch(bool refresh)
         {
-            if(!ResearchCanAct || !SampleResearch(out var sample))return false;
-            bool accepted=Progression.TryReconcileResearch(sample,()=>ResearchConfirmed(sample));
-            if(!accepted && Progression.SaveState!="ready")ResearchSaveFailed();
+            if(!ResearchCanAct)return false;
+            bool result=research.Reconcile();
+            if(!result && Progression.SaveState!="ready")ResearchSaveFailed();
             if(refresh)Refresh("research");
-            return accepted;
+            return result;
         }
         void ResearchSaveFailed()
         {
-            researchSavePending=true;ResearchStatus=Progression.SaveError;
+            runs.ResearchFailed();
             if(Session.Model!=null){Session.HoldCheckpoint();Phase="save-error";}
             Notice=Progression.SaveError;
         }
@@ -93,13 +53,10 @@ namespace SingedTerra.LastStand
         {
             double now=Time.realtimeSinceStartupAsDouble;
             if(now<researchPollAt)return;
-            researchPollAt=now+1;
-            FlushHistoryTime();
-            if(researchClock!=null && Progression.SaveState=="ready" && SampleResearch(out var sample))
+            researchPollAt=now+1;FlushHistoryTime();
+            if(ResearchCanAct)
             {
-                var saved=Progression.ResearchSnapshot;
-                bool completed=Progression.TryPreviewResearch(sample,out var preview) && preview.completionSequence!=saved.completionSequence;
-                if(completed || sample.ElapsedMilliseconds>=15000)ReconcileResearch(MenuPage=="research");
+                if(research.NeedsHeartbeat())ReconcileResearch(MenuPage=="research");
                 else if(MenuPage=="research")Refresh("research-timer");
             }
         }
@@ -108,20 +65,15 @@ namespace SingedTerra.LastStand
         public void OpenHistory()=>OpenMenu("history");
         public void SubmitResearch(LastStandResearchIntent intent)
         {
-            if(MenuPage!="research" || !ResearchCanAct || !SampleResearch(out var sample))return;
-            bool accepted=Progression.TryResearchAction(intent,sample,()=>ResearchConfirmed(sample));
-            if(!accepted)
-            {
-                if(Progression.SaveState!="ready")ResearchSaveFailed();
-                else ResearchStatus="Research changed or this action is unavailable. Review the updated slot and balance.";
-            }
+            if(MenuPage!="research" || !ResearchCanAct)return;
+            if(!research.Submit(intent) && Progression.SaveState!="ready")ResearchSaveFailed();
             Refresh("research-action");
         }
         void StartHistory(bool resume)
         {
             liveHistory=Progression.HistorySnapshot==null?null:new LastStandRunHistory(Progression.HistorySnapshot);
+            long closedMilliseconds=research.TakeClosedMilliseconds();
             if(resume && liveHistory?.Current!=null && closedMilliseconds>0)liveHistory.AddClosedTime(closedMilliseconds);
-            closedMilliseconds=0;
             Array.Clear(activeMillisecondsRemainders,0,activeMillisecondsRemainders.Length);
             pausedMillisecondsRemainder=0;
             historyObservedAt=Time.realtimeSinceStartupAsDouble;

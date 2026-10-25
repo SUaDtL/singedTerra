@@ -1,3 +1,5 @@
+// Versioned diagnostics contract; player actions and state remain in production owners.
+const OBSERVATION_CONTRACT=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v1.json',import.meta.url),'utf8'));
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
 const SHOP_RUNTIME_PROBE = `(() => {
@@ -12,7 +14,8 @@ const SHOP_RUNTIME_PROBE = `(() => {
 })();`;
 const SHOP_PLAYER_INPUTS = ['e2e/helpers/lastStandJourney.mjs','scripts/last-stand-playable-loop.mjs',
   'campaign-unity/Tools/verify_last_stand_loop.py','campaign-unity/Tools/last_stand_shop/test_shop_player.py',
-  'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py'];
+  'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
 // presentation matrix. Preserve every value, streaming JSON in bounded batches.
@@ -42,14 +45,12 @@ export function writeShopPresentationJson(path,value){
 // Admit the complete current controls and scroll fields without repairing a
 // truncated Unity log. Geometry qualification additionally checks raw graphics.
 export function readShopControlObservation(raw) {
-  const tag='ST_LS_HUD_LAYOUT ';
+  const tag=OBSERVATION_CONTRACT.tag;
   assert.ok(typeof raw==='string' && raw.startsWith(tag),'Expected actual HUD control emission');
   const payload=raw.slice(tag.length),boundary=payload.indexOf(',"graphics":[');
   assert.ok(boundary>0,'Complete controls must precede the graphics array');
   const prefix=JSON.parse(payload.slice(0,boundary)+'}');
-  const header=['phase','coordinates','selection','width','height','pixelRatio','scrollOffset','maximumScrollOffset',
-    'settingsScrollOffset','settingsMaximumScrollOffset','controls','shopControls','settingsControls','researchControls','historyControls'];
-  const tail=['researchScrollOffset','researchMaximumScrollOffset','historyScrollOffset','historyMaximumScrollOffset'];
+  const {header,tail}=OBSERVATION_CONTRACT;
   assert.deepEqual(Object.keys(prefix).filter(key=>!tail.includes(key)).sort(),[...header].sort(),'Exact complete controls header');
   // Research/history offsets follow graphics in the Unity record. A truncated
   // packet cannot qualify those panes: keep the raw failure rather than infer it.
@@ -58,32 +59,19 @@ export function readShopControlObservation(raw) {
   assert.ok(Array.isArray(complete.graphics),'Complete observed graphics required');
   const fields={...prefix,...Object.fromEntries(tail.map(key=>[key,complete[key]]))};
   assert.ok(fields.coordinates==='top-left' && typeof fields.phase==='string' && typeof fields.selection==='string');
-  for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset','settingsScrollOffset','settingsMaximumScrollOffset',...tail])
+  for(const name of OBSERVATION_CONTRACT.numeric)
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
-  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects',
-      'Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext','ResearchEntry','WaveInfo']],
-    ['shopControls',['ShopEntry','ShopClose','ShopQuantity','ShopTabAttack','ShopTabDefense','ShopTabUtility',
-      'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy','ShopCard_armorBuy',
-      'ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy','ShopCard_scattergunAttackBuy','ShopCard_scrapYieldBuy']],
-    ['settingsControls',['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3',
-      'MenuResume','MenuSettings','MenuHelp','MenuMilestones','MenuWaveInfo','MenuResearch','MenuHistory','MenuNewRun','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
-      'MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus',
-      'DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp',
-      'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed','ChoicePrevious','ChoiceNext']],
-    ['researchControls',['ResearchClose','ResearchFilter','ResearchBack',
-      ...['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'].map(key=>'ResearchProject-'+key),
-      ...[0,1].flatMap(slot=>['Start','Queue','Switch','Suspend','RemoveQueued'].map(action=>'Research'+action+slot))]],
-    ['historyControls',['RunHistoryClose','RunHistoryTier']]];
+  const names=OBSERVATION_CONTRACT.inventories.map(({field,names})=>[field,names]);
   const allNames=new Set();
   for(const [key,expected]of names) {
     const items=fields[key];assert.ok(Array.isArray(items) && items.length===expected.length,'Complete '+key);
-    assert.deepEqual(items.map(item=>item.name).sort(),expected.sort(),'Unique known '+key);
+    assert.deepEqual(items.map(item=>item.name).sort(),[...expected].sort(),'Unique known '+key);
     for(const item of items) {
       assert.ok(!allNames.has(item.name),'Control identity appears in one owner');allNames.add(item.name);
-      assert.deepEqual(Object.keys(item).sort(),['name','label','accessibleLabel','mode','trackKey','x','y','width','height','active','interactable'].sort());
-      for(const name of ['name','label','accessibleLabel','mode','trackKey'])assert.equal(typeof item[name],'string');
-      for(const name of ['x','y','width','height'])assert.ok(Number.isFinite(item[name]),'Finite control bounds');
+      assert.deepEqual(Object.keys(item).sort(),[...OBSERVATION_CONTRACT.controlStrings,...OBSERVATION_CONTRACT.controlNumbers,...OBSERVATION_CONTRACT.controlBooleans].sort());
+      for(const name of OBSERVATION_CONTRACT.controlStrings)assert.equal(typeof item[name],'string');
+      for(const name of OBSERVATION_CONTRACT.controlNumbers)assert.ok(Number.isFinite(item[name]),'Finite control bounds');
       assert.ok(item.width>=0 && item.height>=0 && typeof item.active==='boolean' && typeof item.interactable==='boolean');
     }
   }

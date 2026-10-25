@@ -758,7 +758,7 @@ test('actual journey compact retention diagnostic bounds error text without trun
 
 test('actual journey evidence writer streams complete nested records without aggregate JSON stringification',()=>{
   const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
-  const start=source.indexOf('export function writeShopPresentationJson('),end=source.indexOf('\n// Unity',start);
+  const start=source.indexOf('export function writeShopPresentationJson('),end=source.indexOf('\nexport function readShopControlObservation(',start);
   const main=source.slice(source.indexOf('export async function runLastStandJourney('));
   const declaration=main.match(/const write = [^\n]+;/)?.[0];
   assert.ok(start>=0 && end>start && declaration,'Real serializer and maintained caller are required');

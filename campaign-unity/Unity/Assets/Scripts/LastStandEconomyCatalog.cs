@@ -15,9 +15,8 @@ namespace SingedTerra.LastStand
         { Version=version;Tracks=LastStandUpgradeCatalog.BuildTracks(version); }
         public LastStandUpgradeDefinition Get(LastStandUpgradeTrackId id)
         {
-            int index=(int)id;
-            if(index<0 || index>=Tracks.Count)throw new ArgumentOutOfRangeException(nameof(id));
-            return Tracks[index];
+            foreach(var row in Tracks)if(row.Id==id)return row;
+            throw new ArgumentOutOfRangeException(nameof(id));
         }
         public bool TryGet(string key,out LastStandUpgradeDefinition definition)
         {
@@ -79,11 +78,10 @@ namespace SingedTerra.LastStand
         static readonly LastStandEconomyDefinition legacy=new LastStandEconomyDefinition(LastStandUpgradeCatalog.LegacyEconomyVersion);
         static readonly LastStandEconomyDefinition previous=new LastStandEconomyDefinition(LastStandUpgradeCatalog.PreviousEconomyVersion);
         static readonly LastStandEconomyDefinition current=new LastStandEconomyDefinition(LastStandUpgradeCatalog.EconomyVersion);
+        public static IReadOnlyList<LastStandEconomyDefinition> All { get; } = Array.AsReadOnly(new[]{legacy,previous,current});
         public static LastStandEconomyDefinition Get(string version)
         {
-            if(version==legacy.Version)return legacy;
-            if(version==previous.Version)return previous;
-            if(version==current.Version)return current;
+            foreach(var definition in All)if(version==definition.Version)return definition;
             throw new ArgumentException("Unsupported Last Stand economy.",nameof(version));
         }
     }
