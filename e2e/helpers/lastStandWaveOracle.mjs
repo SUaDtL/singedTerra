@@ -8,7 +8,7 @@ import { verifyLastStandSource } from '../../scripts/assets/verify-last-stand-so
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 export const WAVE_ORACLE_SOURCES=Object.freeze(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
-  'LastStandWaveCatalog.cs','LastStandRewardCatalog.cs','LastStandUpgradeCatalog.cs','LastStandEconomyCatalog.cs','MechanicsShopModel.cs',
+  'LastStandWaveCatalog.cs','LastStandRewardCatalog.cs','LastStandSelection.cs','LastStandUpgradeCatalog.cs','LastStandEconomyCatalog.cs','MechanicsShopModel.cs',
   'LastStandShopState.cs','LastStandRunClock.cs','LastStandSpeedPolicy.cs']);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const fileSha=path=>sha(readFileSync(path));
