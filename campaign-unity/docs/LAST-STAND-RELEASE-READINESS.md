@@ -90,8 +90,8 @@ release, store submission, merge, deployment or live-host qualification is claim
 | Target | Measured or observed evidence | Remaining proof |
 | --- | --- | --- |
 | WebGL | Final release export passed in [build-webgl-20261025T100855Z-3d64fe](../Evidence/last-stand-architecture/build-webgl-20261025T100855Z-3d64fe/result.json), then the [original export receipt](../Evidence/last-stand-playable-loop/t05/build-20261025T100855Z-3d64fe/result.json) was admitted and packaged. Production typecheck/build passed. In-app browser checks exercised tier/environment preview, settings, a live purchase, wave clears and reload/resume on the prior package with identical runtime code. | Funded/offline research, two-tab ownership, native/background/audio, endurance and exact-candidate hosted CI retain their separate qualification obligations. |
-| Windows | Development build reported `Succeeded`, `174,822,523` bytes: [development receipt](../Evidence/last-stand-architecture/build-windows-20261025T093538Z-2a6afe/result.json). Final release configuration also succeeded, `112,304,539` bytes: [release receipt](../Evidence/last-stand-architecture/build-windows-20261025T095347Z-01cfb8/result.json). Both use x64 Mono, scene `LastStandPrototype`, version `1.0`. The executing agent observed both players launch and render. | Interaction qualification stopped at a Windows Security firewall dialog that the automation surface did not expose as a controllable window. No firewall permission was granted. Fresh/returning-player controls and save/relaunch remain unverified. |
-| Android | Existing SDK reused; Java 17 and NDK r27c installed at the explicit paths below. The Android module installer had a valid Unity signature, but its UAC request was cancelled. The owner is unavailable; installation is paused without another attempt. | Unity Android module installation, source-bound APK build, installation on a declared real device and all native interaction/lifecycle/performance qualification. No APK success is claimed. |
+| Windows | Development build reported `Succeeded`, `174,822,523` bytes: [development receipt](../Evidence/last-stand-architecture/build-windows-20261025T093538Z-2a6afe/result.json). Release configuration also succeeded, `112,304,539` bytes: [release receipt](../Evidence/last-stand-architecture/build-windows-20261025T095347Z-01cfb8/result.json). Both use x64 Mono, scene `LastStandPrototype`, version `1.0`. Actual menu, settings, purchase and checkpoint-relaunch checks passed in both configurations; the development session also cleared five waves. | Hardware audio, performance, abnormal termination and endurance remain unmeasured. |
+| Android | Existing SDK reused; Java 17 and NDK r27c installed at the explicit paths below. The Android module installer has a verified Unity signature. After the owner's popup update, a new installation attempt still returned Windows' operation-canceled error; the module remains absent. | Unity Android module installation, source-bound APK build, installation on a declared real device and all native interaction/lifecycle/performance qualification. No APK success is claimed. |
 
 Eight focused build/preflight checks pass. They cover source/toolchain/scene/
 configuration rejection, modified/missing/extra artifact rejection, incomplete
@@ -116,10 +116,33 @@ After metadata cleanup and repackaging, the executing agent reloaded the final
 package and used its rendered Resume Run and Run Upgrades controls. The same
 paused wave 7, hull 120/120, Cannon Attack level 1 and 103 Scrap were restored.
 
+The Windows development-player follow-up used rendered native input, with no
+save seeding. It cleared five waves, bought one Cannon Attack level, then exited
+during wave 6 with 97 Scrap. Relaunch restored wave 6 paused, hull 120/120,
+Cannon Attack level 1, 85 Scrap and five banked Salvage. The 12 Scrap earned
+during unfinished wave 6 was replayed from the completed-wave checkpoint.
+Music Off persisted through process exit; the original On setting was restored.
+Read-only inspection found four valid native save slots and no exception/error
+lines in that session's log. Evidence is retained in
+`Evidence/architecture-foundations/native-followup-20261025/`.
+
+The release-player follow-up resumed that same checkpoint, opened the run shop
+and bought the next Cannon Attack level for ten Scrap. Exiting before completing
+wave 6 restored both the prior level 1 and its 85 Scrap on relaunch, consistent
+with completed-wave recovery. Music Off persisted separately and was restored
+to On. The release player was closed after these checks. This does not establish
+live-combat or performance parity between the two configurations.
+
+The owner reported approving the popup. Subsequent read-only firewall inspection
+found two enabled Allow/Public rules for the development executable. The agent
+did not create or change those rules. The unrelated Docker Desktop crash dialog
+closed before the successful checks; no factory reset was performed.
+
 Frame pacing, process/device memory, thermal behavior, hardware audio and a full
 long farming session have not been measured for these packaged candidates. Build
-size is the only reported native build measurement here. Launch/render observation
-does not establish input, save/relaunch, accessibility or performance acceptance.
+size is the only reported native build measurement here. The native-player
+journeys establish only the specific input and persistence behavior above;
+launch/render observation alone does not establish broader target acceptance.
 
 ## Android toolchain preparation
 
@@ -140,12 +163,15 @@ that every Java installation on the host was remediated. The build receipt must
 bind these modified JDK bytes. It does not certify the toolchain against every
 security issue.
 
-The missing component is the pinned Unity Android player module. The reviewed
-installer's valid signature did not complete installation: UAC was cancelled and
-the owner cannot attend the machine. Do not retry the elevation or change Hub
-registration to bypass that stop. Resume this installation step when the owner
-can complete it, then rerun preflight with the explicit JDK/SDK/NDK roots and
-produce a real APK receipt.
+The missing component is the pinned Unity Android player module. After the owner
+reported handling a popup, the reviewed installer was attempted again through
+its normal Windows elevation flow. Windows returned "The operation was canceled
+by the user" at `2026-10-25T15:39:36Z`; no installer remains running and the module
+is still absent. The error identifies the installation outcome, not which popup
+the owner handled. No elevation bypass or Hub-registration change was used.
+The installation remains pending owner interaction with the Unity administrator
+prompt. Then rerun preflight with the explicit JDK/SDK/NDK roots and produce a
+real APK receipt.
 
 For comparison, a full embedded toolchain installation would be larger than the
 reused setup above. The following numbers are vendor estimates, not bytes
@@ -199,7 +225,7 @@ areas, not an assignment to an unavailable person.
 | Gap and severity | Evidence / current limit | Responsible area | Exit evidence |
 | --- | --- | --- | --- |
 | High: remaining browser qualification | Final source-bound package, live purchase, wave progression, settings and reload/resume passed in the in-app browser. Funded/offline research and two-tab qualification remain pending from the base sprint. | Delivery / browser verification | Complete the remaining funded-research and ownership journeys on the identified package. Preserve the recorded successful basic journey and keep only the latest local preview. |
-| High — native player interaction | Windows build and rendering observed; the uncontrollable Windows Security dialog blocked interaction. No firewall permission granted. Adapter tests do not exercise the player UI. | Host operator + delivery / platform verification | Owner-resolved OS dialog followed by an actual source-identified player journey, controls/settings checks and shutdown/relaunch persistence. Record the OS choice explicitly; do not infer or grant network permission from a launch. |
+| High: remaining native player qualification | Windows development and release players passed controls, purchase, saved preference and checkpoint restart checks at 1024 by 768. Broader device behavior remains unmeasured. | Delivery / platform verification | Record supported input/display targets, abnormal termination and lifecycle behavior. Preserve both completed native journeys. |
 | High — Android development artifact | SDK/JDK/NDK present; Unity module installation stopped at cancelled UAC. No APK exists as qualification evidence. | Host operator + build/toolchain | Complete the reviewed module installation when the owner is available, pass effective-tool preflight and retain a successful source/toolchain-bound APK build receipt. |
 | High — Android lifecycle and durability | No real-device session, suspend/resume, research-clock, interrupted-write or hardware-audio evidence for this candidate. Windows tests cannot qualify Android behavior. | Platform / device verification | Install the identified APK on a recorded device/OS, exercise fresh and returning profiles, background/foreground, forced termination/relaunch, clock behavior, preferences and audio; retain before/after save and observation evidence. |
 | High — performance and long-run reliability | No candidate frame-time, memory, thermal or real-duration farming measurements. Accelerated model tests are available but are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |

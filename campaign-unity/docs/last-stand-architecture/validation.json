@@ -14,6 +14,7 @@
     {"suite": "LastStandContentValidationChecks.Run", "refusalCasesPassed": 6, "seconds": 8.705, "savedSceneUnchanged": true},
     {"suite": "LastStandShopChecks.RunBattleShop", "outcome": "pass", "seconds": 14.858},
     {"command": "node --test scripts/ci/ciWorkflow.test.mjs", "passed": 188, "failed": 0, "seconds": 0.633},
+    {"command": "node --test scripts/ci/browserMatrix.test.mjs scripts/ci/lastStandEvidenceSetup.test.mjs scripts/ci/ciWorkflow.test.mjs", "passed": 214, "failed": 0, "seconds": 0.780022, "origin": "coverage agent", "note": "Includes isolated shared-contract admission, current purchase funding and CRLF source extraction. Both edited files passed node --check; independent review found no weakened assertions."},
     {"command": "npm run build", "environment": {"VITE_BASE": "/singedTerra/"}, "outcome": "pass", "includes": ["source/export admission", "strict TypeScript", "production bundle"]}
   ],
   "review": {
@@ -25,7 +26,7 @@
     {"target": "webgl", "configuration": "release", "outcome": "pass", "stamp": "20261025T100855Z-3d64fe", "packaged": true, "note": "Rebuilt after trailing-whitespace cleanup in Unity metadata; runtime code unchanged from browser journey."},
     {"target": "windows", "configuration": "development", "outcome": "pass", "stamp": "20261025T093538Z-2a6afe", "reportedBytes": 174822523, "note": "Precedes the final Editor-only validation additions; runtime source is unchanged."},
     {"target": "windows", "configuration": "release", "outcome": "pass", "stamp": "20261025T095347Z-01cfb8", "reportedBytes": 112304539, "sourceInventorySha256": "984c3cb12ed6a2274de7889079c44bb2e55149f3bf0e8b48c8accb9a1f1cccaf"},
-    {"target": "android", "configuration": "development", "outcome": "blocked", "preflightExit": 2, "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. UAC installation cancelled; owner unavailable."}
+    {"target": "android", "configuration": "development", "outcome": "blocked", "preflightExit": 2, "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. After the owner's popup update, the new installer attempt returned operation canceled at 2026-10-25T15:39:36Z. Module remains absent; owner interaction with Unity administrator prompt is pending."}
   ],
   "browserJourney": {
     "package": "Web-20261025T095204Z-3f937d",
@@ -36,9 +37,36 @@
     "leftPaused": true,
     "finalPackageRecheck": {"package": "Web-20261025T100855Z-3d64fe", "verified": "Reload and rendered Resume Run restored paused wave7, hull120/120, Cannon Attack level1 and103 Scrap; run shop opened successfully.", "evidence": "campaign-unity/Evidence/architecture-foundations/browser-final-package.png"}
   },
+  "nativeJourney": {
+    "date": "2026-10-25",
+    "package": "LastStand-windows-20261025T093538Z-2a6afe",
+    "configuration": "development",
+    "input": "Rendered controls through CUA; no save seeding",
+    "verified": ["Menu and settings", "Live wave clears and Cannon Attack purchase", "Process exit and relaunch", "Paused wave6 with hull120/120, Cannon Attack level1,85Scrap and5bankedSalvage", "Music Off persisted through restart; original On restored"],
+    "unfinishedWaveReplay": "97Scrap before exit becomes85Scrap at the completed-wave checkpoint; twelve unfinished-wave Scrap are replayed.",
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/result.json",
+    "nativeSaveSlots": {"inspected": 4, "checksumsValid": 4},
+    "firewall": "Owner reported handling popup; read-only inspection found Allow/Public rules for development executable. No agent firewall changes."
+  },
+  "nativeReleaseJourney": {
+    "date": "2026-10-25",
+    "package": "LastStand-windows-20261025T095347Z-01cfb8",
+    "configuration": "release",
+    "input": "Rendered controls through CUA at 1024 by 768; no save seeding",
+    "verified": ["Resume paused at wave 6 with hull 120/120, 85 Scrap and Cannon Attack level 1", "Menu, settings and run shop controls", "Purchase level 2 for ten Scrap", "Exit before wave completion restores both checkpoint level 1 and 85 Scrap", "Music Off persists independently; original On restored"],
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/release-result.json",
+    "closedAfterCheck": true
+  },
+  "hostedCiFollowup": {
+    "head": "c946855821f61a023dc927bc3baaf32091340894",
+    "run": 40184206002,
+    "outcome": "failure",
+    "reason": "Scope classification's isolated evidence fixture omitted the shared observation-contract JSON.",
+    "repair": "Fixture closure repaired; 214 focused checks pass locally. A new exact-head hosted result is required."
+  },
   "remaining": [
     "Android module installation, actual APK and real device lifecycle/storage/audio/performance qualification",
-    "Windows player controls and save/relaunch: protected firewall dialog blocks automation; no permission granted",
+    "Windows abnormal termination, hardware audio, performance and broader supported input/display qualification",
     "Funded/offline research browser journey, two-tab ownership and native/background/audio qualification inherited from PR544",
     "Ten actual active hours at researched5x; no endurance observation started",
     "Eight historical journey-guard cases lack their external ST_SHOP_BACKGROUND_RECORD, ST_SHOP_GUARD_RECORD or ST_SHOP_OBSERVER_OUTPUT_ROOT fixtures;39 other cases passed",
