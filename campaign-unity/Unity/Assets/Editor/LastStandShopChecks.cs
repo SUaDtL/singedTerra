@@ -1054,6 +1054,63 @@ public static class LastStandShopChecks
             }
         }
     }
+    static void WaveInformationSurface()
+    {
+        foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
+        using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=ResearchSprintSave()}))
+        {
+            f.Click(f.Game.Loop.Phase=="workshop"?"Redeploy":"Deploy");f.Reanchor();
+            var target=f.Button("WaveInfo");var bounds=f.Bounds((RectTransform)target.transform);
+            Require(target.IsActive() && target.IsInteractable() && bounds.width>=43.99f && bounds.height>=43.99f,
+                "wave readout is an ordinary reachable 44px target "+profile);
+            f.Camera.Render();Canvas.ForceUpdateCanvases();
+            Require(ShopRaycast(f,new Vector2(bounds.center.x,f.Canvas.pixelRect.height-bounds.center.y))==target,
+                "wave readout receives real pointer hit testing");
+            target.Select();f.Refresh();
+            string before=f.Game.Session.Model.Snapshot();int wallet=f.Game.Loop.Progression.Wallet;
+            int scrap=Shop(f.Game.Session).Scrap;
+            ExecuteEvents.Execute(target.gameObject,new BaseEventData(EventSystem.current),ExecuteEvents.submitHandler);f.Refresh();
+            Require(f.Game.Loop.MenuPage=="wave" && f.Game.Session.Paused,"keyboard Submit opens and pauses wave details");
+            Require(EventSystem.current.currentSelectedGameObject==f.Button("SettingsClose").gameObject,
+                "wave details use modal initial focus");
+            var body=f.Text("SettingsBody");
+            Require(body.text.Contains("TIER 1 / WAVE 1") && body.text.Contains("ENEMIES LEFT") &&
+                body.text.Contains("CLOSE") && body.text.Contains("RANGED") && body.text.Contains("Armor: none") &&
+                body.text.Contains("Scrap") && body.text.Contains("after your armor") && body.text.Contains("Attack interval"),
+                "actual wave modal exposes both enemy kinds and production combat/reward labels");
+            Require(body.preferredHeight<=body.rectTransform.rect.height+1,"wave details are measured without text clipping");
+            var keyboard=f.Root.GetComponent<LastStandHudKeyboard>();keyboard.NavigateKeyboard("scroll-end");f.Refresh();
+            var back=f.Button("SettingsBack");back.Select();f.Refresh();
+            var backBounds=f.Bounds((RectTransform)back.transform);var screen=CanvasBounds(f);
+            Require(screen.Contains(backBounds.min)&&screen.Contains(backBounds.max),"keyboard reveals final wave panel control");
+            f.Click("SettingsClose");
+            Require(EventSystem.current.currentSelectedGameObject==target.gameObject && !f.Game.Session.Paused,
+                "closing wave details restores the wave target and the previous running state");
+            Require(f.Game.Session.Model.Snapshot()==before && f.Game.Loop.Progression.Wallet==wallet && Shop(f.Game.Session).Scrap==scrap,
+                "reading wave information never advances combat or spends resources");
+            f.Click("ShopEntry");f.Camera.Render();Canvas.ForceUpdateCanvases();
+            var shopTarget=f.Bounds((RectTransform)target.transform);
+            Require(target.IsActive() && target.IsInteractable() && shopTarget.width>=43.99f && shopTarget.height>=43.99f &&
+                ShopRaycast(f,new Vector2(shopTarget.center.x,f.Canvas.pixelRect.height-shopTarget.center.y))==target,
+                "the visible wave readout remains reachable beside the open shop");
+            foreach(string id in new[]{"Menu","ShopClose","ShopQuantity","SpeedRate"})
+            {
+                var other=f.Bounds((RectTransform)f.Button(id).transform);
+                Require(Mathf.Min(shopTarget.xMax,other.xMax)-Mathf.Max(shopTarget.xMin,other.xMin)<.5f ||
+                    Mathf.Min(shopTarget.yMax,other.yMax)-Mathf.Max(shopTarget.yMin,other.yMin)<.5f,
+                    "wave hit target never overlaps the existing shop or menu target "+id);
+            }
+            target.Select();f.Click("WaveInfo");f.Click("SettingsClose");
+            Require(f.Root.Find("ShopPanel").gameObject.activeInHierarchy && !f.Game.Session.Paused &&
+                EventSystem.current.currentSelectedGameObject==target.gameObject,"wave details preserve the open shop and return focus");
+            f.Click("ShopClose");
+            f.Game.Loop.TogglePause();f.Refresh();f.Click("Menu");
+            f.Button("MenuWaveInfo").Select();f.Refresh();f.Click("MenuWaveInfo");
+            Require(f.Game.Loop.MenuPage=="wave","Menu reaches the same wave information page");
+            f.Click("SettingsClose");Require(f.Game.Session.Paused,"closing preserves a preexisting manual pause");
+            LastStandHudChecks.AssertOrdinaryInventory(f.Root,"wave information");
+        }
+    }
     public static void RunResearchSprint()
     {
         bool failed=false;using(var preferencesScope=new LastStandTestPreferencesScope())
@@ -1065,6 +1122,7 @@ public static class LastStandShopChecks
                 NamedIncome("test_research_lab_history_modal_surfaces",ResearchSprintSurfaces,ref failed);
                 NamedIncome("test_research_bulk_shop_surfaces",BulkSprintSurfaces,ref failed);
                 NamedIncome("test_shop_price_line",ShopPriceLine,ref failed);
+                NamedIncome("test_wave_information_surface",WaveInformationSurface,ref failed);
             }
             finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
         }

@@ -1,8 +1,9 @@
 # Research and farming economy candidate
 
-Approved scope: ST-LS-RESEARCH-SPEC, revision 8 (owner approval carried from revision
-7). Values below describe the current candidate, not a final balance claim.
-The implementation uses `research-v1` and `research-farming-economy-v2`.
+Approved scope: ST-LS-RESEARCH-SPEC, revision 9 (owner approval carried from revision
+7, with the requested wave-income and enemy-stats follow-up). Values below describe
+the current candidate, not a final balance claim. New runs use `research-v1` and
+`research-farming-economy-v3`; existing v1/v2 runs keep their saved rules.
 
 ## Currencies and commitments
 
@@ -56,7 +57,9 @@ instant. Research uses UTC on reopen and monotonic elapsed time while open.
 ## Upgrade curves
 
 For a run's nth purchased level, let `e = max(0,n-8)`. Price is
-`slope × n + floor(e²/divisor)`, except Cannon Cycle. Permanent prices use the
+`slope × n + floor(22 × e²/divisor)`, except Cannon Cycle. The first eight run
+purchases and all permanent prices are unchanged. Saved v2 runs retain the original
+`slope × n + floor(e²/divisor)` prices. Permanent prices use the
 purchased permanent rank `n`: `initial + floor(n/linear) + floor(n²/quadratic)`.
 Permanent levels improve the starting build without making the first run purchase
 more expensive. Bulk 1/10/100/Max quotes sum the same prices and stop at funds/cap.
@@ -82,10 +85,22 @@ At total level L, let `g=max(0,L-8)`. Cannon damage is
 `3+L+floor(g²/40)` per simulation second. Armor subtracts L from each hit with
 a minimum of one damage. Scrap Yield adds one percentage point per level.
 
-Base kill Scrap is `3+floor((wave-1)/250)`. Scrap Yield and Scrap Logistics
+Base kill Scrap is `3 + floor(min(wave,200)/10) + floor(max(wave-200,0)/20)`:
+3 at wave 1, 4 at wave 10, 5 at wave 20, 6 at wave 30, 13 at wave 100 and 23 at
+wave 200; it then gains one every 20 waves. Scrap Yield and Scrap Logistics
 multiply subsequent income with exact fractional carry. They never recalculate
 past income. Migrated runs retain their original base income, prices and effects;
 research bonuses apply prospectively. Reload keeps the run's pinned economy.
+In particular, retained v2 runs still use `3+floor((wave-1)/250)`, and v1 runs
+still use the flat base bounty of 3. The stronger income alone let level-20
+development builds reach wave 5,000, so v3 also increases the deep temporary-price
+curvature. Permanent Salvage costs and combat effects were not changed.
+
+The wave readout and Menu open an enemy-stats panel with current tier/wave,
+remaining enemies, HP, armor, attack damage before/after player armor, cadence,
+movement and Scrap value. Timing is shown at 1x; reward values include current
+yield/research and fractional carry. It identifies retained run rules. Opening
+and closing the panel preserves the shop and existing manual pause state.
 
 ## Measurement boundary
 
@@ -96,16 +111,17 @@ Cannon Cycle, 155,370 for Scrap Yield, 482,215 for Armor and roughly 9.21–15.6
 million for the large growth tracks. Early milestone income cannot buy a permanent
 gold box. Caps represent actual completed effects, not decorative levels.
 
-The early earned twelve-run Repair path reaches approximately waves
-40, 71, 112, 140, 164, 192, 216, 246, 282, 349, 402 and 481. Mature Tier 1
-fixtures project 5,000 waves in 10.18–11.11 hours at 5x. Those mature fixtures use
+The earned mixed-allocation Repair path starts at wave 67, reaches wave 3,407
+on run 8, and reaches the probe's 5,000-wave bound on run 10. These runs earn
+their permanent budgets; no gifted profile is substituted for that trajectory.
+Mature Tier 1 fixtures project 5,000 waves in 10.13–10.91 hours at 5x. Those mature fixtures use
 an ideal purchase policy after each admitted kill. They do not yet establish a
 comfortable manual purchase cadence, real-time renderer performance or endurance.
 The separate [periodic bulk report](last-stand-research/periodic-bulk-report.json)
 uses one Max purchase every 15 real minutes, rotating Cannon/Hull/Yield/Cannon/
 Cycle/fitted auxiliary/Armor and skipping capped tracks. It reaches 5,000 waves
-with Launcher in 10.11 hours (40 purchases), Scattergun in 11.29 hours (45), and
-Repair in 12.05 hours (48). Repair is slightly above the 12-hour target. Each
+with Launcher in 10.01 hours (40 purchases), Scattergun in 11.13 hours (44), and
+Repair in 11.62 hours (46). Each
 purchase costs at least three input gestures, including opening and closing the
 shop; this is not an automatic purchase feature. The no-purchase controls die
 around waves 1,983–2,444. Actual interface and scheduling overhead are unmeasured

@@ -84,6 +84,7 @@ namespace SingedTerra.LastStand
             Button("MenuSettings","SETTINGS",content,() => loop.OpenMenu("settings"));
             Button("MenuHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
             Button("MenuMilestones","WAVE MILESTONES",content,() => loop.OpenMenu("milestones"));
+            Button("MenuWaveInfo","CURRENT WAVE ENEMIES",content,() => loop.OpenMenu("wave"));
             Button("MenuResearch","RESEARCH LAB",content,loop.OpenResearch);
             Button("MenuHistory","RUN HISTORY",content,loop.OpenHistory);
             Button("MenuNewRun","NEW RUN",content,() => loop.RequestConfirmation("new-run"));
@@ -169,6 +170,7 @@ namespace SingedTerra.LastStand
                     body.text = loop.Session.Model != null ? "Run paused. Closing this menu preserves a manual pause." : "LAST STAND";
                     if(loop.Guidance.Tutorial != "") body.text += "\n\n" + loop.Guidance.Tutorial;
                     Show("MenuResume"); Show("MenuSettings"); Show("MenuHelp"); Show("MenuMilestones");
+                    Show("MenuWaveInfo",enabled:loop.CanInspectWave);
                     Show("MenuResearch",loop.Progression.GetBestWave(1)>=25?"RESEARCH LAB":"RESEARCH LAB - T1 WAVE 25");
                     Show("MenuHistory");
                     if(loop.Progression.HasCheckpoint)Show("MenuNewRun",enabled:canLeave);
@@ -210,6 +212,13 @@ namespace SingedTerra.LastStand
                 case "help": body.text = LastStandGuidance.Help+
                     "\n\nRESEARCH & FARMING\nTemporary Scrap buys upgrades for this run. Persistent Salvage funds both Mechanics Shop starting upgrades and Lab research. Research uses real time, including while closed; combat speed changes combat only. Switching research keeps elapsed progress and refunds the paid Salvage; resuming pays that cost again.\nRun History compares repeatable Salvage per real active hour, with milestone bonuses shown separately. Comparisons disclose short runs, changing upgrades and checkpoint measurement limits.";
                     Show("SettingsBack"); break;
+                case "wave":
+                    title.text="ENEMY STATS";
+                    body.text=loop.Session.Model!=null && loop.Shop!=null
+                        ?new LastStandWaveInformation(loop.Session.Model,loop.Shop,
+                            loop.Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics)).Describe()
+                        :"Deploy or resume a run to inspect its current wave.";
+                    Show("SettingsBack");break;
                 case "milestones":
                     int tier=loop.Session.Model?.Profile.Tier??loop.Progression.Checkpoint?.Tier??loop.Progression.SelectedTier;
                     title.text="TIER "+tier+" MILESTONES";

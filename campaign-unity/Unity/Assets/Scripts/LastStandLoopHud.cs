@@ -24,11 +24,11 @@ namespace SingedTerra.LastStand
         readonly LastStandSettingsHud settings;
         readonly LastStandResearchHud research;
         readonly LastStandRunHistoryHud history;
-        readonly Button researchEntry;
+        readonly Button researchEntry, waveInfo;
         Button menuReturnFocus;
         bool menuWasOpen;
         string menuWasPage;
-        readonly Button[] actions;
+        readonly Button[] actions, coreActions;
         readonly Button shopEntry, shopClose, shopQuantity;
         long shopProfileRevision;
         readonly Button[] shopTabs, shopActions, allActions;
@@ -257,7 +257,21 @@ namespace SingedTerra.LastStand
             settings = new LastStandSettingsHud(loop,root,font,metalGrain,metalSurface);
             research=new LastStandResearchHud(root,font,loop.CloseMenu,loop.RefreshResearch,loop.SubmitResearch,metalGrain,metalSurface);
             history=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshResearch,metalGrain,metalSurface);
-            var complete = new List<Button>(actions); complete.AddRange(shopActions); complete.AddRange(settings.Buttons);
+            foreach (string id in new[] { "HullValue", "ElapsedTime", "DisabledCount", "CannonDamage", "Fitting" })
+                readouts.Add(id,Label(id,card,(int)LastStandHudLayout.MinimumTextSize));
+            // The existing wave instrument is the entry point: a full-size
+            // transparent hit target adds no extra opaque HUD panel or row.
+            var waveTarget=Node("WaveInfo",card);nodes.Add(waveTarget.name,waveTarget);
+            waveTarget.gameObject.AddComponent<Image>().color=Color.clear;
+            waveInfo=waveTarget.gameObject.AddComponent<Button>();waveInfo.targetGraphic=readouts["ElapsedTime"];
+            var waveColors=waveInfo.colors;waveColors.normalColor=Brass;waveColors.highlightedColor=waveColors.selectedColor=Paper;
+            waveColors.disabledColor=DisabledPaper;waveColors.pressedColor=Color.white;waveInfo.colors=waveColors;
+            waveInfo.onClick.AddListener(()=>loop.OpenMenu("wave"));
+            var waveOutline=readouts["ElapsedTime"].gameObject.AddComponent<Outline>();
+            waveOutline.effectColor=Ink;waveOutline.effectDistance=new Vector2(1,-1);waveOutline.enabled=false;
+            waveInfo.gameObject.AddComponent<LastStandActionFeedback>().Initialize(waveInfo,readouts["ElapsedTime"],waveOutline,null);
+            var core=new List<Button>(actions);core.Add(waveInfo);coreActions=core.ToArray();
+            var complete = new List<Button>(coreActions); complete.AddRange(shopActions); complete.AddRange(settings.Buttons);
             complete.AddRange(research.Buttons);complete.AddRange(history.Buttons);allActions = complete.ToArray();
             keyboard = root.gameObject.AddComponent<LastStandHudKeyboard>(); keyboard.Initialize(allActions,b =>
                 { RevealShopSelection(b); settings.Reveal(b);research.Reveal(b);history.Reveal(b); });
@@ -265,8 +279,6 @@ namespace SingedTerra.LastStand
             keyboard.Escape = () => { if (loop.MenuOpen) loop.CloseMenu(); else loop.OpenMenu(); };
             keyboard.ScrollContent = direction => {if(loop.MenuPage=="research")research.ScrollKeyboard(direction);
                 else if(loop.MenuPage=="history")history.ScrollKeyboard(direction);else settings.ScrollKeyboard(direction);};
-            foreach (string id in new[] { "HullValue", "ElapsedTime", "DisabledCount", "CannonDamage", "Fitting" })
-                readouts.Add(id,Label(id,card,(int)LastStandHudLayout.MinimumTextSize));
             var hullBar = Node("HullBar",card); nodes.Add(hullBar.name,hullBar);
             hullBar.gameObject.AddComponent<Image>().color = Ink;
             hullBar.GetComponent<Image>().sprite = metalSurface; hullBar.GetComponent<Image>().type = Image.Type.Sliced;
@@ -350,7 +362,7 @@ namespace SingedTerra.LastStand
                 var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(runTier),model.Wave);
                 state.HullFraction=Mathf.Clamp01(model.Hull/(float)model.CurrentMaximumHull);
                 state.Readouts.Add("HullValue","HULL "+model.Hull+" / "+model.CurrentMaximumHull);
-                state.Readouts.Add("ElapsedTime","T"+runTier+" / WAVE "+model.Wave);
+                state.Readouts.Add("ElapsedTime","T"+runTier+" / WAVE "+model.Wave+" >");
                 state.Readouts.Add("DisabledCount","LEFT "+model.RemainingWaveEnemies);
                 state.Readouts.Add("CannonDamage","NEXT +"+reward.RepeatableSalvage+" SALVAGE");
                 state.Readouts.Add("Fitting",LastStandTierHudText.NextMilestone(runTier,model.CompletedWave).ToUpperInvariant());
@@ -542,6 +554,8 @@ namespace SingedTerra.LastStand
                 menuReturnFocus=menu;
                 if(EventSystem.current && EventSystem.current.currentSelectedGameObject==researchEntry.gameObject)
                     menuReturnFocus=researchEntry;
+                else if(EventSystem.current && EventSystem.current.currentSelectedGameObject==waveInfo.gameObject)
+                    menuReturnFocus=waveInfo;
             }
             var state = ReadPresentation(); keyboard.BeforeRefresh(state.Phase != projectedPhase); projectedPhase = state.Phase;
             bool garageCards=loop.GarageCardsVisible;
@@ -576,6 +590,9 @@ namespace SingedTerra.LastStand
                 speedPlus.gameObject.SetActive(false);
             }
             foreach (var entry in readouts) entry.Value.text = state.Readouts.TryGetValue(entry.Key,out var value) ? value : "";
+            waveInfo.gameObject.SetActive((state.Phase=="battle" || state.Phase=="settling") && loop.Session.Model?.Profile.IsWaveBased==true);
+            waveInfo.interactable=loop.CanInspectWave && !loop.MenuOpen;
+            waveInfo.GetComponent<LastStandActionFeedback>().Refresh();
             hullFill.anchorMax = new Vector2(state.HullFraction,1);
             settings.Refresh();
             research.Refresh(loop.MenuPage=="research",loop.ResearchSnapshot,loop.Progression.GetBestWave(1),
@@ -614,7 +631,7 @@ namespace SingedTerra.LastStand
             bool resized = layoutPixels != pixels.size; layoutPixels = pixels.size;
             float ratio = PreferredPixelRatio(), cssWidth = pixels.width / ratio, cssHeight = pixels.height / ratio;
             float unitsX = size.x / cssWidth, unitsY = size.y / cssHeight;
-            var active = new List<string>(); foreach (var button in actions) if (button.gameObject.activeSelf) active.Add(button.name);
+            var active = new List<string>(); foreach (var button in coreActions) if (button.gameObject.activeSelf) active.Add(button.name);
             if (shopEntry.gameObject.activeSelf) active.Add(shopEntry.name);
             var keys = new List<string>();
             if (shopView != null) foreach (var cardView in shopView.Cards)
@@ -852,10 +869,11 @@ namespace SingedTerra.LastStand
             {
                 var button = buttons[i]; var bounds = ScreenBounds((RectTransform)button.transform);
                 string track = ""; foreach (var cardControls in shopCards) if (button == cardControls.Buy) track = cardControls.Key;
-                string label = button.GetComponentInChildren<Text>(true)?.text ?? "";
+                string label = button==waveInfo ? readouts["ElapsedTime"].text : button.GetComponentInChildren<Text>(true)?.text ?? "";
                 controls[i] = new Control { name = button.name, label = label, accessibleLabel = button == shopClose ? "Close" : button==menu ? "Menu" :
                     button==tierPrevious?"Previous tier":button==tierNext?"Next tier":button==fittingPrevious?"Previous fitting":button==fittingNext?"Next fitting":
-                    button==shopQuantity?"Purchase quantity "+loop.ShopQuantity+". Cycle 1, 10, 100 or Max":label,
+                    button==shopQuantity?"Purchase quantity "+loop.ShopQuantity+". Cycle 1, 10, 100 or Max":
+                    button==waveInfo?"Current wave enemy stats. "+label:label,
                     mode = mode, trackKey = track, x = bounds.x, y = bounds.y, width = bounds.width, height = bounds.height,
                     active = button.gameObject.activeInHierarchy, interactable = button.IsInteractable() };
             }
@@ -884,7 +902,7 @@ namespace SingedTerra.LastStand
                 graphics.Add(observation);
             }
             var layout = new LayoutState { phase = loop.Phase, coordinates = "top-left", width = Screen.width, height = Screen.height,
-                pixelRatio = PreferredPixelRatio(), controls = ObserveControls(actions,"Core"), shopControls = ObserveControls(shopActions,shopMode.ToString()),
+                pixelRatio = PreferredPixelRatio(), controls = ObserveControls(coreActions,"Core"), shopControls = ObserveControls(shopActions,shopMode.ToString()),
                 settingsControls = ObserveControls(settings.Buttons,"Settings"),
                 researchControls=ObserveControls(research.Buttons,"Research"),historyControls=ObserveControls(history.Buttons,"History"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",

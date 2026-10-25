@@ -25,7 +25,8 @@ namespace SingedTerra.LastStand
     public static class LastStandUpgradeCatalog
     {
         public const string LegacyEconomyVersion = "long-run-economy-v1";
-        public const string EconomyVersion = "research-farming-economy-v2";
+        public const string PreviousEconomyVersion = "research-farming-economy-v2";
+        public const string EconomyVersion = "research-farming-economy-v3";
         public const int TotalCap = 5000, PermanentCap = 2500, ScrapPriceStep = 5;
         public const int LegacyTotalCap = 8, LegacyPermanentCap = 3;
         public const int BaseCannonDamage = 20, CannonDamagePerLevel = 10;
@@ -117,7 +118,10 @@ namespace SingedTerra.LastStand
                 case LastStandUpgradeTrackId.ScattergunAttack:slope=3;divisor=240;break;
                 case LastStandUpgradeTrackId.ScrapYield:slope=5;divisor=20;break;
             }
-            return checked((int)((long)slope*purchaseIndex+extra*extra/divisor));
+            // New-run income grows early. Its deep run prices keep long-term
+            // starting levels valuable; saved economies retain their prices.
+            int curve=EconomyVersion==LastStandUpgradeCatalog.EconomyVersion?22:1;
+            return checked((int)((long)slope*purchaseIndex+curve*extra*extra/divisor));
         }
         public int PermanentPrice(int purchaseIndex)
         {

@@ -104,7 +104,7 @@ public static class LastStandHudChecks
     static bool IsInlineArrow(string id) => id=="TierPrevious"||id=="TierNext"||id=="FittingPrevious"||id=="FittingNext";
     static bool ExpectedGarageCards(LastStandLoopController loop) => (loop.Phase=="garage"||loop.Phase=="workshop") &&
         loop.Progression.SaveState=="ready" && loop.Progression.ActiveRunId==0 && loop.Progression.PendingDefeat==null && loop.Session.Model==null;
-    static string CorePath(string id) => id=="Menu"||id=="ResearchEntry" ? id : id=="TierPrevious"||id=="TierNext" ? "GarageTierCard/"+id :
+    static string CorePath(string id) => id=="WaveInfo"?"LastStandCard/WaveInfo":id=="Menu"||id=="ResearchEntry" ? id : id=="TierPrevious"||id=="TierNext" ? "GarageTierCard/"+id :
         id=="FittingPrevious"||id=="FittingNext" ? "GarageFittingCard/"+id : "LastStandDock/"+id;
     static void AssertInlineGarageFields(LastStandLoopController loop,RectTransform root)
     {
@@ -625,10 +625,12 @@ public static class LastStandHudChecks
         RequireVisible(f.Text("PhaseHeading"), "required battle PhaseHeading");
         foreach (string id in CoreControlIds)
         {
-            var button = f.Button(id); bool active = id=="Menu" || id=="SpeedMinus"||id=="SpeedRate"||id=="SpeedPlus";
+            var button = f.Button(id); bool active = id=="Menu" || id=="SpeedMinus"||id=="SpeedRate"||id=="SpeedPlus" ||
+                id=="WaveInfo" && f.Loop.Session.Model?.Profile.IsWaveBased==true;
             Require(button.gameObject.activeInHierarchy == active, "actual battle stable control inventory " + id);
             if (!active) continue;
             Require(button.enabled, "actual battle Button enabled " + id);
+            if(id=="WaveInfo") { RequireVisible(f.Text("ElapsedTime"),"interactive wave readout");continue; }
             RequireVisible(button.GetComponent<Image>(), "required battle action " + id);
             RequireVisible(button.transform.Find(id + "Text").GetComponent<Text>(), "required battle action label " + id);
         }
@@ -889,7 +891,8 @@ public static class LastStandHudChecks
         {
             var control = report.controls[i]; var button = RuntimeButton(ids[i]);
             Require(control.name == ids[i] && seen.Add(control.name), "runtime ordered unique control identity " + ids[i]);
-            Require(control.label == button.GetComponentInChildren<Text>(true).text &&
+            string actualLabel=ids[i]=="WaveInfo"?runtimeRoot.Find("LastStandCard/ElapsedTime").GetComponent<Text>().text:button.GetComponentInChildren<Text>(true).text;
+            Require(control.label == actualLabel &&
                 control.active == button.gameObject.activeInHierarchy && control.interactable == button.IsInteractable(),
                 "runtime current label active/interactable state " + ids[i] + " " + state);
             ((RectTransform)button.transform).GetWorldCorners(corners);
@@ -1354,12 +1357,12 @@ public static class LastStandHudChecks
     static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects", "SpeedMinus", "SpeedRate", "SpeedPlus",
         "TierPrevious","TierNext","FittingPrevious","FittingNext" };
     static readonly string[] CoreControlIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects",
-        "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "TierPrevious","TierNext","FittingPrevious","FittingNext","ResearchEntry" };
+        "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "TierPrevious","TierNext","FittingPrevious","FittingNext","ResearchEntry","WaveInfo" };
     static readonly string[] ShopControlIds = { "ShopEntry", "ShopClose", "ShopQuantity", "ShopTabAttack", "ShopTabDefense", "ShopTabUtility",
         "ShopCard_cannonAttackBuy", "ShopCard_launcherAttackBuy", "ShopCard_hullCapacityBuy", "ShopCard_armorBuy",
         "ShopCard_cannonCycleBuy", "ShopCard_fieldRepairBuy", "ShopCard_scattergunAttackBuy", "ShopCard_scrapYieldBuy" };
     static readonly string[] ModalControlIds = { "SettingsClose", "ChoicePrevious", "ChoiceNext", "SettingsTab0", "SettingsTab1", "SettingsTab2", "SettingsTab3",
-        "MenuResume", "MenuSettings", "MenuHelp", "MenuMilestones", "MenuResearch", "MenuHistory", "MenuNewRun", "MenuAbandon", "MenuCampaigns", "MenuAbout", "SettingsBack", "SettingsMute",
+        "MenuResume", "MenuSettings", "MenuHelp", "MenuMilestones", "MenuWaveInfo", "MenuResearch", "MenuHistory", "MenuNewRun", "MenuAbandon", "MenuCampaigns", "MenuAbout", "SettingsBack", "SettingsMute",
         "MasterMinus", "MasterPlus", "EffectsMinus", "EffectsPlus", "EffectsSample", "MusicEnabled", "MusicMinus", "MusicPlus",
         "DisplayQuality", "DisplayEffects", "DisplayFullscreen", "TutorialTips", "PurchaseSuggestions", "GameplayHelp", "DataRetry", "PreferencesRetry",
         "DataAccount", "SettingsDefaults", "ConfirmCancel", "ConfirmProceed" };
@@ -1372,7 +1375,7 @@ public static class LastStandHudChecks
     internal static void AssertOrdinaryInventory(RectTransform root, string state)
     {
         var core = new HashSet<string>(CoreControlIds); var shop = new HashSet<string>(ShopControlIds);var modal=new HashSet<string>(ModalControlIds);
-        Require(core.Count==19 && shop.Count==14 && modal.Count==39,"exact stable core19/shop14/modal39 sets "+state);
+        Require(core.Count==20 && shop.Count==14 && modal.Count==40,"exact stable core20/shop14/modal40 sets "+state);
         var research=new HashSet<string>{"ResearchClose","ResearchFilter","ResearchBack"};
         Require(LastStandResearchCatalog.Tracks.Count==4 && LastStandResearchCatalog.SlotCount==2,"current Lab catalog and slot bounds");
         foreach(var track in LastStandResearchCatalog.Tracks)Require(research.Add("ResearchProject-"+track.Key),"unique Lab catalog key");

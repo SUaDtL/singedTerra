@@ -19,7 +19,8 @@ def measure(quick=False, trajectory=False):
     names = MODEL_SOURCES + ["LastStandEconomyCatalog.cs", "LastStandResearchCatalog.cs"]
     paths = complete_sources(SCRIPTS, [SCRIPTS / name for name in names]) + [DIRECTORY / "UpgradeEconomyMeasurements.cs", DIRECTORY / "EconomyHorizonMeasurements.cs", Path(__file__)]
     before = {str(p.relative_to(PROJECT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
-    raw = execute(DIRECTORY / "UpgradeEconomyMeasurements.cs", names, "trajectory" if trajectory else "quick" if quick else "all")
+    raw = execute(DIRECTORY / "UpgradeEconomyMeasurements.cs", names, "trajectory" if trajectory else "quick" if quick else "all",
+                  timeout_seconds=120 if quick else 600)
     rows = list(csv.DictReader(io.StringIO(raw)))
     for row in rows:
         for key in row:
@@ -37,10 +38,11 @@ def measure(quick=False, trajectory=False):
     return {
         "sourceSha256": before,
         "calibration": {
-            "runEconomy": "research-farming-economy-v2",
-            "baseScrap": "3 + floor((wave - 1) / 250) per enemy; Scrap Yield and completed Scrap Logistics multiply subsequent kill income.",
+            "runEconomy": "research-farming-economy-v3",
+            "baseScrap": "3 + floor(min(wave, 200) / 10) + floor(max(wave - 200, 0) / 20) per enemy; Scrap Yield and completed Scrap Logistics multiply subsequent kill income.",
+            "runPrices": "The first eight ranks keep their initial prices; subsequent quadratic price terms use 22 times the v2 coefficient. Cannon Cycle is unchanged. Permanent Salvage prices are unchanged. Saved v1/v2 runs retain their exact prior prices and income.",
             "currentCannonGrowth": "20 + 10L + floor(max(L - 8, 0)^2 / 80). The legacy run retains /5.",
-            "rationale": "The first candidate combined /5 attack growth with an income rise every 100 waves and reached the 2,000-wave probe bound from approximately 700 permanent Salvage. The /40 follow-up still reached 5,000 from 1,447. Slower income bands and gentler current Cannon growth preserve intermediate earned farming stages while maintaining a developed 5,000-wave target.",
+            "rationale": "The v2 curve left wave 30 at 3 Scrap. Early ten-wave increases now make that 6. Applying that new income alone let modest level-20 builds reach the 5,000-wave bound, so the new economy also scales deep temporary prices while preserving starting prices and permanent costs. Fresh, level-20, level-150 and mature builds remain distinct; retained saves are never repriced.",
             "permanentHorizons": horizons,
         },
         "method": "Compiled production C# combat and shop owners. Explicit rotating combat/income/mixed priorities save for their next investment; rewards are credited at admitted kills, purchases occur after kills. First-clear awards appear once on earned trajectories.",

@@ -32,7 +32,7 @@ static class ResearchProfileChecks
     static long Carry(Store store) => LastStandSaveJson.LongInteger(LastStandSaveJson.Read(store.Raw)["recoveryRemainder"]);
     static void SetWallet(Store store, int amount)
     { var raw = LastStandSaveJson.Read(store.Raw); raw["credits"] = amount; store.Raw = LastStandSaveJson.Write(raw); }
-    static Store Unlocked(int wave = 25)
+    static Store Unlocked(int wave = 25, string economyVersion = null)
     {
         var store = new Store(); Check(Load(store).SaveState == "ready", "Seed profile");
         var raw = LastStandSaveJson.Read(store.Raw); raw["credits"] = 100000; raw["selectedFitting"] = "launcher";
@@ -41,6 +41,12 @@ static class ResearchProfileChecks
             levels[track.Key] = track.Id == LastStandUpgradeTrackId.ScrapYield ? 0 : track.Id == LastStandUpgradeTrackId.CannonAttack ? 1000 : track.PermanentCap;
         store.Raw = LastStandSaveJson.Write(raw);
         var p = Load(store); Check(p.SaveState == "ready" && p.TryDeploy(), "Strong production cohort deploy");
+        if(economyVersion!=null) {
+            // A just-deployed empty ledger is valid under either eight-track
+            // economy. Subsequent waves and purchases use that retained owner.
+            store.Raw=store.Raw.Replace(LastStandUpgradeCatalog.EconomyVersion,economyVersion);
+            p=Load(store);Check(p.SaveState=="ready","Retained economy seed loads");
+        }
         var model = p.Checkpoint.RestoreModel(); var shop = p.Checkpoint.RestoreShop();
         for (int i = 1; i <= wave; i++)
         {
@@ -84,6 +90,25 @@ static class ResearchProfileChecks
         Check(p.TryDeploy() && p.HistorySnapshot.Current.RunId == p.ActiveRunId && p.Checkpoint.Shop.PermanentLevels.Count == 8,
             "New run gets eight-track economy and matching history");
         Check(Load(store).HasCheckpoint, "New checkpoint survives full readback");
+    }
+    static void RetainedEconomy()
+    {
+        var store=Unlocked(30,LastStandUpgradeCatalog.PreviousEconomyVersion);var p=Load(store);
+        var model=p.Checkpoint.RestoreModel();var shop=p.Checkpoint.RestoreShop();
+        model.ContinueAfterCheckpoint();shop.UpdatePurchaseLifecycle(LastStandShopPurchaseLifecycle.Running);
+        Check(shop.TryPurchase(new LastStandShopPurchaseIntent(shop.RunId,shop.Version,LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.Ten)).Accepted,"Retained paid upgrade");
+        model.ApplyShopProjection(shop);Clear(model,shop);Check(p.TryCommitWave(model,shop),"Retained paid boundary saved");
+        string saved=store.Raw,snapshot=model.Snapshot();int writes=store.Writes;
+        var reload=Load(store);var restored=reload.Checkpoint.RestoreShop();
+        Check(reload.SaveState=="ready" && store.Raw==saved && store.Writes==writes,"Valid retained profile reload is byte-identical");
+        Check(reload.Checkpoint.RestoreModel().Snapshot()==snapshot && restored.SpentScrap==shop.SpentScrap &&
+            restored.EarnedScrap==shop.EarnedScrap && restored.Scrap==shop.Scrap &&
+            restored.EconomyVersion==LastStandUpgradeCatalog.PreviousEconomyVersion,"Full reload preserves paid run and combat");
+        Check(reload.HistorySnapshot.Current.EconomyVersion==restored.EconomyVersion,"History keeps retained economy");
+        int before=restored.Scrap;restored.ObserveAuthoritativeKills(restored.UniqueKills+1,32,0);
+        Check(restored.Scrap==before+3,"Retained future kill uses old income");
+        Check(reload.TryFinalizeRun(null,"abandon") && reload.TryDeploy() &&
+            reload.Checkpoint.Shop.EconomyVersion==LastStandUpgradeCatalog.EconomyVersion,"Only next deployment adopts new economy");
     }
     static void Legacy()
     {
@@ -316,7 +341,7 @@ static class ResearchProfileChecks
         {
             switch (args[0])
             {
-                case "fresh": Fresh(); break; case "legacy": Legacy(); break; case "v4": V4(args[1], args[2]); break;
+                case "fresh": Fresh(); break; case "retained-economy": RetainedEconomy(); break; case "legacy": Legacy(); break; case "v4": V4(args[1], args[2]); break;
                 case "faults": Faults(); break; case "stale": Stale(); break; case "wallet": Wallet(); break;
                 case "checkpoint": Checkpoint(); break; case "carry": CarryAndHistory(); break;
                 case "contexts": UpgradeContexts(); break;

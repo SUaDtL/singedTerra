@@ -26,12 +26,12 @@ spec.loader.exec_module(verifier)
 def _current_control_fixture():
     """Invented current control inventory for parser tests, never runtime evidence."""
     core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry')
+            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry', 'WaveInfo')
     shop = ('ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
             'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
             'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy')
     settings = ('SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuWaveInfo', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                 'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                 'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                 'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
@@ -1200,6 +1200,8 @@ class ShopJourneyGuardTests(unittest.TestCase):
         action_names = dict(re.findall(r'(\w+)\s*=\s*Action\("([^"]+)"', core_source))
         action_fields = re.search(r'actions = new\[\] \{([^}]+)\}', core_source).group(1)
         actual_core = [action_names[field.strip()] for field in action_fields.split(',')]
+        self.assertIn('core.Add(waveInfo)', core_source)
+        actual_core += re.findall(r'var waveTarget=Node\("([^"]+)"', core_source)
         actual_settings = re.findall(r'Button\("([^"]+)",', settings_source)
         self.assertIn('new Button[4]', settings_source)
         actual_settings += ['SettingsTab' + str(index) for index in range(4)]
@@ -1230,8 +1232,8 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,19);assert.equal(controls.shopControls.length,14);assert.equal(controls.settingsControls.length,39);assert.equal(controls.researchControls.length,17);assert.equal(controls.historyControls.length,2);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls].map(c=>c.name)).size,91);
+assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,14);assert.equal(controls.settingsControls.length,40);assert.equal(controls.researchControls.length,17);assert.equal(controls.historyControls.length,2);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls].map(c=>c.name)).size,93);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');

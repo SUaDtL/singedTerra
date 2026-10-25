@@ -3,6 +3,18 @@ using System.Collections.Generic;
 
 namespace SingedTerra.LastStand
 {
+    public readonly struct LastStandKillReward
+    {
+        public readonly int BaseScrap,NextKillScrap,YieldPercent,LogisticsPercent;
+        public readonly decimal EffectiveScrap;
+        internal LastStandKillReward(int baseScrap,int yieldPercent,int logisticsPercent,int remainder)
+        {
+            BaseScrap=baseScrap;YieldPercent=yieldPercent;LogisticsPercent=logisticsPercent;
+            long numerator=checked((long)baseScrap*yieldPercent*logisticsPercent);
+            EffectiveScrap=(decimal)numerator/LastStandShopState.IncomeScale;
+            NextKillScrap=checked((int)((numerator+remainder)/LastStandShopState.IncomeScale));
+        }
+    }
     public sealed class LastStandShopCheckpoint
     {
         public const int Version=2,LegacyVersion=1;
@@ -178,6 +190,15 @@ namespace SingedTerra.LastStand
             return definition.Project(track.PersistentLevel, track.RunPurchases, Fitting);
         }
 
+        int YieldPercent => economy.IsLegacy?100:100+tracks[(int)LastStandUpgradeTrackId.ScrapYield].CurrentLevel;
+        static int LogisticsPercent(int rank)
+        {
+            if(rank<0 || rank>MaximumLogisticsRank)throw new ArgumentOutOfRangeException(nameof(rank));
+            return 100+2*rank;
+        }
+        public LastStandKillReward ProjectKillReward(int wave,int logisticsRank)
+            => new LastStandKillReward(economy.BaseScrapPerKill(wave),YieldPercent,LogisticsPercent(logisticsRank),IncomeRemainder);
+
         public bool ObserveAuthoritativeKills(int uniqueKills) => CreditKills(uniqueKills,0);
         // The production caller reconciles each admitted simulation step before
         // allowing research/upgrade changes to alter subsequent reward events.
@@ -192,13 +213,12 @@ namespace SingedTerra.LastStand
         {
             if (uniqueKills < 0 || uniqueKills > MaximumUniqueKills)
                 throw new ArgumentOutOfRangeException(nameof(uniqueKills));
-            if(logisticsRank<0 || logisticsRank>MaximumLogisticsRank)throw new ArgumentOutOfRangeException(nameof(logisticsRank));
+            int logisticsPercent=LogisticsPercent(logisticsRank);
             if (IsPurchaseTerminal) return false;
             if (uniqueKills <= UniqueKills) return false;
             long baseTotal=economy.BaseScrapThroughKills(uniqueKills);
             int baseIncome=checked((int)(baseTotal-BaseEarnedScrap));
-            int yieldPercent=economy.IsLegacy?100:100+tracks[(int)LastStandUpgradeTrackId.ScrapYield].CurrentLevel;
-            long bonusNumerator=checked((long)baseIncome*(yieldPercent*(100+2*logisticsRank)-IncomeScale)+IncomeRemainder);
+            long bonusNumerator=checked((long)baseIncome*(YieldPercent*logisticsPercent-IncomeScale)+IncomeRemainder);
             int bonusIncome=checked((int)(bonusNumerator/IncomeScale));
             int nextBase=checked(BaseEarnedScrap+baseIncome),nextBonus=checked(BonusEarnedScrap+bonusIncome);
             int income = checked(baseIncome+bonusIncome);

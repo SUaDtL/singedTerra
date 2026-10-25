@@ -7,7 +7,7 @@ namespace SingedTerra.LastStand
     // Research is a prospective modifier supplied by the authoritative caller.
     public sealed class LastStandEconomyDefinition
     {
-        const int IncomeWaveBand=250;
+        bool RetainsPreviousIncome => Version==LastStandUpgradeCatalog.PreviousEconomyVersion;
         public string Version { get; }
         public bool IsLegacy => Version==LastStandUpgradeCatalog.LegacyEconomyVersion;
         public IReadOnlyList<LastStandUpgradeDefinition> Tracks { get; }
@@ -27,7 +27,9 @@ namespace SingedTerra.LastStand
         public int BaseScrapPerKill(int wave)
         {
             if(wave<1)throw new ArgumentOutOfRangeException(nameof(wave));
-            return IsLegacy?3:checked(3+(wave-1)/IncomeWaveBand);
+            if(IsLegacy)return 3;
+            if(RetainsPreviousIncome)return checked(3+(wave-1)/250);
+            return checked(3+Math.Min(wave,200)/10+Math.Max(wave-200,0)/20);
         }
         // Every prior cohort is defeated before a later wave can pay kills.
         // Fourteen short roster bands plus one closed-form tail keep recovery
@@ -44,15 +46,21 @@ namespace SingedTerra.LastStand
             }
             if(remaining==0)return total;
             long full=remaining/20,partial=remaining%20;
-            total+=20*(3*full+FloorIncomeBandsSum(wave+full-2)-FloorIncomeBandsSum(wave-2));
+            total+=20*(BaseScrapThroughWaves(wave+full-1)-BaseScrapThroughWaves(wave-1));
             if(partial>0)total+=partial*BaseScrapPerKill(checked(wave+(int)full));
             return total;
         }
-        static long FloorIncomeBandsSum(long inclusive)
+        long BaseScrapThroughWaves(long wave)
+        {
+            if(RetainsPreviousIncome)return 3*wave+FloorIncomeBandsSum(wave-1,250);
+            long tail=Math.Max(wave-200,0);
+            return 3*wave+FloorIncomeBandsSum(Math.Min(wave,200),10)+20*tail+FloorIncomeBandsSum(tail,20);
+        }
+        static long FloorIncomeBandsSum(long inclusive,int band)
         {
             if(inclusive<0)return 0;
-            long blocks=inclusive/IncomeWaveBand,remainder=inclusive%IncomeWaveBand;
-            return IncomeWaveBand*blocks*(blocks-1)/2+blocks*(remainder+1);
+            long blocks=inclusive/band,remainder=inclusive%band;
+            return band*blocks*(blocks-1)/2+blocks*(remainder+1);
         }
         public int WaveForKill(int ordinal)
         {
@@ -69,10 +77,12 @@ namespace SingedTerra.LastStand
     public static class LastStandEconomyCatalog
     {
         static readonly LastStandEconomyDefinition legacy=new LastStandEconomyDefinition(LastStandUpgradeCatalog.LegacyEconomyVersion);
+        static readonly LastStandEconomyDefinition previous=new LastStandEconomyDefinition(LastStandUpgradeCatalog.PreviousEconomyVersion);
         static readonly LastStandEconomyDefinition current=new LastStandEconomyDefinition(LastStandUpgradeCatalog.EconomyVersion);
         public static LastStandEconomyDefinition Get(string version)
         {
             if(version==legacy.Version)return legacy;
+            if(version==previous.Version)return previous;
             if(version==current.Version)return current;
             throw new ArgumentException("Unsupported Last Stand economy.",nameof(version));
         }

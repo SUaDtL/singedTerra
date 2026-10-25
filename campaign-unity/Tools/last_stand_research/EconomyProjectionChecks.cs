@@ -8,7 +8,7 @@ static class EconomyProjectionChecks
     static int Main()
     {
         try {
-            foreach(string version in new[]{LastStandUpgradeCatalog.LegacyEconomyVersion,LastStandUpgradeCatalog.EconomyVersion}) {
+            foreach(string version in new[]{LastStandUpgradeCatalog.LegacyEconomyVersion,LastStandUpgradeCatalog.PreviousEconomyVersion,LastStandUpgradeCatalog.EconomyVersion}) {
                 var rules=LastStandUpgradeCatalog.ForEconomy(version);
                 var levels=new int[rules.Tracks.Count];levels[0]=100;
                 var shop=new LastStandShopState(17,LastStandFitting.Launcher,levels,version);

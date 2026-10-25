@@ -36,6 +36,13 @@ class UpgradeBalanceTests(unittest.TestCase):
                 self.assertGreater(mixed["completed"], combat["completed"],
                                    "A measured economy allocation should pay back at established farming depths.")
 
+    def test_permanent_investment_keeps_distinct_farming_stages(self):
+        for fitting in ("Launcher", "Repair", "Scattergun"):
+            stages = [self.row("matched-build", fitting, level=level)["completed"] for level in (0, 20, 150)]
+            stages.append(self.row("mature-build", fitting)["completed"])
+            self.assertTrue(all(a < b for a, b in zip(stages, stages[1:])),
+                            f"{fitting}: stronger income must not collapse distinct permanent farming stages: {stages}")
+
 
 if __name__ == "__main__":
     unittest.main()

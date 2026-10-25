@@ -13,7 +13,7 @@ MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
 CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 
 
-def execute(source, names, case):
+def execute(source, names, case, *, timeout_seconds=120):
     names = list(names)
     if "LastStandUpgradeCatalog.cs" in names and "LastStandEconomyCatalog.cs" not in names:
         names.append("LastStandEconomyCatalog.cs")
@@ -25,7 +25,7 @@ def execute(source, names, case):
         if build.returncode:
             raise AssertionError(build.stdout + build.stderr)
         run = subprocess.run([str(MONO), str(executable), case], capture_output=True, text=True,
-                             encoding="utf-8-sig", timeout=120)
+                             encoding="utf-8-sig", timeout=timeout_seconds)
         if run.returncode:
             raise AssertionError(run.stdout + run.stderr)
         return run.stdout

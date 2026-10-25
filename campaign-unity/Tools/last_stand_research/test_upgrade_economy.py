@@ -23,6 +23,12 @@ class UpgradeEconomyTests(unittest.TestCase):
     def test_late_wave_base_income_outgrows_flat_scrap_ceiling(self):
         self.case("income")
 
+    def test_early_wave_bounty_increases_without_repricing_saved_runs(self):
+        self.case("early-income")
+
+    def test_reward_preview_matches_paid_kills_and_fractional_carry_without_mutation(self):
+        self.case("reward-preview")
+
     def test_legacy_prices_roster_and_prospective_research_income_restore(self):
         self.case("legacy")
 

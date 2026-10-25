@@ -43,6 +43,7 @@ namespace SingedTerra.LastStand
         public string Confirmation { get; private set; } = "";
         public bool MenuOpen => MenuPage != "";
         public bool CanOpenMenu => (!Session.CatchingUp || Session.CheckpointBlocked) && Session.CanRun;
+        public bool CanInspectWave => Session?.Model?.Profile.IsWaveBased==true && Shop!=null && CanOpenMenu;
         public bool Muted => Audio && Audio.Muted;
         public LastStandSelection Selection { get; private set; }
         public bool SelectionOpen => MenuPage=="tier" || MenuPage=="fitting";
@@ -624,6 +625,7 @@ namespace SingedTerra.LastStand
         public void RefreshControls() { Refresh("controls"); }
         public void OpenMenu(string page = "menu")
         {
+            if(page=="wave" && !CanInspectWave)return;
             if((page=="tier" || page=="fitting") && (!CanSelectLoadout || Selection==null))return;
             if (!CanOpenMenu) return;
             RecordPausedTime();

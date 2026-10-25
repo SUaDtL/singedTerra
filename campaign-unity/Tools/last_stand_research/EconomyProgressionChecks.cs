@@ -30,6 +30,49 @@ static class EconomyProgressionChecks
                 shop.ObserveAuthoritativeKills(LastStandWaveCatalog.TotalEnemiesThroughWave(500));
                 Check(shop.EarnedScrap-before>60,"Late-wave base Scrap remains stuck at the old 60-per-wave ceiling.");
             }
+            else if(args[0]=="early-income") {
+                var current=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.EconomyVersion);
+                Check(current.BaseScrapPerKill(1)==3 && current.BaseScrapPerKill(9)==3 &&
+                    current.BaseScrapPerKill(10)==4 && current.BaseScrapPerKill(20)==5 && current.BaseScrapPerKill(30)==6,
+                    "New-run base bounty must grow at early ten-wave milestones, including wave 30.");
+                var old=LastStandUpgradeCatalog.ForEconomy("research-farming-economy-v2");
+                Check(current.Version!=old.Version,"New bounty must not replace saved v2 accounting.");
+                Check(old.BaseScrapPerKill(30)==3 && old.BaseScrapPerKill(250)==3 && old.BaseScrapPerKill(251)==4,
+                    "Retained v2 bounty changed.");
+                int[] paidV2Prices={552,338,442,484,0,326,335,923};
+                for(int i=0;i<paidV2Prices.Length;i++)if(paidV2Prices[i]!=0)
+                    Check(old.Tracks[i].RunPrice(100)==paidV2Prices[i],"Retained deep v2 price changed: "+old.Tracks[i].Key);
+                foreach(var row in current.Tracks)for(int rank=1;rank<=Math.Min(8,row.TotalCap);rank++)
+                    Check(row.RunPrice(rank)==old.Get(row.Id).RunPrice(rank),"Initial purchases became more expensive.");
+                var shop=new LastStandShopState(4,LastStandFitting.Repair,new int[8],old.Version);
+                int kills=LastStandWaveCatalog.TotalEnemiesThroughWave(30);
+                shop.ObserveAuthoritativeKills(kills);
+                Check(shop.TryPurchase(new LastStandShopPurchaseIntent(4,shop.Version,LastStandUpgradeTrackId.CannonAttack)).Accepted,"Saved run purchase.");
+                var restored=LastStandShopState.RestoreCheckpoint(shop.CaptureCheckpoint());
+                int before=restored.Scrap;restored.ObserveAuthoritativeKills(kills+1,31,0);
+                Check(restored.EconomyVersion==old.Version && restored.Scrap==before+3 && restored.SpentScrap==shop.SpentScrap,
+                    "Resumed paid run must retain its prices and payout.");
+            }
+            else if(args[0]=="reward-preview") {
+                foreach(string version in new[]{LastStandUpgradeCatalog.LegacyEconomyVersion,LastStandUpgradeCatalog.PreviousEconomyVersion,LastStandUpgradeCatalog.EconomyVersion}) {
+                    var rules=LastStandUpgradeCatalog.ForEconomy(version);
+                    var levels=new int[rules.Tracks.Count];if(!rules.IsLegacy)levels[7]=1;
+                    var shop=new LastStandShopState(5,LastStandFitting.Repair,levels,version);
+                    for(int kill=1;kill<=500;kill++) {
+                        int wave=rules.WaveForKill(kill),rank=kill<100?1:2;
+                        int before=shop.Scrap,epoch=shop.Version,remainder=shop.IncomeRemainder;
+                        var reward=shop.ProjectKillReward(wave,rank);
+                        Check(reward.BaseScrap==rules.BaseScrapPerKill(wave),"Reward preview uses wrong run economy.");
+                        Check(reward.EffectiveScrap==reward.BaseScrap*(rules.IsLegacy?1m:1.01m)*(1m+.02m*rank),"Reward entitlement has wrong modifiers.");
+                        Check(shop.Scrap==before && shop.Version==epoch && shop.IncomeRemainder==remainder,"Viewing reward changes accounting.");
+                        shop.ObserveAuthoritativeKills(kill,wave,rank);
+                        Check(shop.Scrap-before==reward.NextKillScrap,"Next paid kill differs from displayed reward and carry.");
+                        if(kill==100)shop=LastStandShopState.RestoreCheckpoint(shop.CaptureCheckpoint());
+                    }
+                    Reject(()=>shop.ProjectKillReward(0,0),"Invalid reward wave accepted.");
+                    Reject(()=>shop.ProjectKillReward(1,101),"Invalid reward research accepted.");
+                }
+            }
             else if(args[0]=="legacy") {
                 var old=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion);
                 var current=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.EconomyVersion);
@@ -60,7 +103,7 @@ static class EconomyProgressionChecks
             }
             else if(args[0]=="fraction") {
                 var levels=new int[8];levels[7]=1;
-                var shop=new LastStandShopState(3,LastStandFitting.Repair,levels);
+                var shop=new LastStandShopState(3,LastStandFitting.Repair,levels,LastStandUpgradeCatalog.PreviousEconomyVersion);
                 var rules=LastStandUpgradeCatalog.ForEconomy(shop.EconomyVersion);
                 for(int kill=1;kill<=50;kill++)shop.ObserveAuthoritativeKills(kill,rules.WaveForKill(kill),1);
                 Check(shop.EarnedScrap==154 && shop.IncomeRemainder==5300,"Fractional multiplicative reward lost precision.");
@@ -77,7 +120,8 @@ static class EconomyProgressionChecks
                 Reject(()=>restored.ObserveAuthoritativeKills(101,rules.WaveForKill(101),101),"Unknown logistics rank accepted.");
             }
             else if(args[0]=="prefix") {
-                var rules=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.EconomyVersion);
+                foreach(string version in new[]{LastStandUpgradeCatalog.PreviousEconomyVersion,LastStandUpgradeCatalog.EconomyVersion}) {
+                var rules=LastStandUpgradeCatalog.ForEconomy(version);
                 long expected=0;int kills=0;
                 for(int wave=1;wave<=1200;wave++) {
                     int count=LastStandWaveCatalog.ForWave(1,wave).EnemyCount;
@@ -88,6 +132,7 @@ static class EconomyProgressionChecks
                     }
                 }
                 Check(rules.BaseScrapThroughKills(int.MaxValue)>0,"Large bounded prefix overflowed.");
+                }
             }
             else if(args[0]=="value") {
                 foreach(var row in LastStandUpgradeCatalog.Tracks) {

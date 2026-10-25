@@ -92,6 +92,7 @@ class ResearchProfileTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), "PASS " + case)
 
     def test_fresh_envelope_and_reload(self): self.check("fresh")
+    def test_retained_v2_paid_run_full_profile_reload_and_next_deployment(self): self.check("retained-economy")
     def test_v1_v2_v3_claim_migrations(self): self.check("legacy")
     def test_real_v4_run_economy_migration(self): self.check("v4")
     def test_research_charge_refund_completion_storage_faults(self): self.check("faults")

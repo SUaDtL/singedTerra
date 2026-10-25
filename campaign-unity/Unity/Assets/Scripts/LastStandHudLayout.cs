@@ -163,15 +163,15 @@ namespace SingedTerra.LastStand
                 throw new ArgumentOutOfRangeException("width", "Viewport dimensions must be finite and positive.");
             if (activeControls == null) throw new ArgumentNullException("activeControls");
             int completeActionCount=activeControls.Length;
-            var dockControls=new List<string>();bool floatingMenu=false;
-            foreach(string id in activeControls) { if(id=="Menu")floatingMenu=true;else dockControls.Add(id); }
+            var dockControls=new List<string>();bool floatingMenu=false,waveInfo=false;
+            foreach(string id in activeControls) { if(id=="Menu")floatingMenu=true;else if(id=="WaveInfo")waveInfo=true;else dockControls.Add(id); }
             activeControls=dockControls.ToArray();
             int actionCount = activeControls.Length;
-            if (shop != null && shop.Open) return WithFloatingMenu(OpenShop(width,height,phase,activeControls,shop,actionCount,floatingMenu,waveReceipt),floatingMenu,completeActionCount);
+            if (shop != null && shop.Open) return WithWaveInfo(WithFloatingMenu(OpenShop(width,height,phase,activeControls,shop,actionCount,floatingMenu,waveReceipt),floatingMenu,completeActionCount),waveInfo);
             if((phase=="garage" || phase=="workshop") && Array.IndexOf(activeControls,"TierNext")>=0)
                 return WithFloatingMenu(Garage(width,height,activeControls,actionCount),floatingMenu,completeActionCount);
             if((phase=="battle" || phase=="settling") && Array.IndexOf(activeControls,"SpeedRate")>=0)
-                return WithFloatingMenu(Combat(width,height,activeControls,actionCount,floatingMenu,waveReceipt),floatingMenu,completeActionCount);
+                return WithWaveInfo(WithFloatingMenu(Combat(width,height,activeControls,actionCount,floatingMenu,waveReceipt),floatingMenu,completeActionCount),waveInfo);
 
             var slots = new List<Slot>();
             bool battle = phase == "battle" || phase == "settling";
@@ -222,6 +222,19 @@ namespace SingedTerra.LastStand
                 for(int i=0;i<3;i++)Add(slots,"MenuBar"+i,"Menu","bar",x+16,Edge+4+i*4,20,2);
             }
             return new Projection(projection.Width,projection.Height,slots,actionCount,projection.ShopOpen,
+                projection.BattleClearance,projection.ScrollOffset,projection.MaximumScrollOffset);
+        }
+
+        static Projection WithWaveInfo(Projection projection,bool visible)
+        {
+            if(!visible)return projection;
+            var slots=new List<Slot>(projection.Slots);Slot label=null,card=null;
+            foreach(var slot in slots){if(slot.Id=="ElapsedTime")label=slot;if(slot.Id=="LastStandCard")card=slot;}
+            if(label==null || card==null)return projection;
+            var b=label.Bounds;var c=card.Bounds;
+            float y=Math.Max(c.Y,Math.Min(c.Y+c.Height-MinimumTargetSize,b.Y+(b.Height-MinimumTargetSize)/2));
+            Add(slots,"WaveInfo","LastStandCard","control",b.X,y,Math.Max(MinimumTargetSize,b.Width),MinimumTargetSize);
+            return new Projection(projection.Width,projection.Height,slots,projection.ActionCount,projection.ShopOpen,
                 projection.BattleClearance,projection.ScrollOffset,projection.MaximumScrollOffset);
         }
 
@@ -410,7 +423,10 @@ namespace SingedTerra.LastStand
                     Text(slots,id+"Text",id,rx+4,ry+2,upgradeWidth-8,40,14);
                 }
             }
-            Text(slots,"GarageSave",null,right,actionY-24,research?deployWidth:rightWidth,20,14);
+            // Research uses the right half of this row. The narrower status
+            // column needs two lines for a complete locked-tier explanation.
+            float saveHeight=research?40:20;
+            Text(slots,"GarageSave",null,right,actionY-saveHeight-gap,research?deployWidth:rightWidth,saveHeight,14);
             Add(slots,"GaragePreview",null,"preview",right,52,rightWidth,Math.Max(1,actionY-80));
             return new Projection(width,height,slots,actionCount);
         }

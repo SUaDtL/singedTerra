@@ -633,12 +633,12 @@ def verify_shop_vertical(report):
                     for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset', *tails))
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
         expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry'},
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry', 'WaveInfo'},
                     'shopControls': {'ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy'},
                     'settingsControls': {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuWaveInfo', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                     'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
@@ -1259,12 +1259,12 @@ def verify_shop_recovery(report, require_native=False):
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
                 expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry'}
+                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry', 'WaveInfo'}
                 expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
                     'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
                     'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy'}
                 expected_settings_controls = {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuWaveInfo', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                     'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                     'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                     'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',

@@ -292,6 +292,8 @@ namespace SingedTerra.Encounter
                 var foe=foes[i];pendingHits[i]=foe.Alive && foe.Distance<=StopDistance(foe) && Tick>=foe.NextAttack?foe.Damage:0;
             }
         }
+        public static int AttackIntervalTicks(FoeKind kind)=>kind==FoeKind.Close?20:30;
+        public int IncomingDamagePerHit(int raw)=>Math.Max(1,Math.Min(raw,incomingHitProjection(raw)));
         void AttackTank()
         {
             for (int i = 0; i < Capacity && Hull > 0; i++)
@@ -299,11 +301,10 @@ namespace SingedTerra.Encounter
                 var foe = foes[i];
                 int raw=Profile.IsWaveBased?pendingHits[i]:foe.Damage;
                 if (Profile.IsWaveBased?raw==0:!foe.Alive || foe.Distance > StopDistance(foe) || Tick < foe.NextAttack) continue;
-                int projectedHit = incomingHitProjection(raw);
-                int damage = Math.Min(Hull, Math.Max(1, Math.Min(raw, projectedHit))); Hull -= damage;
+                int damage = Math.Min(Hull,IncomingDamagePerHit(raw)); Hull -= damage;
                 bool close = foe.Kind == FoeKind.Close;
                 if (close) CloseHits=Add(CloseHits,1); else RangedHits=Add(RangedHits,1);
-                foe.NextAttack = Tick + (close ? 20 : 30);
+                foe.NextAttack = Tick + AttackIntervalTicks(foe.Kind);
                 events.Add(new EncounterEvent(close ? EncounterEventKind.CloseHit : EncounterEventKind.RangedHit, i, damage));
             }
         }
