@@ -2,11 +2,11 @@
   "schema": "singedterra-last-stand-export/v2",
   "complete": true,
   "status": "pass",
-  "build": "Web-20261025T100855Z-3d64fe",
+  "build": "Web-20261025T161237Z-583e89",
   "scene": "Assets/Scenes/LastStandPrototype.unity",
-  "sourceHead": "07dc13c0ea0b31af973b24402ea9bdedfb8cc815",
-  "sourceBeforeSha256": "9e67bd3e9af8669ea7451f991212128a71755b052c726bd7231cf551127dbecc",
-  "sourceAfterSha256": "9e67bd3e9af8669ea7451f991212128a71755b052c726bd7231cf551127dbecc",
+  "sourceHead": "1c56a7b12afe724bcf642cbcc05f65feb8afa30e",
+  "sourceBeforeSha256": "55de9c4c12574963431515b9351aa5625f21ae518cd481d2765caf0222a32316",
+  "sourceAfterSha256": "55de9c4c12574963431515b9351aa5625f21ae518cd481d2765caf0222a32316",
   "sourceFiles": {
     "Tools/build_web.py": {
       "mode": "lf-text",
@@ -1578,7 +1578,7 @@
     },
     "Unity/Assets/Scripts/Platform/LastStandFileStorage.cs": {
       "mode": "lf-text",
-      "sha256": "9ed1a62970f47fdf760c50a10ef5645713b704807df28864cc982647cd52732d"
+      "sha256": "16ce109bd578011f9d527c2b7e3f95df2c4c79ac93320cb1b1ec1c41de9a8006"
     },
     "Unity/Assets/Scripts/Platform/LastStandFileStorage.cs.meta": {
       "mode": "lf-text",
@@ -83423,10 +83423,10 @@
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
   "artifacts": {
-    "Build/Web-20261025T100855Z-3d64fe.data": "7ec87ac05b2beb2a7eb7187f4f64d43f370a82a9553a0a46fb825c181c792dfe",
-    "Build/Web-20261025T100855Z-3d64fe.framework.js": "c103013198757909fe4298f80cec24ae3b9ad8a103628d9db7e35181f2feba62",
-    "Build/Web-20261025T100855Z-3d64fe.loader.js": "55189cbfd7ecc74be7ed57f248c0b13fe3f498520030822f77ce65fcc6afa396",
-    "Build/Web-20261025T100855Z-3d64fe.wasm": "8333a89c7d7826c0d7edbdfa787b108c971804462d2ea8cde3d0aa9048700cb9",
+    "Build/Web-20261025T161237Z-583e89.data": "8c9782597cdac7c2a555b214a3371e60ff5bc9e01f4fffeec9c654aca12fafda",
+    "Build/Web-20261025T161237Z-583e89.framework.js": "a97db2f69c64fa490a621d1ec78a1fe20516b421f820b3a553f3bad561ed4bb9",
+    "Build/Web-20261025T161237Z-583e89.loader.js": "5ba7ff10829be485cfc368263f121f60f067b4464c5fdd016649823c5e856191",
+    "Build/Web-20261025T161237Z-583e89.wasm": "e94bd616e63b0e7b1696be65685e2f43441077076dc17cbb6ef7ec75957b3865",
     "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
     "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
     "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
@@ -83439,11 +83439,11 @@
     "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
     "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
     "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
-    "index.html": "8e5dee622e66b28441ba6d18d7fd57283029e65583cf6fba74e68a32fde1a59f"
+    "index.html": "3cf74944dbea19c829f927b62f1496a9e4ab961561a521b973f26ea2ed527b15"
   },
-  "wrapperSha256": "7f4688f4ee0e6cfa71d235fdaa5fa786493c8376f0776d36bd0599e9accbcf69",
-  "rawReceiptSha256": "8eabddc86577552093ad2eede1e2cd9fb615b240d7359f7d9135d418431dd0b9",
-  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261025T100855Z-3d64fe/result.json",
+  "wrapperSha256": "eea61c5fcf5cfabe0503c344ea23b54b06ebb8db147d3a1b1cc65d93b4e854f7",
+  "rawReceiptSha256": "21c5f6207ee974fbc4d16464550f419dccdab897259e7daa1cb91bb1143dbb38",
+  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261025T161237Z-583e89/result.json",
   "approvedArtifacts": {
     "ST-LS-ARCH-SPEC": {
       "model_sha256": "7948be048bc7d1c92b0b305feb7ba4926707648b151c8aa4119b0d7e6bb19e6e",
@@ -83451,9 +83451,9 @@
       "revision": 3
     },
     "ST-LS-ARCH-PLAN": {
-      "model_sha256": "f3efbf8bcb70c3e7d85f7f6bac295c59ca6628fba6eb05698a23b36be6109c9b",
+      "model_sha256": "efd79ed252c963a961932c7d5b6946bcb3fbdeb1129b2ec92df13a7892e88662",
       "normative_sha256": "79d402dc99b8d4c082f8cab52d1122694ae2e021b2ccd12158f7bd83e67ed7f7",
-      "revision": 62
+      "revision": 73
     }
   },
   "sceneBeforeSha256": "4c7d06b728b64b763a6a62e34abe212bdf56648ea24865df6aa7d9174de59b8f",

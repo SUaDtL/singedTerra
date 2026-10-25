@@ -229,7 +229,53 @@ class NativeStorageTests(unittest.TestCase):
         deadline = time.monotonic() + 5
         while not path.exists() and time.monotonic() < deadline and process.poll() is None:
             time.sleep(.02)
-        self.assertTrue(path.exists(), "Native process did not reach the expected lease boundary")
+        details = ""
+        if not path.exists() and process.poll() is not None:
+            stdout, stderr = process.communicate(timeout=5)
+            details = "\n" + stdout + stderr
+        self.assertTrue(path.exists(), "Native process did not reach the expected lease boundary" + details)
+
+    def contended_process(self, mode, contender=None):
+        ready = self.root / (mode + "-ready")
+        owner = subprocess.Popen([str(MONO), str(self.exe), mode, str(self.root), self.key, str(ready)],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8-sig")
+        try:
+            self.wait_for(ready, owner)
+            return run_csharp(contender or self.exe, ["contended", self.root, self.key], timeout_seconds=10)
+        finally:
+            if owner.poll() is None:
+                owner.terminate()
+            owner.communicate(timeout=5)
+
+    def test_same_process_observers_do_not_release_the_cross_process_lease(self):
+        result = self.contended_process("hold-with-observers")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.strip(), "read-only")
+        self.call("write", "after-owner-exit")
+        self.assertEqual(self.call("read").stdout.strip(), "after-owner-exit")
+
+    def test_native_lease_honors_an_independent_os_range_lock(self):
+        self.call("write", "held")
+        result = self.contended_process("hold-range-lock")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.strip(), "read-only")
+        self.call("write", "after-range-release")
+        self.assertEqual(self.call("read").stdout.strip(), "after-range-release")
+
+    def test_missing_os_range_lock_is_detected_by_an_independent_process(self):
+        original = SCRIPTS / "Platform/LastStandFileStorage.cs"
+        raw = original.read_text(encoding="utf-8-sig")
+        locking = "candidate.Lock(0, 1);"
+        self.assertEqual(raw.count(locking), 1)
+        altered = self.root / "NoRangeLock.cs"
+        altered.write_text(raw.replace(locking, ""), encoding="utf-8")
+        fault = self.root / "NoRangeLock.exe"
+        compile_csharp(fault, [altered if path == original else path for path in self.inputs])
+        self.call("write", "held")
+        result = self.contended_process("hold-range-lock", contender=fault)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("A second writer acquired the record", result.stderr)
+        self.assertEqual(self.call("read").stdout.strip(), "held")
 
     def surviving_waiter(self, executable, folder):
         folder.mkdir(); ready = folder / "owner-ready"; waiting = folder / "waiter-ready"; released = folder / "released"

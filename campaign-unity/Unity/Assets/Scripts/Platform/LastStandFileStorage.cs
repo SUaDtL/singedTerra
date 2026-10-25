@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -16,6 +17,9 @@ namespace SingedTerra.LastStand
         const int MaximumKeyCharacters = 64;
         static readonly byte[] Magic = Encoding.ASCII.GetBytes("STLSSAVE");
         static readonly UTF8Encoding Utf8 = new UTF8Encoding(false, true);
+        static readonly object ProcessLeaseGate = new object();
+        static readonly HashSet<string> ProcessLeases = new HashSet<string>(
+            Path.DirectorySeparatorChar == '\\' ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         readonly object gate = new object();
         readonly string root, key, prefix;
         readonly string[] slots;
@@ -72,8 +76,25 @@ namespace SingedTerra.LastStand
             ValidateDirectoryChain();
             string lockPath = prefix + ".lock";
             EnsurePlainFile(lockPath);
-            try { lease = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
-            catch (IOException) { lease = null; } // Another adapter owns this record; reads remain available.
+            lock (ProcessLeaseGate)
+            {
+                // Mono's Unix FileShare bookkeeping is process-local. Use an
+                // OS range lock for other processes, and avoid even opening a
+                // second local handle: POSIX locks belong to the process and
+                // closing that other handle could release the owner's lock.
+                if (ProcessLeases.Contains(prefix)) return;
+                FileStream candidate = null;
+                try
+                {
+                    candidate = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                    candidate.Lock(0, 1);
+                    ProcessLeases.Add(prefix);
+                    lease = candidate;
+                    candidate = null;
+                }
+                catch (IOException) { } // Contention or unavailable storage: no write ownership.
+                finally { if (candidate != null) candidate.Dispose(); }
+            }
         }
 
         public string Read()
@@ -267,8 +288,16 @@ namespace SingedTerra.LastStand
             {
                 if (disposed) return;
                 disposed = true;
-                if (lease != null) lease.Dispose();
-                lease = null;
+                if (lease != null)
+                    lock (ProcessLeaseGate)
+                    {
+                        try { lease.Dispose(); }
+                        finally
+                        {
+                            lease = null;
+                            ProcessLeases.Remove(prefix);
+                        }
+                    }
             }
         }
     }

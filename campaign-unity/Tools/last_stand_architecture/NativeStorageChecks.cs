@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
 using SingedTerra.LastStand;
 
@@ -57,6 +58,19 @@ static class NativeStorageChecks
     {
         try
         {
+            if (args[0] == "hold-range-lock")
+            {
+                // Independent lease holder: use the OS range-lock contract
+                // directly, without constructing the production adapter.
+                string file = Path.Combine(args[1], "ls-" + BitConverter.ToString(Encoding.ASCII.GetBytes(args[2])).Replace("-", "").ToLowerInvariant() + ".lock");
+                using (var stream = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+                {
+                    stream.Lock(0, 1);
+                    File.WriteAllText(args[3], "ready");
+                    Thread.Sleep(20000);
+                }
+                return 0;
+            }
             using (var store = new LastStandFileStorage(args[1], args[2]))
             {
                 switch (args[0])
@@ -70,8 +84,29 @@ static class NativeStorageChecks
                         Console.WriteLine(store.Read());
                         break;
                     case "hold":
+                    case "hold-with-observers":
                         if (!store.CanWrite) throw new Exception("Writer lease unavailable");
                         store.Write("held");
+                        if (args[0] == "hold-with-observers")
+                        {
+                            // POSIX range locks belong to a process: opening
+                            // and then closing another handle to this inode
+                            // can release its original owner's range lock.
+                            for (int n = 0; n < 3; n++)
+                                using (var observer = new LastStandFileStorage(Path.Combine(args[1], "."), args[2]))
+                                {
+                                    Need(!observer.CanWrite, "A same-process observer acquired the record");
+                                    Need(observer.Read() == "held", "Observer must read committed bytes");
+                                    try { observer.Write("illegal"); throw new Exception("Observer writer succeeded"); }
+                                    catch (InvalidOperationException) { }
+                                }
+                            using (var independent = new LastStandFileStorage(args[1], args[2] + ".other"))
+                            {
+                                Need(independent.CanWrite, "Separate record must retain independent ownership");
+                                independent.Write("other");
+                            }
+                            Need(store.CanWrite && store.Read() == "held", "Observer disposal changed the owner");
+                        }
                         File.WriteAllText(args[3], "ready");
                         Thread.Sleep(20000);
                         break;
