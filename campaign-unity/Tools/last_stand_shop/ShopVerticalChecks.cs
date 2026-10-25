@@ -67,7 +67,11 @@ internal static class ShopVerticalChecks
         Require(catalog != null, "The actual compiled baseline supplies no six-track catalog or authoritative effect/price projection.");
         var tracksProperty = catalog.GetProperty("Tracks", BindingFlags.Public | BindingFlags.Static);
         Require(tracksProperty != null, "The catalog must expose its immutable typed track definitions.");
-        var tracks = tracksProperty.GetValue(null);
+        var current = (IReadOnlyList<LastStandUpgradeDefinition>)tracksProperty.GetValue(null);
+        Equal(current.Count, 8, "Current economy has eight stable tracks");
+        Equal(current[6].Key, "scattergunAttack", "Scattergun identity remains appended");
+        Equal(current[7].Key, "scrapYield", "Scrap Yield is appended without reindexing");
+        var tracks = LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion).Tracks;
         var result = new List<object>();
         foreach (var track in (IEnumerable)tracks) result.Add(track);
         Equal(result.Count, 7, "Six preserved tracks plus explicit Scattergun Attack");
@@ -147,8 +151,8 @@ internal static class ShopVerticalChecks
             // Adjacent 0.05-second upgrades must remain distinguishable even
             // under a locale that normally uses a decimal comma.
             CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
-            var cycle = LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonCycle);
-            var repair = LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair);
+            var cycle = LegacyDefinition(LastStandUpgradeTrackId.CannonCycle);
+            var repair = LegacyDefinition(LastStandUpgradeTrackId.FieldRepair);
             for (int level = 0; level <= 8; level++)
             {
                 Equal(cycle.DescribeEffect(level), CycleSeconds[level] + "s between cannon shots", "Exact readable cycle L=" + level);
@@ -240,17 +244,17 @@ internal static class ShopVerticalChecks
         Require(typedLookup != null, "Catalog supplies its public typed lookup.");
         var trackIdType = catalog.Assembly.GetType("SingedTerra.LastStand.LastStandUpgradeTrackId");
         Require(trackIdType != null && trackIdType.IsEnum, "Track lookup identity must be the actual typed enum.");
-        for (int i = 0; i < tracks.Length; i++)
+        foreach (var current in LastStandUpgradeCatalog.Tracks)
         {
-            object[] args = { Keys[i], null };
+            object[] args = { current.Key, null };
             Equal(lookup.Invoke(null, args), true, "Known key accepted");
-            Require(Object.ReferenceEquals(args[1], tracks[i]), "Lookup returns the authoritative immutable definition.");
-            var typed = CallStatic(typedLookup, Enum.Parse(trackIdType, Ids[i]));
-            Require(Object.ReferenceEquals(typed, args[1]), "Typed Get returns the exact definition for " + Ids[i]);
-            Equal(Text(typed, "Id"), Ids[i], "Typed Get exact ID");
-            Equal(Text(typed, "Key"), Keys[i], "Typed Get exact key");
+            Require(Object.ReferenceEquals(args[1], current), "Lookup returns the authoritative immutable definition.");
+            var typed = CallStatic(typedLookup, current.Id);
+            Require(Object.ReferenceEquals(typed, args[1]), "Typed Get returns the exact definition for " + current.Id);
+            Equal(Text(typed, "Id"), current.Id.ToString(), "Typed Get exact ID");
+            Equal(Text(typed, "Key"), current.Key, "Typed Get exact key");
         }
-        foreach (int invalidId in new[] { -1, 7, 99, int.MaxValue })
+        foreach (int invalidId in new[] { -1, 8, 99, int.MaxValue })
             RejectedParameter(() => CallStatic(typedLookup, Enum.ToObject(trackIdType, invalidId)), "id",
                 "Typed Get invalid id=" + invalidId);
         foreach (var unknown in new[] { null, "", "CannonAttack", "cannonAttack ", "unknown" })
@@ -262,11 +266,13 @@ internal static class ShopVerticalChecks
     }
 
     static int Price(int n) {long extra=Math.Max(0,n-8);return checked((int)(5L*n+extra*extra/40));}
+    static LastStandUpgradeDefinition LegacyDefinition(LastStandUpgradeTrackId id) =>
+        LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion).Get(id);
     static int PermanentPrice(int n) {long extra=Math.Max(0,n-3);return checked((int)(n+extra*extra/16));}
     static void FillToCap(object ledger,int index)
     {
         Call(ledger,"ObserveAuthoritativeKills",LastStandShopState.MaximumUniqueKills);
-        int cap=LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)index).TotalCap;
+        int cap=LegacyDefinition((LastStandUpgradeTrackId)index).TotalCap;
         while((int)Get(LedgerTrack(ledger,index),"CurrentLevel")<cap) {
             int n=(int)Get(LedgerTrack(ledger,index),"RunPurchases");
             var result=Call(ledger,"TryPurchase",PurchaseIntent(ledger,index));
@@ -281,11 +287,11 @@ internal static class ShopVerticalChecks
         var ledgerType = assembly.GetType("SingedTerra.LastStand.LastStandShopState");
         Require(ledgerType != null, "The actual compiled baseline supplies no run-owned ledger for independent tracks and unique-kill Scrap accounting.");
         var fittingType = assembly.GetType("SingedTerra.LastStand.LastStandFitting");
-        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>) });
+        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string) });
         Require(constructor != null, "The ledger must freeze six permanent levels for an identified run and fitting.");
         // Explicitly append zero for the new track to these preserved six-slot test inputs.
         if(permanentLevels != null && permanentLevels.Length == 6) { var expanded = new int[7]; Array.Copy(permanentLevels, expanded, 6); permanentLevels = expanded; }
-        try { return constructor.Invoke(new object[] { runId, Enum.Parse(fittingType, launcher ? "Launcher" : "Repair"), permanentLevels }); }
+        try { return constructor.Invoke(new object[] { runId, Enum.Parse(fittingType, launcher ? "Launcher" : "Repair"), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion }); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
 
@@ -301,9 +307,9 @@ internal static class ShopVerticalChecks
         var ledgerType = assembly.GetType("SingedTerra.LastStand.LastStandShopState");
         Require(ledgerType != null, "Malformed construction must exercise the actual compiled ledger.");
         var fittingType = assembly.GetType("SingedTerra.LastStand.LastStandFitting");
-        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>) });
+        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string) });
         Require(constructor != null, "Malformed construction uses the actual run/fitting/permanent snapshot boundary.");
-        try { return constructor.Invoke(new[] { (object)runId, Enum.ToObject(fittingType, fittingValue), permanentLevels }); }
+        try { return constructor.Invoke(new[] { (object)runId, Enum.ToObject(fittingType, fittingValue), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion }); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
 
@@ -1683,19 +1689,21 @@ internal static class ShopVerticalChecks
         Require(type != null, "Actual production supplies no immutable six-card run/permanent shop presentation.");
         var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
         Require(method != null, "Actual presentation supplies " + methodName);
-        return methodName == "ProjectRun" ? CallStatic(method, owner) :
-            CallStatic(method, owner, launcher ? LastStandFitting.Launcher : LastStandFitting.Repair);
+        return methodName == "ProjectRun" ? CallStatic(method, owner, LastStandBulkQuantity.One) :
+            CallStatic(method, owner, launcher ? LastStandFitting.Launcher : LastStandFitting.Repair, LastStandBulkQuantity.One);
     }
 
     static object[] PresentationCards(object view)
     {
         var cards = (IList)Get(view, "Cards");
         Require(cards.IsReadOnly, "The card collection cannot be replaced or reordered.");
-        Equal(cards.Count, 7, "Six historical cards plus appended Scattergun Attack");
+        Equal(cards.Count, Text(view,"Mode") == "Permanent" ? 8 : 7, "Permanent uses current roster; historical run retains its seven tracks");
         Equal(Get(cards[6], "Key"), "scattergunAttack", "Appended card preserves existing ordering");
+        if (cards.Count == 8) Equal(Get(cards[7], "Key"), "scrapYield", "Current permanent view includes Scrap Yield");
         var result = new object[cards.Count];
         cards.CopyTo(result, 0);
-        foreach (object item in new[] { view, result[0], result[1], result[2], result[3], result[4], result[5], result[6] })
+        var immutableItems = new List<object>(result); immutableItems.Add(view);
+        foreach (object item in immutableItems)
         {
             foreach (var property in item.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 Require(property.GetSetMethod() == null, "Presentation exposes no public setter: " + property.Name);
@@ -1725,7 +1733,7 @@ internal static class ShopVerticalChecks
 
     static void PresentationCard(object card, int index, int permanent, int purchases, bool permanentMode, bool launcher)
     {
-        var definition=LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)index);
+        var definition=permanentMode ? LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)index) : LegacyDefinition((LastStandUpgradeTrackId)index);
         int level = permanent + purchases, cap = permanentMode ? definition.PermanentCap : definition.TotalCap;
         bool capped = level == cap, applies = index != (launcher ? 5 : 1);
         Equal(Text(card, "TrackId"), Ids[index], "Card has the catalog typed identity");
@@ -1740,16 +1748,16 @@ internal static class ShopVerticalChecks
         Equal(Get(card, "RemainingPurchases"), cap - level, "Card has context remaining levels");
         Equal(Get(card, "AppliesToFitting"), applies, "Card reports combat fitting applicability");
         Equal(Get(card, "IsDormant"), permanentMode && !applies, "Permanent dormant fitting is informational");
-        int? price = capped ? (int?)null : permanentMode ? PermanentPrice(permanent + 1) : Price(purchases + 1);
+        int? price = capped ? (int?)null : permanentMode ? definition.PermanentPrice(permanent + 1) : Price(purchases + 1);
         Equal(Get(card, "NextPrice"), price, "Card has the exact context price");
         Equal(Get(card, "PriceDescription"), capped ? "MAX" : price + (permanentMode ? " Salvage" : " Scrap"), "Card names the correct currency");
-        string effect = index == 3 ? "reduce hits by " + level + " (minimum 1 damage)" :
+        string effect = permanentMode ? definition.DescribeEffect(level) : index == 3 ? "reduce hits by " + level + " (minimum 1 damage)" :
             index == 4 ? CycleSeconds[level] + "s between cannon shots" : Effects[index][level] + Units[index];
-        string next = capped ? "MAX" : level >= 8 ? definition.DescribeEffect(level + 1) : index == 3 ? "reduce hits by " + (level + 1) + " (minimum 1 damage)" :
+        string next = capped ? "MAX" : permanentMode || level >= 8 ? definition.DescribeEffect(level + 1) : index == 3 ? "reduce hits by " + (level + 1) + " (minimum 1 damage)" :
             index == 4 ? CycleSeconds[level + 1] + "s between cannon shots" : Effects[index][level + 1] + Units[index];
         Equal(Get(card, "CurrentEffectDescription"), effect, "Card current effect is exact");
         Equal(Get(card, "NextEffectDescription"), next, "Card never invents an effect above its context cap");
-        Equal(Get(card, "CurrentEffectDescription"), LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)index).DescribeEffect(level), "Card shares catalog descriptions");
+        Equal(Get(card, "CurrentEffectDescription"), definition.DescribeEffect(level), "Card shares its economy's catalog descriptions");
     }
 
     static void PresentationReason(object card, string refusal, string text)
@@ -1856,7 +1864,7 @@ internal static class ShopVerticalChecks
 
             for (int permanent = 0; permanent <= 3; permanent++)
             {
-                var storage = new PresentationStorage(PresentationSave(100, new[] { permanent, permanent, permanent, permanent, permanent, permanent }));
+                var storage = new PresentationStorage(PresentationSave(1000, new[] { permanent, permanent, permanent, permanent, permanent, permanent }));
                 var progression = LastStandProgression.Load(storage);
                 int reads = storage.Reads, writes = storage.Writes;
                 var view = Presentation("ProjectPermanent", progression, launcher);
@@ -1865,7 +1873,7 @@ internal static class ShopVerticalChecks
                 Equal(Text(view, "Mode"), "Permanent", "Workshop has distinct permanent context");
                 Equal(Text(view, "Currency"), "Salvage", "Permanent currency is typed Salvage");
                 Equal(Get(view, "CurrencyName"), "Salvage", "Workshop wallet is named Salvage");
-                Equal(Get(view, "Balance"), 100, "Workshop copies only committed wallet");
+                Equal(Get(view, "Balance"), 1000, "Workshop copies only committed wallet");
                 Equal(Get(view, "RunId"), 0, "Permanent view contains no active run purchase identity");
                 Equal(Get(view, "Version"), 0, "Permanent view cannot impersonate a run revision");
                 Equal(Get(view, "SaveState"), "ready", "Workshop copies confirmed save readiness");
@@ -1886,15 +1894,15 @@ internal static class ShopVerticalChecks
             }
             var insufficient = LastStandProgression.Load(new PresentationStorage(PresentationSave(0, new int[6])));
             foreach (var card in PresentationCards(Presentation("ProjectPermanent", insufficient, launcher))) PresentationReason(card, "InsufficientSalvage", "Not enough Salvage");
-            var positiveInsufficient = LastStandProgression.Load(new PresentationStorage(PresentationSave(2, new[] { 2, 2, 2, 2, 2, 2 })));
+            var positiveInsufficient = LastStandProgression.Load(new PresentationStorage(PresentationSave(1, new[] { 2, 2, 2, 2, 2, 2 })));
             foreach (var card in PresentationCards(Presentation("ProjectPermanent", positiveInsufficient, launcher)))
             {
-                Equal(Get(card, "NextPrice"), 3, "Permanent affordability uses current P+1 price");
+                Equal(Get(card, "NextPrice"), LastStandUpgradeCatalog.Get((LastStandUpgradeTrackId)Get(card,"TrackId")).PermanentPrice(3), "Permanent affordability uses current economy P+1 price");
                 PresentationReason(card, "InsufficientSalvage", "Not enough Salvage");
             }
-            var active = LastStandProgression.Load(new PresentationStorage(PresentationSave(10, new int[6])));
+            var active = LastStandProgression.Load(new PresentationStorage(PresentationSave(100, new int[6])));
             Require(active.TryDeploy(), "Permanent active-run fixture uses a real verified reservation.");
-            foreach (var card in PresentationCards(Presentation("ProjectPermanent", active, launcher))) PresentationReason(card, "ActiveRun", "Run active");
+            foreach (var card in PresentationCards(Presentation("ProjectPermanent", active, launcher))) PresentationReason(card, "None", "Ready");
             var pending = LastStandProgression.Load(new PresentationStorage(PresentationSave(10, new int[6], "{\"runId\":1,\"elapsedTicks\":20,\"kills\":2,\"reward\":1}", 2)));
             foreach (var card in PresentationCards(Presentation("ProjectPermanent", pending, launcher))) PresentationReason(card, "PendingReward", "Claim pending Salvage first");
             var broken = LastStandProgression.Load(new PresentationStorage("invalid fixture"));
@@ -1913,7 +1921,7 @@ internal static class ShopVerticalChecks
             Require(uncertain.Retry(), "Existing owner confirms the same candidate exactly once.");
             Equal(PresentationFingerprint(unconfirmed), unconfirmedCopy, "Old save-error view is immutable across recovery");
             var confirmed = Presentation("ProjectPermanent", uncertain, launcher);
-            Equal(Get(confirmed, "Balance"), 9, "Fresh view observes only verified wallet");
+            Equal(Get(confirmed, "Balance"), 10 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).PermanentPrice(1), "Fresh view observes only verified wallet");
             Equal(Get(PresentationCards(confirmed)[3], "PermanentLevel"), 1, "Fresh view observes only verified level");
         }
         Console.Error.WriteLine("WITNESS presentation: all six identities/effects, run P0..3/n-to-cap, permanent P0..3/both fittings, typed lifecycle/save/funds reasons and immutable copies.");
@@ -1928,7 +1936,19 @@ internal static class ShopVerticalChecks
     static string Text(object owner, string name) => Get(owner, name).ToString();
     static object Call(object owner, string name, params object[] args)
     {
-        var method = owner.GetType().GetMethod(name, BindingFlags.Public | BindingFlags.Instance);
+        MethodInfo method = null;
+        foreach (var candidate in owner.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (candidate.Name != name) continue;
+            var parameters = candidate.GetParameters();
+            if (parameters.Length != args.Length) continue;
+            bool matches = true;
+            for (int i = 0; i < args.Length; i++)
+                matches &= args[i] == null ? !parameters[i].ParameterType.IsValueType : parameters[i].ParameterType.IsInstanceOfType(args[i]);
+            if (!matches) continue;
+            Require(method == null, "Ambiguous fixture call: " + name);
+            method = candidate;
+        }
         Require(method != null, "Missing public behavior: " + name);
         try { return method.Invoke(owner, args); }
         catch (TargetInvocationException error) { throw error.InnerException; }

@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {LAST_STAND_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandJourney.mjs';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
+import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 import {WAVE_ORACLE_SOURCES} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
@@ -15,7 +16,7 @@ import {assertCombinedWaveQualification,assertWaveBinding,assertWaveTerminals,ve
 // Inert contract fixtures only. They are never browser reports or acceptance.
 const hash='a'.repeat(64),head='b'.repeat(40),clone=value=>structuredClone(value);
 const profiles=[1,2].flatMap(tier=>['repair','launcher','scattergun'].flatMap(fitting=>[20,30,40,50].map(d=>`${tier}:${fitting}:${d}`)));
-const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 // Reduced from the failed native checkpoint-reload capture: wallet 6, workshop,
 // inactive Deploy and active Redeploy both labelled RESUME RUN. Inert guards only.
 function deploymentFixture(phase='workshop',hasCheckpoint=true){
@@ -43,7 +44,7 @@ test('deployment control binds observed phase, checkpoint intent and the exact c
 test('actual earned checkpoint, purchase and terminal reload callers choose the observed primary control',async()=>{
   const calls=[source.match(/const resumedCheckpoint=(await gameClick\([^;\n]+\));/),
     source.match(/const hitStart=hits.length;(await gameClick\([^;\n]+\));/),
-    source.match(/kind:'terminal-reload',saved:naturalSaved,state:finalReload\}\);\n\s*(await gameClick\([^;\n]+\));/)];
+    source.match(/kind:'terminal-reload',saved:[^\n]+state:finalReload\}\);\n\s*(await gameClick\([^;\n]+\));/)];
   for(const [index,match]of calls.entries()){
     assert.ok(match,'Actual reload deployment caller required: '+index);
     const invoke=new Function('gameClick','states','layouts','lastStandDeploymentControl',`return (async()=>${match[1]})();`);
@@ -84,10 +85,10 @@ function expectedFixture(){return {head,inputs:Object.fromEntries(LAST_STAND_JOU
   waveSources:Object.fromEntries(WAVE_ORACLE_SOURCES.map(p=>[p,hash]))};}
 function resumeFixture(){
   const encounter={rulesVersion:'last-stand-waves-v1',tier:1,fitting:1,wave:1,completedWave:1,tick:201,hull:114,kills:6,committedCannonDamage:20};
-  const saved={version:4,credits:1,lastFinalizedRunId:0,checkpoint:{runId:1,encounter},pendingDefeat:null};
+  const saved={...idleWaveFields(),credits:2,lastFinalizedRunId:0,checkpoint:{runId:1,encounter},pendingDefeat:null};
   const resumed={action:'resume',t:100,load:2,timeOrigin:1000,phase:'battle',saveState:'ready',runId:1,activeTier:1,
     fittingId:'repair',profileVersion:encounter.rulesVersion,hasCheckpoint:true,checkpointBlocked:false,
-    checkpointWave:1,completedWave:1,wave:2,tick:201,hull:114,kills:6,cannonDamage:20,wallet:1,pendingRunId:0,paused:true,speed:0};
+    checkpointWave:1,completedWave:1,wave:2,tick:201,hull:114,kills:6,cannonDamage:20,wallet:2,pendingRunId:0,paused:true,speed:0};
   return {kind:'checkpoint-resume',saved,resumed,stable:{...resumed,action:'menu',t:1300},stored:clone(saved),observedClock:{t:1301,timeOrigin:1000}};
 }
 function terminalFixture(mode){
@@ -97,7 +98,7 @@ function terminalFixture(mode){
   const staged={...identity,t:201,action:'defeat-staged',phase:'settling',tick:5080,kills:100,hull:0,saveState:'ready',
     sessionRun:run,runId:0,pendingRunId:0,hasCheckpoint:false,wallet:4};
   const result={...staged,action:'result',phase:'result',t:230};
-  const saved={version:4,checkpoint:null,pendingDefeat:null,lastFinalizedRunId:run,credits:4};
+  const saved={...idleWaveFields({runId:run,finalized:true}),checkpoint:null,pendingDefeat:null,lastFinalizedRunId:run,credits:4};
   const layouts=[{...identity,phase:'settling',t:202,controls:[{name:'Claim',active:false,interactable:false}]}];
   return {kind:'wave-terminal',mode,evidence:{before,terminal,staged,result,saved,layouts},
     ...(mode==='hidden'?{interval:{begin:110,recovered:240,before:{...before},events:[
@@ -150,12 +151,12 @@ function baseReport(expected,host='linux'){
 }
 function lifeReport(expected,host='linux'){
   const report=baseReport(expected,host),resume=resumeFixture(),foreground=terminalFixture('foreground'),hidden=terminalFixture('hidden');
-  report.checks.push(...WAVE_LIFECYCLE_CHECKS.map(name=>({name,pass:true,...(name==='one salvage commits Cannon Attack level1'?{detail:{wallet:0,level:1,cannonDamage:30}}:{})})));
+  report.checks.push(...WAVE_LIFECYCLE_CHECKS.map(name=>({name,pass:true,...(name==='two salvage commits Cannon Attack level1'?{detail:{wallet:0,level:1,cannonDamage:30}}:{})})));
   report.keyboard_actions=[['ShopCard_cannonAttackBuy','purchase'],['SpeedRate','session'],['Claim','continue'],['Claim','continue']]
     .map(([name,action])=>({name,action,keys:['Enter']}));
   report.keyboard_trace={matched:true,actions:4,observed_edges:8};
-  report.lifecycle=[resume,{kind:'checkpoint-abandon',before:clone(resume.saved),after:{...clone(resume.saved),checkpoint:null,lastFinalizedRunId:1}},
-    {kind:'background-wave',saved:{version:4,credits:1,pendingDefeat:null,checkpoint:{runId:2,encounter:{completedWave:1,rulesVersion:'last-stand-waves-v1',tier:1}}},
+  report.lifecycle=[resume,{kind:'checkpoint-abandon',before:clone(resume.saved),after:abandonedWaveSave(resume.saved)},
+    {kind:'background-wave',saved:{...idleWaveFields({runId:2}),credits:1,pendingDefeat:null,checkpoint:{runId:2,encounter:{completedWave:1,rulesVersion:'last-stand-waves-v1',tier:1}}},
       interval:{begin:100,recovered:200,before:{load:3,timeOrigin:3000,run:2,tick:0}},after:{t:210,load:3,timeOrigin:3000,run:2,tick:201,loop:{runId:2,wallet:1,activeTier:1}}},
     intervalFixture('explicit-pause'),intervalFixture(),{kind:'no-replay-telemetry',cues:[]},foreground,hidden,
     {kind:'terminal-reload',saved:clone(foreground.evidence.saved),state:{load:4,runId:0,pendingRunId:0,hasCheckpoint:false,wallet:4}}];
@@ -216,6 +217,8 @@ test('current aggregate retains ten real wave lifecycles, entry, recovery and ex
   const {reports,expected}=matrixFixture(),result=assertLastStandWaveMatrix(reports,expected);
   assert.equal(result.status,'pass');assert.equal(result.natural_terminal,'pass');assert.equal(result.full_acceptance,'pending');assert.equal(result.merge_ready,false);
   const mutations=[r=>r.pop(),r=>r[1]=clone(r[0]),r=>delete r[0].contract,r=>r[0].contract='old-manual-claim',
+    r=>r[0].contract='last-stand-waves/v1',r=>r[0].lifecycle[0].saved.version=4,
+    r=>delete r[0].wave_model.source_lf_sha256['LastStandEconomyCatalog.cs'],
     r=>r[0].binding.current_head='c'.repeat(40),r=>r[0].binding.served_after={},r=>r[0].wave_model.source_lf_sha256={},
     r=>r[0].wave_model.export_binding=null,r=>r[0].wave_model.commands[1].exit=1,r=>r[0].wave_model.profiles.pop(),
     r=>r[0].qualification.merge_ready=true,r=>r[0].qualification.natural_terminal='pending',r=>r[0].error='failure',
@@ -244,8 +247,8 @@ test('actual maintained wave purchase feeds current aggregate and rejects wallet
   assert.ok(begin>0&&end>begin);const run=new Function('gameKey','check','savedWave','return(async()=>{'+source.slice(begin,end)+'})();');
   for(const fault of [null,{wallet:1},{level:0},{cannonDamage:20}]){
     const {reports,expected}=matrixFixture(),observations=[];
-    await run(async()=>({wallet:0,level:1,cannonDamage:30,...fault}),(pass,name,detail)=>observations.push({pass,name,detail}),{credits:1});
-    reports[0].checks=reports[0].checks.filter(c=>c.name!=='one salvage commits Cannon Attack level1').concat(observations);
+    await run(async()=>({wallet:0,level:1,cannonDamage:30,...fault}),(pass,name,detail)=>observations.push({pass,name,detail}),{credits:2});
+    reports[0].checks=reports[0].checks.filter(c=>c.name!=='two salvage commits Cannon Attack level1').concat(observations);
     if(fault)assert.throws(()=>assertLastStandWaveMatrix(reports,expected));else assert.doesNotThrow(()=>assertLastStandWaveMatrix(reports,expected));
   }
 });
@@ -323,7 +326,7 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   const staged={...loop,t:201,action:'defeat-staged',phase:'settling',runId:0,pendingRunId:0,hasCheckpoint:false,tick:2,hull:0};
   const result={...staged,t:230,action:'result',phase:'result',tick:0},layout={...staged,t:202,controls:[]};
   const terminalRaw={states:[loop,staged,result],encounters:[initial,terminal],layouts:[layout]};
-  const saved={version:4,checkpoint:null,pendingDefeat:null,lastFinalizedRunId:19,credits:4};
+  const saved={...idleWaveFields({runId:19,finalized:true}),checkpoint:null,pendingDefeat:null,lastFinalizedRunId:19,credits:4};
   const proof=journey.validateWaveTerminal({before,result,saved,...terminalRaw,oracle:{0:initial,2:terminal}});
   const interval={before,begin:110,recovered:240,events:terminalFixture('hidden').interval.events.map(e=>({...e,load:before.load,timeOrigin:before.timeOrigin}))};
   report.lifecycle=[{kind:'wave-terminal',mode:'hidden',evidence:proof,interval}];put('runtime-telemetry.json',terminalRaw);put('input-trace.json',interval.events);

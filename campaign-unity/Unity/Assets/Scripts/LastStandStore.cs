@@ -10,15 +10,29 @@ namespace SingedTerra.LastStand
         string Read();
         void Write(string value);
     }
+    public interface ILastStandStorageOwnership { bool CanWrite { get; } }
 
-    public sealed class LastStandStore : ILastStandStorage
+    public sealed class LastStandStore : ILastStandStorage,ILastStandStorageOwnership
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern string LastStandStorage_Get(string key);
         [DllImport("__Internal")]
         private static extern int LastStandStorage_Set(string key, string value);
+        [DllImport("__Internal")]
+        private static extern int LastStandStorage_CanWrite();
 #endif
+        public bool CanWrite
+        {
+            get
+            {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                return LastStandStorage_CanWrite()==1;
+#else
+                return true;
+#endif
+            }
+        }
 
         public string Read()
         {

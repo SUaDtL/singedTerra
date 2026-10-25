@@ -100,7 +100,8 @@ def main():
             'android':False,'publish':False,'editor':str(editor)}
     if a.scene == 'last-stand':
         require(set(record['approved_artifacts']) in ({'ST-LS-LOOP-SPEC', 'ST-LS-LOOP-PLAN'},
-                {'ST-LS-WAVES-SPEC', 'ST-LS-WAVES-PLAN'}),
+                {'ST-LS-WAVES-SPEC', 'ST-LS-WAVES-PLAN'},
+                {'ST-LS-RESEARCH-SPEC', 'ST-LS-RESEARCH-PLAN'}),
                 'Supply the caller-observed Last Stand spec/plan identity pair')
         for identity in record['approved_artifacts'].values():
             require(set(identity) == {'revision', 'model_sha256', 'normative_sha256'}

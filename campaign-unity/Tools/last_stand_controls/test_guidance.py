@@ -14,7 +14,7 @@ MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
 CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 SOURCE_NAMES = ("LastStandGuidance.cs", "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs",
-                "LastStandRunClock.cs", "LastStandSpeedPolicy.cs")
+                "LastStandRunClock.cs", "LastStandSpeedPolicy.cs", "LastStandEconomyCatalog.cs")
 
 
 def compile_checks(executable, overrides=None):

@@ -11,6 +11,7 @@ namespace SingedTerra.LastStand
     internal static class LastStandSaveJson
     {
         internal const int MaximumLength = 65536;
+        internal const long MaximumInteger = 9007199254740991L;
         internal static Dictionary<string, object> Read(string source)
         {
             var parser = new Parser(source);
@@ -24,6 +25,12 @@ namespace SingedTerra.LastStand
             value as List<object> ?? throw new FormatException("Expected array.");
         internal static int Integer(object value) => value is int number && number >= 0
             ? number : throw new FormatException("Expected nonnegative integer.");
+        internal static long LongInteger(object value)
+        {
+            if(value is int narrow && narrow>=0)return narrow;
+            if(value is long wide && wide>=0 && wide<=MaximumInteger)return wide;
+            throw new FormatException("Expected bounded nonnegative integer.");
+        }
         internal static string String(object value) => value is string text
             ? text : throw new FormatException("Expected string.");
         internal static bool Boolean(object value) => value is bool flag
@@ -49,6 +56,11 @@ namespace SingedTerra.LastStand
             {
                 if (number < 0) throw new FormatException("Negative save integer.");
                 text.Append(number.ToString(CultureInfo.InvariantCulture)); return;
+            }
+            if(value is long wide)
+            {
+                if(wide<0 || wide>MaximumInteger)throw new FormatException("Save integer exceeds exact browser range.");
+                text.Append(wide.ToString(CultureInfo.InvariantCulture));return;
             }
             if (value is bool flag) { text.Append(flag ? "true" : "false"); return; }
             if (value is string str)
@@ -126,8 +138,9 @@ namespace SingedTerra.LastStand
                 {
                     int start = offset++;
                     if (c != '0') while (offset < source.Length && source[offset] >= '0' && source[offset] <= '9') offset++;
-                    if (!int.TryParse(source.Substring(start, offset - start), NumberStyles.None, CultureInfo.InvariantCulture, out int result))
+                    if (!long.TryParse(source.Substring(start, offset - start), NumberStyles.None, CultureInfo.InvariantCulture, out long result) || result>MaximumInteger)
                         throw new FormatException("Save integer overflow.");
+                    if(result<=int.MaxValue)return (int)result;
                     return result;
                 }
                 if (Literal("true")) return true;

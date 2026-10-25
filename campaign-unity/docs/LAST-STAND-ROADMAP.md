@@ -9,6 +9,34 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The current in-repo visual scope is
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
+## Research and farming sprint candidate — October 24, 2026
+
+The owner approved the [research and farming specification](../../.codearbiter/specs/last-stand-research-and-farming.html)
+and [plan](../../.codearbiter/plans/last-stand-research-and-farming.html). The candidate
+adds a Research Lab, bulk upgrades, farming history and a revised economy. Both
+permanent upgrades and research spend Salvage; Scrap remains local to the run.
+Research advances in real time, including while closed. Combat remains checkpointed
+and never simulates closed-tab time. Two Lab slots unlock at Tier 1 waves 25 and 100.
+
+Game Speed research earns half-step ceilings from 1x through 5x; completion never
+changes the selected speed or resumes a pause automatically. Supporting research
+improves repeatable Salvage, subsequent kill Scrap and other projects' research
+duration. Suspended projects retain time, refund once and require repayment to
+resume. Each slot accepts one prepaid queued project.
+
+Version 5 saves commit research, shared currency and bounded run history with the
+existing wave checkpoint owner. A migrated active run retains its original prices,
+effects and seven-track roster until it ends; new runs use the eight-track economy,
+including Scrap Yield. Permanent purchases always use current prices and affect
+the next deployment. A browser Web Lock admits one save writer per origin; another
+tab remains read-only and can take ownership after the owner closes and it reloads.
+
+The [economy notes](LAST-STAND-RESEARCH-ECONOMY.md) state the actual coefficients,
+measurement assumptions and remaining calibration limits. Model projections,
+imported Unity checks, browser inspection, ten real active hours at 5x, hosted CI,
+merge and deployment remain separate evidence. This candidate is not a release
+or a claim that its elapsed-time qualification has passed.
+
 ## Wave sprint candidate — October 23, 2026
 
 The owner approved the [waves and resume specification](../../.codearbiter/specs/last-stand-waves-and-resume.html)

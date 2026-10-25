@@ -1,129 +1,55 @@
 using System;
 using SingedTerra.LastStand;
-
 internal sealed class FakeStorage : ILastStandStorage
 {
     public string Value;
-    public bool FailRead;
-    public bool FailWrite;
-    public bool FailNextRead;
-    public bool WriteThenFailRead;
-    public bool MismatchAfterWrite;
-    public bool MismatchNextRead;
-    public string Read()
-    {
-        if (FailRead || FailNextRead) { FailNextRead = false; throw new Exception("read failed"); }
-        if (MismatchNextRead) { MismatchNextRead = false; return "mismatch"; }
-        return Value;
-    }
-    public void Write(string value)
-    {
-        if (FailWrite) throw new Exception("write failed");
-        Value = value;
-        if (WriteThenFailRead) { WriteThenFailRead = false; FailNextRead = true; }
-        if (MismatchAfterWrite) { MismatchAfterWrite = false; MismatchNextRead = true; }
-    }
+    public bool FailRead,FailWrite,FailNextRead,WriteThenFailRead,MismatchAfterWrite,MismatchNextRead;
+    public string Read(){if(FailRead||FailNextRead){FailNextRead=false;throw new Exception("read failed");}if(MismatchNextRead){MismatchNextRead=false;return "mismatch";}return Value;}
+    public void Write(string value){if(FailWrite)throw new Exception("write failed");Value=value;if(WriteThenFailRead){WriteThenFailRead=false;FailNextRead=true;}if(MismatchAfterWrite){MismatchAfterWrite=false;MismatchNextRead=true;}}
 }
-
 internal static class Program
 {
-    private static void Main(string[] args)
+    static void Need(bool value,string reason){if(!value)throw new InvalidOperationException(reason);}
+    static string Legacy(bool pending,int credits=0)=>"{\"version\":1,\"credits\":"+credits+",\"permanentLevel\":0,\"nextRunId\":2,\"lastFinalizedRunId\":0,\"pendingDefeat\":"+(pending?"{\"runId\":1,\"elapsedTicks\":42,\"kills\":3,\"reward\":1}":"null")+"}";
+    static LastStandProgression Load(FakeStorage store)=>LastStandProgression.Load(store,()=>1000000);
+    static void Main(string[] args)
     {
-        var storage = new FakeStorage();
-        var model = LastStandProgression.Load(storage);
-        switch (args[0])
+        var storage=new FakeStorage();var model=Load(storage);
+        switch(args[0])
         {
             case "defeat":
-                var deployed = model.TryDeploy();
-                var staged = model.TryStageDefeat(42, 3);
-                var claimed = model.TryClaim();
-                var duplicate = model.TryClaim();
-                Console.WriteLine($"{deployed},{staged},{claimed},{duplicate},{model.Wallet},{model.CannonAttackLevel},{model.FinalizedRunId}");
-                break;
+                Need(model.TryDeploy()&&model.TryStageDefeat(42,3),"Reserve/finalize run.");
+                Need(!model.TryStageDefeat(42,3)&&!model.TryClaim()&&model.Wallet==0&&model.FinalizedRunId==1,"Defeat consumes once without death payout.");
+                model=Load(new FakeStorage{Value=Legacy(true)});
+                Need(model.TryClaim()&&!model.TryClaim()&&model.Wallet==1&&model.FinalizedRunId==1,"Historical pending reward claims once.");break;
             case "excluded":
-                var firstDeploy = model.TryDeploy();
-                model.AbandonRun();
-                var noClaim = model.TryClaim();
-                var secondDeploy = model.TryDeploy();
-                var noHorizon = model.TryStageNonDefeat();
-                Console.WriteLine($"{firstDeploy},{secondDeploy},{model.Wallet},{noClaim},{model.FinalizedRunId},{noHorizon}");
-                break;
+                Need(model.TryDeploy(),"Reserve.");model.AbandonRun();
+                Need(!model.HasCheckpoint&&!model.TryClaim()&&model.Wallet==0,"Abandon gives no reward.");
+                Need(model.TryDeploy()&&!model.TryStageLimit(3600,4)&&model.HasCheckpoint,"No artificial horizon result.");
+                Need(model.TryStageNonDefeat()&&model.FinalizedRunId==2&&!model.TryClaim(),"Non-defeat consumes run.");break;
             case "upgrade":
-                var frozen = model.CannonDamage;
-                model.TryDeploy();
-                var refusedDuringRun = model.TryPurchase();
-                storage.Value = "{\"version\":1,\"credits\":6,\"permanentLevel\":0,\"nextRunId\":2,\"lastFinalizedRunId\":0,\"pendingDefeat\":null}";
-                var live = model.CannonDamage;
-                model.AbandonRun();
-                model = LastStandProgression.Load(storage);
-                var price = model.NextCost;
-                model.TryPurchase();
-                var first = model.CannonDamage;
-                var secondPrice = model.NextCost;
-                model.TryPurchase();
-                var second = model.CannonDamage;
-                var thirdPrice = model.NextCost;
-                model.TryPurchase();
-                var third = model.CannonDamage;
-                var cap = model.TryPurchase();
-                var empty = LastStandProgression.Load(new FakeStorage());
-                var insufficient = empty.TryPurchase();
-                Console.WriteLine($"{frozen},{live},{price},{first},{model.CannonAttackLevel - 2},{secondPrice},{second},{thirdPrice},{third},{cap},{model.CannonAttackLevel},{model.Wallet},{refusedDuringRun},{insufficient},{empty.Wallet},{empty.CannonAttackLevel}");
-                break;
+                model=Load(new FakeStorage{Value=Legacy(false,6)});Need(model.TryDeploy()&&model.CannonDamage==20,"Frozen base deployment.");
+                for(int n=1;n<=3;n++)Need(model.NextCost==2&&model.TryPurchase()&&model.CannonAttackLevel==n&&model.CannonDamage==20,"Two Salvage early price; frozen active stats.");
+                Need(model.Wallet==0&&!model.TryPurchase(),"Insufficient funds.");model.AbandonRun();
+                Need(model.TryDeploy()&&model.CannonDamage==50,"Future deployment uses purchased levels.");break;
             case "reload":
-                model.TryDeploy();
-                model.TryStageDefeat(7, 4);
-                var exactSchema = storage.Value.Contains("\"credits\":0") &&
-                    storage.Value.Contains("\"version\":3") &&
-                    storage.Value.Contains("\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0}") &&
-                    storage.Value.Contains("\"lastFinalizedRunId\":0") &&
-                    !storage.Value.Contains("\"wallet\"") &&
-                    !storage.Value.Contains("\"cannonAttackLevel\"") &&
-                    !storage.Value.Contains("\"finalizedRunId\"");
-                var restored = LastStandProgression.Load(storage);
-                var pending = restored.PendingDefeat;
-                var shape = pending == null ? "missing pending" : $"{restored.NextRunId},{restored.FinalizedRunId},{pending.RunId},{pending.ElapsedTicks},{pending.Kills},{pending != null}";
-                storage.Value = storage.Value.Replace("\"nextRunId\":2", "\"nextRunId\":3");
-                var stale = LastStandProgression.Load(storage);
-                var staleState = stale.SaveState;
-                storage.Value = "{\"version\":2,\"credits\":0,\"permanentLevel\":0,\"nextRunId\":1,\"lastFinalizedRunId\":0,\"pendingDefeat\":null}";
-                var blocked = LastStandProgression.Load(storage);
-                storage.Value = "{\"version\":01,\"credits\":0,\"permanentLevel\":0,\"nextRunId\":1,\"lastFinalizedRunId\":0,\"pendingDefeat\":null}";
-                var leadingZero = LastStandProgression.Load(storage).SaveState;
-                storage.Value = "{\"version\":1,\"credits\":0,\"permanentLevel\":0,\"nextRunId\":1,\"lastFinalizedRunId\":0,\"pendingDefeat\":null}\v";
-                var invalidWhitespace = LastStandProgression.Load(storage).SaveState;
-                Console.WriteLine($"{shape};{exactSchema};{staleState};{blocked.TryDeploy()},{blocked.SaveState};{leadingZero},{invalidWhitespace}");
-                break;
+                Need(model.TryDeploy(),"Reserve.");var restored=Load(storage);
+                Need(restored.SaveState=="ready"&&restored.HasCheckpoint&&restored.NextRunId==2&&restored.Checkpoint.CompletedWave==0,"Restore starting boundary.");
+                Need(storage.Value.StartsWith("{\"version\":5,")&&storage.Value.Contains("\"scrapYield\":0")&&storage.Value.Contains("\"research\":")&&storage.Value.Contains("\"history\":"),"Complete current schema.");
+                foreach(string bad in new[]{storage.Value.Replace("\"version\":5","\"version\":6"),storage.Value.Replace("\"nextRunId\":2","\"nextRunId\":1"),Legacy(false).Replace("\"version\":1","\"version\":01"),Legacy(false)+"\v"})
+                {var invalid=new FakeStorage{Value=bad};Need(Load(invalid).SaveState=="blocked"&&invalid.Value==bad,"Malformed bytes preserved.");}break;
             case "failure":
-                model.TryDeploy();
-                model.TryStageDefeat(9, 2);
-                storage.FailWrite = true;
-                var failure = model.TryClaim();
-                var oldWallet = model.Wallet;
-                var hasPending = model.PendingDefeat != null;
-                storage.FailWrite = false;
-                var retry = model.Retry();
-                var unreadable = new FakeStorage { FailRead = true };
-                var initialBlocked = LastStandProgression.Load(unreadable);
-                Console.WriteLine($"{failure},{oldWallet},{hasPending},{retry},{model.Wallet},{model.TryClaim()},{model.FinalizedRunId},{initialBlocked.SaveState},{initialBlocked.TryDeploy()}");
-                break;
+                storage.Value=Legacy(true);model=Load(storage);storage.FailWrite=true;
+                Need(!model.TryClaim()&&model.Wallet==0&&model.PendingDefeat!=null,"Denied claim unpublished.");storage.FailWrite=false;
+                Need(model.Retry()&&model.Wallet==1&&!model.TryClaim(),"Retry publishes once.");
+                var unreadable=Load(new FakeStorage{FailRead=true});Need(unreadable.SaveState=="blocked"&&!unreadable.TryDeploy(),"Unreadable save blocks deploy.");break;
             case "uncertain":
-                model.TryDeploy();
-                model.TryStageDefeat(9, 2);
-                storage.WriteThenFailRead = true;
-                var uncertain = model.TryClaim();
-                var before = model.Wallet;
-                var reconciled = model.Retry();
-                var mismatchStorage = new FakeStorage();
-                var mismatchModel = LastStandProgression.Load(mismatchStorage);
-                mismatchModel.TryDeploy();
-                mismatchModel.TryStageDefeat(3, 1);
-                mismatchStorage.MismatchAfterWrite = true;
-                var mismatch = mismatchModel.TryClaim();
-                var preserved = mismatchModel.Wallet == 0 && mismatchModel.PendingDefeat != null;
-                var mismatchRetry = mismatchModel.Retry();
-                Console.WriteLine($"{uncertain},{before},{reconciled},{model.Wallet},{model.TryClaim()},{model.FinalizedRunId},{mismatch},{preserved},{mismatchRetry},{mismatchModel.Wallet}");
-                break;
+                foreach(bool mismatch in new[]{false,true})
+                {storage=new FakeStorage{Value=Legacy(true)};model=Load(storage);storage.WriteThenFailRead=!mismatch;storage.MismatchAfterWrite=mismatch;
+                Need(!model.TryClaim()&&model.Wallet==0&&model.PendingDefeat!=null,"Unconfirmed claim unpublished.");
+                Need(model.Retry()&&model.Retry()&&model.Wallet==1&&!model.TryClaim()&&Load(storage).Wallet==1,"Readback recovery applies reward once.");}break;
+            default:throw new InvalidOperationException("Unknown case.");
         }
+        Console.WriteLine("PASS "+args[0]);
     }
 }

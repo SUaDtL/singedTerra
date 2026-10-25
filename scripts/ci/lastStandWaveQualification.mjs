@@ -3,10 +3,11 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve,dirname,basename} from 'node:path';
 import {LAST_STAND_JOURNEY_INPUTS,validateCheckpointResume,validateWaveTerminal,validateGameplayInput,validateKeyboardGameplayInput,validateModelObservation,
-  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents,validateHiddenWaveTerminal} from '../../e2e/helpers/lastStandJourney.mjs';
+  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents,validateHiddenWaveTerminal,
+  assertIdleWaveSave,assertWaveSavePreserved,validateWaveAbandonSave} from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_ORACLE_SOURCES,parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 
-export const WAVE_CONTRACT='last-stand-waves/v1';
+export const WAVE_CONTRACT='last-stand-waves/v2';
 export const WAVE_RUNTIME_KEYS=Object.freeze(['manifest_sha256','receipt_sha256','source_lock_sha256','source_inventory_sha256','wrapper_sha256','build']);
 export const WAVE_RECOVERY_CHECKS=Object.freeze(['.loader.js: real Retry recovered genuine scene','.wasm: real Retry recovered genuine scene',
   'corrupt bytes preserved by Retry','blocked writes recover through real Retry']);
@@ -14,7 +15,7 @@ export const WAVE_ERROR_CHECK='no unclassified browser/Unity/shader/request erro
 export const WAVE_LIFECYCLE_CHECKS=Object.freeze(['normal-speed automatic baseline deployed','first base cannon leaves identical 30 HP foe at 10 HP',
   'pause stops combat ticks','cleared waves atomically bank rewards and complete checkpoints','wave rewards require no manual Claim',
   'saved wave survives reload and awaits explicit Resume','Resume restores saved state paused without offline catch-up',
-  'confirmed abandon keeps banked rewards and finalizes run','one salvage commits Cannon Attack level1',
+  'confirmed abandon keeps banked rewards and finalizes run','two salvage commits Cannon Attack level1',
   'purchase reload retains permanent level and spent balance','same first foe one-hit defeated by real 30 damage',
   'background wave rewards and checkpoint share one durable save','natural defeat finalizes checkpoint without a second payout',
   'Continue cannot pay a second reward','finalized natural defeat cannot resume after reload',
@@ -88,11 +89,11 @@ export function assertWaveLifecycle(report) {
   assert.ok(resume.stable.t>=resume.resumed.t+1000,'Fresh post-wait state required');
   assert.ok(resume.saved.checkpoint.encounter.completedWave>0,'Earned checkpoint required');
   const abandon=only(report.lifecycle,'checkpoint-abandon');assert.deepEqual(abandon.before,resume.saved);
-  assert.deepEqual(abandon.after,{...abandon.before,checkpoint:null,lastFinalizedRunId:abandon.before.checkpoint.runId},'Abandon changes only durable run finalization');
-  const purchase=report.checks.find(c=>c.name==='one salvage commits Cannon Attack level1').detail;
-  assert.equal(purchase?.wallet,resume.saved.credits-1);assert.equal(purchase.level,1);assert.equal(purchase.cannonDamage,30);
+  validateWaveAbandonSave(abandon);
+  const purchase=report.checks.find(c=>c.name==='two salvage commits Cannon Attack level1').detail;
+  assert.equal(purchase?.wallet,resume.saved.credits-2);assert.equal(purchase.level,1);assert.equal(purchase.cannonDamage,30);
   const background=only(report.lifecycle,'background-wave'),cp=background.saved?.checkpoint;
-  assert.equal(background.saved?.version,4);assert.ok(cp&&cp.runId>resume.saved.checkpoint.runId);
+  assertIdleWaveSave(background.saved);assert.ok(cp&&cp.runId>resume.saved.checkpoint.runId);
   assert.ok(cp.encounter.completedWave>=1);assert.equal(background.saved.pendingDefeat,null);
   assert.equal(cp.runId,background.after?.loop?.runId);assert.equal(background.saved.credits,background.after.loop.wallet);
   assert.equal(cp.encounter.rulesVersion,'last-stand-waves-v1');assert.equal(cp.encounter.tier,background.after.loop.activeTier);
@@ -127,7 +128,7 @@ export function assertWaveTerminals(report) {
     }
     assert.equal(result.action,'result');assert.equal(result.phase,'result');assert.equal(result.wallet,staged.wallet);
     assert.ok(before.t<terminal.t&&terminal.t<=staged.t&&staged.t<=result.t);
-    assert.equal(saved?.version,4);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
+    assertIdleWaveSave(saved);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
     assert.equal(saved.lastFinalizedRunId,before.loop.runId);assert.equal(saved.credits,staged.wallet);
     assert.ok(layouts?.length&&layouts.every(layout=>layout.phase==='settling'&&layout.load===before.load&&
       layout.timeOrigin===before.timeOrigin&&layout.t>=terminal.t&&layout.t<=result.t&&
@@ -137,7 +138,7 @@ export function assertWaveTerminals(report) {
     }
   }
   const foreground=terminals.find(row=>row.mode==='foreground').evidence,reload=only(report.lifecycle,'terminal-reload');
-  assert.deepEqual(reload.saved,foreground.saved);assert.ok(reload.state.load>foreground.result.load);
+  assertWaveSavePreserved(foreground.saved,reload.saved);assert.ok(reload.state.load>foreground.result.load);
   for(const key of ['runId','pendingRunId'])assert.equal(reload.state[key],0);
   assert.equal(reload.state.hasCheckpoint,false);assert.equal(reload.state.wallet,foreground.saved.credits);
   assert.equal(report.keyboard_actions.filter(a=>a.name==='Claim'&&a.action==='continue').length,2,'Both result acknowledgements use real keyboard input');

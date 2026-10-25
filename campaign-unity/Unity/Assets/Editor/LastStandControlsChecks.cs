@@ -295,22 +295,38 @@ public static class LastStandControlsChecks
             finally { camera.targetTexture=null;UnityEngine.Object.DestroyImmediate(texture); }
         }
     }
-    static void UnlockSecondTier(Fixture f)
+    static string EarnedSecondTierSave()
     {
-        Require(f.Loop.Progression.TryDeploy()&&f.Loop.Progression.TryStageDefeat(1200,1)&&f.Loop.Progression.TryClaim(),
-            "isolated integration fixture unlocks through real saved outcome/claim contract");
-        f.Loop.RefreshControls();
+        var store=new Storage();LastStandProgression.Load(store);
+        // Numerical build setup only. Tier and armament unlocks are earned by
+        // sequential production combat and durable wave commits below.
+        foreach(var track in LastStandUpgradeCatalog.Tracks)
+            store.Value=store.Value.Replace("\""+track.Key+"\":0","\""+track.Key+"\":"+track.PermanentCap);
+        var progress=LastStandProgression.Load(store);Require(progress.TryDeploy(),"tier fixture reserves a wave run");
+        var model=progress.Checkpoint.RestoreModel();var shop=progress.Checkpoint.RestoreShop();
+        for(int wave=1;wave<=LastStandTierCatalog.Get(2).RequiredWave;wave++)
+        {
+            int budget=20000;
+            while(model.Status==EncounterStatus.Running && !model.AwaitingWaveCommit && budget-->0)model.Step();
+            shop.ObserveAuthoritativeKills(model.Kills,model.Wave,0);
+            Require(model.AwaitingWaveCommit && model.Hull>0 && progress.TryCommitWave(model,shop),"tier fixture banks wave "+wave);
+            if(wave<LastStandTierCatalog.Get(2).RequiredWave)Require(model.ContinueAfterCheckpoint(),"tier fixture continues after commit");
+        }
+        Require(progress.TierTwoUnlocked && progress.TryFinalizeRun(reason:"abandon",shop:shop),"earned tier survives ending the fixture run");
+        return store.Value;
     }
     static void UnlockedTierAndFittingSelection()
     {
-        var f=new Fixture();UnlockSecondTier(f);
+        var f=new Fixture(gameplay:EarnedSecondTierSave());
         f.Click("TierNext");
         Require(f.Loop.GarageTierSelection.Current.Unlocked&&f.Loop.Progression.SelectedTier==2&&f.Loop.EnvironmentId=="iron-perimeter",
             "unlocked choice commits exact selected tier and environment");
         Require(!f.Button("FittingPrevious").IsInteractable()&&f.Loop.GarageFittingSelection.Current.Id=="repair","fitting starts at explicit current identity");
         f.Click("FittingNext");
-        Require(f.Loop.FittingId=="launcher"&&!f.Button("FittingNext").IsInteractable(),"fitting arrow equips explicit identity and stops at catalog endpoint");
-        f.Click("Deploy");
+        Require(f.Loop.FittingId=="launcher","fitting arrow equips explicit launcher identity");
+        f.Click("FittingNext");
+        Require(f.Loop.FittingId=="scattergun"&&!f.Button("FittingNext").IsInteractable(),"fitting selector includes the wave-100 unlock and stops at the catalog endpoint");
+        f.Click("FittingPrevious");f.Click("Redeploy");
         Require(f.Loop.Session.Model!=null&&f.Loop.Session.Model.HasLauncher&&f.Loop.Progression.ActiveTier==2,"deployment captures chosen fitting and tier");
         string snapshot=f.Loop.Session.Model.Snapshot();
         f.Loop.MoveGarageTier(-1);f.Loop.MoveGarageFitting(-1);f.Loop.OpenSelector("tier");f.Loop.MoveSelection(-1);f.Loop.SelectTier(1);
@@ -320,7 +336,7 @@ public static class LastStandControlsChecks
     }
     static void SelectorSaveFailureRestoresEnvironment()
     {
-        var f=new Fixture();UnlockSecondTier(f);string save=f.Game.Value;f.Game.DenyWrite=true;
+        var f=new Fixture(gameplay:EarnedSecondTierSave());string save=f.Game.Value;f.Game.DenyWrite=true;
         f.Click("TierNext");
         Require(f.Loop.Progression.SaveState!="ready"&&f.Loop.Progression.SelectedTier==1&&f.Game.Value==save,
             "denied selection write preserves durable tier");
@@ -332,7 +348,7 @@ public static class LastStandControlsChecks
     }
     static void SelectorEnvironmentPreflightPreservesSave()
     {
-        var f=new Fixture();UnlockSecondTier(f);string save=f.Game.Value;int writes=f.Game.Writes;
+        var f=new Fixture(gameplay:EarnedSecondTierSave());string save=f.Game.Value;int writes=f.Game.Writes;
         var review=f.Art.GetComponent<BattlefieldReview>();var iron=review.ironEnvironment;
         review.ironEnvironment=null;
         f.Loop.SelectTier(2);
@@ -342,7 +358,7 @@ public static class LastStandControlsChecks
         Require(footer.isActiveAndEnabled&&footer.text.Contains("Battlefield unavailable"),
             "failed environment preflight remains visible in the actual quiet garage footer");
         review.ironEnvironment=iron;f.Loop.SelectTier(1);
-        Require(!footer.text.Contains("unavailable")&&footer.text.Contains("LOCAL SAVE READY")&&f.Game.Value==save&&f.Game.Writes==writes,
+        Require(!footer.text.Contains("unavailable")&&footer.text.Contains("SALVAGE "+f.Loop.Progression.Wallet)&&f.Game.Value==save&&f.Game.Writes==writes,
             "successful current-tier retry clears the error without saving or reserving a run");
     }
     static void SelectorDescriptionKeyboardScroll()
@@ -378,13 +394,15 @@ public static class LastStandControlsChecks
         f.Loop.OpenMenu("settings");f.Click("SettingsTab3");
         Require(f.Loop.MenuPage=="settings"&&f.Button("DataRetry").IsInteractable(),"actual Save & Account exposes the deployment retry");
         f.Game.DenyWrite=false;f.Click("DataRetry");
-        Require(f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.ActiveRunId!=0&&f.Loop.Session.Model!=null&&f.Loop.Phase=="battle",
-            "successful retry starts exactly the reserved run");
-        Require(f.Loop.MenuPage=="settings"&&f.Loop.Session.MenuPaused&&f.Loop.Session.Paused&&f.Loop.Session.EffectiveSpeed==0,
-            "run created by retry must inherit the already-open menu pause hold");
-        Require(f.Loop.Session.Model.Tick==0,"retry never advances combat behind settings");
+        Require(f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.ActiveRunId!=0&&f.Loop.Progression.HasCheckpoint&&
+            f.Loop.Session.Model==null&&f.Loop.Phase=="garage"&&f.Loop.MenuPage=="settings",
+            "successful retry saves the reserved checkpoint and keeps settings open for an explicit Resume");
+        int run=f.Loop.Progression.ActiveRunId;
+        f.Click("SettingsClose");f.Click("Deploy");
+        Require(f.Loop.Session.Model!=null&&f.Loop.Progression.ActiveRunId==run&&f.Loop.Session.ManualPaused&&f.Loop.Session.Model.Tick==0,
+            "Resume enters exactly the reserved checkpoint paused without combat behind settings");
         f.Loop.Session.AdvanceAt(f.Clock.LastTimestamp+2);
-        Require(f.Loop.Session.Model.Tick==0&&f.Loop.Session.Failure=="","open settings continues excluding combat time after retry");
+        Require(f.Loop.Session.Model.Tick==0&&f.Loop.Session.Failure=="","resumed checkpoint waits for an explicit combat unpause");
     }
 
     static void ExistingSuitePreferenceScope()
@@ -604,8 +622,9 @@ public static class LastStandControlsChecks
             f.Loop.RequestConfirmation("abandon");f.Click("ConfirmProceed");
             Require(f.Loop.Progression.ActiveRunId==0&&f.Loop.Session.Model==null&&f.Loop.Phase=="garage"&&!f.Loop.MenuOpen,
                 "confirmed abandon returns to garage without automatic redeploy");
-            Require(f.Loop.Progression.Wallet==0&&f.Loop.Progression.PendingDefeat==null&&f.Game.Value==save&&f.Game.Writes==writes,
-                "confirmed abandon does not manufacture a claim or reward/save");
+            Require(f.Loop.Progression.Wallet==0&&f.Loop.Progression.PendingDefeat==null&&!f.Loop.Progression.HasCheckpoint&&
+                f.Loop.Progression.FinalizedRunId==run&&f.Game.Value!=save&&f.Game.Writes==writes+1,
+                "confirmed abandon durably removes its checkpoint once without manufacturing a claim or reward");
         }
     }
 
@@ -632,22 +651,23 @@ public static class LastStandControlsChecks
     {
         var f=new Fixture();f.Click("Deploy");f.Game.DenyWrite=true;
         var model=f.Loop.Session.Model;
-        for(int i=0;model.Status==EncounterStatus.Running&&i<3600;i++)model.Step();
-        Require(model.Status==EncounterStatus.Defeated,"controlled terminal fixture actually defeats");
-        Invoke(f.Loop,"OnSessionChanged");
-        Require(f.Loop.Phase=="save-error"&&f.Loop.Progression.SaveState=="retry","actual terminal write is unconfirmed");
+        for(int i=0;f.Loop.Phase!="save-error"&&i<2000;i++)f.Loop.Session.AdvanceAt(f.Clock.LastTimestamp+.05);
+        Require(model.CompletedWave==1 && f.Loop.Session.CheckpointBlocked,"controlled fixture clears a real wave and holds its failed checkpoint");
+        Require(f.Loop.Phase=="save-error"&&f.Loop.Progression.SaveState=="retry","actual wave write is unconfirmed");
         string save=f.Game.Value;
         f.Loop.RequestNavigation(false);f.Loop.RequestNavigation(true);f.Loop.RequestConfirmation("abandon");
         Require(f.Loop.Confirmation==""&&f.Loop.Progression.SaveState=="retry"&&f.Game.Value==save,
-            "return/account/abandon gates preserve unconfirmed terminal data");
+            "return/account/abandon gates preserve unconfirmed wave data");
         f.Loop.OpenMenu();Require(!f.Button("MenuCampaigns").IsInteractable()&&!f.Button("MenuAbandon").IsInteractable(),
             "actual menu disables routes that could lose the pending save");
         f.Click("MenuSettings");f.Click("SettingsTab3");
         Require(!f.Button("DataAccount").IsInteractable()&&f.Button("DataRetry").IsInteractable(),
             "Save & Account exposes recovery and refuses account departure");
         f.Game.DenyWrite=false;f.Click("DataRetry");
-        Require(f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.PendingDefeat!=null&&f.Loop.Progression.Wallet==0,
-            "Retry commits the pending result without automatic Claim");
+        Require(f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.Checkpoint.CompletedWave==1&&
+            f.Loop.Progression.Wallet==LastStandRewardCatalog.At(LastStandTierCatalog.Get(1),1).RepeatableSalvage&&
+            f.Loop.Progression.PendingDefeat==null&&f.Loop.Session.Paused,
+            "Retry atomically banks the wave and reward while settings keeps combat paused");
     }
 
     static void DisplayOwnsRuntimePipelineClone()
@@ -685,7 +705,8 @@ public static class LastStandControlsChecks
         f.Loop.OpenMenu("settings");f.Click("SettingsTab2");f.Click("TutorialTips");
         Require(f.Loop.Guidance.Tutorial==""&&!LastStandPreferences.Load(f.Preferences).Current.TutorialTips,
             "actual toggle dismisses and persists tutorial opt-out");
-        f.Click("GameplayHelp");Require(f.Loop.MenuPage=="help"&&f.Canvas.GetComponentsInChildren<Text>(true).Any(t=>t.text==LastStandGuidance.Help),
+        f.Click("GameplayHelp");Require(f.Loop.MenuPage=="help"&&f.Canvas.GetComponentsInChildren<Text>(true).Any(t=>
+            t.name=="SettingsBody"&&t.text.StartsWith(LastStandGuidance.Help,StringComparison.Ordinal)&&t.text.Contains("RESEARCH & FARMING")),
             "explicit Help remains available with tutorial disabled");
         f.Loop.OpenMenu("settings");f.Click("SettingsTab0");
         var events=new List<string>();Application.LogCallback capture=(message,trace,kind)=>{if(message.StartsWith("ST_LS_AUDIO event=",StringComparison.Ordinal))events.Add(message);};

@@ -9,7 +9,7 @@ using SingedTerra.VisualReview;
 namespace SingedTerra.LastStand
 {
     // Present only on the dedicated playable scene. The review scene remains non-awarding.
-    public sealed class LastStandLoopController : MonoBehaviour
+    public sealed partial class LastStandLoopController : MonoBehaviour
     {
         // Editor checks substitute a disposable record without touching a player's local save.
 #if UNITY_EDITOR
@@ -43,6 +43,7 @@ namespace SingedTerra.LastStand
         public string Confirmation { get; private set; } = "";
         public bool MenuOpen => MenuPage != "";
         public bool CanOpenMenu => (!Session.CatchingUp || Session.CheckpointBlocked) && Session.CanRun;
+        public bool CanInspectWave => Session?.Model?.Profile.IsWaveBased==true && Shop!=null && CanOpenMenu;
         public bool Muted => Audio && Audio.Muted;
         public LastStandSelection Selection { get; private set; }
         public bool SelectionOpen => MenuPage=="tier" || MenuPage=="fitting";
@@ -64,7 +65,15 @@ namespace SingedTerra.LastStand
         float settle;
         bool purchasePending, permanentPurchaseInProgress, suppressCallbackFeedback, failedRun, temporaryPurchaseInProgress;
         LastStandUpgradeTrackId pendingPermanentTrack;
-        int pendingPermanentPriorLevel;
+        int pendingPermanentPriorLevel,pendingPermanentQuantity;
+        public LastStandBulkQuantity ShopQuantity { get; private set; }=LastStandBulkQuantity.One;
+        public void CycleShopQuantity()
+        {
+            ShopQuantity=ShopQuantity==LastStandBulkQuantity.One?LastStandBulkQuantity.Ten:
+                ShopQuantity==LastStandBulkQuantity.Ten?LastStandBulkQuantity.Hundred:
+                ShopQuantity==LastStandBulkQuantity.Hundred?LastStandBulkQuantity.Max:LastStandBulkQuantity.One;
+            Refresh("shop-quantity");
+        }
         bool previousRunInBackground, ownsBackgroundSetting;
         bool waveSavePending, terminalSavePending, abandonSavePending, startingSavePending;
         string afterAbandon = "";
@@ -84,6 +93,8 @@ namespace SingedTerra.LastStand
             Progression = LastStandProgression.Load(new LastStandStore());
             Preferences = LastStandPreferences.Load(new LastStandPreferencesStore());
 #endif
+            InitializeResearch();
+            Session.GrantMaximumSpeed(Progression.MaximumGameSpeed);
             Session.ConfigureSpeed(Preferences.Current.LastPositiveSpeed);
             Audio = gameObject.AddComponent<LastStandAudio>();
             Audio.Initialize();
@@ -97,6 +108,7 @@ namespace SingedTerra.LastStand
             session.Changed += OnSessionChanged;
             session.Stepped += OnSessionStepped;
             session.WaveCleared += OnWaveCleared;
+            session.BeforeAdvance = ReconcileResearchBenefits;
             artHud.SetPlayableVisible();
             Phase = Progression.PendingDefeat != null ? "result" : Progression.Wallet > 0 ? "workshop" : "garage";
             if (Progression.SaveState != "ready") Notice = Progression.SaveError;
@@ -167,7 +179,11 @@ namespace SingedTerra.LastStand
             { GarageTierSelection=new LastStandSelection(options,Progression.SelectedTier.ToString(),true);garageTierStamp=stamp; }
             string fittingStamp=art.FittingId+":"+Progression.IsFittingUnlocked("scattergun");
             if(GarageFittingSelection==null || garageFittingStamp!=fittingStamp)
-            { GarageFittingSelection=new LastStandSelection(LastStandFittingCatalog.OptionsFor(Progression.IsFittingUnlocked),art.FittingId,false);garageFittingStamp=fittingStamp; }
+            {
+                var available=new List<LastStandSelectionOption>();
+                foreach(var option in LastStandFittingCatalog.OptionsFor(Progression.IsFittingUnlocked))if(option.Unlocked)available.Add(option);
+                GarageFittingSelection=new LastStandSelection(available,art.FittingId,false);garageFittingStamp=fittingStamp;
+            }
         }
         public void RestoreGaragePreview()
         {
@@ -244,6 +260,7 @@ namespace SingedTerra.LastStand
             var shop=checkpoint.RestoreShop();
             var model=checkpoint.RestoreModel();
             runShop = shop; FinalAccounting = null;
+            StartHistory(resume);
             failedRun = suppressCallbackFeedback = waveSavePending = terminalSavePending = false;
             Audio.UnlockFromGesture("deploy");
             Session.ConfigureSpeed(Preferences.Current.LastPositiveSpeed);
@@ -269,7 +286,11 @@ namespace SingedTerra.LastStand
         {
             // Income belongs to every authoritative admitted step, including a
             // terminal/background step. Audio admission never owns accounting.
-            if (runShop != null && model == Session.Model) runShop.ObserveAuthoritativeKills(model.Kills);
+            if (runShop != null && model == Session.Model)
+            {
+                runShop.ObserveAuthoritativeKills(model.Kills,model.Wave,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
+                RecordActiveStep();
+            }
             if (Phase != "battle" || Session.Paused || Session.Failure != "") return;
             // Preserve ordinary short foreground batches. A delayed/background
             // callback and every subsequent debt-draining callback discard old
@@ -307,13 +328,15 @@ namespace SingedTerra.LastStand
         void OnWaveCleared(EncounterModel model)
         {
             if(model!=Session.Model || runShop==null)return;
-            if(!Progression.TryCommitWave(model,runShop))
+            FlushHistoryTime();
+            if(!ReconcileResearchBenefits() || !Progression.TryCommitWave(model,runShop,liveHistory))
             {
                 waveSavePending=true;Session.HoldCheckpoint();Phase="save-error";
                 Notice=Progression.SaveError??"Wave checkpoint is unconfirmed. Retry Save before continuing.";
                 Refresh("wave-save-error");return;
             }
             waveSavePending=false;
+            AdoptCommittedHistory();
             Notice=ReceiptNotice();
             Session.ContinueCommittedWave();
             // Commit telemetry describes this exact boundary. The session will
@@ -335,13 +358,14 @@ namespace SingedTerra.LastStand
                     Notice="The run stopped. Your last confirmed wave checkpoint is available to resume.";
                     Refresh("technical-failure");return;
                 }
-                if(waveSavePending || terminalSavePending || abandonSavePending)
+                if(waveSavePending || terminalSavePending || abandonSavePending || researchSavePending)
                 { Refresh("save-error");return; }
                 if(model.Status==EncounterStatus.Defeated)
                 {
+                    FlushHistoryTime();
                     // A simultaneous final kill/death may already have atomically
                     // banked this wave and invalidated the checkpoint.
-                    if(Progression.HasCheckpoint && !Progression.TryFinalizeRun())
+                    if(Progression.HasCheckpoint && !Progression.TryFinalizeRun(liveHistory,shop:runShop))
                     {
                         terminalSavePending=true;Session.HoldCheckpoint();Phase="save-error";
                         Notice=Progression.SaveError??"Defeat is not yet saved. Retry Save.";
@@ -361,12 +385,14 @@ namespace SingedTerra.LastStand
         void FinalizeShop(LastStandShopPurchaseLifecycle lifecycle, EncounterModel model)
         {
             if (runShop == null) return;
-            if (model != null) runShop.ObserveAuthoritativeKills(model.Kills);
+            if (model != null) runShop.ObserveAuthoritativeKills(model.Kills,model.Wave,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
             FinalAccounting = runShop.FinalizeAccounting(lifecycle);
         }
 
         void Update()
         {
+            UpdateResearch();
+            RecordPausedTime();
             if (Phase != "settling") return;
             if (Session.Paused) return;
             // TerminalElapsedSeconds is cumulative active time from the sole
@@ -403,37 +429,41 @@ namespace SingedTerra.LastStand
 
         public void Purchase() => Purchase(LastStandUpgradeTrackId.CannonAttack);
 
-        public void Purchase(LastStandUpgradeTrackId track)
+        public void Purchase(LastStandUpgradeTrackId track)=>TryPurchasePermanent(track,ShopQuantity,Progression.Revision);
+        public bool TryPurchasePermanent(LastStandUpgradeTrackId track,LastStandBulkQuantity quantity,long expectedRevision)
         {
-            if (MenuOpen) return;
+            if (MenuOpen || expectedRevision!=Progression.Revision) { Refresh("purchase-stale");return false; }
             Guidance.Dismiss();
             int index = (int)track;
             if (permanentPurchaseInProgress || index < 0 || index >= LastStandUpgradeCatalog.Tracks.Count ||
                 (Phase != "garage" && Phase != "workshop") || Session.Model != null ||
-                Progression.PendingDefeat != null) return;
+                Progression.PendingDefeat != null) return false;
             if (Progression.SaveState != "ready")
             {
                 Notice = Progression.SaveError;
-                Refresh("purchase-unavailable"); return;
+                Refresh("purchase-unavailable"); return false;
             }
+            if(!ReconcileResearchBenefits()) { Refresh("purchase-unavailable");return false; }
             var definition = LastStandUpgradeCatalog.Tracks[index];
             int priorLevel = Progression.GetPermanentLevel(track);
+            var quote=Progression.QuotePermanent(track,quantity);
             permanentPurchaseInProgress = true;
             try
             {
                 SyncAudioAdmission(); Audio.UnlockFromGesture("purchase");
-                if (!Progression.TryPurchase(track))
+                if (!Progression.TryPurchasePermanent(track,quantity,Progression.Revision))
                 {
                     purchasePending = Progression.SaveState != "ready";
                     if (purchasePending)
-                    { pendingPermanentTrack = track; pendingPermanentPriorLevel = priorLevel; }
+                    { pendingPermanentTrack = track; pendingPermanentPriorLevel = priorLevel;pendingPermanentQuantity=quote.Quantity; }
                     Notice = Progression.SaveError ?? (priorLevel == LastStandUpgradeCatalog.PermanentCap ?
                         definition.Name + " is fully upgraded." : "Not enough salvage yet.");
-                    Refresh("purchase-unavailable"); return;
+                    Refresh("purchase-unavailable"); return false;
                 }
                 purchasePending = false;
-                Audio.PlayPurchase(); Notice = definition.Name + " upgraded and saved.";
+                Audio.PlayPurchase(); Notice = definition.Name + " +"+quote.Quantity+" saved for "+quote.Cost+" Salvage. Existing checkpoints keep their original deployment levels.";
                 Guidance.PurchaseConfirmed(track, priorLevel); Refresh("purchase");
+                return true;
             }
             finally { permanentPurchaseInProgress = false; }
         }
@@ -497,6 +527,16 @@ namespace SingedTerra.LastStand
         public void RetrySave()
         {
             if(!Progression.Retry()){Notice=Progression.SaveError;Refresh("save-error");return;}
+            if(researchClock==null)InitializeResearch();
+            if(Progression.SaveState!="ready"){Notice=Progression.SaveError;Refresh("save-error");return;}
+            Session.GrantMaximumSpeed(Progression.MaximumGameSpeed);
+            if(researchSavePending)
+            {
+                researchSavePending=false;
+                // A research write may have failed at the wave boundary.
+                // Retain that boundary until its reward/checkpoint also saves.
+                if(Session.Model!=null && !waveSavePending){Session.ContinueCommittedWave();Phase="battle";}
+            }
             if(abandonSavePending)
             {
                 if(Progression.HasCheckpoint){Notice="Abandon is not confirmed.";Refresh("save-error");return;}
@@ -508,9 +548,9 @@ namespace SingedTerra.LastStand
                 bool committed=model.Status==EncounterStatus.Defeated
                     ?Progression.FinalizedRunId==runShop.RunId
                     :Progression.Checkpoint?.CompletedWave==model.CompletedWave;
-                if(!committed && !Progression.TryCommitWave(model,runShop))
+                if(!committed && (!ReconcileResearchBenefits() || !Progression.TryCommitWave(model,runShop,liveHistory)))
                 {Notice=Progression.SaveError??"Checkpoint remains unconfirmed.";Refresh("save-error");return;}
-                waveSavePending=false;Session.ContinueCommittedWave();Phase="battle";
+                waveSavePending=false;AdoptCommittedHistory();Session.ContinueCommittedWave();Phase="battle";
                 Notice=ReceiptNotice("Press Resume when ready.");
                 if(model.Status==EncounterStatus.Defeated)
                 {
@@ -522,13 +562,13 @@ namespace SingedTerra.LastStand
             }
             if(terminalSavePending)
             {
-                if(Progression.HasCheckpoint && !Progression.TryFinalizeRun())
+                if(Progression.HasCheckpoint && !Progression.TryFinalizeRun(liveHistory,shop:runShop))
                 {Notice=Progression.SaveError;Refresh("save-error");return;}
                 terminalSavePending=false;FinalizeShop(LastStandShopPurchaseLifecycle.Defeated,model);
                 Session.ReturnToInspection();Phase="result";Notice=ReceiptNotice("Run ended. Completed rewards remain saved.");
                 Refresh("save-recovered");return;
             }
-            bool confirmed=purchasePending && Progression.GetPermanentLevel(pendingPermanentTrack)==pendingPermanentPriorLevel+1;
+            bool confirmed=purchasePending && Progression.GetPermanentLevel(pendingPermanentTrack)==pendingPermanentPriorLevel+pendingPermanentQuantity;
             purchasePending=false;
             if(confirmed){SyncAudioAdmission();Audio.UnlockFromGesture("retry-purchase");Audio.PlayPurchase();Guidance.PurchaseConfirmed(pendingPermanentTrack,pendingPermanentPriorLevel);}
             if(startingSavePending && Progression.HasCheckpoint)
@@ -547,11 +587,14 @@ namespace SingedTerra.LastStand
         public void TogglePause()
         {
             if (MenuOpen || (Phase != "battle" && Phase != "settling")) return;
+            RecordPausedTime();
             Session.TogglePause(); PersistSpeed();
         }
         public void ChangeSpeed(int direction)
         {
             if (MenuOpen || Phase != "battle") return;
+            if(!ReconcileResearchBenefits()){Refresh("speed-unavailable");return;}
+            RecordPausedTime();
             double rate = Math.Max(0, Math.Min(Session.MaximumSpeed, Session.SelectedSpeed + direction * .5));
             if (Session.TrySetSpeed(rate)) PersistSpeed();
         }
@@ -582,8 +625,10 @@ namespace SingedTerra.LastStand
         public void RefreshControls() { Refresh("controls"); }
         public void OpenMenu(string page = "menu")
         {
+            if(page=="wave" && !CanInspectWave)return;
             if((page=="tier" || page=="fitting") && (!CanSelectLoadout || Selection==null))return;
             if (!CanOpenMenu) return;
+            RecordPausedTime();
             RestoreGaragePreview();
             if(SelectionOpen && page!=MenuPage) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
             if (!MenuOpen && Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(true)) return;
@@ -593,6 +638,7 @@ namespace SingedTerra.LastStand
         public void CloseMenu()
         {
             if (!MenuOpen) return;
+            RecordPausedTime();
             if(SelectionOpen) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
             if (Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(false)) return;
             MenuPage = ""; Confirmation = ""; Refresh("menu-close");
@@ -628,9 +674,10 @@ namespace SingedTerra.LastStand
             }
             if (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp)) return;
             afterAbandon=action;
+            RecordPausedTime();FlushHistoryTime();
             if (Progression.HasCheckpoint)
             {
-                if(!Progression.TryFinalizeRun())
+                if(!Progression.TryFinalizeRun(liveHistory,"abandon",runShop))
                 {abandonSavePending=true;Session.HoldCheckpoint();Phase="save-error";Notice=Progression.SaveError;Refresh("save-error");return;}
             }
             FinishAbandon();
@@ -657,13 +704,17 @@ namespace SingedTerra.LastStand
                 Audio.SetMusicSuspended(failedRun || !Session.CanRun || Session.Failure != "" || Progression.SaveState != "ready");
             }
         }
-        void OnApplicationFocus(bool active) { if (!active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); } }
+        void OnApplicationFocus(bool active)
+        {
+            if (!active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); }
+            else if(active && researchClock!=null && Progression.SaveState=="ready")RefreshResearch();
+        }
         void OnApplicationPause(bool active) { if (active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); } }
         void OnDestroy()
         {
             FinalizeShop(LastStandShopPurchaseLifecycle.Exited, Session?.Model);
             runShop = null; FinalAccounting = null;
-            if (Session) { Session.Changed -= OnSessionChanged; Session.Stepped -= OnSessionStepped; Session.WaveCleared -= OnWaveCleared; }
+            if (Session) { Session.Changed -= OnSessionChanged; Session.Stepped -= OnSessionStepped; Session.WaveCleared -= OnWaveCleared; Session.BeforeAdvance=null; }
             hud?.Dispose();
             if (ownsBackgroundSetting) Application.runInBackground = previousRunInBackground;
         }

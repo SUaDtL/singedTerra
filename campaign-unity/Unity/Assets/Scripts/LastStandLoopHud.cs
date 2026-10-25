@@ -22,10 +22,15 @@ namespace SingedTerra.LastStand
         readonly Text garageTierName,garageTierDetail,garageFittingName,garageFittingDescription,garageSave;
         readonly LastStandFittingCallout fittingCallout;
         readonly LastStandSettingsHud settings;
+        readonly LastStandResearchHud research;
+        readonly LastStandRunHistoryHud history;
+        readonly Button researchEntry, waveInfo;
+        Button menuReturnFocus;
         bool menuWasOpen;
         string menuWasPage;
-        readonly Button[] actions;
-        readonly Button shopEntry, shopClose;
+        readonly Button[] actions, coreActions;
+        readonly Button shopEntry, shopClose, shopQuantity;
+        long shopProfileRevision;
         readonly Button[] shopTabs, shopActions, allActions;
         readonly ShopCardControls[] shopCards;
         readonly RectTransform shopPanel, shopViewport, shopContent;
@@ -221,14 +226,16 @@ namespace SingedTerra.LastStand
             garageSave=Label("GarageSave",root,14);garageSave.color=Paper;
             fittingCallout=root.gameObject.AddComponent<LastStandFittingCallout>();
             fittingCallout.Initialize(canvas,loop.GetComponent<SingedTerra.Art.TankPresentation>(),garageFittingCard);
+            researchEntry=Action("ResearchEntry","RESEARCH",root,loop.OpenResearch);
             actions = new[] { fitting, deploy, claim, purchase, redeploy, retry, pause, mute, tier, effects, menu, speedMinus, speedRate, speedPlus,
-                tierPrevious,tierNext,fittingPrevious,fittingNext };
+                tierPrevious,tierNext,fittingPrevious,fittingNext,researchEntry };
             shopEntry = Action("ShopEntry","MECHANICS SHOP",root,OpenShop);
             shopPanel = Panel("ShopPanel",root,true);
             shopHeading = Label("ShopHeading",shopPanel,16); shopHeading.text = "MECHANICS SHOP";
             shopHeading.color = Brass; shopHeading.fontStyle = FontStyle.Bold;
             shopCurrency = Label("ShopCurrency",shopPanel,14); shopCurrency.color = Brass;
             shopClose = Action("ShopClose","\u00d7",shopPanel,CloseShop);
+            shopQuantity=Action("ShopQuantity","[1]   10\n100   MAX",shopPanel,loop.CycleShopQuantity);
             shopTabs = new[] {
                 Action("ShopTabAttack","ATTACK",shopPanel,() => SelectCategory(LastStandUpgradeCategory.Attack)),
                 Action("ShopTabDefense","DEFENSE",shopPanel,() => SelectCategory(LastStandUpgradeCategory.Defense)),
@@ -244,16 +251,34 @@ namespace SingedTerra.LastStand
             shopScroll.onValueChanged.AddListener(OnShopScrolled);
             shopCards = new ShopCardControls[LastStandUpgradeCatalog.Tracks.Count];
             foreach (var definition in LastStandUpgradeCatalog.Tracks) shopCards[(int)definition.Id] = CreateShopCard(definition);
-            var extra = new List<Button> { shopEntry, shopClose }; extra.AddRange(shopTabs);
+            var extra = new List<Button> { shopEntry, shopClose,shopQuantity }; extra.AddRange(shopTabs);
             foreach (var controls in shopCards) extra.Add(controls.Buy);
             shopActions = extra.ToArray();
             settings = new LastStandSettingsHud(loop,root,font,metalGrain,metalSurface);
-            var complete = new List<Button>(actions); complete.AddRange(shopActions); complete.AddRange(settings.Buttons); allActions = complete.ToArray();
-            keyboard = root.gameObject.AddComponent<LastStandHudKeyboard>(); keyboard.Initialize(allActions,b => { RevealShopSelection(b); settings.Reveal(b); });
-            keyboard.Escape = () => { if (loop.MenuOpen) loop.CloseMenu(); else loop.OpenMenu(); };
-            keyboard.ScrollContent = direction => settings.ScrollKeyboard(direction);
+            research=new LastStandResearchHud(root,font,loop.CloseMenu,loop.RefreshResearch,loop.SubmitResearch,metalGrain,metalSurface);
+            history=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshResearch,metalGrain,metalSurface);
             foreach (string id in new[] { "HullValue", "ElapsedTime", "DisabledCount", "CannonDamage", "Fitting" })
                 readouts.Add(id,Label(id,card,(int)LastStandHudLayout.MinimumTextSize));
+            // The existing wave instrument is the entry point: a full-size
+            // transparent hit target adds no extra opaque HUD panel or row.
+            var waveTarget=Node("WaveInfo",card);nodes.Add(waveTarget.name,waveTarget);
+            waveTarget.gameObject.AddComponent<Image>().color=Color.clear;
+            waveInfo=waveTarget.gameObject.AddComponent<Button>();waveInfo.targetGraphic=readouts["ElapsedTime"];
+            var waveColors=waveInfo.colors;waveColors.normalColor=Brass;waveColors.highlightedColor=waveColors.selectedColor=Paper;
+            waveColors.disabledColor=DisabledPaper;waveColors.pressedColor=Color.white;waveInfo.colors=waveColors;
+            waveInfo.onClick.AddListener(()=>loop.OpenMenu("wave"));
+            var waveOutline=readouts["ElapsedTime"].gameObject.AddComponent<Outline>();
+            waveOutline.effectColor=Ink;waveOutline.effectDistance=new Vector2(1,-1);waveOutline.enabled=false;
+            waveInfo.gameObject.AddComponent<LastStandActionFeedback>().Initialize(waveInfo,readouts["ElapsedTime"],waveOutline,null);
+            var core=new List<Button>(actions);core.Add(waveInfo);coreActions=core.ToArray();
+            var complete = new List<Button>(coreActions); complete.AddRange(shopActions); complete.AddRange(settings.Buttons);
+            complete.AddRange(research.Buttons);complete.AddRange(history.Buttons);allActions = complete.ToArray();
+            keyboard = root.gameObject.AddComponent<LastStandHudKeyboard>(); keyboard.Initialize(allActions,b =>
+                { RevealShopSelection(b); settings.Reveal(b);research.Reveal(b);history.Reveal(b); });
+            research.FocusRequested=keyboard.Focus;
+            keyboard.Escape = () => { if (loop.MenuOpen) loop.CloseMenu(); else loop.OpenMenu(); };
+            keyboard.ScrollContent = direction => {if(loop.MenuPage=="research")research.ScrollKeyboard(direction);
+                else if(loop.MenuPage=="history")history.ScrollKeyboard(direction);else settings.ScrollKeyboard(direction);};
             var hullBar = Node("HullBar",card); nodes.Add(hullBar.name,hullBar);
             hullBar.gameObject.AddComponent<Image>().color = Ink;
             hullBar.GetComponent<Image>().sprite = metalSurface; hullBar.GetComponent<Image>().type = Image.Type.Sliced;
@@ -293,17 +318,17 @@ namespace SingedTerra.LastStand
             bool canClaim=ready && result && !checkpoint;
             var state=new Presentation {Phase=phase,Primary=garage?"Deploy":workshop?"Redeploy":result?"Claim":battle||settling?"SpeedRate":"RetrySave",
                 Active=new[]{false,garage,result,false,workshop,!ready,false,false,false,false,true,battle||settling,battle||settling,battle||settling,
-                    cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen},
+                    cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen},
                 Available=new[]{loop.CanSelectLoadout,canDeploy,canClaim,false,canDeploy,true,canPause,true,loop.CanSelectLoadout,CanChangeEffects(),
                     loop.CanOpenMenu,battle&&canPause&&loop.Session.SelectedSpeed>0,canPause,battle&&canPause&&loop.Session.SelectedSpeed<loop.Session.MaximumSpeed,
                     loop.CanSelectLoadout&&loop.GarageTierSelection!=null&&loop.GarageTierSelection.CanPrevious,
                     loop.CanSelectLoadout&&loop.GarageTierSelection!=null&&loop.GarageTierSelection.CanNext,
                     loop.CanSelectLoadout&&loop.GarageFittingSelection!=null&&loop.GarageFittingSelection.CanPrevious,
-                    loop.CanSelectLoadout&&loop.GarageFittingSelection!=null&&loop.GarageFittingSelection.CanNext},
+                    loop.CanSelectLoadout&&loop.GarageFittingSelection!=null&&loop.GarageFittingSelection.CanNext,loop.CanOpenMenu},
                 Labels=new[]{"FITTING: "+fittingName,canDeploy?checkpoint?"RESUME RUN":"DEPLOY":"UNAVAILABLE",
                     progress.PendingDefeat!=null && progress.PendingDefeat.Reward>0?"CLAIM LEGACY REWARD":"CONTINUE","UPGRADES",canDeploy?checkpoint?"RESUME RUN":"DEPLOY":"UNAVAILABLE","RETRY SAVE",
                     canPause?loop.Session.Paused?"RESUME":"PAUSE":"WAIT",loop.Muted?"SOUND OFF":"SOUND ON","TIER "+runTier,
-                    loop.Session.View.FullEffects?"FX FULL":"FX LOW","Menu","-",!canPause?"WAIT":loop.Session.Paused?"0x\nPAUSED":loop.Session.EffectiveSpeed.ToString("0.0")+"x","+","<",">","<",">"}};
+                    loop.Session.View.FullEffects?"FX FULL":"FX LOW","Menu","-",!canPause?"WAIT":loop.Session.Paused?"0x\nPAUSED":loop.Session.EffectiveSpeed.ToString("0.0")+"x","+","<",">","<",">","RESEARCH"}};
             if(garage||workshop)
             {
                 state.Heading=checkpoint?"RESUME YOUR RUN":"LAST STAND";
@@ -337,7 +362,7 @@ namespace SingedTerra.LastStand
                 var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(runTier),model.Wave);
                 state.HullFraction=Mathf.Clamp01(model.Hull/(float)model.CurrentMaximumHull);
                 state.Readouts.Add("HullValue","HULL "+model.Hull+" / "+model.CurrentMaximumHull);
-                state.Readouts.Add("ElapsedTime","T"+runTier+" / WAVE "+model.Wave);
+                state.Readouts.Add("ElapsedTime","T"+runTier+" / WAVE "+model.Wave+" >");
                 state.Readouts.Add("DisabledCount","LEFT "+model.RemainingWaveEnemies);
                 state.Readouts.Add("CannonDamage","NEXT +"+reward.RepeatableSalvage+" SALVAGE");
                 state.Readouts.Add("Fitting",LastStandTierHudText.NextMilestone(runTier,model.CompletedWave).ToUpperInvariant());
@@ -393,13 +418,15 @@ namespace SingedTerra.LastStand
             if (shopOpen && shopMode == LastStandShopMode.Permanent)
             {
                 if (!CanOpenPermanentShop()) return;
-                loop.Purchase(track); Refresh(); return;
+                if(shopView==null)return;
+                loop.TryPurchasePermanent(track,shopView.Quantity,shopProfileRevision); Refresh(); return;
             }
             var shop = loop.Shop;
             if (!shopOpen || shop == null || shop.RunId != shopRunId) return;
-            // Ready is presentation, never a reservation. Capture the real
-            // current immutable intent at activation and submit it once.
-            var intent = new LastStandShopPurchaseIntent(shop.RunId,shop.Version,track);
+            // Submit the displayed revision and selected quantity. A delayed
+            // click must not silently recompute a different Max purchase.
+            if(shopView==null)return;
+            var intent = new LastStandShopPurchaseIntent(shopView.RunId,shopView.Version,track,shopView.Quantity);
             int activation = ++purchaseActivation;
             var result = loop.TryPurchaseTemporary(intent);
             ObservePurchase(activation,intent,result);
@@ -440,12 +467,15 @@ namespace SingedTerra.LastStand
             { shopOpen = false; shopRunId = 0; SetShopScrollOffset(0); purchaseFeedback = null; }
             shopMode = mode;
             var fitting = LastStandFittingCatalog.Parse(loop.FittingId);
-            shopView = run ? LastStandShopPresentation.ProjectRun(owner) : permanent ?
-                LastStandShopPresentation.ProjectPermanent(loop.Progression,fitting) : null;
+            shopView = run ? LastStandShopPresentation.ProjectRun(owner,loop.ShopQuantity) : permanent ?
+                LastStandShopPresentation.ProjectPermanent(loop.Progression,fitting,loop.ShopQuantity) : null;
+            shopProfileRevision=loop.Progression.Revision;
             shopEntry.gameObject.SetActive(active); StyleAction(shopEntry,false,active);
             shopEntry.GetComponentInChildren<Text>(true).text = shopOpen ? "CLOSE SHOP" : run ? "SHOP" : "MECHANICS SHOP";
             StyleAction(shopClose,false,shopOpen);
-            shopHeading.text = run ? "SHOP / THIS RUN" : "SHOP / PERMANENT";
+            StyleAction(shopQuantity,false,shopOpen);
+            shopQuantity.GetComponentInChildren<Text>(true).text=QuantityLabel(loop.ShopQuantity);
+            shopHeading.text = run ? "THIS RUN" : loop.Progression.HasCheckpoint?"NEXT DEPLOY":"PERMANENT";
             shopCurrency.text = (run ? "SCRAP  " : "SALVAGE  ") + (shopView?.Balance ?? 0);
             if (shopOpen && permanent)
             {
@@ -456,25 +486,34 @@ namespace SingedTerra.LastStand
             for (int i = 0; i < shopTabs.Length; i++) StyleAction(shopTabs[i],i == (int)shopCategory,shopOpen);
             foreach (var controls in shopCards)
             {
-                var cardView = shopView?.Cards[(int)controls.TrackId];
+                int cardIndex=(int)controls.TrackId;
+                var cardView = shopView!=null && cardIndex<shopView.Cards.Count?shopView.Cards[cardIndex]:null;
                 if (cardView == null) { StyleAction(controls.Buy,false,false); continue; }
                 controls.Title.text = cardView.Name;
                 controls.Levels.text = "Level " + cardView.CurrentLevel + " / " + cardView.Cap;
                 controls.Current.text = EffectDelta(cardView);
                 controls.Next.text = run ? "Permanent " + cardView.PermanentLevel + "  /  This run " + cardView.RunPurchases : "";
-                controls.Price.text = cardView.PriceDescription;
-                controls.Refusal.text = purchaseFeedback != null && feedbackTrack == controls.TrackId ? purchaseFeedback : cardView.Reason;
-                controls.Buy.GetComponentInChildren<Text>(true).text = cardView.NextPrice.HasValue ?
-                    "BUY  " + cardView.PriceDescription.ToUpperInvariant() : "MAX";
+                controls.Price.text = cardView.QuotedCost+" "+shopView.CurrencyName;
+                controls.Refusal.text = purchaseFeedback != null && feedbackTrack == controls.TrackId ? purchaseFeedback :
+                    cardView.Refusal==LastStandShopCardRefusal.None?cardView.QuotedCost.ToString("N0")+" "+shopView.CurrencyName+" total":cardView.Reason;
+                controls.Buy.GetComponentInChildren<Text>(true).text = cardView.Refusal==LastStandShopCardRefusal.AtCap?"MAX":
+                    "BUY x"+cardView.PurchaseQuantity;
                 StyleAction(controls.Buy,false,shopOpen && cardView.CanPurchase);
+                if(cardView.Refusal==LastStandShopCardRefusal.AtCap)
+                {controls.Buy.GetComponent<Image>().color=Brass;controls.Buy.GetComponentInChildren<Text>(true).color=Ink;}
             }
         }
         static string EffectDelta(LastStandShopCard cardView)
         {
             // Keep exact catalog wording and units together. This is a text
             // transition, never another owner of effect arithmetic.
-            return cardView.CurrentEffectDescription + (cardView.NextPrice.HasValue ? " to " + cardView.NextEffectDescription : "");
+            return cardView.CurrentEffectDescription + (cardView.PurchaseQuantity>0 ? " to " + cardView.ResultEffectDescription+
+                "\n+"+cardView.PurchaseQuantity+" levels -> level "+cardView.ResultLevel :
+                cardView.NextPrice.HasValue?"\nNext level: "+cardView.NextEffectDescription+"\n"+cardView.PriceDescription:"");
         }
+        static string QuantityLabel(LastStandBulkQuantity quantity) =>
+            (quantity==LastStandBulkQuantity.One?"[1]":"1")+"   "+(quantity==LastStandBulkQuantity.Ten?"[10]":"10")+"\n"+
+            (quantity==LastStandBulkQuantity.Hundred?"[100]":"100")+"   "+(quantity==LastStandBulkQuantity.Max?"[MAX]":"MAX");
         void OnShopScrolled(Vector2 ignored)
         {
             if (layingOut || !shopOpen || shopUnitsY <= 0) return;
@@ -510,6 +549,14 @@ namespace SingedTerra.LastStand
         public void Refresh()
         {
             bool menuChanged = menuWasOpen != loop.MenuOpen || menuWasPage != loop.MenuPage;
+            if(!menuWasOpen && loop.MenuOpen)
+            {
+                menuReturnFocus=menu;
+                if(EventSystem.current && EventSystem.current.currentSelectedGameObject==researchEntry.gameObject)
+                    menuReturnFocus=researchEntry;
+                else if(EventSystem.current && EventSystem.current.currentSelectedGameObject==waveInfo.gameObject)
+                    menuReturnFocus=waveInfo;
+            }
             var state = ReadPresentation(); keyboard.BeforeRefresh(state.Phase != projectedPhase); projectedPhase = state.Phase;
             bool garageCards=loop.GarageCardsVisible;
             heading.text = garageCards?"LAST STAND":state.Heading; detail.text = state.Detail; status.text = state.Status;
@@ -543,8 +590,15 @@ namespace SingedTerra.LastStand
                 speedPlus.gameObject.SetActive(false);
             }
             foreach (var entry in readouts) entry.Value.text = state.Readouts.TryGetValue(entry.Key,out var value) ? value : "";
+            waveInfo.gameObject.SetActive((state.Phase=="battle" || state.Phase=="settling") && loop.Session.Model?.Profile.IsWaveBased==true);
+            waveInfo.interactable=loop.CanInspectWave && !loop.MenuOpen;
+            waveInfo.GetComponent<LastStandActionFeedback>().Refresh();
             hullFill.anchorMax = new Vector2(state.HullFraction,1);
-            settings.Refresh(); keyboard.TrapFocus = loop.MenuOpen;
+            settings.Refresh();
+            research.Refresh(loop.MenuPage=="research",loop.ResearchSnapshot,loop.Progression.GetBestWave(1),
+                loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus);
+            history.Refresh(loop.MenuPage=="history",loop.RunHistorySnapshot);
+            keyboard.TrapFocus = loop.MenuOpen;
             card.GetComponent<Image>().color=garageCards&&!shopOpen?Color.clear:Graphite;
             dock.GetComponent<Image>().color=garageCards&&!shopOpen?Color.clear:Graphite;
             cardFrame.enabled=dockFrame.enabled=!(garageCards&&!shopOpen);
@@ -554,8 +608,9 @@ namespace SingedTerra.LastStand
                 foreach(var b in shopActions) b.interactable=false;
             }
             Layout();
-            if(menuChanged) keyboard.Focus(loop.MenuOpen ? settings.InitialFocus :
-                menuWasPage=="tier" ? tierNext : menuWasPage=="fitting" ? fittingNext : menu);
+            if(menuChanged) keyboard.Focus(loop.MenuOpen ? loop.MenuPage=="research"?research.InitialFocus:
+                loop.MenuPage=="history"?history.InitialFocus:settings.InitialFocus :
+                menuWasPage=="tier" ? tierNext : menuWasPage=="fitting" ? fittingNext : menuReturnFocus??menu);
             menuWasOpen=loop.MenuOpen; menuWasPage=loop.MenuPage;
             ReportShopState();
         }
@@ -576,7 +631,7 @@ namespace SingedTerra.LastStand
             bool resized = layoutPixels != pixels.size; layoutPixels = pixels.size;
             float ratio = PreferredPixelRatio(), cssWidth = pixels.width / ratio, cssHeight = pixels.height / ratio;
             float unitsX = size.x / cssWidth, unitsY = size.y / cssHeight;
-            var active = new List<string>(); foreach (var button in actions) if (button.gameObject.activeSelf) active.Add(button.name);
+            var active = new List<string>(); foreach (var button in coreActions) if (button.gameObject.activeSelf) active.Add(button.name);
             if (shopEntry.gameObject.activeSelf) active.Add(shopEntry.name);
             var keys = new List<string>();
             if (shopView != null) foreach (var cardView in shopView.Cards)
@@ -643,6 +698,7 @@ namespace SingedTerra.LastStand
             }
             else cardFrame.SetInstruments(false,default(Rect),default(Rect),default(Rect));
             settings.Layout(cssWidth,cssHeight,unitsX,unitsY);
+            research.Layout(cssWidth,cssHeight,unitsX,unitsY);history.Layout(cssWidth,cssHeight,unitsX,unitsY);
             var art=loop.GetComponent<SingedTerra.Art.TankPresentation>();
             LastStandHudLayout.Slot preview=null;
             bool garagePreview=loop.GarageCardsVisible&&!shopOpen&&slots.TryGetValue("GaragePreview",out preview);
@@ -675,7 +731,8 @@ namespace SingedTerra.LastStand
         [Serializable] sealed class CardObservation
         {
             public string key,category,currentEffect,nextEffect,price,refusal,reason;
-            public int trackId,p,n,level,cap,nextPrice;
+            public int trackId,p,n,level,cap,nextPrice,purchaseQuantity,quotedCost,resultLevel;
+            public string resultEffect;
             public bool hasNextPrice,eligible,canPurchase;
         }
         [Serializable] sealed class AccountingObservation
@@ -714,6 +771,8 @@ namespace SingedTerra.LastStand
                 p = cardView.PermanentLevel, n = cardView.RunPurchases, level = cardView.CurrentLevel, cap = cardView.Cap,
                 hasNextPrice = cardView.NextPrice.HasValue, nextPrice = cardView.NextPrice ?? 0, price = cardView.PriceDescription,
                 currentEffect = cardView.CurrentEffectDescription, nextEffect = cardView.NextEffectDescription,
+                purchaseQuantity=cardView.PurchaseQuantity,quotedCost=cardView.QuotedCost,resultLevel=cardView.ResultLevel,
+                resultEffect=cardView.ResultEffectDescription,
                 eligible = cardView.AppliesToFitting, canPurchase = cardView.CanPurchase,
                 refusal = cardView.Refusal.ToString(), reason = cardView.Reason });
             var accounting = loop.FinalAccounting ?? owner?.FinalAccounting;
@@ -788,7 +847,8 @@ namespace SingedTerra.LastStand
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;
-            public Control[] controls,shopControls,settingsControls; public GraphicObservation[] graphics;
+            public Control[] controls,shopControls,settingsControls,researchControls,historyControls; public GraphicObservation[] graphics;
+            public float researchScrollOffset,researchMaximumScrollOffset,historyScrollOffset,historyMaximumScrollOffset;
         }
         string NodePath(Transform node)
         {
@@ -809,9 +869,11 @@ namespace SingedTerra.LastStand
             {
                 var button = buttons[i]; var bounds = ScreenBounds((RectTransform)button.transform);
                 string track = ""; foreach (var cardControls in shopCards) if (button == cardControls.Buy) track = cardControls.Key;
-                string label = button.GetComponentInChildren<Text>(true)?.text ?? "";
+                string label = button==waveInfo ? readouts["ElapsedTime"].text : button.GetComponentInChildren<Text>(true)?.text ?? "";
                 controls[i] = new Control { name = button.name, label = label, accessibleLabel = button == shopClose ? "Close" : button==menu ? "Menu" :
-                    button==tierPrevious?"Previous tier":button==tierNext?"Next tier":button==fittingPrevious?"Previous fitting":button==fittingNext?"Next fitting":label,
+                    button==tierPrevious?"Previous tier":button==tierNext?"Next tier":button==fittingPrevious?"Previous fitting":button==fittingNext?"Next fitting":
+                    button==shopQuantity?"Purchase quantity "+loop.ShopQuantity+". Cycle 1, 10, 100 or Max":
+                    button==waveInfo?"Current wave enemy stats. "+label:label,
                     mode = mode, trackKey = track, x = bounds.x, y = bounds.y, width = bounds.width, height = bounds.height,
                     active = button.gameObject.activeInHierarchy, interactable = button.IsInteractable() };
             }
@@ -840,12 +902,15 @@ namespace SingedTerra.LastStand
                 graphics.Add(observation);
             }
             var layout = new LayoutState { phase = loop.Phase, coordinates = "top-left", width = Screen.width, height = Screen.height,
-                pixelRatio = PreferredPixelRatio(), controls = ObserveControls(actions,"Core"), shopControls = ObserveControls(shopActions,shopMode.ToString()),
+                pixelRatio = PreferredPixelRatio(), controls = ObserveControls(coreActions,"Core"), shopControls = ObserveControls(shopActions,shopMode.ToString()),
                 settingsControls = ObserveControls(settings.Buttons,"Settings"),
+                researchControls=ObserveControls(research.Buttons,"Research"),historyControls=ObserveControls(history.Buttons,"History"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
             layout.settingsScrollOffset = settings.ScrollOffset;
             layout.settingsMaximumScrollOffset = settings.MaximumScrollOffset;
+            layout.researchScrollOffset=research.ScrollOffset;layout.researchMaximumScrollOffset=research.MaximumScrollOffset;
+            layout.historyScrollOffset=history.ScrollOffset;layout.historyMaximumScrollOffset=history.MaximumScrollOffset;
             string timerText = timerObservation?.text;
             if (timerObservation != null) timerObservation.text = "";
             string key = JsonUtility.ToJson(layout);

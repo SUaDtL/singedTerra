@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
 import { validateWaveResume, validateWaveCommit, validateWaveAbandon } from '../../e2e/helpers/lastStandWaveJourney.mjs';
+import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 
 // Invented observations exercise the acceptance reader, never qualify a player.
 const clone=value=>structuredClone(value);
 function fixture(){
-  const levels={cannonAttack:0,launcherAttack:0,hullCapacity:0,armor:0,cannonCycle:0,fieldRepair:0,scattergunAttack:0};
+  const levels={cannonAttack:0,launcherAttack:0,hullCapacity:0,armor:0,cannonCycle:0,fieldRepair:0,scattergunAttack:0,scrapYield:0};
   const encounter={rulesVersion:'last-stand-waves-v1',tier:1,fitting:1,wave:1,completedWave:1,tick:201,hull:114,kills:6,committedCannonDamage:20};
   const shop={runId:1,fitting:1,uniqueKills:6,earnedScrap:60,spentScrap:0,scrap:60,permanentLevels:levels,runPurchases:{...levels}};
-  const saved={version:4,credits:1,nextRunId:2,lastFinalizedRunId:0,permanentLevels:levels,firstClears:[],unlockedFittings:['repair','launcher'],
+  const saved={...idleWaveFields(),credits:1,nextRunId:2,lastFinalizedRunId:0,permanentLevels:levels,firstClears:[],unlockedFittings:['repair','launcher'],
     tierRecords:{'dust-basin':{bestWave:1,legacyTicks:0,legacyKills:0,unlocked:true}},checkpoint:{runId:1,encounter,shop},pendingDefeat:null};
   const state={phase:'battle',saveState:'ready',runId:1,activeTier:1,profileVersion:'last-stand-waves-v1',wave:2,completedWave:1,
     checkpointWave:1,hasCheckpoint:true,checkpointBlocked:false,tick:201,hull:114,kills:6,cannonDamage:20,fittingId:'repair',paused:true,speed:0,wallet:1};
@@ -42,7 +43,7 @@ test('wave commits require sequential wave and actual durable reward/ledger chan
   }
 });
 test('confirmed abandon invalidates only the run and preserves banked progression through reload',()=>{
-  const before=fixture().saved;const after=clone(before);after.checkpoint=null;after.lastFinalizedRunId=1;
+  const before=fixture().saved;const after=abandonedWaveSave(before);
   const value={before,after,reloaded:clone(after)};assert.doesNotThrow(()=>validateWaveAbandon(value));
   for(const mutate of [v=>v.after.checkpoint=clone(v.before.checkpoint),v=>v.after.credits--,
     v=>v.after.lastFinalizedRunId=0,v=>v.after.pendingDefeat={reward:1},

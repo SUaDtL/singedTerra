@@ -117,7 +117,7 @@ namespace SingedTerra.Encounter
         public static EncounterModel CreatePlayable(LastStandFitting fitting,int tier,LastStandShopState shop)
         {
             if(shop==null)throw new ArgumentNullException(nameof(shop));
-            int committed=LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(shop.GetTrack(LastStandUpgradeTrackId.CannonAttack).PermanentLevel,1);
+            int committed=shop.GetDefinition(LastStandUpgradeTrackId.CannonAttack).EffectAt(shop.GetTrack(LastStandUpgradeTrackId.CannonAttack).PermanentLevel,1);
             var model=new EncounterModel(fitting,EncounterProfile.ForTier(tier),committed);
             model.ApplyShopProjection(shop);return model;
         }
@@ -125,14 +125,14 @@ namespace SingedTerra.Encounter
         {
             if(shop==null || shop.Fitting!=Fitting || !Profile.IsPlayable)throw new ArgumentException("Shop/model fitting mismatch.");
             Func<LastStandUpgradeTrackId,int> level=id=>shop.GetTrack(id).CurrentLevel;
-            TryApplyPlayableAttackProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(level(LastStandUpgradeTrackId.CannonAttack),1),
-                LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.LauncherAttack).EffectAt(level(LastStandUpgradeTrackId.LauncherAttack),1));
+            TryApplyPlayableAttackProjection(shop.GetDefinition(LastStandUpgradeTrackId.CannonAttack).EffectAt(level(LastStandUpgradeTrackId.CannonAttack),1),
+                shop.GetDefinition(LastStandUpgradeTrackId.LauncherAttack).EffectAt(level(LastStandUpgradeTrackId.LauncherAttack),1));
             int armor=level(LastStandUpgradeTrackId.Armor);
-            TryApplyPlayableDefenseProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.HullCapacity).EffectAt(level(LastStandUpgradeTrackId.HullCapacity),1),raw=>Math.Max(1,raw-armor));
+            TryApplyPlayableDefenseProjection(shop.GetDefinition(LastStandUpgradeTrackId.HullCapacity).EffectAt(level(LastStandUpgradeTrackId.HullCapacity),1),raw=>Math.Max(1,raw-armor));
             TryApplyPlayableArmorProjection(armor);
-            TryApplyPlayableCannonPeriodProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonCycle).EffectAt(level(LastStandUpgradeTrackId.CannonCycle),1));
-            if(HasRepair)TryApplyPlayableRepairProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).EffectAt(level(LastStandUpgradeTrackId.FieldRepair),1));
-            if(HasScattergun)TryApplyPlayableScattergunProjection(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.ScattergunAttack).EffectAt(level(LastStandUpgradeTrackId.ScattergunAttack),1));
+            TryApplyPlayableCannonPeriodProjection(shop.GetDefinition(LastStandUpgradeTrackId.CannonCycle).EffectAt(level(LastStandUpgradeTrackId.CannonCycle),1));
+            if(HasRepair)TryApplyPlayableRepairProjection(shop.GetDefinition(LastStandUpgradeTrackId.FieldRepair).EffectAt(level(LastStandUpgradeTrackId.FieldRepair),1));
+            if(HasScattergun)TryApplyPlayableScattergunProjection(shop.GetDefinition(LastStandUpgradeTrackId.ScattergunAttack).EffectAt(level(LastStandUpgradeTrackId.ScattergunAttack),1));
         }
         public bool TryApplyPlayableArmorProjection(int level)
         {
@@ -292,6 +292,8 @@ namespace SingedTerra.Encounter
                 var foe=foes[i];pendingHits[i]=foe.Alive && foe.Distance<=StopDistance(foe) && Tick>=foe.NextAttack?foe.Damage:0;
             }
         }
+        public static int AttackIntervalTicks(FoeKind kind)=>kind==FoeKind.Close?20:30;
+        public int IncomingDamagePerHit(int raw)=>Math.Max(1,Math.Min(raw,incomingHitProjection(raw)));
         void AttackTank()
         {
             for (int i = 0; i < Capacity && Hull > 0; i++)
@@ -299,11 +301,10 @@ namespace SingedTerra.Encounter
                 var foe = foes[i];
                 int raw=Profile.IsWaveBased?pendingHits[i]:foe.Damage;
                 if (Profile.IsWaveBased?raw==0:!foe.Alive || foe.Distance > StopDistance(foe) || Tick < foe.NextAttack) continue;
-                int projectedHit = incomingHitProjection(raw);
-                int damage = Math.Min(Hull, Math.Max(1, Math.Min(raw, projectedHit))); Hull -= damage;
+                int damage = Math.Min(Hull,IncomingDamagePerHit(raw)); Hull -= damage;
                 bool close = foe.Kind == FoeKind.Close;
                 if (close) CloseHits=Add(CloseHits,1); else RangedHits=Add(RangedHits,1);
-                foe.NextAttack = Tick + (close ? 20 : 30);
+                foe.NextAttack = Tick + AttackIntervalTicks(foe.Kind);
                 events.Add(new EncounterEvent(close ? EncounterEventKind.CloseHit : EncounterEventKind.RangedHit, i, damage));
             }
         }

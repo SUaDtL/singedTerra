@@ -1,0 +1,182 @@
+{
+  "schema": "last-stand-research-validation/v1",
+  "observedDate": "2026-10-25",
+  "status": "implementation-ready-with-qualification-pending",
+  "scope": "Research/farming changes stacked on the unmerged wave/resume candidate PR 543. This is not a merge or deployment receipt.",
+  "spec": {
+    "artifactId": "ST-LS-RESEARCH-SPEC",
+    "revision": 9,
+    "normativeSha256": "a26c072e969b3cc12d8cdbfc94da318bdb21aad8e2edb5f3cfe7cc624380052b"
+  },
+  "export": {
+    "build": "Web-20261025T055932Z-e01eb3",
+    "sourceInventorySha256": "451c06aa9de0daea250f82dfe918b973244c73c9c3a05ce8504e145bccdf3e21",
+    "receipt": "../last-stand-web/receipt-sanitized.json",
+    "sourceLock": "../last-stand-web/source-lock.json",
+    "status": "passed"
+  },
+  "checks": [
+    {
+      "name": "Research, economy, save codec, migration, ownership, clock, history and qualification fixtures",
+      "command": "python -m unittest discover -s campaign-unity/Tools/last_stand_research -p test_*.py",
+      "passed": 57,
+      "seconds": 65.809
+    },
+    {
+      "name": "Speed/session regressions, including failed research save retaining the wave hold",
+      "passed": 10
+    },
+    {
+      "name": "Actual Unity imported-scene research startup and boundary recovery",
+      "passed": 4
+    },
+    {
+      "name": "Actual Unity Lab/history and bulk controls at desktop, portrait and short landscape sizes",
+      "passed": 2
+    },
+    {
+      "name": "Actual Unity shared panel chrome",
+      "passed": 3
+    },
+    {
+      "name": "Endurance, research journey and current wave evidence guards",
+      "passed": 47
+    },
+    {
+      "name": "Selected Background, Focus and combined qualification guards excluding the native Chrome case",
+      "passed": 116
+    },
+    {
+      "name": "Production typecheck, Vite build and packaged-source admission",
+      "command": "npm run build",
+      "environment": {
+        "VITE_BASE": "/singedTerra/"
+      },
+      "status": "passed"
+    }
+  ],
+  "review": {
+    "scope": "Research/economy persistence and verification seams",
+    "status": "no-actionable-findings",
+    "negativeControls": [
+      "Removing writer ownership is detected by the production profile tests.",
+      "Removing compare-and-swap is detected when a stale second writer would replace the shared wallet winner."
+    ],
+    "numericUnityCoverage": "unmeasured",
+    "authCrypto": "No actionable finding in the reviewed source, fixtures, storage bridge or generated-runtime changes. Unkeyed SHA256 is confined to build/source/fixture provenance.",
+    "secrets": "Gitleaks 8.30.1 staged scan and complete-file scan of 131 changed files found no leaks. A synthetic token-shaped negative control was detected."
+  },
+  "visualObservation": "Garage and locked Lab inspected in the in-app browser. This is a limited visual check, not the full funded-research journey or owner acceptance.",
+  "economy": {
+    "stageReport": "upgrade-economy-report.json",
+    "periodicBulkReport": "periodic-bulk-report.json",
+    "boundary": "Production-model projections with declared development investments and purchase policies. Not measured elapsed gameplay, ordinary earned mature progression, native audio, or final balance."
+  },
+  "pending": [
+    "Execute the source-bound funded-research/browser journey, including closed completion, both slots, bulk spending, all speed steps and two-tab ownership.",
+    "Rerun the single Background guard containing owned native Chrome after the source-byte hashing correction.",
+    "Observe ten actual active hours at the real 5x setting after the source is frozen; no current endurance run has started.",
+    "Complete affected native/background/audio qualification and human farming-cadence assessment.",
+    "Verify the new PR exact-head hosted CI separately; predecessor PR 543 CI does not cover this sprint.",
+    "Merge, publication and deployed live-host verification require their own authority and evidence."
+  ],
+  "baselineObservedDate": "2026-10-24",
+  "baselineEvidenceBoundary": "The original checks and review above describe the prior sprint baseline. The waveIncomeFollowup section records the current changed-source checks; prior native/browser/endurance obligations remain open.",
+  "waveIncomeFollowup": {
+    "economy": "research-farming-economy-v3",
+    "savedRunPolicy": "Existing v1/v2 runs keep their income, paid upgrade prices, fractional accounting and checkpoint. Only a new deployment adopts v3.",
+    "baseScrapExamples": {
+      "wave1": 3,
+      "wave10": 4,
+      "wave20": 5,
+      "wave30": 6,
+      "wave100": 13,
+      "wave200": 23,
+      "wave5000": 263
+    },
+    "pricing": "Initial eight temporary ranks and permanent Salvage prices are unchanged; new-run deeper temporary quadratic coefficient is 22. Previous versions retain their exact prices.",
+    "checks": [
+      {
+        "name": "Research, economy, saved-run continuation and stats projection",
+        "passed": 57,
+        "seconds": 21.72,
+        "method": "Python unittest discovery excluding balance and bulk suites; those assertions are checked against fresh reports below.",
+        "evidence": "../../Evidence/wave-intelligence/research-checks.json"
+      },
+      {
+        "name": "Fresh complete economy and periodic-bulk measurements",
+        "economyRows": 129,
+        "bulkRows": 15,
+        "acceptanceAssertionsPassed": 5,
+        "method": "Run existing test assertions against regenerated reports after checking every declared source SHA256.",
+        "evidence": "../../Evidence/wave-intelligence/measured-checks.json"
+      },
+      {
+        "name": "Unity menu/controller regression checks",
+        "passed": 19,
+        "evidence": "../../Evidence/last-stand-controls/20261025T055147Z-136cfe33/result.json"
+      },
+      {
+        "name": "Unity research modal, bulk controls, shop prices and enemy stats",
+        "passed": 4,
+        "profiles": [
+          "1366x664",
+          "390x688",
+          "568x196"
+        ],
+        "method": "ShopUiTests.setUpClass() then run_checks(RunResearchSprint), invoked with Python stdin.",
+        "evidence": "../../Evidence/wave-intelligence/ui-green/editor-20261025T055205Z-1c68de1b/result.json"
+      },
+      {
+        "name": "Wave model regression checks",
+        "passed": 10
+      },
+      {
+        "name": "Control inventory guard checks",
+        "passed": 7
+      },
+      {
+        "name": "Unity Web export and packaging",
+        "status": "passed",
+        "build": "Web-20261025T055932Z-e01eb3"
+      },
+      {
+        "name": "Production build, strict typecheck and package/source admission",
+        "command": "npm run build",
+        "environment": {
+          "VITE_BASE": "/singedTerra/"
+        },
+        "status": "passed"
+      }
+    ],
+    "browser": {
+      "status": "passed-limited-visual-check",
+      "origin": "http://localhost:4174",
+      "profile": "Isolated origin; no reload or interaction with the user save at 127.0.0.1.",
+      "observed": [
+        "Fresh deployment",
+        "Wave readout opens shared Enemy Stats panel",
+        "HP, armor, damage, attack timing, movement and reward text rendered",
+        "Modal holds battle while open; close resumes previously running battle",
+        "Entry works with run upgrade shop open"
+      ],
+      "screenshots": [
+        "../../Evidence/wave-intelligence/enemy-stats-browser.png",
+        "../../Evidence/wave-intelligence/enemy-stats-shop-browser.png"
+      ]
+    },
+    "projectedMatureBulkHoursAt5x": {
+      "launcher": 10.0142,
+      "repair": 11.6219,
+      "scattergun": 11.1295
+    },
+    "qualificationBoundary": "Model projections and scoped editor/browser checks only. No actual 10-hour endurance, full funded-research journey, hosted exact-head CI, merge or deployed-host claim.",
+    "interruption": "Windows restarted during the first export; that failed receipt is retained. Verified pre-build graphics files were restored before the successful retry.",
+    "review": {
+      "status": "no-actionable-findings",
+      "scope": "Changed economy, retained save continuation, shared stat/reward projection, HUD access and focused fixtures; generated assets admitted against fresh export receipt. No new dependencies, authentication or database migrations.",
+      "secrets": "Gitleaks staged scan passed for the complete intended 45-path set. Shared sensitive-line classifier found no crypto or secret-sensitive additions.",
+      "coverage": "Criterion-focused checks and production-model measurements; numeric Unity coverage remains unmeasured."
+    }
+  }
+}

@@ -26,23 +26,29 @@ spec.loader.exec_module(verifier)
 def _current_control_fixture():
     """Invented current control inventory for parser tests, never runtime evidence."""
     core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext')
-    shop = ('ShopEntry', 'ShopClose', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
+            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry', 'WaveInfo')
+    shop = ('ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
             'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-            'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy')
+            'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy')
     settings = ('SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
+                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuWaveInfo', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
                 'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
                 'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
                 'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
                 'ChoicePrevious', 'ChoiceNext')
+    research = ('ResearchClose', 'ResearchFilter', 'ResearchBack',
+                *('ResearchProject-' + key for key in ('gameSpeed', 'salvageRecovery', 'researchSpeed', 'scrapLogistics')),
+                *('Research' + action + str(slot) for slot in (0, 1) for action in ('Start', 'Queue', 'Switch', 'Suspend', 'RemoveQueued')))
+    history = ('RunHistoryClose', 'RunHistoryTier')
     def controls(names):
         return [dict(name=name, label=name, accessibleLabel=name, mode='', trackKey='',
                      x=0, y=0, width=44, height=44, active=True, interactable=True) for name in names]
     return dict(phase='garage', coordinates='top-left', selection='Deploy', width=1366, height=768,
                 pixelRatio=1, scrollOffset=0, maximumScrollOffset=0,
                 settingsScrollOffset=0, settingsMaximumScrollOffset=0,
-                controls=controls(core), shopControls=controls(shop), settingsControls=controls(settings))
+                controls=controls(core), shopControls=controls(shop), settingsControls=controls(settings),
+                researchControls=controls(research), historyControls=controls(history),
+                researchScrollOffset=0, researchMaximumScrollOffset=0, historyScrollOffset=0, historyMaximumScrollOffset=0)
 
 
 def _replace_recovery_copies(value, old, new):
@@ -1194,6 +1200,8 @@ class ShopJourneyGuardTests(unittest.TestCase):
         action_names = dict(re.findall(r'(\w+)\s*=\s*Action\("([^"]+)"', core_source))
         action_fields = re.search(r'actions = new\[\] \{([^}]+)\}', core_source).group(1)
         actual_core = [action_names[field.strip()] for field in action_fields.split(',')]
+        self.assertIn('core.Add(waveInfo)', core_source)
+        actual_core += re.findall(r'var waveTarget=Node\("([^"]+)"', core_source)
         actual_settings = re.findall(r'Button\("([^"]+)",', settings_source)
         self.assertIn('new Button[4]', settings_source)
         actual_settings += ['SettingsTab' + str(index) for index in range(4)]
@@ -1224,8 +1232,8 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,18);assert.equal(controls.shopControls.length,12);assert.equal(controls.settingsControls.length,37);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls].map(c=>c.name)).size,67);
+assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,14);assert.equal(controls.settingsControls.length,40);assert.equal(controls.researchControls.length,17);assert.equal(controls.historyControls.length,2);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls].map(c=>c.name)).size,93);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
@@ -1287,7 +1295,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         truncated = ('ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[{'text': 'synthetic parser fixture ' * 1000}]), separators=(',', ':')))[:8190]
         with self.assertRaisesRegex(AssertionError, 'Controls were not complete'):
             namespace['read_controls'](truncated)
-        for key in ('controls', 'shopControls', 'settingsControls'):
+        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = deepcopy(value)
                 if fault == 'missing': candidate[key].pop()
@@ -1311,7 +1319,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
                          'observation': {'text': 'synthetic current controls'}}
             exec(code, namespace)
         admit(_current_control_fixture())
-        for key in ('controls', 'shopControls', 'settingsControls'):
+        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = _current_control_fixture()
                 if fault == 'missing': candidate[key].pop()
