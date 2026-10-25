@@ -15,6 +15,7 @@
     {"suite": "LastStandShopChecks.RunBattleShop", "outcome": "pass", "seconds": 14.858},
     {"command": "node --test scripts/ci/ciWorkflow.test.mjs", "passed": 188, "failed": 0, "seconds": 0.633},
     {"command": "node --test scripts/ci/browserMatrix.test.mjs scripts/ci/lastStandEvidenceSetup.test.mjs scripts/ci/ciWorkflow.test.mjs", "passed": 214, "failed": 0, "seconds": 0.780022, "origin": "coverage agent", "note": "Includes isolated shared-contract admission, current purchase funding and CRLF source extraction. Both edited files passed node --check; independent review found no weakened assertions."},
+    {"suite": "All 20 Node test files selected by the CI scope job", "passed": 436, "failed": 0, "skipped": 0, "seconds": 6.6670022, "origin": "coverage agent", "note": "Includes dependency-free milestone/endurance imports and explicit LF/CRLF serializer extraction cases. Production assertions and runtime code are unchanged."},
     {"command": "npm run build", "environment": {"VITE_BASE": "/singedTerra/"}, "outcome": "pass", "includes": ["source/export admission", "strict TypeScript", "production bundle"]}
   ],
   "review": {
@@ -58,11 +59,11 @@
     "closedAfterCheck": true
   },
   "hostedCiFollowup": {
-    "head": "c946855821f61a023dc927bc3baaf32091340894",
-    "run": 40184206002,
+    "head": "9a8f8fb13dcc885041824c0ab0c85be548daf861",
+    "run": 40208844715,
     "outcome": "failure",
-    "reason": "Scope classification's isolated evidence fixture omitted the shared observation-contract JSON.",
-    "repair": "Fixture closure repaired; 214 focused checks pass locally. A new exact-head hosted result is required."
+    "reason": "The first fixture repair passed, then dependency-free milestone/endurance checkouts lacked the same JSON contract and Linux LF extraction commented out the serializer test bridge.",
+    "repair": "Dependency-free closure repaired and source fragments joined with real newlines; all 436 scope tests pass locally, including both line-ending variants. A new exact-head hosted result is required."
   },
   "remaining": [
     "Android module installation, actual APK and real device lifecycle/storage/audio/performance qualification",
