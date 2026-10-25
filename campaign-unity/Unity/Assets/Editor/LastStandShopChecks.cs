@@ -1023,6 +1023,37 @@ public static class LastStandShopChecks
             PermanentCards(f,LastStandUpgradeCategory.Attack);
         }
     }
+    static void ShopPriceLine()
+    {
+        foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
+        foreach(bool run in new[]{false,true})
+        using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=Save(new int[8],wallet:0)}))
+        {
+            if(run)f.Game.Loop.Deploy();
+            f.Refresh();f.Click("ShopEntry");
+            var view=run?LastStandShopPresentation.ProjectRun(Shop(f.Game.Session)):
+                LastStandShopPresentation.ProjectPermanent(f.Game.Loop.Progression,LastStandFitting.Repair);
+            foreach(var category in new[]{LastStandUpgradeCategory.Attack,LastStandUpgradeCategory.Defense,LastStandUpgradeCategory.Utility})
+            {
+                f.Click("ShopTab"+category);f.Camera.Render();Canvas.ForceUpdateCanvases();
+                foreach(var card in view.Cards)
+                {
+                    if(card.Category!=category||!card.AppliesToFitting)continue;
+                    var label=f.Text("ShopCard_"+card.Key+"CurrentEffect");
+                    int start=label.text.IndexOf(card.PriceDescription,StringComparison.Ordinal);
+                    Require(start>=0,"unaffordable card exposes its next price: "+card.Key);
+                    var generator=label.cachedTextGenerator;
+                    generator.Populate(label.text,label.GetGenerationSettings(label.rectTransform.rect.size));
+                    bool wholePriceLine=false;
+                    for(int i=0;i<generator.lines.Count;i++)
+                        if(generator.lines[i].startCharIdx==start)
+                            wholePriceLine=i+1==generator.lines.Count||generator.lines[i+1].startCharIdx>=start+card.PriceDescription.Length;
+                    Require(wholePriceLine,"price and currency occupy their own unbroken rendered line: "+card.Key+" / "+view.CurrencyName+" / "+profile);
+                    Require(label.preferredHeight<=label.rectTransform.rect.height+1f,"price line fits the measured card: "+card.Key);
+                }
+            }
+        }
+    }
     public static void RunResearchSprint()
     {
         bool failed=false;using(var preferencesScope=new LastStandTestPreferencesScope())
@@ -1033,6 +1064,7 @@ public static class LastStandShopChecks
             {
                 NamedIncome("test_research_lab_history_modal_surfaces",ResearchSprintSurfaces,ref failed);
                 NamedIncome("test_research_bulk_shop_surfaces",BulkSprintSurfaces,ref failed);
+                NamedIncome("test_shop_price_line",ShopPriceLine,ref failed);
             }
             finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
         }
@@ -1065,7 +1097,7 @@ public static class LastStandShopChecks
         string id="ShopCard_"+card.Key;
         string effect=card.CurrentEffectDescription+(card.PurchaseQuantity>0?
             " to "+card.ResultEffectDescription+"\n+"+card.PurchaseQuantity+" levels -> level "+card.ResultLevel:
-            card.NextPrice.HasValue?"\nNext level: "+card.NextEffectDescription+" / "+card.PriceDescription:"");
+            card.NextPrice.HasValue?"\nNext level: "+card.NextEffectDescription+"\n"+card.PriceDescription:"");
         Require(f.Text(id+"CurrentEffect").text==effect && f.Text(id+"Price").text==card.QuotedCost+" "+currency,
             "exact current effect, affordable aggregate price and resulting level "+card.Key);
         string reason=card.Refusal==LastStandShopCardRefusal.None?card.QuotedCost.ToString("N0")+" "+currency+" total":card.Reason;

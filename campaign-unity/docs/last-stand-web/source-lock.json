@@ -394,7 +394,7 @@
       },
       "Unity/Assets/Editor/LastStandShopChecks.cs": {
         "mode": "lf-text",
-        "sha256": "c75061c38e72dcc06854fa566e7b587bff894a32a1c2738d9f57f62a5b2153ed"
+        "sha256": "b3a484b69d82a842fdeb27d830596ade04c2cddd9fc8cf16beb33524e154f5a2"
       },
       "Unity/Assets/Editor/LastStandShopChecks.cs.meta": {
         "mode": "lf-text",
@@ -1110,7 +1110,7 @@
       },
       "Unity/Assets/Scripts/LastStandLoopHud.cs": {
         "mode": "lf-text",
-        "sha256": "9efec848d3fcd0de217f59bde825b48fe717d2157770a6b5a0eab9792998ad83"
+        "sha256": "8166b58787db415cada5e55a5d859d89aaecbeda2e6e06b4032a44f6c1962a1f"
       },
       "Unity/Assets/Scripts/LastStandLoopHud.cs.meta": {
         "mode": "lf-text",
@@ -13597,7 +13597,7 @@
         "sha256": "2973a6af930e142f62cde00076beda8a3cc3a66d9bfcde7a58ba7d4be2251c26"
       }
     },
-    "sha256": "63e067f942e829fb00198d04b630447a1fc21d36ed0151ea81eaa427a6c15063"
+    "sha256": "bf992f7c6a1bcfe7b68f6c9d9ff20db6d70d4836d08eeb8214669eaea77e4530"
   },
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
@@ -83200,7 +83200,7 @@
     },
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
-  "receiptSha256": "8e606ee8d91078db7c11e251e08dc8c89e6284a86b93aa7934249cac5e5ded8c",
+  "receiptSha256": "bf2dfb09b170b6a279a5360d281acdbf58c72ef4d5f7a8b1d8033801f066113a",
   "vendor": {
     "path": "Unity/Packages/com.unity.render-pipelines.universal",
     "version": "17.3.0",

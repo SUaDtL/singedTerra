@@ -327,5 +327,11 @@ console.log(JSON.stringify({report:reportPath,reportSha256:sha(reportPath),build
     def test_shop_rendered_effect_separator(self):
         self.render_followup_case()
 
+    def test_shop_price_line(self):
+        code, log = self.run_checks("RunResearchSprint")
+        self.assertIn("ST_LS_SHOP_PASS " + self._testMethodName, log, log[-14000:])
+        self.assertNotIn("ST_LS_SHOP_FAIL ", log)
+        self.assertEqual(code, 0, log[-10000:])
+
     def test_shop_workshop_single_purchase_action(self):
         self.render_followup_case()

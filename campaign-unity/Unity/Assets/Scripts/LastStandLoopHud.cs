@@ -497,7 +497,7 @@ namespace SingedTerra.LastStand
             // transition, never another owner of effect arithmetic.
             return cardView.CurrentEffectDescription + (cardView.PurchaseQuantity>0 ? " to " + cardView.ResultEffectDescription+
                 "\n+"+cardView.PurchaseQuantity+" levels -> level "+cardView.ResultLevel :
-                cardView.NextPrice.HasValue?"\nNext level: "+cardView.NextEffectDescription+" / "+cardView.PriceDescription:"");
+                cardView.NextPrice.HasValue?"\nNext level: "+cardView.NextEffectDescription+"\n"+cardView.PriceDescription:"");
         }
         static string QuantityLabel(LastStandBulkQuantity quantity) =>
             (quantity==LastStandBulkQuantity.One?"[1]":"1")+"   "+(quantity==LastStandBulkQuantity.Ten?"[10]":"10")+"\n"+
