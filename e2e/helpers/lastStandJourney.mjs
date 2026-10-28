@@ -1594,16 +1594,30 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     item.rules==='playable-prototype-v1' && item.tick===0 && item.wave===0 && item.completedWave===0 &&
     item.locked===false && item.clockTimestamp===-1 && item.clockPending===-1 && item.callbackSteps===0 &&
     item.paused===false && item.failed===false && item.catchingUp===false;
-  const idleLoop=item=>current(item) && item.sessionRun===before.run && item.profileVersion==='last-stand-waves-v1' &&
-    item.phase==='result' && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
+  const idleLoop=(item,phase)=>current(item) && item.sessionRun===before.run && item.profileVersion==='last-stand-waves-v1' &&
+    item.phase===phase && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
     item.activeTier===0 && item.hasCheckpoint===false && item.tick===0 && item.wave===0 && item.completedWave===0;
-  const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop) && before.loop.t>=before.t;
+  const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop,'result') && before.loop.t>=before.t;
   assert.equal(waveRun,typeof before.rules==='string' && before.rules.startsWith('last-stand-waves-v1:') || idleWaveResult,
     'Native audio interval wave profile and model rules disagree');
   if(idleWaveResult){
     const during=item=>current(item) && item.t>=before.t && item.t<=recovered;
+    const {loop,hull,...model}=before;
+    assert.deepEqual(encounters.find(item=>current(item) && item.run===before.run && item.t===before.t && item.action===before.action),model,
+      'Idle interval requires its actual model observation');
+    assert.deepEqual(states.find(item=>current(item) && item.t===loop.t && item.action===loop.action),loop,
+      'Idle interval requires its actual paired result observation');
+    const results=states.filter(item=>current(item) && item.sessionRun===before.run && item.action==='result' && item.t<=recovered);
+    assert.ok(results.length===1 && idleLoop(results[0],'result') && Number.isFinite(results[0].t) &&
+      results[0].t<=loop.t && loop.t<=loss.t,'Idle interval requires the first raw finalized result before native loss');
+    const finalized=results[0];
+    // ReturnToInspection emits its cleared model and synchronous session HUD
+    // before the controller publishes result. Retain and prove that prefix;
+    // a later research refresh must not hide any subsequent activity.
+    const idleState=item=>item.t<finalized.t ? item.action==='session' && idleLoop(item,'settling') &&
+      item.hull===model.hp && item.kills===0 && item.paused===false : idleLoop(item,'result');
     assert.ok(Array.isArray(callbackRecords) && !callbackRecords.some(during) && !cues.some(during) &&
-      encounters.filter(during).every(idleModel) && states.filter(during).every(idleLoop),
+      encounters.filter(during).every(idleModel) && states.filter(during).every(idleState),
       'Finalized idle result cannot admit combat callbacks, cues or an active lifecycle');
   }
   const attempts=waveRun?(callbackRecords??[]).filter(c=>current(c) && c.action==='cue' && c.t>=returned.t && c.t<=recovered):[];

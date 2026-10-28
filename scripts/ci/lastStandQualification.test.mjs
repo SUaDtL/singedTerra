@@ -1400,28 +1400,33 @@ test('actual audio return caller rejects contradictory wave/archive identity bef
   }
 });
 
-test('actual observer and audio caller accept only silent finalized current-wave result intervals',async()=>{
+test('actual observer and audio caller preserve the cleared-model result transition without admitting post-result activity',async()=>{
   const start=source.indexOf('    const noReplay=async('),end=source.indexOf('\n    const away=',start);
   assert.ok(start>=0 && end>start);
-  const fixture=async(kind='hidden')=>{
-    // Reduced shard9 CI39973718698 result-state rows. Bounds are inert;
-    // the production observer pairs the actual model-less lifecycle shape.
-    const id={load:6,timeOrigin:1792767933281.4,scope:'healthy'};
-    const model={...id,action:'visibility',t:270273.19999999995,run:1,rules:'playable-prototype-v1',
+  const fixture=async(kind='hidden',refresh=false,repeated=false)=>{
+    // Reduced current shard3 artifact12790561180: model clear emits a settling
+    // HUD row before result publication. These inert bounds are not acceptance.
+    const id={load:6,timeOrigin:1793158593925.9,scope:'healthy'};
+    const cleared={...id,action:'return',t:285468.7999999998,run:1,rules:'playable-prototype-v1',
       status:'Fitting',fitting:'repair',tick:0,wave:0,completedWave:0,hp:120,kills:0,locked:false,
       clockTimestamp:-1,clockPending:-1,callbackSteps:0,paused:false,failed:false,catchingUp:false};
-    const state={...id,action:'session',t:270335.79999999993,sessionRun:1,profileVersion:'last-stand-waves-v1',
+    const state={...id,action:'result',t:285569.3999999999,sessionRun:1,profileVersion:'last-stand-waves-v1',
       phase:'result',saveState:'ready',runId:0,pendingRunId:0,activeTier:0,hasCheckpoint:false,
       tick:0,wave:0,completedWave:0,hull:120,kills:0,paused:false,cannonDamage:30};
-    const before=await journey.observeRuntimePair({encounters:[model],states:[state],load:6,
-      clock:async()=>({t:272510.29999999993,timeOrigin:id.timeOrigin}),
+    const model=repeated?{...cleared,action:'visibility',t:286000}:cleared;
+    const encounters=repeated?[cleared,model]:[model];
+    const states=[{...state,action:'session',phase:'settling',t:285512.3999999999},state];
+    if(repeated)states.push({...state,action:'session',t:model.t+1});
+    if(refresh)states.push({...state,action:'research',t:288626.19999999995});
+    const before=await journey.observeRuntimePair({encounters,states,load:6,
+      clock:async()=>({t:288700,timeOrigin:id.timeOrigin}),
       wait:async()=>assert.fail('Already coherent idle pair must not wait'),check:(v,m)=>assert.ok(v,m)});
     const event=(type,t,focused,hidden)=>({...id,kind:type,t,focused,hidden,globalTarget:true});
-    const events=kind==='hidden'?[event('blur',273181.5,false,false),event('visibilitychange',273212.29999999993,false,true),
-      event('focus',279230.3999999999,true,true),event('visibilitychange',279259.79999999993,true,false)]:
-      [event('blur',273181.5,false,false),event('focus',279230.3999999999,true,false)];
-    return {kind,before,begin:273220,recovered:279400,ms:6000,events,cues:[],callbackRecords:[],
-      encounters:[model,{...model,t:279231.1}],states:[state,{...state,t:279257}]};
+    const events=kind==='hidden'?[event('blur',289824.3,false,false),event('visibilitychange',289873.5,false,true),
+      event('visibilitychange',295892,false,false),event('focus',295892.3,true,false)]:
+      [event('blur',289824.3,false,false),event('focus',295892.3,true,false)];
+    return {kind,before,begin:289874,recovered:296100,ms:6000,events,cues:[],callbackRecords:[],
+      encounters:[...encounters,{...model,action:'visibility',t:295905.4}],states:[...states,{...state,action:'session',t:295990.3}]};
   };
   const run=async x=>{
     const report={lifecycle:[]};
@@ -1432,8 +1437,8 @@ test('actual observer and audio caller accept only silent finalized current-wave
     });
     await noReplay(x.begin,x.recovered,x);return report;
   };
-  for(const kind of ['hidden','blur']){
-    const report=await run(await fixture(kind));
+  for(const kind of ['hidden','blur'])for(const refresh of [false,true])for(const repeated of [false,true]){
+    const report=await run(await fixture(kind,refresh,repeated));
     assert.equal(report.lifecycle.length,1);assert.equal(report.lifecycle[0].boundary.callbacks.length,0);
     assert.equal(report.lifecycle[0].cues.length,0);
   }
@@ -1450,6 +1455,25 @@ test('actual observer and audio caller accept only silent finalized current-wave
     x=>x.callbackRecords.push({...x.before,t:x.begin+1,action:'begin'}),
     x=>x.callbackRecords.push({...x.before,t:x.recovered-1,action:'cue',played:false,reason:'expired'}),
   ]){const x=await fixture();mutate(x);await assert.rejects(()=>run(x),undefined,String(mutate));}
+  // A later paired research refresh must never erase activity after the first
+  // actual result, or establish a result that was absent when native focus left.
+  const first=x=>x.states.find(s=>s.action==='result');
+  for(const mutate of [
+    x=>x.states.splice(1,0,{...first(x),action:'session',phase:'battle',t:286000}),
+    x=>x.states.splice(1,0,{...first(x),action:'session',phase:'settling',t:286000}),
+    x=>x.cues.push({...x.before,t:286000,text:'ST_LS_AUDIO event=defeat\n'}),
+    x=>x.callbackRecords.push({...x.before,t:286000,action:'end'}),
+    x=>x.encounters.splice(1,0,{...x.encounters[0],t:286000,status:'Running'}),
+    x=>x.states=x.states.filter(s=>s.action!=='result'),
+    x=>first(x).sessionRun++,x=>first(x).load++,x=>first(x).timeOrigin++,x=>first(x).scope='other',
+    x=>first(x).t=x.begin+1,x=>first(x).saveState='failed',x=>first(x).hasCheckpoint=true,
+    x=>x.states.push({...first(x),t:288000}),
+    x=>x.states[0].tick=1,x=>x.states[0].hull=0,x=>x.states[0].kills=1,
+    x=>x.states[0].runId=3,x=>x.states[0].pendingRunId=3,x=>x.states[0].hasCheckpoint=true,
+    x=>x.states[0].phase='battle',x=>x.states[0].action='defeat-staged',x=>x.states[0].paused=true,
+    x=>{x.events.forEach(e=>e.t-=4000);},
+    x=>{x.before.loop={...x.before.loop,t:x.begin+1};},
+  ]){const x=await fixture('hidden',true);mutate(x);await assert.rejects(()=>run(x),undefined,String(mutate));}
 });
 
 test('current-wave cue decisions distinguish fresh playback from delayed diagnostic logging',()=>{
