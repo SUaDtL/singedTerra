@@ -5,9 +5,18 @@ import { runInNewContext } from 'node:vm';
 import { createHash } from 'node:crypto';
 import { dirname, resolve, basename } from 'node:path';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
-import { assertCombinedQualification } from './lastStandQualification.mjs';
+import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
+import { assertCombinedQualification, currentQualificationInputs } from './lastStandQualification.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+
+for(const path of controlInputPaths)test('source closure: main qualification binds actual '+path,()=>{
+  const current=currentQualificationInputs();
+  const expected=createHash('sha256').update(readFileSync(resolve(path),'utf8').replace(/\r\n/g,'\n')).digest('hex');
+  assert.equal(current[path],expected,'Current qualification must include the actual consumed input: '+path);
+});
 
 function keyboardSubmitFixture(){
   const identity={load:3,timeOrigin:1000,scope:'healthy'},prepared={...identity,t:10,phase:'battle'};
@@ -35,14 +44,16 @@ test('actual keyboard caller refuses retained wave-boundary focus migration befo
   for(const [selection,delayed] of [['SpeedRate',false],['ShopEntry',false],['Menu',false],['SpeedRate',true],['ShopEntry',true]]){
     const value=keyboardSubmitFixture(),trace=[],states=[],encounters=[],downs=[],report={keyboard_actions:[],screenshots:[]};
     let now=10,freshWaits=0;
-    value.layout.controls=[{name:'Menu',x:20,y:0},{name:'SpeedRate',x:0,y:20},{name:'ShopEntry',x:40,y:20}]
-      .map(c=>({...c,active:true,interactable:true}));
+    value.layout.width=1280;value.layout.height=720;
+    value.layout.controls=[{name:'Menu',x:20,y:20},{name:'SpeedRate',x:20,y:80},{name:'ShopEntry',x:80,y:80}]
+      .map(c=>({...c,width:44,height:44,active:true,interactable:true}));
     const layouts=[value.layout],page={locator:()=>({evaluate:async()=>true}),waitForTimeout:async()=>{},
       evaluate:async code=>typeof code==='string'?null:{...value.documentState,t:now+10},
       keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=delayed?19:now+1;},
         down:async key=>{downs.push(key);states.push({action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
     const run=runInNewContext(source.slice(begin,end)+';gameKey',{page,trace,states,encounters,layouts,report,
-      geometry:async()=>({layout:value.prepared}),keyboardFocus:async()=>{},
+      geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720}}),keyboardFocus:async()=>{},
+      projectedControls:tierJourneyControlGeometry,
       hudControls:layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls],
       check:(condition,message)=>assert.ok(condition,message),screenshot:async()=>{value.layout.selection=selection;},
       until:async(items,start,predicate)=>{
@@ -1203,6 +1214,22 @@ function fixture(){
   linux.lifecycle.find(item=>item.kind==='settling-transition').scope='transient-functional-telemetry';
   return {windows,linux,head,inputs,runtime,served};
 }
+
+test('source closure: combined qualification rejects omitted or changed control input bindings',()=>{
+  const value=fixture(),current=currentQualificationInputs();value.inputs={...current};
+  for(const report of [value.windows,value.linux]){
+    report.binding.portable_text_inputs={...current};report.binding.input_files={...current};
+  }
+  assert.doesNotThrow(()=>assertCombinedQualification(value));
+  for(const path of controlInputPaths)for(const host of ['windows','linux'])for(const fault of ['omitted','changed','invalid','raw-omitted']){
+    const broken=structuredClone(value),binding=broken[host].binding;
+    if(fault==='omitted')delete binding.portable_text_inputs[path];
+    if(fault==='changed')binding.portable_text_inputs[path]='0'.repeat(64);
+    if(fault==='invalid')binding.portable_text_inputs[path]='invalid hash';
+    if(fault==='raw-omitted')delete binding.input_files[path];
+    assert.throws(()=>assertCombinedQualification(broken),undefined,host+' '+fault+' '+path);
+  }
+});
 
 test('combined qualification refuses missing Windows five-cue evidence or Linux media claims',()=>{
   assert.equal(assertCombinedQualification(fixture()).status,'pass');

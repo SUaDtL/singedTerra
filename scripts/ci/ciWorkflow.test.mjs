@@ -115,10 +115,10 @@ test('required CI runs current wave gate and checkpoint reader regressions',()=>
   const check=source=>{
     const scope=job(source,'scope'),run=scope.split('\n').find(line=>line.includes('run: node --test scripts/ci/changeScope.test.mjs'));
     assert.ok(run);
-    for(const name of ['lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])assert.ok(run.includes(`scripts/ci/${name}.test.mjs`));
+    for(const name of ['lastStandControlReveal','lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])assert.ok(run.includes(`scripts/ci/${name}.test.mjs`));
   };
   check(ci);
-  for(const name of ['lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])
+  for(const name of ['lastStandControlReveal','lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])
     assert.throws(()=>check(ci.replace(` scripts/ci/${name}.test.mjs`,'')));
 });
 

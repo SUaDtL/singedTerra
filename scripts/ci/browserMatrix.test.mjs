@@ -320,7 +320,7 @@ test('native Return inspects the Last Stand-only library without launching retir
 
 test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapshot', async () => {
   const source=readJourneySource();
-  const begin=source.indexOf('    const geometry=async(name)=>{'),end=source.indexOf('    const resize=async',begin);
+  const begin=source.indexOf('    const geometry=async('),end=source.indexOf('    const resize=async',begin);
   const controlBegin=source.indexOf('    const hudControls=');
   assert.ok(begin>0 && end>begin);
   assert.ok(controlBegin>0&&controlBegin<begin,'Maintained HUD collection and projection closures required');
@@ -331,7 +331,7 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
     const layout={coordinates:'top-left',width:1280,height:720,
       controls:[{name:'Menu',x:10,y:10,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
     const run=runInNewContext('(async()=>{'+source.slice(controlBegin,begin)+source.slice(begin,end)+'return geometry("Menu");})()',{
-      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],tierJourneyControlGeometry,
+      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],tierJourneyControlGeometry,trace:[],load:1,
       getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'}),
       page:{viewportSize:()=>({width:1280,height:720}),locator:()=>({
         boundingBox:async()=>{reads++;return fault==='hidden'?null:box;},

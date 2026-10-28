@@ -76,7 +76,7 @@ jobs:
       - name: Initialize Last Stand evidence root
         run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Scope and required-result regressions
-        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs scripts/ci/lastStandWaveQualification.test.mjs scripts/ci/lastStandWaveJourney.test.mjs scripts/ci/lastStandWaveEvidence.test.mjs scripts/ci/lastStandHistoricalShop.test.mjs scripts/ci/lastStandMilestoneSetup.test.mjs scripts/ci/lastStandEndurance.test.mjs
+        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs scripts/ci/lastStandControlReveal.test.mjs scripts/ci/lastStandWaveQualification.test.mjs scripts/ci/lastStandWaveJourney.test.mjs scripts/ci/lastStandWaveEvidence.test.mjs scripts/ci/lastStandHistoricalShop.test.mjs scripts/ci/lastStandMilestoneSetup.test.mjs scripts/ci/lastStandEndurance.test.mjs
       - name: Verify and select the complete browser matrix
         id: browser-matrix
         run: |

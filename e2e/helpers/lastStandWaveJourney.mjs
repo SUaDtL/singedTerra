@@ -12,6 +12,8 @@ import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 const SAVE_KEY='singedTerra.lastStand.prototype.v1';
 const FITTINGS=['launcher','repair','scattergun'];
 export const WAVE_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs',
+  'e2e/helpers/lastStandControlReveal.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-first-session.mjs']);
 const hashInputs=()=>Object.fromEntries(WAVE_JOURNEY_INPUTS.map(path=>[path,createHash('sha256').update(readFileSync(resolve(path))).digest('hex')]));
@@ -68,7 +70,8 @@ export const WAVE_JOURNEY_PROBE=`(() => {
    original.call(console,'ST_WAVE_OBSERVATION '+JSON.stringify({text,t,timeOrigin}));};
  for(const kind of ['pointerdown','pointerup','keydown','keyup','blur','focus','visibilitychange'])
   window.addEventListener(kind,event=>original.call(console,'ST_WAVE_INPUT '+JSON.stringify({kind:event.type,t:performance.now(),timeOrigin:performance.timeOrigin,
-   trusted:event.isTrusted,code:event.code,x:event.clientX,y:event.clientY,target:event.target?.id??'',focused:document.hasFocus(),hidden:document.hidden})),{capture:true,passive:true});
+   trusted:event.isTrusted,code:event.code,x:event.clientX,y:event.clientY,target:event.target?.id??'',globalTarget:event.target===window||event.target===document,
+   focused:document.hasFocus(),hidden:document.hidden})),{capture:true,passive:true});
 })();`;
 
 // Current ordinary-player acceptance. Deep progression is separately exercised
@@ -125,20 +128,13 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     const layout=current(report.layouts),canvas=await page.locator('#unity-canvas').boundingBox();assert.ok(canvas);
     return {layout,canvas,projected:tierJourneyControlGeometry(layout,canvas)};
   };
+  const {revealLastStandControl}=await import('./lastStandControlReveal.mjs');
   const reveal=async name=>{
-    for(let attempt=0;attempt<40;attempt++){
-      const geometryNow=await geometry(),{layout,canvas,projected}=geometryNow;
-      const target=projected.find(c=>c.name===name);assert.ok(target,'Current visible-page target '+name);
-      if(target.full)return geometryNow;
-      const item=[...layout.controls,...layout.shopControls,...layout.settingsControls].find(c=>c.name===name);
-      const clip=target.clip,sign=item.y<clip.y?-1:1;
-      const x=canvas.x+(clip.x+clip.width/2)*canvas.width/layout.width;
-      const y=canvas.y+(clip.y+clip.height/2)*canvas.height/layout.height;
-      const old=layout.settingsScrollOffset+layout.scrollOffset;
-      await page.mouse.move(x,y);await page.mouse.wheel(0,sign*Math.min(180,clip.height*canvas.height/layout.height/2));
-      await until(()=>Math.abs(current(report.layouts).settingsScrollOffset+current(report.layouts).scrollOffset-old)>.5,5);
-    }
-    assert.fail('Target could not be fully revealed by ordinary scrolling: '+name);
+    const start=report.inputsObserved.length,originalLoad=load;
+    return revealLastStandControl({name,page,geometry,assertUninterrupted:()=>assert.ok(load===originalLoad&&
+      !report.inputsObserved.slice(start).some(event=>event.globalTarget&&
+        (event.kind==='blur'||event.kind==='visibilitychange'&&event.hidden)),
+    'Scroll reveal refuses document, focus or visibility loss')});
   };
   const click=async name=>{
     const {layout,canvas}=await reveal(name);

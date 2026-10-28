@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
+import {runInNewContext} from 'node:vm';
 import {LAST_STAND_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandJourney.mjs';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
+import {WAVE_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandWaveJourney.mjs';
+import {currentQualificationInputs} from './lastStandQualification.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 import {WAVE_ORACLE_SOURCES} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
@@ -17,6 +20,32 @@ import {assertCombinedWaveQualification,assertWaveBinding,assertWaveTerminals,ve
 const hash='a'.repeat(64),head='b'.repeat(40),clone=value=>structuredClone(value);
 const profiles=[1,2].flatMap(tier=>['repair','launcher','scattergun'].flatMap(fitting=>[20,30,40,50].map(d=>`${tier}:${fitting}:${d}`)));
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+
+for(const path of controlInputPaths)test('source closure: wave producer binds actual '+path,()=>{
+  const wave=readFileSync(new URL('../../e2e/helpers/lastStandWaveJourney.mjs',import.meta.url),'utf8');
+  const begin=wave.indexOf('const hashInputs='),end=wave.indexOf('\n',begin);
+  assert.ok(begin>0&&end>begin,'Exercise the actual wave input recorder');
+  const recorded=runInNewContext(wave.slice(begin,end)+';hashInputs();',{WAVE_JOURNEY_INPUTS,createHash,readFileSync,resolve});
+  assert.equal(recorded[path],createHash('sha256').update(readFileSync(resolve(path))).digest('hex'),
+    'Wave input recorder must include the actual consumed input: '+path);
+});
+
+test('source closure: current wave reader rejects omitted or changed control input bindings',()=>{
+  const expected={...expectedFixture(),inputs:currentQualificationInputs()},report=baseReport(expected);
+  const check=r=>assertWaveBinding(r,expected,'linux','linux-functional','viewport-section-pass');
+  assert.doesNotThrow(()=>check(report));
+  for(const path of controlInputPaths)for(const fault of ['omitted','changed','invalid','raw-omitted','raw-invalid']){
+    const broken=clone(report);
+    if(fault==='omitted')delete broken.binding.portable_text_inputs[path];
+    if(fault==='changed')broken.binding.portable_text_inputs[path]='0'.repeat(64);
+    if(fault==='invalid')broken.binding.portable_text_inputs[path]='invalid hash';
+    if(fault==='raw-omitted')delete broken.binding.input_files[path];
+    if(fault==='raw-invalid')broken.binding.input_files[path]='invalid hash';
+    assert.throws(()=>check(broken),undefined,fault+' '+path);
+  }
+});
 // Reduced from the failed native checkpoint-reload capture: wallet 6, workshop,
 // inactive Deploy and active Redeploy both labelled RESUME RUN. Inert guards only.
 function deploymentFixture(phase='workshop',hasCheckpoint=true){

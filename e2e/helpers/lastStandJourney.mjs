@@ -3282,6 +3282,8 @@ export function persistLastStandJourneyEvidence(report,observations,write,diagno
 }
 
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
+  'e2e/helpers/lastStandControlReveal.mjs',
+  'e2e/helpers/lastStandTierJourney.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
   'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs',
@@ -3823,12 +3825,13 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     // Loaded after this module is initialized: both maintained journeys share
     // the same measured target/clipping oracle without an eager module cycle.
     const {tierJourneyControlGeometry}=await import('./lastStandTierJourney.mjs');
+    const {revealLastStandControl}=await import('./lastStandControlReveal.mjs');
     const hudControls=layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls];
     const projectedControls=(layout,canvas)=>tierJourneyControlGeometry({...layout,graphicsTruncated:false,
       // retainRuntimeObservation already parsed the complete original record.
       // Serialize its observed graphics only for the shared reader boundary.
       raw:'ST_LS_HUD_LAYOUT '+JSON.stringify({graphics:layout.graphics})},canvas);
-    const geometry=async(name)=>{
+    const measureControls=async()=>{
       const {canvas,pixels}=await page.locator('#unity-canvas').evaluate(element=>{
         const box=element.getBoundingClientRect(),visible=getComputedStyle(element).visibility==='visible' && box.width>0 && box.height>0;
         return {canvas:visible?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
@@ -3838,7 +3841,15 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       const layout=layouts.at(-1);check(layout?.coordinates==='top-left','real HUD top-left convention');
       check(Math.abs(layout.width-pixels.width)<=1 && Math.abs(layout.height-pixels.height)<=1,'HUD dimensions use actual canvas backing pixels',{canvas,pixels,layout});
       const projected=projectedControls(layout,canvas);
-      check(projected.some(item=>item.name===name && item.full),`real HUD ${name} is completely visible inside its actual viewport`);
+      return {canvas,layout,projected};
+    };
+    const geometry=async(name,{reveal=false,requireFull=true}={})=>{
+      const start=trace.length,originalLoad=load;
+      const {canvas,layout,projected}=reveal?await revealLastStandControl({name,page,geometry:measureControls,
+        assertUninterrupted:()=>assert.ok(load===originalLoad&&!trace.slice(start).some(event=>event.globalTarget&&
+          (event.kind==='blur'||event.kind==='visibilitychange'&&event.hidden)),
+        'Scroll reveal refuses document, focus or visibility loss')}):await measureControls();
+      if(requireFull)check(projected.some(item=>item.name===name && item.full),`real HUD ${name} is completely visible inside its actual viewport`);
       const control=hudControls(layout).filter(item=>item.name===name && item.active && item.interactable);
       check(control.length===1,`operable real HUD ${name}`);return{canvas,layout,item:control[0]};
     };
@@ -3872,7 +3883,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     };
     if(section.lifecycle)await resize(captureViewport);
     const armGameClick=async(name,action,predicate=()=>true)=>{
-      const {canvas,layout,item}=await geometry(name);await focused('gameplay pointer');
+      await focused('gameplay pointer');const {canvas,layout,item}=await geometry(name,{reveal:true});
       await page.evaluate("window.__stInputArea='gameplay'");
       const point={x:canvas.x+(item.x+item.width/2)*canvas.width/layout.width,y:canvas.y+(item.y+item.height/2)*canvas.height/layout.height};
       await page.mouse.move(point.x,point.y);await page.waitForTimeout(80);
@@ -3917,7 +3928,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     };
     const gameClick=async(...args)=>(await armGameClick(...args))();
     const gameKey=async(name,action,predicate=()=>true)=>{
-      const {layout:prepared}=await geometry(name),navigationStart=trace.length;
+      const {layout:prepared}=await geometry(name,{requireFull:false}),navigationStart=trace.length;
       await keyboardFocus(page.locator('#last-stand-return'));
       await page.keyboard.press('Tab');
       check(await page.locator('#unity-canvas').evaluate(element=>document.activeElement===element),'native Tab enters actual Unity controls');
@@ -3932,9 +3943,12 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       await until(layouts,0,item=>item.load===navigation.load && item.timeOrigin===navigation.timeOrigin &&
         item.scope===navigation.scope && item.t>=navigation.t,8);
       await screenshot(`keyboard-focus-${name}-${report.screenshots.length}`);
+      const {canvas:keyboardCanvas}=await geometry(name);
       const documentState=await page.evaluate(()=>({timeOrigin:performance.timeOrigin,t:performance.now(),
         focused:!document.hidden && document.hasFocus() && document.activeElement===document.getElementById('unity-canvas')}));
       validateKeyboardSubmit({name,prepared,state:states.at(-1),layout:layouts.at(-1),documentState,navigation});
+      check(projectedControls(layouts.at(-1),keyboardCanvas).some(item=>item.name===name&&item.full),
+        'Keyboard submit requires the complete target in its current actual viewport');
       const start=states.length,encStart=encounters.length;
       await page.keyboard.down('Enter');await page.waitForTimeout(150);await page.keyboard.up('Enter');keys.push('Enter');
       const observed=await until(states,start,item=>item.action===action && predicate(item),8);
