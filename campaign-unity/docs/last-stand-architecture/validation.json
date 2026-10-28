@@ -211,6 +211,62 @@
       "storeSigned": false,
       "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T012758Z-f2181e/result.json",
       "note": "Local development build only; no Android device interaction or store qualification."
+    },
+    {
+      "target": "webgl",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261028T015816Z-3cf813",
+      "head": "2425418b122dda4ded7e3cddd32e2d67e4730782",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261028T015816Z-3cf813/result.json",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "packaged": true
+    },
+    {
+      "target": "windows",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261028T020013Z-5689b9",
+      "head": "2425418b122dda4ded7e3cddd32e2d67e4730782",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261028T020013Z-5689b9/result.json",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "packaged": false
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "failed",
+      "stamp": "20261028T020233Z-a4e415",
+      "head": "2425418b122dda4ded7e3cddd32e2d67e4730782",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T020233Z-a4e415/result.json",
+      "reason": "RuntimeError: Native player marker/shader diagnostics failed",
+      "note": "Unity compiled an APK and emitted the player success marker, but18 d3d11 Editor-import shader warnings reject the receipt. Not accepted as a verified current Android artifact."
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261028T021504Z-e86444",
+      "head": "405fb92fedbec1cec1c719f776e7cb8ac97ee2a2",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 51393644,
+      "artifactSha256": "b064a65b6f4a7502539a1811d0c924a3fc7a4723892fe809ba9aa4a671188241",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T021504Z-e86444/result.json",
+      "apkSignature": "apksigner verifies v2 Android Debug signature",
+      "shaderDiagnostics": 0,
+      "jdkCleanupError": false,
+      "note": "Unchanged-source Android retry after configuring reviewed existing custom tool roots; rejected prior Editor-import warning receipt retained. No device qualification."
     }
   ],
   "browserJourney": {
@@ -307,12 +363,13 @@
     "historical": true
   },
   "remaining": [
-    "Real Android device lifecycle/storage/audio/performance qualification; development APK built successfully from the recorded source and toolchain",
+    "Real Android device lifecycle/storage/audio/performance qualification; current development APK verified",
     "Windows abnormal termination, hardware audio, performance and broader supported input/display qualification",
     "Funded/offline research browser journey, two-tab ownership and native/background/audio qualification inherited from PR544",
     "Ten actual active hours at researched5x; no endurance observation started",
     "Eight historical journey-guard cases lack their external ST_SHOP_BACKGROUND_RECORD, ST_SHOP_GUARD_RECORD or ST_SHOP_OBSERVER_OUTPUT_ROOT fixtures;39 other cases passed",
-    "Exact-head hosted CI, merge, publication, deployment and live-host proof"
+    "Exact-head hosted CI, merge, publication, deployment and live-host proof",
+    "Initial Android target import emitted Editor-only d3d11 probe-baker warnings and was rejected by the unchanged whole-log scanner; unchanged-source retry passed. Clean-import warning-free repeatability is not established."
   ],
   "published": false,
   "nativeLeaseRepairJourney": {
@@ -381,6 +438,35 @@
       "target": "android",
       "configuration": "development",
       "outcome": "pass",
+      "stamp": "20261028T021504Z-e86444",
+      "head": "405fb92fedbec1cec1c719f776e7cb8ac97ee2a2",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 51393644,
+      "artifactSha256": "b064a65b6f4a7502539a1811d0c924a3fc7a4723892fe809ba9aa4a671188241",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T021504Z-e86444/result.json",
+      "apkSignature": "apksigner verifies v2 Android Debug signature",
+      "shaderDiagnostics": 0,
+      "jdkCleanupError": false,
+      "note": "Unchanged-source Android retry after configuring reviewed existing custom tool roots; rejected prior Editor-import warning receipt retained. No device qualification."
+    },
+    "hostPreferences": {
+      "scope": "per-user Unity Editor external tools",
+      "changed": "Exactly three UseEmbedded DWORD toggles1to0; all existing custom path bytes unchanged",
+      "backup": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/unity-tools-preferences-before.json",
+      "readback": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/unity-tools-preferences-applied.json",
+      "postBuild": "All six values unchanged; no JDK cleanup error in current log",
+      "review": "Independent security PASS"
+    },
+    "previousVerifiedBuild": {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
       "stamp": "20261028T012758Z-f2181e",
       "head": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
       "sourceInventorySha256": "ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94",
@@ -398,17 +484,50 @@
   },
   "playerSourceInventories": {
     "windowsRelease": {
-      "stamp": "20261025T161123Z-81ff23",
-      "sha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc"
+      "stamp": "20261028T020013Z-5689b9",
+      "sha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe"
     },
     "webglRelease": {
-      "stamp": "20261025T161237Z-583e89",
-      "sha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc"
+      "stamp": "20261028T015816Z-3cf813",
+      "sha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe"
     },
     "androidDevelopment": {
-      "stamp": "20261028T012758Z-f2181e",
-      "sha256": "ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94"
+      "stamp": "20261028T021504Z-e86444",
+      "sha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe"
     },
     "note": "Each inventory includes its recorded build-wrapper bytes; no cross-target identity is inferred."
+  },
+  "researchHeartbeatRepair": {
+    "commit": "d977d228",
+    "cause": "Research15s autosave advanced authoritative profile revision without refreshing idle permanent-shop quote. Valid next purchase emitted purchase-stale.",
+    "fix": "Refresh projections after reconciliation returns, preserving stale intent and reentrancy checks.",
+    "actualEditorRegression": {
+      "red": "two expected failures; source_unchanged=true",
+      "green": "all3 cases pass; source_unchanged=true",
+      "seconds": 8.935,
+      "cases": [
+        "one durable purchase after heartbeat; older revision still refused",
+        "failed save disables Buy without changing wallet or level",
+        "run owner/version/ledger/model remain unchanged"
+      ],
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/shop-heartbeat-green.log"
+    },
+    "reentrySeconds": 7.628,
+    "applicationTests": 3,
+    "applicationSeconds": 1.148,
+    "independentReviews": "coverage and security PASS",
+    "hostedCi": {
+      "head": "405fb92fedbec1cec1c719f776e7cb8ac97ee2a2",
+      "outcome": "failure",
+      "run": 40618936400,
+      "reason": "Lifecycle shards 4,6,7,10 reached the hidden natural-terminal check and timed out waiting for the runtime result. Shards 8,9 passed; remaining shards were still running at inspection. New failure under diagnosis; no full hosted acceptance claimed."
+    }
+  },
+  "latestPreview": {
+    "url": "http://127.0.0.1:4174/singedTerra/last-stand/",
+    "package": "Web-20261028T015816Z-3cf813",
+    "servedManifestMatchesStaged": true,
+    "note": "Existing server reused; HTTP manifest identity verified. Rendered CUA check loaded this package, opened and closed the permanent shop, and resumed the existing checkpoint paused at wave7, hull120/120,103Scrap,CannonAttack1. No purchases or settings changes made. This bounded observation does not qualify funded research, two-tab ownership or endurance.",
+    "screenshot": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/heartbeat-current-browser.png"
   }
 }

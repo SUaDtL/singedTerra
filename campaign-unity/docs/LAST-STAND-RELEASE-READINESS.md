@@ -91,9 +91,9 @@ is claimed.
 
 | Target | Measured or observed evidence | Remaining proof |
 | --- | --- | --- |
-| WebGL | Release export passed in [build-webgl-20261025T161237Z-583e89](../Evidence/last-stand-architecture/build-webgl-20261025T161237Z-583e89/result.json), then the [original export receipt](../Evidence/last-stand-playable-loop/t05/build-20261025T161237Z-583e89/result.json) was admitted and packaged. Production typecheck/build passed. Earlier browser checks exercised tier/environment preview, settings, purchase, wave clears and reload/resume. | Funded/offline research, two-tab ownership, native/background/audio, endurance and exact-candidate hosted CI retain their separate qualification obligations. |
-| Windows | Rebuilt release reported `Succeeded`, `112,305,051` bytes: [release receipt](../Evidence/last-stand-architecture/build-windows-20261025T161123Z-81ff23/result.json). Uses x64 Mono, scene `LastStandPrototype`, version `1.0`. Rendered resume, run shop, settings and process-restart checks passed after the lease repair. Earlier development and release journeys also exercised purchases; the development session cleared five waves. | Hardware audio, performance, abnormal termination and endurance remain unmeasured. The older development build does not qualify the new lease implementation. |
-| Android | ARM64 IL2CPP development APK built successfully: [receipt](../Evidence/last-stand-architecture/build-android-20261028T012758Z-f2181e/result.json). `LastStand.apk` is 39,799,485 bytes; source and toolchain inventories match before/after. Uses the installed Unity module and reviewed Corretto 17.0.21.0.11. | Real-device interaction, lifecycle, durability, audio and performance qualification. No device or emulator is connected. This local debug-signed APK is not store qualification. |
+| WebGL | Corrected release export passed in [current receipt](../Evidence/last-stand-architecture/build-webgl-20261028T015816Z-3cf813/result.json), then its original export receipt was admitted and packaged. Source/toolchain unchanged; strict TypeScript and production build passed. Port 4174 serves the matching package. | Fresh hosted browser journey, funded/offline research, two-tab ownership, background/audio and endurance remain separate qualification obligations. Earlier rendered journeys below identify their older packages. |
+| Windows | Corrected release [build receipt](../Evidence/last-stand-architecture/build-windows-20261028T020013Z-5689b9/result.json) reports Succeeded and 112,305,051 bytes. Uses x64 Mono and the same source inventory as current WebGL. | Earlier rendered journeys below predate the heartbeat correction. Current packaged interaction, hardware audio, performance, abnormal termination and endurance remain unmeasured. |
+| Android | Corrected ARM64 IL2CPP development [APK receipt](../Evidence/last-stand-architecture/build-android-20261028T021504Z-e86444/result.json) passed. APK 51,393,644 bytes; Android Debug signature verified; source/toolchain unchanged, same source inventory as Windows/WebGL, zero shader diagnostics and no JDK cleanup error. | Real-device interaction, lifecycle, durability, audio and performance qualification. No device or emulator is connected. Earlier rejected Editor-import warnings remain recorded below; no store qualification is claimed. |
 
 Nine focused build/preflight checks pass. They cover source/toolchain/scene/
 configuration rejection, modified/missing/extra artifact rejection, incomplete
@@ -162,8 +162,14 @@ The browser-driver repair at `c4cc8022` passes 367 focused checks and retains
 full-target visibility and input guards while revealing scrollable controls.
 Hosted CI passes engine/build, core/product/tier browsers and Last Stand shards
 11 and 12. Several lifecycle shards now pass the earlier scroll gate but time
-out awaiting a runtime observation after a keyboard action. That follow-up is
-under investigation; automated browser qualification remains incomplete.
+out awaiting a runtime observation after a keyboard action. The source-bound
+artifact showed a genuine stale purchase: the 15-second research heartbeat
+advanced profile revision without refreshing the displayed quote. Commit
+`d977d228` refreshes after reconciliation returns. Actual Unity regression
+assertions fail before and pass after the change, covering one durable purchase,
+old-intent refusal, failed-save disablement and unchanged run accounting.
+Independent coverage/security reviews pass. Fresh hosted qualification at
+`405fb92f` remains pending; no driver retry conceals the refusal.
 
 The owner reported approving the popup. Subsequent read-only firewall inspection
 found two enabled Allow/Public rules for the development executable. The agent
@@ -206,7 +212,7 @@ The pinned Unity Android module installation completed with exit 0 on October 27
 after the owner authorized reopening its normal Windows elevation prompt.
 The earlier October 25 attempt was canceled. No elevation bypass or
 Hub-registration change was used. The replacement-tool build uses the explicit
-Corretto, SDK and NDK roots above and completed successfully. The APK SHA-256 is
+Corretto, SDK and NDK roots above and completed successfully. The earlier APK SHA-256 is
 `e941e6e6db999cc135d5767ba2625aa65a71ff5d88bb3381b05ea8de4ed7df42`.
 The receipt records source inventory
 `ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94`
@@ -214,6 +220,26 @@ at commit `c4cc8022`. It includes the updated target-build wrapper; the earlier
 Windows/WebGL inventories retain their own recorded wrapper bytes. Unity's build
 report counts 541,582,682 bytes of build content, separately from the measured
 39,799,485-byte APK. Neither figure is a device performance measurement.
+
+The corrected heartbeat candidate was rebuilt as
+`build-android-20261028T021504Z-e86444`: 51,393,644 APK bytes, SHA-256
+`b064a65b6f4a7502539a1811d0c924a3fc7a4723892fe809ba9aa4a671188241`.
+Its source inventory `43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe`
+matches the current Windows/WebGL candidates. The APK debug signature verifies.
+The first rebuild was rejected for 18 D3D11 conversion warnings from the
+Editor-only TraceVirtualOffset probe baker during initial import; that shader
+is absent from the Android used-asset list. The unchanged-source Android retry
+passed the same strict whole-log scanner. No warning filtering or receipt
+rewriting was used. Clean-import warning-free repeatability remains unproven.
+
+The earlier Android logs also contained a shutdown Gradle cleanup error after
+restoring missing embedded tools. Completing the authorized host setup changed
+only three per-user Unity UseEmbedded toggles to false, selecting the existing
+reviewed custom JDK/SDK/NDK paths. All six raw preference values were backed up
+and compared before the write; path bytes stayed unchanged. Independent review
+and read-back checks passed. The current build retains those preferences and
+contains no JDK cleanup error. Backup and conditional rollback metadata are in
+`Evidence/architecture-foundations/android-followup-20261027/unity-tools-preferences-*.json`.
 
 For comparison, a full embedded toolchain installation would be larger than the
 reused setup above. The following numbers are vendor estimates, not bytes
@@ -266,8 +292,8 @@ areas, not an assignment to an unavailable person.
 
 | Gap and severity | Evidence / current limit | Responsible area | Exit evidence |
 | --- | --- | --- | --- |
-| High: remaining browser qualification | Final source-bound package, live purchase, wave progression, settings and reload/resume passed in the in-app browser. Funded/offline research and two-tab qualification remain pending from the base sprint. | Delivery / browser verification | Complete the remaining funded-research and ownership journeys on the identified package. Preserve the recorded successful basic journey and keep only the latest local preview. |
-| High: remaining native player qualification | Windows development and release players passed controls, purchase, saved preference and checkpoint restart checks at 1024 by 768. Broader device behavior remains unmeasured. | Delivery / platform verification | Record supported input/display targets, abnormal termination and lifecycle behavior. Preserve both completed native journeys. |
+| High: remaining browser qualification | Current package opens the permanent shop and restores the existing checkpoint paused at wave7, hull120/120,103Scrap,CannonAttack1. Earlier pre-heartbeat package passed live purchase, wave progression and settings. Hosted hidden-terminal failures remain under diagnosis; funded/offline research and two-tab qualification remain pending. | Delivery / browser verification | Complete the current hosted journey and funded-research and ownership journeys. Preserve earlier successful journeys as historical evidence and keep only the latest local preview. |
+| High: remaining native player qualification | Earlier pre-heartbeat Windows players passed controls, purchase, saved preference and checkpoint restart at 1024 by 768. Current-candidate interaction and broader device behavior remain unmeasured. | Delivery / platform verification | Recheck the current candidate and record supported input/display targets, abnormal termination and lifecycle behavior. Preserve both earlier native journeys as historical evidence. |
 | High â€” Android lifecycle and durability | No real-device session, suspend/resume, research-clock, interrupted-write or hardware-audio evidence for this candidate. Windows tests cannot qualify Android behavior. | Platform / device verification | Install the identified APK on a recorded device/OS, exercise fresh and returning profiles, background/foreground, forced termination/relaunch, clock behavior, preferences and audio; retain before/after save and observation evidence. |
 | High â€” performance and long-run reliability | No candidate frame-time, memory, thermal or real-duration farming measurements. Accelerated model tests are available but are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |
 | High â€” content and economy release depth | The foundation preserves frozen behavior and supplies typed definitions; this does not establish sufficient progression depth or long-term balance. | Game design / economy / content | Review supported tiers, waves, rewards, research and armaments against the maintained progression goals; retain representative play/farming evidence and explicit release-scope acceptance. |
