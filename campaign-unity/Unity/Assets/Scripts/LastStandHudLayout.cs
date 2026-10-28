@@ -66,12 +66,19 @@ namespace SingedTerra.LastStand
             public ReadOnlyCollection<float> RefusalHeights { get; private set; }
             public ReadOnlyCollection<float> ContributionHeights { get; private set; }
             public float NoticeHeight { get; private set; }
+            public float HeadingHeight { get; private set; }
+            public float DetailHeight { get; private set; }
 
             public ShopPanelInput(bool open, string[] cardKeys, float scrollOffset)
                 : this(open,cardKeys,scrollOffset,null,null,null,40) { }
 
             public ShopPanelInput(bool open, string[] cardKeys, float scrollOffset,
                 float[] effectHeights, float[] refusalHeights, float[] contributionHeights, float noticeHeight)
+                :this(open,cardKeys,scrollOffset,effectHeights,refusalHeights,contributionHeights,noticeHeight,LineHeight,LineHeight) { }
+
+            public ShopPanelInput(bool open, string[] cardKeys, float scrollOffset,
+                float[] effectHeights, float[] refusalHeights, float[] contributionHeights, float noticeHeight,
+                float headingHeight, float detailHeight)
             {
                 if (cardKeys == null) throw new ArgumentNullException(nameof(cardKeys));
                 if (float.IsNaN(scrollOffset) || float.IsInfinity(scrollOffset))
@@ -87,7 +94,10 @@ namespace SingedTerra.LastStand
                 ContributionHeights = Heights(contributionHeights,keys.Length,LineHeight);
                 if (float.IsNaN(noticeHeight) || float.IsInfinity(noticeHeight) || noticeHeight < LineHeight)
                     throw new ArgumentOutOfRangeException(nameof(noticeHeight));
-                NoticeHeight = noticeHeight;
+                if (float.IsNaN(headingHeight) || float.IsInfinity(headingHeight) || headingHeight < LineHeight ||
+                    float.IsNaN(detailHeight) || float.IsInfinity(detailHeight) || detailHeight < LineHeight)
+                    throw new ArgumentOutOfRangeException(nameof(detailHeight));
+                NoticeHeight = noticeHeight; HeadingHeight=headingHeight; DetailHeight=detailHeight;
             }
             static ReadOnlyCollection<float> Heights(float[] values, int count, float fallback)
             {
@@ -468,7 +478,7 @@ namespace SingedTerra.LastStand
                 Battle(core,narrow?PortraitBreakpoint-1:regionWidth,height,edge,padding,false,actionCount,floatingMenu);
                 if(waveReceipt)InlineReceipt(core);
             }
-            else OpenCard(core, regionWidth, edge, shop.NoticeHeight,floatingMenu);
+            else OpenCard(core, regionWidth, edge, shop.NoticeHeight,floatingMenu,shop.HeadingHeight,shop.DetailHeight);
             Dock(core, regionWidth, height, controls, edge, padding, false,battle && (actionCount == 3 || actionCount == 4));
             var slots = new List<Slot>();
             foreach (var slot in core)
@@ -482,7 +492,7 @@ namespace SingedTerra.LastStand
             float bottom = dock == null ? height - edge : dock.Bounds.Y;
             float panelTop = side ? edge : (battle ? Math.Max(card.Y + card.Height + Gap, height * .5f + Gap + 1) : card.Y + card.Height + Gap);
             float panelHeight = side ? height - 2 * edge : bottom - Gap - panelTop;
-            float shopPadding = shortLandscape ? 10 : ShopPadding;
+            float shopPadding = shortLandscape ? 10 : side ? ShopPadding : 8;
             float viewportHeight = panelHeight - 2 * shopPadding - 2 * MinimumTargetSize - 2 * ShopGap;
             if (panelWidth < 304 || viewportHeight < MinimumTargetSize)
                 throw new ArgumentOutOfRangeException("height", "Shop space must reveal one complete purchase target below its fixed header and tabs.");
@@ -503,15 +513,15 @@ namespace SingedTerra.LastStand
             return new Projection(width, height, slots, actionCount, true, clearance, offset, maximum);
         }
 
-        static void OpenCard(List<Slot> slots, float width, float edge, float noticeHeight,bool floatingMenu)
+        static void OpenCard(List<Slot> slots, float width, float edge, float noticeHeight,bool floatingMenu,float headingHeight,float detailHeight)
         {
             float wide = Math.Min(width - 2 * edge, MaximumCardWidth);
             if(floatingMenu)wide=Math.Min(wide,width-Edge-52-Gap-edge);
             float inner = wide - 2 * PanelPadding, x = edge + PanelPadding, y = edge + PanelPadding;
-            Add(slots,"LastStandCard",null,"panel",edge,edge,wide,2 * PanelPadding + 2 * LineHeight + ShopGap + noticeHeight);
-            Text(slots,"PhaseHeading","LastStandCard",x,y,inner,LineHeight,BodyTextSize);
-            Text(slots,"PhaseDetail","LastStandCard",x,y + LineHeight,inner,LineHeight);
-            Text(slots,"SaveStatus","LastStandCard",x,y + 2 * LineHeight + ShopGap,inner,noticeHeight);
+            Add(slots,"LastStandCard",null,"panel",edge,edge,wide,2 * PanelPadding + headingHeight + detailHeight + ShopGap + noticeHeight);
+            Text(slots,"PhaseHeading","LastStandCard",x,y,inner,headingHeight,BodyTextSize);
+            Text(slots,"PhaseDetail","LastStandCard",x,y + headingHeight,inner,detailHeight);
+            Text(slots,"SaveStatus","LastStandCard",x,y + headingHeight + detailHeight + ShopGap,inner,noticeHeight);
         }
 
         static void Shop(List<Slot> slots, float left, float top, float width, float height,

@@ -115,10 +115,10 @@ test('required CI runs current wave gate and checkpoint reader regressions',()=>
   const check=source=>{
     const scope=job(source,'scope'),run=scope.split('\n').find(line=>line.includes('run: node --test scripts/ci/changeScope.test.mjs'));
     assert.ok(run);
-    for(const name of ['lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])assert.ok(run.includes(`scripts/ci/${name}.test.mjs`));
+    for(const name of ['lastStandControlReveal','lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])assert.ok(run.includes(`scripts/ci/${name}.test.mjs`));
   };
   check(ci);
-  for(const name of ['lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])
+  for(const name of ['lastStandControlReveal','lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])
     assert.throws(()=>check(ci.replace(` scripts/ci/${name}.test.mjs`,'')));
 });
 
@@ -756,9 +756,11 @@ test('actual journey compact retention diagnostic bounds error text without trun
   assert.equal(JSON.parse(fixture.errors[0].split('=',2)[1]).error,String(original).slice(0,2000));
 });
 
-test('actual journey evidence writer streams complete nested records without aggregate JSON stringification',()=>{
-  const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
-  const start=source.indexOf('export function writeShopPresentationJson('),end=source.indexOf('\n// Unity',start);
+test('actual journey evidence writer streams complete nested records without aggregate JSON stringification',async t=>{
+  const original=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
+  for(const [name,newline] of [['LF','\n'],['CRLF','\r\n']])await t.test(name,()=>{
+  const source=original.replace(/\r\n|\r|\n/g,newline);
+  const start=source.indexOf('export function writeShopPresentationJson('),end=source.indexOf('\nexport function readShopControlObservation(',start);
   const main=source.slice(source.indexOf('export async function runLastStandJourney('));
   const declaration=main.match(/const write = [^\n]+;/)?.[0];
   assert.ok(start>=0 && end>start && declaration,'Real serializer and maintained caller are required');
@@ -768,7 +770,7 @@ test('actual journey evidence writer streams complete nested records without agg
     closeSync:fd=>closed.push(fd),join:(base,name)=>base+'/'+name,output:'explicit-inert',
     JSON:{stringify(value){assert.ok(value===null || typeof value!=='object','Aggregate JSON stringification is forbidden');
       return JSON.stringify(value);}}});
-  runInContext(source.slice(start,end).replace(/^export /,'')+';'+declaration+';globalThis.actualWrite=write;',context);
+  runInContext([source.slice(start,end).replace(/^export /,''),declaration,'globalThis.actualWrite=write;'].join('\n'),context);
   const values={records:Array.from({length:900},(_,seq)=>({seq,raw:'Observed glyph Ω\n'.repeat(180),
     values:[null,undefined,false,0,seq+.5,NaN,Infinity],nested:{empty:[],object:{},omitted:undefined}}))};
   context.actualWrite('raw.json',values);
@@ -778,6 +780,7 @@ test('actual journey evidence writer streams complete nested records without agg
   const cycle={};cycle.self=cycle;
   assert.throws(()=>context.actualWrite('cycle.json',cycle),/Circular/);
   assert.deepEqual(closed,[7,7],'A rejected record still closes its owned file');
+  });
 });
 
 test('audio diagnostics retain latest sixteen snapshots and exact dropped count',async()=>{

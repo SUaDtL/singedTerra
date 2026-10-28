@@ -24,31 +24,8 @@ spec.loader.exec_module(verifier)
 
 
 def _current_control_fixture():
-    """Invented current control inventory for parser tests, never runtime evidence."""
-    core = ('ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-            'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry', 'WaveInfo')
-    shop = ('ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
-            'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-            'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy')
-    settings = ('SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuWaveInfo', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
-                'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
-                'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
-                'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
-                'ChoicePrevious', 'ChoiceNext')
-    research = ('ResearchClose', 'ResearchFilter', 'ResearchBack',
-                *('ResearchProject-' + key for key in ('gameSpeed', 'salvageRecovery', 'researchSpeed', 'scrapLogistics')),
-                *('Research' + action + str(slot) for slot in (0, 1) for action in ('Start', 'Queue', 'Switch', 'Suspend', 'RemoveQueued')))
-    history = ('RunHistoryClose', 'RunHistoryTier')
-    def controls(names):
-        return [dict(name=name, label=name, accessibleLabel=name, mode='', trackKey='',
-                     x=0, y=0, width=44, height=44, active=True, interactable=True) for name in names]
-    return dict(phase='garage', coordinates='top-left', selection='Deploy', width=1366, height=768,
-                pixelRatio=1, scrollOffset=0, maximumScrollOffset=0,
-                settingsScrollOffset=0, settingsMaximumScrollOffset=0,
-                controls=controls(core), shopControls=controls(shop), settingsControls=controls(settings),
-                researchControls=controls(research), historyControls=controls(history),
-                researchScrollOffset=0, researchMaximumScrollOffset=0, historyScrollOffset=0, historyMaximumScrollOffset=0)
+    """Static independent parser fixture, never runtime evidence."""
+    return json.loads((TOOLS / 'last_stand_architecture/fixtures/observation-v1.json').read_text(encoding='utf8'))
 
 
 def _replace_recovery_copies(value, old, new):
@@ -1197,14 +1174,16 @@ class ShopJourneyGuardTests(unittest.TestCase):
         scripts = TOOLS.parent / 'Unity/Assets/Scripts'
         core_source = (scripts / 'LastStandLoopHud.cs').read_text(encoding='utf8')
         settings_source = (scripts / 'LastStandSettingsHud.cs').read_text(encoding='utf8')
-        action_names = dict(re.findall(r'(\w+)\s*=\s*Action\("([^"]+)"', core_source))
-        action_fields = re.search(r'actions = new\[\] \{([^}]+)\}', core_source).group(1)
-        actual_core = [action_names[field.strip()] for field in action_fields.split(',')]
-        self.assertIn('core.Add(waveInfo)', core_source)
-        actual_core += re.findall(r'var waveTarget=Node\("([^"]+)"', core_source)
+        owners = {key:(scripts / name).read_text(encoding='utf8') for key,name in {
+            'combat':'LastStandCombatHud.cs','garage':'LastStandGarageView.cs','modals':'LastStandModalHost.cs'}.items()}
+        names = {key:dict(re.findall(r'(\w+)\s*=\s*(?:elements\.)?Action\("([^\"]+)"', source)) for key,source in owners.items()}
+        action_fields = re.search(r'actions=new\[\]\{([^}]+)\}',core_source).group(1)
+        actual_core = [names[owner][field] for owner,field in (item.strip().split('.') for item in action_fields.split(','))]
+        self.assertIn('core.Add(combat.WaveInfo)',core_source)
+        actual_core += re.findall(r'var waveTarget=Node\("([^\"]+)"',owners['combat'])
         actual_settings = re.findall(r'Button\("([^"]+)",', settings_source)
         self.assertIn('new Button[4]', settings_source)
-        actual_settings += ['SettingsTab' + str(index) for index in range(4)]
+        actual_settings += ['SettingsClose'] + ['SettingsTab' + str(index) for index in range(4)]
         for channel in re.findall(r'Volume\("([^"]+)",', settings_source):
             actual_settings += [channel + 'Minus', channel + 'Plus']
         fixture = _current_control_fixture()
@@ -1286,7 +1265,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         owner = next(node for node in source.body if isinstance(node, ast.FunctionDef) and node.name == 'verify_shop_vertical')
         functions = [node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name in ('require', 'read_controls')]
         self.assertEqual({node.name for node in functions}, {'require', 'read_controls'})
-        namespace = {'json': json, 'math': math}
+        namespace = {'json': json, 'math': math, 'OBSERVATION_CONTRACT': verifier.OBSERVATION_CONTRACT}
         exec(compile(ast.Module(body=functions, type_ignores=[]), '<actual Shop verifier pure reader>', 'exec'), namespace)
         value = _current_control_fixture()
         raw = 'ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[]), separators=(',', ':'))
@@ -1315,7 +1294,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
                      and ast.unparse(node.test) == "key == 'controlsOnly'")
         code = compile(ast.Module(body=block.body, type_ignores=[]), '<actual recovery inventory block>', 'exec')
         def admit(value):
-            namespace = {'value': dict(value, graphics=[]), 'need': verifier._recovery_need,
+            namespace = {'value': dict(value, graphics=[]), 'need': verifier._recovery_need, 'OBSERVATION_CONTRACT': verifier.OBSERVATION_CONTRACT,
                          'observation': {'text': 'synthetic current controls'}}
             exec(code, namespace)
         admit(_current_control_fixture())

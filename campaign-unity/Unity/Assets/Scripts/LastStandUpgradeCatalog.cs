@@ -63,9 +63,7 @@ namespace SingedTerra.LastStand
 
         public static LastStandUpgradeDefinition Get(LastStandUpgradeTrackId id)
         {
-            int index = (int)id;
-            if (index < 0 || index >= Tracks.Count) throw new ArgumentOutOfRangeException(nameof(id));
-            return Tracks[index];
+            return ForEconomy(EconomyVersion).Get(id);
         }
 
         public static bool TryGet(string key, out LastStandUpgradeDefinition definition)

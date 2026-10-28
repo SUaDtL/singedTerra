@@ -20,11 +20,12 @@ namespace SingedTerra.LastStand
         public Color AmbientEquator { get; }
         public Color AmbientGround { get; }
 
-        internal LastStandEnvironmentDefinition(string id, string name, string description,
+        internal LastStandEnvironmentDefinition(LastStandEnvironmentIdentity identity,
             int treatmentIndex, float cameraPitch, Color sunColor, float sunIntensity,
             float sunPitch, Color ambientSky, Color ambientEquator, Color ambientGround)
         {
-            Id=id; Name=name; Description=description; TreatmentIndex=treatmentIndex;
+            if(identity==null)throw new ArgumentNullException(nameof(identity));
+            Id=identity.Id; Name=identity.Name; Description=identity.Description; TreatmentIndex=treatmentIndex;
             CameraPitch=cameraPitch; SunColor=sunColor; SunIntensity=sunIntensity;
             SunPitch=sunPitch; AmbientSky=ambientSky; AmbientEquator=ambientEquator;
             AmbientGround=ambientGround;
@@ -34,12 +35,10 @@ namespace SingedTerra.LastStand
     public static class LastStandEnvironmentCatalog
     {
         static readonly LastStandEnvironmentDefinition[] definitions = {
-            new LastStandEnvironmentDefinition("sunlit-ash", "Sunlit Ash",
-                "Warm ash flats, broken rock and long sunlit approaches.", 0, 58f,
+            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("sunlit-ash"), 0, 58f,
                 new Color(1f,.86f,.66f), 1.65f, 42f,
                 new Color(.55f,.59f,.64f), new Color(.39f,.34f,.28f), new Color(.16f,.16f,.14f)),
-            new LastStandEnvironmentDefinition("iron-perimeter", "Iron Perimeter",
-                "A cold industrial perimeter with hard cover and steel-grey ground.", 1, 70f,
+            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("iron-perimeter"), 1, 70f,
                 new Color(.78f,.87f,1f), 1.35f, 53f,
                 new Color(.49f,.59f,.68f), new Color(.32f,.38f,.40f), new Color(.16f,.16f,.14f))
         };

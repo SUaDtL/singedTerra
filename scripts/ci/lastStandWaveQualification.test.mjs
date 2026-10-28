@@ -3,20 +3,49 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
+import {runInNewContext} from 'node:vm';
 import {LAST_STAND_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandJourney.mjs';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
+import {WAVE_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandWaveJourney.mjs';
+import {currentQualificationInputs} from './lastStandQualification.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 import {WAVE_ORACLE_SOURCES} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
-import {assertCombinedWaveQualification,assertWaveBinding,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
+import {assertCombinedWaveQualification,assertWaveBinding,assertWaveLifecycle,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
   WAVE_LIFECYCLE_CHECKS,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_ERROR_CHECK} from './lastStandWaveQualification.mjs';
 
 // Inert contract fixtures only. They are never browser reports or acceptance.
 const hash='a'.repeat(64),head='b'.repeat(40),clone=value=>structuredClone(value);
 const profiles=[1,2].flatMap(tier=>['repair','launcher','scattergun'].flatMap(fitting=>[20,30,40,50].map(d=>`${tier}:${fitting}:${d}`)));
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+
+for(const path of controlInputPaths)test('source closure: wave producer binds actual '+path,()=>{
+  const wave=readFileSync(new URL('../../e2e/helpers/lastStandWaveJourney.mjs',import.meta.url),'utf8');
+  const begin=wave.indexOf('const hashInputs='),end=wave.indexOf('\n',begin);
+  assert.ok(begin>0&&end>begin,'Exercise the actual wave input recorder');
+  const recorded=runInNewContext(wave.slice(begin,end)+';hashInputs();',{WAVE_JOURNEY_INPUTS,createHash,readFileSync,resolve});
+  assert.equal(recorded[path],createHash('sha256').update(readFileSync(resolve(path))).digest('hex'),
+    'Wave input recorder must include the actual consumed input: '+path);
+});
+
+test('source closure: current wave reader rejects omitted or changed control input bindings',()=>{
+  const expected={...expectedFixture(),inputs:currentQualificationInputs()},report=baseReport(expected);
+  const check=r=>assertWaveBinding(r,expected,'linux','linux-functional','viewport-section-pass');
+  assert.doesNotThrow(()=>check(report));
+  for(const path of controlInputPaths)for(const fault of ['omitted','changed','invalid','raw-omitted','raw-invalid']){
+    const broken=clone(report);
+    if(fault==='omitted')delete broken.binding.portable_text_inputs[path];
+    if(fault==='changed')broken.binding.portable_text_inputs[path]='0'.repeat(64);
+    if(fault==='invalid')broken.binding.portable_text_inputs[path]='invalid hash';
+    if(fault==='raw-omitted')delete broken.binding.input_files[path];
+    if(fault==='raw-invalid')broken.binding.input_files[path]='invalid hash';
+    assert.throws(()=>check(broken),undefined,fault+' '+path);
+  }
+});
 // Reduced from the failed native checkpoint-reload capture: wallet 6, workshop,
 // inactive Deploy and active Redeploy both labelled RESUME RUN. Inert guards only.
 function deploymentFixture(phase='workshop',hasCheckpoint=true){
@@ -43,7 +72,7 @@ test('deployment control binds observed phase, checkpoint intent and the exact c
 });
 test('actual earned checkpoint, purchase and terminal reload callers choose the observed primary control',async()=>{
   const calls=[source.match(/const resumedCheckpoint=(await gameClick\([^;\n]+\));/),
-    source.match(/const hitStart=hits.length;(await gameClick\([^;\n]+\));/),
+    source.match(/const hitStart=hits.length;const upgradedDeployment=(await gameClick\([^;\n]+\));/),
     source.match(/kind:'terminal-reload',saved:[^\n]+state:finalReload\}\);\n\s*(await gameClick\([^;\n]+\));/)];
   for(const [index,match]of calls.entries()){
     assert.ok(match,'Actual reload deployment caller required: '+index);
@@ -91,6 +120,39 @@ function resumeFixture(){
     checkpointWave:1,completedWave:1,wave:2,tick:201,hull:114,kills:6,cannonDamage:20,wallet:2,pendingRunId:0,paused:true,speed:0};
   return {kind:'checkpoint-resume',saved,resumed,stable:{...resumed,action:'menu',t:1300},stored:clone(saved),observedClock:{t:1301,timeOrigin:1000}};
 }
+function backgroundFixture(){
+  const {before,after}=clone(intervalFixture().evidence),rules='last-stand-waves-v1';
+  after.loop={...after.loop,profileVersion:rules,fittingId:'repair',cannonDamage:30,wallet:1};
+  const checkpointState={...after.loop,t:220,action:'session',phase:'battle',saveState:'ready',paused:true,speed:0,
+    pendingRunId:0,hasCheckpoint:true,checkpointBlocked:false,tick:3,wave:2,completedWave:1,checkpointWave:1,wallet:2};
+  const saved={...idleWaveFields({runId:19}),credits:2,pendingDefeat:null,checkpoint:{runId:19,
+    encounter:{tier:1,fitting:1,rulesVersion:rules,tick:2,wave:1,completedWave:1,committedCannonDamage:30}}};
+  return {kind:'background-wave',interval:{begin:100,recovered:195,before},after,checkpointState,saved};
+}
+test('saved background checkpoint wave must name its cleared cohort',()=>{
+  const good=backgroundFixture();assert.equal(journey.validateBackgroundCheckpoint(good),true);
+  const broken=clone(good);broken.saved.checkpoint.encounter.wave=999;
+  assert.throws(()=>journey.validateBackgroundCheckpoint(broken));
+});
+test('background checkpoint witness keeps running progression separate and rejects mismatched paused save boundaries',()=>{
+  const good=backgroundFixture();assert.notEqual(good.after.loop.wallet,good.saved.credits);
+  assert.equal(journey.validateBackgroundCheckpoint(good),true);
+  const report=lifeReport(expectedFixture());assert.doesNotThrow(()=>assertWaveLifecycle(report));
+  for(const mutate of [r=>delete r.checkpointState,r=>r.checkpointState.wallet--,r=>r.saved.credits++,
+    r=>r.checkpointState.load++,r=>r.checkpointState.timeOrigin++,r=>r.checkpointState.scope='other',
+    r=>r.checkpointState.sessionRun++,r=>r.checkpointState.runId++,r=>r.saved.checkpoint.runId++,
+    r=>r.checkpointState.t=r.after.loop.t-.1,r=>r.checkpointState.paused=false,r=>r.checkpointState.speed=1,
+    r=>r.checkpointState.phase='result',r=>r.checkpointState.saveState='failed',r=>r.checkpointState.checkpointBlocked=true,
+    r=>r.checkpointState.hasCheckpoint=false,r=>r.checkpointState.pendingRunId=1,r=>r.saved.pendingDefeat={},
+    r=>r.checkpointState.completedWave++,r=>r.checkpointState.checkpointWave++,r=>r.checkpointState.wave++,
+    r=>r.checkpointState.tick=r.saved.checkpoint.encounter.tick-1,r=>r.checkpointState.activeTier++,
+    r=>r.checkpointState.profileVersion='other',r=>r.checkpointState.fittingId='launcher',r=>r.checkpointState.cannonDamage++,
+    r=>r.saved.history.current.runId++,r=>r.saved.history.current.highestClearedWave++]){
+    const broken=clone(good);mutate(broken);assert.throws(()=>journey.validateBackgroundCheckpoint(broken),undefined,String(mutate));
+    const aggregate=clone(report),index=aggregate.lifecycle.findIndex(r=>r.kind==='background-wave');aggregate.lifecycle[index]=broken;
+    assert.throws(()=>assertWaveLifecycle(aggregate),undefined,String(mutate));
+  }
+});
 function terminalFixture(mode){
   const load=mode==='foreground'?3:5,run=mode==='foreground'?2:3,identity={load,timeOrigin:load*1000,scope:'healthy'};
   const before={...identity,t:100,run,status:'Running',loop:{runId:run,phase:'battle'},fitting:'repair',tier:1};
@@ -101,7 +163,7 @@ function terminalFixture(mode){
   const saved={...idleWaveFields({runId:run,finalized:true}),checkpoint:null,pendingDefeat:null,lastFinalizedRunId:run,credits:4};
   const layouts=[{...identity,phase:'settling',t:202,controls:[{name:'Claim',active:false,interactable:false}]}];
   return {kind:'wave-terminal',mode,evidence:{before,terminal,staged,result,saved,layouts},
-    ...(mode==='hidden'?{interval:{begin:110,recovered:240,before:{...before},events:[
+    ...(mode==='hidden'?{continuation:{completion:'hidden'},interval:{begin:110,recovered:240,before:{...before},events:[
       {...identity,t:105,kind:'visibilitychange',hidden:true,focused:false,globalTarget:true},
       {...identity,t:235,kind:'visibilitychange',hidden:false,focused:true,globalTarget:true}]}}:{})};
 }
@@ -114,6 +176,90 @@ test('hidden terminal cannot use recovered bookkeeping to hide an earlier real v
   const value=lifeReport(expectedFixture()),row=value.lifecycle.find(r=>r.kind==='wave-terminal'&&r.mode==='hidden');
   change(row);assert.throws(()=>assertWaveTerminals(value),undefined,String(change));
  }
+});
+function deferredTerminalFixture(){
+ const row=terminalFixture('hidden'),e=row.evidence,identity={load:e.before.load,timeOrigin:e.before.timeOrigin,scope:e.before.scope};
+ Object.assign(e.before,{tick:0,selectedSpeed:1,clockTimestamp:1,clockPending:0});
+ Object.assign(e.terminal,{t:60210,tick:256});Object.assign(e.staged,{t:60211,tick:256});
+ Object.assign(e.result,{t:60230,tick:0});e.layouts[0].t=60212;
+ row.interval={before:clone(e.before),begin:110,recovered:60130,ms:14300,events:[
+  {...identity,t:105,kind:'visibilitychange',hidden:true,focused:false,globalTarget:true},
+  {...identity,t:60120,kind:'visibilitychange',hidden:false,focused:true,globalTarget:true}]};
+ const pair=(id,t,fromTick,previousTimestamp,timestamp,priorPending)=>{
+  const elapsed=timestamp-previousTimestamp,a={...identity,id,run:e.before.run,t,action:'begin',fromTick,tick:fromTick,steps:0,
+   previousTimestamp,timestamp,elapsed,priorPending,pending:priorPending+elapsed,speed:1,paused:false,failed:false};
+  return [a,{...a,t:t+20,action:'end',tick:fromTick+128,steps:128,pending:a.pending-6.4}];
+ };
+ const callbacks=[...pair(1,30000,0,1,30.9,0),...pair(2,60200,128,30.9,61.1,23.5)];
+ row.continuation=journey.validateBackgroundWaveTerminal({...row,callbackRecords:callbacks});return row;
+}
+test('deferred terminal retains full hidden dwell and capped debt through native return, distinct from hidden persistence',()=>{
+ const row=deferredTerminalFixture(),callbacks=row.continuation.callbacks;
+ assert.equal(row.continuation.completion,'after-native-return');
+ assert.deepEqual(journey.validateBackgroundWaveTerminal(terminalFixture('hidden')),{completion:'hidden'});
+ const report=lifeReport(expectedFixture());report.lifecycle=report.lifecycle.map(r=>r.kind==='wave-terminal'&&r.mode==='hidden'?row:r);
+ assert.doesNotThrow(()=>assertWaveTerminals(report));
+ for(const mode of ['hidden','unknown',undefined]){
+  const broken=clone(report);broken.lifecycle.find(r=>r.mode==='hidden').continuation.completion=mode;
+  assert.throws(()=>assertWaveTerminals(broken));
+ }
+ // A sub-tick callback can admit time without emitting a record; exact carry
+ // must include that gap, without inventing a skipped model step.
+ const fractional=clone(row),a=fractional.continuation.callbacks[0],b=fractional.continuation.callbacks[1];
+ for(const record of [a,b]){record.previousTimestamp+=.02;record.priorPending+=.02;record.elapsed-=.02;}
+ assert.doesNotThrow(()=>journey.validateBackgroundWaveTerminal({...fractional,callbackRecords:fractional.continuation.callbacks}));
+ assert.equal(callbacks.at(-1).tick,row.evidence.terminal.tick);
+});
+test('deferred terminal rejects shortened hidden dwell, interrupted visibility, lost debt, cap overflow and stalled catch-up',()=>{
+ const faults=[r=>r.interval.ms--,r=>r.interval.begin=0,r=>r.interval.before.run++,r=>r.evidence.before.selectedSpeed=2,
+  r=>r.interval.events[1].t=r.interval.begin+r.interval.ms-1,
+  r=>r.interval.events.splice(1,0,{...r.interval.events[1],t:106},{...r.interval.events[0],t:108}),
+  r=>r.interval.events[1].focused=false,r=>r.interval.events[0].globalTarget=false,r=>r.interval.events[1].load++,
+  r=>r.interval.events[1].timeOrigin++,r=>r.interval.events[1].scope='other',
+  r=>r.evidence.result.t=r.interval.recovered+60001,r=>r.evidence.result.sessionRun++,
+  r=>r.evidence.terminal.t=60199,r=>r.evidence.terminal.t=60221,r=>r.evidence.terminal.tick++,
+  r=>r.continuation.callbacks.pop(),r=>r.continuation.callbacks[2].id++,r=>r.continuation.callbacks[2].load++,
+  r=>r.continuation.callbacks[2].fromTick++,r=>r.continuation.callbacks[3].steps=129,
+  r=>r.continuation.callbacks[2].paused=true,r=>r.continuation.callbacks[3].failed=true,
+  r=>r.continuation.callbacks[2].speed=2,r=>r.continuation.callbacks[2].elapsed=-1,
+  ...[.05,.05-.5e-9].map(gap=>r=>{for(const record of r.continuation.callbacks.slice(0,2)){
+   record.previousTimestamp+=gap;record.priorPending+=gap;record.elapsed-=gap;}}),
+  r=>{for(const record of r.continuation.callbacks.slice(2)){record.previousTimestamp+=.02;record.priorPending+=.02;record.elapsed-=.02;}},
+  r=>r.continuation.callbacks[2].previousTimestamp-=1,r=>r.continuation.callbacks[3].timestamp++,
+  r=>r.continuation.callbacks[2].priorPending-=.01,r=>r.continuation.callbacks[2].priorPending+=.01,
+  r=>r.continuation.callbacks[3].pending-=.01,r=>r.continuation.callbacks[3].pending+=.01,
+  r=>r.evidence.before.clockPending+=.01,r=>r.evidence.before.clockTimestamp+=.01];
+ for(const fault of faults){const row=deferredTerminalFixture();fault(row);
+  assert.throws(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}),undefined,String(fault));}
+});
+test('deferred terminal rejects a hidden automatic pause, checkpoint failure or replayed background cue',()=>{
+ const row=deferredTerminalFixture(),before=row.evidence.before;
+ const state={...before,sessionRun:before.run,t:31000,phase:'battle',paused:false,saveState:'ready',checkpointBlocked:false};
+ const verify=(states,cues=[])=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks,states,cues});
+ assert.doesNotThrow(()=>verify([state]));
+ for(const fault of [{paused:true},{checkpointBlocked:true},{saveState:'failed'}])assert.throws(()=>verify([{...state,...fault}]));
+ assert.throws(()=>verify([state],[{...before,t:32000,action:'cue'}]));
+ assert.throws(()=>verify([state],[{...before,t:60220,action:'cue'}]));
+});
+test('deferred terminal refuses an unsolicited settling pause before the same result',()=>{
+ const row=deferredTerminalFixture(),state={...row.evidence.staged,t:60215,paused:true};
+ const verify=states=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks,states});
+ assert.doesNotThrow(()=>verify([{...state,paused:false}]));
+ assert.doesNotThrow(()=>verify([{...row.evidence.result,paused:true}]));
+ assert.throws(()=>verify([state]),/automatic pause/);
+});
+test('deferred terminal cannot extend its actual native-return deadline using reported recovery time',()=>{
+ const row=deferredTerminalFixture();
+ row.evidence.result.t=row.interval.events[1].t+60000;
+ row.interval.recovered=row.evidence.result.t;
+ assert.doesNotThrow(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}));
+ row.evidence.result.t++;
+ row.interval.recovered=row.evidence.result.t;
+ assert.throws(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}),/bounded foreground catch-up/);
+});
+test('background terminal cannot move its interval start after the source-bound model observation',()=>{
+ const row=deferredTerminalFixture();row.interval.before={...row.interval.before,t:107};row.interval.events[0].t=108;
+ assert.throws(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}),/source-bound model observation/);
 });
 function intervalFixture(kind='hidden'){
   const pause=kind==='explicit-pause';
@@ -156,8 +302,7 @@ function lifeReport(expected,host='linux'){
     .map(([name,action])=>({name,action,keys:['Enter']}));
   report.keyboard_trace={matched:true,actions:4,observed_edges:8};
   report.lifecycle=[resume,{kind:'checkpoint-abandon',before:clone(resume.saved),after:abandonedWaveSave(resume.saved)},
-    {kind:'background-wave',saved:{...idleWaveFields({runId:2}),credits:1,pendingDefeat:null,checkpoint:{runId:2,encounter:{completedWave:1,rulesVersion:'last-stand-waves-v1',tier:1}}},
-      interval:{begin:100,recovered:200,before:{load:3,timeOrigin:3000,run:2,tick:0}},after:{t:210,load:3,timeOrigin:3000,run:2,tick:201,loop:{runId:2,wallet:1,activeTier:1}}},
+    backgroundFixture(),
     intervalFixture('explicit-pause'),intervalFixture(),{kind:'no-replay-telemetry',cues:[]},foreground,hidden,
     {kind:'terminal-reload',saved:clone(foreground.evidence.saved),state:{load:4,runId:0,pendingRunId:0,hasCheckpoint:false,wallet:4}}];
   return report;
@@ -274,13 +419,15 @@ test('current CLIs dispatch only the wave contract while historical exports stay
   }
 });
 
-test('raw wave verifier binds compiler streams, every native edge, oracle membership and actual screenshot pixels',t=>{
+test('raw wave verifier binds compiler streams, every native edge, oracle membership and actual screenshot pixels',async t=>{
   const root=mkdtempSync(join(tmpdir(),'st-inert-wave-reader-'));t.after(()=>rmSync(root,{recursive:true}));mkdirSync(join(root,'wave-model-oracle'));
   const expected=expectedFixture(),report=baseReport(expected),sha=b=>createHash('sha256').update(b).digest('hex');
-  const raw=Buffer.from(profiles.flatMap(key=>[0,1,2].map(tick=>key.replaceAll(':',',')+
-    `,${tick},${tick===2?0:120},0,0,0,0,0,0,${tick===2?1:0},0,0,1,0,${tick===2?'Defeated':'Running'}\r\n`)).join(''));
+  const raw=Buffer.from(profiles.flatMap(key=>(key==='1:repair:30'?[0,1,2,3,4]:[0,1,2]).map(tick=>{
+    const checkpoint=key==='1:repair:30',cleared=checkpoint&&tick>=2,terminal=tick===(checkpoint?4:2);
+    return key.replaceAll(':',',')+`,${tick},${terminal?0:120},${cleared?1:0},${cleared?1:0},${cleared?1:0},0,0,0,${terminal?1:0},0,0,${cleared?2:1},${cleared?1:0},${terminal?'Defeated':'Running'}\r\n`;
+  })).join(''));
   const empty=Buffer.alloc(0),driver=Buffer.from('inert fixture, never executed'),exe=Buffer.from('not an executable');
-  const model=report.wave_model;model.rows=72;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
+  const model=report.wave_model;model.rows=74;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
   model.commands[0].stdoutSha256=sha(empty);model.commands[0].stderrSha256=sha(empty);model.commands[1].stdoutSha256=sha(raw);model.commands[1].stderrSha256=sha(empty);
   const put=(name,value)=>writeFileSync(join(root,name),typeof value==='object'&&!Buffer.isBuffer(value)?JSON.stringify(value):value);
   put('wave-model-oracle/binding.json',model);put('wave-model-oracle/commands.json',{inputs:model.inputs,commands:model.commands});
@@ -293,6 +440,59 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
     assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));put(path,original);
   }
   put('input-trace.json',[{area:'gameplay',kind:'pointerdown'}]);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));put('input-trace.json',[]);
+  const background=backgroundFixture(),{loop:running,hull:unusedHull,...runningModel}=background.after;
+  const committed={...background.checkpointState,t:210,action:'wave-committed',paused:false,speed:1,tick:2};
+  const backgroundRaw={states:[running,committed,background.checkpointState],encounters:[runningModel],layouts:[]};
+  report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const [name,mutate] of [
+    ['saved wave999 cannot override the unchanged actual cleared boundary',r=>r.saved.checkpoint.encounter.wave=999],
+    ['saved tick1 cannot claim wave1 cleared before its source oracle',r=>r.saved.checkpoint.encounter.tick=1]]){
+    await t.test(name,()=>{
+      const broken=clone(background);mutate(broken);report.lifecycle=[broken];
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+    });
+  }
+  // A valid boundary may precede the running pair; the pause is later than
+  // both. Do not force saved tick to equal the later paused combat tick.
+  const olderBoundary=clone(background),olderRaw=clone(backgroundRaw);
+  Object.assign(olderBoundary.after,{t:215,tick:3,kills:1,spawned:1,cannon:1,wave:2,completedWave:1});
+  Object.assign(olderBoundary.after.loop,{t:216,tick:3,kills:1,wave:2,completedWave:1,wallet:2});
+  const {loop:olderLoop,hull:olderHull,...olderModel}=olderBoundary.after;
+  olderRaw.states[0]=olderLoop;olderRaw.encounters=[olderModel];report.lifecycle=[olderBoundary];put('runtime-telemetry.json',olderRaw);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
+  for(const mutate of [r=>delete r.checkpointState,r=>r.checkpointState.wallet++,r=>r.checkpointState.t++,
+    r=>r.checkpointState.load++,r=>r.checkpointState.timeOrigin++,r=>r.checkpointState.scope='other',
+    r=>r.checkpointState.sessionRun++,r=>r.checkpointState.runId++,r=>r.checkpointState.paused=false,
+    r=>r.checkpointState.t=r.after.loop.t-.1,r=>r.saved.credits++]){
+    const broken=clone(background);mutate(broken);report.lifecycle=[broken];
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(mutate));
+  }
+  report.lifecycle=[background];
+  for(const mutate of [r=>r.states.pop(),r=>r.states.push(clone(r.states.at(-1))),r=>r.states.at(-1).wallet++,
+    r=>r.states.at(-1).t++,r=>r.states.at(-1).runId++,r=>r.states.splice(1,1),r=>r.states.push(clone(r.states[1])),
+    r=>r.states[1].wallet++,r=>r.states[1].tick++,r=>r.states[1].completedWave++,r=>r.states[1].checkpointWave++,
+    r=>r.states[1].wave++,r=>r.states[1].load++,r=>r.states[1].timeOrigin++,r=>r.states[1].scope='other',
+    r=>r.states[1].sessionRun++,r=>r.states[1].runId++,r=>r.states[1].profileVersion='other',
+    r=>r.states[1].fittingId='launcher',r=>r.states[1].t=background.checkpointState.t+1,
+    r=>r.states.push({...r.states[1],t:215,tick:3})]){
+    const broken=clone(backgroundRaw);mutate(broken);put('runtime-telemetry.json',broken);
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(mutate));
+  }
+  const nonBoundary=clone(background),nonBoundaryRaw=clone(backgroundRaw);
+  nonBoundary.saved.checkpoint.encounter.tick=3;nonBoundaryRaw.states[1].tick=3;
+  report.lifecycle=[nonBoundary];put('runtime-telemetry.json',nonBoundaryRaw);
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),'A forged later commit cannot make an interior oracle tick a new cleared boundary');
+  // A raw row's existence alone cannot turn a foreign or earlier state into
+  // this run's paused checkpoint witness, even with the same wallet.
+  for(const mutate of [r=>r.load++,r=>r.timeOrigin++,r=>r.scope='other',r=>r.sessionRun++,r=>r.runId++,
+    r=>r.t=background.after.loop.t-.1,r=>r.paused=false]){
+    const broken=clone(background),actual=clone(backgroundRaw);mutate(broken.checkpointState);
+    actual.states.push(broken.checkpointState);report.lifecycle=[broken];put('runtime-telemetry.json',actual);
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(mutate));
+  }
+  report.lifecycle=[];
   for(const kind of ['explicit-pause','hidden']){
     const record=intervalFixture(kind),e=record.evidence;
     const endpoints=kind==='explicit-pause'?['before','paused','returned','resumed','after']:['before','after'];
@@ -329,12 +529,52 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   const saved={...idleWaveFields({runId:19,finalized:true}),checkpoint:null,pendingDefeat:null,lastFinalizedRunId:19,credits:4};
   const proof=journey.validateWaveTerminal({before,result,saved,...terminalRaw,oracle:{0:initial,2:terminal}});
   const interval={before,begin:110,recovered:240,events:terminalFixture('hidden').interval.events.map(e=>({...e,load:before.load,timeOrigin:before.timeOrigin}))};
-  report.lifecycle=[{kind:'wave-terminal',mode:'hidden',evidence:proof,interval}];put('runtime-telemetry.json',terminalRaw);put('input-trace.json',interval.events);
+  report.lifecycle=[{kind:'wave-terminal',mode:'hidden',evidence:proof,interval,continuation:{completion:'hidden'}}];put('runtime-telemetry.json',terminalRaw);put('input-trace.json',interval.events);
   assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
   for(const changed of [interval.events.slice(0,1),interval.events.map(e=>({...e,load:e.load+1})),
     interval.events.map(e=>e.hidden?e:{...e,t:220})]){
     put('input-trace.json',changed);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
   }
+  // Exercise the same raw oracle reader for deferred completion. These are
+  // inert observations, never a browser qualification or a save injection.
+  const deferredRaw=clone(terminalRaw),[deferredBefore,deferredTerminal]=deferredRaw.encounters;
+  deferredTerminal.t=2010;deferredRaw.states[1].t=2011;deferredRaw.states[2].t=2030;deferredRaw.layouts[0].t=2012;
+  const callback={load:before.load,timeOrigin:before.timeOrigin,scope:before.scope,run:before.run,id:1,t:2000,
+    action:'begin',fromTick:0,tick:0,steps:0,previousTimestamp:1,timestamp:2.9,elapsed:1.9,priorPending:0,
+    pending:1.9,speed:1,paused:false,failed:false};
+  deferredRaw.callbackRecords=[callback,{...callback,t:2020,action:'end',tick:2,steps:2,pending:1.8}];deferredRaw.cues=[];
+  const deferredProof=journey.validateWaveTerminal({before,result:deferredRaw.states[2],saved,...deferredRaw,oracle:{0:deferredBefore,2:deferredTerminal}});
+  const deferredInterval={...interval,recovered:1910,ms:1600,events:interval.events.map(e=>e.hidden?e:{...e,t:1900})};
+  const deferred={kind:'wave-terminal',mode:'hidden',evidence:deferredProof,interval:deferredInterval};
+  deferred.continuation=journey.validateBackgroundWaveTerminal({...deferred,...deferredRaw});
+  report.lifecycle=[deferred];put('runtime-telemetry.json',deferredRaw);put('input-trace.json',deferredInterval.events);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const fault of [r=>r.callbackRecords.pop(),r=>r.callbackRecords[1].pending-=.01,
+    r=>r.callbackRecords[1].steps=129,r=>r.callbackRecords[0].run++,r=>r.callbackRecords[0].t=2011,
+    r=>r.states.push({...loop,t:1800,paused:true}),r=>r.states.push({...loop,t:1800,checkpointBlocked:true}),
+    r=>r.states.push({...loop,t:2015,phase:'settling',paused:true}),
+    r=>r.states.push({...loop,t:1800,saveState:'failed'}),r=>r.cues.push({...callback,t:2005})]){
+    const changed=clone(deferredRaw);fault(changed);put('runtime-telemetry.json',changed);
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(fault));
+  }
+  put('runtime-telemetry.json',deferredRaw);
+  for(const fault of [r=>r.interval.ms--,r=>r.continuation.completion='hidden',r=>r.continuation.callbacks.pop(),
+    r=>r.continuation.callbacks[0].priorPending+=.01]){
+    const changed=clone(deferred);fault(changed);report.lifecycle=[changed];
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(fault));
+  }
+  report.lifecycle=[deferred];put('input-trace.json',deferredInterval.events.map(e=>e.hidden?e:{...e,t:1709}));
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+  const stalled=clone(deferred),stalledRaw=clone(deferredRaw);
+  stalled.evidence.result.t=stalled.interval.events[1].t+60001;stalled.interval.recovered=stalled.evidence.result.t;
+  stalledRaw.states[2].t=stalled.evidence.result.t;
+  report.lifecycle=[stalled];put('runtime-telemetry.json',stalledRaw);put('input-trace.json',deferredInterval.events);
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/bounded foreground catch-up/);
+  const masked=clone(deferred);masked.interval.before={...masked.interval.before,t:107};masked.interval.events[0].t=108;
+  const interrupted=[deferredInterval.events[0],{...deferredInterval.events[1],t:106},
+    {...deferredInterval.events[0],t:108},deferredInterval.events[1]];
+  report.lifecycle=[masked];put('runtime-telemetry.json',deferredRaw);put('input-trace.json',interrupted);
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
   report.lifecycle=[];put('runtime-telemetry.json',{states:[],encounters:[],layouts:[]});put('input-trace.json',[]);
   const png=Buffer.alloc(24);Buffer.from([137,80,78,71,13,10,26,10]).copy(png);png.write('IHDR',12);png.writeUInt32BE(44,16);png.writeUInt32BE(44,20);
   put('shot.png',png);report.screenshots=[{file:'shot.png',sha256:sha(png),viewport:{width:44,height:44}}];

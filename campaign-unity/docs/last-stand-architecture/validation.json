@@ -1,0 +1,883 @@
+{
+  "schema": "singedterra-last-stand-foundation-validation/v1",
+  "date": "2026-10-27",
+  "implementationBase": "07dc13c0ea0b31af973b24402ea9bdedfb8cc815",
+  "qualification": "partial",
+  "localChecks": [
+    {
+      "command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
+      "passed": 37,
+      "failed": 0,
+      "seconds": 18.217,
+      "host": "Windows Roslyn",
+      "origin": "foundation_baseline tool outputs",
+      "note": "Includes independent OS range-lock and observer-disposal regressions plus real wave-oracle compile. Linux GREEN is still separate."
+    },
+    {
+      "command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
+      "passed": 37,
+      "failed": 0,
+      "seconds": 13.942,
+      "host": "Windows Mono/mcs, explicit compiler override",
+      "origin": "foundation_baseline tool outputs",
+      "note": "Includes independent OS range-lock and observer-disposal regressions plus real wave-oracle compile. Linux GREEN is still separate."
+    },
+    {
+      "suite": "last_stand_research",
+      "passed": 62,
+      "failed": 0,
+      "seconds": 137.874
+    },
+    {
+      "suite": "last_stand_waves/test_wave_model.py",
+      "passed": 10,
+      "failed": 0,
+      "seconds": 9.422
+    },
+    {
+      "suite": "last_stand_controls/test_menu.py",
+      "casesPassed": 19,
+      "failed": 0
+    },
+    {
+      "suite": "Unity UI foundation and actual observation emitter",
+      "outcome": "pass",
+      "scope": "Desktop, portrait and short landscape; four emitted garage/settings/research/history packets accepted by JS and Python decoders; malformed packets refused."
+    },
+    {
+      "suite": "LastStandContentValidationChecks.Run",
+      "refusalCasesPassed": 6,
+      "seconds": 8.705,
+      "savedSceneUnchanged": true
+    },
+    {
+      "suite": "LastStandShopChecks.RunBattleShop",
+      "outcome": "pass",
+      "seconds": 14.858
+    },
+    {
+      "command": "node --test scripts/ci/ciWorkflow.test.mjs",
+      "passed": 188,
+      "failed": 0,
+      "seconds": 0.633
+    },
+    {
+      "command": "node --test scripts/ci/browserMatrix.test.mjs scripts/ci/lastStandEvidenceSetup.test.mjs scripts/ci/ciWorkflow.test.mjs",
+      "passed": 214,
+      "failed": 0,
+      "seconds": 0.780022,
+      "origin": "coverage agent",
+      "note": "Includes isolated shared-contract admission, current purchase funding and CRLF source extraction. Both edited files passed node --check; independent review found no weakened assertions."
+    },
+    {
+      "suite": "All 20 Node test files selected by the CI scope job",
+      "passed": 436,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 6.6670022,
+      "origin": "coverage agent",
+      "note": "Includes dependency-free milestone/endurance imports and explicit LF/CRLF serializer extraction cases. Production assertions and runtime code are unchanged."
+    },
+    {
+      "command": "npm run build",
+      "environment": {
+        "VITE_BASE": "/singedTerra/"
+      },
+      "outcome": "pass",
+      "includes": [
+        "source/export admission",
+        "strict TypeScript",
+        "production bundle"
+      ]
+    },
+    {
+      "command": "npm run coverage --workspace @singedterra/client",
+      "passed": 2405,
+      "filesPassed": 246,
+      "failed": 0,
+      "seconds": 70.47,
+      "coverage": {
+        "statements": 91.72,
+        "branches": 84.79,
+        "functions": 91.3,
+        "lines": 94.91
+      },
+      "toolVersion": "vitest 5.0.5"
+    },
+    {
+      "command": "npm run audit:deps",
+      "outcome": "pass",
+      "vulnerabilities": 0
+    },
+    {
+      "command": "node --import tsx scripts/checks/dependency_contract.mjs",
+      "outcome": "pass",
+      "assertions": 15
+    },
+    {
+      "command": "npm run build",
+      "outcome": "pass",
+      "note": "Includes strict typecheck, source/package admission and production Vite build after refreshing the export."
+    },
+    {
+      "command": "npm run check",
+      "outcome": "pass",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/engine-followup.log",
+      "note": "Full engine check after preserving the two bad-clipping checks with current shared error messages."
+    },
+    {
+      "suite": "Architecture after Android preflight compatibility correction",
+      "command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
+      "passed": 38,
+      "failed": 0,
+      "seconds": 24.551,
+      "evidence": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/pure-checks.log"
+    }
+  ],
+  "review": {
+    "security": "PASS; no unresolved findings",
+    "coverageAudit": "PASS; containment mutations, pure CI discovery and actual scene-validation negatives resolved the findings",
+    "numericUnityCoverage": "unmeasured; no Unity/C#/Python coverage command is declared"
+  },
+  "builds": [
+    {
+      "target": "webgl",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T100855Z-3d64fe",
+      "packaged": true,
+      "note": "Rebuilt after trailing-whitespace cleanup in Unity metadata; runtime code unchanged from browser journey.",
+      "supersededByLeaseRepair": true
+    },
+    {
+      "target": "windows",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261025T093538Z-2a6afe",
+      "reportedBytes": 174822523,
+      "note": "Precedes the final Editor-only validation additions; runtime source is unchanged."
+    },
+    {
+      "target": "windows",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T095347Z-01cfb8",
+      "reportedBytes": 112304539,
+      "sourceInventorySha256": "984c3cb12ed6a2274de7889079c44bb2e55149f3bf0e8b48c8accb9a1f1cccaf",
+      "supersededByLeaseRepair": true
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "blocked",
+      "preflightExit": 2,
+      "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. After the owner's popup update, the new installer attempt returned operation canceled at 2026-10-25T15:39:36Z. Module remains absent; owner interaction with Unity administrator prompt is pending.",
+      "date": "2026-10-25",
+      "historical": true,
+      "supersededBy": "20261028T012758Z-f2181e"
+    },
+    {
+      "target": "windows",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T161123Z-81ff23",
+      "sourceInventorySha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc",
+      "packaged": false,
+      "note": "Rebuilt after the native lease repair."
+    },
+    {
+      "target": "webgl",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261025T161237Z-583e89",
+      "sourceInventorySha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc",
+      "packaged": true,
+      "note": "Rebuilt after the native lease repair."
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261028T012758Z-f2181e",
+      "head": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+      "sourceInventorySha256": "ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 39799485,
+      "artifactSha256": "e941e6e6db999cc135d5767ba2625aa65a71ff5d88bb3381b05ea8de4ed7df42",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T012758Z-f2181e/result.json",
+      "note": "Local development build only; no Android device interaction or store qualification."
+    },
+    {
+      "target": "webgl",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261028T015816Z-3cf813",
+      "head": "2425418b122dda4ded7e3cddd32e2d67e4730782",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261028T015816Z-3cf813/result.json",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "packaged": true
+    },
+    {
+      "target": "windows",
+      "configuration": "release",
+      "outcome": "pass",
+      "stamp": "20261028T020013Z-5689b9",
+      "head": "2425418b122dda4ded7e3cddd32e2d67e4730782",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261028T020013Z-5689b9/result.json",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "packaged": false
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "failed",
+      "stamp": "20261028T020233Z-a4e415",
+      "head": "2425418b122dda4ded7e3cddd32e2d67e4730782",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T020233Z-a4e415/result.json",
+      "reason": "RuntimeError: Native player marker/shader diagnostics failed",
+      "note": "Unity compiled an APK and emitted the player success marker, but18 d3d11 Editor-import shader warnings reject the receipt. Not accepted as a verified current Android artifact."
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261028T021504Z-e86444",
+      "head": "405fb92fedbec1cec1c719f776e7cb8ac97ee2a2",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 51393644,
+      "artifactSha256": "b064a65b6f4a7502539a1811d0c924a3fc7a4723892fe809ba9aa4a671188241",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T021504Z-e86444/result.json",
+      "apkSignature": "apksigner verifies v2 Android Debug signature",
+      "shaderDiagnostics": 0,
+      "jdkCleanupError": false,
+      "note": "Unchanged-source Android retry after configuring reviewed existing custom tool roots; rejected prior Editor-import warning receipt retained. No device qualification."
+    }
+  ],
+  "browserJourney": {
+    "package": "Web-20261025T095204Z-3f937d",
+    "host": "Codex in-app browser",
+    "url": "http://127.0.0.1:4174/singedTerra/last-stand/",
+    "input": "Rendered controls through CUA; no save seeding or game-method injection",
+    "verified": [
+      "Locked Tier 2 preview switches environment and refuses deployment",
+      "Shared menu and settings",
+      "Cannon Attack purchase costs five Scrap and grants one run level",
+      "Actual wave clears and rewards",
+      "Reload offers wave 7; resume is paused with hull 120/120, attack level1 and103 Scrap",
+      "Ambient Music Off persists across reload; original On setting restored"
+    ],
+    "leftPaused": true,
+    "finalPackageRecheck": {
+      "package": "Web-20261025T100855Z-3d64fe",
+      "verified": "Reload and rendered Resume Run restored paused wave7, hull 120/120, Cannon Attack level1 and103 Scrap; run shop opened successfully.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/browser-final-package.png"
+    },
+    "leaseRepairPackageRecheck": {
+      "package": "Web-20261025T161237Z-583e89",
+      "verified": "Rendered Resume Run restores paused wave 7,hull 120/120,103 Scrap,Cannon Attack level 1; run shop opens. Temporary 1024x768 viewport reset.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/web-lease-refresh.png"
+    }
+  },
+  "nativeJourney": {
+    "date": "2026-10-25",
+    "package": "LastStand-windows-20261025T093538Z-2a6afe",
+    "configuration": "development",
+    "input": "Rendered controls through CUA; no save seeding",
+    "verified": [
+      "Menu and settings",
+      "Live wave clears and Cannon Attack purchase",
+      "Process exit and relaunch",
+      "Paused wave6 with hull 120/120, Cannon Attack level1,85 Scrap and5bankedSalvage",
+      "Music Off persisted through restart; original On restored"
+    ],
+    "unfinishedWaveReplay": "97Scrap before exit becomes85 Scrap at the completed-wave checkpoint; twelve unfinished-wave Scrap are replayed.",
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/result.json",
+    "nativeSaveSlots": {
+      "inspected": 4,
+      "checksumsValid": 4
+    },
+    "firewall": "Owner reported handling popup; read-only inspection found Allow/Public rules for development executable. No agent firewall changes."
+  },
+  "nativeReleaseJourney": {
+    "date": "2026-10-25",
+    "package": "LastStand-windows-20261025T095347Z-01cfb8",
+    "configuration": "release",
+    "input": "Rendered controls through CUA at 1024 by 768; no save seeding",
+    "verified": [
+      "Resume paused at wave 6 with hull 120/120, 85 Scrap and Cannon Attack level 1",
+      "Menu, settings and run shop controls",
+      "Purchase level 2 for ten Scrap",
+      "Exit before wave completion restores both checkpoint level 1 and 85 Scrap",
+      "Music Off persists independently; original On restored"
+    ],
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/release-result.json",
+    "closedAfterCheck": true
+  },
+  "hostedCiFollowup": {
+    "head": "1c56a7b12afe724bcf642cbcc05f65feb8afa30e",
+    "run": 40209320859,
+    "outcome": "failure",
+    "classification": "pass",
+    "reason": "Linux Mono file sharing is process-local; wave oracle omitted LastStandSelection.cs; dependency audit found vulnerable development tools.",
+    "repair": "Explicit OS range lock plus protected local ownership; complete hashed oracle inputs; independently reviewed Vitest 5.0.5 and Undici 8.12.3 closure. New exact-head Linux/browser CI required.",
+    "leaseRepairLinuxProof": {
+      "head": "7bdb9cc295816d954b413ccf6e23d82c33a19c33",
+      "run": 40211282180,
+      "job": 121222970501,
+      "step": "Verify Last Stand pure architecture regressions",
+      "outcome": "success",
+      "source": "Completed GitHub job log: all 37 architecture regressions passed on Linux; browser job later failed separately."
+    }
+  },
+  "hostedCiCurrent": {
+    "head": "7bdb9cc295816d954b413ccf6e23d82c33a19c33",
+    "run": 40211282180,
+    "outcome": "failure",
+    "passed": [
+      "CI classification, Edge runtime and Edge function jobs",
+      "All four core browser shards, product browser, tier browser and Last Stand shard 11",
+      "37 pure architecture regressions on hosted Linux"
+    ],
+    "failures": [
+      "Engine: two stale expected clipping diagnostic strings; corrected in fde5a046 with unchanged malformed-mask fixtures and full local npm run check passing.",
+      "Eleven Last Stand browser shards: driver requires MenuAbandon fully visible before scrolling its actual settings viewport. Driver fix remains pending; guards are intact."
+    ],
+    "manualMenuObservation": "At 1280x720, ordinary wheel input exposes Abandon Run; clicking opens confirmation; Cancel preserves paused wave 7 and hull120/120. This is a rendered observation, not an automated driver pass.",
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/menu-before-scroll.png; menu-after-scroll.png; menu-confirmation.png",
+    "historical": true
+  },
+  "remaining": [
+    "Real Android device lifecycle/storage/audio/performance qualification; current development APK verified",
+    "Windows abnormal termination, hardware audio, performance and broader supported input/display qualification",
+    "Funded/offline research browser journey, two-tab ownership and native/background/audio qualification inherited from PR544",
+    "Ten actual active hours at researched5x; no endurance observation started",
+    "Eight historical journey-guard cases lack their external ST_SHOP_BACKGROUND_RECORD, ST_SHOP_GUARD_RECORD or ST_SHOP_OBSERVER_OUTPUT_ROOT fixtures;39 other cases passed",
+    "Exact-head hosted CI, merge, publication, deployment and live-host proof",
+    "Initial Android target import emitted Editor-only d3d11 probe-baker warnings and was rejected by the unchanged whole-log scanner; unchanged-source retry passed. Clean-import warning-free repeatability is not established."
+  ],
+  "published": false,
+  "nativeLeaseRepairJourney": {
+    "package": "LastStand-windows-20261025T161123Z-81ff23",
+    "configuration": "release",
+    "input": "Rendered CUA; no save seeding",
+    "verified": [
+      "Existing checkpoint resumes paused wave 6,hull 120/120,85 Scrap,Cannon Attack level 1",
+      "Menu,settings,runshop",
+      "Music Off persists through process exit and relaunch",
+      "Original On setting restored; player closed"
+    ],
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/lease-release-*.png"
+  },
+  "dependencyRepair": {
+    "review": "foundation_security preinstall and actual-lock PASS",
+    "scope": "16 development package updates, removal of siginfo and stackback; jsdom and runtime dependencies unchanged",
+    "vitest": "5.0.5",
+    "coverage": "5.0.5",
+    "undici": "8.12.3",
+    "registrySignaturesAndIntegrity": "verified for changed closure",
+    "slsa": "available source provenance inspected; no independent Sigstore verification",
+    "lockSha256": "1e84d98866085828ea6f14a40782997f53cd5179879590fb21a89161f8333d29",
+    "installedWithScripts": false,
+    "auditVulnerabilities": 0
+  },
+  "browserDriverRepair": {
+    "commit": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+    "observedDefect": "Pointer and keyboard preparation required MenuAbandon to be fully visible before ordinary scroll/navigation could reveal it.",
+    "repair": "Shared ordinary-wheel preparation for pointer; native Tab before final keyboard admission. Keep full-target, focus, viewport, document and correct-scroll-owner guards.",
+    "red": "Two actual-driver visibility failures; five of eight source-binding regressions failed.",
+    "green": {
+      "passed": 367,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/menu-source-bindings-green.log"
+    },
+    "review": "Coverage findings resolved; workflow and staged auth/crypto reviews PASS; canonical diff-bound marker recorded after actual review.",
+    "hostedCi": {
+      "head": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+      "run": 40615126069,
+      "outcome": "failure",
+      "reason": "Lifecycle shards pass the previous scroll gate but time out waiting for a real runtime observation after gameKey, line4215. Follow-up diagnosis/repair in progress; no hosted browser pass claimed.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/c4cc-hosted-shard6.log"
+    }
+  },
+  "androidToolchain": {
+    "moduleInstalled": true,
+    "installerExitCode": 0,
+    "jdk": "Amazon Corretto17.0.21.0.11",
+    "javaVersion": "17.0.21",
+    "runtimeVersion": "17.0.21+11-LTS",
+    "jdkRoot": "C:/Users/brenn/singedTerra-engine-lab/tools/android-last-stand-20261027/jdk17.0.21_0",
+    "archiveSha256": "59d6514305f6fab3b18955fb17185562f0a0bbf20e1466eda33a5429f3b31618",
+    "review": "Official exact release, license and current security fixes reviewed before download; archive integrity, Amazon Authenticode and actual release/runtime verified.",
+    "certificateVerification": "Four revoked root certificate fingerprints absent; metadata and truststore were not modified.",
+    "preflight": "pass",
+    "connectedDevices": 0,
+    "evidence": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/corretto-verification.json",
+    "firstBuild": {
+      "stamp": "20261028T010809Z-832b05",
+      "outcome": "failed",
+      "reason": "Unity System.Version parser rejected BellSoft17.0.21.0.2 numeric version; java -version itself succeeded. Preflight now catches incompatible versions before build."
+    },
+    "currentBuild": {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261028T021504Z-e86444",
+      "head": "405fb92fedbec1cec1c719f776e7cb8ac97ee2a2",
+      "sourceInventorySha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 51393644,
+      "artifactSha256": "b064a65b6f4a7502539a1811d0c924a3fc7a4723892fe809ba9aa4a671188241",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T021504Z-e86444/result.json",
+      "apkSignature": "apksigner verifies v2 Android Debug signature",
+      "shaderDiagnostics": 0,
+      "jdkCleanupError": false,
+      "note": "Unchanged-source Android retry after configuring reviewed existing custom tool roots; rejected prior Editor-import warning receipt retained. No device qualification."
+    },
+    "hostPreferences": {
+      "scope": "per-user Unity Editor external tools",
+      "changed": "Exactly three UseEmbedded DWORD toggles1to0; all existing custom path bytes unchanged",
+      "backup": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/unity-tools-preferences-before.json",
+      "readback": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/unity-tools-preferences-applied.json",
+      "postBuild": "All six values unchanged; no JDK cleanup error in current log",
+      "review": "Independent security PASS"
+    },
+    "previousVerifiedBuild": {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261028T012758Z-f2181e",
+      "head": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+      "sourceInventorySha256": "ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 39799485,
+      "artifactSha256": "e941e6e6db999cc135d5767ba2625aa65a71ff5d88bb3381b05ea8de4ed7df42",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T012758Z-f2181e/result.json",
+      "note": "Local development build only; no Android device interaction or store qualification."
+    }
+  },
+  "playerSourceInventories": {
+    "windowsRelease": {
+      "stamp": "20261028T020013Z-5689b9",
+      "sha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe"
+    },
+    "webglRelease": {
+      "stamp": "20261028T015816Z-3cf813",
+      "sha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe"
+    },
+    "androidDevelopment": {
+      "stamp": "20261028T021504Z-e86444",
+      "sha256": "43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe"
+    },
+    "note": "Each inventory includes its recorded build-wrapper bytes; no cross-target identity is inferred."
+  },
+  "researchHeartbeatRepair": {
+    "commit": "d977d228",
+    "cause": "Research15s autosave advanced authoritative profile revision without refreshing idle permanent-shop quote. Valid next purchase emitted purchase-stale.",
+    "fix": "Refresh projections after reconciliation returns, preserving stale intent and reentrancy checks.",
+    "actualEditorRegression": {
+      "red": "two expected failures; source_unchanged=true",
+      "green": "all3 cases pass; source_unchanged=true",
+      "seconds": 8.935,
+      "cases": [
+        "one durable purchase after heartbeat; older revision still refused",
+        "failed save disables Buy without changing wallet or level",
+        "run owner/version/ledger/model remain unchanged"
+      ],
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/shop-heartbeat-green.log"
+    },
+    "reentrySeconds": 7.628,
+    "applicationTests": 3,
+    "applicationSeconds": 1.148,
+    "independentReviews": "coverage and security PASS",
+    "hostedCi": {
+      "head": "405fb92fedbec1cec1c719f776e7cb8ac97ee2a2",
+      "outcome": "failure",
+      "run": 40618936400,
+      "reason": "Completed run: lifecycle shards 1,2,4,5,6,7,10 timed out at the hidden natural-terminal check; 3,8,9 passed. Engine/build, CodeQL and other browser checks passed. Recorded browser throttling retained capped processing debt. Maintained UI and wave contracts permit completion on foreground return; the stronger driver deadline is under repair. No full hosted acceptance claimed."
+    }
+  },
+  "latestPreview": {
+    "url": "http://127.0.0.1:4174/singedTerra/last-stand/",
+    "package": "Web-20261028T015816Z-3cf813",
+    "servedManifestMatchesStaged": true,
+    "note": "Existing server reused; HTTP manifest identity verified. Rendered CUA check loaded this package, opened and closed the permanent shop, and resumed the existing checkpoint paused at wave7, hull120/120,103Scrap,CannonAttack1. No purchases or settings changes made. This bounded observation does not qualify funded research, two-tab ownership or endurance.",
+    "screenshot": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/heartbeat-current-browser.png"
+  },
+  "hiddenTerminalDriverRepair": {
+    "commit": "d184471d",
+    "helperSha256": "1febb0076d25ca8c22268fc25b03f6bcb7314f033ed2d6d9a6204fba3451f6cd",
+    "cause": "The driver required a terminal result before native visibility return despite retained clock debt under actual browser callback throttling. UI AC-09/AC-10/SEC-03 and later WAVES SEC-LOOP allow bounded reconciliation on return.",
+    "fix": "Distinct hidden and after-native-return completion modes retain raw visibility timing, oracle-derived dwell, capped callback/debt accounting, exact terminal/save checks and no replay. No runtime or browser throttle changes.",
+    "regression": "Actual caller RED before fix; settling pause, report-only deadline and interval-start manipulation also reproduced RED before their narrow corrections.",
+    "focusedPassed": 32,
+    "focusedFailed": 0,
+    "focusedSkipped": 0,
+    "independentReviews": "Final coverage and security PASS on the recorded helper hash; research fixture separately reviewed PASS",
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/hidden-terminal-source-bound-green.log",
+    "capturedReplay": "Actual shard4/7 clock admission passes for82/85 background and return callback pairs, ending Running at ticks3300/3332. Earlier foreground segments also pass. Partial captures are not terminal or browser acceptance.",
+    "replayEvidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/hidden-terminal-clock-replay-source-bound.log",
+    "relatedSuite": {
+      "scope": "All14 scripts/ci/lastStand*.test.mjs files, sequential execution",
+      "passed": 218,
+      "failed": 1,
+      "skipped": 0,
+      "seconds": 53.8737454,
+      "failure": "Unchanged Windows native foreground setup times out before the modified path; document remains hidden while an existing non-task Chrome window covers the target. Retained as a host qualification limit, with no occlusion bypass or user-window changes.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/hidden-terminal-related-serial.log",
+      "diagnostics": "campaign-unity/Evidence/last-stand-playable-loop/t06/precleanup-diagnostic-guard-qWFEx4/precleanup-observation.json"
+    },
+    "researchFixture": "The broader run also exposed a stale complete-telemetry fixture missing WaveInfo/MenuWaveInfo. Its inventory now derives from the maintained contract, retaining independent required-name and omission checks. Focused4/4 pass; parser/runtime unchanged.",
+    "freshHostedCompletion": "Run40625861839 failed at later finalized-idle qualification; partial trace proves deferred terminal completion in inspected shard3 only. Follow-up diagnosis is recorded separately."
+  },
+  "hostedFollowup20261028": {
+    "sourceCommit": "c6b32cdef661743a455f5373bd72144c437b2209",
+    "ciRun": 40625861839,
+    "ciConclusion": "failure",
+    "codeqlRun": 40625861810,
+    "codeqlConclusion": "success",
+    "inspectedFailure": "Nine lifecycle shards fail finalized-idle validation with the same stack. Shard3 raw trace shows no post-result callbacks/cues; repaired locally. Shard5 job122610637950 instead fails the stronger-cannon first-hit assertion; raw artifact12788914921 retained for separate diagnosis.",
+    "status": "Historical CI failures retained. Idle-result, authoritative-hit and observer fixes are committed as62f60b53,9ec44f05 and3ae1a017; matching player packagec9c92125. See observerRepairs20261028 for current local results; fresh exact-head hosted completion pending.",
+    "source": "https://github.com/SUaDtL/singedTerra/actions/runs/40625861839"
+  },
+  "idleResultDriverRepair": {
+    "sourceBase": "c6b32cdef661743a455f5373bd72144c437b2209",
+    "helperLfSha256": "3984bf78edef950f208da18e551430adb25e963b11fc0f57cbacf193ac46d4ba",
+    "testLfSha256": "7f77b29b333aeacfc44712772d4f5b62b54d90e0b3eb1bc4f7e1ee1246711d46",
+    "targetRed": "Original c6 source rejects actual cleared-model settling prefix with the exact hosted assertion; renewed RED after fixture correction.",
+    "localChecks": {
+      "focusedAudioObserver": {
+        "passed": 15,
+        "failed": 0
+      },
+      "relatedFocusWave": {
+        "passed": 62,
+        "failed": 0
+      },
+      "syntaxAndWhitespace": "pass"
+    },
+    "recordedReplay": {
+      "artifactId": 12790561180,
+      "rawStates": 1016,
+      "rawRowsOmitted": 0,
+      "callbacksAfterClear": 0,
+      "playedCuesAfterClear": 0,
+      "repairedPredicate": "pass",
+      "limits": "Captured-data predicate only; no live browser or rendered-audio acceptance."
+    },
+    "reviews": {
+      "coverage": "pass",
+      "security": "pass:8 positive cases,25 independent hostile variants,complete raw trace retained"
+    },
+    "logs": "campaign-unity/Evidence/combat-depth-planning-20261028/idle-result-*.log",
+    "hosted": {
+      "commit": "62f60b5343206e9452115240d51694758b9f13cc",
+      "ciRun": 40766130825,
+      "ciStatus": "completed",
+      "codeqlRun": 40766130506,
+      "codeqlConclusion": "success",
+      "ciConclusion": "failure",
+      "individualJobsPassed": 23,
+      "lifecycleShardsPassed": 10,
+      "aggregateJob": 123105751007,
+      "aggregateFailure": "assertWaveLifecycle line98 second assertion: saved credits3 versus background.after.loop.wallet2; resolved locally by observerRepairs20261028, fresh hosted proof pending."
+    },
+    "commit": "62f60b53"
+  },
+  "authoritativeHitRepair": {
+    "sourceBase": "62f60b5343206e9452115240d51694758b9f13cc",
+    "diagnosis": "confirmed_code_defect",
+    "artifactId": 12788914921,
+    "artifactSha256": "9c7de64eac9e79afb2fe6286ccbdbadc23a6b954c81618d9ac49812ed042b754",
+    "diagnosisPacketSha256": "305c06ca4104f9d5ae744d31f0ba663874de8f6c94821b94351304041d081d79",
+    "controllerLfSha256Before": "6bab4325dbf5aae93ca6610ac2b48e4712fa96eabaa1dce791211eec23457c55",
+    "observed": "Delayed507ms callback crosses the actual first cannon at tick60. Audio suppression also suppresses Hit; next retained diagnostic at88 observes a reused slot. Model counters and oracle agree on the real damage.",
+    "targetRegression": "test_authoritative_first_hit_survives_feedback_suppression",
+    "status": "reviewed fix and matching players committed;13seeded browser research checks and bounded5xsmoke pass; fresh hosted lifecycle remains pending",
+    "twins": [
+      "Existing Editor feedback check misuses Hit count as audio-dispatch witness.",
+      "Both browser20/30 hit selectors require exact first-event/source binding.",
+      "Windows audio/PCM timing must be separated from potentially silent authoritative hits."
+    ],
+    "limits": "Diagnosis is source-bound captured evidence; no fresh rendered/browser/device acceptance.",
+    "commit": "9ec44f0546e1082a90ec5b566addcf5b296e8af3",
+    "unity": {
+      "wrappersPassed": 6,
+      "editorCasesPassed": 7,
+      "sourceUnchanged": true,
+      "log": "first-hit-green-v4.log",
+      "variants": "damage20/30 under delayed, hidden and retained-debt callbacks"
+    },
+    "node": {
+      "passed": 149,
+      "failed": 0,
+      "skipped": 0,
+      "log": "first-hit-related-green-v3.log"
+    },
+    "reviews": {
+      "coverage": "pass; independent9/9 focused checks",
+      "security": "pass; independent9/9 and26 malformed variants rejected; all253 source/archive hashes per Editor receipt, assemblies and logs verified"
+    },
+    "recordedReplay": {
+      "log": "first-hit-recorded-replay-v3.log",
+      "missingUpgradedFirstHit": "rejected",
+      "replacementFabricated": false,
+      "limits": "Unmodified captured-data predicates only; not fresh browser or renderedPCM proof."
+    },
+    "reviewedLfSha256": {
+      "campaign-unity/Tools/last_stand_ui/test_background_feedback.py": "7f9318fcf4ff0852431b1f5f1732f99fbeb627e4d4a2157511ce21c51078f5d4",
+      "campaign-unity/Unity/Assets/Editor/LastStandBackgroundChecks.cs": "54e6e96d58604dd0a5760911b3cf1a628fa762767d914b06d56dd3975e1897e0",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs": "bf22521b84af5580a9eed50f3471596800f56019685c01b25fdf1c4cdc7a5132",
+      "e2e/helpers/lastStandJourney.mjs": "65c53bcfc8a851125facfed550ba142630db5b1a008fa2659600ab1d52893911",
+      "scripts/ci/lastStandQualification.test.mjs": "9b8b2fafe4f0ab91a9e53377b67b66e0de6966e2dd56a92db7db077f846db24b",
+      "scripts/ci/lastStandWaveQualification.test.mjs": "ce56afce0a428938fbd80dc652e88d422302f387623fdada0cecf5e4b0cbc83d"
+    },
+    "rebuiltPlayers": [
+      {
+        "receipt": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261028T205905Z-90afa9/result.json",
+        "receiptSha256": "c561de0ceedf49dbc9e4d119862c5e70712f8db8a65a7e64893198f036061aa8",
+        "target": "webgl",
+        "configuration": "release",
+        "status": "pass",
+        "sourceHead": "9ec44f0546e1082a90ec5b566addcf5b296e8af3",
+        "sourceInventorySha256": "9c57a2b0f6ff04f28c5d75ebf3deb374fa81ef7d16ba8814b04c6e55aa5bddfe",
+        "sourceAndToolsUnchanged": true
+      },
+      {
+        "receipt": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261028T210240Z-789ab9/result.json",
+        "receiptSha256": "b8d14b2e04f9685a43be00d63721c6c79aa0cd27b154dd6c63b0aa4fa8559900",
+        "target": "windows",
+        "configuration": "release",
+        "status": "pass",
+        "sourceHead": "9ec44f0546e1082a90ec5b566addcf5b296e8af3",
+        "sourceInventorySha256": "9c57a2b0f6ff04f28c5d75ebf3deb374fa81ef7d16ba8814b04c6e55aa5bddfe",
+        "sourceAndToolsUnchanged": true
+      },
+      {
+        "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T210711Z-0d1bb4/result.json",
+        "receiptSha256": "224d971459a4e063d14cb57eff09c4092ec89d8cc8982069f25229b97474673b",
+        "target": "android",
+        "configuration": "development",
+        "status": "pass",
+        "sourceHead": "9ec44f0546e1082a90ec5b566addcf5b296e8af3",
+        "sourceInventorySha256": "9c57a2b0f6ff04f28c5d75ebf3deb374fa81ef7d16ba8814b04c6e55aa5bddfe",
+        "sourceAndToolsUnchanged": true
+      }
+    ],
+    "androidImportAttempt": {
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T210423Z-ce3ee6/result.json",
+      "status": "rejected",
+      "reason": "18 TraceVirtualOffset probe-baker shader warnings despite successful Unity player marker",
+      "retry": "unchanged source and unchanged strict scanner; subsequent build passed",
+      "cleanImportRepeatability": "unproven"
+    },
+    "apk": {
+      "bytes": 51393788,
+      "sha256": "587be690d6b1c776bc9559ae1c11de0b86d1eeff8d86040a90c06ada477beef7",
+      "signature": "verified Android Debug v2; not store signing",
+      "signatureLog": "campaign-unity/Evidence/combat-depth-planning-20261028/first-hit-apk-signature.log",
+      "physicalDeviceAcceptance": "pending"
+    },
+    "webPackage": {
+      "build": "Web-20261028T205905Z-90afa9",
+      "sourceAdmission": "pass; 3453 locally present inputs",
+      "payloadAdmission": "pass;16 export assets",
+      "productionBuild": "pass",
+      "productionBuildLog": "campaign-unity/Evidence/combat-depth-planning-20261028/first-hit-production-build.log",
+      "servedManifest": "127.0.0.1:4174 matches packaged manifest; existing user tab not reloaded"
+    },
+    "browserResearch": {
+      "status": "passed",
+      "checks": 13,
+      "screenshots": 11,
+      "errors": 0,
+      "closedCompletionObserved": true,
+      "result": "campaign-unity/Evidence/combat-depth-planning-20261028/first-hit-research-browser/result.json",
+      "resultSha256": "2febb1a8f66d7008b247b54ec4cad7805ca8ed56d2fdddfffb94f12a43f05cbf",
+      "scope": "Fresh packaged9ec44f05 source-bound headless browser journey passes13 checks and retains11 screenshots, zero errors. Real close/reopen completes funded research; shared-Salvage start/queue/suspend/switch, two-tab exclusive ownership and transfer, bulk purchase, fresh locked Labs,0-to5x controls and single abandon/history pass. Development fixtures disclose gifted funding and synthetic prior research; this is browser behavior, not earned progression, native audio/device acceptance or endurance. Existing user profile untouched."
+    },
+    "earlierReviewLfSha256": {
+      "campaign-unity/Tools/last_stand_ui/test_background_feedback.py": "7f9318fcf4ff0852431b1f5f1732f99fbeb627e4d4a2157511ce21c51078f5d4",
+      "campaign-unity/Unity/Assets/Editor/LastStandBackgroundChecks.cs": "54e6e96d58604dd0a5760911b3cf1a628fa762767d914b06d56dd3975e1897e0",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs": "bf22521b84af5580a9eed50f3471596800f56019685c01b25fdf1c4cdc7a5132",
+      "e2e/helpers/lastStandJourney.mjs": "5514c7744a9468d36ec26abe0feef00200363f38b0e698eca2786fe28ea56f95",
+      "scripts/ci/lastStandQualification.test.mjs": "a213e5fa8e1f78090c161cd96e14e00599ab48b9f03802755c7e7acfcf9c83c2",
+      "scripts/ci/lastStandWaveQualification.test.mjs": "ce56afce0a428938fbd80dc652e88d422302f387623fdada0cecf5e4b0cbc83d"
+    },
+    "reviewBindingNote": "Final reviewed/committed source at9ec44f05 includes the caller evidence correction. Earlier helper/test bindings retained separately; final149-check log and affected independent reviews apply to final source."
+  },
+  "foundation5xSmoke20261028": {
+    "status": "failed",
+    "result": "campaign-unity/Evidence/combat-depth-planning-20261028/foundation-5x-smoke/result.json",
+    "error": "Unobserved clock gap cannot count as gameplay or sleep through qualification",
+    "observedActiveMilliseconds": 31004.4729,
+    "limits": "Retained failed observation, not a performance/endurance pass. Confirmed observer blind interval during awaited purchase; later fixed-sampler smoke is recorded separately."
+  },
+  "observerRepairs20261028": {
+    "status": "committed; final local checks and affected independent reviews pass; prior-snapshot180s5x smoke passes; fresh exact-head hosted CI pending",
+    "checks": [
+      {
+        "kind": "sampling",
+        "checks": 22,
+        "log": "campaign-unity/Evidence/combat-depth-planning-20261028/sampling-fix-focused-green-v2.log",
+        "sourceLfHashes": {
+          "scripts/last-stand-wave-endurance.mjs": "8a6c41c7f9445d0852cc9d9d5527f6ed3c444b5f442ba659ba34fbf9cf4dcb31",
+          "scripts/ci/lastStandEndurance.test.mjs": "08af2f4f8454b9bb50f51eb33862b6ed2f8659e64c013c9cd7940481e5c0d70d"
+        },
+        "nativeRevision": 101
+      },
+      {
+        "kind": "wallet",
+        "checks": 151,
+        "log": "campaign-unity/Evidence/combat-depth-planning-20261028/wallet-related-green.log",
+        "sourceLfHashes": {
+          "e2e/helpers/lastStandJourney.mjs": "036d7e5ed80ec76f74a493404e1c053ecce6eb9fe9439f4d45c9ed0a69aa8625",
+          "scripts/ci/lastStandWaveQualification.mjs": "8beb138971aa85563e5799ccf76b6550e7397c78f87ee4f7849ac4a65e67ad0d",
+          "scripts/ci/lastStandQualification.test.mjs": "8e2678bbdcb88ed04e84d87bf87399dba8a1f136035f0808b95df88cf70c0754",
+          "scripts/ci/lastStandWaveQualification.test.mjs": "318e228344cfd7fa7dfff76b183b625733811f908fac34960b5d179a9ec9a52f"
+        },
+        "nativeRevision": 102
+      }
+    ],
+    "runtimeChanged": false,
+    "acceptance": false,
+    "smoke": {
+      "status": "smoke-pass",
+      "enduranceQualified": false,
+      "result": "campaign-unity/Evidence/combat-depth-planning-20261028/foundation-5x-smoke-observer-fixed/result.json",
+      "resultSha256": "1e7401bc00d31bba70c4a53192a73c1f14a0dab934c5e6067fb470e70afb2d68",
+      "samplesSha256": "48fbb92d483a75b83b6c74ae1aa8ab01d4770ac3f25e1b76a175f5b7a01b08e2",
+      "driverInputsRawSha256": {
+        "scripts/last-stand-wave-endurance.mjs": "af032d6c57e63e58486ea4755f8cc094731244c4e6b6b69b5e56f48b5b99e252",
+        "scripts/last-stand-wave-milestones.mjs": "170e99058c2a6405aa4fe672d8442aa2d8685f219146c5bf0cc973226ee8f0d6",
+        "e2e/helpers/lastStandJourney.mjs": "938a270c5961177ea70ce6532b03156d183d3a540dbcdfe32d70f29661535ede",
+        "e2e/helpers/lastStandTierJourney.mjs": "9de9a1691ad3679b98a7ee77e09584ee335c933ef58e12dfcfc022e6e87c6ad4",
+        "e2e/helpers/lastStandWaveJourney.mjs": "49f515be4420277301e1fcb4e6a8e8d24d6ace5abbffbb4e62ea49958d20cc0d",
+        "e2e/helpers/lastStandWaveOracle.mjs": "ac5ffb8b1d668a3fe72fd1245f0929d67e2ab9a7e83380e0c839a30ff16baaba",
+        "scripts/assets/verify-last-stand-source.mjs": "0ad31dc46b351b1364a57a7fb0cac41b7b68f689cd5669f768845bb577b229a1",
+        "scripts/assets/verify-last-stand.mjs": "7f993461c53f29318cd9a8bff8cd3e0c1d37f2b20dd7f232b5199b5a71b8584d"
+      },
+      "playerSourceCommit": "9ec44f0546e1082a90ec5b566addcf5b296e8af3",
+      "build": "Web-20261028T205905Z-90afa9",
+      "activeMs": 180767.4932,
+      "observedSimulationMs": 903800,
+      "samples": 176,
+      "finalState": {
+        "phase": "battle",
+        "saveState": "ready",
+        "runId": 2,
+        "activeTier": 1,
+        "wave": 83,
+        "completedWave": 82,
+        "checkpointWave": 82,
+        "hasCheckpoint": true,
+        "checkpointBlocked": false,
+        "tick": 18806,
+        "hull": 128652,
+        "kills": 627,
+        "wallet": 1879624,
+        "paused": false,
+        "speed": 5,
+        "fittingId": "launcher"
+      },
+      "purchases": [
+        {
+          "atActiveMs": 39492.77129999999,
+          "key": "cannonAttack",
+          "quantity": 29,
+          "cost": 2619,
+          "runId": 2,
+          "tick": 4577
+        }
+      ],
+      "framesBetweenSummaries": {
+        "count": 2462,
+        "totalMs": 181726.1,
+        "meanMs": 73.81238830219334,
+        "histogramDelta": [
+          0,
+          0,
+          0,
+          2458,
+          4,
+          0,
+          0
+        ]
+      },
+      "rendererJavaScriptHeapUsedBytes": {
+        "first": 10335796,
+        "last": 10748308,
+        "sampledMaximum": 11165320
+      },
+      "callback": {
+        "count": 5903,
+        "maximumSteps": 11,
+        "maximumElapsedSeconds": 0.1269999999999989,
+        "maximumPendingSeconds": 0.5755000000000392
+      },
+      "storageWrites": {
+        "count": 96,
+        "successes": 96,
+        "errors": 0,
+        "totalMs": 1.6000000834465027,
+        "maximumMs": 0.10000002384185791
+      },
+      "storageReadbacks": {
+        "count": 96,
+        "errors": 0,
+        "mismatches": 0,
+        "totalMs": 2.5000001192092896,
+        "maximumMs": 0.19999998807907104,
+        "unconfirmed": 0
+      },
+      "limits": [
+        "One seeded, headless Chromium document on Windows; user profile untouched.",
+        "Frames cover the first-to-final summary interval; active ledger excludes final reporting and cleanup.",
+        "Frame histogram p95 upper bound100ms;73.812ms mean is a diagnostic headless baseline, not target-device performance acceptance.",
+        "Renderer JS heap excludes WebAssembly linear memory. Callback elapsed is scheduling time, not CPU step cost.",
+        "Wallet boundary review corrections follow this run; its exact driver inputs remain historical.",
+        "No ten-hour, hardware-audio, thermal or physical-device qualification."
+      ]
+    },
+    "walletReviewFinding": "Closed: genuine failing controls for impossible saved wave and premature tick now reject; exact actual-commit/source-oracle boundary binding passes valid earlier-commit/later-pause cases.",
+    "commit": "3ae1a017819c24a9b9ee5fb2aa841418d15d6ee3",
+    "finalWalletChecks": {
+      "passed": 154,
+      "skipped": 0,
+      "log": "campaign-unity/Evidence/combat-depth-planning-20261028/wallet-related-green-v2.log",
+      "sourceLfHashes": {
+        "e2e/helpers/lastStandJourney.mjs": "7d01b79c6985892d777808f956799f0774af8df44c738a52cd9c655639f07503",
+        "scripts/ci/lastStandWaveQualification.mjs": "13a66db3b8ce4258859c145005a0daddc07b2a3b636edcf587c88eacdd65444b",
+        "scripts/ci/lastStandQualification.test.mjs": "8e2678bbdcb88ed04e84d87bf87399dba8a1f136035f0808b95df88cf70c0754",
+        "scripts/ci/lastStandWaveQualification.test.mjs": "f955237ec29ca79fdf12d96e94323db46d47a1cfa1ff3fa93b3e3293e7b2d78f"
+      },
+      "independentReview": "PASS;5targeted checks; prior MEDIUM malformed boundary finding closed"
+    }
+  }
+}

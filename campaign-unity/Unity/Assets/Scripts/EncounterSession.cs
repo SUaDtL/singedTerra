@@ -7,7 +7,7 @@ using SingedTerra.LastStand;
 namespace SingedTerra.Encounter
 {
     // One owner for this transient, non-awarding session and its admitted ticks.
-    public sealed class EncounterSession : MonoBehaviour
+    public sealed class EncounterSession : MonoBehaviour, ILastStandPurchaseSession
     {
         TankPresentation art;
         EncounterModel model;
@@ -89,6 +89,7 @@ namespace SingedTerra.Encounter
             View.Clear(); View.Render(model); Emit("deploy");
             if (runClock != null && runClock.Failed) Fail("InvalidClock");
         }
+        void ILastStandPurchaseSession.ApplyShopProjection() => ApplyShopProjection();
         internal void ApplyShopProjection()
         {
             model.ApplyShopProjection(Shop);
@@ -333,6 +334,7 @@ namespace SingedTerra.Encounter
         void OnApplicationFocus(bool value)
         {
             focused = value;
+            UpdateNativeSuspension();
             // Idle Last Stand controls also depend on focus. A terminal run
             // releases its clock while hidden, so notify its HUD on return.
             if (loop) Emit("visibility"); else if (!value) Suspend("focus");
@@ -340,7 +342,20 @@ namespace SingedTerra.Encounter
         void OnApplicationPause(bool value)
         {
             applicationPaused = value;
+            UpdateNativeSuspension();
             if (loop) Emit("visibility"); else if (value) Suspend("application");
+        }
+        void UpdateNativeSuspension()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (loop && runClock != null)
+            {
+                runClock.SetHostSuspended(Time.realtimeSinceStartupAsDouble, !focused || applicationPaused);
+                Paused = runClock.Paused;
+                Reason = runClock.HostSuspended ? "application" : runClock.MenuPaused ? "menu" : runClock.ManualPaused ? "user" : "";
+                art.SetEncounterPaused(Paused);
+            }
+#endif
         }
         [Serializable] sealed class State
         {

@@ -29,6 +29,7 @@ from native_chrome import NativeChrome
 from visual_review_checks import artifact_hashes, digest, pointer, require
 from visual_review_motion import MotionCapture
 
+OBSERVATION_CONTRACT = json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v1.json').read_text(encoding='utf8'))
 ROOT = Path(__file__).resolve().parents[1]
 EDITOR = Path('C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe')
 EVIDENCE = ROOT / 'Evidence' / 'last-stand-playable-loop' / 't03'
@@ -620,44 +621,27 @@ def verify_shop_vertical(report):
         boundary = payload.find(',"graphics":[')
         require(boundary > 0, 'Controls were not complete before graphics')
         fields = json.loads(payload[:boundary] + '}')
-        headers = {'phase', 'coordinates', 'selection', 'width', 'height', 'pixelRatio',
-                   'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset',
-                   'controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls'}
-        tails = {'researchScrollOffset', 'researchMaximumScrollOffset', 'historyScrollOffset', 'historyMaximumScrollOffset'}
+        headers = set(OBSERVATION_CONTRACT['header'])
+        tails = set(OBSERVATION_CONTRACT['tail'])
         require(set(fields) - tails == headers and fields['coordinates'] == 'top-left'
                 and isinstance(fields['phase'], str) and isinstance(fields['selection'], str), 'Invalid controls header')
         complete = json.loads(payload)
         require(set(complete) == headers | tails | {'graphics'} and isinstance(complete['graphics'], list), 'Unexpected diagnostic tail')
         fields.update({key: complete[key] for key in tails})
         require(all(type(fields[key]) in (int, float) and math.isfinite(fields[key]) and fields[key] >= 0
-                    for key in ('width', 'height', 'pixelRatio', 'scrollOffset', 'maximumScrollOffset', 'settingsScrollOffset', 'settingsMaximumScrollOffset', *tails))
+                    for key in OBSERVATION_CONTRACT['numeric'])
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
-        expected = {'controls': {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry', 'WaveInfo'},
-                    'shopControls': {'ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
-                    'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy'},
-                    'settingsControls': {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuWaveInfo', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
-                    'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
-                    'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
-                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
-                    'ChoicePrevious', 'ChoiceNext'},
-                    'researchControls': {'ResearchClose', 'ResearchFilter', 'ResearchBack',
-                        *('ResearchProject-' + key for key in ('gameSpeed','salvageRecovery','researchSpeed','scrapLogistics')),
-                        *('Research' + action + str(slot) for slot in (0,1) for action in ('Start','Queue','Switch','Suspend','RemoveQueued'))},
-                    'historyControls': {'RunHistoryClose','RunHistoryTier'}}
+        expected = {group['field']: set(group['names']) for group in OBSERVATION_CONTRACT['inventories']}
         for key, names in expected.items():
             values = fields[key]
             require(isinstance(values, list) and len(values) == len(names)
                     and {item['name'] for item in values} == names, 'Missing or repeated observed controls')
             for item in values:
-                require(set(item) == {'name', 'label', 'accessibleLabel', 'mode', 'trackKey',
-                        'x', 'y', 'width', 'height', 'active', 'interactable'}
-                        and all(isinstance(item[name], str) for name in ('name', 'label', 'accessibleLabel', 'mode', 'trackKey'))
-                        and all(type(item[name]) in (int, float) and math.isfinite(item[name]) for name in ('x', 'y', 'width', 'height'))
+                require(set(item) == set(OBSERVATION_CONTRACT['controlStrings'] + OBSERVATION_CONTRACT['controlNumbers'] + OBSERVATION_CONTRACT['controlBooleans'])
+                        and all(isinstance(item[name], str) for name in OBSERVATION_CONTRACT['controlStrings'])
+                        and all(type(item[name]) in (int, float) and math.isfinite(item[name]) for name in OBSERVATION_CONTRACT['controlNumbers'])
                         and min(item['width'], item['height']) >= 0
-                        and type(item['active']) is bool and type(item['interactable']) is bool, 'Malformed control field')
+                        and all(type(item[name]) is bool for name in OBSERVATION_CONTRACT['controlBooleans']), 'Malformed control field')
         return dict(fields, observationScope='complete-controls-only', graphicsTruncated=False, raw=raw)
 
     tags = {'ST_LS_SHOP_STATE ': 'shopStates', 'ST_LS_SHOP_PURCHASE ': 'purchases',
@@ -1258,24 +1242,7 @@ def verify_shop_recovery(report, require_native=False):
             if key == 'controlsOnly':
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
-                expected_controls = {'ToggleFitting', 'Deploy', 'Claim', 'Purchase', 'Redeploy', 'RetrySave', 'Pause', 'ToggleMute', 'ToggleTier', 'Effects',
-                    'Menu', 'SpeedMinus', 'SpeedRate', 'SpeedPlus', 'TierPrevious', 'TierNext', 'FittingPrevious', 'FittingNext', 'ResearchEntry', 'WaveInfo'}
-                expected_shop_controls = {'ShopEntry', 'ShopClose', 'ShopQuantity', 'ShopTabAttack', 'ShopTabDefense', 'ShopTabUtility',
-                    'ShopCard_cannonAttackBuy', 'ShopCard_launcherAttackBuy', 'ShopCard_hullCapacityBuy',
-                    'ShopCard_armorBuy', 'ShopCard_cannonCycleBuy', 'ShopCard_fieldRepairBuy', 'ShopCard_scattergunAttackBuy', 'ShopCard_scrapYieldBuy'}
-                expected_settings_controls = {'SettingsClose', 'SettingsTab0', 'SettingsTab1', 'SettingsTab2', 'SettingsTab3',
-                    'MenuResume', 'MenuSettings', 'MenuHelp', 'MenuMilestones', 'MenuWaveInfo', 'MenuResearch', 'MenuHistory', 'MenuNewRun', 'MenuAbandon', 'MenuCampaigns', 'MenuAbout', 'SettingsBack', 'SettingsMute',
-                    'MasterMinus', 'MasterPlus', 'EffectsMinus', 'EffectsPlus', 'EffectsSample', 'MusicEnabled', 'MusicMinus', 'MusicPlus',
-                    'DisplayQuality', 'DisplayEffects', 'DisplayFullscreen', 'TutorialTips', 'PurchaseSuggestions', 'GameplayHelp',
-                    'DataRetry', 'PreferencesRetry', 'DataAccount', 'SettingsDefaults', 'ConfirmCancel', 'ConfirmProceed',
-                    'ChoicePrevious', 'ChoiceNext'}
-                expected_research_controls = {'ResearchClose','ResearchFilter','ResearchBack',
-                    *('ResearchProject-' + key for key in ('gameSpeed','salvageRecovery','researchSpeed','scrapLogistics')),
-                    *('Research' + action + str(slot) for slot in (0,1) for action in ('Start','Queue','Switch','Suspend','RemoveQueued'))}
-                expected_history_controls = {'RunHistoryClose','RunHistoryTier'}
-                expected_sets = {'controls': expected_controls, 'shopControls': expected_shop_controls,
-                    'settingsControls': expected_settings_controls, 'researchControls': expected_research_controls,
-                    'historyControls': expected_history_controls}
+                expected_sets = {group['field']: set(group['names']) for group in OBSERVATION_CONTRACT['inventories']}
                 need(all(isinstance(value.get(key), list) and len(value[key]) == len(expected)
                     and {control['name'] for control in value[key]} == expected for key, expected in expected_sets.items()),
                     'Incomplete recovery controls')

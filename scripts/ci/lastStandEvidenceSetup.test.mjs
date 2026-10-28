@@ -24,13 +24,6 @@ function fixture(t) {
   const checkout = join(owned, 'checkout');
   mkdirSync(join(checkout, 'campaign-unity'), { recursive: true });
   mkdirSync(join(checkout, 'scripts/ci'), { recursive: true });
-  // Import the real admission module with its complete static dependency chain.
-  // The empty campaign tree still proves setup creates only the evidence path.
-  for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/helpers/lastStandMatrix.mjs',
-    'e2e/helpers/lastStandWaveOracle.mjs', 'scripts/assets/verify-last-stand-source.mjs']) {
-    mkdirSync(dirname(join(checkout, path)), { recursive: true });
-    copyFileSync(join(root, path), join(checkout, path));
-  }
   if (existsSync(join(root, setupPath))) copyFileSync(join(root, setupPath), join(checkout, setupPath));
   const outside = join(owned, 'outside');
   mkdirSync(outside);
@@ -43,6 +36,17 @@ function fixture(t) {
     rmSync(actual, { recursive: true });
   });
   return { owned, checkout, outside };
+}
+
+function copyAdmissionInputs(checkout) {
+  // Import the real admission module with its complete code and data closure.
+  // Setup-only containment cases retain their empty campaign tree.
+  for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/helpers/lastStandMatrix.mjs',
+    'e2e/helpers/lastStandWaveOracle.mjs', 'scripts/assets/verify-last-stand-source.mjs',
+    'campaign-unity/Tools/contracts/last-stand-observation-v1.json']) {
+    mkdirSync(dirname(join(checkout, path)), { recursive: true });
+    copyFileSync(join(root, path), join(checkout, path));
+  }
 }
 
 function execute(checkout, args, cwd = checkout) {
@@ -85,6 +89,7 @@ test('clean checkout initializes Last Stand evidence before guards and journey',
     const { checkout, outside } = fixture(t);
     assert.deepEqual(readdirSync(join(checkout, 'campaign-unity')), []);
     assert.equal(existsSync(join(checkout, evidencePath)), false);
+    copyAdmissionInputs(checkout);
     setupBeforeConsumer(workflow, id, checkout);
     assertAdmitted(checkout);
     writeFileSync(join(checkout, evidencePath, 'retained'), 'preserve existing evidence');
@@ -120,6 +125,7 @@ test('setup is fixed to its resolved checkout and rejects symlink components bef
 
 test('prepared evidence keeps the unchanged lexical and resolved escape guards', t => {
   const { checkout, outside } = fixture(t);
+  copyAdmissionInputs(checkout);
   const setup = execute(checkout, [join(checkout, setupPath)], outside);
   assert.equal(setup.status, 0, setup.stderr);
   assertAdmitted(checkout);

@@ -10,27 +10,26 @@ import {admitResearchFixtures} from '../last-stand-research-journey.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const clone=value=>structuredClone(value);
+const observationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v1.json',import.meta.url),'utf8'));
 // Invented telemetry tests only the admission reader; it cannot qualify a UI.
 function observation(){
-  const groups={
-    controls:['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects','Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext','ResearchEntry'],
-    shopControls:['ShopEntry','ShopClose','ShopQuantity','ShopTabAttack','ShopTabDefense','ShopTabUtility',...['cannonAttack','launcherAttack','hullCapacity','armor','cannonCycle','fieldRepair','scattergunAttack','scrapYield'].map(key=>'ShopCard_'+key+'Buy')],
-    settingsControls:['SettingsClose','ChoicePrevious','ChoiceNext','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3','MenuResume','MenuSettings','MenuHelp','MenuMilestones','MenuResearch','MenuHistory','MenuNewRun','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute','MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus','DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp','DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed'],
-    researchControls:['ResearchClose','ResearchFilter','ResearchBack',...['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'].map(key=>'ResearchProject-'+key),...[0,1].flatMap(slot=>['Start','Queue','Switch','Suspend','RemoveQueued'].map(action=>'Research'+action+slot))],
-    historyControls:['RunHistoryClose','RunHistoryTier']};
+  const groups=Object.fromEntries(observationContract.inventories.map(({field,names})=>[field,names]));
   return {phase:'garage',coordinates:'top-left',selection:'',width:1366,height:664,pixelRatio:1,scrollOffset:0,maximumScrollOffset:0,
     settingsScrollOffset:0,settingsMaximumScrollOffset:0,
     ...Object.fromEntries(Object.entries(groups).map(([key,names])=>[key,names.map(name=>({name,label:name,accessibleLabel:name,mode:key,trackKey:'',x:0,y:0,width:44,height:44,active:false,interactable:false}))])),
     graphics:[],researchScrollOffset:0,researchMaximumScrollOffset:0,historyScrollOffset:0,historyMaximumScrollOffset:0};
 }
 const raw=value=>'ST_LS_HUD_LAYOUT '+JSON.stringify(value);
-test('current complete telemetry contains every unique owner including Lab/history/bulk',()=>{
+test('current complete telemetry contains every unique owner including Lab/history/bulk and wave info',()=>{
   const result=readShopControlObservation(raw(observation()));
   assert.equal(result.researchControls.length,17);assert.equal(result.historyControls.length,2);
   assert.equal(result.shopControls.length,14);assert.equal(result.graphicsTruncated,false);
+  assert.ok(result.controls.some(control=>control.name==='WaveInfo'));
+  assert.ok(result.settingsControls.some(control=>control.name==='MenuWaveInfo'));
 });
 test('current telemetry refuses missing, duplicate, unknown, invalid and truncated data',()=>{
   for(const mutate of [v=>delete v.researchControls,v=>v.researchControls.pop(),v=>v.researchControls[1].name=v.researchControls[0].name,
+    v=>v.controls=v.controls.filter(control=>control.name!=='WaveInfo'),v=>v.settingsControls=v.settingsControls.filter(control=>control.name!=='MenuWaveInfo'),
     v=>v.shopControls[2].name='invented',v=>v.controls[0].width=-1,v=>v.historyScrollOffset=-1,
     v=>delete v.historyMaximumScrollOffset,v=>v.graphics=null,v=>v.undeclared=true,v=>v.researchControls[0].extra='bad']){
     const value=observation();mutate(value);assert.throws(()=>readShopControlObservation(raw(value)));

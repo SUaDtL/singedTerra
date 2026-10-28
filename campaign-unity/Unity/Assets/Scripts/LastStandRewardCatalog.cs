@@ -38,11 +38,20 @@ namespace SingedTerra.LastStand
             return Milestones(tier,LastStandTierCatalog.All);
         }
         public static IReadOnlyList<LastStandMilestone> Milestones(LastStandTierDefinition tier,IReadOnlyList<LastStandTierDefinition> definitions)
+            => Milestones(tier,definitions,LastStandFittingCatalog.Definitions);
+        public static IReadOnlyList<LastStandMilestone> Milestones(LastStandTierDefinition tier,IReadOnlyList<LastStandTierDefinition> definitions,
+            IReadOnlyList<LastStandFittingDefinition> fittings)
         {
             if(tier==null)throw new ArgumentNullException(nameof(tier));
             LastStandTierCatalog.Validate(definitions);
             var waves=new SortedSet<int>(milestoneWaves);
             var unlocks=new Dictionary<int,int>();
+            if(fittings==null)throw new ArgumentNullException(nameof(fittings));
+            var fittingUnlocks=new Dictionary<int,string>();
+            foreach(var fitting in fittings)if(fitting!=null && fitting.UnlockTier==tier.Id) {
+                if(fittingUnlocks.ContainsKey(fitting.UnlockWave))throw new ArgumentException("One milestone can unlock only one fitting.");
+                waves.Add(fitting.UnlockWave);fittingUnlocks.Add(fitting.UnlockWave,fitting.Id);
+            }
             foreach(var candidate in definitions)if(candidate.RequiredTier==tier.Id) {
                 if(unlocks.ContainsKey(candidate.RequiredWave))throw new ArgumentException("One milestone can unlock only one tier.");
                 waves.Add(candidate.RequiredWave);unlocks.Add(candidate.RequiredWave,candidate.Id);
@@ -50,7 +59,8 @@ namespace SingedTerra.LastStand
             var rows=new List<LastStandMilestone>();
             foreach(int wave in waves) {
                 unlocks.TryGetValue(wave,out int unlock);
-                rows.Add(new LastStandMilestone(tier.Key,wave,Math.Max(5,wave/2),unlock,tier.Id==1 && wave==100?"scattergun":null));
+                fittingUnlocks.TryGetValue(wave,out string fitting);
+                rows.Add(new LastStandMilestone(tier.Key,wave,Math.Max(5,wave/2),unlock,fitting));
             }
             return rows.AsReadOnly();
         }

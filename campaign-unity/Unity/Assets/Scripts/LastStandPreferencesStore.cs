@@ -7,7 +7,7 @@ namespace SingedTerra.LastStand
 {
     // Uses the existing storage bridge with a separate key. No path in this
     // adapter can write, migrate or reset the gameplay progression record.
-    public sealed class LastStandPreferencesStore : ILastStandStorage
+    public sealed class LastStandPreferencesStore : ILastStandStorage,IDisposable
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -15,6 +15,16 @@ namespace SingedTerra.LastStand
         [DllImport("__Internal")]
         private static extern int LastStandStorage_Set(string key, string value);
 #endif
+#if (UNITY_ANDROID || UNITY_STANDALONE) && !UNITY_EDITOR
+        LastStandFileStorage native;
+        LastStandFileStorage Native => native ?? (native = new LastStandFileStorage(UnityEngine.Application.persistentDataPath, LastStandPreferences.StorageKey));
+#endif
+        public void Dispose()
+        {
+#if (UNITY_ANDROID || UNITY_STANDALONE) && !UNITY_EDITOR
+            native?.Dispose();
+#endif
+        }
         public string Read()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -25,6 +35,8 @@ namespace SingedTerra.LastStand
 #elif UNITY_EDITOR
             return UnityEngine.PlayerPrefs.HasKey(LastStandPreferences.StorageKey)
                 ? UnityEngine.PlayerPrefs.GetString(LastStandPreferences.StorageKey) : null;
+#elif UNITY_ANDROID || UNITY_STANDALONE
+            return Native.Read();
 #else
             throw new PlatformNotSupportedException("Last Stand settings require WebGL or Unity Editor.");
 #endif
@@ -39,6 +51,8 @@ namespace SingedTerra.LastStand
 #elif UNITY_EDITOR
             UnityEngine.PlayerPrefs.SetString(LastStandPreferences.StorageKey, value);
             UnityEngine.PlayerPrefs.Save();
+#elif UNITY_ANDROID || UNITY_STANDALONE
+            Native.Write(value);
 #else
             throw new PlatformNotSupportedException("Last Stand settings require WebGL or Unity Editor.");
 #endif

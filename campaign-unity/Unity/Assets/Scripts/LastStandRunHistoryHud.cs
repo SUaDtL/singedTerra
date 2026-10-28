@@ -11,8 +11,8 @@ namespace SingedTerra.LastStand
     // finalizes a run. The existing shared keyboard owner handles navigation.
     public sealed class LastStandRunHistoryHud
     {
-        readonly LastStandProgressionModal modal;
-        readonly LastStandProgressionPane pane;
+        readonly LastStandModal modal;
+        readonly LastStandScrollPane pane;
         readonly Text body;
         readonly Button filter;
         readonly Action refresh;
@@ -28,7 +28,7 @@ namespace SingedTerra.LastStand
             Texture2D metal=null,Sprite surface=null)
         {
             this.refresh=refresh??throw new ArgumentNullException(nameof(refresh));
-            modal=new LastStandProgressionModal("RunHistory",parent,font,close,metal,surface);
+            modal=new LastStandModal("RunHistory",parent,font,close,metal,surface);
             pane=modal.Pane("RunHistory");body=modal.Text("RunHistoryBody",pane.Content,16);
             filter=modal.Button("RunHistoryTier","TIER: ALL",modal.Panel,()=>
             {int index=tiers.IndexOf(selectedTier);selectedTier=tiers[(index+1)%tiers.Count];pane.Reset();RefreshContent();this.refresh();});

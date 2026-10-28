@@ -5,9 +5,129 @@ import { runInNewContext } from 'node:vm';
 import { createHash } from 'node:crypto';
 import { dirname, resolve, basename } from 'node:path';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
-import { assertCombinedQualification } from './lastStandQualification.mjs';
+import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
+import { assertCombinedQualification, currentQualificationInputs } from './lastStandQualification.mjs';
+import {idleWaveFields} from './lastStandWaveSaveFixtures.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+
+function firstImpactFixture(damage=20){
+  const identity={load:3,timeOrigin:1000,scope:'healthy'};
+  const oracle=Object.fromEntries(Array.from({length:91},(_,tick)=>[tick,{tick,hp:120,kills:tick<60?0:tick<80?(damage===30?1:0):(damage===30?2:1),
+    spawned:tick===0?0:2,cannon:tick<60?0:tick<80?1:2,launcher:0,healed:0,closeHits:0,rangedHits:0,alive:tick===0?0:1,status:'Running',wave:1,completedWave:0}]));
+  const deployed={...identity,t:1010,action:'deploy',phase:'battle',profileVersion:'last-stand-waves-v1',saveState:'ready',
+    runId:7,sessionRun:1,tick:0,activeTier:1,fittingId:'repair',cannonDamage:damage,paused:false,speed:1};
+  const encounters=[{...identity,...oracle[0],t:1000,action:'deploy',run:1,fitting:'repair',rules:'last-stand-waves-v1:playable-prototype-v1'}];
+  const hits=[{...identity,t:4000,tick:60,cannonDamage:damage,firstFoeHull:damage===20?10:0,kills:damage===20?0:1}];
+  const delayed={...identity,id:8,run:1,fromTick:55,timestamp:103.257,previousTimestamp:102.75,priorPending:0,elapsed:.507,focused:true,applicationPaused:false,paused:false,failed:false};
+  const fresh={...identity,id:9,run:1,fromTick:75,timestamp:104.25,previousTimestamp:103.75,priorPending:0,elapsed:.5,focused:true,applicationPaused:false,paused:false,failed:false};
+  const cannon={...fresh,action:'cue',cue:'cannon',tick:80,steps:5,ordinal:1,played:true,reason:'played',admittedAt:104.25,t:5000};
+  // Exactly .5 seconds is admitted; the timestamps model immediate playback.
+  const impact={...cannon,cue:'destruction',ordinal:2,t:5002};
+  const callbackRecords=[{...delayed,action:'begin',tick:55,steps:0,pending:.507,t:3990},
+    {...delayed,action:'end',tick:65,steps:10,pending:.007,t:4010},
+    {...fresh,action:'begin',tick:75,steps:0,pending:.5,t:4990},cannon,impact,
+    {...fresh,action:'end',tick:85,steps:10,pending:0,t:5010}];
+  const cues=[{...identity,t:5001,text:'ST_LS_AUDIO event=cannon\n'},{...identity,t:5003,text:'ST_LS_AUDIO event=destruction\n'}];
+  return {deployed,hits,encounters,callbackRecords,cues,oracle};
+}
+async function firstImpactCaller(x,{upgraded=false,player=false,rms=.01}={}){
+  const anchor=source.indexOf(upgraded?'const upgradedHit=':'const first=await',source.indexOf('const baselineHitStart='));
+  const end=source.indexOf(upgraded?"    await screenshot('07-upgraded-first-hit');":'    const changeSetting=',anchor);
+  assert.ok(anchor>=0 && end>anchor);
+  const measured=[];
+  const call=runInNewContext('(async()=>{'+source.slice(anchor,end)+';return {hit:'+ (upgraded?'upgradedHit':'first')+'};})',{
+    ...journey,...x,deployed:x.deployed,upgradedDeployment:x.deployed,baselineHitStart:0,hitStart:0,player,
+    modelOracle:{['1:repair:'+x.deployed.cannonDamage]:x.oracle},startAudio:1010,noCaptureStart:1010,
+    check:(value,label)=>assert.ok(value,label),mark:async()=>4200,battleLayouts:async()=>null,
+    page:{waitForTimeout:async()=>{},evaluate:async()=>[]},write:()=>{},
+    frameTiming:()=>({p95_ms:10}),report:{frame_timing:{capture_active:{'first-foe-before-impact':{p95_ms:10}}}},
+    energy:async(begin,end)=>{measured.push([begin,end]);return {maximum_rms:rms};},
+    until:async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;}
+  });
+  const value=await call();return {value,measured};
+}
+test('actual first-hit callers reject a later reused foe slot and wrong deployment identity',async()=>{
+  for(const damage of [20,30]){
+    const options={upgraded:damage===30};await firstImpactCaller(firstImpactFixture(damage),options);
+    for(const mutate of [x=>x.hits[0].tick=80,x=>x.hits[0].load++,x=>x.hits[0].timeOrigin++,x=>x.hits[0].scope='other',
+      x=>x.callbackRecords[0].run++,x=>x.encounters[0].run++,x=>x.deployed.sessionRun++,
+      x=>x.hits[0].kills++,x=>x.callbackRecords[1].tick=59]){
+      const x=firstImpactFixture(damage);mutate(x);await assert.rejects(()=>firstImpactCaller(x,options),undefined,String(mutate));
+    }
+  }
+});
+test('actual first-hit audio caller measures a fresh admitted cannon pair independently of suppressed impact time',async()=>{
+  const {measured}=await firstImpactCaller(firstImpactFixture(),{player:true});
+  assert.deepEqual(measured,[[4501,5753]],'rendered PCM window must follow actual played cannon and impact, not the diagnostic hit or polling time');
+});
+test('actual cannon audio callers reject stale, missing, foreign, duplicate and silent playback proof',async()=>{
+  for(const damage of [20,30]){
+    const options={player:true,upgraded:damage===30};await firstImpactCaller(firstImpactFixture(damage),options);
+    for(const mutate of [x=>x.callbackRecords[3].admittedAt+=.001,x=>x.callbackRecords[4].admittedAt+=.001,
+      x=>x.callbackRecords[2].priorPending=.05,x=>x.callbackRecords[2].focused=false,
+      x=>x.callbackRecords[2].applicationPaused=true,x=>x.callbackRecords[3].played=false,
+      x=>x.callbackRecords[4].reason='expired',x=>x.callbackRecords[4].cue='impact',
+      x=>x.callbackRecords[4].ordinal=3,x=>x.callbackRecords[4].run++,x=>x.callbackRecords[5].tick++,
+      x=>x.cues.splice(0,1),x=>x.cues.push({...x.cues[0]}),x=>x.cues[1].scope='other',
+      x=>x.cues[0].t=3999,x=>x.oracle[80].cannon=1]){
+      const x=firstImpactFixture(damage);mutate(x);await assert.rejects(()=>firstImpactCaller(x,options),undefined,String(mutate));
+    }
+  }
+  await assert.rejects(()=>firstImpactCaller(firstImpactFixture(),{player:true,rms:0}),/rendered cannon\/impact/);
+});
+test('actual cannon audio callers reject impossible callback clocks and reversed played-pair ordering',async()=>{
+  for(const damage of [20,30])for(const mutate of [
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>{c.previousTimestamp=c.timestamp+.01;c.elapsed=-.01;}),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>c.elapsed=10),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>{c.previousTimestamp=c.timestamp=-1;if(c.action==='cue')c.admittedAt=-1;c.elapsed=0;}),
+    x=>x.callbackRecords[2].pending=NaN,x=>x.callbackRecords[5].pending=-1,
+    x=>{x.callbackRecords[4].t=4999;x.cues[1].t=4999.5;},
+    x=>{x.callbackRecords[4].admittedAt=104.249;},
+  ]){
+    const x=firstImpactFixture(damage);mutate(x);
+    await assert.rejects(()=>firstImpactCaller(x,{player:true,upgraded:damage===30}),undefined,String(mutate));
+  }
+});
+test('actual cannon audio caller rejects a reversed companion and missing document identity',async()=>{
+  for(const mutate of [
+    x=>{x.callbackRecords[4].t=4999;x.cues[1].t=4999.5;},
+    x=>{for(const item of [x.deployed,...x.encounters,...x.hits,...x.callbackRecords,...x.cues])
+      for(const field of ['load','timeOrigin','scope'])delete item[field];},
+  ]){
+    const x=firstImpactFixture();mutate(x);await assert.rejects(()=>firstImpactCaller(x,{player:true}),undefined,String(mutate));
+  }
+});
+test('actual cannon audio callers reject duplicate or unidentified admission records',async()=>{
+  for(const damage of [20,30])for(const mutate of [
+    x=>x.callbackRecords.splice(4,0,{...x.callbackRecords[3]}),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>delete c.id),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>c.id=0),
+    x=>{x.callbackRecords[3].ordinal=0;x.callbackRecords[4].ordinal=1;},
+  ]){
+    const x=firstImpactFixture(damage);mutate(x);
+    await assert.rejects(()=>firstImpactCaller(x,{player:true,upgraded:damage===30}),undefined,String(mutate));
+  }
+});
+test('actual decoded cannon recordings use the independent played-pair windows for both runs',async()=>{
+  const windows={begin:4501,end:5753},calls=[];
+  for(const [start,end] of [["const firstAudio=await saveAudio('first-run'",'\n'],["if(player)await saveAudio('second-run'",';']]){
+    const at=source.indexOf(start),stop=source.indexOf(end,at);assert.ok(at>=0 && stop>at);
+    const call=runInNewContext('(async()=>{'+source.slice(at,stop+1)+'})',{
+      player:true,firstSound:windows,upgradedSound:windows,firstHit:4000,upgradedHit:{t:4000},naturalProof:{staged:{t:10000}},
+      saveAudio:async(name,value)=>{calls.push({name,value:JSON.parse(JSON.stringify(value))});return [];}
+    });await call();
+  }
+  assert.deepEqual(calls.map(row=>row.value['cannon-impact']),[[4501,5753],[4501,5753]]);
+});
+
+for(const path of controlInputPaths)test('source closure: main qualification binds actual '+path,()=>{
+  const current=currentQualificationInputs();
+  const expected=createHash('sha256').update(readFileSync(resolve(path),'utf8').replace(/\r\n/g,'\n')).digest('hex');
+  assert.equal(current[path],expected,'Current qualification must include the actual consumed input: '+path);
+});
 
 function keyboardSubmitFixture(){
   const identity={load:3,timeOrigin:1000,scope:'healthy'},prepared={...identity,t:10,phase:'battle'};
@@ -35,14 +155,16 @@ test('actual keyboard caller refuses retained wave-boundary focus migration befo
   for(const [selection,delayed] of [['SpeedRate',false],['ShopEntry',false],['Menu',false],['SpeedRate',true],['ShopEntry',true]]){
     const value=keyboardSubmitFixture(),trace=[],states=[],encounters=[],downs=[],report={keyboard_actions:[],screenshots:[]};
     let now=10,freshWaits=0;
-    value.layout.controls=[{name:'Menu',x:20,y:0},{name:'SpeedRate',x:0,y:20},{name:'ShopEntry',x:40,y:20}]
-      .map(c=>({...c,active:true,interactable:true}));
+    value.layout.width=1280;value.layout.height=720;
+    value.layout.controls=[{name:'Menu',x:20,y:20},{name:'SpeedRate',x:20,y:80},{name:'ShopEntry',x:80,y:80}]
+      .map(c=>({...c,width:44,height:44,active:true,interactable:true}));
     const layouts=[value.layout],page={locator:()=>({evaluate:async()=>true}),waitForTimeout:async()=>{},
       evaluate:async code=>typeof code==='string'?null:{...value.documentState,t:now+10},
       keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=delayed?19:now+1;},
         down:async key=>{downs.push(key);states.push({action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
     const run=runInNewContext(source.slice(begin,end)+';gameKey',{page,trace,states,encounters,layouts,report,
-      geometry:async()=>({layout:value.prepared}),keyboardFocus:async()=>{},
+      geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720}}),keyboardFocus:async()=>{},
+      projectedControls:tierJourneyControlGeometry,
       hudControls:layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls],
       check:(condition,message)=>assert.ok(condition,message),screenshot:async()=>{value.layout.selection=selection;},
       until:async(items,start,predicate)=>{
@@ -1204,6 +1326,22 @@ function fixture(){
   return {windows,linux,head,inputs,runtime,served};
 }
 
+test('source closure: combined qualification rejects omitted or changed control input bindings',()=>{
+  const value=fixture(),current=currentQualificationInputs();value.inputs={...current};
+  for(const report of [value.windows,value.linux]){
+    report.binding.portable_text_inputs={...current};report.binding.input_files={...current};
+  }
+  assert.doesNotThrow(()=>assertCombinedQualification(value));
+  for(const path of controlInputPaths)for(const host of ['windows','linux'])for(const fault of ['omitted','changed','invalid','raw-omitted']){
+    const broken=structuredClone(value),binding=broken[host].binding;
+    if(fault==='omitted')delete binding.portable_text_inputs[path];
+    if(fault==='changed')binding.portable_text_inputs[path]='0'.repeat(64);
+    if(fault==='invalid')binding.portable_text_inputs[path]='invalid hash';
+    if(fault==='raw-omitted')delete binding.input_files[path];
+    assert.throws(()=>assertCombinedQualification(broken),undefined,host+' '+fault+' '+path);
+  }
+});
+
 test('combined qualification refuses missing Windows five-cue evidence or Linux media claims',()=>{
   assert.equal(assertCombinedQualification(fixture()).status,'pass');
   const name='all five procedural cues admitted';
@@ -1306,6 +1444,38 @@ test('background wave caller awaits a post-return observation before collecting 
   assert.equal(observed,fresh);
 });
 
+test('background checkpoint capture remains coherent when a wave commits between model observation and durable read',async()=>{
+  const begin=source.indexOf('    const afterBackground=await observation('),end=source.indexOf('    const quietStart=',begin);
+  assert.ok(begin>0&&end>begin,'Execute the actual background capture including its native pause');
+  const id={load:5,timeOrigin:1000,scope:'healthy'},rules='last-stand-waves-v1';
+  const live={...id,t:56512.2,action:'session',sessionRun:1,runId:2,phase:'battle',saveState:'ready',wallet:2,
+    tick:505,wave:2,completedWave:1,checkpointWave:1,paused:false,speed:1,pendingRunId:0,hasCheckpoint:true,
+    checkpointBlocked:false,activeTier:1,fittingId:'repair',profileVersion:rules,cannonDamage:30};
+  const after={...id,t:56502,action:'tick',run:1,tick:505,wave:2,completedWave:1,fitting:'repair',loop:live};
+  const committed={...live,t:56878.3,action:'wave-committed',wallet:3,tick:507,wave:3,completedWave:2,checkpointWave:2};
+  const paused={...committed,t:57000,action:'session',tick:513,paused:true,speed:0};
+  const interval={begin:41855.3,recovered:55128.7,before:{...id,t:39215.5,run:1,tick:160}};
+  const saved={...idleWaveFields({runId:2,wave:2}),credits:3,pendingDefeat:null,checkpoint:{runId:2,
+    encounter:{tier:1,fitting:1,rulesVersion:rules,tick:507,wave:2,completedWave:2,committedCannonDamage:30}}};
+  const states=[live],report={lifecycle:[]},calls=[];
+  // The real trace crossed a complete wave after the coherent running pair.
+  // Both asynchronous boundaries allow that legitimate intervening commit.
+  const commit=()=>{if(states.at(-1)===live)states.push(committed);};
+  const run=new Function('observation','reference','validateModelObservation','interval','page','SAVE_KEY','states','check','report',
+    'gameKey','phaseMatrix','nextBoundary','validateBackgroundCheckpoint',
+    'return(async()=>{'+source.slice(begin,end)+'})();');
+  await run(async()=>after,()=>({505:after}),observed=>assert.equal(observed,after),interval,
+    {evaluate:async()=>{commit();calls.push('read');return JSON.stringify(saved);}},'inert-key',states,
+    (ok,message)=>assert.ok(ok,message),report,async(name,action,predicate)=>{
+      assert.equal(name,'SpeedRate');assert.equal(action,'session');commit();states.push(paused);
+      assert.equal(predicate(paused),true);calls.push('native-pause');return paused;
+    },async()=>calls.push('matrix'),2,journey.validateBackgroundCheckpoint);
+  const row=report.lifecycle[0];assert.equal(row.after,after,'Keep the earlier running/clock witness');
+  assert.equal(row.saved.credits,(row.checkpointState??row.after.loop).wallet,'Durable balance must match its own checkpoint witness');
+  assert.equal(row.checkpointState,paused,'Retain the actual paused owner state separately');
+  assert.deepEqual(calls,['native-pause','read','matrix'],'Pause must complete before durable capture');
+});
+
 
 function waveReturnTerminalFixture(kind='hidden'){
   // Counter shape from retained current wave oracle Tier1/repair/30 ticks5078–5080.
@@ -1373,28 +1543,33 @@ test('actual audio return caller rejects contradictory wave/archive identity bef
   }
 });
 
-test('actual observer and audio caller accept only silent finalized current-wave result intervals',async()=>{
+test('actual observer and audio caller preserve the cleared-model result transition without admitting post-result activity',async()=>{
   const start=source.indexOf('    const noReplay=async('),end=source.indexOf('\n    const away=',start);
   assert.ok(start>=0 && end>start);
-  const fixture=async(kind='hidden')=>{
-    // Reduced shard9 CI39973718698 result-state rows. Bounds are inert;
-    // the production observer pairs the actual model-less lifecycle shape.
-    const id={load:6,timeOrigin:1792767933281.4,scope:'healthy'};
-    const model={...id,action:'visibility',t:270273.19999999995,run:1,rules:'playable-prototype-v1',
+  const fixture=async(kind='hidden',refresh=false,repeated=false)=>{
+    // Reduced current shard3 artifact12790561180: model clear emits a settling
+    // HUD row before result publication. These inert bounds are not acceptance.
+    const id={load:6,timeOrigin:1793158593925.9,scope:'healthy'};
+    const cleared={...id,action:'return',t:285468.7999999998,run:1,rules:'playable-prototype-v1',
       status:'Fitting',fitting:'repair',tick:0,wave:0,completedWave:0,hp:120,kills:0,locked:false,
       clockTimestamp:-1,clockPending:-1,callbackSteps:0,paused:false,failed:false,catchingUp:false};
-    const state={...id,action:'session',t:270335.79999999993,sessionRun:1,profileVersion:'last-stand-waves-v1',
+    const state={...id,action:'result',t:285569.3999999999,sessionRun:1,profileVersion:'last-stand-waves-v1',
       phase:'result',saveState:'ready',runId:0,pendingRunId:0,activeTier:0,hasCheckpoint:false,
       tick:0,wave:0,completedWave:0,hull:120,kills:0,paused:false,cannonDamage:30};
-    const before=await journey.observeRuntimePair({encounters:[model],states:[state],load:6,
-      clock:async()=>({t:272510.29999999993,timeOrigin:id.timeOrigin}),
+    const model=repeated?{...cleared,action:'visibility',t:286000}:cleared;
+    const encounters=repeated?[cleared,model]:[model];
+    const states=[{...state,action:'session',phase:'settling',t:285512.3999999999},state];
+    if(repeated)states.push({...state,action:'session',t:model.t+1});
+    if(refresh)states.push({...state,action:'research',t:288626.19999999995});
+    const before=await journey.observeRuntimePair({encounters,states,load:6,
+      clock:async()=>({t:288700,timeOrigin:id.timeOrigin}),
       wait:async()=>assert.fail('Already coherent idle pair must not wait'),check:(v,m)=>assert.ok(v,m)});
     const event=(type,t,focused,hidden)=>({...id,kind:type,t,focused,hidden,globalTarget:true});
-    const events=kind==='hidden'?[event('blur',273181.5,false,false),event('visibilitychange',273212.29999999993,false,true),
-      event('focus',279230.3999999999,true,true),event('visibilitychange',279259.79999999993,true,false)]:
-      [event('blur',273181.5,false,false),event('focus',279230.3999999999,true,false)];
-    return {kind,before,begin:273220,recovered:279400,ms:6000,events,cues:[],callbackRecords:[],
-      encounters:[model,{...model,t:279231.1}],states:[state,{...state,t:279257}]};
+    const events=kind==='hidden'?[event('blur',289824.3,false,false),event('visibilitychange',289873.5,false,true),
+      event('visibilitychange',295892,false,false),event('focus',295892.3,true,false)]:
+      [event('blur',289824.3,false,false),event('focus',295892.3,true,false)];
+    return {kind,before,begin:289874,recovered:296100,ms:6000,events,cues:[],callbackRecords:[],
+      encounters:[...encounters,{...model,action:'visibility',t:295905.4}],states:[...states,{...state,action:'session',t:295990.3}]};
   };
   const run=async x=>{
     const report={lifecycle:[]};
@@ -1405,8 +1580,8 @@ test('actual observer and audio caller accept only silent finalized current-wave
     });
     await noReplay(x.begin,x.recovered,x);return report;
   };
-  for(const kind of ['hidden','blur']){
-    const report=await run(await fixture(kind));
+  for(const kind of ['hidden','blur'])for(const refresh of [false,true])for(const repeated of [false,true]){
+    const report=await run(await fixture(kind,refresh,repeated));
     assert.equal(report.lifecycle.length,1);assert.equal(report.lifecycle[0].boundary.callbacks.length,0);
     assert.equal(report.lifecycle[0].cues.length,0);
   }
@@ -1423,6 +1598,25 @@ test('actual observer and audio caller accept only silent finalized current-wave
     x=>x.callbackRecords.push({...x.before,t:x.begin+1,action:'begin'}),
     x=>x.callbackRecords.push({...x.before,t:x.recovered-1,action:'cue',played:false,reason:'expired'}),
   ]){const x=await fixture();mutate(x);await assert.rejects(()=>run(x),undefined,String(mutate));}
+  // A later paired research refresh must never erase activity after the first
+  // actual result, or establish a result that was absent when native focus left.
+  const first=x=>x.states.find(s=>s.action==='result');
+  for(const mutate of [
+    x=>x.states.splice(1,0,{...first(x),action:'session',phase:'battle',t:286000}),
+    x=>x.states.splice(1,0,{...first(x),action:'session',phase:'settling',t:286000}),
+    x=>x.cues.push({...x.before,t:286000,text:'ST_LS_AUDIO event=defeat\n'}),
+    x=>x.callbackRecords.push({...x.before,t:286000,action:'end'}),
+    x=>x.encounters.splice(1,0,{...x.encounters[0],t:286000,status:'Running'}),
+    x=>x.states=x.states.filter(s=>s.action!=='result'),
+    x=>first(x).sessionRun++,x=>first(x).load++,x=>first(x).timeOrigin++,x=>first(x).scope='other',
+    x=>first(x).t=x.begin+1,x=>first(x).saveState='failed',x=>first(x).hasCheckpoint=true,
+    x=>x.states.push({...first(x),t:288000}),
+    x=>x.states[0].tick=1,x=>x.states[0].hull=0,x=>x.states[0].kills=1,
+    x=>x.states[0].runId=3,x=>x.states[0].pendingRunId=3,x=>x.states[0].hasCheckpoint=true,
+    x=>x.states[0].phase='battle',x=>x.states[0].action='defeat-staged',x=>x.states[0].paused=true,
+    x=>{x.events.forEach(e=>e.t-=4000);},
+    x=>{x.before.loop={...x.before.loop,t:x.begin+1};},
+  ]){const x=await fixture('hidden',true);mutate(x);await assert.rejects(()=>run(x),undefined,String(mutate));}
 });
 
 test('current-wave cue decisions distinguish fresh playback from delayed diagnostic logging',()=>{

@@ -79,7 +79,9 @@ def main():
     p.add_argument('--scene',choices=('field','review','gallery','last-stand'),default='field',help='Existing saved scene to export (default: field)')
     p.add_argument('--stamp', help='Pre-frozen fresh output/evidence suffix')
     p.add_argument('--approval-binding', help='Caller-observed native spec/plan identity JSON; metadata, not runtime inputs')
+    p.add_argument('--configuration', choices=('development','release'), default='release')
     a=p.parse_args();editor=a.editor.resolve();require(editor.is_file(),'Editor executable missing')
+    require(a.scene=='last-stand' or a.configuration=='release', 'Explicit development configuration is supported for Last Stand only')
     stamp=a.stamp or datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:6]
     require(re.fullmatch(r'[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}',stamp) is not None, 'Invalid frozen output stamp')
     evidence_root=ROOT/'Evidence'
@@ -97,11 +99,12 @@ def main():
     record={'schema':'singedterra-last-stand-build/v2','status':'running','build':str(build),'stages':[],'scene':scene_path,
             'scene_before':digest(scene),'protected_scenes_before':protected_scenes,
             'approved_artifacts':json.loads(a.approval_binding) if a.approval_binding else {},
-            'android':False,'publish':False,'editor':str(editor)}
+            'android':False,'publish':False,'editor':str(editor),'configuration':a.configuration}
     if a.scene == 'last-stand':
         require(set(record['approved_artifacts']) in ({'ST-LS-LOOP-SPEC', 'ST-LS-LOOP-PLAN'},
                 {'ST-LS-WAVES-SPEC', 'ST-LS-WAVES-PLAN'},
-                {'ST-LS-RESEARCH-SPEC', 'ST-LS-RESEARCH-PLAN'}),
+                {'ST-LS-RESEARCH-SPEC', 'ST-LS-RESEARCH-PLAN'},
+                {'ST-LS-ARCH-SPEC', 'ST-LS-ARCH-PLAN'}),
                 'Supply the caller-observed Last Stand spec/plan identity pair')
         for identity in record['approved_artifacts'].values():
             require(set(identity) == {'revision', 'model_sha256', 'normative_sha256'}
@@ -110,6 +113,7 @@ def main():
                     'Invalid native approval metadata')
     # These are observed identities only. This exporter cannot confer native approval.
     env=os.environ.copy();env['ST_ART_WEB_OUTPUT']=str(build);env['ST_ART_PROJECT_CHECK']=str(PROJECT)
+    env['ST_LS_BUILD_CONFIGURATION']=a.configuration
     if os.name=='nt':
         common=Path(env.get('ProgramData',env.get('SystemDrive','C:')+'/ProgramData'))
         require(common.is_dir(),'ProgramData unavailable');env.setdefault('ProgramData',str(common));env.setdefault('ALLUSERSPROFILE',str(common))
@@ -144,6 +148,9 @@ def main():
         log=(evidence/'unity-web.log').read_text(encoding='utf-8',errors='replace')
         if a.scene=='last-stand':
             require('ST_LS_WEB_BUILD_PASS' in log,'Missing Last Stand Web build marker')
+            require('ST_LS_WEB_BUILD_PASS configuration='+a.configuration+' options='
+                    +('Development' if a.configuration=='development' else 'None') in log,
+                    'Last Stand Web build configuration mismatch')
             diagnostics=shader_diagnostics(log)
             require(accepts_log(log,'ST_LS_WEB_BUILD_PASS'),
                     'Unity shader compiler diagnostics: '+' | '.join(diagnostics[:8]))

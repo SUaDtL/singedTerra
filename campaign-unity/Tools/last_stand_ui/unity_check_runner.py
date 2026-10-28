@@ -9,7 +9,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity" / "Unity"
 UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
-EVIDENCE = Path(r"C:\Users\brenn\codearbiter-review-integration-20261006\ui-t05-garage-system-20261007")
+EVIDENCE = Path(os.environ.get("ST_LS_UI_EVIDENCE", str(ROOT / "campaign-unity/Evidence/last-stand-ui")))
 
 HASH_SCRIPT = """const fs=require('node:fs'),crypto=require('node:crypto');
 const files=JSON.parse(fs.readFileSync(0,'utf8'));
@@ -42,7 +42,9 @@ def run_checks(method, extra_inputs=()):
     log = evidence / "unity-editor.log"
     argv = [str(UNITY), "-batchmode", "-nographics", "-quit", "-projectPath", str(PROJECT),
             "-executeMethod", method, "-logFile", str(log)]
-    inputs = list((PROJECT / "Assets" / "Scripts").glob("*.cs")) + [PROJECT / "Assets" / "Editor" / "LastStandHudChecks.cs", *extra_inputs]
+    def input_paths():
+        return sorted(set((PROJECT / "Assets" / "Scripts").rglob("*.cs")) | set((PROJECT / "Assets" / "Editor").rglob("*.cs")) | set(extra_inputs))
+    inputs = input_paths()
     source = source_hashes(inputs)
     unity_sha256 = source_hashes([UNITY])[str(UNITY)]
     process = subprocess.Popen(argv, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -57,7 +59,7 @@ def run_checks(method, extra_inputs=()):
         (evidence / "timeout.txt").write_text(stdout + "\n" + stderr)
         raise
     content = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-    after = source_hashes(inputs)
+    after = source_hashes(input_paths())
     (evidence / "result.json").write_text(json.dumps({"exit": process.returncode, "stdout": stdout,
         "stderr": stderr, "source_unchanged": source == after,
         "log_sha256": source_hashes([log]).get(log.relative_to(ROOT).as_posix() if log.is_relative_to(ROOT) else str(log)) if log.exists() else None}, indent=2))

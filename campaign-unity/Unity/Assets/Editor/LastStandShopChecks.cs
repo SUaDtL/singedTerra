@@ -94,6 +94,13 @@ public static class LastStandShopChecks
     static void Require(bool value, string label)
     { if (!value) throw new InvalidOperationException("Last Stand shop deployment check failed: " + label); }
     static void SetField(object owner, string name, object value) => owner.GetType().GetField(name, Private).SetValue(owner, value);
+    // The feature owns scroll position after the UI composition split. The
+    // retained assertions below still compare its real state with native input.
+    static float ShopUiScalar(LastStandLoopHud hud,string property)
+    {
+        var owner=typeof(LastStandLoopHud).GetField("shop",Private).GetValue(hud);
+        return (float)owner.GetType().GetProperty(property).GetValue(owner);
+    }
     static void Invoke(object owner, string name, params object[] args) =>
         owner.GetType().GetMethod(name, Private | BindingFlags.DeclaredOnly).Invoke(owner, args);
     static LastStandShopState Shop(EncounterSession session)
@@ -677,6 +684,13 @@ public static class LastStandShopChecks
         public ShopUiFixture(bool launcher, Vector2Int profile, MemoryStorage storage = null)
         {
             Game = new Fixture(launcher, new int[6], storage);
+            // Arrange the durable selection as well as its art projection.
+            // All action accounting below begins after this fixture setup.
+            if(Game.Loop.Progression.SelectedFitting!=(launcher?"launcher":"repair"))
+            {
+                Require(Game.Loop.Progression.TrySelectFitting(launcher?"launcher":"repair"),"fixture persists its admitted fitting");
+                Game.Storage.Writes=Game.Storage.SuccessfulWrites=0;
+            }
             // The domain fixture arranges authored modules directly after
             // controller initialization. Publish that test-owned starting
             // choice through the controller before exercising live arrows.
@@ -1252,6 +1266,8 @@ public static class LastStandShopChecks
     {
         foreach (var button in f.Root.GetComponentsInChildren<Button>(false))
         {
+            if(button.name=="WaveInfo")
+            { Require(button.GetComponent<Image>().color.a==0 && button.GetComponent("LastStandActionFeedback"),"wave readout uses its transparent accessible action target");continue; }
             var label = button.GetComponentInChildren<Text>(true); var parent = label.transform.parent;
             var frame = parent.Find("ConsoleFrame").GetComponent<Graphic>();
             Require(frame.GetComponent<CanvasRenderer>(), "actual material has native CanvasRenderer " + button.name);
@@ -1276,6 +1292,127 @@ public static class LastStandShopChecks
         // The actual textured/rendered pixel result remains a later WebGL
         // acceptance obligation; this imported check proves the real mesh,
         // foreground and Selectable state rather than a private palette claim.
+    }
+    static void PermanentNotificationReentry()
+    {
+        var game=new Fixture(false,new int[6]);var progression=game.Loop.Progression;
+        var track=LastStandUpgradeTrackId.CannonAttack;int level=progression.GetPermanentLevel(track);
+        int wallet=progression.Wallet,writes=game.Storage.Writes;
+        var quote=progression.QuotePermanent(track,LastStandBulkQuantity.One);
+        bool attempted=false,acceptedNested=false;
+        game.Loop.Changed+=()=>
+        {
+            if(attempted)return;attempted=true;
+            acceptedNested=game.Loop.TryPurchasePermanent(track,LastStandBulkQuantity.One,progression.Revision);
+        };
+        bool accepted=game.Loop.TryPurchasePermanent(track,LastStandBulkQuantity.One,progression.Revision);
+        Require(accepted && attempted && !acceptedNested && progression.GetPermanentLevel(track)==level+1 &&
+            progression.Wallet==wallet-quote.Cost && game.Storage.Writes==writes+1 &&
+            LastStandProgression.Load(game.Storage).GetPermanentLevel(track)==level+1,
+            "accepted notification must retain the purchase guard: nested="+acceptedNested+" level="+progression.GetPermanentLevel(track)+
+            " wallet="+progression.Wallet+" writes="+(game.Storage.Writes-writes));
+    }
+    public static void RunPermanentNotificationReentry()
+    {
+        bool failed=false;
+        using(var preferencesScope=new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED");var factory=LastStandLoopController.StorageFactory;
+            bool background=Application.runInBackground;
+            try{NamedIncome("test_permanent_notification_reentry_is_one_purchase",PermanentNotificationReentry,ref failed);}
+            finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
+        }
+        if(failed)EditorApplication.Exit(1);
+    }
+    sealed class ShopResearchTime : ILastStandTime
+    {
+        public long UtcMilliseconds { get; set; }
+        public double MonotonicSeconds { get; set; }
+        public void AdvanceHeartbeat() { UtcMilliseconds+=16000;MonotonicSeconds+=16; }
+    }
+    static ShopResearchTime ShopHeartbeatClock(ShopUiFixture fixture)
+    {
+        var loop=fixture.Game.Loop;
+        var time=new ShopResearchTime {UtcMilliseconds=loop.Progression.ResearchSnapshot.lastObservedUtcMilliseconds};
+        var coordinator=new LastStandResearchCoordinator(loop.Progression,time);
+        coordinator.Confirmed+=()=>loop.Session.GrantMaximumSpeed(loop.Progression.MaximumGameSpeed);
+        SetField(loop,"research",coordinator);
+        Require(coordinator.Initialize(),"actual research coordinator initializes deterministic heartbeat clock");
+        return time;
+    }
+    static void Heartbeat(ShopUiFixture fixture,ShopResearchTime time)
+    {
+        time.AdvanceHeartbeat();SetField(fixture.Game.Loop,"researchPollAt",0d);
+        Invoke(fixture.Game.Loop,"UpdateResearch");
+    }
+    static void ResearchHeartbeatPermanentShop()
+    {
+        using(var f=new ShopUiFixture(false,new Vector2Int(800,476)))
+        {
+            var loop=f.Game.Loop;var progression=loop.Progression;var time=ShopHeartbeatClock(f);
+            f.Click("ShopEntry");var track=LastStandUpgradeTrackId.CannonAttack;
+            long displayedRevision=progression.Revision;int wallet=progression.Wallet,level=progression.GetPermanentLevel(track);
+            var quote=progression.QuotePermanent(track,LastStandBulkQuantity.One);
+            Heartbeat(f,time);
+            Require(progression.Revision>displayedRevision && loop.MenuPage=="" && f.Button("ShopCard_cannonAttackBuy").IsInteractable(),
+                "heartbeat commits authoritative profile while the permanent shop remains open");
+            int writes=f.Game.Storage.Writes;
+            // Do not refresh the fixture before this input: the normal heartbeat
+            // must publish its new revision to the already displayed purchase.
+            f.Click("ShopCard_cannonAttackBuy");
+            Require(progression.GetPermanentLevel(track)==level+1 && progression.Wallet==wallet-quote.Cost &&
+                f.Game.Storage.Writes==writes+1 && LastStandProgression.Load(f.Game.Storage).GetPermanentLevel(track)==level+1,
+                "first displayed purchase after research heartbeat commits exactly once without stale refusal");
+            int paidWallet=progression.Wallet;writes=f.Game.Storage.Writes;
+            Require(!loop.TryPurchasePermanent(track,LastStandBulkQuantity.One,displayedRevision) &&
+                progression.Wallet==paidWallet && progression.GetPermanentLevel(track)==level+1 && f.Game.Storage.Writes==writes,
+                "genuinely stale permanent intent remains rejected after the refreshed purchase");
+        }
+    }
+    static void ResearchHeartbeatFailedSave()
+    {
+        using(var f=new ShopUiFixture(false,new Vector2Int(800,476)))
+        {
+            var progression=f.Game.Loop.Progression;var time=ShopHeartbeatClock(f);f.Click("ShopEntry");
+            int wallet=progression.Wallet,level=progression.GetPermanentLevel(LastStandUpgradeTrackId.CannonAttack);
+            string saved=f.Game.Storage.Value;f.Game.Storage.FailWrite=true;Heartbeat(f,time);
+            Require(progression.SaveState!="ready" && progression.Wallet==wallet &&
+                progression.GetPermanentLevel(LastStandUpgradeTrackId.CannonAttack)==level && f.Game.Storage.Value==saved,
+                "failed heartbeat cannot alter durable wallet or permanent level");
+            Require(!f.Button("ShopCard_cannonAttackBuy").IsInteractable(),
+                "failed heartbeat immediately disables the displayed permanent purchase");
+        }
+    }
+    static void ResearchHeartbeatRunShop()
+    {
+        using(var f=new ShopUiFixture(false,new Vector2Int(800,476)))
+        {
+            var time=ShopHeartbeatClock(f);var shop=Funded(f.Game);f.Game.Session.TogglePauseAt(f.Game.Timestamp);f.Refresh();f.Click("ShopEntry");
+            int version=shop.Version,scrap=shop.Scrap,spent=shop.SpentScrap,earned=shop.EarnedScrap;
+            string model=f.Game.Session.Model.Snapshot();long revision=f.Game.Loop.Progression.Revision;
+            Heartbeat(f,time);
+            Require(f.Game.Loop.Progression.Revision>revision && ReferenceEquals(shop,Shop(f.Game.Session)) &&
+                shop.Version==version && shop.Scrap==scrap && shop.SpentScrap==spent && shop.EarnedScrap==earned &&
+                f.Game.Session.Model.Snapshot()==model && f.Button("ShopClose").IsActive(),
+                "profile heartbeat refresh preserves the live shop owner, intent version and run accounting");
+        }
+    }
+    public static void RunResearchHeartbeat()
+    {
+        bool failed=false;
+        using(var preferencesScope=new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED");var factory=LastStandLoopController.StorageFactory;
+            bool background=Application.runInBackground;
+            try
+            {
+                NamedIncome("test_research_heartbeat_refreshes_displayed_shop_revision",ResearchHeartbeatPermanentShop,ref failed);
+                NamedIncome("test_research_heartbeat_failed_save_disables_displayed_purchase",ResearchHeartbeatFailedSave,ref failed);
+                NamedIncome("test_research_heartbeat_preserves_run_shop",ResearchHeartbeatRunShop,ref failed);
+            }
+            finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
+        }
+        if(failed)EditorApplication.Exit(1);
     }
     static void BattleShopProfiles()
     {
@@ -1304,13 +1441,14 @@ public static class LastStandShopChecks
             f.Click("ShopTabUtility"); ShopCards(f, LastStandUpgradeCategory.Utility);
             var incompatible = f.Button("ShopCard_" + (launcher ? "fieldRepair" : "launcherAttack") + "Buy");
             Require(!incompatible.gameObject.activeInHierarchy && !incompatible.IsActive(), "wrong fitting is hidden from the Shop");
-            f.Click("ShopTabAttack"); f.Reanchor(); int changes = 0; f.Game.Loop.Changed += () => changes++;
+            f.Click("ShopTabAttack"); f.Reanchor(); int changes = 0, purchaseWrites=f.Game.Storage.Writes; f.Game.Loop.Changed += () => changes++;
             f.Click("ShopCard_cannonAttackBuy");
             Require(changes == 1 && shop.Scrap == 1 && shop.SpentScrap == 5 && shop.GetTrack(LastStandUpgradeTrackId.CannonAttack).RunPurchases == 1 &&
-                model.CurrentCannonDamage == 30 && f.Game.Storage.Writes == 1 && f.Game.Loop.Progression.Wallet == 20,
-                "one actual Button activation submits current intent and updates only live run/model once");
-            Require(f.Text("CannonDamage").text == "CANNON  30 DAMAGE" && f.Text("PhaseDetail").text.Contains("CANNON  30 DAMAGE"),
-                "actual current cannon stats in both HUD presentations");
+                model.CurrentCannonDamage == 30 && f.Game.Storage.Writes == purchaseWrites && f.Game.Loop.Progression.Wallet == 20,
+                "one actual Button activation submits current intent and updates only live run/model once: changes="+changes+" scrap="+shop.Scrap+" spent="+shop.SpentScrap+" levels="+shop.GetTrack(LastStandUpgradeTrackId.CannonAttack).RunPurchases+" damage="+model.CurrentCannonDamage+" writes="+f.Game.Storage.Writes+" wallet="+f.Game.Loop.Progression.Wallet);
+            Require(f.Text("ShopCard_cannonAttackCurrentEffect").text.StartsWith("30 damage") &&
+                f.Text("ElapsedTime").text=="T1 / WAVE "+model.Wave+" >",
+                "actual current cannon stats in its card and current wave in the battle HUD");
             ShopCards(f, LastStandUpgradeCategory.Attack);
             ShopMaterialStates(f);
             int spent = shop.SpentScrap; var disabled = f.Button("ShopCard_cannonAttackBuy");
@@ -1324,7 +1462,11 @@ public static class LastStandShopChecks
                 f.Button("SpeedRate").GetComponentInChildren<Text>().text=="0x\nPAUSED", "actual rate pause retains live shop");
             int permanentWallet = f.Game.Loop.Progression.Wallet, permanentP = f.Game.Loop.Progression.CannonAttackLevel;
             int permanentWrites = f.Game.Storage.Writes;
-            var oldButton = f.Button("ShopCard_cannonAttackBuy"); f.Game.Session.ReturnToInspection(); f.Refresh();
+            var oldButton = f.Button("ShopCard_cannonAttackBuy");
+            f.Game.Loop.OpenMenu();f.Game.Loop.RequestConfirmation("abandon");f.Game.Loop.ConfirmAction();f.Refresh();
+            Require(!f.Game.Loop.Progression.HasCheckpoint && f.Game.Loop.Progression.ActiveRunId==0 &&
+                f.Game.Storage.Writes==permanentWrites+1,"confirmed abandon durably clears the checkpoint exactly once");
+            permanentWrites=f.Game.Storage.Writes;
             oldButton.onClick.Invoke();
             Require(!f.Button("ShopClose").IsActive() && f.Button("ShopEntry").IsActive() && shop.Scrap == 0 &&
                 f.Game.Loop.FinalAccounting != null && f.Game.Loop.FinalAccounting.SpentScrap == spent,
@@ -1361,7 +1503,7 @@ public static class LastStandShopChecks
             f.Game.Session.TogglePauseAt(f.Game.Timestamp); f.Refresh(); f.Click("ShopEntry"); f.Click("ShopTabDefense");
             int tick = model.Tick; f.Reanchor(); f.Click("ShopCard_hullCapacityBuy");
             Require(f.Game.Session.Paused && model.Tick == tick && model.Hull == 75 && model.CurrentMaximumHull == 135 &&
-                f.Text("HullValue").text == "HULL  75 / 135" && f.Text("PhaseDetail").text.Contains("HULL  75 / 135"),
+                f.Text("HullValue").text == "HULL 75 / 135" && f.Text("PhaseDetail").text.Contains("Hull 75 / 135"),
                 "paused actual hull buy excludes time and updates current/max labels");
             var fill = (RectTransform)f.Root.Find("LastStandCard/HullBar/HullFill");
             Require(Math.Abs(fill.anchorMax.x - 75f / 135) < .0001f, "hull fraction uses actual dynamic maximum");
@@ -1377,12 +1519,18 @@ public static class LastStandShopChecks
         using (var f = new ShopUiFixture(false, new Vector2Int(1366,664)))
         {
             var shop = Funded(f.Game); f.Game.Session.TogglePauseAt(f.Game.Timestamp);
-            Require(shop.ObserveAuthoritativeKills(LastStandShopState.MaximumUniqueKills), "owner-arranged cap fixture funds are valid");
-            for (int i = 0; i < LastStandUpgradeCatalog.TotalCap; i++)
-                Require(Buy(f.Game, Intent(shop, LastStandUpgradeTrackId.CannonAttack), f.Game.Timestamp).Accepted, "actual owner buys each cap level");
-            f.Refresh(); f.Click("ShopEntry");
-            Require(f.Button("ShopCard_cannonAttackBuy").GetComponentInChildren<Text>(true).text == "MAX" && f.Text("ShopCard_cannonAttackRefusal").text == "MAX" &&
-                !f.Button("ShopCard_cannonAttackBuy").IsInteractable(), "exact cap/MAX refusal from immutable projection");
+            var cycle = shop.GetDefinition(LastStandUpgradeTrackId.CannonCycle);
+            int capCost = 0;
+            for (int level = 1; level <= cycle.TotalCap; level++) capCost = checked(capCost + cycle.RunPrice(level));
+            // This fixture proves the short track's MAX presentation, not the
+            // legacy fixed-bounty integer limit. Fund only the required buys.
+            int capKills = checked(shop.UniqueKills + (capCost + LastStandShopState.ScrapPerKill - 1) / LastStandShopState.ScrapPerKill);
+            Require(shop.ObserveAuthoritativeKills(capKills) && shop.Scrap >= capCost, "owner-arranged cap fixture funds are valid");
+            for (int i = 0; i < cycle.TotalCap; i++)
+                Require(Buy(f.Game, Intent(shop, LastStandUpgradeTrackId.CannonCycle), f.Game.Timestamp).Accepted, "actual owner buys each short track cap level");
+            f.Refresh(); f.Click("ShopEntry"); f.Click("ShopTabUtility");
+            Require(f.Button("ShopCard_cannonCycleBuy").GetComponentInChildren<Text>(true).text == "MAX" && f.Text("ShopCard_cannonCycleRefusal").text == "MAX" &&
+                !f.Button("ShopCard_cannonCycleBuy").IsInteractable(), "exact cap/MAX refusal from immutable projection");
         }
     }
     public static void RunBattleShop()
@@ -1405,34 +1553,42 @@ public static class LastStandShopChecks
             new Vector2Int(390,688),new Vector2Int(844,266) })
         foreach (bool launcher in new[] { false,true })
         using (var f = new ShopUiFixture(launcher,profile,new MemoryStorage { Value = Save(new int[6],wallet: 0) }))
+        using (var input = new NativeShopInput(f))
         {
             f.Click("ShopEntry");
-            Require(f.Text("ShopHeading").text == "SHOP / PERMANENT" && f.Text("ShopCurrency").text == "SALVAGE  0",
+            Require(f.Text("ShopHeading").text == "PERMANENT" && f.Text("ShopCurrency").text == "SALVAGE  0",
                 "permanent title explains lifetime beside the exact committed wallet");
             Require(f.Text("ShopHeading").preferredHeight <= f.Text("ShopHeading").rectTransform.rect.height + 1,
                 "permanent lifetime heading fits the existing slot");
             f.Click("ShopClose"); f.Click("Deploy");
-            f.Game.AdvanceTicks(1199); f.Refresh();
-            Require(f.Text("PhaseHeading").text == "HOLD THE POSITION","live banner does not grant an early goal");
-            Require(f.Text("PhaseHeading").preferredHeight<=f.Text("PhaseHeading").rectTransform.rect.height+1,
-                "initial live heading is fully readable at "+profile);
-            int writes = f.Game.Storage.Writes;
-            f.Game.AdvanceTicks(1); f.Refresh();
-            var heading = f.Text("PhaseHeading");
-            Require(f.Game.Loop.Phase == "battle" && heading.text == "Goal met; saves at end",
-                "actual live goal banner explains future persistence");
-            Require(heading.preferredHeight <= heading.rectTransform.rect.height + 1,
-                "live goal save boundary fits the existing one-line slot at " + profile);
-            Require(f.Game.Storage.Writes == writes && f.Game.Loop.Progression.GetBestTicks(1) == 0 &&
-                !f.Game.Loop.Progression.TierTwoUnlocked,"live goal writes no record or unlock");
+            var current=f.Game.Session.Model; int firstWave=current.Wave;
+            Require(f.Text("PhaseHeading").text=="CLEAR THE WAVE" && current.CompletedWave==0,
+                "live banner asks for defeating the current cohort before rewards");
+            int writes=f.Game.Storage.Writes;
+            for(int guard=0;current.CompletedWave<firstWave && guard<256;guard++)
+            {
+                foreach(var foe in current.Foes)if(foe.Alive)
+                { typeof(EncounterFoe).GetProperty("Hull").SetValue(foe,1);typeof(EncounterFoe).GetProperty("Distance").SetValue(foe,0); }
+                SetField(current,"nextCannon",current.Tick+1);SetField(current,"nextSpawn",current.Tick+1);f.Game.AdvanceTicks(1);
+            }
+            f.Refresh(); var heading=f.Text("PhaseHeading");
+            Require(current.CompletedWave==firstWave && current.Wave==firstWave+1 && f.Game.Loop.Phase=="battle" &&
+                heading.text=="CLEAR THE WAVE", "cleared cohort advances to the next real wave");
+            Require(heading.preferredHeight<=heading.rectTransform.rect.height+1,"wave banner fits at "+profile);
+            Require(f.Game.Storage.Writes==writes+1 && f.Game.Loop.Progression.GetBestWave(1)==firstWave &&
+                f.Game.Loop.Progression.Checkpoint.CompletedWave==firstWave && !f.Game.Loop.Progression.TierTwoUnlocked &&
+                f.Game.Loop.Progression.Wallet==LastStandRewardCatalog.At(LastStandTierCatalog.Get(1),firstWave).RepeatableSalvage &&
+                LastStandProgression.Load(f.Game.Storage).Checkpoint.CompletedWave==firstWave,
+                "cleared wave commits exactly once, survives reload, and never prematurely unlocks a tier");
             f.Click("ShopEntry");
-            Require(f.Text("ShopHeading").text == "SHOP / THIS RUN" &&
+            Require(f.Text("ShopHeading").text == "THIS RUN" &&
                 f.Text("ShopCurrency").text == "SCRAP  " + Shop(f.Game.Session).Scrap,
                 "temporary title explains lifetime beside the exact run balance");
             Require(f.Text("ShopHeading").preferredHeight <= f.Text("ShopHeading").rectTransform.rect.height + 1,
                 "temporary lifetime heading fits the existing slot");
             var scroll = f.Root.Find("ShopPanel").GetComponent<ScrollRect>();
             scroll.verticalNormalizedPosition = .5f; scroll.onValueChanged.Invoke(new Vector2(0,.5f)); f.Refresh();
+            writes=f.Game.Storage.Writes;
             var model = f.Game.Session.Model; string snapshot = model.Snapshot(), save = f.Game.Storage.Value;
             var scrollPosition = scroll.content.anchoredPosition;
             bool original = f.Game.Session.View.FullEffects, muted = f.Game.Loop.Muted;
@@ -1457,10 +1613,12 @@ public static class LastStandShopChecks
                     label.preferredHeight <= label.rectTransform.rect.height + .2f,"open Shop full/reduced label fits " + profile);
                 Require(bounds.width >= 43.99f && bounds.height >= 43.99f && CanvasBounds(f).Contains(bounds.min) &&
                     CanvasBounds(f).Contains(bounds.max),"open Shop effects retains reachable44px target " + profile);
+                input.Render();
                 var settingsViewport=f.Bounds((RectTransform)f.Root.Find("SettingsModal/SettingsPanel/SettingsViewport"));
-                Require(settingsViewport.Contains(bounds.min)&&settingsViewport.Contains(bounds.max)&&
+                Require(bounds.xMin>=settingsViewport.xMin-.1f && bounds.yMin>=settingsViewport.yMin-.1f &&
+                    bounds.xMax<=settingsViewport.xMax+.1f && bounds.yMax<=settingsViewport.yMax+.1f &&
                     ShopRaycast(f,new Vector2(bounds.center.x,f.Canvas.pixelRect.height-bounds.center.y))==effects,
-                    "Display effects is revealed inside the actual mask and reached by the pointer");
+                    "Display effects is revealed inside the actual mask and reached by the pointer: "+profile+" viewport="+settingsViewport+" button="+bounds+" hit="+ShopRaycast(f,new Vector2(bounds.center.x,f.Canvas.pixelRect.height-bounds.center.y))?.name);
                 Require(f.Game.Session.Model == model && model.Snapshot() == snapshot && f.Game.Storage.Value == save &&
                     f.Game.Storage.Writes == writes && f.Game.Loop.Muted == muted && f.Game.Loop.Phase == phase &&
                     f.Game.Session.MenuPaused&&f.Game.Session.Paused&&f.Game.Session.ManualPaused==manualPaused&&
@@ -1502,7 +1660,8 @@ public static class LastStandShopChecks
         SetField(model.Foes[0], "NextAttack", 5); f.Game.AdvanceTicks(1);
         f.Game.AdvanceTicks(10); Invoke(f.Game.Loop, "Update"); f.Refresh();
         Require(f.Game.Loop.Phase == "result" && f.Game.Session.Model == null &&
-            f.Game.Loop.Progression.PendingDefeat?.Reward == 1, "real settled defeat waits for manual Claim");
+            f.Game.Loop.Progression.PendingDefeat == null && !f.Game.Loop.Progression.HasCheckpoint &&
+            f.Game.Loop.Progression.ActiveRunId==0, "real wave defeat clears its checkpoint and waits for Continue without a second reward");
     }
     static void PermanentCards(ShopUiFixture f, LastStandUpgradeCategory category)
     {
@@ -1751,10 +1910,11 @@ public static class LastStandShopChecks
     [Serializable] sealed class CommittedCard { public int trackId, p; }
     static string CaptureShop(ShopUiFixture f)
     {
-        var capture = typeof(LastStandLoopHud).GetMethod("CaptureShopStateJson", Private);
-        Require(capture != null && CallsMethod(typeof(LastStandLoopHud).GetMethod("ReportShopState", Private), capture),
+        var owner=typeof(LastStandLoopHud).GetField("observations",Private).GetValue(f.Hud);
+        var capture=owner.GetType().GetMethod("CaptureShopStateJson",Private);
+        Require(capture!=null && CallsMethod(owner.GetType().GetMethod("ReportShopState"),capture),
             "actual ReportShopState consumes the compiled observation producer");
-        return (string)capture.Invoke(f.Hud, null);
+        return (string)capture.Invoke(owner,null);
     }
     static CommittedObservation CommittedLevels(ShopUiFixture f, int[] expected, bool absentCards)
     {
@@ -2035,7 +2195,7 @@ public static class LastStandShopChecks
             bounds.yMin >= clip.yMin-.1f && bounds.yMax <= clip.yMax+.1f,
             "selected card revealed fully inside real masked ScrollRect " + button.name + " " + bounds + " clip=" + clip);
         Require(ShopRaycast(f, new Vector2(bounds.center.x, f.Canvas.pixelRect.height-bounds.center.y)) == button,
-            "revealed selected card receives actual raycast " + button.name);
+            "revealed selected card receives actual raycast " + button.name+" bounds="+bounds+" clip="+clip+" hit="+ShopRaycast(f,new Vector2(bounds.center.x,f.Canvas.pixelRect.height-bounds.center.y))?.name+" interactable="+button.IsInteractable());
         var style = button.GetComponentInChildren<Text>().fontStyle;
         Require(button.GetComponent<Outline>().enabled && (style == FontStyle.Bold || style == FontStyle.BoldAndItalic),
             "current native selection has visible stroke and type " + button.name);
@@ -2129,8 +2289,8 @@ public static class LastStandShopChecks
             float reading = scroll.content.anchoredPosition.y;
             Require(input.Events.currentSelectedGameObject == lower.gameObject && lower.IsInteractable() &&
                 Math.Abs(reading-revealed) > 1f, "actual native " + gesture + " moves ScrollRect with eligible Buy still selected");
-            float stored = (float)typeof(LastStandLoopHud).GetField("shopScrollOffset",Private).GetValue(f.Hud);
-            float units = (float)typeof(LastStandLoopHud).GetField("shopUnitsY",Private).GetValue(f.Hud);
+            float stored = ShopUiScalar(f.Hud,"ScrollOffset");
+            float units = ShopUiScalar(f.Hud,"UnitsY");
             Require(Math.Abs(stored*units-reading) < .1f,
                 "native ScrollRect lifecycle delivers " + gesture + " offset to existing HUD owner before combat refresh");
             Debug.Log("ST_LS_SHOP_SCROLL_BEFORE_REFRESH gesture=" + gesture + " content=" + reading + " owner=" + stored*units);
@@ -2162,7 +2322,7 @@ public static class LastStandShopChecks
             var shop = Funded(f.Game); var model = f.Game.Session.Model; f.Reanchor(); input.Render();
             input.Activate("ShopEntry", "keyboard");
             input.Activate(launcher ? "ShopTabAttack" : "ShopTabUtility", "touch");
-            var lower = f.Button(launcher ? "ShopCard_launcherAttackBuy" : "ShopCard_fieldRepairBuy");
+            var lower = f.Button(launcher ? "ShopCard_launcherAttackBuy" : "ShopCard_scrapYieldBuy");
             input.Events.SetSelectedGameObject(lower.gameObject); input.Render(); SelectedCardVisible(f,lower);
             RetainedSelectionScroll(f,input,lower);
             int writes = f.Game.Storage.Writes, wallet = f.Game.Loop.Progression.Wallet;
@@ -2199,17 +2359,18 @@ public static class LastStandShopChecks
             int spent = shop.SpentScrap;
             typeof(EncounterModel).GetProperty("Hull").SetValue(model,1);
             SetField(model.Foes[0], "NextAttack", model.Tick+1); f.Game.AdvanceTicks(1); Invoke(f.Game.Loop,"Update"); input.Render();
-            Require(f.Game.Loop.Phase == "settling" && f.Game.Loop.Progression.PendingDefeat != null,
+            Require(f.Game.Loop.Phase == "settling" && f.Game.Loop.Progression.PendingDefeat == null && !f.Game.Loop.Progression.HasCheckpoint &&
+                f.Game.Loop.Progression.ActiveRunId==0 && !f.Button("ShopClose").IsActive(),
                 "actual defeat invalidates open run panel before terminal interval");
             ValidCurrentFocus(f); lower.onClick.Invoke(); input.Submit(lower);
             Require(shop.SpentScrap == spent && f.Game.Loop.Progression.Wallet == wallet,
                 "terminal stale card and native Submit cannot debit or auto-Claim");
             f.Game.AdvanceTicks(10); Invoke(f.Game.Loop,"Update"); input.Render(); ValidCurrentFocus(f);
-            Require(f.Game.Loop.Phase == "result" && f.Game.Loop.Progression.PendingDefeat != null &&
-                f.Game.Loop.Progression.Wallet == wallet, "current result focus keeps manual Claim authority");
+            Require(f.Game.Loop.Phase == "result" && f.Game.Loop.Progression.PendingDefeat == null &&
+                f.Game.Loop.Progression.Wallet == wallet && f.Text("ClaimText").text=="CONTINUE", "current result preserves banked rewards and exposes Continue");
             input.Activate("Claim","keyboard"); ValidCurrentFocus(f);
-            Require(f.Game.Loop.Phase == "workshop" && f.Game.Loop.Progression.Wallet == wallet+1,
-                "one explicit native Claim reaches current workshop");
+            Require(f.Game.Loop.Phase == "workshop" && f.Game.Loop.Progression.Wallet == wallet && !f.Game.Loop.Progression.HasCheckpoint,
+                "one explicit native Continue reaches current workshop without a duplicate reward");
             Debug.Log("ST_LS_SHOP_INPUT_TERMINAL " + profile + " fitting=" + launcher);
         }
     }
@@ -2254,7 +2415,7 @@ public static class LastStandShopChecks
             var viewport = f.Bounds(scroll.viewport); var clipped = f.Bounds((RectTransform)lower.transform);
             Require(scroll.content.rect.height > scroll.viewport.rect.height &&
                 clipped.yMax > viewport.yMax+1 && scroll.content.anchoredPosition.y < .1f,
-                "compact actual zero-funds card starts clipped before native gesture");
+                "compact actual zero-funds card starts clipped before native gesture: "+phase+" launcher="+launcher+" clip="+viewport+" button="+clipped+" offset="+scroll.content.anchoredPosition.y);
             int writes = f.Game.Storage.Writes, wallet = f.Game.Loop.Progression.Wallet, buys = 0;
             string raw = f.Game.Storage.Value; bool paused = f.Game.Session.Paused;
             var model = f.Game.Session.Model; var shop = f.Game.Loop.Shop;
@@ -2276,7 +2437,7 @@ public static class LastStandShopChecks
             var reached = f.Bounds((RectTransform)lower.transform); viewport = f.Bounds(scroll.viewport);
             Debug.Log("ST_LS_SHOP_COMPACT_REACHED target=" + reached + " viewport=" + viewport +
                 " content=" + scroll.content.anchoredPosition.y + " owner=" +
-                typeof(LastStandLoopHud).GetField("shopScrollOffset",Private).GetValue(f.Hud));
+                ShopUiScalar(f.Hud,"ScrollOffset"));
             Require(reached.yMin >= viewport.yMin-.1f && reached.yMax <= viewport.yMax+.1f &&
                 reached.width >= 43.99f && reached.height >= 43.99f,
                 "native compact scroll exposes the complete lower purchase target");

@@ -104,6 +104,24 @@ export async function resumeEarnedCheckpoint(layout,click){
 }
 export function isEnduranceReadyObservation(state){return state?.action==='ready'&&state.saveState==='ready';}
 
+// A single owned observer keeps taking fresh samples while input/reporting awaits
+// the browser. A blocked event loop still produces a real gap; no timestamps are
+// synthesized. stop() joins the in-flight read before the browser may be closed.
+export function startEnduranceSampling({sample,wait}){
+  let stopped=false,failed=false,failure,first;
+  const ready=new Promise(resolve=>{first=resolve;});
+  const done=(async()=>{
+    try{
+      while(!stopped){
+        await sample(()=>stopped);first();
+        if(!stopped)await wait(1000);
+      }
+    }catch(error){failed=true;failure=error;}
+    finally{first();}
+  })();
+  return {ready,check(){if(failed)throw failure;},async stop(){stopped=true;await done;}};
+}
+
 export async function finalizeOwnedEndurance({prepareReport,persist,closeBrowser,onFailure}){
   const failures=[];
   try{prepareReport();persist();}catch(error){failures.push(error);}
@@ -388,27 +406,46 @@ async function main(){
         writeFileSync(resolve(output,stem+'-checkpoint.json'),raw);report.screenshots.push({path,at:record.at,elapsedMs:record.elapsedMs});nextScreenshot+=3600000;}
       report.latestSample=record;persist();
     };
-    while(!interrupted){
-      if(observerError)throw observerError;assert.equal(latest?.saveState,'ready','A save fault stops endurance qualification');
-      assert.equal(latest?.checkpointBlocked,false,'A blocked checkpoint stops endurance qualification');
-      const probe=await page.evaluate(()=>window.__stEnduranceProbe.snapshot()),now=performance.now();
-      const observation={atMs:now-started,timeOrigin:probe.timeOrigin,stateAgeMs:now-latestAt,phase:latest.phase,
-        paused:latest.paused,speed:latest.speed,tick:latest.tick,runId:latest.runId};
-      accountEnduranceObservation(ledger,observation);
-      if(latest.runId>0&&latest.runId!==previousRun){report.runsObserved++;previousRun=latest.runId;}
-      if(options.mode==='smoke'?ledger.elapsedMs>=options.smokeSeconds*1000:ledger.activeMs>=ENDURANCE_POLICY.activeTargetMs){completed=true;break;}
-      assert.ok(ledger.elapsedMs<ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
-      if(now-started>=nextSummary){await summary();nextSummary+=ENDURANCE_POLICY.summaryEveryMs;}
-      if(options.research&&ledger.activeMs>=nextPurchaseActiveMs&&latest.phase==='battle'&&!latest.paused){
-        await periodicPurchase();nextPurchaseActiveMs+=900000;
+    const sampling=startEnduranceSampling({wait:ms=>page.waitForTimeout(ms),sample:async stopped=>{
+      try{
+        if(stopped()||interrupted)return;
+        if(observerError)throw observerError;
+        const probe=await page.evaluate(()=>window.__stEnduranceProbe.snapshot()),now=performance.now();
+        if(stopped()||interrupted)return;
+        if(observerError)throw observerError;
+        assert.equal(latest?.saveState,'ready','A save fault stops endurance qualification');
+        assert.equal(latest?.checkpointBlocked,false,'A blocked checkpoint stops endurance qualification');
+        const observation={atMs:now-started,timeOrigin:probe.timeOrigin,stateAgeMs:now-latestAt,phase:latest.phase,
+          paused:latest.paused,speed:latest.speed,tick:latest.tick,runId:latest.runId};
+        accountEnduranceObservation(ledger,observation);
+        assert.ok(ledger.elapsedMs<=ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
+        if(latest.runId>0&&latest.runId!==previousRun){report.runsObserved++;previousRun=latest.runId;}
+      }catch(error){observerError??=error;throw error;}
+    }});
+    try{
+      await sampling.ready;sampling.check();
+      while(!interrupted){
+        sampling.check();
+        if(observerError)throw observerError;assert.equal(latest?.saveState,'ready','A save fault stops endurance qualification');
+        assert.equal(latest?.checkpointBlocked,false,'A blocked checkpoint stops endurance qualification');
+        const now=performance.now();
+        if(options.mode==='smoke'?ledger.elapsedMs>=options.smokeSeconds*1000:ledger.activeMs>=ENDURANCE_POLICY.activeTargetMs){completed=true;break;}
+        assert.ok(ledger.elapsedMs<ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
+        if(now-started>=nextSummary){await summary();nextSummary+=ENDURANCE_POLICY.summaryEveryMs;}
+        if(options.research&&ledger.activeMs>=nextPurchaseActiveMs&&latest.phase==='battle'&&!latest.paused){
+          await periodicPurchase();nextPurchaseActiveMs+=900000;
+        }
+        if(latest.phase==='result'){await click('Claim');await until(()=>latest?.phase==='workshop');}
+        if(['garage','workshop'].includes(latest.phase)){
+          assert.equal(latest.hasCheckpoint,false,'Unexpected resumable run cannot be silently replaced');
+          await click(latest.phase==='garage'?'Deploy':'Redeploy');await until(()=>latest?.phase==='battle'&&!latest.paused&&latest.speed===expectedSpeed);
+        }
+        await page.waitForTimeout(1000);
       }
-      if(latest.phase==='result'){await click('Claim');await until(()=>latest?.phase==='workshop');}
-      if(['garage','workshop'].includes(latest.phase)){
-        assert.equal(latest.hasCheckpoint,false,'Unexpected resumable run cannot be silently replaced');
-        await click(latest.phase==='garage'?'Deploy':'Redeploy');await until(()=>latest?.phase==='battle'&&!latest.paused&&latest.speed===expectedSpeed);
-      }
-      await page.waitForTimeout(1000);
+    }finally{
+      await sampling.stop();
     }
+    sampling.check();
     await summary(true);checkSourceBindings();await verifyServed();assertPackagedRuntimeParity(packaged,packagedRuntimeSnapshot());
     report.finalBindingsVerified=true;
   }catch(error){if(interrupted&&error.message==='Interrupted during input')report.cancellationReason=error.message;

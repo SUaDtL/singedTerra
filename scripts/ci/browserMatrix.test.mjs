@@ -11,6 +11,8 @@ import {runInNewContext} from 'node:vm';
 import * as partitionOwner from '../../e2e/helpers/lastStandMatrix.mjs';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
 
+const readJourneySource=()=>readFileSync('e2e/helpers/lastStandJourney.mjs','utf8').replace(/\r\n?/g,'\n');
+
 test('startup routing has an independent owner instead of repeating on every gameplay shard',()=>{
   const {include:lanes}=browserMatrix();
   assert.equal(lanes.length,18,'Startup routing and entry captures must leave the gameplay critical path');
@@ -120,8 +122,8 @@ function matrixFixture() {
   return {reports,expected:{head,inputs}};
 }
 
-test('actual upgrade purchase evidence satisfies the matrix and rejects incorrect wallet, level or damage',async()=>{
-  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+test('classic matrix admits the current purchase observation and rejects incorrect wallet, level or damage',async()=>{
+  const source=readJourneySource();
   const begin=source.indexOf("    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');");
   const end=source.indexOf('\n',begin);
   assert.ok(begin>0 && end>begin,'Execute the maintained purchase observation');
@@ -131,10 +133,12 @@ test('actual upgrade purchase evidence satisfies the matrix and rejects incorrec
     await run(async(name,action)=>{
       assert.equal(name,'ShopCard_cannonAttackBuy');assert.equal(action,'purchase');
       return {wallet:0,level:1,cannonDamage:30,...fault};
-    },(pass,name)=>observations.push({name,pass}),{credits:1});
+    },(pass,name)=>observations.push({name,pass}),{credits:2});
     assert.equal(observations.length,1);
+    assert.equal(observations[0].name,'two salvage commits Cannon Attack level1');
+    // Keep the classic contract fixture intact while checking the current observation.
     for(const report of sample.reports.filter(r=>r.viewport_partition.section==='lifecycle'))
-      report.checks=report.checks.filter(c=>c.name!=='one salvage commits Cannon Attack level1').concat(observations);
+      report.checks=report.checks.concat(observations);
     if(fault)assert.throws(()=>assertLastStandMatrix(sample.reports,sample.expected),/Every assertion must pass/);
     else assert.doesNotThrow(()=>assertLastStandMatrix(sample.reports,sample.expected));
   }
@@ -236,7 +240,7 @@ test('entry qualification requires every original routing case and actual reacha
 });
 
 test('actual journey section guards execute all Windows sections and keep Linux owners disjoint',async()=>{
-  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const source=readJourneySource();
   const commonStart=source.indexOf('    if(section.entry || section.lifecycle){');
   const entryStart=source.indexOf('    if(section.entry){',commonStart);
   const preparationStart=source.indexOf('    if(section.entry || section.lifecycle){',entryStart);
@@ -295,7 +299,7 @@ test('transport discovery counts journeys and retains failures without counting 
 });
 
 test('native Return inspects the Last Stand-only library without launching retired code', async () => {
-  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const source=readJourneySource();
   const begin=source.indexOf("    report.retired_campaign_preservation.native_return='observed unchanged';");
   const end=source.indexOf('    start=states.length;',begin);
   assert.ok(begin>0 && end>begin);
@@ -315,8 +319,8 @@ test('native Return inspects the Last Stand-only library without launching retir
 });
 
 test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapshot', async () => {
-  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
-  const begin=source.indexOf('    const geometry=async(name)=>{'),end=source.indexOf('    const resize=async',begin);
+  const source=readJourneySource();
+  const begin=source.indexOf('    const geometry=async('),end=source.indexOf('    const resize=async',begin);
   const controlBegin=source.indexOf('    const hudControls=');
   assert.ok(begin>0 && end>begin);
   assert.ok(controlBegin>0&&controlBegin<begin,'Maintained HUD collection and projection closures required');
@@ -327,7 +331,7 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
     const layout={coordinates:'top-left',width:1280,height:720,
       controls:[{name:'Menu',x:10,y:10,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
     const run=runInNewContext('(async()=>{'+source.slice(controlBegin,begin)+source.slice(begin,end)+'return geometry("Menu");})()',{
-      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],tierJourneyControlGeometry,
+      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],tierJourneyControlGeometry,trace:[],load:1,
       getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'}),
       page:{viewportSize:()=>({width:1280,height:720}),locator:()=>({
         boundingBox:async()=>{reads++;return fault==='hidden'?null:box;},
@@ -341,7 +345,7 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
 });
 
 test('actual phase inspection captures once while preserving geometry and focus checks',async()=>{
-  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const source=readJourneySource();
   const begin=source.indexOf('    const resize=async'),phase=source.indexOf('    const phaseMatrix=',begin),
     end=source.indexOf('    if(section.lifecycle)await resize(captureViewport);\n    const armGameClick=',phase);
   assert.ok(begin>0 && phase>begin && end>phase);
@@ -360,7 +364,7 @@ test('actual phase inspection captures once while preserving geometry and focus 
 });
 
 test('actual journey check journals every observation without rewriting the growing report each time',()=>{
-  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const source=readJourneySource();
   const begin=source.indexOf('  const check =',source.indexOf('export async function runLastStandJourney(')),
     end=source.indexOf('  const write =',begin);
   assert.ok(begin>0 && end>begin);

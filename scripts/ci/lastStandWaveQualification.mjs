@@ -3,8 +3,8 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve,dirname,basename} from 'node:path';
 import {LAST_STAND_JOURNEY_INPUTS,validateCheckpointResume,validateWaveTerminal,validateGameplayInput,validateKeyboardGameplayInput,validateModelObservation,
-  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents,validateHiddenWaveTerminal,
-  assertIdleWaveSave,assertWaveSavePreserved,validateWaveAbandonSave} from '../../e2e/helpers/lastStandJourney.mjs';
+  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents,validateBackgroundWaveTerminal,
+  assertIdleWaveSave,assertWaveSavePreserved,validateWaveAbandonSave,validateBackgroundCheckpoint} from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_ORACLE_SOURCES,parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 
 export const WAVE_CONTRACT='last-stand-waves/v2';
@@ -95,7 +95,7 @@ export function assertWaveLifecycle(report) {
   const background=only(report.lifecycle,'background-wave'),cp=background.saved?.checkpoint;
   assertIdleWaveSave(background.saved);assert.ok(cp&&cp.runId>resume.saved.checkpoint.runId);
   assert.ok(cp.encounter.completedWave>=1);assert.equal(background.saved.pendingDefeat,null);
-  assert.equal(cp.runId,background.after?.loop?.runId);assert.equal(background.saved.credits,background.after.loop.wallet);
+  validateBackgroundCheckpoint(background);
   assert.equal(cp.encounter.rulesVersion,'last-stand-waves-v1');assert.equal(cp.encounter.tier,background.after.loop.activeTier);
   assert.ok(background.interval?.begin<background.interval.recovered);
   assert.ok(background.after.t>=background.interval.recovered);assert.equal(background.after.load,background.interval.before.load);
@@ -134,7 +134,8 @@ export function assertWaveTerminals(report) {
       layout.timeOrigin===before.timeOrigin&&layout.t>=terminal.t&&layout.t<=result.t&&
       !layout.controls.some(c=>c.name==='Claim'&&c.active&&c.interactable)));
     if(row.mode==='hidden'){
-      validateHiddenWaveTerminal(row);
+      assert.deepEqual(row.continuation,validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation?.callbacks}),
+        'Background terminal must declare its observed completion mode');
     }
   }
   const foreground=terminals.find(row=>row.mode==='foreground').evidence,reload=only(report.lifecycle,'terminal-reload');
@@ -253,9 +254,12 @@ export function verifyWaveFiles(resultPath,report) {
       assert.deepEqual(proof,record.evidence,'Terminal proof differs from actual source-bound telemetry');
       if(record.mode==='hidden'){
         const {interval}=record;
-        const events=waveIntervalEvents(interval.before,{...interval.before,t:interval.recovered},trace);
+        const before=record.evidence.before;
+        const events=waveIntervalEvents(before,{...before,t:interval.recovered},trace);
         assert.deepEqual(events,interval.events,'Hidden terminal events differ from actual input trace');
-        validateHiddenWaveTerminal({...record,events});
+        assert.deepEqual(record.continuation,validateBackgroundWaveTerminal({...record,events,
+          callbackRecords:telemetry.callbackRecords,states:telemetry.states,cues:telemetry.cues}),
+          'Background completion must bind the raw callback, state and audio evidence');
       }
       if(record.interaction){actualState(record.interaction.paused);actualState(record.interaction.resumed);}
     }else if(record.kind==='terminal-reload')actualState(record.state);
@@ -263,6 +267,26 @@ export function verifyWaveFiles(resultPath,report) {
       const {loop,hull,...model}=record.after;
       assert.deepEqual(telemetry.encounters.find(item=>item.load===model.load&&item.timeOrigin===model.timeOrigin&&item.t===model.t&&item.action===model.action),model);
       actualState(loop);validateModelObservation(record.after,oracle(record.after));
+      validateBackgroundCheckpoint(record);
+      const state=record.checkpointState,matching=telemetry.states.filter(item=>item.load===state.load&&item.timeOrigin===state.timeOrigin&&
+        item.t===state.t&&item.action===state.action);
+      assert.equal(matching.length,1,'Exactly one raw paused checkpoint witness is required');
+      assert.deepEqual(matching[0],state,'Paused checkpoint differs from actual runtime telemetry');
+      const e=record.saved.checkpoint.encounter,profile=oracle(record.after),boundary=profile[e.tick],previous=profile[e.tick-1];
+      assert.ok(boundary&&previous,'Saved checkpoint tick must exist in the source oracle');
+      assert.equal(boundary.status,'Running');assert.equal(boundary.alive,0);
+      assert.equal(boundary.completedWave,e.completedWave);assert.equal(previous.completedWave,e.completedWave-1);
+      // Oracle rows and wave-committed HUD rows follow ContinueCommittedWave;
+      // the durable snapshot itself still names the just-cleared cohort.
+      assert.equal(boundary.wave,e.wave+1);
+      const commits=telemetry.states.filter(item=>item.action==='wave-committed'&&item.load===state.load&&
+        item.timeOrigin===state.timeOrigin&&item.scope===state.scope&&item.sessionRun===state.sessionRun&&
+        item.runId===state.runId&&Number.isFinite(item.t)&&item.t>=0&&item.t<=state.t).sort((a,b)=>b.t-a.t);
+      assert.ok(commits.length>0,'The paused checkpoint requires its actual committed boundary');
+      const committed=commits[0];assert.equal(commits.filter(item=>item.t===committed.t).length,1,'Latest committed boundary must be unique');
+      assert.equal(committed.tick,e.tick);assert.equal(committed.completedWave,e.completedWave);assert.equal(committed.wave,e.wave+1);
+      for(const key of ['checkpointWave','wallet','activeTier','profileVersion','fittingId','cannonDamage','phase','saveState',
+        'hasCheckpoint','checkpointBlocked','pendingRunId'])assert.equal(committed[key],state[key],'Committed and paused checkpoint ownership must match');
     }else if(record.kind==='new-run-cancel'){
       actualState(record.confirmation);actualState(record.cancelled);actualLayout(record.layout);
     }

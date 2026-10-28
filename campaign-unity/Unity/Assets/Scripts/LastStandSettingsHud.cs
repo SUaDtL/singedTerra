@@ -9,76 +9,44 @@ namespace SingedTerra.LastStand
     public sealed class LastStandSettingsHud
     {
         readonly LastStandLoopController loop;
-        readonly Font font;
-        readonly Texture2D metalGrain;
-        readonly Sprite metalSurface;
+        readonly LastStandModal modal;
+        readonly LastStandScrollPane pane;
         readonly RectTransform shade, panel, viewport, content;
         readonly Text title, body, choiceName;
         readonly ScrollRect scroll;
         readonly Button close;
-        readonly List<Button> buttons = new List<Button>();
+        readonly List<Button> buttons;
         readonly Dictionary<string,Button> controls = new Dictionary<string,Button>();
         readonly List<Button> visible = new List<Button>();
         readonly Button[] tabs;
         string tab = "Audio", previousPage = "";
         float scaleX = 1, scaleY = 1, viewportHeight;
         public Button[] Buttons => buttons.ToArray();
-        public float ScrollOffset => loop.MenuOpen ? content.anchoredPosition.y / scaleY : 0;
-        public float MaximumScrollOffset => loop.MenuOpen ? Math.Max(0,content.rect.height / scaleY - viewportHeight) : 0;
+        public float ScrollOffset => loop.MenuOpen ? pane.Offset : 0;
+        public float MaximumScrollOffset => loop.MenuOpen ? pane.MaximumOffset : 0;
         public Button InitialFocus => loop.MenuPage == "confirm" ? controls["ConfirmCancel"] : close;
         static readonly Color Paper = new Color(.94f,.91f,.80f);
         static readonly Color Brass = new Color(.91f,.69f,.33f);
-        static RectTransform Node(string name, Transform parent)
-        {
-            var r = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
-            r.SetParent(parent, false); r.anchorMin = r.anchorMax = r.pivot = new Vector2(0,1); return r;
-        }
-        static void Place(RectTransform r, float x, float y, float w, float h)
-        { r.anchoredPosition = new Vector2(x,-y); r.sizeDelta = new Vector2(w,h); }
-        Text Text(string name, Transform parent, int size)
-        {
-            var text = Node(name,parent).gameObject.AddComponent<Text>(); text.font = font;
-            text.fontSize = size; text.color = Paper; text.raycastTarget = false;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap; text.verticalOverflow = VerticalWrapMode.Truncate; return text;
-        }
-        Button Button(string name, string label, Transform parent, Action handler)
-        {
-            var r = Node(name,parent); var image = LastStandConsoleChrome.Surface(r,metalSurface,true); image.color = new Color(.24f,.27f,.205f);
-            var frame = LastStandConsoleChrome.Frame(r,metalGrain,true);
-            var b = r.gameObject.AddComponent<Button>(); b.targetGraphic = image;
-            var colors = b.colors; colors.normalColor = colors.disabledColor = Color.white;
-            colors.selectedColor = colors.highlightedColor = new Color(1.10f,1.10f,1.06f);
-            colors.pressedColor = new Color(.85f,.85f,.85f); colors.fadeDuration = .08f; b.colors = colors;
-            b.onClick.AddListener(() => handler());
-            var t = Text(name + "Text",r,16); t.text = label; t.alignment = TextAnchor.MiddleCenter;
-            t.rectTransform.anchorMin = Vector2.zero; t.rectTransform.anchorMax = Vector2.one;
-            t.rectTransform.offsetMin = new Vector2(8,2); t.rectTransform.offsetMax = new Vector2(-8,-2);
-            LastStandConsoleChrome.Feedback(b,t,frame);
-            controls.Add(name,b); buttons.Add(b); return b;
-        }
+        static void Place(RectTransform r,float x,float y,float w,float h)=>LastStandUiPrimitives.Place(r,x,y,w,h);
+        Text Text(string name,Transform parent,int size)=>modal.Text(name,parent,size);
+        Button Button(string name,string label,Transform parent,Action handler)
+        {var button=modal.Button(name,label,parent,handler);controls.Add(name,button);return button;}
         public LastStandSettingsHud(LastStandLoopController owner, Transform parent, Font sharedFont,
             Texture2D sharedMetal = null, Sprite sharedSurface = null)
         {
-            loop = owner; font = sharedFont; metalGrain = sharedMetal; metalSurface = sharedSurface;
-            shade = Node("SettingsModal",parent); shade.gameObject.AddComponent<Image>().color = new Color(0,0,0,.82f);
-            panel = Node("SettingsPanel",shade);
-            LastStandConsoleChrome.Surface(panel,metalSurface,false).color = new Color(.12f,.15f,.13f);
-            LastStandConsoleChrome.Frame(panel,metalGrain);
-            title = Text("SettingsHeading",panel,22); title.color = Brass;
-            choiceName = Text("SelectionName",panel,18);choiceName.alignment=TextAnchor.MiddleCenter;choiceName.color=Brass;
-            close = Button("SettingsClose","CLOSE",panel,loop.CloseMenu);
+            loop=owner;
+            modal=new LastStandModal("Settings",parent,sharedFont,loop.CloseMenu,sharedMetal,sharedSurface);
+            shade=modal.Shade;panel=modal.Panel;title=modal.Title;close=modal.Close;
+            modal.Status.gameObject.SetActive(false);buttons=modal.Buttons;controls.Add(close.name,close);
+            choiceName=Text("SelectionName",panel,18);choiceName.alignment=TextAnchor.MiddleCenter;choiceName.color=Brass;
             Button("ChoicePrevious","<",panel,() => loop.MoveSelection(-1));
             Button("ChoiceNext",">",panel,() => loop.MoveSelection(1));
-            tabs = new Button[4]; string[] labels = { "Audio", "Display", "Gameplay", "Save & Account" };
+            tabs = new Button[4]; string[] labels = { "Audio", "Display", "Gameplay", loop.Platform.CanOpenAccount ? "Save & Account" : "Save" };
             for (int i=0;i<labels.Length;i++)
             {
                 string value = labels[i]; tabs[i] = Button("SettingsTab" + i,value,panel,() => { tab=value; ResetScroll(); loop.RefreshControls(); });
             }
-            viewport = Node("SettingsViewport",panel);
-            LastStandConsoleChrome.Surface(viewport,metalSurface,false).color = new Color(.09f,.11f,.10f);
-            viewport.gameObject.AddComponent<RectMask2D>(); content = Node("SettingsContent",viewport);
-            scroll = panel.gameObject.AddComponent<ScrollRect>(); scroll.viewport = viewport; scroll.content = content;
-            scroll.horizontal = false; scroll.vertical = true; scroll.inertia = false; scroll.movementType = ScrollRect.MovementType.Clamped;
+            pane=modal.Pane("Settings");viewport=pane.Viewport;content=pane.Content;scroll=pane.Scroll;
             body = Text("SettingsBody",content,16);
             Button("MenuResume","RESUME / CLOSE",content,loop.CloseMenu);
             Button("MenuSettings","SETTINGS",content,() => loop.OpenMenu("settings"));
@@ -102,7 +70,7 @@ namespace SingedTerra.LastStand
             Button("DisplayQuality","",content,() => loop.SetPreferences(loop.Preferences.Current.With(quality:
                 loop.Preferences.Current.Quality == LastStandQuality.Current ? LastStandQuality.Performance : LastStandQuality.Current)));
             Button("DisplayEffects","",content,loop.ToggleEffects);
-            Button("DisplayFullscreen","",content,() => loop.Browser.ToggleFullscreen());
+            Button("DisplayFullscreen","",content,() => loop.Platform.ToggleFullscreen());
             Button("TutorialTips","",content,() => loop.SetPreferences(loop.Preferences.Current.With(tutorialTips:!loop.Preferences.Current.TutorialTips)));
             Button("PurchaseSuggestions","",content,() => loop.SetPreferences(loop.Preferences.Current.With(purchaseSuggestions:!loop.Preferences.Current.PurchaseSuggestions)));
             Button("GameplayHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
@@ -125,22 +93,8 @@ namespace SingedTerra.LastStand
             if (label != null) b.GetComponentInChildren<Text>().text = label;
             visible.Add(b);
         }
-        void ResetScroll()
-        {
-            // Normalized positioning uses bounds from the previous page. Set
-            // the actual top offset exactly before the new content is laid out.
-            scroll.StopMovement(); content.anchoredPosition=Vector2.zero;
-        }
-        void ClampScroll()
-        {
-            float maximum=Math.Max(0,content.rect.height-viewportHeight*scaleY);
-            float current=content.anchoredPosition.y;
-            float bounded=Mathf.Clamp(current,0,maximum);
-            if(content.anchoredPosition.x!=0 || current!=bounded)
-            {
-                scroll.StopMovement();content.anchoredPosition=new Vector2(0,bounded);
-            }
-        }
+        void ResetScroll()=>pane.Reset();
+        void ClampScroll()=>pane.Clamp();
         public void Refresh()
         {
             bool visiblePage=loop.MenuOpen && loop.MenuPage!="research" && loop.MenuPage!="history";
@@ -175,7 +129,7 @@ namespace SingedTerra.LastStand
                     Show("MenuHistory");
                     if(loop.Progression.HasCheckpoint)Show("MenuNewRun",enabled:canLeave);
                     Show("MenuAbandon",enabled:canLeave && loop.Progression.ActiveRunId != 0);
-                    Show("MenuCampaigns",enabled:canLeave); Show("MenuAbout"); break;
+                    if(loop.Platform.CanNavigate)Show("MenuCampaigns",enabled:canLeave); Show("MenuAbout"); break;
                 case "settings":
                     foreach (var b in tabs) b.gameObject.SetActive(true);
                     body.text = loop.Preferences.Status;
@@ -187,15 +141,15 @@ namespace SingedTerra.LastStand
                     }
                     else if (tab == "Display")
                     {
-                        body.text += "\nPerformance lowers 3D render resolution to 75%. Interface text stays at full resolution.\n" + loop.Browser.FullscreenStatus;
+                        body.text += "\nPerformance lowers 3D render resolution to 75%. Interface text stays at full resolution.\n" + loop.Platform.FullscreenStatus;
                         Show("DisplayQuality","QUALITY: " + p.Quality.ToString().ToUpperInvariant(),loop.Display.Available);
                         Show("DisplayEffects",p.ReducedEffects ? "EFFECTS: REDUCED" : "EFFECTS: FULL");
-                        Show("DisplayFullscreen",loop.Browser.Fullscreen ? "EXIT FULLSCREEN" : "ENTER FULLSCREEN",loop.Browser.FullscreenAvailable);
+                        if(loop.Platform.FullscreenAvailable)Show("DisplayFullscreen",loop.Platform.Fullscreen ? "EXIT FULLSCREEN" : "ENTER FULLSCREEN",loop.Platform.FullscreenAvailable);
                     }
                     else if (tab == "Gameplay")
                     {
                         body.text += "\nLast running speed: " + loop.Session.LastPositiveSpeed.ToString("0.0") +
-                            "x. Research cap: "+(1+.5*loop.ResearchSnapshot.completedRanks[(int)LastStandResearchTrackId.GameSpeed]).ToString("0.0")+
+                            "x. Research cap: "+loop.Session.MaximumSpeed.ToString("0.0")+
                             "x. Research raises the cap; you choose the running speed.\nEssential status, errors and confirmations remain visible.";
                         Show("TutorialTips",p.TutorialTips ? "TUTORIAL TIPS: ON" : "TUTORIAL TIPS: OFF");
                         Show("PurchaseSuggestions",p.PurchaseSuggestions ? "PURCHASE SUGGESTIONS: ON" : "PURCHASE SUGGESTIONS: OFF"); Show("GameplayHelp");
@@ -203,10 +157,10 @@ namespace SingedTerra.LastStand
                     else
                     {
                         body.text += "\nGameplay save: " + loop.Progression.SaveState + ". " + (loop.Progression.SaveError ?? "") +
-                            "\nProgress stays in this browser; signing in does not sync it. Each cleared wave saves hull, upgrades, Scrap and cooldowns. Leaving or reloading restores the last checkpoint; partial-wave spending and upgrades roll back together. Resume starts paused, without closed-tab catch-up.";
+                            "\nProgress is saved locally and is not synced to an account. Each cleared wave saves hull, upgrades, Scrap and cooldowns. Leaving or reloading restores the last checkpoint; partial-wave spending and upgrades roll back together. Resume starts paused, without closed-tab catch-up.";
                         Show("DataRetry",enabled:loop.Progression.SaveState != "ready");
                         Show("PreferencesRetry",enabled:loop.Preferences.CanRetry);
-                        Show("DataAccount",enabled:canLeave); Show("SettingsDefaults");
+                        if(loop.Platform.CanOpenAccount)Show("DataAccount",enabled:canLeave); Show("SettingsDefaults");
                     }
                     Show("SettingsBack"); break;
                 case "help": body.text = LastStandGuidance.Help+
@@ -247,12 +201,7 @@ namespace SingedTerra.LastStand
                 bool available = b.interactable;
                 var label = b.GetComponentInChildren<Text>(true);
                 bool selectedTab = loop.MenuPage == "settings" && Array.IndexOf(tabs,b) >= 0 && label.text == tab;
-                b.GetComponent<Image>().color = !available ? new Color(.14f,.16f,.135f,1) :
-                    selectedTab ? Brass : new Color(.24f,.27f,.205f,1);
-                label.color = !available ? new Color(.76f,.75f,.67f,1) :
-                    selectedTab ? new Color(.055f,.068f,.064f,1) : Paper;
-                b.GetComponentInChildren<LastStandConsoleFrame>(true).SetAction(selectedTab,available);
-                b.GetComponent<LastStandActionFeedback>().Refresh();
+                modal.Style(b,available,selectedTab);
             }
         }
         void VolumeRows(string name, int value)
@@ -274,12 +223,12 @@ namespace SingedTerra.LastStand
                 Place((RectTransform)controls["ChoiceNext"].transform,(cw-56)*unitsX,68*unitsY,44*unitsX,44*unitsY);
                 Place(choiceName.rectTransform,64*unitsX,64*unitsY,(cw-128)*unitsX,52*unitsY);
                 viewportHeight=Math.Max(44,ch-132);
-                Place(viewport,12*unitsX,120*unitsY,(cw-24)*unitsX,viewportHeight*unitsY);
+                pane.Layout(12,120,cw-24,viewportHeight,unitsX,unitsY);
                 float bw=cw-40;body.fontSize=Mathf.CeilToInt(16*unitsY);
                 var textSettings=body.GetGenerationSettings(new Vector2(bw*unitsX,0));
                 float bh=body.cachedTextGeneratorForLayout.GetPreferredHeight(body.text,textSettings)/body.pixelsPerUnit+16*unitsY;
                 Place(body.rectTransform,8*unitsX,8*unitsY,bw*unitsX,bh);
-                content.sizeDelta=new Vector2((cw-24)*unitsX,Math.Max(viewportHeight*unitsY,bh+16*unitsY));
+                pane.Finish(bh/unitsY+16);
                 ClampScroll();scroll.scrollSensitivity=44*unitsY;
                 foreach(var t in shade.GetComponentsInChildren<Text>(true))if(t!=body)t.fontSize=Mathf.CeilToInt((t==title?22:t==choiceName?18:16)*unitsY);
                 return;
@@ -295,7 +244,7 @@ namespace SingedTerra.LastStand
                 for(int i=0;i<4;i++) Place((RectTransform)tabs[i].transform,(12+(i%columns)*(tw+8))*unitsX,(y+(i/columns)*52)*unitsY,tw*unitsX,44*unitsY);
                 y += (4/columns)*52;
             }
-            viewportHeight=Math.Max(44,h-y-12); Place(viewport,12*unitsX,y*unitsY,inner*unitsX,viewportHeight*unitsY);
+            viewportHeight=Math.Max(44,h-y-12); pane.Layout(12,y,inner,viewportHeight,unitsX,unitsY);
             float bodyWidth=inner-16;
             body.fontSize=Mathf.CeilToInt(16*unitsY);
             var settings=body.GetGenerationSettings(new Vector2(bodyWidth*unitsX,0));
@@ -310,32 +259,15 @@ namespace SingedTerra.LastStand
                 if(volume) { i++; Place((RectTransform)visible[i].transform,(16+bw)*unitsX,row*unitsY,bw*unitsX,44*unitsY); }
                 row+=52;
             }
-            content.sizeDelta=new Vector2(inner*unitsX,Math.Max(viewportHeight,row+8)*unitsY);
+            pane.Finish(row+8);
             // Preserve a valid reading position on same-page refreshes, but
             // repair the actual content when text or viewport bounds contract.
             ClampScroll();
             foreach(var t in shade.GetComponentsInChildren<Text>(true)) if(t!=body) t.fontSize=Mathf.CeilToInt((t==title?22:16)*unitsY);
             scroll.scrollSensitivity=44*unitsY;
         }
-        public void Reveal(Button button)
-        {
-            if (!button || !button.transform.IsChildOf(content)) return;
-            var rect=(RectTransform)button.transform; float y=-rect.anchoredPosition.y, offset=content.anchoredPosition.y;
-            if(y<offset) offset=y;
-            else if(y+rect.rect.height>offset+viewportHeight*scaleY) offset=y+rect.rect.height-viewportHeight*scaleY;
-            content.anchoredPosition=new Vector2(0,Mathf.Clamp(offset,0,Math.Max(0,content.rect.height-viewportHeight*scaleY)));
-        }
+        public void Reveal(Button button)=>pane.Reveal(button);
         public void ScrollKeyboard(string direction)
-        {
-            if(!loop.MenuOpen)return;
-            float maximum=Math.Max(0,content.rect.height-viewportHeight*scaleY),offset=content.anchoredPosition.y;
-            float step=Math.Max(44,viewportHeight*.8f)*scaleY;
-            if(direction=="scroll-up")offset-=step;
-            else if(direction=="scroll-down")offset+=step;
-            else if(direction=="scroll-start")offset=0;
-            else if(direction=="scroll-end")offset=maximum;
-            else return;
-            scroll.StopMovement();content.anchoredPosition=new Vector2(0,Mathf.Clamp(offset,0,maximum));
-        }
+        {if(loop.MenuOpen)pane.ScrollKeyboard(direction);}
     }
 }

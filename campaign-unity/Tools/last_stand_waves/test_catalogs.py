@@ -1,16 +1,13 @@
 """Execute the production wave/tier/reward catalogs, including authored-data rejection."""
 from pathlib import Path
-import subprocess
 import tempfile
 import unittest
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import EDITOR, MONO, CSC, compile_csharp, run_csharp
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "Unity/Assets/Scripts"
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 
 
 def execute(source, names, case, *, timeout_seconds=120):
@@ -19,13 +16,9 @@ def execute(source, names, case, *, timeout_seconds=120):
         names.append("LastStandEconomyCatalog.cs")
     with tempfile.TemporaryDirectory(prefix="st-waves-") as folder:
         executable = Path(folder) / "Checks.exe"
-        build = subprocess.run([str(MONO), str(CSC), "-nologo", f"-out:{executable}",
-                                *map(str,complete_sources(SCRIPTS,[SCRIPTS / name for name in names])), str(source)],
-                               capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
-        if build.returncode:
-            raise AssertionError(build.stdout + build.stderr)
-        run = subprocess.run([str(MONO), str(executable), case], capture_output=True, text=True,
-                             encoding="utf-8-sig", timeout=timeout_seconds)
+        compile_csharp(executable, complete_sources(SCRIPTS, [SCRIPTS / name for name in names]) + [source],
+                       warnings_as_errors=False, timeout_seconds=60)
+        run = run_csharp(executable, [case], timeout_seconds=timeout_seconds)
         if run.returncode:
             raise AssertionError(run.stdout + run.stderr)
         return run.stdout

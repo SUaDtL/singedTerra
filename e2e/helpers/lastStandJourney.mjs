@@ -1,3 +1,5 @@
+// Versioned diagnostics contract; player actions and state remain in production owners.
+const OBSERVATION_CONTRACT=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v1.json',import.meta.url),'utf8'));
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
 const SHOP_RUNTIME_PROBE = `(() => {
@@ -12,7 +14,8 @@ const SHOP_RUNTIME_PROBE = `(() => {
 })();`;
 const SHOP_PLAYER_INPUTS = ['e2e/helpers/lastStandJourney.mjs','scripts/last-stand-playable-loop.mjs',
   'campaign-unity/Tools/verify_last_stand_loop.py','campaign-unity/Tools/last_stand_shop/test_shop_player.py',
-  'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py'];
+  'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
 // presentation matrix. Preserve every value, streaming JSON in bounded batches.
@@ -42,14 +45,12 @@ export function writeShopPresentationJson(path,value){
 // Admit the complete current controls and scroll fields without repairing a
 // truncated Unity log. Geometry qualification additionally checks raw graphics.
 export function readShopControlObservation(raw) {
-  const tag='ST_LS_HUD_LAYOUT ';
+  const tag=OBSERVATION_CONTRACT.tag;
   assert.ok(typeof raw==='string' && raw.startsWith(tag),'Expected actual HUD control emission');
   const payload=raw.slice(tag.length),boundary=payload.indexOf(',"graphics":[');
   assert.ok(boundary>0,'Complete controls must precede the graphics array');
   const prefix=JSON.parse(payload.slice(0,boundary)+'}');
-  const header=['phase','coordinates','selection','width','height','pixelRatio','scrollOffset','maximumScrollOffset',
-    'settingsScrollOffset','settingsMaximumScrollOffset','controls','shopControls','settingsControls','researchControls','historyControls'];
-  const tail=['researchScrollOffset','researchMaximumScrollOffset','historyScrollOffset','historyMaximumScrollOffset'];
+  const {header,tail}=OBSERVATION_CONTRACT;
   assert.deepEqual(Object.keys(prefix).filter(key=>!tail.includes(key)).sort(),[...header].sort(),'Exact complete controls header');
   // Research/history offsets follow graphics in the Unity record. A truncated
   // packet cannot qualify those panes: keep the raw failure rather than infer it.
@@ -58,32 +59,19 @@ export function readShopControlObservation(raw) {
   assert.ok(Array.isArray(complete.graphics),'Complete observed graphics required');
   const fields={...prefix,...Object.fromEntries(tail.map(key=>[key,complete[key]]))};
   assert.ok(fields.coordinates==='top-left' && typeof fields.phase==='string' && typeof fields.selection==='string');
-  for(const name of ['width','height','pixelRatio','scrollOffset','maximumScrollOffset','settingsScrollOffset','settingsMaximumScrollOffset',...tail])
+  for(const name of OBSERVATION_CONTRACT.numeric)
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
-  const names=[['controls',['ToggleFitting','Deploy','Claim','Purchase','Redeploy','RetrySave','Pause','ToggleMute','ToggleTier','Effects',
-      'Menu','SpeedMinus','SpeedRate','SpeedPlus','TierPrevious','TierNext','FittingPrevious','FittingNext','ResearchEntry','WaveInfo']],
-    ['shopControls',['ShopEntry','ShopClose','ShopQuantity','ShopTabAttack','ShopTabDefense','ShopTabUtility',
-      'ShopCard_cannonAttackBuy','ShopCard_launcherAttackBuy','ShopCard_hullCapacityBuy','ShopCard_armorBuy',
-      'ShopCard_cannonCycleBuy','ShopCard_fieldRepairBuy','ShopCard_scattergunAttackBuy','ShopCard_scrapYieldBuy']],
-    ['settingsControls',['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3',
-      'MenuResume','MenuSettings','MenuHelp','MenuMilestones','MenuWaveInfo','MenuResearch','MenuHistory','MenuNewRun','MenuAbandon','MenuCampaigns','MenuAbout','SettingsBack','SettingsMute',
-      'MasterMinus','MasterPlus','EffectsMinus','EffectsPlus','EffectsSample','MusicEnabled','MusicMinus','MusicPlus',
-      'DisplayQuality','DisplayEffects','DisplayFullscreen','TutorialTips','PurchaseSuggestions','GameplayHelp',
-      'DataRetry','PreferencesRetry','DataAccount','SettingsDefaults','ConfirmCancel','ConfirmProceed','ChoicePrevious','ChoiceNext']],
-    ['researchControls',['ResearchClose','ResearchFilter','ResearchBack',
-      ...['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'].map(key=>'ResearchProject-'+key),
-      ...[0,1].flatMap(slot=>['Start','Queue','Switch','Suspend','RemoveQueued'].map(action=>'Research'+action+slot))]],
-    ['historyControls',['RunHistoryClose','RunHistoryTier']]];
+  const names=OBSERVATION_CONTRACT.inventories.map(({field,names})=>[field,names]);
   const allNames=new Set();
   for(const [key,expected]of names) {
     const items=fields[key];assert.ok(Array.isArray(items) && items.length===expected.length,'Complete '+key);
-    assert.deepEqual(items.map(item=>item.name).sort(),expected.sort(),'Unique known '+key);
+    assert.deepEqual(items.map(item=>item.name).sort(),[...expected].sort(),'Unique known '+key);
     for(const item of items) {
       assert.ok(!allNames.has(item.name),'Control identity appears in one owner');allNames.add(item.name);
-      assert.deepEqual(Object.keys(item).sort(),['name','label','accessibleLabel','mode','trackKey','x','y','width','height','active','interactable'].sort());
-      for(const name of ['name','label','accessibleLabel','mode','trackKey'])assert.equal(typeof item[name],'string');
-      for(const name of ['x','y','width','height'])assert.ok(Number.isFinite(item[name]),'Finite control bounds');
+      assert.deepEqual(Object.keys(item).sort(),[...OBSERVATION_CONTRACT.controlStrings,...OBSERVATION_CONTRACT.controlNumbers,...OBSERVATION_CONTRACT.controlBooleans].sort());
+      for(const name of OBSERVATION_CONTRACT.controlStrings)assert.equal(typeof item[name],'string');
+      for(const name of OBSERVATION_CONTRACT.controlNumbers)assert.ok(Number.isFinite(item[name]),'Finite control bounds');
       assert.ok(item.width>=0 && item.height>=0 && typeof item.active==='boolean' && typeof item.interactable==='boolean');
     }
   }
@@ -1464,6 +1452,87 @@ export function validateModelObservation(observed,oracle) {
   if(Object.hasOwn(expected,'wave'))for(const key of ['wave','completedWave'])
     assert.equal(observed[key],expected[key],'Source-bound wave '+key+' differs');
 }
+const sameDeploymentDocument=(item,deployed)=>item.load===deployed.load && item.timeOrigin===deployed.timeOrigin && item.scope===deployed.scope;
+function cannonDeployment(deployed,encounters,oracle){
+  assert.ok(Number.isSafeInteger(deployed.load) && deployed.load>0 && Number.isFinite(deployed.timeOrigin) && deployed.timeOrigin>0 &&
+    Number.isFinite(deployed.t) && deployed.t>=0 && deployed.scope==='healthy' &&
+    Number.isSafeInteger(deployed.runId) && Number.isSafeInteger(deployed.sessionRun),
+    'Cannon proof requires explicit current document, scope and run identities');
+  assert.ok(deployed.action==='deploy' && deployed.phase==='battle' && deployed.saveState==='ready' &&
+    deployed.profileVersion==='last-stand-waves-v1' && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
+    deployed.activeTier===1 && deployed.fittingId==='repair' && [20,30].includes(deployed.cannonDamage),
+    'First cannon proof requires its actual current repair deployment');
+  const models=encounters.filter(item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun && item.action==='deploy');
+  assert.ok(models.length===1 && models[0].t<=deployed.t && models[0].tick===0 && models[0].fitting==='repair' &&
+    models[0].rules.startsWith('last-stand-waves-v1:'),'First cannon proof requires its raw same-run model deployment');
+  validateModelObservation(models[0],oracle);
+}
+function cannonCallback(item,deployed,records){
+  const group=records.filter(row=>sameDeploymentDocument(row,deployed) && row.run===deployed.sessionRun && row.id===item.id);
+  const starts=group.filter(row=>row.action==='begin'),ends=group.filter(row=>row.action==='end');
+  assert.ok(starts.length===1 && ends.length===1,'Cannon evidence requires one complete actual callback');
+  const begin=starts[0],end=ends[0];
+  assert.ok(Number.isSafeInteger(begin.id) && begin.id>0 && Number.isSafeInteger(begin.fromTick) && begin.fromTick>=0,
+    'Cannon callback requires its actual positive identity and integral tick');
+  assert.ok([begin,end].every(row=>['t','timestamp','previousTimestamp','elapsed','priorPending','pending'].every(key=>
+    Number.isFinite(row[key]) && row[key]>=0) && row.timestamp>=row.previousTimestamp &&
+    Math.abs(row.elapsed-(row.timestamp-row.previousTimestamp))<=1e-9) &&
+    begin.priorPending===end.priorPending,'Cannon callback clocks and retained carry must be finite, monotonic and consistent');
+  assert.ok(begin.t>=deployed.t && begin.t<=item.t && item.t<=end.t && begin.fromTick===end.fromTick &&
+    begin.tick===begin.fromTick && end.tick===begin.fromTick+end.steps && Number.isInteger(end.steps) && end.steps>0 && end.steps<=128 &&
+    begin.fromTick<item.tick && item.tick<=end.tick && begin.timestamp===end.timestamp &&
+    begin.previousTimestamp===end.previousTimestamp,'Cannon evidence must belong to its actual bounded run callback');
+  return {begin,end,group};
+}
+export async function observeFirstCannonImpact({deployed,start,hits,encounters,callbackRecords,oracle,until}){
+  cannonDeployment(deployed,encounters,oracle);
+  const expected=Object.values(oracle).find(row=>row.cannon>0);
+  assert.ok(expected?.cannon===1 && oracle[expected.tick-1]?.cannon===0,'First cannon event absent from source-bound oracle');
+  const hit=await until(hits,start,item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t,45);
+  assert.ok(hit.tick===expected.tick && hit.cannonDamage===deployed.cannonDamage && hit.kills===expected.kills &&
+    hit.firstFoeHull===Math.max(0,30-deployed.cannonDamage),'First authoritative cannon impact differs from deployment/oracle');
+  await until(callbackRecords,0,item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun &&
+    item.action==='end' && item.t>=hit.t && item.fromTick<hit.tick && item.tick>=hit.tick,8);
+  const starts=callbackRecords.filter(item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun &&
+    item.action==='begin' && item.t>=deployed.t && item.t<=hit.t && item.fromTick<hit.tick);
+  const begin=starts.at(-1);assert.ok(begin,'First impact has no authoritative callback');
+  cannonCallback({...hit,id:begin.id},deployed,callbackRecords);
+  assert.equal(hits.slice(start).filter(item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t && item.tick===hit.tick).length,1,
+    'First authoritative impact cannot be duplicated');
+  return hit;
+}
+export async function observeFreshCannonAudio({deployed,encounters,callbackRecords,cues,oracle,until}){
+  cannonDeployment(deployed,encounters,oracle);
+  const current=item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun && item.t>=deployed.t;
+  const cannon=await until(callbackRecords,0,item=>current(item) && item.action==='cue' && item.cue==='cannon' && item.played &&
+    callbackRecords.some(next=>current(next) && next.action==='cue' && next.id===item.id && next.tick===item.tick && next.ordinal===item.ordinal+1 && next.played) &&
+    callbackRecords.some(end=>current(end) && end.id===item.id && end.action==='end'),45);
+  const {begin,end,group}=cannonCallback(cannon,deployed,callbackRecords);
+  const a=oracle[cannon.tick-1],b=oracle[cannon.tick];
+  assert.ok(a && b && b.cannon-a.cannon===1 && [0,1].includes(b.kills-a.kills),'Played cannon must match an actual oracle event');
+  assert.ok(Number.isSafeInteger(cannon.ordinal) && cannon.ordinal>0 &&
+    group.filter(item=>item.action==='cue' && item.ordinal===cannon.ordinal).length===1,
+    'Played cannon requires one unique identified admission');
+  const companion=group.filter(item=>item.action==='cue' && item.ordinal===cannon.ordinal+1);
+  assert.equal(companion.length,1,'Played cannon needs one admitted impact/destruction companion');
+  const attempts=[cannon,companion[0]],expected=['cannon',b.kills>a.kills?'destruction':'impact'];
+  assert.ok(begin.focused && !begin.applicationPaused && !begin.paused && !begin.failed && begin.priorPending<.05 && begin.elapsed<=.5 && end.elapsed<=.5,
+    'Fresh cannon sound cannot come from hidden, paused or retained-debt callbacks');
+  const events=attempts.map((item,index)=>{
+    assert.ok(item.cue===expected[index] && item.played===true && item.reason==='played' && item.tick===cannon.tick && item.fromTick===begin.fromTick &&
+      item.timestamp===begin.timestamp && item.previousTimestamp===begin.previousTimestamp && item.steps===item.tick-item.fromTick &&
+      item.steps>=1 && item.steps<=10 && item.timestamp-item.previousTimestamp<=.5 && Number.isFinite(item.admittedAt) &&
+      item.admittedAt>=item.timestamp && item.admittedAt-item.previousTimestamp<=.5 && item.t>=begin.t && item.t<=end.t,
+      'Cannon/impact audio requires its fresh actual playback admission');
+    const next=group.filter(row=>row.action==='cue' && row.t>item.t).sort((x,y)=>x.t-y.t)[0];
+    const played=cues.filter(row=>sameDeploymentDocument(row,deployed) && row.t>=item.t && row.t<=(next?.t??end.t) &&
+      row.text.trim()==='ST_LS_AUDIO event='+item.cue);
+    assert.equal(played.length,1,'Each admitted sound requires one actual played-event observation');return played[0];
+  });
+  assert.ok(cannon.t<=events[0].t && events[0].t<=companion[0].t && companion[0].t<=events[1].t &&
+    companion[0].admittedAt>=cannon.admittedAt,'Played cannon and companion must retain actual chronological admission and log order');
+  return {begin:Math.max(deployed.t,events[0].t-500),end:events[1].t+750,deployed,callback:{begin,end},attempts,events};
+}
 export function validateSettlingTransition({before,result,states,layouts,encounters,oracle}) {
   assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
     before.status==='Running' && !before.paused && !before.failed && !before.catchingUp &&
@@ -1606,16 +1675,30 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     item.rules==='playable-prototype-v1' && item.tick===0 && item.wave===0 && item.completedWave===0 &&
     item.locked===false && item.clockTimestamp===-1 && item.clockPending===-1 && item.callbackSteps===0 &&
     item.paused===false && item.failed===false && item.catchingUp===false;
-  const idleLoop=item=>current(item) && item.sessionRun===before.run && item.profileVersion==='last-stand-waves-v1' &&
-    item.phase==='result' && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
+  const idleLoop=(item,phase)=>current(item) && item.sessionRun===before.run && item.profileVersion==='last-stand-waves-v1' &&
+    item.phase===phase && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
     item.activeTier===0 && item.hasCheckpoint===false && item.tick===0 && item.wave===0 && item.completedWave===0;
-  const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop) && before.loop.t>=before.t;
+  const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop,'result') && before.loop.t>=before.t;
   assert.equal(waveRun,typeof before.rules==='string' && before.rules.startsWith('last-stand-waves-v1:') || idleWaveResult,
     'Native audio interval wave profile and model rules disagree');
   if(idleWaveResult){
     const during=item=>current(item) && item.t>=before.t && item.t<=recovered;
+    const {loop,hull,...model}=before;
+    assert.deepEqual(encounters.find(item=>current(item) && item.run===before.run && item.t===before.t && item.action===before.action),model,
+      'Idle interval requires its actual model observation');
+    assert.deepEqual(states.find(item=>current(item) && item.t===loop.t && item.action===loop.action),loop,
+      'Idle interval requires its actual paired result observation');
+    const results=states.filter(item=>current(item) && item.sessionRun===before.run && item.action==='result' && item.t<=recovered);
+    assert.ok(results.length===1 && idleLoop(results[0],'result') && Number.isFinite(results[0].t) &&
+      results[0].t<=loop.t && loop.t<=loss.t,'Idle interval requires the first raw finalized result before native loss');
+    const finalized=results[0];
+    // ReturnToInspection emits its cleared model and synchronous session HUD
+    // before the controller publishes result. Retain and prove that prefix;
+    // a later research refresh must not hide any subsequent activity.
+    const idleState=item=>item.t<finalized.t ? item.action==='session' && idleLoop(item,'settling') &&
+      item.hull===model.hp && item.kills===0 && item.paused===false : idleLoop(item,'result');
     assert.ok(Array.isArray(callbackRecords) && !callbackRecords.some(during) && !cues.some(during) &&
-      encounters.filter(during).every(idleModel) && states.filter(during).every(idleLoop),
+      encounters.filter(during).every(idleModel) && states.filter(during).every(idleState),
       'Finalized idle result cannot admit combat callbacks, cues or an active lifecycle');
   }
   const attempts=waveRun?(callbackRecords??[]).filter(c=>current(c) && c.action==='cue' && c.t>=returned.t && c.t<=recovered):[];
@@ -3294,6 +3377,8 @@ export function persistLastStandJourneyEvidence(report,observations,write,diagno
 }
 
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
+  'e2e/helpers/lastStandControlReveal.mjs',
+  'e2e/helpers/lastStandTierJourney.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
   'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs',
@@ -3408,6 +3493,72 @@ export function validateHiddenWaveTerminal({interval,evidence,events=interval?.e
   assert.ok(isWaveResultFor(before,result),'Hidden terminal requires the exact same-session result transition');
   return {loss,visible};
 }
+// The loaded-page contract permits throttled callbacks and reconciliation on
+// ordinary return. Keep that outcome separate from actual hidden persistence.
+export function validateBackgroundWaveTerminal({interval,evidence,events=interval?.events,callbackRecords=[],states=[],cues=[]}) {
+  const {before,terminal,result}=evidence;
+  assert.deepEqual(interval?.before,before,'Background interval starts at the source-bound model observation');
+  const current=item=>item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope;
+  const loss=events?.find(item=>current(item) && item.globalTarget===true &&
+    item.kind==='visibilitychange' && item.hidden && !item.focused);
+  const visible=loss && events.find(item=>current(item) && item.globalTarget===true &&
+    item.kind==='visibilitychange' && !item.hidden && item.t>loss.t);
+  if(visible && result.t<visible.t){
+    validateHiddenWaveTerminal({interval,evidence,events});return {completion:'hidden'};
+  }
+  assert.ok(interval && Number.isFinite(interval.begin) && Number.isFinite(interval.recovered));
+  for(const key of ['load','timeOrigin','scope','run'])assert.equal(interval.before[key],before[key]);
+  assert.deepEqual(events,waveIntervalEvents(before,{...before,t:interval.recovered},events),
+    'Deferred terminal requires its exact bounded native visibility events');
+  assert.ok(events.every((event,index)=>Number.isFinite(event.t) && (!index || event.t>=events[index-1].t)));
+  const requiredMs=(terminal.tick-before.tick)*50+1500;
+  assert.ok(before.selectedSpeed===1 && Number.isSafeInteger(terminal.tick) && terminal.tick>before.tick &&
+    Number.isSafeInteger(before.tick) && interval.ms===requiredMs && loss && visible &&
+    before.t<=loss.t && loss.t<=interval.begin && visible.t>=interval.begin+requiredMs &&
+    visible.t<=interval.recovered,
+    'Deferred terminal requires the full oracle-derived 1x hidden interval before its first native return');
+  assert.ok(events.some(item=>item.globalTarget===true && item.t>=visible.t && item.t<=interval.recovered &&
+    item.focused===true && item.hidden===false),'Deferred terminal requires actual native foreground return');
+  assert.ok(isWaveResultFor(before,result) && result.t>=visible.t && result.t<=visible.t+60000,
+    'Deferred terminal must finish within the bounded foreground catch-up window');
+  const callbacks=callbackRecords.filter(item=>current(item) && item.run===before.run &&
+    ['begin','end'].includes(item.action) && item.fromTick>=before.tick && item.t>=before.t && item.t<=result.t);
+  const starts=callbacks.filter(item=>item.action==='begin'),ends=callbacks.filter(item=>item.action==='end');
+  assert.ok(starts.length>0 && starts.length===ends.length,'Deferred terminal requires complete admitted callback pairs');
+  const near=(a,b)=>Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<1e-6;
+  let tick=before.tick,pending=before.clockPending,timestamp=before.clockTimestamp;
+  for(let i=0;i<starts.length;i++){
+    const a=starts[i],b=ends[i];
+    assert.ok(a.id===b.id && a.run===b.run && a.t<=b.t && (!i || ends[i-1].t<=a.t) &&
+      (!i || a.id>starts[i-1].id),'Deferred callbacks retain exact identity and ordering');
+    for(const row of [a,b])assert.ok(row.paused===false && row.failed===false && row.speed===before.selectedSpeed &&
+      Number.isFinite(row.pending) && row.pending>=0 && Number.isFinite(row.elapsed) && row.elapsed>=0 &&
+      near(row.timestamp-row.previousTimestamp,row.elapsed),'Deferred callback admission must remain unpaused and monotonic');
+    assert.ok(a.fromTick===tick && b.fromTick===tick && a.tick===tick && a.steps===0 &&
+      Number.isInteger(b.steps) && b.steps>=0 && b.steps<=128 && b.tick===tick+b.steps,
+      'Deferred callback must preserve the 128-step cap and every model tick');
+    // Sub-tick admissions do not emit callback records. Their monotonic clock
+    // gap adds time but cannot hide a step because fromTick must still match.
+    const gap=a.previousTimestamp-timestamp;
+    assert.ok(Number.isFinite(gap) && gap>=-1e-6 &&
+      (gap<=1e-6 || (pending+1e-9<.05 && a.priorPending+1e-9<.05)) &&
+      near(a.priorPending,pending+Math.max(0,gap)*before.selectedSpeed) && near(b.priorPending,a.priorPending) &&
+      near(a.pending,a.priorPending+a.elapsed*a.speed) && near(b.pending,a.pending-b.steps*.05) &&
+      near(a.timestamp,b.timestamp) && near(a.previousTimestamp,b.previousTimestamp) && near(a.elapsed,b.elapsed),
+      'Deferred callbacks must conserve admitted elapsed time and retained debt');
+    tick=b.tick;pending=b.pending;timestamp=b.timestamp;
+  }
+  assert.equal(tick,terminal.tick,'Deferred callbacks must reach the independently verified terminal tick');
+  assert.ok(starts.at(-1).t<=terminal.t && terminal.t<=ends.at(-1).t,
+    'Terminal must belong to the final measured callback');
+  const during=item=>current(item) && item.t>=before.t && item.t<=result.t;
+  assert.ok(states.filter(item=>during(item)&&item.sessionRun===before.run).every(item=>
+    item.saveState==='ready' && !item.checkpointBlocked && (!['battle','settling'].includes(item.phase) || item.paused===false)),
+    'Deferred terminal cannot hide an automatic pause or failed checkpoint');
+  assert.ok(!cues.some(item=>current(item) && item.t>=loss.t+200 && item.t<=result.t),
+    'Deferred terminal cannot replay background or catch-up cues');
+  return {completion:'after-native-return',callbacks};
+}
 // These ordinary-player journeys never fund research. Only its idle clock and
 // transaction revisions may advance during Return, reload or explicit Resume.
 // A funded project needs the separate research journey's completion evidence.
@@ -3423,6 +3574,35 @@ export function assertIdleWaveSave(saved) {
   assert.deepEqual(r.partials,Object.fromEntries(Object.keys(empty).map(key=>[key,null])));
   assert.deepEqual(r.slots,[{active:null,queued:null},{active:null,queued:null}]);
   assert.equal(saved.history?.version,1);
+}
+export function validateBackgroundCheckpoint({interval,after,checkpointState:state,saved}) {
+  assertIdleWaveSave(saved);
+  const cp=saved.checkpoint,e=cp?.encounter;
+  assert.ok(e&&state&&after?.loop&&interval?.before,'A separate paused checkpoint witness is required');
+  for(const row of [interval.before,after,after.loop,state]) {
+    assert.ok(Number.isSafeInteger(row.load)&&row.load>0&&Number.isFinite(row.timeOrigin)&&row.timeOrigin>0);
+    assert.ok(Number.isFinite(row.t)&&row.t>=0&&typeof row.scope==='string'&&row.scope.length>0);
+    for(const key of ['load','timeOrigin','scope'])assert.equal(row[key],after[key],'Checkpoint witnesses share one document');
+  }
+  assert.ok(Number.isSafeInteger(after.run)&&after.run>0);assert.equal(after.run,interval.before.run);
+  assert.equal(after.loop.sessionRun,after.run);assert.equal(state.sessionRun,after.run);
+  assert.ok(Number.isSafeInteger(cp.runId)&&cp.runId>0);assert.equal(cp.runId,after.loop.runId);assert.equal(state.runId,cp.runId);
+  assert.ok(Number.isFinite(interval.begin)&&Number.isFinite(interval.recovered)&&interval.before.t<=interval.begin&&interval.begin<interval.recovered);
+  assert.ok(after.t>=interval.recovered&&after.loop.t>=after.t&&state.t>=after.loop.t,'Paused checkpoint must follow the running return witness');
+  assert.equal(after.loop.paused,false);assert.equal(state.action,'session');assert.equal(state.phase,'battle');
+  assert.equal(state.saveState,'ready');assert.equal(state.paused,true);assert.equal(state.speed,0);
+  assert.equal(state.hasCheckpoint,true);assert.equal(state.checkpointBlocked,false);assert.equal(state.pendingRunId,0);
+  assert.equal(saved.pendingDefeat,null);assert.equal(state.wallet,saved.credits,'Durable balance must match its paused checkpoint witness');
+  assert.ok(Number.isSafeInteger(e.completedWave)&&e.completedWave>0&&e.completedWave>=after.completedWave);
+  assert.equal(e.wave,e.completedWave,'A saved checkpoint names its completed cohort');
+  assert.equal(state.completedWave,e.completedWave);assert.equal(state.checkpointWave,e.completedWave);assert.equal(state.wave,e.completedWave+1);
+  assert.ok(Number.isSafeInteger(e.tick)&&e.tick>0&&Number.isSafeInteger(state.tick)&&state.tick>=e.tick&&state.tick>=after.tick);
+  assert.equal(e.rulesVersion,'last-stand-waves-v1');assert.equal(state.profileVersion,e.rulesVersion);assert.equal(after.loop.profileVersion,e.rulesVersion);
+  assert.equal(state.activeTier,e.tier);assert.equal(after.loop.activeTier,e.tier);
+  assert.equal(state.fittingId,['launcher','repair','scattergun'][e.fitting]);assert.equal(state.fittingId,after.fitting);
+  assert.equal(state.cannonDamage,e.committedCannonDamage);assert.equal(state.cannonDamage,after.loop.cannonDamage);
+  assert.equal(saved.history.current?.runId,cp.runId);assert.equal(saved.history.current.highestClearedWave,e.completedWave);
+  return true;
 }
 export function assertWaveSavePreserved(before,after) {
   assertIdleWaveSave(before);assertIdleWaveSave(after);
@@ -3835,12 +4015,13 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     // Loaded after this module is initialized: both maintained journeys share
     // the same measured target/clipping oracle without an eager module cycle.
     const {tierJourneyControlGeometry}=await import('./lastStandTierJourney.mjs');
+    const {revealLastStandControl}=await import('./lastStandControlReveal.mjs');
     const hudControls=layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls];
     const projectedControls=(layout,canvas)=>tierJourneyControlGeometry({...layout,graphicsTruncated:false,
       // retainRuntimeObservation already parsed the complete original record.
       // Serialize its observed graphics only for the shared reader boundary.
       raw:'ST_LS_HUD_LAYOUT '+JSON.stringify({graphics:layout.graphics})},canvas);
-    const geometry=async(name)=>{
+    const measureControls=async()=>{
       const {canvas,pixels}=await page.locator('#unity-canvas').evaluate(element=>{
         const box=element.getBoundingClientRect(),visible=getComputedStyle(element).visibility==='visible' && box.width>0 && box.height>0;
         return {canvas:visible?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
@@ -3850,7 +4031,15 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       const layout=layouts.at(-1);check(layout?.coordinates==='top-left','real HUD top-left convention');
       check(Math.abs(layout.width-pixels.width)<=1 && Math.abs(layout.height-pixels.height)<=1,'HUD dimensions use actual canvas backing pixels',{canvas,pixels,layout});
       const projected=projectedControls(layout,canvas);
-      check(projected.some(item=>item.name===name && item.full),`real HUD ${name} is completely visible inside its actual viewport`);
+      return {canvas,layout,projected};
+    };
+    const geometry=async(name,{reveal=false,requireFull=true}={})=>{
+      const start=trace.length,originalLoad=load;
+      const {canvas,layout,projected}=reveal?await revealLastStandControl({name,page,geometry:measureControls,
+        assertUninterrupted:()=>assert.ok(load===originalLoad&&!trace.slice(start).some(event=>event.globalTarget&&
+          (event.kind==='blur'||event.kind==='visibilitychange'&&event.hidden)),
+        'Scroll reveal refuses document, focus or visibility loss')}):await measureControls();
+      if(requireFull)check(projected.some(item=>item.name===name && item.full),`real HUD ${name} is completely visible inside its actual viewport`);
       const control=hudControls(layout).filter(item=>item.name===name && item.active && item.interactable);
       check(control.length===1,`operable real HUD ${name}`);return{canvas,layout,item:control[0]};
     };
@@ -3884,7 +4073,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     };
     if(section.lifecycle)await resize(captureViewport);
     const armGameClick=async(name,action,predicate=()=>true)=>{
-      const {canvas,layout,item}=await geometry(name);await focused('gameplay pointer');
+      await focused('gameplay pointer');const {canvas,layout,item}=await geometry(name,{reveal:true});
       await page.evaluate("window.__stInputArea='gameplay'");
       const point={x:canvas.x+(item.x+item.width/2)*canvas.width/layout.width,y:canvas.y+(item.y+item.height/2)*canvas.height/layout.height};
       await page.mouse.move(point.x,point.y);await page.waitForTimeout(80);
@@ -3929,7 +4118,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     };
     const gameClick=async(...args)=>(await armGameClick(...args))();
     const gameKey=async(name,action,predicate=()=>true)=>{
-      const {layout:prepared}=await geometry(name),navigationStart=trace.length;
+      const {layout:prepared}=await geometry(name,{requireFull:false}),navigationStart=trace.length;
       await keyboardFocus(page.locator('#last-stand-return'));
       await page.keyboard.press('Tab');
       check(await page.locator('#unity-canvas').evaluate(element=>document.activeElement===element),'native Tab enters actual Unity controls');
@@ -3944,9 +4133,12 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       await until(layouts,0,item=>item.load===navigation.load && item.timeOrigin===navigation.timeOrigin &&
         item.scope===navigation.scope && item.t>=navigation.t,8);
       await screenshot(`keyboard-focus-${name}-${report.screenshots.length}`);
+      const {canvas:keyboardCanvas}=await geometry(name);
       const documentState=await page.evaluate(()=>({timeOrigin:performance.timeOrigin,t:performance.now(),
         focused:!document.hidden && document.hasFocus() && document.activeElement===document.getElementById('unity-canvas')}));
       validateKeyboardSubmit({name,prepared,state:states.at(-1),layout:layouts.at(-1),documentState,navigation});
+      check(projectedControls(layouts.at(-1),keyboardCanvas).some(item=>item.name===name&&item.full),
+        'Keyboard submit requires the complete target in its current actual viewport');
       const start=states.length,encStart=encounters.length;
       await page.keyboard.down('Enter');await page.waitForTimeout(150);await page.keyboard.up('Enter');keys.push('Enter');
       const observed=await until(states,start,item=>item.action===action && predicate(item),8);
@@ -3994,7 +4186,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
         if(kind==='blur')await activateOwnedNativeWindow({native,page,report,kind,role:'original'});
         await page.waitForFunction('!document.hidden && document.hasFocus()');
         const recovered=await mark();await noReplay(begin+200,recovered,{kind,before,begin,recovered,ms,events:trace.slice(traceStart)});
-        return {before,begin,recovered,...(waitHidden?{events:waveIntervalEvents(before,{...before,t:recovered},trace.slice(traceStart))}:{})};
+        return {before,begin,recovered,...(waitHidden?{ms,events:waveIntervalEvents(before,{...before,t:recovered},trace.slice(traceStart))}:{})};
       } catch(error) {
         awayError=error;
         try {await retainAwayFailure({native,page,other,kind,report,output,error,
@@ -4106,9 +4298,13 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const startAudio=await mark();const deployed=await gameClick('Deploy','deploy');
     check(deployed.phase==='battle' && deployed.cannonDamage===20,'normal-speed automatic baseline deployed',deployed);
     if(player){await page.evaluate('window.__stFrameProbe.start()');motion=await startMotion(native.context,page,output);}const motionStart=await mark();
-    const first=await until(hits,baselineHitStart,item=>item.load===deployed.load && item.timeOrigin===deployed.timeOrigin && item.cannonDamage===20,45);const firstHit=await mark();
+    const first=await observeFirstCannonImpact({deployed,start:baselineHitStart,hits,encounters,callbackRecords,
+      oracle:modelOracle[`${deployed.activeTier}:${deployed.fittingId}:${deployed.cannonDamage}`],until});const firstHit=first.t;
     check(first.firstFoeHull===10,'first base cannon leaves identical 30 HP foe at 10 HP',first);
-    await page.waitForTimeout(750);const sound=await energy(Math.max(startAudio,firstHit-500),await mark());
+    const firstSound=player?await observeFreshCannonAudio({deployed,encounters,callbackRecords,cues,
+      oracle:modelOracle[`${deployed.activeTier}:${deployed.fittingId}:${deployed.cannonDamage}`],until}):null;
+    if(player)check(true,'baseline fresh cannon/impact admission bound independently of authoritative hit',firstSound);
+    await page.waitForTimeout(750);const sound=player?await energy(firstSound.begin,firstSound.end):null;
     if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);const layoutPause=await battleLayouts();
     const changeSetting=control=>changeLastStandSetting({control,click:name=>gameClick(name,'hud-layout'),
       currentLayout:()=>layouts.at(-1),currentState:()=>states.at(-1),readValue:()=>states.at(-1).muted,
@@ -4166,7 +4362,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(Object.values(report.frame_timing.capture_active).every(item=>item.p95_ms<=50 && item.p99_ms<=100 && item.max_ms<=250),
       'active cadence: 50 ms p95, 100 ms p99, 250 ms maximum',report.frame_timing.capture_active);
     report.motion=await motion.encode();motion=null;
-    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstHit-500,firstHit+750]});
+    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstSound.begin,firstSound.end]});
     const offset=(firstAudio[0].started-motionStart)/1000,movie=join(output,'normal-speed-repair-with-audio.mp4');
     runTool('ffmpeg',['-hide_banner','-nostdin','-i',join(output,report.motion.file),...(offset>=0?['-itsoffset',offset.toFixed(3)]:['-ss',(-offset).toFixed(3)]),
       '-i',join(output,firstAudio[0].file),'-c:v','copy','-c:a','aac','-b:a','160k',movie]);
@@ -4218,9 +4414,10 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===savedWave.credits-2 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
-    await resize(captureViewport);const hitStart=hits.length;await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
+    await resize(captureViewport);const hitStart=hits.length;const upgradedDeployment=await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
-    const upgradedHit=await until(hits,hitStart,item=>item.cannonDamage===30,45);const noCaptureEnd=await mark();
+    const upgradedHit=await observeFirstCannonImpact({deployed:upgradedDeployment,start:hitStart,hits,encounters,callbackRecords,
+      oracle:modelOracle[`${upgradedDeployment.activeTier}:${upgradedDeployment.fittingId}:${upgradedDeployment.cannonDamage}`],until});const noCaptureEnd=upgradedHit.t;
     if(player){
     const noCaptureFrames=await page.evaluate('window.__stFrameProbe.stop()');write('animation-frame-no-capture-timestamps.json',{timestamps:noCaptureFrames,active_window:[noCaptureStart,noCaptureEnd]});
     report.frame_timing.no_capture_active=frameTiming(noCaptureFrames,noCaptureStart,noCaptureEnd);
@@ -4228,16 +4425,21 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(captured.p95_ms<=uncaptured.p95_ms*1.5+5,'screencast pre-impact p95 within 50 percent plus5ms',{captured,uncaptured});
     }
     check(upgradedHit.firstFoeHull===0 && upgradedHit.kills>=1,'same first foe one-hit defeated by real 30 damage',upgradedHit);
+    const upgradedSound=player?await observeFreshCannonAudio({deployed:upgradedDeployment,encounters,callbackRecords,cues,
+      oracle:modelOracle[`${upgradedDeployment.activeTier}:${upgradedDeployment.fittingId}:${upgradedDeployment.cannonDamage}`],until}):null;
+    if(player)check(true,'upgraded fresh cannon/impact admission bound independently of authoritative hit',upgradedSound);
     await screenshot('07-upgraded-first-hit');
     const nextBoundary=states.at(-1).completedWave+1;
     const interval=await away('hidden',12000);
     await until(states,0,item=>item.load===load && item.completedWave>=nextBoundary && item.saveState==='ready',60);
     const afterBackground=await observation({minT:interval.recovered,run:interval.before.run});validateModelObservation(afterBackground,reference(afterBackground));
+    const checkpointState=await gameKey('SpeedRate','session',item=>item.paused);
     const backgroundSaved=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(backgroundSaved.checkpoint?.encounter.completedWave>=nextBoundary && backgroundSaved.credits===states.at(-1).wallet &&
+    validateBackgroundCheckpoint({interval,after:afterBackground,checkpointState,saved:backgroundSaved});
+    check(backgroundSaved.checkpoint?.encounter.completedWave>=nextBoundary && backgroundSaved.credits===checkpointState.wallet &&
       backgroundSaved.pendingDefeat===null,'background wave rewards and checkpoint share one durable save');
-    report.lifecycle.push({kind:'background-wave',interval,after:afterBackground,saved:backgroundSaved});
-    await gameKey('SpeedRate','session',item=>item.paused);await phaseMatrix('background-checkpoint');
+    report.lifecycle.push({kind:'background-wave',interval,after:afterBackground,checkpointState,saved:backgroundSaved});
+    await phaseMatrix('background-checkpoint');
     const quietStart=await mark();await page.waitForTimeout(900);await noReplay(quietStart,await mark());
     await gameKey('SpeedRate','session',item=>!item.paused);
     const terminalBefore=await observation(),terminalStart=states.length,terminalOracle=reference(terminalBefore);
@@ -4260,7 +4462,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       ...(player?{interaction:{paused:terminalPaused,resumed:terminalResumed,viewports:matrix.phaseViewports.map(v=>v.name)}}:{})});
     check(true,'natural defeat finalizes checkpoint without a second payout',naturalProof);
     await phaseMatrix('result');
-    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750],
+    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedSound.begin,upgradedSound.end],
       defeat:[naturalProof.staged.t-250,naturalProof.staged.t+750]});
     const continued=await gameKey('Claim','continue');
     check(continued.wallet===naturalSaved.credits && continued.pendingRunId===0 && !continued.hasCheckpoint,
@@ -4276,15 +4478,17 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const backgroundExpected=Object.values(backgroundOracle).at(-1),backgroundStart=states.length;
     check(backgroundExpected.status==='Defeated','background actual wave model has natural terminal');
     const terminalAway=await away('hidden',(backgroundExpected.tick-backgroundBefore.tick)*50+1500,{
-      waitHidden:({before,begin})=>until(states,backgroundStart,item=>{
-        assertWaveStillHidden(before,begin,trace);return isWaveResultFor(backgroundBefore,item);
-      },60)});
-    const backgroundResult=await until(states,backgroundStart,item=>isWaveResultFor(backgroundBefore,item),15);
+      waitHidden:async({before,begin})=>assertWaveStillHidden(before,begin,trace)});
+    const backgroundResult=await until(states,backgroundStart,item=>isWaveResultFor(backgroundBefore,item),60);
     const backgroundFinal=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const backgroundProof=validateWaveTerminal({before:backgroundBefore,result:backgroundResult,saved:backgroundFinal,
       states,encounters,layouts,oracle:backgroundOracle});
-    validateHiddenWaveTerminal({interval:terminalAway,evidence:backgroundProof});
-    report.lifecycle.push({kind:'wave-terminal',mode:'hidden',interval:terminalAway,evidence:backgroundProof});
+    terminalAway.before=backgroundBefore;
+    terminalAway.events=waveIntervalEvents(backgroundBefore,{...backgroundBefore,t:terminalAway.recovered},trace);
+    const continuation=validateBackgroundWaveTerminal({interval:terminalAway,evidence:backgroundProof,callbackRecords,states,cues});
+    const reconciledAt=await mark();
+    await noReplay(terminalAway.begin+200,reconciledAt,{...terminalAway,kind:'hidden',recovered:reconciledAt});
+    report.lifecycle.push({kind:'wave-terminal',mode:'hidden',interval:terminalAway,evidence:backgroundProof,continuation});
     check(true,'background natural defeat finalizes checkpoint once without payout',backgroundProof);
     const savedTerminalBytes=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
     for(let i=0;i<2;i++)await away('hidden',6000);
