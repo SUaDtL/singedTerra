@@ -426,7 +426,7 @@
       },
       "Unity/Assets/Editor/LastStandShopChecks.cs": {
         "mode": "lf-text",
-        "sha256": "f3922507643d8d5b05096ceac36232c5b394ff20f5b8b5ad484c9d0e45ad0255"
+        "sha256": "3730f651ae9bf9d0eeca39eecfd00785c1178d3edd0efb64c86aaf815e132b5c"
       },
       "Unity/Assets/Editor/LastStandShopChecks.cs.meta": {
         "mode": "lf-text",
@@ -1270,7 +1270,7 @@
       },
       "Unity/Assets/Scripts/LastStandLoopResearch.cs": {
         "mode": "lf-text",
-        "sha256": "4011affbc5796013a8a8ad7a4eb1d624aa46879eb1a52945f027e5cc51b2c4ad"
+        "sha256": "a57fc1e5279e7e3e43c832253fc30a9fd4f12dde4d205d32074f2d7b40f31bd6"
       },
       "Unity/Assets/Scripts/LastStandLoopResearch.cs.meta": {
         "mode": "lf-text",
@@ -13782,7 +13782,7 @@
       },
       "Unity/ProjectSettings/ProjectSettings.asset": {
         "mode": "lf-text",
-        "sha256": "25d236f9c8d6ac278d9da375033a0bf0dba0269d13d5665390cbb6dca3617d36"
+        "sha256": "eb0aaebc1bb0ba501b992bf271b11ea3d62a17662ef569b839d7a8ec17932cb3"
       },
       "Unity/ProjectSettings/ProjectVersion.txt": {
         "mode": "lf-text",
@@ -13825,7 +13825,7 @@
         "sha256": "2973a6af930e142f62cde00076beda8a3cc3a66d9bfcde7a58ba7d4be2251c26"
       }
     },
-    "sha256": "55de9c4c12574963431515b9351aa5625f21ae518cd481d2765caf0222a32316"
+    "sha256": "f80c4af074fe1e60f5bf4cf8326620109a66bfe7c29111553fa5c8f0165ff398"
   },
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
@@ -83428,7 +83428,7 @@
     },
     "sha256": "d21e7a7c8c7d17c135989e9eb59162fefc2c151384450c364e1505e631e633d6"
   },
-  "receiptSha256": "4042063cff29e5c551b7a26699403b27e6290d4ca78a1b47a4d3a3f64c922fd6",
+  "receiptSha256": "e080010a22f03c0722cbd21b691ecbe6dd9b8025db8a93e70c722ee28b1c9291",
   "vendor": {
     "path": "Unity/Packages/com.unity.render-pipelines.universal",
     "version": "17.3.0",
