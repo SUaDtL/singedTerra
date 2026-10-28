@@ -44,6 +44,11 @@ def jdk_identity(editor, jdk_root=None):
     versions = re.findall(r'^JAVA_VERSION="([^"]+)"\s*$', release.read_text(encoding="utf-8-sig"), re.M)
     require(len(versions) == 1 and re.fullmatch(r'17(?:\.\d+)*(?:\+\d+(?:\.\d+)*)?', versions[0]) is not None,
             "A Java 17 JDK is required; invalid JAVA_VERSION in " + str(release))
+    # Unity 6000.3 AndroidJavaRoot parses the numeric prefix with System.Version.
+    # Reject incompatible vendor version shapes before hashing tools or launching Unity.
+    components = versions[0].split("+", 1)[0].split(".")
+    require(2 <= len(components) <= 4 and all(int(part) <= 2147483647 for part in components),
+            "Pinned Unity requires a Java 17 version with 2-4 Int32 components; select a compatible patched JDK without rewriting its metadata")
     return {"root": str(root), "version": versions[0], "source": "custom" if jdk_root is not None else "embedded"}
 
 

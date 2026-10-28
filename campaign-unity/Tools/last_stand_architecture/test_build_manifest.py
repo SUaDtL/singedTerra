@@ -33,7 +33,7 @@ class BuildManifestTests(unittest.TestCase):
         self.write(editor.parent, "Data/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll")
         jdk = root / "reviewed-jdk17"
         self.write(jdk, "bin/java.exe")
-        self.write(jdk, "release", b'JAVA_VERSION="17.0.21.0.2"\n')
+        self.write(jdk, "release", b'JAVA_VERSION="17.0.21.1"\n')
         self.write(jdk, "lib/security/cacerts", b"reviewed certificate store")
         sdk = root / "existing-sdk"
         for name in ("platform-tools/adb.exe", "build-tools/36.0.0/aapt2.exe", "platforms/android-36/android.jar",
@@ -144,7 +144,7 @@ class BuildManifestTests(unittest.TestCase):
             editor, project, overrides = self.android_fixture(Path(folder))
             available = preflight(editor, "android", "development", root=project, **overrides)
             self.assertTrue(available["ready"], available["blockers"])
-            self.assertEqual(available["androidTools"]["jdk"]["version"], "17.0.21.0.2")
+            self.assertEqual(available["androidTools"]["jdk"]["version"], "17.0.21.1")
             for name in ("jdk", "sdk", "ndk"):
                 self.assertEqual(available["androidTools"][name]["source"], "custom")
                 self.assertEqual(available["androidTools"][name]["root"], str(overrides[name + "_root"].resolve()))
@@ -153,6 +153,20 @@ class BuildManifestTests(unittest.TestCase):
             self.assertFalse(preflight(editor, "android", "development", root=project, **overrides)["ready"])
             with self.assertRaisesRegex(ValueError, "only to Android"):
                 preflight(editor, "windows", "development", root=project, **overrides)
+
+    def test_preflight_rejects_java_version_the_pinned_unity_cannot_parse(self):
+        with tempfile.TemporaryDirectory(prefix="st-build-unity-java-version-") as folder:
+            editor, project, overrides = self.android_fixture(Path(folder))
+            for version in ("17.0.21.0.2", "17", "17.2147483648"):
+                with self.subTest(version=version):
+                    self.write(overrides["jdk_root"], "release", f'JAVA_VERSION="{version}"\n'.encode())
+                    available = preflight(editor, "android", "development", root=project, **overrides)
+                    self.assertFalse(available["ready"], "Unity must recognize the selected Java version before building")
+                    self.assertTrue(any("Unity" in blocker for blocker in available["blockers"]))
+            for version in ("17.0", "17.0.21", "17.0.21.1", "17.0.21+9"):
+                with self.subTest(version=version):
+                    self.write(overrides["jdk_root"], "release", f'JAVA_VERSION="{version}"\n'.encode())
+                    self.assertTrue(preflight(editor, "android", "development", root=project, **overrides)["ready"])
 
     def test_java_metadata_requires_one_stable_java17_version_and_nonempty_binary(self):
         with tempfile.TemporaryDirectory(prefix="st-build-java-version-") as folder:
@@ -163,7 +177,7 @@ class BuildManifestTests(unittest.TestCase):
                 self.write(jdk, "release", text.encode())
                 with self.subTest(metadata=text), self.assertRaisesRegex(RuntimeError, "Java 17"):
                     jdk_identity(editor, jdk)
-            self.write(jdk, "release", b'JAVA_VERSION="17.0.21.0.2"\n')
+            self.write(jdk, "release", b'JAVA_VERSION="17.0.21.1"\n')
             (jdk / "bin/java.exe").write_bytes(b"")
             self.assertFalse(preflight(editor, "android", "development", root=project, **overrides)["ready"])
             (jdk / "bin/java.exe").unlink()
