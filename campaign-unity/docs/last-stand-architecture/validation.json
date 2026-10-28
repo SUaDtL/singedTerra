@@ -1,9 +1,8 @@
 {
   "schema": "singedterra-last-stand-foundation-validation/v1",
-  "date": "2026-10-25",
+  "date": "2026-10-27",
   "implementationBase": "07dc13c0ea0b31af973b24402ea9bdedfb8cc815",
   "qualification": "partial",
-  "finalPlayerSourceInventorySha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc",
   "localChecks": [
     {
       "command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
@@ -125,6 +124,14 @@
       "outcome": "pass",
       "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/engine-followup.log",
       "note": "Full engine check after preserving the two bad-clipping checks with current shared error messages."
+    },
+    {
+      "suite": "Architecture after Android preflight compatibility correction",
+      "command": "python -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
+      "passed": 38,
+      "failed": 0,
+      "seconds": 24.551,
+      "evidence": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/pure-checks.log"
     }
   ],
   "review": {
@@ -164,7 +171,10 @@
       "configuration": "development",
       "outcome": "blocked",
       "preflightExit": 2,
-      "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. After the owner's popup update, the new installer attempt returned operation canceled at 2026-10-25T15:39:36Z. Module remains absent; owner interaction with Unity administrator prompt is pending."
+      "reason": "Only AndroidPlayer module missing. Existing SDK and reviewed installed JDK17/NDKr27c recognized. After the owner's popup update, the new installer attempt returned operation canceled at 2026-10-25T15:39:36Z. Module remains absent; owner interaction with Unity administrator prompt is pending.",
+      "date": "2026-10-25",
+      "historical": true,
+      "supersededBy": "20261028T012758Z-f2181e"
     },
     {
       "target": "windows",
@@ -183,6 +193,24 @@
       "sourceInventorySha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc",
       "packaged": true,
       "note": "Rebuilt after the native lease repair."
+    },
+    {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261028T012758Z-f2181e",
+      "head": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+      "sourceInventorySha256": "ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 39799485,
+      "artifactSha256": "e941e6e6db999cc135d5767ba2625aa65a71ff5d88bb3381b05ea8de4ed7df42",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T012758Z-f2181e/result.json",
+      "note": "Local development build only; no Android device interaction or store qualification."
     }
   ],
   "browserJourney": {
@@ -275,10 +303,11 @@
       "Eleven Last Stand browser shards: driver requires MenuAbandon fully visible before scrolling its actual settings viewport. Driver fix remains pending; guards are intact."
     ],
     "manualMenuObservation": "At 1280x720, ordinary wheel input exposes Abandon Run; clicking opens confirmation; Cancel preserves paused wave 7 and hull120/120. This is a rendered observation, not an automated driver pass.",
-    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/menu-before-scroll.png; menu-after-scroll.png; menu-confirmation.png"
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/menu-before-scroll.png; menu-after-scroll.png; menu-confirmation.png",
+    "historical": true
   },
   "remaining": [
-    "Android module installation, actual APK and real device lifecycle/storage/audio/performance qualification",
+    "Real Android device lifecycle/storage/audio/performance qualification; development APK built successfully from the recorded source and toolchain",
     "Windows abnormal termination, hardware audio, performance and broader supported input/display qualification",
     "Funded/offline research browser journey, two-tab ownership and native/background/audio qualification inherited from PR544",
     "Ten actual active hours at researched5x; no endurance observation started",
@@ -309,5 +338,77 @@
     "lockSha256": "1e84d98866085828ea6f14a40782997f53cd5179879590fb21a89161f8333d29",
     "installedWithScripts": false,
     "auditVulnerabilities": 0
+  },
+  "browserDriverRepair": {
+    "commit": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+    "observedDefect": "Pointer and keyboard preparation required MenuAbandon to be fully visible before ordinary scroll/navigation could reveal it.",
+    "repair": "Shared ordinary-wheel preparation for pointer; native Tab before final keyboard admission. Keep full-target, focus, viewport, document and correct-scroll-owner guards.",
+    "red": "Two actual-driver visibility failures; five of eight source-binding regressions failed.",
+    "green": {
+      "passed": 367,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/menu-source-bindings-green.log"
+    },
+    "review": "Coverage findings resolved; workflow and staged auth/crypto reviews PASS; canonical diff-bound marker recorded after actual review.",
+    "hostedCi": {
+      "head": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+      "run": 40615126069,
+      "outcome": "failure",
+      "reason": "Lifecycle shards pass the previous scroll gate but time out waiting for a real runtime observation after gameKey, line4215. Follow-up diagnosis/repair in progress; no hosted browser pass claimed.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/c4cc-hosted-shard6.log"
+    }
+  },
+  "androidToolchain": {
+    "moduleInstalled": true,
+    "installerExitCode": 0,
+    "jdk": "Amazon Corretto17.0.21.0.11",
+    "javaVersion": "17.0.21",
+    "runtimeVersion": "17.0.21+11-LTS",
+    "jdkRoot": "C:/Users/brenn/singedTerra-engine-lab/tools/android-last-stand-20261027/jdk17.0.21_0",
+    "archiveSha256": "59d6514305f6fab3b18955fb17185562f0a0bbf20e1466eda33a5429f3b31618",
+    "review": "Official exact release, license and current security fixes reviewed before download; archive integrity, Amazon Authenticode and actual release/runtime verified.",
+    "certificateVerification": "Four revoked root certificate fingerprints absent; metadata and truststore were not modified.",
+    "preflight": "pass",
+    "connectedDevices": 0,
+    "evidence": "campaign-unity/Evidence/architecture-foundations/android-followup-20261027/corretto-verification.json",
+    "firstBuild": {
+      "stamp": "20261028T010809Z-832b05",
+      "outcome": "failed",
+      "reason": "Unity System.Version parser rejected BellSoft17.0.21.0.2 numeric version; java -version itself succeeded. Preflight now catches incompatible versions before build."
+    },
+    "currentBuild": {
+      "target": "android",
+      "configuration": "development",
+      "outcome": "pass",
+      "stamp": "20261028T012758Z-f2181e",
+      "head": "c4cc80225a0cca51bd266c6ba5c5adc6acedccb1",
+      "sourceInventorySha256": "ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94",
+      "sourceUnchanged": true,
+      "toolchainUnchanged": true,
+      "artifact": "LastStand.apk",
+      "artifactBytes": 39799485,
+      "artifactSha256": "e941e6e6db999cc135d5767ba2625aa65a71ff5d88bb3381b05ea8de4ed7df42",
+      "backend": "IL2CPP",
+      "architecture": "ARM64",
+      "storeSigned": false,
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261028T012758Z-f2181e/result.json",
+      "note": "Local development build only; no Android device interaction or store qualification."
+    }
+  },
+  "playerSourceInventories": {
+    "windowsRelease": {
+      "stamp": "20261025T161123Z-81ff23",
+      "sha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc"
+    },
+    "webglRelease": {
+      "stamp": "20261025T161237Z-583e89",
+      "sha256": "c0fd8a1d2b7a50bf3a76a5f15cc84af1ebc5b6c5a5a0b5110f1311f7cdbfdffc"
+    },
+    "androidDevelopment": {
+      "stamp": "20261028T012758Z-f2181e",
+      "sha256": "ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94"
+    },
+    "note": "Each inventory includes its recorded build-wrapper bytes; no cross-target identity is inferred."
   }
 }

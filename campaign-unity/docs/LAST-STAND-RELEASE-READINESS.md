@@ -1,6 +1,6 @@
 # Last Stand release readiness
 
-This inventory describes the release-foundation implementation on 2026-10-25.
+This inventory describes the release-foundation implementation on 2026-10-27.
 It is not a publication, store-submission or device-qualification receipt. The
 current Unity project declares player version `1.0`; the repository package is
 `0.0.0`. Neither is a newly approved public game version.
@@ -29,6 +29,9 @@ project. Missing modules/tools fail before building, with no automatic install.
 Android also accepts explicit `--jdk-root`, `--sdk-root` and `--ndk-root` paths;
 omitting each option uses that component under the pinned editor's Android module.
 The selected JDK must report Java 17, and the NDK must be r27c (`27.2.12479018`).
+The pinned Unity parser accepts two to four numeric Java version components;
+preflight rejects incompatible vendor versions before hashing tools or launching
+Unity. Select a compatible patched distribution without rewriting its metadata.
 The SDK requires platform tools, build tools `36.0.0`, platform `android-36`,
 command-line tools `16.0`, CMake `3.22.1` and owner-managed license acceptance.
 These options select already installed tools; they do not install them or certify
@@ -76,7 +79,7 @@ that **original web receipt** with `package_last_stand_web.py` for staging and
 the established source-lock/admission checks; the new target summary does not
 replace or weaken that packaging contract.
 
-## Delivery state on 2026-10-25
+## Delivery state on 2026-10-27
 
 Build receipts below describe their recorded source inventories. A hosted Linux
 failure exposed process-local file-sharing behavior in Mono. Native storage now
@@ -90,11 +93,13 @@ is claimed.
 | --- | --- | --- |
 | WebGL | Release export passed in [build-webgl-20261025T161237Z-583e89](../Evidence/last-stand-architecture/build-webgl-20261025T161237Z-583e89/result.json), then the [original export receipt](../Evidence/last-stand-playable-loop/t05/build-20261025T161237Z-583e89/result.json) was admitted and packaged. Production typecheck/build passed. Earlier browser checks exercised tier/environment preview, settings, purchase, wave clears and reload/resume. | Funded/offline research, two-tab ownership, native/background/audio, endurance and exact-candidate hosted CI retain their separate qualification obligations. |
 | Windows | Rebuilt release reported `Succeeded`, `112,305,051` bytes: [release receipt](../Evidence/last-stand-architecture/build-windows-20261025T161123Z-81ff23/result.json). Uses x64 Mono, scene `LastStandPrototype`, version `1.0`. Rendered resume, run shop, settings and process-restart checks passed after the lease repair. Earlier development and release journeys also exercised purchases; the development session cleared five waves. | Hardware audio, performance, abnormal termination and endurance remain unmeasured. The older development build does not qualify the new lease implementation. |
-| Android | Existing SDK reused; Java 17 and NDK r27c installed at the explicit paths below. The Android module installer has a verified Unity signature. After the owner's popup update, a new installation attempt still returned Windows' operation-canceled error; the module remains absent. | Unity Android module installation, source-bound APK build, installation on a declared real device and all native interaction/lifecycle/performance qualification. No APK success is claimed. |
+| Android | ARM64 IL2CPP development APK built successfully: [receipt](../Evidence/last-stand-architecture/build-android-20261028T012758Z-f2181e/result.json). `LastStand.apk` is 39,799,485 bytes; source and toolchain inventories match before/after. Uses the installed Unity module and reviewed Corretto 17.0.21.0.11. | Real-device interaction, lifecycle, durability, audio and performance qualification. No device or emulator is connected. This local debug-signed APK is not store qualification. |
 
-Eight focused build/preflight checks pass. They cover source/toolchain/scene/
+Nine focused build/preflight checks pass. They cover source/toolchain/scene/
 configuration rejection, modified/missing/extra artifact rejection, incomplete
-Windows module variants, missing Android tools and wrong NDK version. Fourteen
+Windows module variants, missing Android tools, wrong NDK version and Unity's
+Java-version parsing boundary. The updated pure architecture suite passes all
+38 checks (24.551 seconds). Fourteen
 native file/process tests pass independently of PlayerPrefs, including surviving
 writer contention, stale profile/settings protection, real Windows junction
 refusal with unchanged target bytes and compiled guard-removal negative controls.
@@ -119,7 +124,7 @@ package and used its rendered Resume Run and Run Upgrades controls. The same
 paused wave 7, hull 120/120, Cannon Attack level 1 and 103 Scrap were restored.
 The lease-repair package `Web-20261025T161237Z-583e89` passed the same rendered
 checkpoint and run-shop recheck. The temporary browser viewport was reset;
-the existing preview at port 4174 remains the only game server.
+at that check, port 4174 was the only game server.
 
 The Windows development-player follow-up used rendered native input, with no
 save seeding. It cleared five waves, bought one Cannon Attack level, then exited
@@ -153,6 +158,13 @@ runtime dependencies or jsdom. Audit reports zero vulnerabilities; 2,405 client
 tests and typecheck pass. Current hosted Linux and full CI results remain a
 separate obligation recorded on the PR.
 
+The browser-driver repair at `c4cc8022` passes 367 focused checks and retains
+full-target visibility and input guards while revealing scrollable controls.
+Hosted CI passes engine/build, core/product/tier browsers and Last Stand shards
+11 and 12. Several lifecycle shards now pass the earlier scroll gate but time
+out awaiting a runtime observation after a keyboard action. That follow-up is
+under investigation; automated browser qualification remains incomplete.
+
 The owner reported approving the popup. Subsequent read-only firewall inspection
 found two enabled Allow/Public rules for the development executable. The agent
 did not create or change those rules. The unrelated Docker Desktop crash dialog
@@ -172,26 +184,36 @@ that SDK. Separately installed task-local components are:
 
 | Component | Installed path | Observed identity |
 | --- | --- | --- |
-| JDK | `C:/Users/brenn/singedTerra-engine-lab/tools/android-last-stand-20261025/jdk-17.0.21.0.2` | BellSoft Java `17.0.21.0.2+5-LTS`, Windows x86_64; its `release` metadata records version date `2026-10-22`. |
+| JDK | `C:/Users/brenn/singedTerra-engine-lab/tools/android-last-stand-20261027/jdk17.0.21_0` | Amazon Corretto `17.0.21.0.11`; original `JAVA_VERSION="17.0.21"`, runtime `17.0.21+11-LTS`, Windows x86_64. |
 | NDK | `C:/Users/brenn/singedTerra-engine-lab/tools/android-last-stand-20261025/android-ndk-r27c` | `source.properties`: r27c, `27.2.12479018`. |
 
-Four affected trust roots were removed from this task-local JDK's active
+For the earlier BellSoft installation, four affected trust roots were removed from its
 `lib/security/cacerts`, following the [Oracle eMudhra advisory](https://ops.java/emudhra).
 The prior store is retained beside it as `cacerts.pre-emudhra-removal`; it is a
 backup, not the active trust store. This change is scoped to this JDK, not a claim
-that every Java installation on the host was remediated. The build receipt must
-bind these modified JDK bytes. It does not certify the toolchain against every
-security issue.
+that every Java installation on the host was remediated.
 
-The missing component is the pinned Unity Android player module. After the owner
-reported handling a popup, the reviewed installer was attempted again through
-its normal Windows elevation flow. Windows returned "The operation was canceled
-by the user" at `2026-10-25T15:39:36Z`; no installer remains running and the module
-is still absent. The error identifies the installation outcome, not which popup
-the owner handled. No elevation bypass or Hub-registration change was used.
-The installation remains pending owner interaction with the Unity administrator
-prompt. Then rerun preflight with the explicit JDK/SDK/NDK roots and produce a
-real APK receipt.
+The current Corretto distribution needs no local metadata or truststore change.
+Its [tagged changelog](https://github.com/corretto/corretto-17/blob/17.0.21.0.11/CHANGELOG.md)
+includes both current certificate fixes. The downloaded archive matches SHA-256
+`59d6514305f6fab3b18955fb17185562f0a0bbf20e1466eda33a5429f3b31618`,
+and `java.exe` has a valid Amazon Authenticode signature. All four revoked
+certificate fingerprints are absent from its 141-certificate store. These
+bounded checks and the original Java version are retained in
+`Evidence/architecture-foundations/android-followup-20261027/corretto-verification.json`.
+
+The pinned Unity Android module installation completed with exit 0 on October 27,
+after the owner authorized reopening its normal Windows elevation prompt.
+The earlier October 25 attempt was canceled. No elevation bypass or
+Hub-registration change was used. The replacement-tool build uses the explicit
+Corretto, SDK and NDK roots above and completed successfully. The APK SHA-256 is
+`e941e6e6db999cc135d5767ba2625aa65a71ff5d88bb3381b05ea8de4ed7df42`.
+The receipt records source inventory
+`ef7f9c04d3d1050c01dc289279325995ce55981dcaef9a6793d370da1259dc94`
+at commit `c4cc8022`. It includes the updated target-build wrapper; the earlier
+Windows/WebGL inventories retain their own recorded wrapper bytes. Unity's build
+report counts 541,582,682 bytes of build content, separately from the measured
+39,799,485-byte APK. Neither figure is a device performance measurement.
 
 For comparison, a full embedded toolchain installation would be larger than the
 reused setup above. The following numbers are vendor estimates, not bytes
@@ -246,14 +268,13 @@ areas, not an assignment to an unavailable person.
 | --- | --- | --- | --- |
 | High: remaining browser qualification | Final source-bound package, live purchase, wave progression, settings and reload/resume passed in the in-app browser. Funded/offline research and two-tab qualification remain pending from the base sprint. | Delivery / browser verification | Complete the remaining funded-research and ownership journeys on the identified package. Preserve the recorded successful basic journey and keep only the latest local preview. |
 | High: remaining native player qualification | Windows development and release players passed controls, purchase, saved preference and checkpoint restart checks at 1024 by 768. Broader device behavior remains unmeasured. | Delivery / platform verification | Record supported input/display targets, abnormal termination and lifecycle behavior. Preserve both completed native journeys. |
-| High — Android development artifact | SDK/JDK/NDK present; Unity module installation stopped at cancelled UAC. No APK exists as qualification evidence. | Host operator + build/toolchain | Complete the reviewed module installation when the owner is available, pass effective-tool preflight and retain a successful source/toolchain-bound APK build receipt. |
-| High — Android lifecycle and durability | No real-device session, suspend/resume, research-clock, interrupted-write or hardware-audio evidence for this candidate. Windows tests cannot qualify Android behavior. | Platform / device verification | Install the identified APK on a recorded device/OS, exercise fresh and returning profiles, background/foreground, forced termination/relaunch, clock behavior, preferences and audio; retain before/after save and observation evidence. |
-| High — performance and long-run reliability | No candidate frame-time, memory, thermal or real-duration farming measurements. Accelerated model tests are available but are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |
-| High — content and economy release depth | The foundation preserves frozen behavior and supplies typed definitions; this does not establish sufficient progression depth or long-term balance. | Game design / economy / content | Review supported tiers, waves, rewards, research and armaments against the maintained progression goals; retain representative play/farming evidence and explicit release-scope acceptance. |
+| High â€” Android lifecycle and durability | No real-device session, suspend/resume, research-clock, interrupted-write or hardware-audio evidence for this candidate. Windows tests cannot qualify Android behavior. | Platform / device verification | Install the identified APK on a recorded device/OS, exercise fresh and returning profiles, background/foreground, forced termination/relaunch, clock behavior, preferences and audio; retain before/after save and observation evidence. |
+| High â€” performance and long-run reliability | No candidate frame-time, memory, thermal or real-duration farming measurements. Accelerated model tests are available but are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |
+| High â€” content and economy release depth | The foundation preserves frozen behavior and supplies typed definitions; this does not establish sufficient progression depth or long-term balance. | Game design / economy / content | Review supported tiers, waves, rewards, research and armaments against the maintained progression goals; retain representative play/farming evidence and explicit release-scope acceptance. |
 | High: first-session clarity and accessibility | Shared layouts, focused controls and one packaged desktop first/returning session passed. Touch accessibility and player comprehension acceptance remain unmeasured. | Product UX / accessibility | Recorded checks on supported viewport/input targets, including readable states, focus, navigation, settings, prompts and recovery, with remaining issues dispositioned. |
-| High — visual/audio quality and rights | Rendering and source assets exist; hardware listening, final visual acceptance and a complete release-rights decision are not supplied by the build receipts. | Art / audio / product | Asset provenance and license review for the shipped content plus target visual/listening acceptance; retain any known exceptions explicitly. |
-| High — player support and recovery | Adapter corruption/ownership safeguards pass; the packaged failed-save/retry/recovery experience and support diagnostics are not qualified. | Platform / support UX | Exercise understandable failures and safe retry/recovery on actual targets, preserving existing progress, and demonstrate useful support diagnostics without sensitive data. |
-| High — candidate review and distribution | Local tests/builds do not establish hosted CI, independent review, merge, deployment or live-host success. | Delivery / release owner | Exact-candidate checks and review, authorized branch disposition, then separately authorized publication/deployment and live-host evidence where required. Store release needs its own version/signing/submission decision. |
+| High â€” visual/audio quality and rights | Rendering and source assets exist; hardware listening, final visual acceptance and a complete release-rights decision are not supplied by the build receipts. | Art / audio / product | Asset provenance and license review for the shipped content plus target visual/listening acceptance; retain any known exceptions explicitly. |
+| High â€” player support and recovery | Adapter corruption/ownership safeguards pass; the packaged failed-save/retry/recovery experience and support diagnostics are not qualified. | Platform / support UX | Exercise understandable failures and safe retry/recovery on actual targets, preserving existing progress, and demonstrate useful support diagnostics without sensitive data. |
+| High â€” candidate review and distribution | Local tests/builds do not establish hosted CI, independent review, merge, deployment or live-host success. | Delivery / release owner | Exact-candidate checks and review, authorized branch disposition, then separately authorized publication/deployment and live-host evidence where required. Store release needs its own version/signing/submission decision. |
 
 Browser development, Android development and public/store release retain separate
 readiness decisions. Windows is useful native development evidence, not a

@@ -5009,3 +5009,12 @@ The fresh R07 review found no remaining CPU defect but identified a supported sa
 - The Android installer was retried after the owner's popup update. Windows returned operation canceled at 15:39:36Z; AndroidPlayer remains absent. No UAC bypass, Docker factory reset or agent firewall change occurred. Android build/device qualification remains pending.
 - PR #546 CI at c9468558 failed because the isolated admission fixture omitted the shared observation contract. Repaired that closure and two proven pre-existing fixture defects: insufficient purchase funding and CRLF-sensitive extraction. All 214 focused CI tests pass; independent review found no weakened assertions. Runtime code and packaged builds are unchanged.
 - Kept the current draft PR and remaining qualification obligations. No merge or publication is implied by these local checks.
+
+## 2026-10-27 Last Stand continuation - confidence: high - intent: explicit current plan approval
+
+- User explicitly stated "approve ST-LS-ARCH-PLAN". Recorded against revision 83, normative SHA256 79d402dc99b8d4c082f8cab52d1122694ae2e021b2ccd12158f7bd83e67ed7f7. Continue the agreed foundation work; verification remains evidence-based.
+- User authorized reopening the reviewed Unity installer and one correction/revalidation of the malformed diagnostic handoff. DEBUG-HANDOFF-RETRY was logged before the corrected validation passed. No test or security check was waived.
+
+- Unity Android module installed successfully. The actual build exposed the vendor Java-version parser boundary; committed preflight regression/fix 59fcc4a1 and selected reviewed compatible Corretto 17.0.21.0.11 without modifying its metadata/truststore. All 38 architecture checks pass.
+- Android ARM64 IL2CPP development build 20261028T012758Z-f2181e passed at c4cc8022. Source/toolchain inventories unchanged; LastStand.apk is 39,799,485 bytes. No device/emulator is connected; device lifecycle/audio/performance qualification remains open.
+- Driver fix c4cc8022 reveals controls through ordinary scroll or keyboard navigation while retaining full input guards. Related evidence-binding omissions are fixed. All 367 focused checks pass with zero failures/skips; independent coverage/security/auth-crypto reviews pass. Pushed to existing draft PR 546; hosted CI remains a separate exact-head check. No merge or publication.
