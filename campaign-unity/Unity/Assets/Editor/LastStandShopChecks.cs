@@ -1324,6 +1324,96 @@ public static class LastStandShopChecks
         }
         if(failed)EditorApplication.Exit(1);
     }
+    sealed class ShopResearchTime : ILastStandTime
+    {
+        public long UtcMilliseconds { get; set; }
+        public double MonotonicSeconds { get; set; }
+        public void AdvanceHeartbeat() { UtcMilliseconds+=16000;MonotonicSeconds+=16; }
+    }
+    static ShopResearchTime ShopHeartbeatClock(ShopUiFixture fixture)
+    {
+        var loop=fixture.Game.Loop;
+        var time=new ShopResearchTime {UtcMilliseconds=loop.Progression.ResearchSnapshot.lastObservedUtcMilliseconds};
+        var coordinator=new LastStandResearchCoordinator(loop.Progression,time);
+        coordinator.Confirmed+=()=>loop.Session.GrantMaximumSpeed(loop.Progression.MaximumGameSpeed);
+        SetField(loop,"research",coordinator);
+        Require(coordinator.Initialize(),"actual research coordinator initializes deterministic heartbeat clock");
+        return time;
+    }
+    static void Heartbeat(ShopUiFixture fixture,ShopResearchTime time)
+    {
+        time.AdvanceHeartbeat();SetField(fixture.Game.Loop,"researchPollAt",0d);
+        Invoke(fixture.Game.Loop,"UpdateResearch");
+    }
+    static void ResearchHeartbeatPermanentShop()
+    {
+        using(var f=new ShopUiFixture(false,new Vector2Int(800,476)))
+        {
+            var loop=f.Game.Loop;var progression=loop.Progression;var time=ShopHeartbeatClock(f);
+            f.Click("ShopEntry");var track=LastStandUpgradeTrackId.CannonAttack;
+            long displayedRevision=progression.Revision;int wallet=progression.Wallet,level=progression.GetPermanentLevel(track);
+            var quote=progression.QuotePermanent(track,LastStandBulkQuantity.One);
+            Heartbeat(f,time);
+            Require(progression.Revision>displayedRevision && loop.MenuPage=="" && f.Button("ShopCard_cannonAttackBuy").IsInteractable(),
+                "heartbeat commits authoritative profile while the permanent shop remains open");
+            int writes=f.Game.Storage.Writes;
+            // Do not refresh the fixture before this input: the normal heartbeat
+            // must publish its new revision to the already displayed purchase.
+            f.Click("ShopCard_cannonAttackBuy");
+            Require(progression.GetPermanentLevel(track)==level+1 && progression.Wallet==wallet-quote.Cost &&
+                f.Game.Storage.Writes==writes+1 && LastStandProgression.Load(f.Game.Storage).GetPermanentLevel(track)==level+1,
+                "first displayed purchase after research heartbeat commits exactly once without stale refusal");
+            int paidWallet=progression.Wallet;writes=f.Game.Storage.Writes;
+            Require(!loop.TryPurchasePermanent(track,LastStandBulkQuantity.One,displayedRevision) &&
+                progression.Wallet==paidWallet && progression.GetPermanentLevel(track)==level+1 && f.Game.Storage.Writes==writes,
+                "genuinely stale permanent intent remains rejected after the refreshed purchase");
+        }
+    }
+    static void ResearchHeartbeatFailedSave()
+    {
+        using(var f=new ShopUiFixture(false,new Vector2Int(800,476)))
+        {
+            var progression=f.Game.Loop.Progression;var time=ShopHeartbeatClock(f);f.Click("ShopEntry");
+            int wallet=progression.Wallet,level=progression.GetPermanentLevel(LastStandUpgradeTrackId.CannonAttack);
+            string saved=f.Game.Storage.Value;f.Game.Storage.FailWrite=true;Heartbeat(f,time);
+            Require(progression.SaveState!="ready" && progression.Wallet==wallet &&
+                progression.GetPermanentLevel(LastStandUpgradeTrackId.CannonAttack)==level && f.Game.Storage.Value==saved,
+                "failed heartbeat cannot alter durable wallet or permanent level");
+            Require(!f.Button("ShopCard_cannonAttackBuy").IsInteractable(),
+                "failed heartbeat immediately disables the displayed permanent purchase");
+        }
+    }
+    static void ResearchHeartbeatRunShop()
+    {
+        using(var f=new ShopUiFixture(false,new Vector2Int(800,476)))
+        {
+            var time=ShopHeartbeatClock(f);var shop=Funded(f.Game);f.Game.Session.TogglePauseAt(f.Game.Timestamp);f.Refresh();f.Click("ShopEntry");
+            int version=shop.Version,scrap=shop.Scrap,spent=shop.SpentScrap,earned=shop.EarnedScrap;
+            string model=f.Game.Session.Model.Snapshot();long revision=f.Game.Loop.Progression.Revision;
+            Heartbeat(f,time);
+            Require(f.Game.Loop.Progression.Revision>revision && ReferenceEquals(shop,Shop(f.Game.Session)) &&
+                shop.Version==version && shop.Scrap==scrap && shop.SpentScrap==spent && shop.EarnedScrap==earned &&
+                f.Game.Session.Model.Snapshot()==model && f.Button("ShopClose").IsActive(),
+                "profile heartbeat refresh preserves the live shop owner, intent version and run accounting");
+        }
+    }
+    public static void RunResearchHeartbeat()
+    {
+        bool failed=false;
+        using(var preferencesScope=new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED");var factory=LastStandLoopController.StorageFactory;
+            bool background=Application.runInBackground;
+            try
+            {
+                NamedIncome("test_research_heartbeat_refreshes_displayed_shop_revision",ResearchHeartbeatPermanentShop,ref failed);
+                NamedIncome("test_research_heartbeat_failed_save_disables_displayed_purchase",ResearchHeartbeatFailedSave,ref failed);
+                NamedIncome("test_research_heartbeat_preserves_run_shop",ResearchHeartbeatRunShop,ref failed);
+            }
+            finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
+        }
+        if(failed)EditorApplication.Exit(1);
+    }
     static void BattleShopProfiles()
     {
         var profiles = new[] { new Vector2Int(1920,976), new Vector2Int(1366,664), new Vector2Int(720,516),

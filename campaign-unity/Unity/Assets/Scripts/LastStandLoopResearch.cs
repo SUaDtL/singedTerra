@@ -56,7 +56,7 @@ namespace SingedTerra.LastStand
             researchPollAt=now+1;FlushHistoryTime();
             if(ResearchCanAct)
             {
-                if(research.NeedsHeartbeat())ReconcileResearch(MenuPage=="research");
+                if(research.NeedsHeartbeat())ReconcileResearch(true);
                 else if(MenuPage=="research")Refresh("research-timer");
             }
         }

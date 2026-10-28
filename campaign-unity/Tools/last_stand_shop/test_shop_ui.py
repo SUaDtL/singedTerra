@@ -156,6 +156,13 @@ class ShopUiTests(unittest.TestCase):
         self.assertEqual(code, 0, log[-10000:])
         self.assertIn("ST_LS_SHOP_PASS " + self._testMethodName, log)
 
+    def test_research_heartbeat_refreshes_displayed_shop_revision(self):
+        code, log = self.run_checks("RunResearchHeartbeat")
+        self.assertEqual(code, 0, log[-10000:])
+        for name in (self._testMethodName, "test_research_heartbeat_failed_save_disables_displayed_purchase",
+                     "test_research_heartbeat_preserves_run_shop"):
+            self.assertIn("ST_LS_SHOP_PASS " + name, log)
+
     def test_battle_shop_tabs_live_cards_and_refusal_feedback(self):
         self.exit_code, self.log = self.run_checks("RunBattleShop")
         name = self._testMethodName
