@@ -7,6 +7,7 @@ import { dirname, resolve, basename } from 'node:path';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
 import { assertCombinedQualification, currentQualificationInputs } from './lastStandQualification.mjs';
+import {idleWaveFields} from './lastStandWaveSaveFixtures.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
@@ -1441,6 +1442,38 @@ test('background wave caller awaits a post-return observation before collecting 
   const observed=await run(async options=>options?.minT>=interval.recovered&&options.run===2?fresh:stale,
     ()=>({201:fresh}),(state,oracle)=>assert.deepEqual(oracle[state.tick],state,'Pre-return cached sample cannot establish a post-return checkpoint'),interval);
   assert.equal(observed,fresh);
+});
+
+test('background checkpoint capture remains coherent when a wave commits between model observation and durable read',async()=>{
+  const begin=source.indexOf('    const afterBackground=await observation('),end=source.indexOf('    const quietStart=',begin);
+  assert.ok(begin>0&&end>begin,'Execute the actual background capture including its native pause');
+  const id={load:5,timeOrigin:1000,scope:'healthy'},rules='last-stand-waves-v1';
+  const live={...id,t:56512.2,action:'session',sessionRun:1,runId:2,phase:'battle',saveState:'ready',wallet:2,
+    tick:505,wave:2,completedWave:1,checkpointWave:1,paused:false,speed:1,pendingRunId:0,hasCheckpoint:true,
+    checkpointBlocked:false,activeTier:1,fittingId:'repair',profileVersion:rules,cannonDamage:30};
+  const after={...id,t:56502,action:'tick',run:1,tick:505,wave:2,completedWave:1,fitting:'repair',loop:live};
+  const committed={...live,t:56878.3,action:'wave-committed',wallet:3,tick:507,wave:3,completedWave:2,checkpointWave:2};
+  const paused={...committed,t:57000,action:'session',tick:513,paused:true,speed:0};
+  const interval={begin:41855.3,recovered:55128.7,before:{...id,t:39215.5,run:1,tick:160}};
+  const saved={...idleWaveFields({runId:2,wave:2}),credits:3,pendingDefeat:null,checkpoint:{runId:2,
+    encounter:{tier:1,fitting:1,rulesVersion:rules,tick:507,wave:2,completedWave:2,committedCannonDamage:30}}};
+  const states=[live],report={lifecycle:[]},calls=[];
+  // The real trace crossed a complete wave after the coherent running pair.
+  // Both asynchronous boundaries allow that legitimate intervening commit.
+  const commit=()=>{if(states.at(-1)===live)states.push(committed);};
+  const run=new Function('observation','reference','validateModelObservation','interval','page','SAVE_KEY','states','check','report',
+    'gameKey','phaseMatrix','nextBoundary','validateBackgroundCheckpoint',
+    'return(async()=>{'+source.slice(begin,end)+'})();');
+  await run(async()=>after,()=>({505:after}),observed=>assert.equal(observed,after),interval,
+    {evaluate:async()=>{commit();calls.push('read');return JSON.stringify(saved);}},'inert-key',states,
+    (ok,message)=>assert.ok(ok,message),report,async(name,action,predicate)=>{
+      assert.equal(name,'SpeedRate');assert.equal(action,'session');commit();states.push(paused);
+      assert.equal(predicate(paused),true);calls.push('native-pause');return paused;
+    },async()=>calls.push('matrix'),2,journey.validateBackgroundCheckpoint);
+  const row=report.lifecycle[0];assert.equal(row.after,after,'Keep the earlier running/clock witness');
+  assert.equal(row.saved.credits,(row.checkpointState??row.after.loop).wallet,'Durable balance must match its own checkpoint witness');
+  assert.equal(row.checkpointState,paused,'Retain the actual paused owner state separately');
+  assert.deepEqual(calls,['native-pause','read','matrix'],'Pause must complete before durable capture');
 });
 
 

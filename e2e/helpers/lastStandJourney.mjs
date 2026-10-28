@@ -3575,6 +3575,35 @@ export function assertIdleWaveSave(saved) {
   assert.deepEqual(r.slots,[{active:null,queued:null},{active:null,queued:null}]);
   assert.equal(saved.history?.version,1);
 }
+export function validateBackgroundCheckpoint({interval,after,checkpointState:state,saved}) {
+  assertIdleWaveSave(saved);
+  const cp=saved.checkpoint,e=cp?.encounter;
+  assert.ok(e&&state&&after?.loop&&interval?.before,'A separate paused checkpoint witness is required');
+  for(const row of [interval.before,after,after.loop,state]) {
+    assert.ok(Number.isSafeInteger(row.load)&&row.load>0&&Number.isFinite(row.timeOrigin)&&row.timeOrigin>0);
+    assert.ok(Number.isFinite(row.t)&&row.t>=0&&typeof row.scope==='string'&&row.scope.length>0);
+    for(const key of ['load','timeOrigin','scope'])assert.equal(row[key],after[key],'Checkpoint witnesses share one document');
+  }
+  assert.ok(Number.isSafeInteger(after.run)&&after.run>0);assert.equal(after.run,interval.before.run);
+  assert.equal(after.loop.sessionRun,after.run);assert.equal(state.sessionRun,after.run);
+  assert.ok(Number.isSafeInteger(cp.runId)&&cp.runId>0);assert.equal(cp.runId,after.loop.runId);assert.equal(state.runId,cp.runId);
+  assert.ok(Number.isFinite(interval.begin)&&Number.isFinite(interval.recovered)&&interval.before.t<=interval.begin&&interval.begin<interval.recovered);
+  assert.ok(after.t>=interval.recovered&&after.loop.t>=after.t&&state.t>=after.loop.t,'Paused checkpoint must follow the running return witness');
+  assert.equal(after.loop.paused,false);assert.equal(state.action,'session');assert.equal(state.phase,'battle');
+  assert.equal(state.saveState,'ready');assert.equal(state.paused,true);assert.equal(state.speed,0);
+  assert.equal(state.hasCheckpoint,true);assert.equal(state.checkpointBlocked,false);assert.equal(state.pendingRunId,0);
+  assert.equal(saved.pendingDefeat,null);assert.equal(state.wallet,saved.credits,'Durable balance must match its paused checkpoint witness');
+  assert.ok(Number.isSafeInteger(e.completedWave)&&e.completedWave>0&&e.completedWave>=after.completedWave);
+  assert.equal(e.wave,e.completedWave,'A saved checkpoint names its completed cohort');
+  assert.equal(state.completedWave,e.completedWave);assert.equal(state.checkpointWave,e.completedWave);assert.equal(state.wave,e.completedWave+1);
+  assert.ok(Number.isSafeInteger(e.tick)&&e.tick>0&&Number.isSafeInteger(state.tick)&&state.tick>=e.tick&&state.tick>=after.tick);
+  assert.equal(e.rulesVersion,'last-stand-waves-v1');assert.equal(state.profileVersion,e.rulesVersion);assert.equal(after.loop.profileVersion,e.rulesVersion);
+  assert.equal(state.activeTier,e.tier);assert.equal(after.loop.activeTier,e.tier);
+  assert.equal(state.fittingId,['launcher','repair','scattergun'][e.fitting]);assert.equal(state.fittingId,after.fitting);
+  assert.equal(state.cannonDamage,e.committedCannonDamage);assert.equal(state.cannonDamage,after.loop.cannonDamage);
+  assert.equal(saved.history.current?.runId,cp.runId);assert.equal(saved.history.current.highestClearedWave,e.completedWave);
+  return true;
+}
 export function assertWaveSavePreserved(before,after) {
   assertIdleWaveSave(before);assertIdleWaveSave(after);
   assert.ok(after.revision>=before.revision,'Profile revision cannot roll back');
@@ -4404,11 +4433,13 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const interval=await away('hidden',12000);
     await until(states,0,item=>item.load===load && item.completedWave>=nextBoundary && item.saveState==='ready',60);
     const afterBackground=await observation({minT:interval.recovered,run:interval.before.run});validateModelObservation(afterBackground,reference(afterBackground));
+    const checkpointState=await gameKey('SpeedRate','session',item=>item.paused);
     const backgroundSaved=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
-    check(backgroundSaved.checkpoint?.encounter.completedWave>=nextBoundary && backgroundSaved.credits===states.at(-1).wallet &&
+    validateBackgroundCheckpoint({interval,after:afterBackground,checkpointState,saved:backgroundSaved});
+    check(backgroundSaved.checkpoint?.encounter.completedWave>=nextBoundary && backgroundSaved.credits===checkpointState.wallet &&
       backgroundSaved.pendingDefeat===null,'background wave rewards and checkpoint share one durable save');
-    report.lifecycle.push({kind:'background-wave',interval,after:afterBackground,saved:backgroundSaved});
-    await gameKey('SpeedRate','session',item=>item.paused);await phaseMatrix('background-checkpoint');
+    report.lifecycle.push({kind:'background-wave',interval,after:afterBackground,checkpointState,saved:backgroundSaved});
+    await phaseMatrix('background-checkpoint');
     const quietStart=await mark();await page.waitForTimeout(900);await noReplay(quietStart,await mark());
     await gameKey('SpeedRate','session',item=>!item.paused);
     const terminalBefore=await observation(),terminalStart=states.length,terminalOracle=reference(terminalBefore);

@@ -13,7 +13,7 @@ import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs'
 import {WAVE_ORACLE_SOURCES} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
-import {assertCombinedWaveQualification,assertWaveBinding,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
+import {assertCombinedWaveQualification,assertWaveBinding,assertWaveLifecycle,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
   WAVE_LIFECYCLE_CHECKS,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_ERROR_CHECK} from './lastStandWaveQualification.mjs';
 
 // Inert contract fixtures only. They are never browser reports or acceptance.
@@ -120,6 +120,39 @@ function resumeFixture(){
     checkpointWave:1,completedWave:1,wave:2,tick:201,hull:114,kills:6,cannonDamage:20,wallet:2,pendingRunId:0,paused:true,speed:0};
   return {kind:'checkpoint-resume',saved,resumed,stable:{...resumed,action:'menu',t:1300},stored:clone(saved),observedClock:{t:1301,timeOrigin:1000}};
 }
+function backgroundFixture(){
+  const {before,after}=clone(intervalFixture().evidence),rules='last-stand-waves-v1';
+  after.loop={...after.loop,profileVersion:rules,fittingId:'repair',cannonDamage:30,wallet:1};
+  const checkpointState={...after.loop,t:220,action:'session',phase:'battle',saveState:'ready',paused:true,speed:0,
+    pendingRunId:0,hasCheckpoint:true,checkpointBlocked:false,tick:3,wave:2,completedWave:1,checkpointWave:1,wallet:2};
+  const saved={...idleWaveFields({runId:19}),credits:2,pendingDefeat:null,checkpoint:{runId:19,
+    encounter:{tier:1,fitting:1,rulesVersion:rules,tick:2,wave:1,completedWave:1,committedCannonDamage:30}}};
+  return {kind:'background-wave',interval:{begin:100,recovered:195,before},after,checkpointState,saved};
+}
+test('saved background checkpoint wave must name its cleared cohort',()=>{
+  const good=backgroundFixture();assert.equal(journey.validateBackgroundCheckpoint(good),true);
+  const broken=clone(good);broken.saved.checkpoint.encounter.wave=999;
+  assert.throws(()=>journey.validateBackgroundCheckpoint(broken));
+});
+test('background checkpoint witness keeps running progression separate and rejects mismatched paused save boundaries',()=>{
+  const good=backgroundFixture();assert.notEqual(good.after.loop.wallet,good.saved.credits);
+  assert.equal(journey.validateBackgroundCheckpoint(good),true);
+  const report=lifeReport(expectedFixture());assert.doesNotThrow(()=>assertWaveLifecycle(report));
+  for(const mutate of [r=>delete r.checkpointState,r=>r.checkpointState.wallet--,r=>r.saved.credits++,
+    r=>r.checkpointState.load++,r=>r.checkpointState.timeOrigin++,r=>r.checkpointState.scope='other',
+    r=>r.checkpointState.sessionRun++,r=>r.checkpointState.runId++,r=>r.saved.checkpoint.runId++,
+    r=>r.checkpointState.t=r.after.loop.t-.1,r=>r.checkpointState.paused=false,r=>r.checkpointState.speed=1,
+    r=>r.checkpointState.phase='result',r=>r.checkpointState.saveState='failed',r=>r.checkpointState.checkpointBlocked=true,
+    r=>r.checkpointState.hasCheckpoint=false,r=>r.checkpointState.pendingRunId=1,r=>r.saved.pendingDefeat={},
+    r=>r.checkpointState.completedWave++,r=>r.checkpointState.checkpointWave++,r=>r.checkpointState.wave++,
+    r=>r.checkpointState.tick=r.saved.checkpoint.encounter.tick-1,r=>r.checkpointState.activeTier++,
+    r=>r.checkpointState.profileVersion='other',r=>r.checkpointState.fittingId='launcher',r=>r.checkpointState.cannonDamage++,
+    r=>r.saved.history.current.runId++,r=>r.saved.history.current.highestClearedWave++]){
+    const broken=clone(good);mutate(broken);assert.throws(()=>journey.validateBackgroundCheckpoint(broken),undefined,String(mutate));
+    const aggregate=clone(report),index=aggregate.lifecycle.findIndex(r=>r.kind==='background-wave');aggregate.lifecycle[index]=broken;
+    assert.throws(()=>assertWaveLifecycle(aggregate),undefined,String(mutate));
+  }
+});
 function terminalFixture(mode){
   const load=mode==='foreground'?3:5,run=mode==='foreground'?2:3,identity={load,timeOrigin:load*1000,scope:'healthy'};
   const before={...identity,t:100,run,status:'Running',loop:{runId:run,phase:'battle'},fitting:'repair',tier:1};
@@ -269,8 +302,7 @@ function lifeReport(expected,host='linux'){
     .map(([name,action])=>({name,action,keys:['Enter']}));
   report.keyboard_trace={matched:true,actions:4,observed_edges:8};
   report.lifecycle=[resume,{kind:'checkpoint-abandon',before:clone(resume.saved),after:abandonedWaveSave(resume.saved)},
-    {kind:'background-wave',saved:{...idleWaveFields({runId:2}),credits:1,pendingDefeat:null,checkpoint:{runId:2,encounter:{completedWave:1,rulesVersion:'last-stand-waves-v1',tier:1}}},
-      interval:{begin:100,recovered:200,before:{load:3,timeOrigin:3000,run:2,tick:0}},after:{t:210,load:3,timeOrigin:3000,run:2,tick:201,loop:{runId:2,wallet:1,activeTier:1}}},
+    backgroundFixture(),
     intervalFixture('explicit-pause'),intervalFixture(),{kind:'no-replay-telemetry',cues:[]},foreground,hidden,
     {kind:'terminal-reload',saved:clone(foreground.evidence.saved),state:{load:4,runId:0,pendingRunId:0,hasCheckpoint:false,wallet:4}}];
   return report;
@@ -387,13 +419,15 @@ test('current CLIs dispatch only the wave contract while historical exports stay
   }
 });
 
-test('raw wave verifier binds compiler streams, every native edge, oracle membership and actual screenshot pixels',t=>{
+test('raw wave verifier binds compiler streams, every native edge, oracle membership and actual screenshot pixels',async t=>{
   const root=mkdtempSync(join(tmpdir(),'st-inert-wave-reader-'));t.after(()=>rmSync(root,{recursive:true}));mkdirSync(join(root,'wave-model-oracle'));
   const expected=expectedFixture(),report=baseReport(expected),sha=b=>createHash('sha256').update(b).digest('hex');
-  const raw=Buffer.from(profiles.flatMap(key=>[0,1,2].map(tick=>key.replaceAll(':',',')+
-    `,${tick},${tick===2?0:120},0,0,0,0,0,0,${tick===2?1:0},0,0,1,0,${tick===2?'Defeated':'Running'}\r\n`)).join(''));
+  const raw=Buffer.from(profiles.flatMap(key=>(key==='1:repair:30'?[0,1,2,3,4]:[0,1,2]).map(tick=>{
+    const checkpoint=key==='1:repair:30',cleared=checkpoint&&tick>=2,terminal=tick===(checkpoint?4:2);
+    return key.replaceAll(':',',')+`,${tick},${terminal?0:120},${cleared?1:0},${cleared?1:0},${cleared?1:0},0,0,0,${terminal?1:0},0,0,${cleared?2:1},${cleared?1:0},${terminal?'Defeated':'Running'}\r\n`;
+  })).join(''));
   const empty=Buffer.alloc(0),driver=Buffer.from('inert fixture, never executed'),exe=Buffer.from('not an executable');
-  const model=report.wave_model;model.rows=72;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
+  const model=report.wave_model;model.rows=74;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
   model.commands[0].stdoutSha256=sha(empty);model.commands[0].stderrSha256=sha(empty);model.commands[1].stdoutSha256=sha(raw);model.commands[1].stderrSha256=sha(empty);
   const put=(name,value)=>writeFileSync(join(root,name),typeof value==='object'&&!Buffer.isBuffer(value)?JSON.stringify(value):value);
   put('wave-model-oracle/binding.json',model);put('wave-model-oracle/commands.json',{inputs:model.inputs,commands:model.commands});
@@ -406,6 +440,59 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
     assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));put(path,original);
   }
   put('input-trace.json',[{area:'gameplay',kind:'pointerdown'}]);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));put('input-trace.json',[]);
+  const background=backgroundFixture(),{loop:running,hull:unusedHull,...runningModel}=background.after;
+  const committed={...background.checkpointState,t:210,action:'wave-committed',paused:false,speed:1,tick:2};
+  const backgroundRaw={states:[running,committed,background.checkpointState],encounters:[runningModel],layouts:[]};
+  report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const [name,mutate] of [
+    ['saved wave999 cannot override the unchanged actual cleared boundary',r=>r.saved.checkpoint.encounter.wave=999],
+    ['saved tick1 cannot claim wave1 cleared before its source oracle',r=>r.saved.checkpoint.encounter.tick=1]]){
+    await t.test(name,()=>{
+      const broken=clone(background);mutate(broken);report.lifecycle=[broken];
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+    });
+  }
+  // A valid boundary may precede the running pair; the pause is later than
+  // both. Do not force saved tick to equal the later paused combat tick.
+  const olderBoundary=clone(background),olderRaw=clone(backgroundRaw);
+  Object.assign(olderBoundary.after,{t:215,tick:3,kills:1,spawned:1,cannon:1,wave:2,completedWave:1});
+  Object.assign(olderBoundary.after.loop,{t:216,tick:3,kills:1,wave:2,completedWave:1,wallet:2});
+  const {loop:olderLoop,hull:olderHull,...olderModel}=olderBoundary.after;
+  olderRaw.states[0]=olderLoop;olderRaw.encounters=[olderModel];report.lifecycle=[olderBoundary];put('runtime-telemetry.json',olderRaw);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
+  for(const mutate of [r=>delete r.checkpointState,r=>r.checkpointState.wallet++,r=>r.checkpointState.t++,
+    r=>r.checkpointState.load++,r=>r.checkpointState.timeOrigin++,r=>r.checkpointState.scope='other',
+    r=>r.checkpointState.sessionRun++,r=>r.checkpointState.runId++,r=>r.checkpointState.paused=false,
+    r=>r.checkpointState.t=r.after.loop.t-.1,r=>r.saved.credits++]){
+    const broken=clone(background);mutate(broken);report.lifecycle=[broken];
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(mutate));
+  }
+  report.lifecycle=[background];
+  for(const mutate of [r=>r.states.pop(),r=>r.states.push(clone(r.states.at(-1))),r=>r.states.at(-1).wallet++,
+    r=>r.states.at(-1).t++,r=>r.states.at(-1).runId++,r=>r.states.splice(1,1),r=>r.states.push(clone(r.states[1])),
+    r=>r.states[1].wallet++,r=>r.states[1].tick++,r=>r.states[1].completedWave++,r=>r.states[1].checkpointWave++,
+    r=>r.states[1].wave++,r=>r.states[1].load++,r=>r.states[1].timeOrigin++,r=>r.states[1].scope='other',
+    r=>r.states[1].sessionRun++,r=>r.states[1].runId++,r=>r.states[1].profileVersion='other',
+    r=>r.states[1].fittingId='launcher',r=>r.states[1].t=background.checkpointState.t+1,
+    r=>r.states.push({...r.states[1],t:215,tick:3})]){
+    const broken=clone(backgroundRaw);mutate(broken);put('runtime-telemetry.json',broken);
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(mutate));
+  }
+  const nonBoundary=clone(background),nonBoundaryRaw=clone(backgroundRaw);
+  nonBoundary.saved.checkpoint.encounter.tick=3;nonBoundaryRaw.states[1].tick=3;
+  report.lifecycle=[nonBoundary];put('runtime-telemetry.json',nonBoundaryRaw);
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),'A forged later commit cannot make an interior oracle tick a new cleared boundary');
+  // A raw row's existence alone cannot turn a foreign or earlier state into
+  // this run's paused checkpoint witness, even with the same wallet.
+  for(const mutate of [r=>r.load++,r=>r.timeOrigin++,r=>r.scope='other',r=>r.sessionRun++,r=>r.runId++,
+    r=>r.t=background.after.loop.t-.1,r=>r.paused=false]){
+    const broken=clone(background),actual=clone(backgroundRaw);mutate(broken.checkpointState);
+    actual.states.push(broken.checkpointState);report.lifecycle=[broken];put('runtime-telemetry.json',actual);
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(mutate));
+  }
+  report.lifecycle=[];
   for(const kind of ['explicit-pause','hidden']){
     const record=intervalFixture(kind),e=record.evidence;
     const endpoints=kind==='explicit-pause'?['before','paused','returned','resumed','after']:['before','after'];
