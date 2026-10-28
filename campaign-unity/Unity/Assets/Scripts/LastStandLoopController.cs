@@ -308,10 +308,11 @@ namespace SingedTerra.LastStand
                 if (suppressCallbackFeedback) DiscardMissedFeedback();
             }
             SyncAudioAdmission();
-            if (suppressCallbackFeedback || !Session.CanRun) return;
+            bool feedbackAllowed = !suppressCallbackFeedback && Session.CanRun;
             foreach (var evt in model.Events)
             {
-                Audio.PlayEvent(evt.Kind, evt.Amount, !evt.Killed);
+                if (feedbackAllowed) Audio.PlayEvent(evt.Kind, evt.Amount, !evt.Killed);
+                // Authoritative hit evidence is independent of audiovisual admission.
                 if (evt.Kind == EncounterEventKind.Cannon)
                     LastStandObservations.Hit(model);
             }

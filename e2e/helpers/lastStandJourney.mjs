@@ -1452,6 +1452,87 @@ export function validateModelObservation(observed,oracle) {
   if(Object.hasOwn(expected,'wave'))for(const key of ['wave','completedWave'])
     assert.equal(observed[key],expected[key],'Source-bound wave '+key+' differs');
 }
+const sameDeploymentDocument=(item,deployed)=>item.load===deployed.load && item.timeOrigin===deployed.timeOrigin && item.scope===deployed.scope;
+function cannonDeployment(deployed,encounters,oracle){
+  assert.ok(Number.isSafeInteger(deployed.load) && deployed.load>0 && Number.isFinite(deployed.timeOrigin) && deployed.timeOrigin>0 &&
+    Number.isFinite(deployed.t) && deployed.t>=0 && deployed.scope==='healthy' &&
+    Number.isSafeInteger(deployed.runId) && Number.isSafeInteger(deployed.sessionRun),
+    'Cannon proof requires explicit current document, scope and run identities');
+  assert.ok(deployed.action==='deploy' && deployed.phase==='battle' && deployed.saveState==='ready' &&
+    deployed.profileVersion==='last-stand-waves-v1' && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
+    deployed.activeTier===1 && deployed.fittingId==='repair' && [20,30].includes(deployed.cannonDamage),
+    'First cannon proof requires its actual current repair deployment');
+  const models=encounters.filter(item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun && item.action==='deploy');
+  assert.ok(models.length===1 && models[0].t<=deployed.t && models[0].tick===0 && models[0].fitting==='repair' &&
+    models[0].rules.startsWith('last-stand-waves-v1:'),'First cannon proof requires its raw same-run model deployment');
+  validateModelObservation(models[0],oracle);
+}
+function cannonCallback(item,deployed,records){
+  const group=records.filter(row=>sameDeploymentDocument(row,deployed) && row.run===deployed.sessionRun && row.id===item.id);
+  const starts=group.filter(row=>row.action==='begin'),ends=group.filter(row=>row.action==='end');
+  assert.ok(starts.length===1 && ends.length===1,'Cannon evidence requires one complete actual callback');
+  const begin=starts[0],end=ends[0];
+  assert.ok(Number.isSafeInteger(begin.id) && begin.id>0 && Number.isSafeInteger(begin.fromTick) && begin.fromTick>=0,
+    'Cannon callback requires its actual positive identity and integral tick');
+  assert.ok([begin,end].every(row=>['t','timestamp','previousTimestamp','elapsed','priorPending','pending'].every(key=>
+    Number.isFinite(row[key]) && row[key]>=0) && row.timestamp>=row.previousTimestamp &&
+    Math.abs(row.elapsed-(row.timestamp-row.previousTimestamp))<=1e-9) &&
+    begin.priorPending===end.priorPending,'Cannon callback clocks and retained carry must be finite, monotonic and consistent');
+  assert.ok(begin.t>=deployed.t && begin.t<=item.t && item.t<=end.t && begin.fromTick===end.fromTick &&
+    begin.tick===begin.fromTick && end.tick===begin.fromTick+end.steps && Number.isInteger(end.steps) && end.steps>0 && end.steps<=128 &&
+    begin.fromTick<item.tick && item.tick<=end.tick && begin.timestamp===end.timestamp &&
+    begin.previousTimestamp===end.previousTimestamp,'Cannon evidence must belong to its actual bounded run callback');
+  return {begin,end,group};
+}
+export async function observeFirstCannonImpact({deployed,start,hits,encounters,callbackRecords,oracle,until}){
+  cannonDeployment(deployed,encounters,oracle);
+  const expected=Object.values(oracle).find(row=>row.cannon>0);
+  assert.ok(expected?.cannon===1 && oracle[expected.tick-1]?.cannon===0,'First cannon event absent from source-bound oracle');
+  const hit=await until(hits,start,item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t,45);
+  assert.ok(hit.tick===expected.tick && hit.cannonDamage===deployed.cannonDamage && hit.kills===expected.kills &&
+    hit.firstFoeHull===Math.max(0,30-deployed.cannonDamage),'First authoritative cannon impact differs from deployment/oracle');
+  await until(callbackRecords,0,item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun &&
+    item.action==='end' && item.t>=hit.t && item.fromTick<hit.tick && item.tick>=hit.tick,8);
+  const starts=callbackRecords.filter(item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun &&
+    item.action==='begin' && item.t>=deployed.t && item.t<=hit.t && item.fromTick<hit.tick);
+  const begin=starts.at(-1);assert.ok(begin,'First impact has no authoritative callback');
+  cannonCallback({...hit,id:begin.id},deployed,callbackRecords);
+  assert.equal(hits.slice(start).filter(item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t && item.tick===hit.tick).length,1,
+    'First authoritative impact cannot be duplicated');
+  return hit;
+}
+export async function observeFreshCannonAudio({deployed,encounters,callbackRecords,cues,oracle,until}){
+  cannonDeployment(deployed,encounters,oracle);
+  const current=item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun && item.t>=deployed.t;
+  const cannon=await until(callbackRecords,0,item=>current(item) && item.action==='cue' && item.cue==='cannon' && item.played &&
+    callbackRecords.some(next=>current(next) && next.action==='cue' && next.id===item.id && next.tick===item.tick && next.ordinal===item.ordinal+1 && next.played) &&
+    callbackRecords.some(end=>current(end) && end.id===item.id && end.action==='end'),45);
+  const {begin,end,group}=cannonCallback(cannon,deployed,callbackRecords);
+  const a=oracle[cannon.tick-1],b=oracle[cannon.tick];
+  assert.ok(a && b && b.cannon-a.cannon===1 && [0,1].includes(b.kills-a.kills),'Played cannon must match an actual oracle event');
+  assert.ok(Number.isSafeInteger(cannon.ordinal) && cannon.ordinal>0 &&
+    group.filter(item=>item.action==='cue' && item.ordinal===cannon.ordinal).length===1,
+    'Played cannon requires one unique identified admission');
+  const companion=group.filter(item=>item.action==='cue' && item.ordinal===cannon.ordinal+1);
+  assert.equal(companion.length,1,'Played cannon needs one admitted impact/destruction companion');
+  const attempts=[cannon,companion[0]],expected=['cannon',b.kills>a.kills?'destruction':'impact'];
+  assert.ok(begin.focused && !begin.applicationPaused && !begin.paused && !begin.failed && begin.priorPending<.05 && begin.elapsed<=.5 && end.elapsed<=.5,
+    'Fresh cannon sound cannot come from hidden, paused or retained-debt callbacks');
+  const events=attempts.map((item,index)=>{
+    assert.ok(item.cue===expected[index] && item.played===true && item.reason==='played' && item.tick===cannon.tick && item.fromTick===begin.fromTick &&
+      item.timestamp===begin.timestamp && item.previousTimestamp===begin.previousTimestamp && item.steps===item.tick-item.fromTick &&
+      item.steps>=1 && item.steps<=10 && item.timestamp-item.previousTimestamp<=.5 && Number.isFinite(item.admittedAt) &&
+      item.admittedAt>=item.timestamp && item.admittedAt-item.previousTimestamp<=.5 && item.t>=begin.t && item.t<=end.t,
+      'Cannon/impact audio requires its fresh actual playback admission');
+    const next=group.filter(row=>row.action==='cue' && row.t>item.t).sort((x,y)=>x.t-y.t)[0];
+    const played=cues.filter(row=>sameDeploymentDocument(row,deployed) && row.t>=item.t && row.t<=(next?.t??end.t) &&
+      row.text.trim()==='ST_LS_AUDIO event='+item.cue);
+    assert.equal(played.length,1,'Each admitted sound requires one actual played-event observation');return played[0];
+  });
+  assert.ok(cannon.t<=events[0].t && events[0].t<=companion[0].t && companion[0].t<=events[1].t &&
+    companion[0].admittedAt>=cannon.admittedAt,'Played cannon and companion must retain actual chronological admission and log order');
+  return {begin:Math.max(deployed.t,events[0].t-500),end:events[1].t+750,deployed,callback:{begin,end},attempts,events};
+}
 export function validateSettlingTransition({before,result,states,layouts,encounters,oracle}) {
   assert.ok(Number.isInteger(before?.load) && Number.isFinite(before.timeOrigin) && Number.isFinite(before.t) &&
     before.status==='Running' && !before.paused && !before.failed && !before.catchingUp &&
@@ -4188,9 +4269,13 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const startAudio=await mark();const deployed=await gameClick('Deploy','deploy');
     check(deployed.phase==='battle' && deployed.cannonDamage===20,'normal-speed automatic baseline deployed',deployed);
     if(player){await page.evaluate('window.__stFrameProbe.start()');motion=await startMotion(native.context,page,output);}const motionStart=await mark();
-    const first=await until(hits,baselineHitStart,item=>item.load===deployed.load && item.timeOrigin===deployed.timeOrigin && item.cannonDamage===20,45);const firstHit=await mark();
+    const first=await observeFirstCannonImpact({deployed,start:baselineHitStart,hits,encounters,callbackRecords,
+      oracle:modelOracle[`${deployed.activeTier}:${deployed.fittingId}:${deployed.cannonDamage}`],until});const firstHit=first.t;
     check(first.firstFoeHull===10,'first base cannon leaves identical 30 HP foe at 10 HP',first);
-    await page.waitForTimeout(750);const sound=await energy(Math.max(startAudio,firstHit-500),await mark());
+    const firstSound=player?await observeFreshCannonAudio({deployed,encounters,callbackRecords,cues,
+      oracle:modelOracle[`${deployed.activeTier}:${deployed.fittingId}:${deployed.cannonDamage}`],until}):null;
+    if(player)check(true,'baseline fresh cannon/impact admission bound independently of authoritative hit',firstSound);
+    await page.waitForTimeout(750);const sound=player?await energy(firstSound.begin,firstSound.end):null;
     if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);const layoutPause=await battleLayouts();
     const changeSetting=control=>changeLastStandSetting({control,click:name=>gameClick(name,'hud-layout'),
       currentLayout:()=>layouts.at(-1),currentState:()=>states.at(-1),readValue:()=>states.at(-1).muted,
@@ -4248,7 +4333,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(Object.values(report.frame_timing.capture_active).every(item=>item.p95_ms<=50 && item.p99_ms<=100 && item.max_ms<=250),
       'active cadence: 50 ms p95, 100 ms p99, 250 ms maximum',report.frame_timing.capture_active);
     report.motion=await motion.encode();motion=null;
-    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstHit-500,firstHit+750]});
+    const firstAudio=await saveAudio('first-run',{'cannon-impact':[firstSound.begin,firstSound.end]});
     const offset=(firstAudio[0].started-motionStart)/1000,movie=join(output,'normal-speed-repair-with-audio.mp4');
     runTool('ffmpeg',['-hide_banner','-nostdin','-i',join(output,report.motion.file),...(offset>=0?['-itsoffset',offset.toFixed(3)]:['-ss',(-offset).toFixed(3)]),
       '-i',join(output,firstAudio[0].file),'-c:v','copy','-c:a','aac','-b:a','160k',movie]);
@@ -4300,9 +4385,10 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===savedWave.credits-2 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
-    await resize(captureViewport);const hitStart=hits.length;await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
+    await resize(captureViewport);const hitStart=hits.length;const upgradedDeployment=await gameClick(lastStandDeploymentControl(states.at(-1),layouts.at(-1)),'deploy');
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
-    const upgradedHit=await until(hits,hitStart,item=>item.cannonDamage===30,45);const noCaptureEnd=await mark();
+    const upgradedHit=await observeFirstCannonImpact({deployed:upgradedDeployment,start:hitStart,hits,encounters,callbackRecords,
+      oracle:modelOracle[`${upgradedDeployment.activeTier}:${upgradedDeployment.fittingId}:${upgradedDeployment.cannonDamage}`],until});const noCaptureEnd=upgradedHit.t;
     if(player){
     const noCaptureFrames=await page.evaluate('window.__stFrameProbe.stop()');write('animation-frame-no-capture-timestamps.json',{timestamps:noCaptureFrames,active_window:[noCaptureStart,noCaptureEnd]});
     report.frame_timing.no_capture_active=frameTiming(noCaptureFrames,noCaptureStart,noCaptureEnd);
@@ -4310,6 +4396,9 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(captured.p95_ms<=uncaptured.p95_ms*1.5+5,'screencast pre-impact p95 within 50 percent plus5ms',{captured,uncaptured});
     }
     check(upgradedHit.firstFoeHull===0 && upgradedHit.kills>=1,'same first foe one-hit defeated by real 30 damage',upgradedHit);
+    const upgradedSound=player?await observeFreshCannonAudio({deployed:upgradedDeployment,encounters,callbackRecords,cues,
+      oracle:modelOracle[`${upgradedDeployment.activeTier}:${upgradedDeployment.fittingId}:${upgradedDeployment.cannonDamage}`],until}):null;
+    if(player)check(true,'upgraded fresh cannon/impact admission bound independently of authoritative hit',upgradedSound);
     await screenshot('07-upgraded-first-hit');
     const nextBoundary=states.at(-1).completedWave+1;
     const interval=await away('hidden',12000);
@@ -4342,7 +4431,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       ...(player?{interaction:{paused:terminalPaused,resumed:terminalResumed,viewports:matrix.phaseViewports.map(v=>v.name)}}:{})});
     check(true,'natural defeat finalizes checkpoint without a second payout',naturalProof);
     await phaseMatrix('result');
-    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedHit.t-500,upgradedHit.t+750],
+    if(player)await saveAudio('second-run',{'cannon-impact':[upgradedSound.begin,upgradedSound.end],
       defeat:[naturalProof.staged.t-250,naturalProof.staged.t+750]});
     const continued=await gameKey('Claim','continue');
     check(continued.wallet===naturalSaved.credits && continued.pendingRunId===0 && !continued.hasCheckpoint,

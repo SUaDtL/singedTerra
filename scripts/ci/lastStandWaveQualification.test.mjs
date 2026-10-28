@@ -72,7 +72,7 @@ test('deployment control binds observed phase, checkpoint intent and the exact c
 });
 test('actual earned checkpoint, purchase and terminal reload callers choose the observed primary control',async()=>{
   const calls=[source.match(/const resumedCheckpoint=(await gameClick\([^;\n]+\));/),
-    source.match(/const hitStart=hits.length;(await gameClick\([^;\n]+\));/),
+    source.match(/const hitStart=hits.length;const upgradedDeployment=(await gameClick\([^;\n]+\));/),
     source.match(/kind:'terminal-reload',saved:[^\n]+state:finalReload\}\);\n\s*(await gameClick\([^;\n]+\));/)];
   for(const [index,match]of calls.entries()){
     assert.ok(match,'Actual reload deployment caller required: '+index);

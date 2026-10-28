@@ -12,6 +12,116 @@ const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',impor
 const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
 
+function firstImpactFixture(damage=20){
+  const identity={load:3,timeOrigin:1000,scope:'healthy'};
+  const oracle=Object.fromEntries(Array.from({length:91},(_,tick)=>[tick,{tick,hp:120,kills:tick<60?0:tick<80?(damage===30?1:0):(damage===30?2:1),
+    spawned:tick===0?0:2,cannon:tick<60?0:tick<80?1:2,launcher:0,healed:0,closeHits:0,rangedHits:0,alive:tick===0?0:1,status:'Running',wave:1,completedWave:0}]));
+  const deployed={...identity,t:1010,action:'deploy',phase:'battle',profileVersion:'last-stand-waves-v1',saveState:'ready',
+    runId:7,sessionRun:1,tick:0,activeTier:1,fittingId:'repair',cannonDamage:damage,paused:false,speed:1};
+  const encounters=[{...identity,...oracle[0],t:1000,action:'deploy',run:1,fitting:'repair',rules:'last-stand-waves-v1:playable-prototype-v1'}];
+  const hits=[{...identity,t:4000,tick:60,cannonDamage:damage,firstFoeHull:damage===20?10:0,kills:damage===20?0:1}];
+  const delayed={...identity,id:8,run:1,fromTick:55,timestamp:103.257,previousTimestamp:102.75,priorPending:0,elapsed:.507,focused:true,applicationPaused:false,paused:false,failed:false};
+  const fresh={...identity,id:9,run:1,fromTick:75,timestamp:104.25,previousTimestamp:103.75,priorPending:0,elapsed:.5,focused:true,applicationPaused:false,paused:false,failed:false};
+  const cannon={...fresh,action:'cue',cue:'cannon',tick:80,steps:5,ordinal:1,played:true,reason:'played',admittedAt:104.25,t:5000};
+  // Exactly .5 seconds is admitted; the timestamps model immediate playback.
+  const impact={...cannon,cue:'destruction',ordinal:2,t:5002};
+  const callbackRecords=[{...delayed,action:'begin',tick:55,steps:0,pending:.507,t:3990},
+    {...delayed,action:'end',tick:65,steps:10,pending:.007,t:4010},
+    {...fresh,action:'begin',tick:75,steps:0,pending:.5,t:4990},cannon,impact,
+    {...fresh,action:'end',tick:85,steps:10,pending:0,t:5010}];
+  const cues=[{...identity,t:5001,text:'ST_LS_AUDIO event=cannon\n'},{...identity,t:5003,text:'ST_LS_AUDIO event=destruction\n'}];
+  return {deployed,hits,encounters,callbackRecords,cues,oracle};
+}
+async function firstImpactCaller(x,{upgraded=false,player=false,rms=.01}={}){
+  const anchor=source.indexOf(upgraded?'const upgradedHit=':'const first=await',source.indexOf('const baselineHitStart='));
+  const end=source.indexOf(upgraded?"    await screenshot('07-upgraded-first-hit');":'    const changeSetting=',anchor);
+  assert.ok(anchor>=0 && end>anchor);
+  const measured=[];
+  const call=runInNewContext('(async()=>{'+source.slice(anchor,end)+';return {hit:'+ (upgraded?'upgradedHit':'first')+'};})',{
+    ...journey,...x,deployed:x.deployed,upgradedDeployment:x.deployed,baselineHitStart:0,hitStart:0,player,
+    modelOracle:{['1:repair:'+x.deployed.cannonDamage]:x.oracle},startAudio:1010,noCaptureStart:1010,
+    check:(value,label)=>assert.ok(value,label),mark:async()=>4200,battleLayouts:async()=>null,
+    page:{waitForTimeout:async()=>{},evaluate:async()=>[]},write:()=>{},
+    frameTiming:()=>({p95_ms:10}),report:{frame_timing:{capture_active:{'first-foe-before-impact':{p95_ms:10}}}},
+    energy:async(begin,end)=>{measured.push([begin,end]);return {maximum_rms:rms};},
+    until:async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;}
+  });
+  const value=await call();return {value,measured};
+}
+test('actual first-hit callers reject a later reused foe slot and wrong deployment identity',async()=>{
+  for(const damage of [20,30]){
+    const options={upgraded:damage===30};await firstImpactCaller(firstImpactFixture(damage),options);
+    for(const mutate of [x=>x.hits[0].tick=80,x=>x.hits[0].load++,x=>x.hits[0].timeOrigin++,x=>x.hits[0].scope='other',
+      x=>x.callbackRecords[0].run++,x=>x.encounters[0].run++,x=>x.deployed.sessionRun++,
+      x=>x.hits[0].kills++,x=>x.callbackRecords[1].tick=59]){
+      const x=firstImpactFixture(damage);mutate(x);await assert.rejects(()=>firstImpactCaller(x,options),undefined,String(mutate));
+    }
+  }
+});
+test('actual first-hit audio caller measures a fresh admitted cannon pair independently of suppressed impact time',async()=>{
+  const {measured}=await firstImpactCaller(firstImpactFixture(),{player:true});
+  assert.deepEqual(measured,[[4501,5753]],'rendered PCM window must follow actual played cannon and impact, not the diagnostic hit or polling time');
+});
+test('actual cannon audio callers reject stale, missing, foreign, duplicate and silent playback proof',async()=>{
+  for(const damage of [20,30]){
+    const options={player:true,upgraded:damage===30};await firstImpactCaller(firstImpactFixture(damage),options);
+    for(const mutate of [x=>x.callbackRecords[3].admittedAt+=.001,x=>x.callbackRecords[4].admittedAt+=.001,
+      x=>x.callbackRecords[2].priorPending=.05,x=>x.callbackRecords[2].focused=false,
+      x=>x.callbackRecords[2].applicationPaused=true,x=>x.callbackRecords[3].played=false,
+      x=>x.callbackRecords[4].reason='expired',x=>x.callbackRecords[4].cue='impact',
+      x=>x.callbackRecords[4].ordinal=3,x=>x.callbackRecords[4].run++,x=>x.callbackRecords[5].tick++,
+      x=>x.cues.splice(0,1),x=>x.cues.push({...x.cues[0]}),x=>x.cues[1].scope='other',
+      x=>x.cues[0].t=3999,x=>x.oracle[80].cannon=1]){
+      const x=firstImpactFixture(damage);mutate(x);await assert.rejects(()=>firstImpactCaller(x,options),undefined,String(mutate));
+    }
+  }
+  await assert.rejects(()=>firstImpactCaller(firstImpactFixture(),{player:true,rms:0}),/rendered cannon\/impact/);
+});
+test('actual cannon audio callers reject impossible callback clocks and reversed played-pair ordering',async()=>{
+  for(const damage of [20,30])for(const mutate of [
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>{c.previousTimestamp=c.timestamp+.01;c.elapsed=-.01;}),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>c.elapsed=10),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>{c.previousTimestamp=c.timestamp=-1;if(c.action==='cue')c.admittedAt=-1;c.elapsed=0;}),
+    x=>x.callbackRecords[2].pending=NaN,x=>x.callbackRecords[5].pending=-1,
+    x=>{x.callbackRecords[4].t=4999;x.cues[1].t=4999.5;},
+    x=>{x.callbackRecords[4].admittedAt=104.249;},
+  ]){
+    const x=firstImpactFixture(damage);mutate(x);
+    await assert.rejects(()=>firstImpactCaller(x,{player:true,upgraded:damage===30}),undefined,String(mutate));
+  }
+});
+test('actual cannon audio caller rejects a reversed companion and missing document identity',async()=>{
+  for(const mutate of [
+    x=>{x.callbackRecords[4].t=4999;x.cues[1].t=4999.5;},
+    x=>{for(const item of [x.deployed,...x.encounters,...x.hits,...x.callbackRecords,...x.cues])
+      for(const field of ['load','timeOrigin','scope'])delete item[field];},
+  ]){
+    const x=firstImpactFixture();mutate(x);await assert.rejects(()=>firstImpactCaller(x,{player:true}),undefined,String(mutate));
+  }
+});
+test('actual cannon audio callers reject duplicate or unidentified admission records',async()=>{
+  for(const damage of [20,30])for(const mutate of [
+    x=>x.callbackRecords.splice(4,0,{...x.callbackRecords[3]}),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>delete c.id),
+    x=>x.callbackRecords.filter(c=>c.id===9).forEach(c=>c.id=0),
+    x=>{x.callbackRecords[3].ordinal=0;x.callbackRecords[4].ordinal=1;},
+  ]){
+    const x=firstImpactFixture(damage);mutate(x);
+    await assert.rejects(()=>firstImpactCaller(x,{player:true,upgraded:damage===30}),undefined,String(mutate));
+  }
+});
+test('actual decoded cannon recordings use the independent played-pair windows for both runs',async()=>{
+  const windows={begin:4501,end:5753},calls=[];
+  for(const [start,end] of [["const firstAudio=await saveAudio('first-run'",'\n'],["if(player)await saveAudio('second-run'",';']]){
+    const at=source.indexOf(start),stop=source.indexOf(end,at);assert.ok(at>=0 && stop>at);
+    const call=runInNewContext('(async()=>{'+source.slice(at,stop+1)+'})',{
+      player:true,firstSound:windows,upgradedSound:windows,firstHit:4000,upgradedHit:{t:4000},naturalProof:{staged:{t:10000}},
+      saveAudio:async(name,value)=>{calls.push({name,value:JSON.parse(JSON.stringify(value))});return [];}
+    });await call();
+  }
+  assert.deepEqual(calls.map(row=>row.value['cannon-impact']),[[4501,5753],[4501,5753]]);
+});
+
 for(const path of controlInputPaths)test('source closure: main qualification binds actual '+path,()=>{
   const current=currentQualificationInputs();
   const expected=createHash('sha256').update(readFileSync(resolve(path),'utf8').replace(/\r\n/g,'\n')).digest('hex');

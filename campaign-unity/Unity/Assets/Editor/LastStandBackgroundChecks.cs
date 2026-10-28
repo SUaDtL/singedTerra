@@ -299,13 +299,47 @@ public static class LastStandBackgroundChecks
         public int Writes;
         public bool FailWrite;
         public Action BeforeWrite;
+        public readonly System.Collections.Generic.List<string> Records=new System.Collections.Generic.List<string>();
         public string Read() => Value;
         public void Write(string value)
         {
             Writes++; BeforeWrite?.Invoke();
             if (FailWrite) throw new InvalidOperationException("deliberate disposable storage failure");
             Value = value;
+            Records.Add(value);
         }
+    }
+    static System.Collections.Generic.Dictionary<string,object> SaveFields(string value)
+    {
+        return (System.Collections.Generic.Dictionary<string,object>)typeof(LastStandProgression).Assembly
+            .GetType("SingedTerra.LastStand.LastStandSaveJson").GetMethod("Read",BindingFlags.Static|BindingFlags.NonPublic)
+            .Invoke(null,new object[]{value});
+    }
+    static string SaveFieldsJson(object value)=> (string)typeof(LastStandProgression).Assembly
+        .GetType("SingedTerra.LastStand.LastStandSaveJson").GetMethod("Write",BindingFlags.Static|BindingFlags.NonPublic)
+        .Invoke(null,new object[]{value});
+    static void ResearchOnlyWrites(FeedbackStorage storage,string before,int first,int count)
+    {
+        Require(storage.Records.Count==first+count,"exact explicit research reconciliation write count");
+        var previous=SaveFields(before);
+        for(int i=first;i<storage.Records.Count;i++) {
+            var next=SaveFields(storage.Records[i]);
+            Require(Convert.ToInt64(next["revision"])==Convert.ToInt64(previous["revision"])+1,"research commits advance profile revision once");
+            var priorResearch=(System.Collections.Generic.Dictionary<string,object>)previous["research"];
+            var nextResearch=(System.Collections.Generic.Dictionary<string,object>)next["research"];
+            foreach(string field in new[]{"revision","lastObservedUtcMilliseconds"}) {
+                Require(Convert.ToInt64(nextResearch[field])>=Convert.ToInt64(priorResearch[field]),"research clocks/revisions never move backwards");
+                priorResearch.Remove(field);nextResearch.Remove(field);
+            }
+            previous.Remove("revision");next.Remove("revision");
+            Require(SaveFieldsJson(previous)==SaveFieldsJson(next),"research-only commits preserve every gameplay and research-benefit field");
+            previous=SaveFields(storage.Records[i]);
+        }
+    }
+    sealed class FeedbackResearchTime : ILastStandTime
+    {
+        public long UtcMilliseconds { get; set; }
+        public double MonotonicSeconds => 0;
     }
     sealed class FeedbackFixture
     {
@@ -323,6 +357,13 @@ public static class LastStandBackgroundChecks
             Art = UnityEngine.Object.FindFirstObjectByType<TankPresentation>();
             Invoke(Art, "Start"); Invoke(Art.GetComponent<ArtHud>(), "Start");
             Loop = Art.GetComponent<LastStandLoopController>();
+            // These checks advance combat time, not wall-time research. Keep
+            // the real research coordinator on an independent fixed test clock.
+            var research=new LastStandResearchCoordinator(Loop.Progression,new FeedbackResearchTime{
+                UtcMilliseconds=Loop.Progression.ResearchSnapshot.lastObservedUtcMilliseconds});
+            research.Confirmed+=()=>Session.GrantMaximumSpeed(Loop.Progression.MaximumGameSpeed);
+            Field(Loop,"research",research);
+            Require(research.Initialize(),"actual research owner initializes the isolated fixed clock");
             Field(Session, "focused", true);
             Invoke(Loop.Audio, "OnApplicationFocus", true);
             if (!Loop.Progression.HasCheckpoint && Loop.Progression.PendingDefeat==null &&
@@ -360,7 +401,7 @@ public static class LastStandBackgroundChecks
             Require(Loop.Phase=="result" || Loop.Phase=="save-error", "actual natural wave defeat or durable-save refusal reached controller");
         }
     }
-    static string WorkshopSave => "{\"version\":3,\"credits\":1,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}";
+    static string WorkshopSave => "{\"version\":3,\"credits\":2,\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0},\"nextRunId\":2,\"lastFinalizedRunId\":1,\"selectedTier\":1,\"tierRecords\":{\"tier-goals-v1\":{\"bestTicks1\":0,\"bestKills1\":0,\"bestTicks2\":0,\"bestKills2\":0,\"tierTwoUnlocked\":false}},\"pendingDefeat\":null}";
     static EncounterModel NaturalWaveDefeat(bool launcher)
     {
         var model=new EncounterModel(launcher,EncounterProfile.ForTier(1));
@@ -394,11 +435,14 @@ public static class LastStandBackgroundChecks
                 writes==initialWrites+oracle.CompletedWave+(oracle.AwaitingWaveCommit?0:1) &&
                 f.Loop.Progression.CannonAttackLevel==0 && f.Loop.Progression.NextRunId==2,
                 "exact completed-wave rewards and one durable write per boundary/finalization, with no automatic purchase or redeploy");
-            string finished=f.Storage.Value;
+            string finished=f.Storage.Value;int records=f.Storage.Records.Count;
             f.Advance(1000);f.Hidden(false);f.Focus(true);f.Advance(1001);f.Loop.Claim();f.Loop.Claim();
-            Require(f.Storage.Writes==writes && f.Storage.Value==finished && f.Loop.Progression.Wallet==earned && f.Session.Model==null,
-                "duplicate callbacks, foreground return and repeated Continue cannot award or write again");
+            ResearchOnlyWrites(f.Storage,finished,records,2);writes+=2;
+            Require(f.Storage.Writes==writes && f.Loop.Progression.Wallet==earned && f.Session.Model==null,
+                "duplicate callbacks and Continue cannot award or add writes beyond two explicit research reconciliations");
+            finished=f.Storage.Value;records=f.Storage.Records.Count;
             var reloaded=new FeedbackFixture(launcher,f.Storage);
+            ResearchOnlyWrites(f.Storage,finished,records,2);writes+=2;
             Require(reloaded.Loop.Phase==(earned>0?"workshop":"garage") && reloaded.Session.Model==null &&
                 !reloaded.Loop.Progression.HasCheckpoint && reloaded.Loop.Progression.Wallet==earned && reloaded.Storage.Writes==writes,
                 "reload keeps earned waves without resurrecting the defeated run or a pending payout");
@@ -448,7 +492,8 @@ public static class LastStandBackgroundChecks
             limit.Advance(101);limit.Advance(300);
             Require(limit.Session.Model.Snapshot()==frozen && limit.Storage.Writes==limitWrites,
                 "duplicate limit callbacks cannot step, award or write");
-            var reloadedLimit=new FeedbackFixture(launcher,limit.Storage);
+            records=limit.Storage.Records.Count;var reloadedLimit=new FeedbackFixture(launcher,limit.Storage);
+            ResearchOnlyWrites(limit.Storage,checkpoint,records,2);limitWrites+=2;
             Require(reloadedLimit.Loop.Progression.HasCheckpoint && reloadedLimit.Loop.Progression.Checkpoint.CompletedWave==0 &&
                 reloadedLimit.Loop.Progression.ActiveRunId==limitRun && reloadedLimit.Session.Model==null && reloadedLimit.Storage.Writes==limitWrites,
                 "reload offers the last confirmed boundary, not a manufactured technical-limit reward");
@@ -462,7 +507,9 @@ public static class LastStandBackgroundChecks
                 failure.Loop.Progression.Wallet==0 && failure.Session.Model==null && failure.Loop.Audio.Suspended && failure.Storage.Value==saved,
                 "technical failure admits no award or cue and preserves the confirmed resumable boundary");
             var unfinished=new FeedbackFixture(launcher);unfinished.Deploy();int unfinishedWrites=unfinished.Storage.Writes;
+            string unfinishedSave=unfinished.Storage.Value;records=unfinished.Storage.Records.Count;
             var resumed=new FeedbackFixture(launcher,unfinished.Storage);
+            ResearchOnlyWrites(unfinished.Storage,unfinishedSave,records,2);unfinishedWrites+=2;
             Require(resumed.Loop.Progression.HasCheckpoint && resumed.Loop.Progression.Wallet==0 && resumed.Session.Model==null &&
                 resumed.Storage.Writes==unfinishedWrites,"unfinished reload preserves the same run without an award or extra write");
             resumed.Loop.Deploy();
@@ -487,8 +534,10 @@ public static class LastStandBackgroundChecks
             Require(f.Loop.Progression.PendingDefeat==null && f.Loop.Progression.Wallet==reward && f.Storage.Writes==writes+1 &&
                 f.Session.Model==null && f.Loop.Progression.CannonAttackLevel==0 && !f.Loop.Progression.HasCheckpoint,
                 "historical reward or zero-reward limit acknowledgement remains exactly once and never deploys");
+            string claimed=f.Storage.Value;int records=f.Storage.Records.Count;
             var reload=new FeedbackFixture(storage:f.Storage);
-            Require(reload.Loop.Progression.PendingDefeat==null && reload.Loop.Progression.Wallet==reward && reload.Storage.Writes==writes+1,
+            ResearchOnlyWrites(f.Storage,claimed,records,2);
+            Require(reload.Loop.Progression.PendingDefeat==null && reload.Loop.Progression.Wallet==reward && reload.Storage.Writes==writes+3,
                 "claimed historical result cannot reappear or pay again after reload");
         }
     }
@@ -505,8 +554,9 @@ public static class LastStandBackgroundChecks
             Field(f.Session,"runClock",new LastStandRunClock(end,oracle.Profile.Horizon));
             f.Loop.TogglePause();
             Require(f.Session.Paused && f.Loop.Audio.Suspended,"actual settling Pause action freezes lifecycle and audio");
-            int writes=f.Storage.Writes,wallet=f.Loop.Progression.Wallet;
+            int writes=f.Storage.Writes,wallet=f.Loop.Progression.Wallet,records=f.Storage.Records.Count;string saved=f.Storage.Value;
             f.Focus(false);f.Hidden(true);f.Advance(end+10);f.Hidden(false);f.Focus(true);
+            ResearchOnlyWrites(f.Storage,saved,records,2);writes+=2;
             Require(f.Session.Paused && f.Loop.Phase=="settling" && f.Session.TerminalElapsedSeconds<.1 && f.Storage.Writes==writes,
                 "ten seconds away and focus return cannot clear explicit settling Pause");
             f.Session.TogglePauseAt(end+20);f.Advance(end+20.25);f.Advance(end+20.25);
@@ -517,36 +567,109 @@ public static class LastStandBackgroundChecks
                 "only new active elapsed completes .48 settling, without another award or durable write");
         }
     }
+    [Serializable] sealed class HitObservation
+    {
+        public int tick,cannonDamage,firstFoeHull,kills;
+    }
+    static void AuthoritativeFirstHitSurvivesFeedbackSuppression()
+    {
+        foreach(int damage in new[]{20,30}) foreach(string mode in new[]{"delayed","hidden","debt"})
+        {
+            var f=new FeedbackFixture(storage:damage==30?new FeedbackStorage{Value=WorkshopSave}:null);
+            if(damage==30)f.Loop.Purchase();
+            f.Deploy();
+            Require(f.Session.Model.Profile.IsWaveBased && f.Session.Model.CommittedCannonDamage==damage,
+                "real current-wave deployment binds the purchased permanent damage");
+            var hits=new System.Collections.Generic.List<HitObservation>();
+            var cues=new System.Collections.Generic.List<LastStandAudioCue>();
+            var played=new System.Collections.Generic.List<string>();
+            Application.LogCallback observe=(message,stack,type)=>{
+                if(message.StartsWith("ST_LS_HIT "))hits.Add(JsonUtility.FromJson<HitObservation>(message.Substring(10)));
+                if(message.StartsWith("ST_ENC_CALLBACK ")) {
+                    var cue=JsonUtility.FromJson<LastStandAudioCue>(message.Substring(16));
+                    if(cue.action=="cue")cues.Add(cue);
+                }
+                if(message.StartsWith("ST_LS_AUDIO event="))played.Add(message);
+            };
+            Application.logMessageReceived+=observe;
+            try {
+                for(int tick=1;tick<=55;tick++)f.Advance(100+tick*.05);
+                if(mode=="hidden"){f.Focus(false);f.Hidden(true);}
+                double now=mode=="debt"?110:103.257;
+                f.Advance(now);
+                Require(f.Session.Model.Tick==(mode=="debt"?183:65),"actual bounded callback crosses the first cannon at60");
+                Require(hits.Count>0 && hits[0].tick==60 && hits[0].cannonDamage==damage &&
+                    hits[0].firstFoeHull==(damage==20?10:0) && hits[0].kills==(damage==20?0:1),
+                    "authoritative first cannon hit survives suppressed "+mode+" feedback at damage "+damage);
+                if(mode=="debt")f.Advance(now);
+                var oracle=new EncounterModel(false,EncounterProfile.ForTier(1),damage);
+                var expected=new System.Collections.Generic.List<HitObservation>();
+                while(oracle.Tick<f.Session.Model.Tick) {
+                    oracle.Step();
+                    foreach(var evt in oracle.Events)if(evt.Kind==EncounterEventKind.Cannon)
+                        expected.Add(new HitObservation{tick=oracle.Tick,cannonDamage=damage,firstFoeHull=oracle.Foes[0].Hull,kills=oracle.Kills});
+                    if(oracle.AwaitingWaveCommit)oracle.ContinueAfterCheckpoint();
+                }
+                Require(hits.Count==expected.Count && f.Session.Model.CannonShots==expected.Count,
+                    "exactly one authoritative observation per real cannon across bounded catch-up");
+                for(int i=0;i<hits.Count;i++)Require(JsonUtility.ToJson(hits[i])==JsonUtility.ToJson(expected[i]),
+                    "actual hit payload equals the independently stepped current model");
+                Require(cues.Count==0 && played.Count==0 && !f.Art.flash.activeSelf &&
+                    (float)typeof(TankPresentation).GetField("recoilTime",Private).GetValue(f.Art)==0,
+                    "hit diagnostics never admit suppressed audio or replay recoil and flash");
+                int count=hits.Count,tickBefore=f.Session.Model.Tick;
+                f.Advance(now);if(mode=="hidden"){f.Hidden(false);f.Focus(true);}f.Advance(now);
+                Require(hits.Count==count && f.Session.Model.Tick==tickBefore && cues.Count==0 && played.Count==0,
+                    "zero-step and native-return callbacks never duplicate hits or replay cues");
+            } finally {Application.logMessageReceived-=observe;}
+        }
+    }
+    public static void RunHitObservation()
+    {
+        Debug.Log("ST_LS_BACKGROUND_COMPILED");
+        bool failed=false;
+        using(var preferencesScope=new LastStandTestPreferencesScope()) {
+            var factory=LastStandLoopController.StorageFactory;bool background=Application.runInBackground;
+            try {Check("test_authoritative_first_hit_survives_feedback_suppression",AuthoritativeFirstHitSurvivesFeedbackSuppression,ref failed);}
+            finally {
+                LastStandLoopController.StorageFactory=factory;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+                Application.runInBackground=background;
+            }
+        }
+        if(failed)EditorApplication.Exit(1);
+    }
     static void FocusRestoresCurrentCuesWithoutReplay()
     {
         var events = new System.Collections.Generic.List<string>();
-        int combatDispatches = 0;
+        int combatAttempts = 0;
         Application.LogCallback observe = (message, stack, type) =>
         {
             if (message.StartsWith("ST_LS_AUDIO event=")) events.Add(message);
-            if (message.StartsWith("ST_LS_HIT ")) combatDispatches++;
+            if (message.StartsWith("ST_ENC_CALLBACK ") &&
+                JsonUtility.FromJson<LastStandAudioCue>(message.Substring(16)).action=="cue") combatAttempts++;
         };
         Application.logMessageReceived += observe;
         try
         {
             var f = new FeedbackFixture(); f.Deploy(); events.Clear(); f.Advance(103);
             Require(f.Session.Model.Tick == 60 && f.Session.Model.CannonShots == 1, "actual long catch-up first cannon boundary");
-            Require(events.Count == 0 && combatDispatches == 0,
+            Require(events.Count == 0 && combatAttempts == 0,
                 "long catch-up cannon and impact cues never enter controller audio dispatch or voices");
             Require((float)typeof(TankPresentation).GetField("recoilTime", Private).GetValue(f.Art) == 0 &&
                 !f.Art.flash.activeSelf, "missed shot has no replay recoil or flash");
             f.Advance(103); Require(events.Count == 0, "duplicate return callback replays no cue");
             for (int i = 61; i <= 120; i++) f.Advance(100 + i * .05);
             Require(events.Contains("ST_LS_AUDIO event=cannon"), "next current foreground cannon reaches actual audio voice admission");
-            var debt = new FeedbackFixture(); debt.Deploy(); events.Clear(); int beforeDebt = combatDispatches;
+            var debt = new FeedbackFixture(); debt.Deploy(); events.Clear(); int beforeDebt = combatAttempts;
             debt.Advance(110);
-            Require(debt.Session.Model.Tick == 128 && debt.Session.CatchingUp && events.Count == 0 && combatDispatches == beforeDebt,
+            Require(debt.Session.Model.Tick == 128 && debt.Session.CatchingUp && events.Count == 0 && combatAttempts == beforeDebt,
                 "first bounded catch-up callback retains debt without old audio dispatch");
             debt.Advance(110);
-            Require(debt.Session.Model.Tick == 200 && !debt.Session.CatchingUp && events.Count == 0 && combatDispatches == beforeDebt,
+            Require(debt.Session.Model.Tick == 200 && !debt.Session.CatchingUp && events.Count == 0 && combatAttempts == beforeDebt,
                 "final duplicate debt-draining callback remains silent through its final shot");
             debt.Advance(110);
-            Require(events.Count == 0 && combatDispatches == beforeDebt, "zero-debt duplicate callback cannot replay a cue");
+            Require(events.Count == 0 && combatAttempts == beforeDebt, "zero-debt duplicate callback cannot replay a cue");
             for (int i = 201; i <= 240; i++) debt.Advance(100 + i * .05);
             Require(events.Contains("ST_LS_AUDIO event=cannon"), "new foreground cannon after debt reconciliation is admitted");
             events.Clear();
@@ -588,7 +711,7 @@ public static class LastStandBackgroundChecks
         {
             var store = new FeedbackStorage { Value = WorkshopSave };
             var f = new FeedbackFixture(false, store);
-            Require(f.Loop.Progression.SaveState=="ready" && store.Value.StartsWith("{\"version\":4,"),
+            Require(f.Loop.Progression.SaveState=="ready" && Convert.ToInt32(SaveFields(store.Value)["version"])==5,
                 "historical workshop migration finishes before the purchase fault is injected");
             int initialWrites=store.Writes;store.FailWrite=true;
             f.Loop.Audio.UnlockFromGesture("test-current-failed-purchase");
@@ -600,7 +723,7 @@ public static class LastStandBackgroundChecks
             string committed = store.Value;
             f.Loop.Purchase();
             Require(f.Loop.Progression.SaveState == "retry" && store.Value == committed && store.Writes == initialWrites + 1 &&
-                f.Loop.Progression.CannonAttackLevel == 0 && f.Loop.Progression.Wallet == 1 &&
+                f.Loop.Progression.CannonAttackLevel == 0 && f.Loop.Progression.Wallet == 2 &&
                 f.Loop.Progression.PendingDefeat == null && f.Loop.Progression.ActiveRunId == 0 &&
                 f.Session.Model == null && cues.Count == 0,
                 "actual failed purchase preserves committed wallet level and record without cue award or redeploy");
@@ -638,7 +761,7 @@ public static class LastStandBackgroundChecks
 
             var blockedStore = new FeedbackStorage { Value = WorkshopSave };
             var blocked = new FeedbackFixture(false, blockedStore);
-            Require(blocked.Loop.Progression.SaveState=="ready" && blockedStore.Value.StartsWith("{\"version\":4,"),
+            Require(blocked.Loop.Progression.SaveState=="ready" && Convert.ToInt32(SaveFields(blockedStore.Value)["version"])==5,
                 "conflict fixture begins with a confirmed current workshop save");
             int blockedInitialWrites=blockedStore.Writes;string blockedCommitted=blockedStore.Value;
             blockedStore.FailWrite=true;
@@ -646,13 +769,13 @@ public static class LastStandBackgroundChecks
             blocked.Loop.Purchase();
             Require(blocked.Loop.Progression.SaveState=="retry" && blockedStore.Value==blockedCommitted &&
                 blockedStore.Writes==blockedInitialWrites+1,"purchase failure leaves the current committed record before conflict injection");
-            blockedStore.Value = blockedCommitted.Replace("\"credits\":1", "\"credits\":2");
+            blockedStore.Value = blockedCommitted.Replace("\"credits\":2", "\"credits\":3");
             Require(blockedStore.Value!=blockedCommitted,"conflict fixture changes actual current save bytes");
             int priorCues = cues.Count;
             blocked.Loop.RetrySave();
             Require(blocked.Loop.Progression.SaveState == "blocked" && blocked.Session.CanRun &&
                 !blocked.Session.Paused && !blocked.Loop.Muted && blocked.Loop.Audio.Suspended && !blocked.Loop.Audio.CanPlay &&
-                blocked.Loop.Progression.Wallet == 1 && blocked.Loop.Progression.CannonAttackLevel == 0 &&
+                blocked.Loop.Progression.Wallet == 2 && blocked.Loop.Progression.CannonAttackLevel == 0 &&
                 blocked.Loop.Progression.PendingDefeat == null && blocked.Session.Model == null && cues.Count == priorCues,
                 "actual conflicting purchase save stays focused blocked silent and non-awarding");
             blocked.Loop.Audio.PlayPurchase();
@@ -792,6 +915,7 @@ public static class LastStandBackgroundChecks
     }
     public static void RunCueAdmission()
     {
+        Debug.Log("ST_LS_BACKGROUND_COMPILED");
         bool failed=false;
         using(var preferencesScope=new LastStandTestPreferencesScope()) {
             var factory=LastStandLoopController.StorageFactory;
@@ -807,6 +931,7 @@ public static class LastStandBackgroundChecks
     }
     public static void RunFeedback()
     {
+        Debug.Log("ST_LS_BACKGROUND_COMPILED");
         bool failed = false;
         using (var preferencesScope = new LastStandTestPreferencesScope())
         {
