@@ -130,7 +130,7 @@ function terminalFixture(mode){
   const saved={...idleWaveFields({runId:run,finalized:true}),checkpoint:null,pendingDefeat:null,lastFinalizedRunId:run,credits:4};
   const layouts=[{...identity,phase:'settling',t:202,controls:[{name:'Claim',active:false,interactable:false}]}];
   return {kind:'wave-terminal',mode,evidence:{before,terminal,staged,result,saved,layouts},
-    ...(mode==='hidden'?{interval:{begin:110,recovered:240,before:{...before},events:[
+    ...(mode==='hidden'?{continuation:{completion:'hidden'},interval:{begin:110,recovered:240,before:{...before},events:[
       {...identity,t:105,kind:'visibilitychange',hidden:true,focused:false,globalTarget:true},
       {...identity,t:235,kind:'visibilitychange',hidden:false,focused:true,globalTarget:true}]}}:{})};
 }
@@ -143,6 +143,90 @@ test('hidden terminal cannot use recovered bookkeeping to hide an earlier real v
   const value=lifeReport(expectedFixture()),row=value.lifecycle.find(r=>r.kind==='wave-terminal'&&r.mode==='hidden');
   change(row);assert.throws(()=>assertWaveTerminals(value),undefined,String(change));
  }
+});
+function deferredTerminalFixture(){
+ const row=terminalFixture('hidden'),e=row.evidence,identity={load:e.before.load,timeOrigin:e.before.timeOrigin,scope:e.before.scope};
+ Object.assign(e.before,{tick:0,selectedSpeed:1,clockTimestamp:1,clockPending:0});
+ Object.assign(e.terminal,{t:60210,tick:256});Object.assign(e.staged,{t:60211,tick:256});
+ Object.assign(e.result,{t:60230,tick:0});e.layouts[0].t=60212;
+ row.interval={before:clone(e.before),begin:110,recovered:60130,ms:14300,events:[
+  {...identity,t:105,kind:'visibilitychange',hidden:true,focused:false,globalTarget:true},
+  {...identity,t:60120,kind:'visibilitychange',hidden:false,focused:true,globalTarget:true}]};
+ const pair=(id,t,fromTick,previousTimestamp,timestamp,priorPending)=>{
+  const elapsed=timestamp-previousTimestamp,a={...identity,id,run:e.before.run,t,action:'begin',fromTick,tick:fromTick,steps:0,
+   previousTimestamp,timestamp,elapsed,priorPending,pending:priorPending+elapsed,speed:1,paused:false,failed:false};
+  return [a,{...a,t:t+20,action:'end',tick:fromTick+128,steps:128,pending:a.pending-6.4}];
+ };
+ const callbacks=[...pair(1,30000,0,1,30.9,0),...pair(2,60200,128,30.9,61.1,23.5)];
+ row.continuation=journey.validateBackgroundWaveTerminal({...row,callbackRecords:callbacks});return row;
+}
+test('deferred terminal retains full hidden dwell and capped debt through native return, distinct from hidden persistence',()=>{
+ const row=deferredTerminalFixture(),callbacks=row.continuation.callbacks;
+ assert.equal(row.continuation.completion,'after-native-return');
+ assert.deepEqual(journey.validateBackgroundWaveTerminal(terminalFixture('hidden')),{completion:'hidden'});
+ const report=lifeReport(expectedFixture());report.lifecycle=report.lifecycle.map(r=>r.kind==='wave-terminal'&&r.mode==='hidden'?row:r);
+ assert.doesNotThrow(()=>assertWaveTerminals(report));
+ for(const mode of ['hidden','unknown',undefined]){
+  const broken=clone(report);broken.lifecycle.find(r=>r.mode==='hidden').continuation.completion=mode;
+  assert.throws(()=>assertWaveTerminals(broken));
+ }
+ // A sub-tick callback can admit time without emitting a record; exact carry
+ // must include that gap, without inventing a skipped model step.
+ const fractional=clone(row),a=fractional.continuation.callbacks[0],b=fractional.continuation.callbacks[1];
+ for(const record of [a,b]){record.previousTimestamp+=.02;record.priorPending+=.02;record.elapsed-=.02;}
+ assert.doesNotThrow(()=>journey.validateBackgroundWaveTerminal({...fractional,callbackRecords:fractional.continuation.callbacks}));
+ assert.equal(callbacks.at(-1).tick,row.evidence.terminal.tick);
+});
+test('deferred terminal rejects shortened hidden dwell, interrupted visibility, lost debt, cap overflow and stalled catch-up',()=>{
+ const faults=[r=>r.interval.ms--,r=>r.interval.begin=0,r=>r.interval.before.run++,r=>r.evidence.before.selectedSpeed=2,
+  r=>r.interval.events[1].t=r.interval.begin+r.interval.ms-1,
+  r=>r.interval.events.splice(1,0,{...r.interval.events[1],t:106},{...r.interval.events[0],t:108}),
+  r=>r.interval.events[1].focused=false,r=>r.interval.events[0].globalTarget=false,r=>r.interval.events[1].load++,
+  r=>r.interval.events[1].timeOrigin++,r=>r.interval.events[1].scope='other',
+  r=>r.evidence.result.t=r.interval.recovered+60001,r=>r.evidence.result.sessionRun++,
+  r=>r.evidence.terminal.t=60199,r=>r.evidence.terminal.t=60221,r=>r.evidence.terminal.tick++,
+  r=>r.continuation.callbacks.pop(),r=>r.continuation.callbacks[2].id++,r=>r.continuation.callbacks[2].load++,
+  r=>r.continuation.callbacks[2].fromTick++,r=>r.continuation.callbacks[3].steps=129,
+  r=>r.continuation.callbacks[2].paused=true,r=>r.continuation.callbacks[3].failed=true,
+  r=>r.continuation.callbacks[2].speed=2,r=>r.continuation.callbacks[2].elapsed=-1,
+  ...[.05,.05-.5e-9].map(gap=>r=>{for(const record of r.continuation.callbacks.slice(0,2)){
+   record.previousTimestamp+=gap;record.priorPending+=gap;record.elapsed-=gap;}}),
+  r=>{for(const record of r.continuation.callbacks.slice(2)){record.previousTimestamp+=.02;record.priorPending+=.02;record.elapsed-=.02;}},
+  r=>r.continuation.callbacks[2].previousTimestamp-=1,r=>r.continuation.callbacks[3].timestamp++,
+  r=>r.continuation.callbacks[2].priorPending-=.01,r=>r.continuation.callbacks[2].priorPending+=.01,
+  r=>r.continuation.callbacks[3].pending-=.01,r=>r.continuation.callbacks[3].pending+=.01,
+  r=>r.evidence.before.clockPending+=.01,r=>r.evidence.before.clockTimestamp+=.01];
+ for(const fault of faults){const row=deferredTerminalFixture();fault(row);
+  assert.throws(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}),undefined,String(fault));}
+});
+test('deferred terminal rejects a hidden automatic pause, checkpoint failure or replayed background cue',()=>{
+ const row=deferredTerminalFixture(),before=row.evidence.before;
+ const state={...before,sessionRun:before.run,t:31000,phase:'battle',paused:false,saveState:'ready',checkpointBlocked:false};
+ const verify=(states,cues=[])=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks,states,cues});
+ assert.doesNotThrow(()=>verify([state]));
+ for(const fault of [{paused:true},{checkpointBlocked:true},{saveState:'failed'}])assert.throws(()=>verify([{...state,...fault}]));
+ assert.throws(()=>verify([state],[{...before,t:32000,action:'cue'}]));
+ assert.throws(()=>verify([state],[{...before,t:60220,action:'cue'}]));
+});
+test('deferred terminal refuses an unsolicited settling pause before the same result',()=>{
+ const row=deferredTerminalFixture(),state={...row.evidence.staged,t:60215,paused:true};
+ const verify=states=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks,states});
+ assert.doesNotThrow(()=>verify([{...state,paused:false}]));
+ assert.doesNotThrow(()=>verify([{...row.evidence.result,paused:true}]));
+ assert.throws(()=>verify([state]),/automatic pause/);
+});
+test('deferred terminal cannot extend its actual native-return deadline using reported recovery time',()=>{
+ const row=deferredTerminalFixture();
+ row.evidence.result.t=row.interval.events[1].t+60000;
+ row.interval.recovered=row.evidence.result.t;
+ assert.doesNotThrow(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}));
+ row.evidence.result.t++;
+ row.interval.recovered=row.evidence.result.t;
+ assert.throws(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}),/bounded foreground catch-up/);
+});
+test('background terminal cannot move its interval start after the source-bound model observation',()=>{
+ const row=deferredTerminalFixture();row.interval.before={...row.interval.before,t:107};row.interval.events[0].t=108;
+ assert.throws(()=>journey.validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation.callbacks}),/source-bound model observation/);
 });
 function intervalFixture(kind='hidden'){
   const pause=kind==='explicit-pause';
@@ -358,12 +442,52 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   const saved={...idleWaveFields({runId:19,finalized:true}),checkpoint:null,pendingDefeat:null,lastFinalizedRunId:19,credits:4};
   const proof=journey.validateWaveTerminal({before,result,saved,...terminalRaw,oracle:{0:initial,2:terminal}});
   const interval={before,begin:110,recovered:240,events:terminalFixture('hidden').interval.events.map(e=>({...e,load:before.load,timeOrigin:before.timeOrigin}))};
-  report.lifecycle=[{kind:'wave-terminal',mode:'hidden',evidence:proof,interval}];put('runtime-telemetry.json',terminalRaw);put('input-trace.json',interval.events);
+  report.lifecycle=[{kind:'wave-terminal',mode:'hidden',evidence:proof,interval,continuation:{completion:'hidden'}}];put('runtime-telemetry.json',terminalRaw);put('input-trace.json',interval.events);
   assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
   for(const changed of [interval.events.slice(0,1),interval.events.map(e=>({...e,load:e.load+1})),
     interval.events.map(e=>e.hidden?e:{...e,t:220})]){
     put('input-trace.json',changed);assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
   }
+  // Exercise the same raw oracle reader for deferred completion. These are
+  // inert observations, never a browser qualification or a save injection.
+  const deferredRaw=clone(terminalRaw),[deferredBefore,deferredTerminal]=deferredRaw.encounters;
+  deferredTerminal.t=2010;deferredRaw.states[1].t=2011;deferredRaw.states[2].t=2030;deferredRaw.layouts[0].t=2012;
+  const callback={load:before.load,timeOrigin:before.timeOrigin,scope:before.scope,run:before.run,id:1,t:2000,
+    action:'begin',fromTick:0,tick:0,steps:0,previousTimestamp:1,timestamp:2.9,elapsed:1.9,priorPending:0,
+    pending:1.9,speed:1,paused:false,failed:false};
+  deferredRaw.callbackRecords=[callback,{...callback,t:2020,action:'end',tick:2,steps:2,pending:1.8}];deferredRaw.cues=[];
+  const deferredProof=journey.validateWaveTerminal({before,result:deferredRaw.states[2],saved,...deferredRaw,oracle:{0:deferredBefore,2:deferredTerminal}});
+  const deferredInterval={...interval,recovered:1910,ms:1600,events:interval.events.map(e=>e.hidden?e:{...e,t:1900})};
+  const deferred={kind:'wave-terminal',mode:'hidden',evidence:deferredProof,interval:deferredInterval};
+  deferred.continuation=journey.validateBackgroundWaveTerminal({...deferred,...deferredRaw});
+  report.lifecycle=[deferred];put('runtime-telemetry.json',deferredRaw);put('input-trace.json',deferredInterval.events);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const fault of [r=>r.callbackRecords.pop(),r=>r.callbackRecords[1].pending-=.01,
+    r=>r.callbackRecords[1].steps=129,r=>r.callbackRecords[0].run++,r=>r.callbackRecords[0].t=2011,
+    r=>r.states.push({...loop,t:1800,paused:true}),r=>r.states.push({...loop,t:1800,checkpointBlocked:true}),
+    r=>r.states.push({...loop,t:2015,phase:'settling',paused:true}),
+    r=>r.states.push({...loop,t:1800,saveState:'failed'}),r=>r.cues.push({...callback,t:2005})]){
+    const changed=clone(deferredRaw);fault(changed);put('runtime-telemetry.json',changed);
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(fault));
+  }
+  put('runtime-telemetry.json',deferredRaw);
+  for(const fault of [r=>r.interval.ms--,r=>r.continuation.completion='hidden',r=>r.continuation.callbacks.pop(),
+    r=>r.continuation.callbacks[0].priorPending+=.01]){
+    const changed=clone(deferred);fault(changed);report.lifecycle=[changed];
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),undefined,String(fault));
+  }
+  report.lifecycle=[deferred];put('input-trace.json',deferredInterval.events.map(e=>e.hidden?e:{...e,t:1709}));
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
+  const stalled=clone(deferred),stalledRaw=clone(deferredRaw);
+  stalled.evidence.result.t=stalled.interval.events[1].t+60001;stalled.interval.recovered=stalled.evidence.result.t;
+  stalledRaw.states[2].t=stalled.evidence.result.t;
+  report.lifecycle=[stalled];put('runtime-telemetry.json',stalledRaw);put('input-trace.json',deferredInterval.events);
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/bounded foreground catch-up/);
+  const masked=clone(deferred);masked.interval.before={...masked.interval.before,t:107};masked.interval.events[0].t=108;
+  const interrupted=[deferredInterval.events[0],{...deferredInterval.events[1],t:106},
+    {...deferredInterval.events[0],t:108},deferredInterval.events[1]];
+  report.lifecycle=[masked];put('runtime-telemetry.json',deferredRaw);put('input-trace.json',interrupted);
+  assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));
   report.lifecycle=[];put('runtime-telemetry.json',{states:[],encounters:[],layouts:[]});put('input-trace.json',[]);
   const png=Buffer.alloc(24);Buffer.from([137,80,78,71,13,10,26,10]).copy(png);png.write('IHDR',12);png.writeUInt32BE(44,16);png.writeUInt32BE(44,20);
   put('shot.png',png);report.screenshots=[{file:'shot.png',sha256:sha(png),viewport:{width:44,height:44}}];

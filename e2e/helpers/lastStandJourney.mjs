@@ -3398,6 +3398,72 @@ export function validateHiddenWaveTerminal({interval,evidence,events=interval?.e
   assert.ok(isWaveResultFor(before,result),'Hidden terminal requires the exact same-session result transition');
   return {loss,visible};
 }
+// The loaded-page contract permits throttled callbacks and reconciliation on
+// ordinary return. Keep that outcome separate from actual hidden persistence.
+export function validateBackgroundWaveTerminal({interval,evidence,events=interval?.events,callbackRecords=[],states=[],cues=[]}) {
+  const {before,terminal,result}=evidence;
+  assert.deepEqual(interval?.before,before,'Background interval starts at the source-bound model observation');
+  const current=item=>item.load===before.load && item.timeOrigin===before.timeOrigin && item.scope===before.scope;
+  const loss=events?.find(item=>current(item) && item.globalTarget===true &&
+    item.kind==='visibilitychange' && item.hidden && !item.focused);
+  const visible=loss && events.find(item=>current(item) && item.globalTarget===true &&
+    item.kind==='visibilitychange' && !item.hidden && item.t>loss.t);
+  if(visible && result.t<visible.t){
+    validateHiddenWaveTerminal({interval,evidence,events});return {completion:'hidden'};
+  }
+  assert.ok(interval && Number.isFinite(interval.begin) && Number.isFinite(interval.recovered));
+  for(const key of ['load','timeOrigin','scope','run'])assert.equal(interval.before[key],before[key]);
+  assert.deepEqual(events,waveIntervalEvents(before,{...before,t:interval.recovered},events),
+    'Deferred terminal requires its exact bounded native visibility events');
+  assert.ok(events.every((event,index)=>Number.isFinite(event.t) && (!index || event.t>=events[index-1].t)));
+  const requiredMs=(terminal.tick-before.tick)*50+1500;
+  assert.ok(before.selectedSpeed===1 && Number.isSafeInteger(terminal.tick) && terminal.tick>before.tick &&
+    Number.isSafeInteger(before.tick) && interval.ms===requiredMs && loss && visible &&
+    before.t<=loss.t && loss.t<=interval.begin && visible.t>=interval.begin+requiredMs &&
+    visible.t<=interval.recovered,
+    'Deferred terminal requires the full oracle-derived 1x hidden interval before its first native return');
+  assert.ok(events.some(item=>item.globalTarget===true && item.t>=visible.t && item.t<=interval.recovered &&
+    item.focused===true && item.hidden===false),'Deferred terminal requires actual native foreground return');
+  assert.ok(isWaveResultFor(before,result) && result.t>=visible.t && result.t<=visible.t+60000,
+    'Deferred terminal must finish within the bounded foreground catch-up window');
+  const callbacks=callbackRecords.filter(item=>current(item) && item.run===before.run &&
+    ['begin','end'].includes(item.action) && item.fromTick>=before.tick && item.t>=before.t && item.t<=result.t);
+  const starts=callbacks.filter(item=>item.action==='begin'),ends=callbacks.filter(item=>item.action==='end');
+  assert.ok(starts.length>0 && starts.length===ends.length,'Deferred terminal requires complete admitted callback pairs');
+  const near=(a,b)=>Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<1e-6;
+  let tick=before.tick,pending=before.clockPending,timestamp=before.clockTimestamp;
+  for(let i=0;i<starts.length;i++){
+    const a=starts[i],b=ends[i];
+    assert.ok(a.id===b.id && a.run===b.run && a.t<=b.t && (!i || ends[i-1].t<=a.t) &&
+      (!i || a.id>starts[i-1].id),'Deferred callbacks retain exact identity and ordering');
+    for(const row of [a,b])assert.ok(row.paused===false && row.failed===false && row.speed===before.selectedSpeed &&
+      Number.isFinite(row.pending) && row.pending>=0 && Number.isFinite(row.elapsed) && row.elapsed>=0 &&
+      near(row.timestamp-row.previousTimestamp,row.elapsed),'Deferred callback admission must remain unpaused and monotonic');
+    assert.ok(a.fromTick===tick && b.fromTick===tick && a.tick===tick && a.steps===0 &&
+      Number.isInteger(b.steps) && b.steps>=0 && b.steps<=128 && b.tick===tick+b.steps,
+      'Deferred callback must preserve the 128-step cap and every model tick');
+    // Sub-tick admissions do not emit callback records. Their monotonic clock
+    // gap adds time but cannot hide a step because fromTick must still match.
+    const gap=a.previousTimestamp-timestamp;
+    assert.ok(Number.isFinite(gap) && gap>=-1e-6 &&
+      (gap<=1e-6 || (pending+1e-9<.05 && a.priorPending+1e-9<.05)) &&
+      near(a.priorPending,pending+Math.max(0,gap)*before.selectedSpeed) && near(b.priorPending,a.priorPending) &&
+      near(a.pending,a.priorPending+a.elapsed*a.speed) && near(b.pending,a.pending-b.steps*.05) &&
+      near(a.timestamp,b.timestamp) && near(a.previousTimestamp,b.previousTimestamp) && near(a.elapsed,b.elapsed),
+      'Deferred callbacks must conserve admitted elapsed time and retained debt');
+    tick=b.tick;pending=b.pending;timestamp=b.timestamp;
+  }
+  assert.equal(tick,terminal.tick,'Deferred callbacks must reach the independently verified terminal tick');
+  assert.ok(starts.at(-1).t<=terminal.t && terminal.t<=ends.at(-1).t,
+    'Terminal must belong to the final measured callback');
+  const during=item=>current(item) && item.t>=before.t && item.t<=result.t;
+  assert.ok(states.filter(item=>during(item)&&item.sessionRun===before.run).every(item=>
+    item.saveState==='ready' && !item.checkpointBlocked && (!['battle','settling'].includes(item.phase) || item.paused===false)),
+    'Deferred terminal cannot hide an automatic pause or failed checkpoint');
+  assert.ok(!cues.some(item=>current(item) && item.t>=loss.t+200 && item.t<=result.t),
+    'Deferred terminal cannot replay background or catch-up cues');
+  return {completion:'after-native-return',callbacks};
+}
 // These ordinary-player journeys never fund research. Only its idle clock and
 // transaction revisions may advance during Return, reload or explicit Resume.
 // A funded project needs the separate research journey's completion evidence.
@@ -3996,7 +4062,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
         if(kind==='blur')await activateOwnedNativeWindow({native,page,report,kind,role:'original'});
         await page.waitForFunction('!document.hidden && document.hasFocus()');
         const recovered=await mark();await noReplay(begin+200,recovered,{kind,before,begin,recovered,ms,events:trace.slice(traceStart)});
-        return {before,begin,recovered,...(waitHidden?{events:waveIntervalEvents(before,{...before,t:recovered},trace.slice(traceStart))}:{})};
+        return {before,begin,recovered,...(waitHidden?{ms,events:waveIntervalEvents(before,{...before,t:recovered},trace.slice(traceStart))}:{})};
       } catch(error) {
         awayError=error;
         try {await retainAwayFailure({native,page,other,kind,report,output,error,
@@ -4278,15 +4344,17 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const backgroundExpected=Object.values(backgroundOracle).at(-1),backgroundStart=states.length;
     check(backgroundExpected.status==='Defeated','background actual wave model has natural terminal');
     const terminalAway=await away('hidden',(backgroundExpected.tick-backgroundBefore.tick)*50+1500,{
-      waitHidden:({before,begin})=>until(states,backgroundStart,item=>{
-        assertWaveStillHidden(before,begin,trace);return isWaveResultFor(backgroundBefore,item);
-      },60)});
-    const backgroundResult=await until(states,backgroundStart,item=>isWaveResultFor(backgroundBefore,item),15);
+      waitHidden:async({before,begin})=>assertWaveStillHidden(before,begin,trace)});
+    const backgroundResult=await until(states,backgroundStart,item=>isWaveResultFor(backgroundBefore,item),60);
     const backgroundFinal=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const backgroundProof=validateWaveTerminal({before:backgroundBefore,result:backgroundResult,saved:backgroundFinal,
       states,encounters,layouts,oracle:backgroundOracle});
-    validateHiddenWaveTerminal({interval:terminalAway,evidence:backgroundProof});
-    report.lifecycle.push({kind:'wave-terminal',mode:'hidden',interval:terminalAway,evidence:backgroundProof});
+    terminalAway.before=backgroundBefore;
+    terminalAway.events=waveIntervalEvents(backgroundBefore,{...backgroundBefore,t:terminalAway.recovered},trace);
+    const continuation=validateBackgroundWaveTerminal({interval:terminalAway,evidence:backgroundProof,callbackRecords,states,cues});
+    const reconciledAt=await mark();
+    await noReplay(terminalAway.begin+200,reconciledAt,{...terminalAway,kind:'hidden',recovered:reconciledAt});
+    report.lifecycle.push({kind:'wave-terminal',mode:'hidden',interval:terminalAway,evidence:backgroundProof,continuation});
     check(true,'background natural defeat finalizes checkpoint once without payout',backgroundProof);
     const savedTerminalBytes=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
     for(let i=0;i<2;i++)await away('hidden',6000);
