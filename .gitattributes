@@ -29,5 +29,7 @@ campaign-unity/docs/last-stand-web/*.json text eol=lf
 client/public/last-stand/Build/*.framework.js whitespace=-blank-at-eol
 # Preserve receipt-bound Unity metadata and the retained owner review records.
 campaign-unity/Unity/Assets/Editor/LastStandBackgroundChecks.cs.meta whitespace=-blank-at-eol
+# Unity serializes empty Android icon subkind values with a trailing space.
+campaign-unity/Unity/ProjectSettings/ProjectSettings.asset whitespace=-blank-at-eol
 campaign-unity/docs/last-stand-mechanics-shop/preview-review.md whitespace=-blank-at-eof
 campaign-unity/docs/last-stand-mechanics-shop/validation.md whitespace=-blank-at-eof
