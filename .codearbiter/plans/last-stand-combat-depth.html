@@ -1,0 +1,1853 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand combat depth: approved sprint plan · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-DEPTH-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-combat-depth.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand combat depth: approved sprint plan</h1><p class="deck">Owner-approved on 2026-10-28: eight work packages for four tiers, five fittings and varied finite waves. Foundation qualification remains unfinished and must precede new combat integration.</p><div class="meta"><span>ST-LS-DEPTH-PLAN</span><span>Revision 20 · schema 0.3.2</span><span>28 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-DEPTH-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2>
+<!-- CA:BEGIN:PRE-OWNER -->
+<article class="record" id="PRE-OWNER" data-ca-symbol="PRE-OWNER" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-OWNER">PRE-OWNER</a><h3>Owner selects this next sprint</h3></div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Requirement</span>Owner approved the presented combat-depth scope and said Approve continue on 2026-10-28. Execute the agreed roster/unlock/backfill scope without another approval ceremony; scope changes and publication remain separately governed.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-BASE">T-BASE</a></li><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-ENEMIES">T-ENEMIES</a></li><li><a href="#T-ARMS">T-ARMS</a></li><li><a href="#T-CAMPAIGN">T-CAMPAIGN</a></li><li><a href="#T-PRESENT">T-PRESENT</a></li><li><a href="#T-BALANCE">T-BALANCE</a></li><li><a href="#T-DELIVERY">T-DELIVERY</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>a7f3eadb3d5a1bc242b88b9bfd10ae80aa61b2b92a3793e9720236b7e720d828</div><div class="field"><span class="label">Origin</span>user_statement</div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T20:01:52Z</div><div class="field"><span class="label">Source</span>Current conversation, user message 2026-10-28: Approve continue</div><div class="field"><span class="label">Summary</span>User approved the presented next combat-depth sprint and directed execution. No extra permission is needed for its ordinary implementation.</div></div></div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>Owner approved the presented combat-depth scope and said Approve continue on 2026-10-28. Execute the agreed roster/unlock/backfill scope without another approval ceremony; scope changes and publication remain separately governed.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-BASE">T-BASE</a></li><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-ENEMIES">T-ENEMIES</a></li><li><a href="#T-ARMS">T-ARMS</a></li><li><a href="#T-CAMPAIGN">T-CAMPAIGN</a></li><li><a href="#T-PRESENT">T-PRESENT</a></li><li><a href="#T-BALANCE">T-BALANCE</a></li><li><a href="#T-DELIVERY">T-DELIVERY</a></li></ul></div><div class="field"><span class="label">Title</span>Owner selects this next sprint</div></div></details></article>
+<!-- CA:END:PRE-OWNER -->
+
+<!-- CA:BEGIN:PRE-BASE -->
+<article class="record" id="PRE-BASE" data-ca-symbol="PRE-BASE" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-BASE">PRE-BASE</a><h3>Verified foundation integration base</h3></div><div class="field"><span class="label">Kind</span>fact</div><div class="field"><span class="label">Requirement</span>Refresh PR 543/544/546 state, resolve inherited foundation CI/browser blockers in their existing scope and qualify the source used for new combat. Do not mark foundation complete or copy its unresolved work into this sprint. No merge is required merely to draft this plan. T-BASE may perform independent baseline inspection and capture while this remains unsatisfied; this exception does not permit new combat integration.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-ENEMIES">T-ENEMIES</a></li><li><a href="#T-ARMS">T-ARMS</a></li><li><a href="#T-CAMPAIGN">T-CAMPAIGN</a></li><li><a href="#T-PRESENT">T-PRESENT</a></li><li><a href="#T-BALANCE">T-BALANCE</a></li><li><a href="#T-DELIVERY">T-DELIVERY</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>fact</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>09f57d78705676f7396b4a6188a13c8e8e4adb2823d58658bd9373456c3258c8</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T22:24:45Z</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/combat-depth-planning-20261028/foundation-1893-ci-green.json</div><div class="field"><span class="label">Summary</span>PR546 head remains1893bbd92135555eeb021656b38f532eb9a0cbcb. CI40775828783 completed success: all24 jobs, including all10 lifecycle shards and combined rendering-guardrails job123136622229. CodeQL40775828731 completed success. gh watcher exited0 and fresh connector readback confirmed workflow and aggregate completion. Corrected foundation browser integration dependency is satisfied. Draft PR and Windows/Android/device/audio/endurance/release obligations remain distinct and unfinished.</div></div></div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>Refresh PR 543/544/546 state, resolve inherited foundation CI/browser blockers in their existing scope and qualify the source used for new combat. Do not mark foundation complete or copy its unresolved work into this sprint. No merge is required merely to draft this plan. T-BASE may perform independent baseline inspection and capture while this remains unsatisfied; this exception does not permit new combat integration.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-ENEMIES">T-ENEMIES</a></li><li><a href="#T-ARMS">T-ARMS</a></li><li><a href="#T-CAMPAIGN">T-CAMPAIGN</a></li><li><a href="#T-PRESENT">T-PRESENT</a></li><li><a href="#T-BALANCE">T-BALANCE</a></li><li><a href="#T-DELIVERY">T-DELIVERY</a></li></ul></div><div class="field"><span class="label">Title</span>Verified foundation integration base</div></div></details></article>
+<!-- CA:END:PRE-BASE -->
+
+<!-- CA:BEGIN:PRE-DEVICE -->
+<article class="record" id="PRE-DEVICE" data-ca-symbol="PRE-DEVICE" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-DEVICE">PRE-DEVICE</a><h3>Physical Android qualification device</h3></div><div class="field"><span class="label">Kind</span>fact</div><div class="field"><span class="label">Requirement</span>A real compatible Android device with authorized install/debug access is available for physical lifecycle/audio/performance checks. Missing access blocks Android acceptance only; it does not stop independent domain work or authorize emulator evidence as device proof.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-DELIVERY">T-DELIVERY</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>fact</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>11ae6b160c22acde615c25215d43170020dc961fecd8e7ef3575b11ac41d57e4</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Outcome</span>unsatisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T20:09:29Z</div><div class="field"><span class="label">Source</span>C:/Users/brenn/AppData/Local/Android/Sdk/platform-tools/adb.exe devices -l, 2026-10-28</div><div class="field"><span class="label">Summary</span>ADB command exited0 and reported no attached devices. Normal local ADB daemon started on5037. Physical Android checks remain unavailable; owner has been asked about device access.</div></div></div><div class="field"><span class="label">Outcome</span>unsatisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>A real compatible Android device with authorized install/debug access is available for physical lifecycle/audio/performance checks. Missing access blocks Android acceptance only; it does not stop independent domain work or authorize emulator evidence as device proof.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-DELIVERY">T-DELIVERY</a></li></ul></div><div class="field"><span class="label">Title</span>Physical Android qualification device</div></div></details></article>
+<!-- CA:END:PRE-DEVICE -->
+</section><section class="group" id="group-tasks"><a class="back" href="#main-content">Top</a><h2>Tasks</h2>
+<!-- CA:BEGIN:T-BASE -->
+<article class="record" id="T-BASE" data-ca-symbol="T-BASE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-BASE">T-BASE</a><h3>Establish the qualified baseline and measurement matrix</h3><span class="badge">IN_PROGRESS</span></div><div class="field"><span class="label">Checkpoint</span>CP-BASE</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-BASE">ST-LS-DEPTH-SPEC#CR-BASE</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-BALANCE">ST-LS-DEPTH-SPEC#CR-BALANCE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Integration base and inherited obligations are explicit; baseline fixtures and comparison policy are committed before changed expectations.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-BASE</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/baseline.md</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_combat_depth</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/baseline.json</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/upgrade-economy-baseline.json</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/periodic-bulk-baseline.json</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/baseline-combat.png</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/baseline-shop-portrait.png</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Recheck current PRs 543/544/546, source and hosted checks. Record inherited defects under the foundation plan; require corrected exact-head browser CI before combat integration. Reuse a suitable checkout and retain one preview.</li><li>Freeze source-bound legacy save/combat/economy fixtures, current player-facing layout and earned progression trajectories. Do not regenerate expected old behavior from changed code.</li><li>Define equal-investment Repair/Launcher/Scattergun/Mortar/Railgun matchup matrix and measurement policy. Record which observations are real play, seeded fixtures, model projections or physical-device results.</li><li>Capture current 5x frame/step/memory baselines where available and define candidate budgets before adding content; choose a real Android reference device at qualification time.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_architecture/run_pure_checks.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Shared-owner, content-boundary and retained-baseline checks pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_model.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_unspawned_or_live_enemy_prevents_clear</li><li>test_pause_and_speed_preserve_wave_outcomes</li><li>test_long_run_has_bounded_state</li><li>test_simultaneous_last_kill_and_defeat</li><li>test_two_thousand_wave_checkpoint_and_numeric_bounds</li><li>test_five_thousand_wave_restore_and_bounded_state</li><li>test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull</li><li>test_midwave_and_inconsistent_checkpoints_are_rejected</li><li>test_scattergun_hits_distinct_targets_without_repair</li><li>test_authored_eighteen_tiers_resolve_and_restore_without_fallback</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_upgrade_balance.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_mature_farming_target_includes_all_ticks_and_real_effects</li><li>test_income_investment_has_a_measured_tradeoff</li><li>test_permanent_investment_keeps_distinct_farming_stages</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>IN_PROGRESS</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_architecture&#34;,&#34;-p&#34;,&#34;test_foundation_baseline.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T20:09:28Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>390dc8e1f888e67bf4719ef7f3ea532c5ce5df0d60a15d1a505f67c3688a18c5</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/combat-depth-planning-20261028/frozen-baseline.log</div><div class="field"><span class="label">Summary</span>2/2 current-source frozen model/save checks passed in4.058s, including compiled reward-drift negative control. Original historical fixtures were not regenerated. Foundation CI remains a separate unresolved prerequisite.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_research/measure_upgrade_economy.py&#34;,&#34;--output&#34;,&#34;campaign-unity/Evidence/combat-depth-planning-20261028/upgrade-economy-baseline.json&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T20:09:29Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>390dc8e1f888e67bf4719ef7f3ea532c5ce5df0d60a15d1a505f67c3688a18c5</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/docs/last-stand-combat-depth/baseline.json; upgrade-economy-baseline.json; periodic-bulk-baseline.json</div><div class="field"><span class="label">Summary</span>129 production-model rows completed with17 current-source hashes; all numerical measurement rows exactly match prior candidate report. Current periodic bulk15 rows also match using16 current inputs. Both sources remain unchanged after measurement. This is model parity, not real-duration or earned-research-calendar proof.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_architecture/run_pure_checks.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T20:20:33Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>2934d674c3beb06b7e4af29f5565b70427ac03c49b227d0a413f40b8d434acbd</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/combat-depth-planning-20261028/architecture-baseline.log</div><div class="field"><span class="label">Summary</span>38/38 current-source architecture tests passed in18.595s. Includes content/domain/application boundaries, native persistence and compiler/source-bound negative controls. Separate hosted lifecycle and physical-device/endurance obligations remain open.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_model.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T21:34:40Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>e916929ddc03e192f181f591d917b5d5c033e6476f4b3c6ae289a374918ff4ad</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/combat-depth-planning-20261028/wave-model-baseline.log</div><div class="field"><span class="label">Summary</span>10/10 current production-model checks passed in8.257s. Historical fixtures remain unchanged. Model checks do not establish renderer, device, long-duration endurance or exact-head hosted acceptance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_upgrade_balance.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T21:34:41Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>e916929ddc03e192f181f591d917b5d5c033e6476f4b3c6ae289a374918ff4ad</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/combat-depth-planning-20261028/upgrade-balance-baseline.log</div><div class="field"><span class="label">Summary</span>3/3 current production-model checks passed in51.55s. Historical fixtures remain unchanged. Model checks do not establish renderer, device, long-duration endurance or exact-head hosted acceptance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-wave-endurance.mjs&#34;,&#34;campaign-unity\\Evidence\\combat-depth-planning-20261028\\first-hit-research-fixtures\\manifest.json&#34;,&#34;campaign-unity\\Evidence\\combat-depth-planning-20261028\\foundation-5x-smoke-observer-fixed&#34;,&#34;--smoke&#34;,&#34;--smoke-seconds=180&#34;,&#34;--research&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T21:48:29Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>f3e1e484a7d2b51152d762254defb70f88defbec18022586efa6b5f7527f8511</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/combat-depth-planning-20261028/foundation-5x-smoke-observer-fixed/result.json</div><div class="field"><span class="label">Summary</span>Owned headless5x smoke passes180.767active seconds,176fresh samples, real29-level2619Scrap purchase,96matching storage write/readbacks,zeroerrors, final source/served bindings verified. Seeded diagnostic only, not endurance/device/audio acceptance. Headless frame and renderer-JS-heap baseline retained; CPU-step/Wasm/device measurements remain unavailable. E2E_LIVE_URL=http://127.0.0.1:4174/singedTerra/.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;gh&#34;,&#34;pr&#34;,&#34;checks&#34;,&#34;546&#34;,&#34;--repo&#34;,&#34;SUaDtL/singedTerra&#34;,&#34;--watch&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-28T22:24:46Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>46a989b5ec5b1f76e1cf7ed84ce440cd812058e475d24fc36a7446aec9efb0ea</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/combat-depth-planning-20261028/foundation-1893-ci-green.json</div><div class="field"><span class="label">Summary</span>PR546 head remains1893bbd92135555eeb021656b38f532eb9a0cbcb. CI40775828783 completed success: all24 jobs, including all10 lifecycle shards and combined rendering-guardrails job123136622229. CodeQL40775828731 completed success. gh watcher exited0 and fresh connector readback confirmed workflow and aggregate completion. Corrected foundation browser integration dependency is satisfied. Draft PR and Windows/Android/device/audio/endurance/release obligations remain distinct and unfinished.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-BASE -->
+
+<!-- CA:BEGIN:T-RULES -->
+<article class="record" id="T-RULES" data-ca-symbol="T-RULES" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-RULES">T-RULES</a><h3>Version combat content and migrate profiles safely</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-DOMAIN</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-CONTENT">ST-LS-DEPTH-SPEC#CR-CONTENT</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-SAVE">ST-LS-DEPTH-SPEC#CR-SAVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-BASE">T-BASE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Old golden checkpoints and prices retain exact behavior; migrated data and new-run edition selection survive failure/retry with no repeated rewards.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-DOMAIN</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/Content/LastStandContentManifest.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandEconomyCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandSaveJson.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandWaveInformation.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandLegacySave.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs</code></td></tr><tr><td>create</td><td><code>campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs.meta</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_combat_depth/test_rules.py</code></td></tr><tr><td>create</td><td><code>campaign-unity/Tools/last_stand_combat_depth/RulesCompatibilityChecks.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_source_closure.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_architecture/FoundationBaselineChecks.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_architecture/test_foundation_baseline.py</code></td></tr><tr><td>modify</td><td><code>.github/workflows/ci.yml</code></td></tr><tr><td>modify</td><td><code>scripts/ci/ciWorkflow.test.mjs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandStore.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Extend stable typed definitions for enemies, fitting mechanics and per-edition content selection; keep UI and platform imports out of domain content.</li><li>Implement atomic forward migration with neutral new track/state fields and stable ID adapters. Pin old active runs to their entire old combat/content/economy interpretation.</li><li>Decode each historical shape against retained definitions before expanding catalogs. The v5 forward migration preserves its existing research/history objects; only formats lacking them may initialize them. Separate frozen old-run continuation expectations from intentionally new deployment, without regenerating historical goldens. Wire new actual-domain checks into existing CI selection.</li><li>Implement proposed best-wave unlock backfill without repeat currency and without invented history; preserve research queues, preferences, history and fractional balances.</li><li>Reject duplicate/missing/cyclic definitions before packaging; exercise old supported versions, unknown future versions, interrupted writes and stale ownership against actual storage/transaction owners.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_combat_depth&#34;,&#34;-p&#34;,&#34;test_*.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_legacy_run_retains_complete_rules</li><li>test_atomic_profile_migration_and_unlock_backfill</li><li>test_unknown_version_preserves_bytes</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_save_codec.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_utc_and_lifetime_milliseconds_preserve_exact_integers</li><li>test_wide_numbers_remain_bounded_without_coercing_old_fields</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_checkpoint_store.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_starting_checkpoint_survives_reload</li><li>test_legacy_migration_preserves_pending_claim_once</li><li>test_checkpoint_rewards_commit_once_under_write_faults</li><li>test_midwave_purchase_and_cost_roll_back_together</li><li>test_first_clear_rewards_and_unlocks_across_runs</li><li>test_future_or_conflicting_save_preserves_original_bytes</li><li>test_mutual_death_banks_and_finalizes_atomically</li><li>test_permanent_purchases_preserve_active_deployment_stats</li><li>test_five_thousand_wave_save_restore_and_bounded_size</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_architecture/run_pure_checks.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Shared-owner, content-boundary and retained-baseline checks pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-RULES -->
+
+<!-- CA:BEGIN:T-ENEMIES -->
+<article class="record" id="T-ENEMIES" data-ca-symbol="T-ENEMIES" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-ENEMIES">T-ENEMIES</a><h3>Implement enemy roles and bounded elite waves</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-DOMAIN</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-ENEMIES">ST-LS-DEPTH-SPEC#CR-ENEMIES</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-CONTENT">ST-LS-DEPTH-SPEC#CR-CONTENT</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-SAVE">ST-LS-DEPTH-SPEC#CR-SAVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>New roles create distinct pressure and real pure-domain tests prove finite wave resolution and legacy parity.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-DOMAIN</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Add concrete pure mechanics for Swarmer, Armored Brute and Siege Elite using saved edition routing; retain legacy Close/Ranged outputs.</li><li>Make new-wave composition deterministic, replace a normal slot for each scheduled elite, and retain the finite enemy count/capacity bound.</li><li>Implement shared armor/penetration, attack telegraph timing and deterministic kill ordering. Keep damage, death, reward and terminal transitions under existing owners.</li><li>Test empty/last-enemy, simultaneous kills, wave boundary, pause/0.5-5x, high wave arithmetic and checkpoint-resume boundaries without substituting fake domain classes.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_combat_depth&#34;,&#34;-p&#34;,&#34;test_*.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_deterministic_role_composition_and_elite_replacement</li><li>test_armor_damage_and_post_death_guards</li><li>test_wave_checkpoint_replays_new_mechanics</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_wave_model.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_unspawned_or_live_enemy_prevents_clear</li><li>test_pause_and_speed_preserve_wave_outcomes</li><li>test_long_run_has_bounded_state</li><li>test_simultaneous_last_kill_and_defeat</li><li>test_two_thousand_wave_checkpoint_and_numeric_bounds</li><li>test_five_thousand_wave_restore_and_bounded_state</li><li>test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull</li><li>test_midwave_and_inconsistent_checkpoints_are_rejected</li><li>test_scattergun_hits_distinct_targets_without_repair</li><li>test_authored_eighteen_tiers_resolve_and_restore_without_fallback</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_architecture/run_pure_checks.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Shared-owner, content-boundary and retained-baseline checks pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-ENEMIES -->
+
+<!-- CA:BEGIN:T-ARMS -->
+<article class="record" id="T-ARMS" data-ca-symbol="T-ARMS" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-ARMS">T-ARMS</a><h3>Add Mortar and Railgun through the existing shop and fitting system</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-DOMAIN</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-ARMS">ST-LS-DEPTH-SPEC#CR-ARMS</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-CONTENT">ST-LS-DEPTH-SPEC#CR-CONTENT</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-SAVE">ST-LS-DEPTH-SPEC#CR-SAVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-ENEMIES">T-ENEMIES</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Both fittings work in real combat and have meaningful quote/effect projections; old fittings and saved purchases remain correct.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-DOMAIN</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/Application/LastStandPurchaseCoordinator.cs</li><li>campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Implement deterministic area hits and armor-penetrating single-target fire; keep main cannon plus one auxiliary fitting.</li><li>Add one relevant permanent/run track per new fitting, exact bulk quotes and active-fitting applicability through the existing ledger and purchase coordinator.</li><li>Connect Tier 1 wave 500 Mortar and Tier 2 wave 100 Railgun unlocks; preserve old fittings and valid legacy active runs.</li><li>Test stale quotes, insufficient funds, caps, locked fitting, incompatible track, multiple targets, same-frame death and failed-save retry with no double spending.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_combat_depth&#34;,&#34;-p&#34;,&#34;test_*.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_mortar_hits_each_target_once</li><li>test_railgun_penetration_and_old_weapon_mitigation</li><li>test_new_fitting_quote_and_failed_save_atomicity</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_shop&#34;,&#34;-p&#34;,&#34;test_shop.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_current_level_cap</li><li>test_next_price_independent_of_persistent</li><li>test_cap_refusal</li><li>test_new_run_reset_and_resume</li><li>test_invalid_config</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_upgrade_economy.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_no_track_maxes_from_first_pass_wave_300_budget</li><li>test_late_wave_base_income_outgrows_flat_scrap_ceiling</li><li>test_early_wave_bounty_increases_without_repricing_saved_runs</li><li>test_reward_preview_matches_paid_kills_and_fractional_carry_without_mutation</li><li>test_legacy_prices_roster_and_prospective_research_income_restore</li><li>test_fractional_income_research_epochs_and_checkpoint_rollback</li><li>test_bounded_income_prefix_matches_individual_production_wave_events</li><li>test_permanent_starting_benefit_and_matched_build_scrap_savings</li><li>test_bulk_quotes_are_exact_partial_affordable_and_cap_bounded</li><li>test_bulk_intent_commits_once_rejects_stale_and_restores_paid_levels</li><li>test_pinned_run_cards_and_bulk_effects_match_actual_combat</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-ARMS -->
+
+<!-- CA:BEGIN:T-CAMPAIGN -->
+<article class="record" id="T-CAMPAIGN" data-ca-symbol="T-CAMPAIGN" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-CAMPAIGN">T-CAMPAIGN</a><h3>Author tiers, environments and progression discovery</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-EXPERIENCE</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-TIERS">ST-LS-DEPTH-SPEC#CR-TIERS</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-CONTENT">ST-LS-DEPTH-SPEC#CR-CONTENT</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-INFO">ST-LS-DEPTH-SPEC#CR-INFO</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-ARMS">T-ARMS</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Four tiers are playable through existing selectors; milestone discovery, locked previews and every unlock work without hard-coded button/count growth.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-EXPERIENCE</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandEnvironmentCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/Content/LastStandContentManifest.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandGarageView.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scenes/LastStandPrototype.unity</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Author Cinder Basin and Storm Foundry with distinct geometry/props, palette and lighting using reviewed existing assets where suitable; do not treat a color filter alone as a biome.</li><li>Unlock each new tier at prior-tier wave 300; authored enemy mixes and rewards read the same catalog. Unlocking does not select or enter the tier.</li><li>Extend the existing tier/fitting window and next-milestone presentation, showing only unlocked tiers plus one locked preview.</li><li>Use a shared read model for progression discovery and guaranteed reward receipts. Optional suggestions obey Settings; essential information remains available manually.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_combat_depth&#34;,&#34;-p&#34;,&#34;test_*.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_tier_unlock_does_not_promote_active_run</li><li>test_only_first_locked_tier_visible</li><li>test_milestone_unlock_and_receipt_exactly_once</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_architecture/run_pure_checks.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Shared-owner, content-boundary and retained-baseline checks pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_controls&#34;,&#34;-p&#34;,&#34;test_menu.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_imported_scene_controls</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-CAMPAIGN -->
+
+<!-- CA:BEGIN:T-PRESENT -->
+<article class="record" id="T-PRESENT" data-ca-symbol="T-PRESENT" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-PRESENT">T-PRESENT</a><h3>Make new enemies and modules readable in actual play</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-EXPERIENCE</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-INFO">ST-LS-DEPTH-SPEC#CR-INFO</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-ARMS">ST-LS-DEPTH-SPEC#CR-ARMS</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-ENEMIES">ST-LS-DEPTH-SPEC#CR-ENEMIES</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-CAMPAIGN">T-CAMPAIGN</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Rendered matches and UI demonstrate every mechanic; no jammed toolbar, detached callout, clipped price, stale inventory or misleading stat.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-EXPERIENCE</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/EncounterView.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/TankPresentation.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandFittingCallout.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandWaveInformation.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandShopPresentation.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/contracts/last-stand-observation-v1.json</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandShopHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandShopChecks.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_shop/test_shop_ui.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_shop/test_shop_layout.py</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandUiPrimitives.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandModalHost.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Build visible tank attachments, correct muzzle/impact anchors and distinct bounded feedback. Keep callout lines attached to the selected module across aspect ratios.</li><li>Give enemy roles recognizable silhouettes/movement and readable elite warning cues in full/reduced effects; do not rely on color alone.</li><li>Extend current-wave information with actual per-type armor/damage/value, and armament previews with cadence/area/penetration tradeoffs. Keep price and value units together.</li><li>Reuse shared chrome/modal/scroll/focus/layout and version the observation shape if needed; update real emitters and consumers together. Check desktop, portrait, short landscape, keyboard and touch.</li><li>Fix the retained390px portrait shop level/cap clipping through shared card geometry/measurement. Add an actual-font failing regression for multi-digit levels through2500/5000, title separation, full cap and long prices across supported viewports. Keep bounded complete headers without global font/overflow changes or per-track layout special cases.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_combat_depth&#34;,&#34;-p&#34;,&#34;test_*.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_wave_stats_use_resolved_enemy_and_reward_values</li><li>test_new_fittings_use_shared_selector_and_callout_contract</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_wave_information.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_current_wave_stats_rewards_and_read_only_projection</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_shop&#34;,&#34;-p&#34;,&#34;test_shop_layout.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_shop_five_profiles_scroll_and_required_controls</li><li>test_shop_text_contrast_targets_and_refusal_bounds</li><li>test_shop_compact_meaningful_summary</li><li>test_shop_measured_long_notice</li><li>test_shop_short_landscape_closed_recovery</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_architecture/run_pure_checks.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Shared-owner, content-boundary and retained-baseline checks pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-PRESENT -->
+
+<!-- CA:BEGIN:T-BALANCE -->
+<article class="record" id="T-BALANCE" data-ca-symbol="T-BALANCE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-BALANCE">T-BALANCE</a><h3>Calibrate earned builds and sustained farming</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-VERIFY</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-BALANCE">ST-LS-DEPTH-SPEC#CR-BALANCE</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-TIERS">ST-LS-DEPTH-SPEC#CR-TIERS</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-ENEMIES">ST-LS-DEPTH-SPEC#CR-ENEMIES</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-ARMS">ST-LS-DEPTH-SPEC#CR-ARMS</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-PRESENT">T-PRESENT</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Measured earned paths satisfy CR-BALANCE with disclosed tradeoffs; coefficients are finalized before playable qualification.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-VERIFY</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_research/measure_upgrade_economy.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_waves/test_long_run_economy.py</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/balance.md</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandEconomyCatalog.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Run the committed equal-investment benchmark matrix using the production model and earned purchases/research. Publish numeric parameters, seeds, policies, damage/survival, Scrap and Salvage per active hour.</li><li>Tune within the approved mechanics/unlock policy so area, penetration, sustain and existing fittings each have a useful matchup. No universal winner across the benchmark suite.</li><li>Show sustainable lower-tier farming versus premature promotion, early affordability without premature gold-boxing, and capped-overflow behavior beyond wave 5000.</li><li>Compare mature 5000-wave pacing at 5x with the 10-12-hour direction without claiming unimplemented Tier 10 balance or converting accelerated simulation into endurance proof.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_combat_depth&#34;,&#34;-p&#34;,&#34;test_*.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_equal_investment_matchup_tradeoffs</li><li>test_lower_tier_farming_beats_premature_push</li><li>test_early_income_cannot_cap_long_term_tracks</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_upgrade_balance.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_mature_farming_target_includes_all_ticks_and_real_effects</li><li>test_income_investment_has_a_measured_tradeoff</li><li>test_permanent_investment_keeps_distinct_farming_stages</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_waves&#34;,&#34;-p&#34;,&#34;test_long_run_economy.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Affected maintained production checks pass; retain raw results and independent expectations.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_existing_investments_preserved</li><li>test_long_run_cost_and_effect_bounds</li><li>test_lower_tier_farming_remains_viable_after_unlock</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-BALANCE -->
+
+<!-- CA:BEGIN:T-DELIVERY -->
+<article class="record" id="T-DELIVERY" data-ca-symbol="T-DELIVERY" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-DELIVERY">T-DELIVERY</a><h3>Qualify and present the integrated playable candidate</h3><span class="badge">PENDING</span></div><div class="field"><span class="label">Checkpoint</span>CP-VERIFY</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-combat-depth.html#CR-QUALIFY">ST-LS-DEPTH-SPEC#CR-QUALIFY</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-SAVE">ST-LS-DEPTH-SPEC#CR-SAVE</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-INFO">ST-LS-DEPTH-SPEC#CR-INFO</a></li><li><a href="../specs/last-stand-combat-depth.html#CR-BASE">ST-LS-DEPTH-SPEC#CR-BASE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-BALANCE">T-BALANCE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>The candidate is reviewable and required actual checks pass; no target is declared qualified with unrun device, endurance or inherited failure obligations.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-VERIFY</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>e2e/helpers/lastStandJourney.mjs</code></td></tr><tr><td>modify</td><td><code>scripts/ci/lastStandWaveQualification.mjs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/verify_last_stand_loop.py</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md</code></td></tr><tr><td>create</td><td><code>campaign-unity/docs/last-stand-combat-depth/validation.json</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.</div><div class="field"><span class="label">Shared inputs</span><ul class="items"><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li><li>campaign-unity/Unity/Assets/Scripts/Platform</li><li>campaign-unity/Tools/build_last_stand.py</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-INTENT">SRC-INTENT</a></li><li><a href="#SRC-STACK">SRC-STACK</a></li><li><a href="#SRC-CI">SRC-CI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-COMBAT">SRC-COMBAT</a></li><li><a href="#SRC-REWARDS">SRC-REWARDS</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-CHECKS">SRC-CHECKS</a></li></ul></div><div class="field"><span class="label">Steps</span><ul class="items"><li>Run affected pure, migration, application and UI checks; build current-source WebGL, Windows and Android with existing pinned tools. Package WebGL only through existing source admission.</li><li>Use normal player controls to demonstrate new fitting/tier loop, upgrade, wave reward, checkpoint reload and old saved-run recovery. Clearly separate earned play from test fixtures used to reach late content.</li><li>Complete exact-head hosted CI and retained background/no-replay checks. On Windows check restart/abnormal termination; on a physical Android device check touch, suspend/kill/relaunch, settings, durability, audio and measured performance. Missing hardware remains an Android blocker.</li><li>Measure sustained 5x frame/step time, memory and physical-device thermal behavior; retain an actual long farming observation separately from fast simulations. Reuse prior evidence only when its source applicability is demonstrated.</li><li>Present one current local preview, source-bound review media and explicit target pass/pending matrix. Stage a reviewable candidate only after approval; merge/publication remains separately authorized. Clean only task-owned disposable files using safe paths.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_architecture/run_pure_checks.py&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Shared-owner, content-boundary and retained-baseline checks pass.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;python&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_combat_depth&#34;,&#34;-p&#34;,&#34;test_*.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.</div><div class="field"><span class="label">Availability</span>proposed</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_legacy_run_retains_complete_rules</li><li>test_wave_checkpoint_replays_new_mechanics</li><li>test_new_fitting_quote_and_failed_save_atomicity</li></ul></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/assets/verify-last-stand-source.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Packaged player matches current runtime source.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;build&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Typecheck and production package succeed after source-bound export.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>PENDING</div></div></details></article>
+<!-- CA:END:T-DELIVERY -->
+</section><section class="group" id="group-checkpoints"><a class="back" href="#main-content">Top</a><h2>Checkpoints</h2>
+<!-- CA:BEGIN:CP-BASE -->
+<article class="record" id="CP-BASE" data-ca-symbol="CP-BASE" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-BASE">CP-BASE</a><h3>Qualified baseline and retained rules</h3></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Exit</span>Inherited failures have a truthful disposition; baseline and independent comparison policy exist.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-BASE">T-BASE</a></li></ul></div></article>
+<!-- CA:END:CP-BASE -->
+
+<!-- CA:BEGIN:CP-DOMAIN -->
+<article class="record" id="CP-DOMAIN" data-ca-symbol="CP-DOMAIN" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-DOMAIN">CP-DOMAIN</a><h3>Compatible combat and armaments</h3></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#CP-BASE">CP-BASE</a></li></ul></div><div class="field"><span class="label">Exit</span>New mechanics work through one domain and transaction owner; old runs preserve their rules.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-RULES">T-RULES</a></li><li><a href="#T-ENEMIES">T-ENEMIES</a></li><li><a href="#T-ARMS">T-ARMS</a></li></ul></div></article>
+<!-- CA:END:CP-DOMAIN -->
+
+<!-- CA:BEGIN:CP-EXPERIENCE -->
+<article class="record" id="CP-EXPERIENCE" data-ca-symbol="CP-EXPERIENCE" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-EXPERIENCE">CP-EXPERIENCE</a><h3>A coherent expanded campaign</h3></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#CP-DOMAIN">CP-DOMAIN</a></li></ul></div><div class="field"><span class="label">Exit</span>Four tiers and five fittings are discoverable, readable and playable through shared surfaces.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-CAMPAIGN">T-CAMPAIGN</a></li><li><a href="#T-PRESENT">T-PRESENT</a></li></ul></div></article>
+<!-- CA:END:CP-EXPERIENCE -->
+
+<!-- CA:BEGIN:CP-VERIFY -->
+<article class="record" id="CP-VERIFY" data-ca-symbol="CP-VERIFY" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-VERIFY">CP-VERIFY</a><h3>Balanced and qualified candidate</h3></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#CP-EXPERIENCE">CP-EXPERIENCE</a></li></ul></div><div class="field"><span class="label">Exit</span>Earned progression is measured; actual source-bound gameplay/build/platform results support each claim.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-BALANCE">T-BALANCE</a></li><li><a href="#T-DELIVERY">T-DELIVERY</a></li></ul></div></article>
+<!-- CA:END:CP-VERIFY -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-PLAN -->
+<article class="record" id="SEC-PLAN" data-ca-symbol="SEC-PLAN" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-PLAN">SEC-PLAN</a><h3>Sequence and scope boundary</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>This is a next-sprint proposal on the existing checkout, not more implementation piled onto draft PR 546. Foundation CI repair and its outstanding qualification remain owned by ST-LS-ARCH-PLAN. After approval and a qualified baseline, execute these eight work packages in dependency order; delivery artifacts form a separate coherent candidate.</p></div><div class="block"><ul class="items"><li>1. Freeze the qualified base and earned comparison matrix.</li><li>2. Establish saved rule editions and migration before introducing mechanics.</li><li>3. Add bounded enemy roles, then new automatic armaments and their upgrade tracks.</li><li>4. Author tiers/environments and finish actual visual, audio and information surfaces.</li><li>5. Calibrate earned play and qualify the integrated candidate on each claimed target.</li></ul></div></div></article>
+<!-- CA:END:SEC-PLAN -->
+
+<!-- CA:BEGIN:SEC-EVIDENCE -->
+<article class="record" id="SEC-EVIDENCE" data-ca-symbol="SEC-EVIDENCE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-EVIDENCE">SEC-EVIDENCE</a><h3>Planned verification, not reported results</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>No gameplay, build, migration or endurance test was run to create this plan. Native artifact validation checks structure and coverage only. Commands marked proposed require new focused test files. Actual Unity/native/browser journeys and real duration are explicit observable checks in T-DELIVERY, not fabricated command exit codes.</p></div><div class="block"><p>Live planning check: foundation CI run 40625861839 failed; CodeQL passed. Inspected shard 3 reports a finalized-idle result callback/cue/lifecycle assertion. A correction needs diagnosis in the current foundation scope; this plan neither weakens the assertion nor claims its cause.</p></div></div></article>
+<!-- CA:END:SEC-EVIDENCE -->
+
+<!-- CA:BEGIN:SEC-REVIEW -->
+<article class="record" id="SEC-REVIEW" data-ca-symbol="SEC-REVIEW" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-REVIEW">SEC-REVIEW</a><h3>Approval covers a concrete candidate</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The owner approved content names, unlock points, elite cadence and no-Salvage historical unlock backfill on 2026-10-28. Numeric combat/economy coefficients are calibrated within those choices, with benchmark evidence before integration. A materially different mechanic, extra system or progression policy returns to scope review.</p></div><div class="block"><p>No device purchase, dependency install, background automation, PR merge, public deployment or store submission is part of planning approval. Optional guidance must remain disableable; the existing paused user run and preview are preserved.</p></div></div></article>
+<!-- CA:END:SEC-REVIEW -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-OWNER -->
+<article class="record" id="SRC-OWNER" data-ca-symbol="SRC-OWNER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-OWNER">SRC-OWNER</a><h3>Next sprint planning request</h3></div><div class="field"><span class="label">Locator</span>Conversation, 2026-10-28</div><div class="field"><span class="label">Note</span>Owner requested next-sprint planning, then explicitly approved the presented combat-depth specification/plan and said Approve continue on 2026-10-28. Execution is authorized within this scope; merge/publication remain separate.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-OWNER -->
+
+<!-- CA:BEGIN:SRC-INTENT -->
+<article class="record" id="SRC-INTENT" data-ca-symbol="SRC-INTENT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-INTENT">SRC-INTENT</a><h3>Established player priorities</h3></div><div class="field"><span class="label">Locator</span>Conversation: tier selector, module callouts, waves/resume, farming pacing and architecture sprint</div><div class="field"><span class="label">Note</span>Broad coherent sprints; scalable tier/fitting windows; distinct environments with possible later revisits; optional prompts can be disabled; wave clears and checkpoints; lower-tier farming remains useful; 5x maximum and roughly 10-12 hours for a mature 5000-wave farm; real-time research uses Salvage.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-INTENT -->
+
+<!-- CA:BEGIN:SRC-STACK -->
+<article class="record" id="SRC-STACK" data-ca-symbol="SRC-STACK" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-STACK">SRC-STACK</a><h3>Current foundation and dependency stack</h3></div><div class="field"><span class="label">Locator</span>Live GitHub PRs 546, 544 and 543, read 2026-10-28</div><div class="field"><span class="label">Note</span>All three remain open drafts. PR 546 head c6b32cde is based on 544 at 07dc13c0, which is based on 543 at a17e2ff5. PR 541 is merged. Do not duplicate their implementation.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/pull/546</div></article>
+<!-- CA:END:SRC-STACK -->
+
+<!-- CA:BEGIN:SRC-CI -->
+<article class="record" id="SRC-CI" data-ca-symbol="SRC-CI" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CI">SRC-CI</a><h3>Current foundation CI result</h3></div><div class="field"><span class="label">Locator</span>Run 40625861839 at c6b32cde; job 122610637940</div><div class="field"><span class="label">Note</span>CI failed in ten Last Stand lifecycle shards; core/build, tier, product, shards 11/12 and Edge passed. CodeQL 40625861810 passed. Inspected shard 3 fails validateAwayAudioReturn: Finalized idle result cannot admit combat callbacks, cues or an active lifecycle. Root cause not established by this planning read.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/actions/runs/40625861839</div></article>
+<!-- CA:END:SRC-CI -->
+
+<!-- CA:BEGIN:SRC-ARCH -->
+<article class="record" id="SRC-ARCH" data-ca-symbol="SRC-ARCH" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ARCH">SRC-ARCH</a><h3>Shared owner map</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-ARCHITECTURE.md</div><div class="field"><span class="label">Note</span>Presentation -&gt; application -&gt; domain; typed content, one profile transaction owner, explicit platform capabilities and independent test oracles. Native ST-LS-ARCH-SPEC CR-CONTENT and CR-PLATFORM were read.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ARCH -->
+
+<!-- CA:BEGIN:SRC-CONTENT -->
+<article class="record" id="SRC-CONTENT" data-ca-symbol="SRC-CONTENT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CONTENT">SRC-CONTENT</a><h3>Actual shipped candidate catalogs</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/Content/LastStandContentManifest.cs; campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs; campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs</div><div class="field"><span class="label">Note</span>Two tiers/environments; Repair, Launcher and Scattergun; real validated selection and milestone graph. Current content manifest does not yet define general enemy archetypes.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CONTENT -->
+
+<!-- CA:BEGIN:SRC-COMBAT -->
+<article class="record" id="SRC-COMBAT" data-ca-symbol="SRC-COMBAT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-COMBAT">SRC-COMBAT</a><h3>Current enemy and wave rules</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs; campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs; campaign-unity/Unity/Assets/Scripts/LastStandWaveInformation.cs</div><div class="field"><span class="label">Note</span>Close and Ranged foes; finite groups up to 20 and model capacity 32; no enemy armor; wave information currently reports Armor: none and equal value for each type.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-COMBAT -->
+
+<!-- CA:BEGIN:SRC-REWARDS -->
+<article class="record" id="SRC-REWARDS" data-ca-symbol="SRC-REWARDS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-REWARDS">SRC-REWARDS</a><h3>Current progression and rewards</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs; campaign-unity/docs/LAST-STAND-ROADMAP.md</div><div class="field"><span class="label">Note</span>Tier 1 wave 100 unlocks Scattergun; wave 300 unlocks Tier 2 without ending the run. Stable first-clear ledger and repeatable Salvage; existing eight-track research economy and retained editions.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-REWARDS -->
+
+<!-- CA:BEGIN:SRC-RELEASE -->
+<article class="record" id="SRC-RELEASE" data-ca-symbol="SRC-RELEASE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-RELEASE">SRC-RELEASE</a><h3>Qualification still outstanding</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md; campaign-unity/docs/last-stand-architecture/validation.json</div><div class="field"><span class="label">Note</span>Three verified builds exist. Current exact-head browser CI is red, Windows foreground setup has a host limit, Android device checks, funded/offline research, writer ownership and real-duration endurance remain open. Existing records are not a public release.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-RELEASE -->
+
+<!-- CA:BEGIN:SRC-CHECKS -->
+<article class="record" id="SRC-CHECKS" data-ca-symbol="SRC-CHECKS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CHECKS">SRC-CHECKS</a><h3>Maintained commands and boundaries</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/tech-stack.md; .codearbiter/coding-standards.md; .codearbiter/security-controls.md; campaign-unity/Tools/last_stand_architecture/run_pure_checks.py</div><div class="field"><span class="label">Note</span>Use existing pure/compiler/build/source verification and shared UI owners; keep legacy TypeScript modes separate. No new service, runtime dependency, account authority or payment path is proposed.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CHECKS -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>c6b32cdef661743a455f5373bd72144c437b2209</div><div class="field"><span class="label">Observed date</span>2026-10-28</div><div class="field"><span class="label">Repository</span>https://github.com/SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: d1950d816707ebda9bbc02d4a202a4e8b1c9d64bec33d41c0b5133fe6e7655ea<br>Model SHA-256: 88e0298b14c90736e2d77757b047649ee59dee2424d473fe7133a2917211755c</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-DEPTH-PLAN",
+  "execution": {
+    "prerequisite_evidence": {},
+    "prerequisite_observations": {
+      "PRE-BASE": {
+        "definition_sha256": "09f57d78705676f7396b4a6188a13c8e8e4adb2823d58658bd9373456c3258c8",
+        "origin": "tool_result",
+        "outcome": "satisfied",
+        "provenance": "caller_reported",
+        "recorded_at": "2026-10-28T22:24:45Z",
+        "source": "campaign-unity/Evidence/combat-depth-planning-20261028/foundation-1893-ci-green.json",
+        "summary": "PR546 head remains1893bbd92135555eeb021656b38f532eb9a0cbcb. CI40775828783 completed success: all24 jobs, including all10 lifecycle shards and combined rendering-guardrails job123136622229. CodeQL40775828731 completed success. gh watcher exited0 and fresh connector readback confirmed workflow and aggregate completion. Corrected foundation browser integration dependency is satisfied. Draft PR and Windows/Android/device/audio/endurance/release obligations remain distinct and unfinished."
+      },
+      "PRE-DEVICE": {
+        "definition_sha256": "11ae6b160c22acde615c25215d43170020dc961fecd8e7ef3575b11ac41d57e4",
+        "origin": "tool_result",
+        "outcome": "unsatisfied",
+        "provenance": "caller_reported",
+        "recorded_at": "2026-10-28T20:09:29Z",
+        "source": "C:/Users/brenn/AppData/Local/Android/Sdk/platform-tools/adb.exe devices -l, 2026-10-28",
+        "summary": "ADB command exited0 and reported no attached devices. Normal local ADB daemon started on5037. Physical Android checks remain unavailable; owner has been asked about device access."
+      },
+      "PRE-OWNER": {
+        "definition_sha256": "a7f3eadb3d5a1bc242b88b9bfd10ae80aa61b2b92a3793e9720236b7e720d828",
+        "origin": "user_statement",
+        "outcome": "satisfied",
+        "provenance": "caller_reported",
+        "recorded_at": "2026-10-28T20:01:52Z",
+        "source": "Current conversation, user message 2026-10-28: Approve continue",
+        "summary": "User approved the presented next combat-depth sprint and directed execution. No extra permission is needed for its ordinary implementation."
+      }
+    },
+    "prerequisites": {
+      "PRE-BASE": "not_satisfied",
+      "PRE-DEVICE": "not_satisfied",
+      "PRE-OWNER": "not_satisfied"
+    },
+    "scopes": {},
+    "task_check_observations": {
+      "T-BASE": [
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_architecture",
+            "-p",
+            "test_foundation_baseline.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "6318b5376ebe703a4e4dfc48dd2eca93a39879fb1e9a86b9f3dbe56176c0a41f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-28T20:09:28Z",
+          "recording_operation_id": "depth-check-06d1f0e161af43f4bf9b3540405327f9",
+          "scoped_inputs_sha256": "390dc8e1f888e67bf4719ef7f3ea532c5ce5df0d60a15d1a505f67c3688a18c5",
+          "source": "campaign-unity/Evidence/combat-depth-planning-20261028/frozen-baseline.log",
+          "source_normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f",
+          "summary": "2/2 current-source frozen model/save checks passed in4.058s, including compiled reward-drift negative control. Original historical fixtures were not regenerated. Foundation CI remains a separate unresolved prerequisite.",
+          "task_subject_sha256": "161454eff45ffeced0544fec69cd1e586a842346f4a31cad4b708f3c1af4bc96"
+        },
+        {
+          "argv": [
+            "python",
+            "-B",
+            "campaign-unity/Tools/last_stand_research/measure_upgrade_economy.py",
+            "--output",
+            "campaign-unity/Evidence/combat-depth-planning-20261028/upgrade-economy-baseline.json"
+          ],
+          "criterion_subject_sha256": "6318b5376ebe703a4e4dfc48dd2eca93a39879fb1e9a86b9f3dbe56176c0a41f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-28T20:09:29Z",
+          "recording_operation_id": "depth-check-fa5637204bdb4a55b5eb605a2647c491",
+          "scoped_inputs_sha256": "390dc8e1f888e67bf4719ef7f3ea532c5ce5df0d60a15d1a505f67c3688a18c5",
+          "source": "campaign-unity/docs/last-stand-combat-depth/baseline.json; upgrade-economy-baseline.json; periodic-bulk-baseline.json",
+          "source_normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f",
+          "summary": "129 production-model rows completed with17 current-source hashes; all numerical measurement rows exactly match prior candidate report. Current periodic bulk15 rows also match using16 current inputs. Both sources remain unchanged after measurement. This is model parity, not real-duration or earned-research-calendar proof.",
+          "task_subject_sha256": "161454eff45ffeced0544fec69cd1e586a842346f4a31cad4b708f3c1af4bc96"
+        },
+        {
+          "argv": [
+            "python",
+            "-B",
+            "campaign-unity/Tools/last_stand_architecture/run_pure_checks.py"
+          ],
+          "criterion_subject_sha256": "6318b5376ebe703a4e4dfc48dd2eca93a39879fb1e9a86b9f3dbe56176c0a41f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-28T20:20:33Z",
+          "recording_operation_id": "depth-architecture-check-f3a75046ce564cbb9cb2af0643d87610",
+          "scoped_inputs_sha256": "2934d674c3beb06b7e4af29f5565b70427ac03c49b227d0a413f40b8d434acbd",
+          "source": "campaign-unity/Evidence/combat-depth-planning-20261028/architecture-baseline.log",
+          "source_normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f",
+          "summary": "38/38 current-source architecture tests passed in18.595s. Includes content/domain/application boundaries, native persistence and compiler/source-bound negative controls. Separate hosted lifecycle and physical-device/endurance obligations remain open.",
+          "task_subject_sha256": "161454eff45ffeced0544fec69cd1e586a842346f4a31cad4b708f3c1af4bc96"
+        },
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_waves",
+            "-p",
+            "test_wave_model.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "6318b5376ebe703a4e4dfc48dd2eca93a39879fb1e9a86b9f3dbe56176c0a41f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-28T21:34:40Z",
+          "recording_operation_id": "depth-baseline-check-884765f708a040d99664f6d4df264965",
+          "scoped_inputs_sha256": "e916929ddc03e192f181f591d917b5d5c033e6476f4b3c6ae289a374918ff4ad",
+          "source": "campaign-unity/Evidence/combat-depth-planning-20261028/wave-model-baseline.log",
+          "source_normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f",
+          "summary": "10/10 current production-model checks passed in8.257s. Historical fixtures remain unchanged. Model checks do not establish renderer, device, long-duration endurance or exact-head hosted acceptance.",
+          "task_subject_sha256": "161454eff45ffeced0544fec69cd1e586a842346f4a31cad4b708f3c1af4bc96"
+        },
+        {
+          "argv": [
+            "python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_research",
+            "-p",
+            "test_upgrade_balance.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "6318b5376ebe703a4e4dfc48dd2eca93a39879fb1e9a86b9f3dbe56176c0a41f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-28T21:34:41Z",
+          "recording_operation_id": "depth-baseline-check-2d7ced5d227a40fbac4c135638bda2d5",
+          "scoped_inputs_sha256": "e916929ddc03e192f181f591d917b5d5c033e6476f4b3c6ae289a374918ff4ad",
+          "source": "campaign-unity/Evidence/combat-depth-planning-20261028/upgrade-balance-baseline.log",
+          "source_normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f",
+          "summary": "3/3 current production-model checks passed in51.55s. Historical fixtures remain unchanged. Model checks do not establish renderer, device, long-duration endurance or exact-head hosted acceptance.",
+          "task_subject_sha256": "161454eff45ffeced0544fec69cd1e586a842346f4a31cad4b708f3c1af4bc96"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-wave-endurance.mjs",
+            "campaign-unity\\Evidence\\combat-depth-planning-20261028\\first-hit-research-fixtures\\manifest.json",
+            "campaign-unity\\Evidence\\combat-depth-planning-20261028\\foundation-5x-smoke-observer-fixed",
+            "--smoke",
+            "--smoke-seconds=180",
+            "--research"
+          ],
+          "criterion_subject_sha256": "6318b5376ebe703a4e4dfc48dd2eca93a39879fb1e9a86b9f3dbe56176c0a41f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-28T21:48:29Z",
+          "recording_operation_id": "five-x-smoke-29a4b24074dd4ccf98fdcad41915cf60",
+          "scoped_inputs_sha256": "f3e1e484a7d2b51152d762254defb70f88defbec18022586efa6b5f7527f8511",
+          "source": "campaign-unity/Evidence/combat-depth-planning-20261028/foundation-5x-smoke-observer-fixed/result.json",
+          "source_normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f",
+          "summary": "Owned headless5x smoke passes180.767active seconds,176fresh samples, real29-level2619Scrap purchase,96matching storage write/readbacks,zeroerrors, final source/served bindings verified. Seeded diagnostic only, not endurance/device/audio acceptance. Headless frame and renderer-JS-heap baseline retained; CPU-step/Wasm/device measurements remain unavailable. E2E_LIVE_URL=http://127.0.0.1:4174/singedTerra/.",
+          "task_subject_sha256": "161454eff45ffeced0544fec69cd1e586a842346f4a31cad4b708f3c1af4bc96"
+        },
+        {
+          "argv": [
+            "gh",
+            "pr",
+            "checks",
+            "546",
+            "--repo",
+            "SUaDtL/singedTerra",
+            "--watch"
+          ],
+          "criterion_subject_sha256": "6318b5376ebe703a4e4dfc48dd2eca93a39879fb1e9a86b9f3dbe56176c0a41f",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-28T22:24:46Z",
+          "recording_operation_id": "depth-foundation-green-8b6e5ad703324617b9e3beb491805573",
+          "scoped_inputs_sha256": "46a989b5ec5b1f76e1cf7ed84ce440cd812058e475d24fc36a7446aec9efb0ea",
+          "source": "campaign-unity/Evidence/combat-depth-planning-20261028/foundation-1893-ci-green.json",
+          "source_normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f",
+          "summary": "PR546 head remains1893bbd92135555eeb021656b38f532eb9a0cbcb. CI40775828783 completed success: all24 jobs, including all10 lifecycle shards and combined rendering-guardrails job123136622229. CodeQL40775828731 completed success. gh watcher exited0 and fresh connector readback confirmed workflow and aggregate completion. Corrected foundation browser integration dependency is satisfied. Draft PR and Windows/Android/device/audio/endurance/release obligations remain distinct and unfinished.",
+          "task_subject_sha256": "27e18978f48be2002800e3434a2ad60a6641f47577c21075f451417ac731c0a8"
+        }
+      ]
+    },
+    "tasks": {
+      "T-ARMS": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-BALANCE": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-BASE": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "IN_PROGRESS"
+      },
+      "T-CAMPAIGN": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-DELIVERY": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-ENEMIES": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-PRESENT": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      },
+      "T-RULES": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "PENDING"
+      }
+    }
+  },
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "88e0298b14c90736e2d77757b047649ee59dee2424d473fe7133a2917211755c",
+    "normative_sha256": "d1950d816707ebda9bbc02d4a202a4e8b1c9d64bec33d41c0b5133fe6e7655ea",
+    "symbol_count": 28
+  },
+  "kind": "plan",
+  "normative": {
+    "baseline": {
+      "commit": "c6b32cdef661743a455f5373bd72144c437b2209",
+      "observed_date": "2026-10-28",
+      "repository": "https://github.com/SUaDtL/singedTerra"
+    },
+    "checkpoints": [
+      {
+        "depends_on": [],
+        "exit": "Inherited failures have a truthful disposition; baseline and independent comparison policy exist.",
+        "id": "CP-BASE",
+        "tasks": [
+          "T-BASE"
+        ],
+        "title": "Qualified baseline and retained rules"
+      },
+      {
+        "depends_on": [
+          "CP-BASE"
+        ],
+        "exit": "New mechanics work through one domain and transaction owner; old runs preserve their rules.",
+        "id": "CP-DOMAIN",
+        "tasks": [
+          "T-RULES",
+          "T-ENEMIES",
+          "T-ARMS"
+        ],
+        "title": "Compatible combat and armaments"
+      },
+      {
+        "depends_on": [
+          "CP-DOMAIN"
+        ],
+        "exit": "Four tiers and five fittings are discoverable, readable and playable through shared surfaces.",
+        "id": "CP-EXPERIENCE",
+        "tasks": [
+          "T-CAMPAIGN",
+          "T-PRESENT"
+        ],
+        "title": "A coherent expanded campaign"
+      },
+      {
+        "depends_on": [
+          "CP-EXPERIENCE"
+        ],
+        "exit": "Earned progression is measured; actual source-bound gameplay/build/platform results support each claim.",
+        "id": "CP-VERIFY",
+        "tasks": [
+          "T-BALANCE",
+          "T-DELIVERY"
+        ],
+        "title": "Balanced and qualified candidate"
+      }
+    ],
+    "criterion_dispositions": [],
+    "prerequisites": [
+      {
+        "id": "PRE-OWNER",
+        "kind": "decision",
+        "requirement": "Owner approved the presented combat-depth scope and said Approve continue on 2026-10-28. Execute the agreed roster/unlock/backfill scope without another approval ceremony; scope changes and publication remain separately governed.",
+        "source_refs": [
+          "SRC-OWNER"
+        ],
+        "task_refs": [
+          "T-BASE",
+          "T-RULES",
+          "T-ENEMIES",
+          "T-ARMS",
+          "T-CAMPAIGN",
+          "T-PRESENT",
+          "T-BALANCE",
+          "T-DELIVERY"
+        ],
+        "title": "Owner selects this next sprint"
+      },
+      {
+        "id": "PRE-BASE",
+        "kind": "fact",
+        "requirement": "Refresh PR 543/544/546 state, resolve inherited foundation CI/browser blockers in their existing scope and qualify the source used for new combat. Do not mark foundation complete or copy its unresolved work into this sprint. No merge is required merely to draft this plan. T-BASE may perform independent baseline inspection and capture while this remains unsatisfied; this exception does not permit new combat integration.",
+        "source_refs": [
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-RELEASE"
+        ],
+        "task_refs": [
+          "T-RULES",
+          "T-ENEMIES",
+          "T-ARMS",
+          "T-CAMPAIGN",
+          "T-PRESENT",
+          "T-BALANCE",
+          "T-DELIVERY"
+        ],
+        "title": "Verified foundation integration base"
+      },
+      {
+        "id": "PRE-DEVICE",
+        "kind": "fact",
+        "requirement": "A real compatible Android device with authorized install/debug access is available for physical lifecycle/audio/performance checks. Missing access blocks Android acceptance only; it does not stop independent domain work or authorize emulator evidence as device proof.",
+        "source_refs": [
+          "SRC-RELEASE"
+        ],
+        "task_refs": [
+          "T-DELIVERY"
+        ],
+        "title": "Physical Android qualification device"
+      }
+    ],
+    "retired_symbols": [],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "This is a next-sprint proposal on the existing checkout, not more implementation piled onto draft PR 546. Foundation CI repair and its outstanding qualification remain owned by ST-LS-ARCH-PLAN. After approval and a qualified baseline, execute these eight work packages in dependency order; delivery artifacts form a separate coherent candidate.",
+            "type": "paragraph"
+          },
+          {
+            "items": [
+              "1. Freeze the qualified base and earned comparison matrix.",
+              "2. Establish saved rule editions and migration before introducing mechanics.",
+              "3. Add bounded enemy roles, then new automatic armaments and their upgrade tracks.",
+              "4. Author tiers/environments and finish actual visual, audio and information surfaces.",
+              "5. Calibrate earned play and qualify the integrated candidate on each claimed target."
+            ],
+            "refs": [],
+            "type": "list"
+          }
+        ],
+        "id": "SEC-PLAN",
+        "title": "Sequence and scope boundary"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "No gameplay, build, migration or endurance test was run to create this plan. Native artifact validation checks structure and coverage only. Commands marked proposed require new focused test files. Actual Unity/native/browser journeys and real duration are explicit observable checks in T-DELIVERY, not fabricated command exit codes.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Live planning check: foundation CI run 40625861839 failed; CodeQL passed. Inspected shard 3 reports a finalized-idle result callback/cue/lifecycle assertion. A correction needs diagnosis in the current foundation scope; this plan neither weakens the assertion nor claims its cause.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-EVIDENCE",
+        "title": "Planned verification, not reported results"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "The owner approved content names, unlock points, elite cadence and no-Salvage historical unlock backfill on 2026-10-28. Numeric combat/economy coefficients are calibrated within those choices, with benchmark evidence before integration. A materially different mechanic, extra system or progression policy returns to scope review.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "No device purchase, dependency install, background automation, PR merge, public deployment or store submission is part of planning approval. Optional guidance must remain disableable; the existing paused user run and preview are preserved.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-REVIEW",
+        "title": "Approval covers a concrete candidate"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-OWNER",
+        "locator": "Conversation, 2026-10-28",
+        "note": "Owner requested next-sprint planning, then explicitly approved the presented combat-depth specification/plan and said Approve continue on 2026-10-28. Execution is authorized within this scope; merge/publication remain separate.",
+        "title": "Next sprint planning request",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-INTENT",
+        "locator": "Conversation: tier selector, module callouts, waves/resume, farming pacing and architecture sprint",
+        "note": "Broad coherent sprints; scalable tier/fitting windows; distinct environments with possible later revisits; optional prompts can be disabled; wave clears and checkpoints; lower-tier farming remains useful; 5x maximum and roughly 10-12 hours for a mature 5000-wave farm; real-time research uses Salvage.",
+        "title": "Established player priorities",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-STACK",
+        "locator": "Live GitHub PRs 546, 544 and 543, read 2026-10-28",
+        "note": "All three remain open drafts. PR 546 head c6b32cde is based on 544 at 07dc13c0, which is based on 543 at a17e2ff5. PR 541 is merged. Do not duplicate their implementation.",
+        "title": "Current foundation and dependency stack",
+        "type": "repository",
+        "url": "https://github.com/SUaDtL/singedTerra/pull/546"
+      },
+      {
+        "id": "SRC-CI",
+        "locator": "Run 40625861839 at c6b32cde; job 122610637940",
+        "note": "CI failed in ten Last Stand lifecycle shards; core/build, tier, product, shards 11/12 and Edge passed. CodeQL 40625861810 passed. Inspected shard 3 fails validateAwayAudioReturn: Finalized idle result cannot admit combat callbacks, cues or an active lifecycle. Root cause not established by this planning read.",
+        "title": "Current foundation CI result",
+        "type": "repository",
+        "url": "https://github.com/SUaDtL/singedTerra/actions/runs/40625861839"
+      },
+      {
+        "id": "SRC-ARCH",
+        "locator": "campaign-unity/docs/LAST-STAND-ARCHITECTURE.md",
+        "note": "Presentation -\u003e application -\u003e domain; typed content, one profile transaction owner, explicit platform capabilities and independent test oracles. Native ST-LS-ARCH-SPEC CR-CONTENT and CR-PLATFORM were read.",
+        "title": "Shared owner map",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CONTENT",
+        "locator": "campaign-unity/Unity/Assets/Scripts/Content/LastStandContentManifest.cs; campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs; campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs",
+        "note": "Two tiers/environments; Repair, Launcher and Scattergun; real validated selection and milestone graph. Current content manifest does not yet define general enemy archetypes.",
+        "title": "Actual shipped candidate catalogs",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-COMBAT",
+        "locator": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs; campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs; campaign-unity/Unity/Assets/Scripts/LastStandWaveInformation.cs",
+        "note": "Close and Ranged foes; finite groups up to 20 and model capacity 32; no enemy armor; wave information currently reports Armor: none and equal value for each type.",
+        "title": "Current enemy and wave rules",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-REWARDS",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs; campaign-unity/docs/LAST-STAND-ROADMAP.md",
+        "note": "Tier 1 wave 100 unlocks Scattergun; wave 300 unlocks Tier 2 without ending the run. Stable first-clear ledger and repeatable Salvage; existing eight-track research economy and retained editions.",
+        "title": "Current progression and rewards",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-RELEASE",
+        "locator": "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md; campaign-unity/docs/last-stand-architecture/validation.json",
+        "note": "Three verified builds exist. Current exact-head browser CI is red, Windows foreground setup has a host limit, Android device checks, funded/offline research, writer ownership and real-duration endurance remain open. Existing records are not a public release.",
+        "title": "Qualification still outstanding",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CHECKS",
+        "locator": ".codearbiter/tech-stack.md; .codearbiter/coding-standards.md; .codearbiter/security-controls.md; campaign-unity/Tools/last_stand_architecture/run_pure_checks.py",
+        "note": "Use existing pure/compiler/build/source verification and shared UI owners; keep legacy TypeScript modes separate. No new service, runtime dependency, account authority or payment path is proposed.",
+        "title": "Maintained commands and boundaries",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "spec_ref": {
+      "artifact_id": "ST-LS-DEPTH-SPEC",
+      "binding_mode": "draft_preview",
+      "normative_sha256": "b7310224e91324a4f40b7de2eff63d0cbb373df4861d5240ce07a76226b6c95f"
+    },
+    "summary": "Owner-approved on 2026-10-28: eight work packages for four tiers, five fittings and varied finite waves. Foundation qualification remains unfinished and must precede new combat integration.",
+    "tasks": [
+      {
+        "checkpoint": "CP-BASE",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-BASE",
+          "ST-LS-DEPTH-SPEC#CR-BALANCE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Integration base and inherited obligations are explicit; baseline fixtures and comparison policy are committed before changed expectations."
+        ],
+        "execution_scope": "CP-BASE",
+        "id": "T-BASE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/baseline.md"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_combat_depth"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/baseline.json"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/upgrade-economy-baseline.json"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/periodic-bulk-baseline.json"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/baseline-combat.png"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/baseline-shop-portrait.png"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Recheck current PRs 543/544/546, source and hosted checks. Record inherited defects under the foundation plan; require corrected exact-head browser CI before combat integration. Reuse a suitable checkout and retain one preview.",
+          "Freeze source-bound legacy save/combat/economy fixtures, current player-facing layout and earned progression trajectories. Do not regenerate expected old behavior from changed code.",
+          "Define equal-investment Repair/Launcher/Scattergun/Mortar/Railgun matchup matrix and measurement policy. Record which observations are real play, seeded fixtures, model projections or physical-device results.",
+          "Capture current 5x frame/step/memory baselines where available and define candidate budgets before adding content; choose a real Android reference device at qualification time."
+        ],
+        "title": "Establish the qualified baseline and measurement matrix",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "campaign-unity/Tools/last_stand_architecture/run_pure_checks.py"
+            ],
+            "assertion": "Shared-owner, content-boundary and retained-baseline checks pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_wave_model.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_unspawned_or_live_enemy_prevents_clear",
+              "test_pause_and_speed_preserve_wave_outcomes",
+              "test_long_run_has_bounded_state",
+              "test_simultaneous_last_kill_and_defeat",
+              "test_two_thousand_wave_checkpoint_and_numeric_bounds",
+              "test_five_thousand_wave_restore_and_bounded_state",
+              "test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull",
+              "test_midwave_and_inconsistent_checkpoints_are_rejected",
+              "test_scattergun_hits_distinct_targets_without_repair",
+              "test_authored_eighteen_tiers_resolve_and_restore_without_fallback"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_research",
+              "-p",
+              "test_upgrade_balance.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_mature_farming_target_includes_all_ticks_and_real_effects",
+              "test_income_investment_has_a_measured_tradeoff",
+              "test_permanent_investment_keeps_distinct_farming_stages"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-DOMAIN",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-CONTENT",
+          "ST-LS-DEPTH-SPEC#CR-SAVE"
+        ],
+        "depends_on": [
+          "T-BASE"
+        ],
+        "done_when": [
+          "Old golden checkpoints and prices retain exact behavior; migrated data and new-run edition selection survive failure/retry with no repeated rewards."
+        ],
+        "execution_scope": "CP-DOMAIN",
+        "id": "T-RULES",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/Content/LastStandContentManifest.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandEconomyCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandSaveJson.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandWaveInformation.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandLegacySave.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs.meta"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_combat_depth/test_rules.py"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/Tools/last_stand_combat_depth/RulesCompatibilityChecks.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_source_closure.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_architecture/FoundationBaselineChecks.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_architecture/test_foundation_baseline.py"
+          },
+          {
+            "action": "modify",
+            "path": ".github/workflows/ci.yml"
+          },
+          {
+            "action": "modify",
+            "path": "scripts/ci/ciWorkflow.test.mjs"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Extend stable typed definitions for enemies, fitting mechanics and per-edition content selection; keep UI and platform imports out of domain content.",
+          "Implement atomic forward migration with neutral new track/state fields and stable ID adapters. Pin old active runs to their entire old combat/content/economy interpretation.",
+          "Decode each historical shape against retained definitions before expanding catalogs. The v5 forward migration preserves its existing research/history objects; only formats lacking them may initialize them. Separate frozen old-run continuation expectations from intentionally new deployment, without regenerating historical goldens. Wire new actual-domain checks into existing CI selection.",
+          "Implement proposed best-wave unlock backfill without repeat currency and without invented history; preserve research queues, preferences, history and fractional balances.",
+          "Reject duplicate/missing/cyclic definitions before packaging; exercise old supported versions, unknown future versions, interrupted writes and stale ownership against actual storage/transaction owners."
+        ],
+        "title": "Version combat content and migrate profiles safely",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_combat_depth",
+              "-p",
+              "test_*.py",
+              "-v"
+            ],
+            "assertion": "New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_legacy_run_retains_complete_rules",
+              "test_atomic_profile_migration_and_unlock_backfill",
+              "test_unknown_version_preserves_bytes"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_research",
+              "-p",
+              "test_save_codec.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_utc_and_lifetime_milliseconds_preserve_exact_integers",
+              "test_wide_numbers_remain_bounded_without_coercing_old_fields"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_checkpoint_store.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_starting_checkpoint_survives_reload",
+              "test_legacy_migration_preserves_pending_claim_once",
+              "test_checkpoint_rewards_commit_once_under_write_faults",
+              "test_midwave_purchase_and_cost_roll_back_together",
+              "test_first_clear_rewards_and_unlocks_across_runs",
+              "test_future_or_conflicting_save_preserves_original_bytes",
+              "test_mutual_death_banks_and_finalizes_atomically",
+              "test_permanent_purchases_preserve_active_deployment_stats",
+              "test_five_thousand_wave_save_restore_and_bounded_size"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "campaign-unity/Tools/last_stand_architecture/run_pure_checks.py"
+            ],
+            "assertion": "Shared-owner, content-boundary and retained-baseline checks pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-DOMAIN",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-ENEMIES",
+          "ST-LS-DEPTH-SPEC#CR-CONTENT",
+          "ST-LS-DEPTH-SPEC#CR-SAVE"
+        ],
+        "depends_on": [
+          "T-RULES"
+        ],
+        "done_when": [
+          "New roles create distinct pressure and real pure-domain tests prove finite wave resolution and legacy parity."
+        ],
+        "execution_scope": "CP-DOMAIN",
+        "id": "T-ENEMIES",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Add concrete pure mechanics for Swarmer, Armored Brute and Siege Elite using saved edition routing; retain legacy Close/Ranged outputs.",
+          "Make new-wave composition deterministic, replace a normal slot for each scheduled elite, and retain the finite enemy count/capacity bound.",
+          "Implement shared armor/penetration, attack telegraph timing and deterministic kill ordering. Keep damage, death, reward and terminal transitions under existing owners.",
+          "Test empty/last-enemy, simultaneous kills, wave boundary, pause/0.5-5x, high wave arithmetic and checkpoint-resume boundaries without substituting fake domain classes."
+        ],
+        "title": "Implement enemy roles and bounded elite waves",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_combat_depth",
+              "-p",
+              "test_*.py",
+              "-v"
+            ],
+            "assertion": "New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_deterministic_role_composition_and_elite_replacement",
+              "test_armor_damage_and_post_death_guards",
+              "test_wave_checkpoint_replays_new_mechanics"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_wave_model.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_unspawned_or_live_enemy_prevents_clear",
+              "test_pause_and_speed_preserve_wave_outcomes",
+              "test_long_run_has_bounded_state",
+              "test_simultaneous_last_kill_and_defeat",
+              "test_two_thousand_wave_checkpoint_and_numeric_bounds",
+              "test_five_thousand_wave_restore_and_bounded_state",
+              "test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull",
+              "test_midwave_and_inconsistent_checkpoints_are_rejected",
+              "test_scattergun_hits_distinct_targets_without_repair",
+              "test_authored_eighteen_tiers_resolve_and_restore_without_fallback"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "campaign-unity/Tools/last_stand_architecture/run_pure_checks.py"
+            ],
+            "assertion": "Shared-owner, content-boundary and retained-baseline checks pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-DOMAIN",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-ARMS",
+          "ST-LS-DEPTH-SPEC#CR-CONTENT",
+          "ST-LS-DEPTH-SPEC#CR-SAVE"
+        ],
+        "depends_on": [
+          "T-ENEMIES"
+        ],
+        "done_when": [
+          "Both fittings work in real combat and have meaningful quote/effect projections; old fittings and saved purchases remain correct."
+        ],
+        "execution_scope": "CP-DOMAIN",
+        "id": "T-ARMS",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/Application/LastStandPurchaseCoordinator.cs",
+          "campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Implement deterministic area hits and armor-penetrating single-target fire; keep main cannon plus one auxiliary fitting.",
+          "Add one relevant permanent/run track per new fitting, exact bulk quotes and active-fitting applicability through the existing ledger and purchase coordinator.",
+          "Connect Tier 1 wave 500 Mortar and Tier 2 wave 100 Railgun unlocks; preserve old fittings and valid legacy active runs.",
+          "Test stale quotes, insufficient funds, caps, locked fitting, incompatible track, multiple targets, same-frame death and failed-save retry with no double spending."
+        ],
+        "title": "Add Mortar and Railgun through the existing shop and fitting system",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_combat_depth",
+              "-p",
+              "test_*.py",
+              "-v"
+            ],
+            "assertion": "New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_mortar_hits_each_target_once",
+              "test_railgun_penetration_and_old_weapon_mitigation",
+              "test_new_fitting_quote_and_failed_save_atomicity"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_shop",
+              "-p",
+              "test_shop.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_current_level_cap",
+              "test_next_price_independent_of_persistent",
+              "test_cap_refusal",
+              "test_new_run_reset_and_resume",
+              "test_invalid_config"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_research",
+              "-p",
+              "test_upgrade_economy.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_no_track_maxes_from_first_pass_wave_300_budget",
+              "test_late_wave_base_income_outgrows_flat_scrap_ceiling",
+              "test_early_wave_bounty_increases_without_repricing_saved_runs",
+              "test_reward_preview_matches_paid_kills_and_fractional_carry_without_mutation",
+              "test_legacy_prices_roster_and_prospective_research_income_restore",
+              "test_fractional_income_research_epochs_and_checkpoint_rollback",
+              "test_bounded_income_prefix_matches_individual_production_wave_events",
+              "test_permanent_starting_benefit_and_matched_build_scrap_savings",
+              "test_bulk_quotes_are_exact_partial_affordable_and_cap_bounded",
+              "test_bulk_intent_commits_once_rejects_stale_and_restores_paid_levels",
+              "test_pinned_run_cards_and_bulk_effects_match_actual_combat"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-EXPERIENCE",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-TIERS",
+          "ST-LS-DEPTH-SPEC#CR-CONTENT",
+          "ST-LS-DEPTH-SPEC#CR-INFO"
+        ],
+        "depends_on": [
+          "T-ARMS"
+        ],
+        "done_when": [
+          "Four tiers are playable through existing selectors; milestone discovery, locked previews and every unlock work without hard-coded button/count growth."
+        ],
+        "execution_scope": "CP-EXPERIENCE",
+        "id": "T-CAMPAIGN",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandEnvironmentCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/Content/LastStandContentManifest.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandGarageView.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandTierHudText.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scenes/LastStandPrototype.unity"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Author Cinder Basin and Storm Foundry with distinct geometry/props, palette and lighting using reviewed existing assets where suitable; do not treat a color filter alone as a biome.",
+          "Unlock each new tier at prior-tier wave 300; authored enemy mixes and rewards read the same catalog. Unlocking does not select or enter the tier.",
+          "Extend the existing tier/fitting window and next-milestone presentation, showing only unlocked tiers plus one locked preview.",
+          "Use a shared read model for progression discovery and guaranteed reward receipts. Optional suggestions obey Settings; essential information remains available manually."
+        ],
+        "title": "Author tiers, environments and progression discovery",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_combat_depth",
+              "-p",
+              "test_*.py",
+              "-v"
+            ],
+            "assertion": "New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_tier_unlock_does_not_promote_active_run",
+              "test_only_first_locked_tier_visible",
+              "test_milestone_unlock_and_receipt_exactly_once"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "campaign-unity/Tools/last_stand_architecture/run_pure_checks.py"
+            ],
+            "assertion": "Shared-owner, content-boundary and retained-baseline checks pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_controls",
+              "-p",
+              "test_menu.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_imported_scene_controls"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-EXPERIENCE",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-INFO",
+          "ST-LS-DEPTH-SPEC#CR-ARMS",
+          "ST-LS-DEPTH-SPEC#CR-ENEMIES"
+        ],
+        "depends_on": [
+          "T-CAMPAIGN"
+        ],
+        "done_when": [
+          "Rendered matches and UI demonstrate every mechanic; no jammed toolbar, detached callout, clipped price, stale inventory or misleading stat."
+        ],
+        "execution_scope": "CP-EXPERIENCE",
+        "id": "T-PRESENT",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/EncounterView.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/TankPresentation.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandFittingCallout.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandWaveInformation.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandShopPresentation.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/contracts/last-stand-observation-v1.json"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandShopHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandShopChecks.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_shop/test_shop_ui.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_shop/test_shop_layout.py"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandUiPrimitives.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandModalHost.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Build visible tank attachments, correct muzzle/impact anchors and distinct bounded feedback. Keep callout lines attached to the selected module across aspect ratios.",
+          "Give enemy roles recognizable silhouettes/movement and readable elite warning cues in full/reduced effects; do not rely on color alone.",
+          "Extend current-wave information with actual per-type armor/damage/value, and armament previews with cadence/area/penetration tradeoffs. Keep price and value units together.",
+          "Reuse shared chrome/modal/scroll/focus/layout and version the observation shape if needed; update real emitters and consumers together. Check desktop, portrait, short landscape, keyboard and touch.",
+          "Fix the retained390px portrait shop level/cap clipping through shared card geometry/measurement. Add an actual-font failing regression for multi-digit levels through2500/5000, title separation, full cap and long prices across supported viewports. Keep bounded complete headers without global font/overflow changes or per-track layout special cases."
+        ],
+        "title": "Make new enemies and modules readable in actual play",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_combat_depth",
+              "-p",
+              "test_*.py",
+              "-v"
+            ],
+            "assertion": "New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_wave_stats_use_resolved_enemy_and_reward_values",
+              "test_new_fittings_use_shared_selector_and_callout_contract"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_research",
+              "-p",
+              "test_wave_information.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_current_wave_stats_rewards_and_read_only_projection"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_shop",
+              "-p",
+              "test_shop_layout.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_shop_five_profiles_scroll_and_required_controls",
+              "test_shop_text_contrast_targets_and_refusal_bounds",
+              "test_shop_compact_meaningful_summary",
+              "test_shop_measured_long_notice",
+              "test_shop_short_landscape_closed_recovery"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "campaign-unity/Tools/last_stand_architecture/run_pure_checks.py"
+            ],
+            "assertion": "Shared-owner, content-boundary and retained-baseline checks pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-VERIFY",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-BALANCE",
+          "ST-LS-DEPTH-SPEC#CR-TIERS",
+          "ST-LS-DEPTH-SPEC#CR-ENEMIES",
+          "ST-LS-DEPTH-SPEC#CR-ARMS"
+        ],
+        "depends_on": [
+          "T-PRESENT"
+        ],
+        "done_when": [
+          "Measured earned paths satisfy CR-BALANCE with disclosed tradeoffs; coefficients are finalized before playable qualification."
+        ],
+        "execution_scope": "CP-VERIFY",
+        "id": "T-BALANCE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_research/measure_upgrade_economy.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_waves/test_long_run_economy.py"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/balance.md"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandEconomyCatalog.cs",
+          "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Run the committed equal-investment benchmark matrix using the production model and earned purchases/research. Publish numeric parameters, seeds, policies, damage/survival, Scrap and Salvage per active hour.",
+          "Tune within the approved mechanics/unlock policy so area, penetration, sustain and existing fittings each have a useful matchup. No universal winner across the benchmark suite.",
+          "Show sustainable lower-tier farming versus premature promotion, early affordability without premature gold-boxing, and capped-overflow behavior beyond wave 5000.",
+          "Compare mature 5000-wave pacing at 5x with the 10-12-hour direction without claiming unimplemented Tier 10 balance or converting accelerated simulation into endurance proof."
+        ],
+        "title": "Calibrate earned builds and sustained farming",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_combat_depth",
+              "-p",
+              "test_*.py",
+              "-v"
+            ],
+            "assertion": "New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_equal_investment_matchup_tradeoffs",
+              "test_lower_tier_farming_beats_premature_push",
+              "test_early_income_cannot_cap_long_term_tracks"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_research",
+              "-p",
+              "test_upgrade_balance.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_mature_farming_target_includes_all_ticks_and_real_effects",
+              "test_income_investment_has_a_measured_tradeoff",
+              "test_permanent_investment_keeps_distinct_farming_stages"
+            ]
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_waves",
+              "-p",
+              "test_long_run_economy.py",
+              "-v"
+            ],
+            "assertion": "Affected maintained production checks pass; retain raw results and independent expectations.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_existing_investments_preserved",
+              "test_long_run_cost_and_effect_bounds",
+              "test_lower_tier_farming_remains_viable_after_unlock"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-VERIFY",
+        "criterion_refs": [
+          "ST-LS-DEPTH-SPEC#CR-QUALIFY",
+          "ST-LS-DEPTH-SPEC#CR-SAVE",
+          "ST-LS-DEPTH-SPEC#CR-INFO",
+          "ST-LS-DEPTH-SPEC#CR-BASE"
+        ],
+        "depends_on": [
+          "T-BALANCE"
+        ],
+        "done_when": [
+          "The candidate is reviewable and required actual checks pass; no target is declared qualified with unrun device, endurance or inherited failure obligations."
+        ],
+        "execution_scope": "CP-VERIFY",
+        "id": "T-DELIVERY",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "e2e/helpers/lastStandJourney.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "scripts/ci/lastStandWaveQualification.mjs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/verify_last_stand_loop.py"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md"
+          },
+          {
+            "action": "create",
+            "path": "campaign-unity/docs/last-stand-combat-depth/validation.json"
+          }
+        ],
+        "rollback": "Preserve player data and captured old-version fixtures. Before real save migration, retain a recoverable backup and forward-recovery path. Do not run older binaries against migrated data without proven compatibility; revert only isolated unshipped source changes. No broad reset, save deletion or unrelated cleanup.",
+        "shared_inputs": [
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs",
+          "campaign-unity/Unity/Assets/Scripts/Platform",
+          "campaign-unity/Tools/build_last_stand.py"
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-INTENT",
+          "SRC-STACK",
+          "SRC-CI",
+          "SRC-ARCH",
+          "SRC-CONTENT",
+          "SRC-COMBAT",
+          "SRC-REWARDS",
+          "SRC-RELEASE",
+          "SRC-CHECKS"
+        ],
+        "steps": [
+          "Run affected pure, migration, application and UI checks; build current-source WebGL, Windows and Android with existing pinned tools. Package WebGL only through existing source admission.",
+          "Use normal player controls to demonstrate new fitting/tier loop, upgrade, wave reward, checkpoint reload and old saved-run recovery. Clearly separate earned play from test fixtures used to reach late content.",
+          "Complete exact-head hosted CI and retained background/no-replay checks. On Windows check restart/abnormal termination; on a physical Android device check touch, suspend/kill/relaunch, settings, durability, audio and measured performance. Missing hardware remains an Android blocker.",
+          "Measure sustained 5x frame/step time, memory and physical-device thermal behavior; retain an actual long farming observation separately from fast simulations. Reuse prior evidence only when its source applicability is demonstrated.",
+          "Present one current local preview, source-bound review media and explicit target pass/pending matrix. Stage a reviewable candidate only after approval; merge/publication remains separately authorized. Clean only task-owned disposable files using safe paths."
+        ],
+        "title": "Qualify and present the integrated playable candidate",
+        "verification": [
+          {
+            "argv": [
+              "python",
+              "-B",
+              "campaign-unity/Tools/last_stand_architecture/run_pure_checks.py"
+            ],
+            "assertion": "Shared-owner, content-boundary and retained-baseline checks pass.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "python",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_combat_depth",
+              "-p",
+              "test_*.py",
+              "-v"
+            ],
+            "assertion": "New actual-domain combat/content/migration tests and negative controls pass; fixtures are not earned-player proof.",
+            "availability": "proposed",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_legacy_run_retains_complete_rules",
+              "test_wave_checkpoint_replays_new_mechanics",
+              "test_new_fitting_quote_and_failed_save_atomicity"
+            ]
+          },
+          {
+            "argv": [
+              "node",
+              "scripts/assets/verify-last-stand-source.mjs"
+            ],
+            "assertion": "Packaged player matches current runtime source.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          },
+          {
+            "argv": [
+              "npm",
+              "run",
+              "build"
+            ],
+            "assertion": "Typecheck and production package succeed after source-bound export.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      }
+    ],
+    "title": "Last Stand combat depth: approved sprint plan"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../specs/last-stand-combat-depth.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 20,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-combat-depth"
+}
+</script>
+</body></html>

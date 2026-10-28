@@ -50,15 +50,23 @@ failed observation and supplies no performance or endurance acceptance.
 The same repair keeps one fresh sampler active during awaited shop/report/run
 transitions. All 22 focused checks and independent review pass, retaining the
 exact five-second bound. An isolated seeded rerun passes 180.767 active seconds,
-176 samples, a rendered 29-level purchase and 96 matching storage write/readbacks.
-It ends at wave 83 with no reported errors and verified final source bindings.
+176 samples and a rendered 29-level purchase. There are 96 matching storage
+write/readbacks from page start through the final summary (91 between the first
+and final summaries). The final summary shows wave 83; the latest observation
+during cleanup reaches wave 84. No errors are reported, and final source
+bindings are verified. Cleanup adds no active-time credit.
 This smoke precedes the final wallet-only review correction; its retained input
 hashes identify that exact driver snapshot. Its headless frame mean is 73.812 ms
 and sampled renderer JavaScript heap peaks at 11,165,320 bytes. These diagnostic
 measurements exclude WebAssembly memory and do not qualify device performance,
 CPU step cost, hardware audio or ten-hour endurance.
-The next combat-depth sprint is approved, with foundation qualification still
-required before new combat integration.
+Current hosted follow-up: foundation head `1893bbd9` passes CI run
+`40775828783`, all 24 jobs including ten lifecycle shards and the final combined
+rendering-guardrails check `123136622229`. CodeQL `40775828731` also passes.
+The PR head was freshly confirmed unchanged after both workflows completed.
+This clears the combat-depth sprint's browser integration dependency; the
+platform, audio and endurance gaps below remain open. Earlier pending/failure
+observations above retain their original historical scope.
 
 ## Target-aware build entry
 
@@ -356,7 +364,7 @@ areas, not an assignment to an unavailable person.
 
 | Gap and severity | Evidence / current limit | Responsible area | Exit evidence |
 | --- | --- | --- | --- |
-| High: remaining browser qualification | The earlier heartbeat package restored the existing paused wave7 checkpoint; that user profile remains untouched by the hit-observation follow-up. The new package passes 13 isolated browser checks for closed-tab research completion, funded transitions, tab ownership/transfer, bulk buying, speed and history. Focused background and first-hit regressions pass. Fresh hosted lifecycle completion remains pending. | Delivery / browser verification | Complete the corrected hosted journey; retain the declared seed limits and earlier successful journeys as historical evidence. Keep only the latest local preview. |
+| High: remaining browser qualification | The earlier heartbeat package restored the existing paused wave7 checkpoint; that user profile remains untouched by the hit-observation follow-up. The new package passes 13 isolated browser checks for closed-tab research completion, funded transitions, tab ownership/transfer, bulk buying, speed and history. Focused background and first-hit regressions pass. Current hosted lifecycle and combined evidence qualification passed at `1893bbd9`; native and endurance checks remain separate. | Delivery / browser verification | Retain the green hosted result, declared seed limits and earlier journeys; requalify affected behavior on the next candidate. Keep only the latest local preview. |
 | High: remaining native player qualification | Earlier pre-heartbeat Windows players passed controls, purchase, saved preference and checkpoint restart at 1024 by 768. Current-candidate interaction and broader device behavior remain unmeasured. | Delivery / platform verification | Recheck the current candidate and record supported input/display targets, abnormal termination and lifecycle behavior. Preserve both earlier native journeys as historical evidence. |
 | High â€” Android lifecycle and durability | No real-device session, suspend/resume, research-clock, interrupted-write or hardware-audio evidence for this candidate. Windows tests cannot qualify Android behavior. | Platform / device verification | Install the identified APK on a recorded device/OS, exercise fresh and returning profiles, background/foreground, forced termination/relaunch, clock behavior, preferences and audio; retain before/after save and observation evidence. |
 | High â€” performance and long-run reliability | A 180-second headless diagnostic frame/renderer-JS-heap baseline exists. Actual target frame time, full memory, thermal behavior and real-duration farming remain unmeasured. Accelerated model tests and this short smoke are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |
