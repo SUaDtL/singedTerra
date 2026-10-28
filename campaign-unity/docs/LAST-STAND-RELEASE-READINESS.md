@@ -5,6 +5,61 @@ It is not a publication, store-submission or device-qualification receipt. The
 current Unity project declares player version `1.0`; the repository package is
 `0.0.0`. Neither is a newly approved public game version.
 
+Current follow-up, October 28: CI run `40625861839` at `c6b32cde` completed
+with failed Last Stand lifecycle checks; CodeQL passed. The retained shard 3
+trace reaches its deferred terminal result, then the idle-result validator
+includes an earlier transition to that result in its observation window. No
+post-finalization callback or played cue appears in that inspected trace.
+The corrected validator passes its regression, 15 focused audio/observer checks
+and 62 related checks. A replay accepts the complete unchanged shard 3 trace;
+this is recorded-data validation, not fresh hosted or rendered-audio proof.
+All nine matching failure stacks were checked. Shard 5 instead fails the
+stronger-cannon first-hit assertion: delayed-callback audio suppression also
+omits the first hit diagnostic. Captured combat counters agree with the model;
+the first retained diagnostic refers to a later shot and reused enemy slot.
+The actual-controller regression fails on the original source and passes after
+separating authoritative hit observations from audio admission. The final Unity
+background sweep passes all six wrappers and seven Editor cases, including both
+damage values under delayed, hidden and retained-debt callbacks. Independent
+review verified the retained source, assembly and log hashes. Browser callers
+now distinguish first-impact evidence from fresh played audio. The related
+browser suite passes 149 checks; both independent reviews pass after correcting
+timestamp, event-order and duplicate-admission checks. The source fix is
+committed as `9ec44f05`. All three players have been rebuilt from matching
+source inventories; fresh hosted proof remains required. These results do not
+clear the other gaps below.
+The fresh package's isolated headless browser research journey passes 13 checks
+with zero browser errors and 11 retained screenshots. It observes completion
+during a real close/reopen, shared-wallet research transitions, two-tab writer
+ownership and transfer, bulk purchase, locked fresh Labs, speed controls through
+5x and exactly-once abandonment/history. Its declared development profiles use
+gifted funding and synthetic prior research. This establishes those browser
+behaviors, not ordinary earned progression, native audio or endurance.
+Follow-up CI `40766130825` at `62f60b53` passes all 23 individual jobs, including
+the ten lifecycle shards. Its final matrix aggregate still rejects a saved
+Salvage/observed-wallet comparison (`3` versus `2`). A legitimate wave committed
+between the running observation and the durable read. The observer repair in
+`3ae1a017` preserves that running observation and captures a separate paused
+checkpoint witness, bound to the actual committed state and source oracle.
+Its actual-caller regression and malformed-boundary controls pass; the final
+related suite passes 154 checks. Independent review passes after closing two
+persisted-boundary validation gaps. Fresh hosted aggregate proof is pending.
+A fresh 5x smoke observation also stopped after its first periodic purchase
+because the observer exceeded its five-second sampling-gap bound. It remains a
+failed observation and supplies no performance or endurance acceptance.
+The same repair keeps one fresh sampler active during awaited shop/report/run
+transitions. All 22 focused checks and independent review pass, retaining the
+exact five-second bound. An isolated seeded rerun passes 180.767 active seconds,
+176 samples, a rendered 29-level purchase and 96 matching storage write/readbacks.
+It ends at wave 83 with no reported errors and verified final source bindings.
+This smoke precedes the final wallet-only review correction; its retained input
+hashes identify that exact driver snapshot. Its headless frame mean is 73.812 ms
+and sampled renderer JavaScript heap peaks at 11,165,320 bytes. These diagnostic
+measurements exclude WebAssembly memory and do not qualify device performance,
+CPU step cost, hardware audio or ten-hour endurance.
+The next combat-depth sprint is approved, with foundation qualification still
+required before new combat integration.
+
 ## Target-aware build entry
 
 `Tools/build_last_stand.py` supports `webgl`, `windows` and `android`, with
@@ -79,7 +134,7 @@ that **original web receipt** with `package_last_stand_web.py` for staging and
 the established source-lock/admission checks; the new target summary does not
 replace or weaken that packaging contract.
 
-## Delivery state on 2026-10-27
+## Delivery state on 2026-10-28
 
 Build receipts below describe their recorded source inventories. A hosted Linux
 failure exposed process-local file-sharing behavior in Mono. Native storage now
@@ -91,9 +146,9 @@ is claimed.
 
 | Target | Measured or observed evidence | Remaining proof |
 | --- | --- | --- |
-| WebGL | Corrected release export passed in [current receipt](../Evidence/last-stand-architecture/build-webgl-20261028T015816Z-3cf813/result.json), then its original export receipt was admitted and packaged. Source/toolchain unchanged; strict TypeScript and production build passed. Port 4174 serves the matching package. | Fresh hosted browser journey, funded/offline research, two-tab ownership, background/audio and endurance remain separate qualification obligations. Earlier rendered journeys below identify their older packages. |
-| Windows | Corrected release [build receipt](../Evidence/last-stand-architecture/build-windows-20261028T020013Z-5689b9/result.json) reports Succeeded and 112,305,051 bytes. Uses x64 Mono and the same source inventory as current WebGL. | Earlier rendered journeys below predate the heartbeat correction. Current packaged interaction, hardware audio, performance, abnormal termination and endurance remain unmeasured. |
-| Android | Corrected ARM64 IL2CPP development [APK receipt](../Evidence/last-stand-architecture/build-android-20261028T021504Z-e86444/result.json) passed. APK 51,393,644 bytes; Android Debug signature verified; source/toolchain unchanged, same source inventory as Windows/WebGL, zero shader diagnostics and no JDK cleanup error. | Real-device interaction, lifecycle, durability, audio and performance qualification. No device or emulator is connected. Earlier rejected Editor-import warnings remain recorded below; no store qualification is claimed. |
+| WebGL | Hit-observation release [receipt](../Evidence/last-stand-architecture/build-webgl-20261028T205905Z-90afa9/result.json) passed, then its original export receipt was admitted and packaged. Source/toolchain unchanged; 3,453 source inputs and 16 payload assets verified; strict TypeScript and production build passed. Port 4174 serves the matching manifest. The isolated research/ownership/speed journey passes 13 checks with a real closed-tab completion. | Fresh hosted lifecycle, native audio, ordinary earned progression and endurance remain separate qualification obligations. The new journey uses declared development profiles; earlier journeys below identify their older packages. |
+| Windows | Hit-observation release [receipt](../Evidence/last-stand-architecture/build-windows-20261028T210240Z-789ab9/result.json) reports Succeeded and 112,305,051 bytes. Uses x64 Mono and the same source inventory as current WebGL. | Earlier rendered journeys below predate the heartbeat and hit-observation corrections. Current player interaction, hardware audio, performance, abnormal termination and endurance remain unmeasured. |
+| Android | ARM64 IL2CPP development [receipt](../Evidence/last-stand-architecture/build-android-20261028T210711Z-0d1bb4/result.json) passed. APK 51,393,788 bytes; Android Debug v2 signature verified; source/toolchain unchanged and the source inventory matches Windows/WebGL. | Real-device interaction, lifecycle, durability, audio and performance qualification. The preceding import attempt was rejected for 18 probe-baker shader warnings; the unchanged-source retry passed the unchanged scanner. Warning-free clean imports and store qualification remain unproven. |
 
 Nine focused build/preflight checks pass. They cover source/toolchain/scene/
 configuration rejection, modified/missing/extra artifact rejection, incomplete
@@ -225,12 +280,21 @@ The corrected heartbeat candidate was rebuilt as
 `build-android-20261028T021504Z-e86444`: 51,393,644 APK bytes, SHA-256
 `b064a65b6f4a7502539a1811d0c924a3fc7a4723892fe809ba9aa4a671188241`.
 Its source inventory `43642e15341c075f695de8d01740b108733017f7cb00ed314076c7bdd4f6defe`
-matches the current Windows/WebGL candidates. The APK debug signature verifies.
+matches that earlier Windows/WebGL candidate set. The APK debug signature verifies.
 The first rebuild was rejected for 18 D3D11 conversion warnings from the
 Editor-only TraceVirtualOffset probe baker during initial import; that shader
 is absent from the Android used-asset list. The unchanged-source Android retry
 passed the same strict whole-log scanner. No warning filtering or receipt
 rewriting was used. Clean-import warning-free repeatability remains unproven.
+
+The hit-observation rebuild at `9ec44f05` repeated the same initial-import
+limitation. Attempt `20261028T210423Z-ce3ee6` remains rejected with 18
+TraceVirtualOffset warnings. The unchanged-source retry `20261028T210711Z-0d1bb4`
+passed: 51,393,788 APK bytes, SHA-256
+`587be690d6b1c776bc9559ae1c11de0b86d1eeff8d86040a90c06ada477beef7`.
+The common Windows/WebGL/Android player source inventory is
+`9c57a2b0f6ff04f28c5d75ebf3deb374fa81ef7d16ba8814b04c6e55aa5bddfe`.
+This is a build and debug-signature result, not physical-device qualification.
 
 The earlier Android logs also contained a shutdown Gradle cleanup error after
 restoring missing embedded tools. Completing the authorized host setup changed
@@ -292,10 +356,10 @@ areas, not an assignment to an unavailable person.
 
 | Gap and severity | Evidence / current limit | Responsible area | Exit evidence |
 | --- | --- | --- | --- |
-| High: remaining browser qualification | Current package opens the permanent shop and restores the existing checkpoint paused at wave7, hull120/120,103Scrap,CannonAttack1. Earlier pre-heartbeat package passed live purchase, wave progression and settings. The hidden-terminal driver now distinguishes completion while hidden from bounded catch-up after return, as the maintained contract requires; focused regression checks pass. Fresh hosted completion, funded/offline research and two-tab qualification remain pending. | Delivery / browser verification | Complete the corrected hosted journey and funded-research and ownership journeys. Preserve earlier successful journeys as historical evidence and keep only the latest local preview. |
+| High: remaining browser qualification | The earlier heartbeat package restored the existing paused wave7 checkpoint; that user profile remains untouched by the hit-observation follow-up. The new package passes 13 isolated browser checks for closed-tab research completion, funded transitions, tab ownership/transfer, bulk buying, speed and history. Focused background and first-hit regressions pass. Fresh hosted lifecycle completion remains pending. | Delivery / browser verification | Complete the corrected hosted journey; retain the declared seed limits and earlier successful journeys as historical evidence. Keep only the latest local preview. |
 | High: remaining native player qualification | Earlier pre-heartbeat Windows players passed controls, purchase, saved preference and checkpoint restart at 1024 by 768. Current-candidate interaction and broader device behavior remain unmeasured. | Delivery / platform verification | Recheck the current candidate and record supported input/display targets, abnormal termination and lifecycle behavior. Preserve both earlier native journeys as historical evidence. |
 | High â€” Android lifecycle and durability | No real-device session, suspend/resume, research-clock, interrupted-write or hardware-audio evidence for this candidate. Windows tests cannot qualify Android behavior. | Platform / device verification | Install the identified APK on a recorded device/OS, exercise fresh and returning profiles, background/foreground, forced termination/relaunch, clock behavior, preferences and audio; retain before/after save and observation evidence. |
-| High â€” performance and long-run reliability | No candidate frame-time, memory, thermal or real-duration farming measurements. Accelerated model tests are available but are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |
+| High â€” performance and long-run reliability | A 180-second headless diagnostic frame/renderer-JS-heap baseline exists. Actual target frame time, full memory, thermal behavior and real-duration farming remain unmeasured. Accelerated model tests and this short smoke are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |
 | High â€” content and economy release depth | The foundation preserves frozen behavior and supplies typed definitions; this does not establish sufficient progression depth or long-term balance. | Game design / economy / content | Review supported tiers, waves, rewards, research and armaments against the maintained progression goals; retain representative play/farming evidence and explicit release-scope acceptance. |
 | High: first-session clarity and accessibility | Shared layouts, focused controls and one packaged desktop first/returning session passed. Touch accessibility and player comprehension acceptance remain unmeasured. | Product UX / accessibility | Recorded checks on supported viewport/input targets, including readable states, focus, navigation, settings, prompts and recovery, with remaining issues dispositioned. |
 | High â€” visual/audio quality and rights | Rendering and source assets exist; hardware listening, final visual acceptance and a complete release-rights decision are not supplied by the build receipts. | Art / audio / product | Asset provenance and license review for the shipped content plus target visual/listening acceptance; retain any known exceptions explicitly. |
