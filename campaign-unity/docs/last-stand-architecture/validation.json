@@ -520,7 +520,7 @@
       "head": "405fb92fedbec1cec1c719f776e7cb8ac97ee2a2",
       "outcome": "failure",
       "run": 40618936400,
-      "reason": "Lifecycle shards 4,6,7,10 reached the hidden natural-terminal check and timed out waiting for the runtime result. Shards 8,9 passed; remaining shards were still running at inspection. New failure under diagnosis; no full hosted acceptance claimed."
+      "reason": "Completed run: lifecycle shards 1,2,4,5,6,7,10 timed out at the hidden natural-terminal check; 3,8,9 passed. Engine/build, CodeQL and other browser checks passed. Recorded browser throttling retained capped processing debt. Maintained UI and wave contracts permit completion on foreground return; the stronger driver deadline is under repair. No full hosted acceptance claimed."
     }
   },
   "latestPreview": {
@@ -529,5 +529,31 @@
     "servedManifestMatchesStaged": true,
     "note": "Existing server reused; HTTP manifest identity verified. Rendered CUA check loaded this package, opened and closed the permanent shop, and resumed the existing checkpoint paused at wave7, hull120/120,103Scrap,CannonAttack1. No purchases or settings changes made. This bounded observation does not qualify funded research, two-tab ownership or endurance.",
     "screenshot": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/heartbeat-current-browser.png"
+  },
+  "hiddenTerminalDriverRepair": {
+    "commit": "d184471d",
+    "helperSha256": "1febb0076d25ca8c22268fc25b03f6bcb7314f033ed2d6d9a6204fba3451f6cd",
+    "cause": "The driver required a terminal result before native visibility return despite retained clock debt under actual browser callback throttling. UI AC-09/AC-10/SEC-03 and later WAVES SEC-LOOP allow bounded reconciliation on return.",
+    "fix": "Distinct hidden and after-native-return completion modes retain raw visibility timing, oracle-derived dwell, capped callback/debt accounting, exact terminal/save checks and no replay. No runtime or browser throttle changes.",
+    "regression": "Actual caller RED before fix; settling pause, report-only deadline and interval-start manipulation also reproduced RED before their narrow corrections.",
+    "focusedPassed": 32,
+    "focusedFailed": 0,
+    "focusedSkipped": 0,
+    "independentReviews": "Final coverage and security PASS on the recorded helper hash; research fixture separately reviewed PASS",
+    "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/hidden-terminal-source-bound-green.log",
+    "capturedReplay": "Actual shard4/7 clock admission passes for82/85 background and return callback pairs, ending Running at ticks3300/3332. Earlier foreground segments also pass. Partial captures are not terminal or browser acceptance.",
+    "replayEvidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/hidden-terminal-clock-replay-source-bound.log",
+    "relatedSuite": {
+      "scope": "All14 scripts/ci/lastStand*.test.mjs files, sequential execution",
+      "passed": 218,
+      "failed": 1,
+      "skipped": 0,
+      "seconds": 53.8737454,
+      "failure": "Unchanged Windows native foreground setup times out before the modified path; document remains hidden while an existing non-task Chrome window covers the target. Retained as a host qualification limit, with no occlusion bypass or user-window changes.",
+      "evidence": "campaign-unity/Evidence/architecture-foundations/native-followup-20261025/hidden-terminal-related-serial.log",
+      "diagnostics": "campaign-unity/Evidence/last-stand-playable-loop/t06/precleanup-diagnostic-guard-qWFEx4/precleanup-observation.json"
+    },
+    "researchFixture": "The broader run also exposed a stale complete-telemetry fixture missing WaveInfo/MenuWaveInfo. Its inventory now derives from the maintained contract, retaining independent required-name and omission checks. Focused4/4 pass; parser/runtime unchanged.",
+    "freshHostedCompletion": "pending"
   }
 }
