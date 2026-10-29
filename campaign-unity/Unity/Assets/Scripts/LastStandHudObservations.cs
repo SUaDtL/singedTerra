@@ -50,11 +50,13 @@ namespace SingedTerra.LastStand
          observedSession=loop.Session;observedSession.Stepped+=ObserveCombat;}
         [Serializable] sealed class ModelObservation
         {
-            public int hull,maximumHull,cannonDamage,launcherDamage,cannonPeriod,repairAmount;
+            public int hull,maximumHull,cannonDamage,launcherDamage,scattergunDamage,mortarDamage,railgunDamage,cannonPeriod,repairAmount;
         }
         static ModelObservation ObserveModel(EncounterModel model) => model == null ? null : new ModelObservation {
             hull = model.Hull, maximumHull = model.CurrentMaximumHull, cannonDamage = model.CurrentCannonDamage,
-            launcherDamage = model.CurrentLauncherDamage, cannonPeriod = model.CurrentCannonPeriod, repairAmount = model.CurrentRepairAmount };
+            launcherDamage = model.CurrentLauncherDamage,scattergunDamage=model.CurrentScattergunDamage,
+            mortarDamage=model.CurrentMortarDamage,railgunDamage=model.CurrentRailgunDamage,
+            cannonPeriod = model.CurrentCannonPeriod, repairAmount = model.CurrentRepairAmount };
         [Serializable] sealed class CardObservation
         {
             public string key,category,currentEffect,nextEffect,price,refusal,reason;
@@ -133,7 +135,7 @@ namespace SingedTerra.LastStand
                 accepted = result.Accepted, refusal = result.Refusal.ToString(), resultVersion = result.Version,
                 chargedScrap = result.ChargedScrap, tick = loop.Session?.Model?.Tick ?? -1, model = ObserveModel(loop.Session?.Model) }));
         }
-        [Serializable] sealed class EventObservation { public string kind; public int slot,amount,rawHit; public bool killed; }
+        [Serializable] sealed class EventObservation { public string kind; public int slot,aimSlot,amount,rawHit; public bool killed; }
         [Serializable] sealed class CombatObservation
         {
             public int runId,tick; public string fitting;
@@ -150,7 +152,7 @@ namespace SingedTerra.LastStand
             {
                 var actual = model.Events[i];
                 bool hit = actual.Kind == EncounterEventKind.CloseHit || actual.Kind == EncounterEventKind.RangedHit;
-                events[i] = new EventObservation { kind = actual.Kind.ToString(), slot = actual.Slot, amount = actual.Amount,
+                events[i] = new EventObservation { kind = actual.Kind.ToString(), slot = actual.Slot, aimSlot=actual.AimSlot,amount = actual.Amount,
                     killed = actual.Killed, rawHit = hit && actual.Slot >= 0 && actual.Slot < model.Foes.Count ? model.Foes[actual.Slot].Damage : 0 };
             }
             Debug.Log("ST_LS_SHOP_COMBAT " + JsonUtility.ToJson(new CombatObservation { runId = runId, tick = model.Tick,

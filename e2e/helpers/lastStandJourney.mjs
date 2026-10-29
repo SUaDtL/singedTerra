@@ -1420,11 +1420,11 @@ function elapsedTicks(before,after) {
   assert.ok(Number.isInteger(after.callbackSteps) && after.callbackSteps>=0 && after.callbackSteps<=128,
     'Background callback step budget exceeded');
 }
-function isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || item?.rules?.startsWith('last-stand-waves-v1:');}
+function isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || /^last-stand-waves-v[12]:/.test(item?.rules??'');}
 export function validateAdmittedClock(before,after) {
   sameDocument(before,after);
   for(const item of [before,after]){
-    assert.match(item.rules??'',/^last-stand-waves-v1:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
+    assert.match(item.rules??'',/^last-stand-waves-v[12]:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
     assert.equal(item.scope,'healthy');assert.equal(item.status,'Running');
     assert.equal(item.paused,false);assert.equal(item.catchingUp,false);assert.equal(item.failed,false);
     assert.equal(item.selectedSpeed,1);assert.equal(item.effectiveSpeed,1);
@@ -1448,7 +1448,15 @@ const MODEL_FIELDS=['tick','hp','kills','spawned','cannon','launcher','healed','
 export function validateModelObservation(observed,oracle) {
   assert.ok(oracle && Object.hasOwn(oracle,observed.tick),'Source-bound model oracle tick absent');
   const expected=oracle[observed.tick];
+  if(expected.rulesVersion){
+    assert.ok(observed.rules?.startsWith(expected.rulesVersion+':'),'Source oracle rules differ');
+    assert.equal(observed.contentVersion,expected.contentVersion,'Source oracle content differs');
+    assert.equal(observed.economyVersion,expected.economyVersion,'Source oracle economy differs');
+    for(const key of ['mortarDamage','railgunDamage'])assert.equal(observed[key],expected[key],'Source oracle effect differs: '+key);
+  }
   for(const key of MODEL_FIELDS)assert.equal(observed[key],expected[key],'Source-bound model '+key+' differs');
+  if(Object.hasOwn(expected,'mortar'))for(const key of ['scattergun','mortar','railgun'])
+    assert.equal(observed[key],expected[key],'Source-bound armament '+key+' differs');
   if(Object.hasOwn(expected,'wave'))for(const key of ['wave','completedWave'])
     assert.equal(observed[key],expected[key],'Source-bound wave '+key+' differs');
 }
@@ -1459,12 +1467,12 @@ function cannonDeployment(deployed,encounters,oracle){
     Number.isSafeInteger(deployed.runId) && Number.isSafeInteger(deployed.sessionRun),
     'Cannon proof requires explicit current document, scope and run identities');
   assert.ok(deployed.action==='deploy' && deployed.phase==='battle' && deployed.saveState==='ready' &&
-    deployed.profileVersion==='last-stand-waves-v1' && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
+    ['last-stand-waves-v1','last-stand-waves-v2'].includes(deployed.profileVersion) && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
     deployed.activeTier===1 && deployed.fittingId==='repair' && [20,30].includes(deployed.cannonDamage),
     'First cannon proof requires its actual current repair deployment');
   const models=encounters.filter(item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun && item.action==='deploy');
   assert.ok(models.length===1 && models[0].t<=deployed.t && models[0].tick===0 && models[0].fitting==='repair' &&
-    models[0].rules.startsWith('last-stand-waves-v1:'),'First cannon proof requires its raw same-run model deployment');
+    models[0].rules.startsWith(deployed.profileVersion+':'),'First cannon proof requires its raw same-run model deployment');
   validateModelObservation(models[0],oracle);
 }
 function cannonCallback(item,deployed,records){
@@ -1667,7 +1675,7 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
   const observed=cues.filter(c=>current(c) && c.t>=loss.t+200 && c.t<=recovered);
   assert.ok(observed.every(c=>Number.isFinite(c.t)),'Invalid current audio cue clock');
   const returnCues=observed.filter(c=>c.t>=returned.t),callbacks=[];
-  const waveRun=before.loop?.profileVersion==='last-stand-waves-v1';
+  const waveRun=['last-stand-waves-v1','last-stand-waves-v2'].includes(before.loop?.profileVersion);
   // The current controller retains its wave profile after ReturnToInspection
   // removes the model. Its finalized result has explicit absent-clock/run fields;
   // it is a silent lifecycle boundary, never an archived combat callback lane.
@@ -1675,11 +1683,11 @@ export function validateAwayAudioReturn({kind,before,begin,recovered,ms,events,c
     item.rules==='playable-prototype-v1' && item.tick===0 && item.wave===0 && item.completedWave===0 &&
     item.locked===false && item.clockTimestamp===-1 && item.clockPending===-1 && item.callbackSteps===0 &&
     item.paused===false && item.failed===false && item.catchingUp===false;
-  const idleLoop=(item,phase)=>current(item) && item.sessionRun===before.run && item.profileVersion==='last-stand-waves-v1' &&
+  const idleLoop=(item,phase)=>current(item) && item.sessionRun===before.run && item.profileVersion===before.loop.profileVersion &&
     item.phase===phase && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
     item.activeTier===0 && item.hasCheckpoint===false && item.tick===0 && item.wave===0 && item.completedWave===0;
   const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop,'result') && before.loop.t>=before.t;
-  assert.equal(waveRun,typeof before.rules==='string' && before.rules.startsWith('last-stand-waves-v1:') || idleWaveResult,
+  assert.equal(waveRun,typeof before.rules==='string' && /^last-stand-waves-v[12]:/.test(before.rules) || idleWaveResult,
     'Native audio interval wave profile and model rules disagree');
   if(idleWaveResult){
     const during=item=>current(item) && item.t>=before.t && item.t<=recovered;
@@ -3563,7 +3571,23 @@ export function validateBackgroundWaveTerminal({interval,evidence,events=interva
 // transaction revisions may advance during Return, reload or explicit Resume.
 // A funded project needs the separate research journey's completion evidence.
 export function assertIdleWaveSave(saved) {
-  assert.equal(saved?.version,5,'Current wave/profile envelope required');
+  assert.ok(saved?.version===5||saved?.version===6,'Supported wave/profile envelope required');
+  if(saved.version===6&&saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint);
+  if(saved.version===5&&saved.checkpoint){
+    const {encounter:e,shop:s}=saved.checkpoint;
+    assert.equal(e?.rulesVersion,'last-stand-waves-v1','Archive envelope cannot contain current rules');
+    assert.ok(Number.isInteger(e.tier)&&e.tier>=1&&e.tier<=2&&Number.isInteger(e.fitting)&&e.fitting>=0&&e.fitting<=2,'Archive content range');
+    assert.ok(!Object.hasOwn(saved.checkpoint,'contentVersion'),'Archive checkpoint has no explicit content field');
+    for(const key of ['mortarShots','railgunShots','nextMortarTick','nextRailgunTick','mortarDamage','railgunDamage'])
+      assert.ok(!Object.hasOwn(e,key),'Current weapon field in archive envelope');
+    if(s){
+      assert.ok(s.version===undefined||s.version===1||s.version===2,'Archive shop schema');
+      if(s.economyVersion!==undefined)assert.ok(['long-run-economy-v1','research-farming-economy-v2','research-farming-economy-v3'].includes(s.economyVersion),'Archive economy');
+      for(const key of ['tier','rewardWave','defeatedMask'])assert.ok(!Object.hasOwn(s,key),'Current ledger field in archive envelope');
+      for(const levels of [s.permanentLevels,s.runPurchases])if(levels)
+        for(const key of ['mortarAttack','railgunAttack'])assert.ok(!Object.hasOwn(levels,key),'Current upgrade in archive envelope');
+    }
+  }
   assert.ok(Number.isSafeInteger(saved.revision)&&saved.revision>0);
   const r=saved.research;assert.equal(r?.version,1);assert.equal(r.catalogVersion,'research-v1');
   assert.ok(Number.isSafeInteger(r.revision)&&r.revision>=0);
@@ -3574,6 +3598,40 @@ export function assertIdleWaveSave(saved) {
   assert.deepEqual(r.partials,Object.fromEntries(Object.keys(empty).map(key=>[key,null])));
   assert.deepEqual(r.slots,[{active:null,queued:null},{active:null,queued:null}]);
   assert.equal(saved.history?.version,1);
+}
+export const WAVE_FITTINGS=Object.freeze(['launcher','repair','scattergun','mortar','railgun']);
+export function assertWaveCheckpointEdition(checkpoint){
+  const e=checkpoint?.encounter,s=checkpoint?.shop;
+  assert.ok(e&&s,'Complete checkpoint edition required');
+  const current=e.rulesVersion==='last-stand-waves-v2';
+  assert.equal(e.rulesVersion,current?'last-stand-waves-v2':'last-stand-waves-v1','Unknown wave rules');
+  assert.equal(checkpoint.contentVersion,current?'last-stand-content-v2':'last-stand-content-v1','Mixed content edition');
+  assert.ok(current?s.economyVersion==='combat-depth-economy-v4':
+    ['long-run-economy-v1','research-farming-economy-v2','research-farming-economy-v3'].includes(s.economyVersion),'Mixed economy edition');
+  assert.ok(Number.isInteger(e.tier)&&e.tier>=1&&e.tier<=(current?4:2),'Tier outside saved edition');
+  assert.ok(Number.isInteger(e.fitting)&&e.fitting>=0&&e.fitting<(current?5:3),'Fitting outside saved edition');
+  const fields=['mortarShots','railgunShots','nextMortarTick','nextRailgunTick','mortarDamage','railgunDamage'];
+  for(const key of fields)if(current)assert.ok(Number.isSafeInteger(e[key])&&e[key]>=0,'Missing weapon state: '+key);
+  else assert.ok(!Object.hasOwn(e,key),'New weapon state in legacy edition');
+  if(current){
+    assert.ok(e.nextMortarTick>=1&&e.nextRailgunTick>=1,'Invalid initial armament due tick');
+    assert.ok(e.mortarDamage>=18&&e.railgunDamage>=40,'Invalid armament damage');
+  }
+  return {rulesVersion:e.rulesVersion,contentVersion:checkpoint.contentVersion,economyVersion:s.economyVersion};
+}
+export function assertWaveStateEdition(state,saved){
+  if(saved.version!==6)return; // Historical reader fixtures retain their envelope.
+  const edition=assertWaveCheckpointEdition(saved.checkpoint);
+  assert.equal(state.profileVersion,edition.rulesVersion);
+  assert.equal(state.contentVersion,edition.contentVersion);
+  assert.equal(state.economyVersion,edition.economyVersion);
+  return edition;
+}
+export function assertWaveRestoredState(state,saved){
+  const edition=assertWaveStateEdition(state,saved);
+  if(!edition)return;
+  if(edition.rulesVersion==='last-stand-waves-v2')for(const key of ['mortarShots','railgunShots','mortarDamage','railgunDamage'])
+    assert.equal(state[key],saved.checkpoint.encounter[key],'Restored armament differs: '+key);
 }
 export function validateBackgroundCheckpoint({interval,after,checkpointState:state,saved}) {
   assertIdleWaveSave(saved);
@@ -3597,9 +3655,9 @@ export function validateBackgroundCheckpoint({interval,after,checkpointState:sta
   assert.equal(e.wave,e.completedWave,'A saved checkpoint names its completed cohort');
   assert.equal(state.completedWave,e.completedWave);assert.equal(state.checkpointWave,e.completedWave);assert.equal(state.wave,e.completedWave+1);
   assert.ok(Number.isSafeInteger(e.tick)&&e.tick>0&&Number.isSafeInteger(state.tick)&&state.tick>=e.tick&&state.tick>=after.tick);
-  assert.equal(e.rulesVersion,'last-stand-waves-v1');assert.equal(state.profileVersion,e.rulesVersion);assert.equal(after.loop.profileVersion,e.rulesVersion);
+  assert.ok(['last-stand-waves-v1','last-stand-waves-v2'].includes(e.rulesVersion));assertWaveStateEdition(state,saved);assertWaveStateEdition(after.loop,saved);assert.equal(state.profileVersion,e.rulesVersion);assert.equal(after.loop.profileVersion,e.rulesVersion);
   assert.equal(state.activeTier,e.tier);assert.equal(after.loop.activeTier,e.tier);
-  assert.equal(state.fittingId,['launcher','repair','scattergun'][e.fitting]);assert.equal(state.fittingId,after.fitting);
+  assert.equal(state.fittingId,WAVE_FITTINGS[e.fitting]);assert.equal(state.fittingId,after.fitting);
   assert.equal(state.cannonDamage,e.committedCannonDamage);assert.equal(state.cannonDamage,after.loop.cannonDamage);
   assert.equal(saved.history.current?.runId,cp.runId);assert.equal(saved.history.current.highestClearedWave,e.completedWave);
   return true;
@@ -3695,9 +3753,10 @@ export function validateCheckpointResume({saved,resumed,stable,stored,observedCl
   assert.ok(checkpoint && e && e.hull>0,'A living saved boundary is required');
   assertWaveSavePreserved(saved,stored);
   for(const state of [resumed,stable]) {
+    assertWaveRestoredState(state,saved);
     assert.equal(state.phase,'battle');assert.equal(state.saveState,'ready');
     assert.equal(state.runId,checkpoint.runId);assert.equal(state.activeTier,e.tier);
-    assert.equal(state.fittingId,['launcher','repair','scattergun'][e.fitting]);
+    assert.equal(state.fittingId,WAVE_FITTINGS[e.fitting]);
     assert.equal(state.profileVersion,e.rulesVersion);assert.equal(state.hasCheckpoint,true);
     assert.equal(state.checkpointBlocked,false);assert.equal(state.checkpointWave,e.completedWave);
     assert.equal(state.completedWave,e.completedWave);assert.equal(state.wave,e.completedWave+1);
@@ -4345,7 +4404,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const savedWave=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const savedState=states.at(-1);
     assertIdleWaveSave(savedWave);
-    check(savedWave.version===5 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
+    check(savedWave.version===6 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
       savedWave.credits===savedState.wallet && savedState.checkpointWave===savedWave.checkpoint.encounter.completedWave,
       'cleared waves atomically bank rewards and complete checkpoints',savedWave);
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),

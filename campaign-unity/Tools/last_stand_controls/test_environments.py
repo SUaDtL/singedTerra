@@ -5,15 +5,14 @@ for the separate pinned-Editor scene suite; the caller must serialize that launc
 Doubles prove routing/ownership only. Imported scenes and browser pixels are
 separate evidence, and none records owner acceptance of the environments.
 """
-from datetime import datetime, timezone
-import json
-import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-import uuid
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
@@ -25,6 +24,7 @@ IMPORTED_CASES = (
     "authored_environment_roots_and_lighting", "invalid_and_missing_environment_refuse",
     "active_combat_environment_is_immutable", "same_identity_reuse_is_idempotent",
     "comparison_scene_retains_treatment_switching", "render_setting_cleanup_preserves_later_owner",
+    "campaign_geometry_palette_and_light", "campaign_authoring_is_idempotent_and_scoped",
 )
 
 # These doubles expose only the Unity calls made by the actual adapter. They
@@ -116,11 +116,14 @@ static class EnvironmentSourceChecks {
   public void Dispose()=>Invoke(Review,"OnDestroy");
  }
  static void Catalog(){
-  Need(LastStandEnvironmentCatalog.All.Count==2,"two authored definitions");
+  Need(LastStandEnvironmentCatalog.All.Count==4,"four authored definitions");
   Need(LastStandEnvironmentCatalog.Get("sunlit-ash").Id=="sunlit-ash","stable identity");
   Need(LastStandEnvironmentCatalog.Get("iron-perimeter").Name=="Iron Perimeter","authored name");
   Need(LastStandEnvironmentCatalog.Get("sunlit-ash").SunIntensity==1.65f,"preserve first treatment light");
   Need(LastStandEnvironmentCatalog.Get("iron-perimeter").CameraPitch==70f,"preserve second framing");
+  var cinder=LastStandEnvironmentCatalog.Get("cinder-basin");var foundry=LastStandEnvironmentCatalog.Get("storm-foundry");
+  Need(cinder.Name=="Cinder Basin"&&foundry.Name=="Storm Foundry"&&cinder.TreatmentIndex==2&&foundry.TreatmentIndex==3,"stable campaign identities");
+  Need(cinder.SunColor!=foundry.SunColor&&cinder.AmbientSky!=foundry.AmbientSky&&cinder.CameraPitch!=foundry.CameraPitch,"distinct campaign light and framing");
   LastStandEnvironmentDefinition found;
   foreach(var invalid in new[]{null,"","SUNLIT-ASH","tier-18"})Need(!LastStandEnvironmentCatalog.TryGet(invalid,out found)&&found==null,"exact known identities only");
   bool rejected=false;try{LastStandEnvironmentCatalog.Get("unknown");}catch(ArgumentOutOfRangeException){rejected=true;}
@@ -134,6 +137,23 @@ static class EnvironmentSourceChecks {
   Need(f.Review.sun.color==LastStandEnvironmentCatalog.Get("iron-perimeter").SunColor&&f.Review.sun.intensity==1.35f,"definition drives light");
   Need(RenderSettings.ambientSkyColor==LastStandEnvironmentCatalog.Get("iron-perimeter").AmbientSky,"definition drives ambient");
   Need(f.Review.TrySelectEnvironment("sunlit-ash")&&f.Review.Treatment==0,"restore first identity");
+ }}
+ static void Campaign(){using(var f=new Fixture()){
+  var cinder=new GameObject();var foundry=new GameObject();
+  f.Review.environmentBindings=new[]{
+   new BattlefieldReview.EnvironmentBinding{environmentId="sunlit-ash",root=f.Review.ashEnvironment},
+   new BattlefieldReview.EnvironmentBinding{environmentId="iron-perimeter",root=f.Review.ironEnvironment},
+   new BattlefieldReview.EnvironmentBinding{environmentId="cinder-basin",root=cinder},
+   new BattlefieldReview.EnvironmentBinding{environmentId="storm-foundry",root=foundry}};
+  foreach(var id in new[]{"cinder-basin","storm-foundry"}){
+   Need(f.Review.TrySelectEnvironment(id),"select authored campaign identity");
+   Need(cinder.activeSelf==(id=="cinder-basin")&&foundry.activeSelf==(id=="storm-foundry")&&!f.Review.ashEnvironment.activeSelf&&!f.Review.ironEnvironment.activeSelf,"one campaign root only");
+   Need(f.Review.sun.color==LastStandEnvironmentCatalog.Get(id).SunColor,"campaign lighting routed from definition");
+   int changes=0;f.Review.Changed+=()=>changes++;int refreshes=f.Art.CameraRefreshes;
+   Need(f.Review.TrySelectEnvironment(id)&&changes==0&&refreshes==f.Art.CameraRefreshes,"campaign repeat is idempotent");
+  }
+  f.Review.Session=new EncounterSession{Model=new Model()};string before=f.Review.Session.Model.Snapshot();
+  Need(!f.Review.TrySelectEnvironment("cinder-basin")&&f.Review.EnvironmentId=="storm-foundry"&&f.Review.Session.Model.Snapshot()==before,"campaign selection cannot mutate active run");
  }}
  static void Invalid(){using(var f=new Fixture()){
   var color=f.Review.sun.color;Need(!f.Review.TrySelectEnvironment("unknown"),"invalid must refuse");
@@ -184,7 +204,7 @@ static class EnvironmentSourceChecks {
   }
  }
  static int Main(string[] args){try{
-  switch(args[0]){case "catalog":Catalog();break;case "selection":Selection();break;case "invalid":Invalid();break;case "combat":Combat();break;case "reuse":Reuse();break;case "comparison":Comparison();break;case "bindings":Bindings();break;case "cleanup":Cleanup();break;case "pipeline":PipelineLaterOwner();break;default:throw new Exception("Unknown case");}
+  switch(args[0]){case "catalog":Catalog();break;case "selection":Selection();break;case "campaign":Campaign();break;case "invalid":Invalid();break;case "combat":Combat();break;case "reuse":Reuse();break;case "comparison":Comparison();break;case "bindings":Bindings();break;case "cleanup":Cleanup();break;case "pipeline":PipelineLaterOwner();break;default:throw new Exception("Unknown case");}
   Console.WriteLine("PASS "+args[0]);return 0;
  }catch(Exception error){Console.Error.WriteLine(error);return 1;}}
 }
@@ -196,10 +216,18 @@ def compile_checks(folder, review_source=None):
     (folder / "UnityDoubles.cs").write_text(DOUBLES, encoding="utf-8")
     (folder / "EnvironmentSourceChecks.cs").write_text(CHECKS, encoding="utf-8")
     executable = folder / "EnvironmentSourceChecks.exe"
+    sources = complete_sources(SCRIPTS, [SCRIPTS / "LastStandEnvironmentCatalog.cs",
+        SCRIPTS / "Content/LastStandContentManifest.cs", review_source or SCRIPTS / "BattlefieldReview.cs"])
+    # Each compile consumes a fixed, real-source snapshot, including the manifest
+    # owner. No substitute catalog or tier implementation hides dependency drift.
+    copies = []
+    for source in sources:
+        target = folder / Path(source).name
+        if Path(source) != target:
+            target.write_bytes(Path(source).read_bytes())
+        copies.append(str(target))
     argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{executable}",
-            str(SCRIPTS / "LastStandEnvironmentCatalog.cs"),
-            str(review_source or SCRIPTS / "BattlefieldReview.cs"),
-            str(folder / "UnityDoubles.cs"), str(folder / "EnvironmentSourceChecks.cs")]
+            *copies, str(folder / "UnityDoubles.cs"), str(folder / "EnvironmentSourceChecks.cs")]
     result = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
     if result.returncode:
         raise AssertionError("Actual-source compile failed (not behavioral RED):\n" + result.stdout + result.stderr)
@@ -224,6 +252,7 @@ class EnvironmentSourceTests(unittest.TestCase):
 
     def test_authored_catalog_is_readonly_and_exact(self): self.case("catalog")
     def test_definition_routes_roots_and_lighting(self): self.case("selection")
+    def test_campaign_bindings_preserve_idempotence_and_combat(self): self.case("campaign")
     def test_unknown_or_missing_content_does_not_mutate(self): self.case("invalid")
     def test_active_model_and_presentation_refuse_changes(self): self.case("combat")
     def test_reused_identity_does_not_recreate_environment(self): self.case("reuse")
@@ -254,40 +283,34 @@ class EnvironmentSourceTests(unittest.TestCase):
                                    "RenderSettings.ambientSkyColor=prior.Sky;", "cleanup", "cleanup must preserve later sky owner")
 
 
+def editor_suite(author=False):
+    """A separate, explicitly serialized real-Editor path with source binding."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "last_stand_ui"))
+    from unity_check_runner import run_checks
+    owned = {PROJECT / "Assets/Scenes/LastStandPrototype.unity",
+             PROJECT / "Assets/Materials/LastStandCinderGround.mat",
+             PROJECT / "Assets/Materials/LastStandCinderGround.mat.meta",
+             PROJECT / "Assets/Materials/LastStandFoundryGround.mat",
+             PROJECT / "Assets/Materials/LastStandFoundryGround.mat.meta"}
+    preserved = {Path(__file__).resolve()}
+    for directory in ("Assets/Scenes", "Assets/Materials", "Assets/VisualReview/Materials",
+                      "Assets/VisualReview/Meshes", "Assets/SeedPack02/Generated/Prefabs"):
+        preserved.update(p for p in (PROJECT / directory).rglob("*") if p.is_file())
+    if author:
+        preserved.difference_update(owned)
+    method = "LastStandCampaignEnvironmentBuild.Build" if author else "LastStandEnvironmentChecks.Run"
+    code, content = run_checks(method, extra_inputs=preserved)
+    markers = ["ST_LS_CAMPAIGN_ENVIRONMENT_BUILD_PASS"] if author else [
+        "ST_LS_ENVIRONMENT_PASS " + name for name in IMPORTED_CASES]
+    if code or any(marker not in content for marker in markers) or "ST_LS_ENVIRONMENT_FAIL " in content:
+        raise AssertionError(content[-16000:])
+
+
 def imported_suite():
-    """A separate explicitly selected real-Editor path; never run by the child author."""
-    folder = ROOT / "campaign-unity/Evidence/last-stand-environments" / (
-        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
-    folder.mkdir(parents=True, exist_ok=False)
-    env = os.environ.copy()
-    common = Path(env.get("ProgramData", "C:/ProgramData"))
-    if not common.is_dir(): raise RuntimeError("ProgramData unavailable")
-    env.setdefault("ProgramData", str(common)); env.setdefault("ALLUSERSPROFILE", str(common))
-    env["ST_LS_PROJECT_CHECK"] = str(PROJECT)
-    owned = subprocess.run(["powershell.exe", "-NoProfile", "-Command",
-        "$p=$env:ST_LS_PROJECT_CHECK.Replace('\\','/'); $n=@(Get-CimInstance Win32_Process -Filter \"Name='Unity.exe'\" | Where-Object {$_.CommandLine -and $_.CommandLine.Replace('\\','/').Contains($p)}).Count; if($n){exit 9}"],
-        env=env, capture_output=True, text=True, timeout=30)
-    if owned.returncode: raise RuntimeError("An existing Unity Editor owns this project; refusing concurrent launch")
-    log = folder / "unity-environments.log"
-    argv = [str(EDITOR / "Editor/Unity.exe"), "-batchmode", "-nographics", "-quit", "-projectPath", str(PROJECT),
-            "-executeMethod", "LastStandEnvironmentChecks.Run", "-logFile", str(log)]
-    (folder / "invocation.json").write_text(json.dumps({"argv": argv, "cwd": str(ROOT), "cases": IMPORTED_CASES}, indent=2))
-    process = subprocess.Popen(argv, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, encoding="utf-8", errors="replace")
-    try: stdout, stderr = process.communicate(timeout=600)
-    except subprocess.TimeoutExpired:
-        process.kill(); stdout, stderr = process.communicate()
-        (folder / "timeout.txt").write_text(stdout + "\n" + stderr, encoding="utf-8")
-        raise
-    content = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-    passed = [name for name in IMPORTED_CASES if "ST_LS_ENVIRONMENT_PASS " + name in content]
-    result = {"exit": process.returncode, "passed": passed, "stdout": stdout, "stderr": stderr}
-    (folder / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
-    print("Environment imported-scene evidence:", folder, flush=True)
-    if process.returncode or len(passed) != len(IMPORTED_CASES) or "ST_LS_ENVIRONMENT_FAIL " in content:
-        raise AssertionError(content[-12000:] + stdout + stderr)
+    editor_suite()
 
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--imported"]: imported_suite()
+    elif sys.argv[1:] == ["--author"]: editor_suite(author=True)
     else: unittest.main()

@@ -284,17 +284,20 @@ namespace SingedTerra.LastStand
                 if(card.Category==shopCategory&&card.AppliesToFitting)keys.Add(card.Key);
             var measures=new Dictionary<string,LastStandHudLayout.Slot>();foreach(var slot in projection.Slots)measures.Add(slot.Id,slot);
             var effects=new float[keys.Count];var refusals=new float[keys.Count];var contributions=new float[keys.Count];
+            var headers=new float[keys.Count];
             for(int i=0;i<keys.Count;i++)
             {
                 string id="ShopCard_"+keys[i];
                 effects[i]=LastStandHudElements.MeasureText(nodes[id+"CurrentEffect"].GetComponent<Text>(),measures[id+"CurrentEffect"],unitsX,unitsY);
                 refusals[i]=LastStandHudElements.MeasureText(nodes[id+"Refusal"].GetComponent<Text>(),measures[id+"Refusal"],unitsX,unitsY);
                 contributions[i]=shopMode==LastStandShopMode.Run?LastStandHudElements.MeasureText(nodes[id+"NextEffect"].GetComponent<Text>(),measures[id+"NextEffect"],unitsX,unitsY):0;
+                headers[i]=Math.Max(LastStandHudElements.MeasureText(nodes[id+"Title"].GetComponent<Text>(),measures[id+"Title"],unitsX,unitsY),
+                    LastStandHudElements.MeasureText(nodes[id+"Levels"].GetComponent<Text>(),measures[id+"Levels"],unitsX,unitsY));
             }
             float notice=measures.ContainsKey("SaveStatus")?LastStandHudElements.MeasureText(status,measures["SaveStatus"],unitsX,unitsY):40;
             float heading=measures.ContainsKey("PhaseHeading")?LastStandHudElements.MeasureText(nodes["PhaseHeading"].GetComponent<Text>(),measures["PhaseHeading"],unitsX,unitsY):LastStandHudLayout.LineHeight;
             float detail=measures.ContainsKey("PhaseDetail")?LastStandHudElements.MeasureText(nodes["PhaseDetail"].GetComponent<Text>(),measures["PhaseDetail"],unitsX,unitsY):LastStandHudLayout.LineHeight;
-            return new LastStandHudLayout.ShopPanelInput(true,keys.ToArray(),shopScrollOffset,effects,refusals,contributions,notice,heading,detail);
+            return new LastStandHudLayout.ShopPanelInput(true,keys.ToArray(),shopScrollOffset,effects,refusals,contributions,notice,heading,detail,headers);
         }
         public void BeginLayout(float offset,float maximum,float unitsY)
         {layingOut=true;shopScrollOffset=offset;shopMaximumScroll=maximum;shopUnitsY=unitsY;shopScroll.scrollSensitivity=40*unitsY;}

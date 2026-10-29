@@ -73,6 +73,8 @@ namespace SingedTerra.LastStand
                         case LastStandUpgradeApplicability.Launcher:return "Requires launcher fitting";
                         case LastStandUpgradeApplicability.Repair:return "Requires repair fitting";
                         case LastStandUpgradeApplicability.Scattergun:return "Requires scattergun fitting";
+                        case LastStandUpgradeApplicability.Mortar:return "Requires mortar fitting";
+                        case LastStandUpgradeApplicability.Railgun:return "Requires railgun fitting";
                         default:throw new ArgumentOutOfRangeException(nameof(applicability));
                     }
                 case LastStandShopCardRefusal.AtCap: return "MAX";
@@ -130,16 +132,17 @@ namespace SingedTerra.LastStand
             int balance = shop.Scrap, runId = shop.RunId, version = shop.Version;
             var lifecycle = shop.PurchaseLifecycle;
             var fitting = shop.Fitting;
-            var cards = new LastStandShopCard[shop.Definitions.Count];
+            var cards = new List<LastStandShopCard>();
             foreach (var definition in shop.Definitions)
             {
+                if(!definition.Available)continue;
                 var track = shop.GetTrack(definition.Id);
                 var quote=definition.QuoteRun(track.PermanentLevel,track.RunPurchases,balance,quantity);
-                cards[(int)definition.Id] = new LastStandShopCard(definition, track, LastStandShopMode.Run,
-                    RunRefusal(lifecycle, track, balance),quote);
+                cards.Add(new LastStandShopCard(definition, track, LastStandShopMode.Run,
+                    RunRefusal(lifecycle, track, balance),quote));
             }
             return new LastStandShopView(LastStandShopMode.Run, balance, runId, version,
-                lifecycle, fitting, String.Empty, String.Empty, cards,quantity);
+                lifecycle, fitting, String.Empty, String.Empty, cards.ToArray(),quantity);
         }
 
         public static LastStandShopView ProjectPermanent(LastStandProgression progression, LastStandFitting fitting,
@@ -150,18 +153,20 @@ namespace SingedTerra.LastStand
             string saveState = progression.SaveState, saveError = progression.SaveError ?? String.Empty;
             var admission = saveState != "ready" ? LastStandShopCardRefusal.SaveUnavailable :
                 progression.PendingDefeat != null ? LastStandShopCardRefusal.PendingReward : LastStandShopCardRefusal.None;
-            var cards = new LastStandShopCard[LastStandUpgradeCatalog.Tracks.Count];
+            var cards = new List<LastStandShopCard>();
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
             {
+                if(!definition.Available)continue;
                 var track = definition.Project(progression.GetPermanentLevel(definition.Id), 0, fitting);
                 var quote=definition.QuotePermanent(track.PermanentLevel,balance,quantity);
                 var refusal = admission != LastStandShopCardRefusal.None ? admission :
+                    !progression.IsPermanentTrackApplicable(definition.Id) ? LastStandShopCardRefusal.WrongFitting :
                     !track.NextPermanentPrice.HasValue ? LastStandShopCardRefusal.AtCap :
                     balance < track.NextPermanentPrice.Value ? LastStandShopCardRefusal.InsufficientSalvage : LastStandShopCardRefusal.None;
-                cards[(int)definition.Id] = new LastStandShopCard(definition, track, LastStandShopMode.Permanent, refusal,quote);
+                cards.Add(new LastStandShopCard(definition, track, LastStandShopMode.Permanent, refusal,quote));
             }
             return new LastStandShopView(LastStandShopMode.Permanent, balance, 0, 0,
-                null, fitting, saveState,saveError,cards,quantity);
+                null, fitting, saveState,saveError,cards.ToArray(),quantity);
         }
 
         static LastStandShopCardRefusal RunRefusal(LastStandShopPurchaseLifecycle lifecycle,

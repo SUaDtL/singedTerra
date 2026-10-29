@@ -176,15 +176,8 @@ namespace SingedTerra.LastStand
                 case "milestones":
                     int tier=loop.Session.Model?.Profile.Tier??loop.Progression.Checkpoint?.Tier??loop.Progression.SelectedTier;
                     title.text="TIER "+tier+" MILESTONES";
-                    body.text="Every completed wave pays repeatable Salvage. Bonuses below are earned once per tier. Unlocking a tier never ends or moves your run.\n";
-                    foreach(var milestone in LastStandRewardCatalog.Milestones(LastStandTierCatalog.Get(tier)))
-                    {
-                        bool earned=loop.Progression.HasFirstClear(milestone.Id);
-                        body.text+="\nWAVE "+milestone.Wave+" / "+(earned?"EARNED":"UPCOMING")+"\nOne-time bonus: +"+milestone.FirstClearSalvage+" Salvage";
-                        if(milestone.UnlockTierId!=0)body.text+=" / Unlock Tier "+milestone.UnlockTierId;
-                        if(milestone.UnlockFittingId!=null)body.text+=" / Unlock "+milestone.UnlockFittingId;
-                        body.text+="\nRepeatable wave reward: +"+LastStandRewardCatalog.At(LastStandTierCatalog.Get(tier),milestone.Wave).RepeatableSalvage+" Salvage\n";
-                    }
+                    var rewardEdition=loop.Session.Model?.Profile.Edition??loop.Progression.Checkpoint?.Edition??LastStandRunEdition.Current;
+                    body.text=LastStandMilestonePresentation.Roadmap(tier,loop.Progression.HasFirstClear,rewardEdition);
                     int legacyTicks=loop.Progression.GetBestTicks(tier),legacyKills=loop.Progression.GetBestKills(tier);
                     if(legacyTicks>0||legacyKills>0)body.text+="\n"+LastStandTierHudText.Best(legacyTicks,legacyKills)+" (not wave credit)";
                     Show("SettingsBack");break;

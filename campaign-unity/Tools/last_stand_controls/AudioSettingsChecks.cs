@@ -71,7 +71,26 @@ namespace SingedTerra.Art
 {
     public sealed class TankPresentation : Component { public Component view; }
 }
-namespace SingedTerra.Encounter { public enum EncounterEventKind { Cannon, Launcher, Repair, CloseHit, RangedHit, Scattergun } }
+// Source-extracted caller uses real domain types. These stand-ins supply only
+// owner inputs and capture the authoritative telemetry invocation.
+namespace SingedTerra.LastStand
+{
+    public static class LastStandObservations { public static int Hits;public static void Hit(EncounterModel model){Hits++;} }
+}
+public partial class ActualAudioCaller
+{
+    public sealed class SessionInputs
+    {
+        public EncounterModel Model;public bool Paused,CanRun=true;public string Failure="";
+        public int StepsThisCallback=1;public double CallbackElapsedSeconds=.05;
+    }
+    public LastStandShopState runShop { get;set; }
+    public LastStandProgression Progression { get;set; }
+    public LastStandAudio Audio;public SessionInputs Session=new SessionInputs();
+    public string Phase="battle";public bool suppressCallbackFeedback,failedRun,MenuOpen;public int Recorded,Discarded;
+    public void RecordActiveStep(){Recorded++;}public void DiscardMissedFeedback(){Discarded++;}
+}
+
 public static class AudioSettingsChecks
 {
     static void Require(bool ok,string message) { if(!ok)throw new Exception(message); }
@@ -272,6 +291,105 @@ public static class AudioSettingsChecks
         Settings(audio,LastStandPreferenceValues.Defaults.With(musicVolume:10));TickMusic(audio);
         Require(music.volume<.2f&&music.volume>=.1f,"Active ambient gain follows setting with a transition");
     }
+    static void Batch(LastStandAudio audio,IReadOnlyList<EncounterEvent> events)=>Invoke(audio,"PlayEvents",events);
+    static string[] Played()=>Debug.Logs.Where(x=>x.StartsWith("ST_LS_AUDIO event=")).Select(x=>x.Substring("ST_LS_AUDIO event=".Length)).ToArray();
+    static void NewWeaponCues()
+    {
+        var clips=new List<AudioClip>();
+        foreach(var kind in new[]{EncounterEventKind.Mortar,EncounterEventKind.Railgun}){
+            var audio=Fixture();audio.PlayEvent(kind,18,true);Require(EffectPlays(audio)==0,"New cue remains gesture-locked");
+            audio.UnlockFromGesture("test-click");audio.PlayEvent(kind,18,true);
+            string cue=kind.ToString().ToLowerInvariant();Require(Played().SequenceEqual(new[]{cue,"impact"}),"New weapon must have distinct firing and actual impact cue: "+cue);
+            var clip=Effects(audio).Single(x=>x.clip!=null&&x.clip.name=="LastStand_"+kind).clip;clips.Add(clip);
+            Require(clip.Samples.Any(x=>Math.Abs(x)>.1f)&&clip.Samples.All(x=>!float.IsNaN(x)&&!float.IsInfinity(x)&&Math.Abs(x)<=1),"New weapon PCM is finite and non-silent");
+            Debug.Logs.Clear();audio.PlayEvent(kind,18,false);Require(Played().SequenceEqual(new[]{cue,"destruction"}),"Lethal new weapon retains destruction cue");
+        }
+        Require(!clips[0].Samples.SequenceEqual(clips[1].Samples),"Mortar and Railgun have distinct actual synthesized data");
+    }
+    static void MortarBatch()
+    {
+        foreach(int victims in new[]{1,2,20})foreach(bool lethal in new[]{false,true}){
+            var audio=Fixture();audio.UnlockFromGesture("test-click");var events=new List<EncounterEvent>();
+            for(int n=0;n<victims;n++)events.Add(new EncounterEvent(EncounterEventKind.Mortar,n,18,lethal&&n==victims-1,0));
+            Batch(audio,events);Require(EffectPlays(audio)==2&&Played().SequenceEqual(new[]{"mortar",lethal?"destruction":"impact"}),"Victim fanout must remain one firing plus one aggregate impact");
+            Require(Effects(audio).Length==4,"Blast cannot grow the four-voice pool");
+            Debug.Logs.Clear();Batch(audio,Array.Empty<EncounterEvent>());Require(Played().Length==0&&EffectPlays(audio)==2,"Empty step has no replay");
+            Batch(audio,events);Require(EffectPlays(audio)==4,"New step at same aim slot is a fresh blast");
+        }
+        var mixed=Fixture();mixed.UnlockFromGesture("test-click");
+        Batch(mixed,new[]{new EncounterEvent(EncounterEventKind.Cannon,0,20),new EncounterEvent(EncounterEventKind.Mortar,1,18,false,2),
+            new EncounterEvent(EncounterEventKind.Mortar,2,18,true,2)});
+        Require(Played().SequenceEqual(new[]{"cannon","impact","mortar","destruction"})&&EffectPlays(mixed)==4,"Cannon order stays unchanged before one aggregated Mortar pair");
+        var two=Fixture();two.UnlockFromGesture("test-click");Batch(two,new[]{new EncounterEvent(EncounterEventKind.Mortar,0,18,false,0),new EncounterEvent(EncounterEventKind.Mortar,2,18,true,2),new EncounterEvent(EncounterEventKind.Mortar,1,18,false,0)});
+        Require(Played().SequenceEqual(new[]{"mortar","impact","mortar","destruction"}),"Separate AimSlot blast groups stay separate without per-victim fanout");
+    }
+    static void BatchHolds()
+    {
+        foreach(var kind in new[]{EncounterEventKind.Mortar,EncounterEventKind.Railgun}){
+            foreach(double now in new[]{.5,.500001}){
+                var boundary=Fixture();boundary.UnlockFromGesture("test-click");Time.realtimeSinceStartupAsDouble=now;
+                Batch(boundary,new[]{new EncounterEvent(kind,0,40)});
+                Require(EffectPlays(boundary)==(now==.5?2:0),"New batch retains the exact500ms playback boundary");
+            }
+            var events=new[]{new EncounterEvent(kind,0,40,true)};var audio=Fixture();audio.UnlockFromGesture("test-click");
+            AudioSource.AfterPlay=()=>Time.realtimeSinceStartupAsDouble+=.005;Batch(audio,events);
+            var decisions=JsonUtility.Values.OfType<LastStandAudioCue>().ToArray();
+            Require(EffectPlays(audio)==1&&decisions.Length==2&&decisions[0].played&&!decisions[1].played&&decisions[1].reason=="expired","Aggregate companion has its own fresh boundary");
+            foreach(string hold in new[]{"pause","mute","focus","application","gain","callback"}){
+                audio=Fixture();audio.UnlockFromGesture("test-click");
+                if(hold=="pause")audio.SetSuspended(true);else if(hold=="mute")audio.ToggleMute();else if(hold=="focus")Invoke(audio,"OnApplicationFocus",false);
+                else if(hold=="application")Invoke(audio,"OnApplicationPause",true);else if(hold=="gain")Settings(audio,LastStandPreferenceValues.Defaults.With(effectsVolume:0));
+                else audio.CombatAdmission=cue=>LastStandAudioCue.Prepare(cue,1,1,0,11,11,1,.496,0,0,true);
+                Batch(audio,events);Require(EffectPlays(audio)==0,"New batch obeys hold: "+hold);
+                audio.SetSuspended(false);Settings(audio,LastStandPreferenceValues.Defaults);Invoke(audio,"OnApplicationFocus",true);Invoke(audio,"OnApplicationPause",false);
+                Require(EffectPlays(audio)==0,"Recovery does not replay a discarded batch");
+            }
+        }
+    }
+    static void InvalidBatch()
+    {
+        var audio=Fixture();audio.UnlockFromGesture("test-click");audio.PlayEvent(EncounterEventKind.Cannon,20,true);
+        var sources=Effects(audio);int stops=sources.Sum(s=>s.StopCount),plays=EffectPlays(audio);
+        var clips=sources.Select(s=>s.clip).ToArray();int decisions=JsonUtility.Values.Count;
+        foreach(var events in new IReadOnlyList<EncounterEvent>[] {null,
+            new[]{new EncounterEvent(EncounterEventKind.Cannon,0,20),new EncounterEvent(EncounterEventKind.Mortar,-1,18)},
+            new[]{new EncounterEvent(EncounterEventKind.Cannon,0,20),new EncounterEvent(EncounterEventKind.Mortar,0,18,false,EncounterModel.Capacity)}}){
+            bool rejected=false;try{audio.PlayEvents(events);}catch(ArgumentException){rejected=true;}
+            Require(rejected,"Malformed blast batch must be rejected before playback");
+            Require(EffectPlays(audio)==plays&&sources.Sum(s=>s.StopCount)==stops&&sources.Select(s=>s.clip).SequenceEqual(clips)&&JsonUtility.Values.Count==decisions,
+                "Rejected batch cannot consume a voice, stop active sound or issue a cue witness");
+        }
+        Batch(audio,new[]{new EncounterEvent(EncounterEventKind.Mortar,0,18)});
+        Require(EffectPlays(audio)==plays+2&&sources[2].clip.name=="LastStand_Mortar"&&sources[3].clip.name=="LastStand_Impact",
+            "Rejected input leaves the next voice and fresh blast admission intact");
+    }
+    sealed class MemoryStore:ILastStandStorage { string raw;public string Read()=>raw;public void Write(string value){raw=value;} }
+    static EncounterModel MortarStep()
+    {
+        var m=new EncounterModel(LastStandFitting.Mortar,EncounterProfile.ForTier(2));
+        typeof(EncounterModel).GetField("nextSpawn",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(m,10000);
+        for(int n=0;n<2;n++){var f=m.Foes[n];f.Id=n==0?5:1;f.Kind=FoeKind.ArmoredBrute;f.Lane=0;f.Distance=n==0?18500:18000;f.Hull=f.MaximumHull=n==0?10:1000;f.Damage=1;}
+        m.Step();Require(m.Events.Count(e=>e.Kind==EncounterEventKind.Cannon)==1&&m.Events.Count(e=>e.Kind==EncounterEventKind.Mortar)==2,"Actual model produced Cannon and one two-victim blast");return m;
+    }
+    static void ActualCaller()
+    {
+        foreach(bool suppressed in new[]{false,true}){
+            var audio=Fixture();audio.UnlockFromGesture("test-click");var model=MortarStep();string before=model.Snapshot();
+            var caller=new ActualAudioCaller{Audio=audio,Progression=LastStandProgression.Load(new MemoryStore(),()=>1790000000000L)};
+            caller.Session.Model=model;caller.Session.CallbackElapsedSeconds=suppressed?.501:.05;LastStandObservations.Hits=0;
+            caller.OnSessionStepped(model);
+            Require(EffectPlays(audio)==(suppressed?0:4),"Actual controller must route one batch without multi-victim amplification");
+            Require(LastStandObservations.Hits==1&&model.Snapshot()==before,"Authoritative Cannon telemetry survives sound suppression without model changes");
+            if(suppressed)Require(caller.Discarded==1&&caller.suppressCallbackFeedback,"Delayed callback preserves discard/debt owner");
+        }
+    }
+    static void Cleanup()
+    {
+        var audio=Fixture();audio.UnlockFromGesture("test-click");
+        var fields=typeof(LastStandAudio).GetFields(BindingFlags.Instance|BindingFlags.NonPublic).Where(f=>f.FieldType==typeof(AudioClip)).ToArray();
+        var clips=fields.Select(f=>(AudioClip)f.GetValue(audio)).ToArray();Require(clips.Length==8&&clips.All(c=>c!=null),"All old/new effects are initialized exactly once");
+        var sources=Effects(audio);Invoke(audio,"OnDestroy");Require(clips.All(c=>c.Destroyed)&&sources.All(s=>s.Destroyed&&!s.isPlaying),"Owned new clips and existing pool are destroyed");
+    }
     public static int Main(string[] args)
     {
         try
@@ -281,6 +399,12 @@ public static class AudioSettingsChecks
                 case "each_combat_cue_uses_its_own_fresh_playback_boundary":EachCombatCueUsesItsOwnFreshPlaybackBoundary();break;
                 case "playback_boundary_clocks_preparation_and_diagnostics":PlaybackBoundaryClocksPreparationAndDiagnostics();break;
                 case "existing_effect_admission":ExistingEffectAdmission();break;
+                case "new_weapon_cues":NewWeaponCues();break;
+                case "mortar_batch":MortarBatch();break;
+                case "batch_holds":BatchHolds();break;
+                case "actual_caller":ActualCaller();break;
+                case "cleanup":Cleanup();break;
+                case "invalid_batch":InvalidBatch();break;
                 case "scattergun_feedback_and_holds":ScattergunFeedbackAndHolds();break;
                 case "initialize_does_not_duplicate_sources":InitializeDoesNotDuplicateSources();break;
                 case "master_and_channel_gains_change_active_sources":MasterAndChannelGainsChangeActiveSources();break;

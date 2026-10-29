@@ -9,6 +9,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using SingedTerra.Art;
 using SingedTerra.LastStand;
+using SingedTerra.Encounter;
 
 // The same passive production capture feeds runtime logs and this imported
 // scene check. The contract is tooling metadata, never a gameplay rules owner.
@@ -23,12 +24,47 @@ public static class LastStandObservationContractChecks
         public Inventory[] inventories;
     }
     [Serializable] sealed class Packets { public string[] packets; }
+    [Serializable] sealed class RunState { public string profileVersion,contentVersion,economyVersion;public int mortarShots,railgunShots,mortarDamage,railgunDamage; }
+    [Serializable] sealed class ModelState { public string contentVersion,economyVersion;public int scattergun,mortar,railgun,mortarDamage,railgunDamage; }
     sealed class Storage:ILastStandStorage
     { string value;public string Read()=>value;public void Write(string next){value=next;} }
     static void Require(bool value,string message){if(!value)throw new InvalidOperationException(message);}
     static object Field(object value,string name)=>value.GetType().GetField(name).GetValue(value);
     static void Same(IEnumerable<string> actual,IEnumerable<string> expected,string message)
     { Require(actual.OrderBy(x=>x).SequenceEqual(expected.OrderBy(x=>x)),message); }
+    static string Capture(string tag,Action emit)
+    {
+        var rows=new List<string>();Application.LogCallback listener=(message,trace,type)=>{if(message.StartsWith(tag))rows.Add(message.Substring(tag.Length));};
+        Application.logMessageReceived+=listener;
+        try{emit();}finally{Application.logMessageReceived-=listener;}
+        Require(rows.Count==1,"Expected one actual observation: "+tag);return rows[0];
+    }
+    static void CheckRunObservations(LastStandLoopController loop,TankPresentation art)
+    {
+        var modelField=typeof(EncounterSession).GetField("model",Private);var original=modelField.GetValue(loop.Session);string originalFitting=art.FittingId;
+        var emit=typeof(EncounterSession).GetMethod("Emit",Private);
+        try
+        {
+            foreach(var edition in new[]{LastStandRunEdition.Current,LastStandRunEdition.Legacy(LastStandUpgradeCatalog.RetainedEconomyVersion)})
+                foreach(var fitting in edition.Fittings)
+                {
+                    var model=new EncounterModel(fitting.Mechanic,EncounterProfile.ForTier(1,edition));
+                    for(int i=0;i<300&&model.Status==EncounterStatus.Running&&!model.AwaitingWaveCommit;i++)model.Step();
+                    modelField.SetValue(loop.Session,model);Require(art.TrySelectFitting(fitting.Id),"Observed fitting exists");
+                    var run=JsonUtility.FromJson<RunState>(Capture("ST_LS_STATE ",()=>LastStandObservations.Emit(loop,"contract")));
+                    Require(run.profileVersion==edition.RulesVersion&&run.contentVersion==edition.ContentVersion&&run.economyVersion==edition.EconomyVersion,"Actual run observation must retain its full edition");
+                    Require(run.mortarShots==model.MortarShots&&run.railgunShots==model.RailgunShots&&
+                        run.mortarDamage==model.CurrentMortarDamage&&run.railgunDamage==model.CurrentRailgunDamage,"Actual resumed weapon values differ");
+                    string raw=Capture("ST_ENC_STATE ",()=>emit.Invoke(loop.Session,new object[]{"contract"}));
+                    var observed=JsonUtility.FromJson<ModelState>(raw);
+                    Require(observed.contentVersion==edition.ContentVersion&&observed.economyVersion==edition.EconomyVersion,"Model observation must retain its full edition");
+                    foreach(string field in new[]{"scattergun","mortar","railgun"})Require(raw.Contains("\""+field+"\":"),"Missing actual counter: "+field);
+                    Require(observed.scattergun==model.ScattergunShots&&observed.mortar==model.MortarShots&&observed.railgun==model.RailgunShots,"Actual armament counters differ");
+                    Require(observed.mortarDamage==model.CurrentMortarDamage&&observed.railgunDamage==model.CurrentRailgunDamage,"Actual armament effects differ");
+                }
+        }
+        finally{modelField.SetValue(loop.Session,original);art.TrySelectFitting(originalFitting);}
+    }
     static void Check(object snapshot,Contract contract)
     {
         Same(snapshot.GetType().GetFields().Select(f=>f.Name),contract.header.Concat(contract.tail).Concat(new[]{"graphics"}),"Emitter fields differ from v1 contract");
@@ -64,6 +100,7 @@ public static class LastStandObservationContractChecks
                 typeof(TankPresentation).GetMethod("Start",Private).Invoke(art,null);
                 typeof(ArtHud).GetMethod("Start",Private).Invoke(art.GetComponent<ArtHud>(),null);
                 var loop=art.GetComponent<LastStandLoopController>();
+                CheckRunObservations(loop,art);
                 var hud=typeof(LastStandLoopController).GetField("hud",Private).GetValue(loop);
                 var observations=hud.GetType().GetField("observations",Private).GetValue(hud);
                 var capture=observations.GetType().GetMethod("CaptureLayoutSnapshot",Private);

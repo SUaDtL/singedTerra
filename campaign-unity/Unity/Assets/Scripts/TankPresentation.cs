@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using SingedTerra.LastStand;
 namespace SingedTerra.Art
@@ -10,33 +11,26 @@ namespace SingedTerra.Art
         public Transform tank, turret, barrel, muzzle;
         public GameObject repairModule, launcherModule, flash;
         public GameObject scattergunModule { get; private set; }
-        LastStandScattergunModule scattergun;
-        Renderer[] repairMeshes, launcherMeshes, scattergunMeshes;
+        sealed class ModuleBinding
+        {
+            public GameObject Root;public Renderer[] Renderers;public Func<Vector3> Muzzle;
+            public Action<Vector3> Fire;public Action<float> Advance;public Action Clear,Restore;
+        }
+        readonly Dictionary<LastStandFitting,ModuleBinding> modules=new Dictionary<LastStandFitting,ModuleBinding>();
         public LastStandFitting Fitting { get; private set; }=LastStandFitting.Repair;
         public GameObject ActiveFittingModule => Module(Fitting);
-        public Renderer[] ActiveFittingRenderers
+        public Renderer[] ActiveFittingRenderers=>modules.TryGetValue(Fitting,out var binding)?binding.Renderers:Array.Empty<Renderer>();
+        public Vector3 ScattergunMuzzle=>FittingMuzzle(LastStandFitting.Scattergun);
+        GameObject Module(LastStandFitting fitting)=>modules.TryGetValue(fitting,out var binding)?binding.Root:null;
+        public Vector3 FittingMuzzle(LastStandFitting fitting)=>modules[fitting].Muzzle();
+        void Bind(LastStandFitting fitting,GameObject root,Func<Vector3> muzzle=null,Action<Vector3> fire=null,
+            Action<float> advance=null,Action clear=null,Action restore=null)
         {
-            get
-            {
-                switch(Fitting)
-                {
-                    case LastStandFitting.Repair:return repairMeshes;
-                    case LastStandFitting.Launcher:return launcherMeshes;
-                    case LastStandFitting.Scattergun:return scattergunMeshes;
-                    default:throw new ArgumentOutOfRangeException(nameof(Fitting));
-                }
-            }
-        }
-        public Vector3 ScattergunMuzzle => scattergun.MuzzlePosition;
-        GameObject Module(LastStandFitting fitting)
-        {
-            switch(fitting)
-            {
-                case LastStandFitting.Repair:return repairModule;
-                case LastStandFitting.Launcher:return launcherModule;
-                case LastStandFitting.Scattergun:return scattergunModule;
-                default:throw new ArgumentOutOfRangeException(nameof(fitting));
-            }
+            var renderers=root.GetComponentsInChildren<Renderer>(true);
+            if(renderers.Length==0)throw new InvalidOperationException("Fitting has no visible geometry: "+fitting);
+            modules.Add(fitting,new ModuleBinding{Root=root,Renderers=renderers,Muzzle=muzzle??(()=>{
+                var bounds=renderers[0].bounds;foreach(var renderer in renderers)bounds.Encapsulate(renderer.bounds);return bounds.center;
+            }),Fire=fire,Advance=advance,Clear=clear,Restore=restore});
         }
         public bool battlefield, showingLauncher, animate=true;
         public int previewCount;
@@ -73,15 +67,16 @@ namespace SingedTerra.Art
             if(inspectionForward.sqrMagnitude<.5f)throw new InvalidOperationException("No horizontal inspection axis");
             Application.targetFrameRate=60;
             if(!GetComponent<SingedTerra.LastStand.LastStandLoopController>())Application.runInBackground=false;
-            if(!scattergunModule)
-            {
-                scattergunModule=new GameObject("Attachment_Scattergun");
-                scattergun=scattergunModule.AddComponent<LastStandScattergunModule>();scattergun.Initialize(this);
-            }
-            repairMeshes=repairModule.GetComponentsInChildren<Renderer>(true);launcherMeshes=launcherModule.GetComponentsInChildren<Renderer>(true);
-            scattergunMeshes=scattergunModule.GetComponentsInChildren<Renderer>(true);
+            scattergunModule=new GameObject("Attachment_Scattergun");
+            var scattergun=scattergunModule.AddComponent<LastStandScattergunModule>();scattergun.Initialize(this);
+            var mortarRoot=new GameObject("Attachment_Mortar");var mortar=mortarRoot.AddComponent<LastStandMortarModule>();mortar.Initialize(this);
+            var railgunRoot=new GameObject("Attachment_Railgun");var railgun=railgunRoot.AddComponent<LastStandRailgunModule>();railgun.Initialize(this);
+            Bind(LastStandFitting.Repair,repairModule);Bind(LastStandFitting.Launcher,launcherModule);
+            Bind(LastStandFitting.Scattergun,scattergunModule,()=>scattergun.MuzzlePosition,scattergun.Fire,scattergun.Advance,scattergun.Clear,scattergun.RestoreMount);
+            Bind(LastStandFitting.Mortar,mortarRoot,()=>mortar.MuzzlePosition,mortar.Fire,mortar.Advance,mortar.Clear,mortar.RestoreMount);
+            Bind(LastStandFitting.Railgun,railgunRoot,()=>railgun.MuzzlePosition,railgun.Fire,railgun.Advance,railgun.Clear,railgun.RestoreMount);
             Fitting=LastStandFitting.Repair;showingLauncher=false;
-            repairModule.SetActive(true);launcherModule.SetActive(false);scattergunModule.SetActive(false);
+            foreach(var item in modules)item.Value.Root.SetActive(item.Key==Fitting);
             initialized=true;
             flash.SetActive(false);SetView(false,true);Report("ready");
         }
@@ -192,12 +187,13 @@ namespace SingedTerra.Art
             EnsureInitialized();
             if(!Module(selected))return false;
             Fitting=selected;showingLauncher=selected==LastStandFitting.Launcher;
-            repairModule.SetActive(selected==LastStandFitting.Repair);launcherModule.SetActive(selected==LastStandFitting.Launcher);
-            scattergunModule.SetActive(selected==LastStandFitting.Scattergun);Report("attachment");
+            foreach(var item in modules)item.Value.Root.SetActive(item.Key==selected);Report("attachment");
             return true;
         }
         public void PlayScattergunShot(Vector3 target)
-        { if(EncounterActive && Fitting==LastStandFitting.Scattergun)scattergun.Fire(target); }
+        { PlayFittingShot(LastStandFitting.Scattergun,target); }
+        public void PlayFittingShot(LastStandFitting fitting,Vector3 target)
+        { if(EncounterActive&&Fitting==fitting&&modules.TryGetValue(fitting,out var binding))binding.Fire?.Invoke(target); }
         public void PreviewMotion()
         {
             if(EncounterActive||recoilTime>0)return;
@@ -211,7 +207,7 @@ namespace SingedTerra.Art
             encounterWasWide=battlefield;encounterWasAnimating=animate;
             SetView(true,true);EncounterActive=true;EncounterPaused=false;animate=false;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
-            scattergun.Clear();
+            foreach(var binding in modules.Values)binding.Clear?.Invoke();
             return true;
         }
         public void EndEncounter()
@@ -219,7 +215,7 @@ namespace SingedTerra.Art
             if(!EncounterActive)return;
             EncounterActive=false;EncounterPaused=false;animate=encounterWasAnimating;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
-            scattergun.RestoreMount();
+            foreach(var binding in modules.Values)binding.Restore?.Invoke();
             SetView(encounterWasWide,true);
         }
         public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
@@ -232,7 +228,7 @@ namespace SingedTerra.Art
         {
             if(!EncounterActive)return;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
-            scattergun.Clear();
+            foreach(var binding in modules.Values)binding.Clear?.Invoke();
         }
         // The session admits terminal time only after its pause/focus/failure guards.
         // Keep the camera, idle motion and committed encounter locked.
@@ -270,7 +266,7 @@ namespace SingedTerra.Art
         }
         void AdvanceShot(float dt)
         {
-            scattergun?.Advance(dt);
+            foreach(var binding in modules.Values)binding.Advance?.Invoke(dt);
             bool wasRecoiling=recoilTime>0;
             if(recoilTime>0)recoilTime=Mathf.Max(0,recoilTime-dt);
             float kick=recoilTime>0?Mathf.Sin((1-recoilTime/.7f)*Mathf.PI)*.32f:0;

@@ -10,7 +10,8 @@ import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs'
 const clone=x=>structuredClone(x);
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 test('current idle wave save accepts only clock metadata changes and rejects historical or altered progression',()=>{
- const before={...idleWaveFields(),credits:2,permanentLevels:{cannonAttack:0},checkpoint:{runId:1,wave:1},pendingDefeat:null};
+ const before={...idleWaveFields(),credits:2,permanentLevels:{cannonAttack:0},checkpoint:{runId:1,wave:1,
+  encounter:{rulesVersion:'last-stand-waves-v1',tier:1,fitting:1}},pendingDefeat:null};
  const after=clone(before);after.revision+=2;after.research.revision+=2;after.research.lastObservedUtcMilliseconds+=15001;
  assert.equal(journey.assertWaveSavePreserved(before,after),true);
  assert.equal(journey.assertWaveSavePreserved(before,clone(before)),true);
@@ -24,7 +25,8 @@ test('current idle wave save accepts only clock metadata changes and rejects his
  }
 });
 test('abandon records one bounded final history entry without rewards, time loss or aggregate inflation',()=>{
- const before={...idleWaveFields(),credits:2,lastFinalizedRunId:0,checkpoint:{runId:1},pendingDefeat:null};
+ const before={...idleWaveFields(),credits:2,lastFinalizedRunId:0,checkpoint:{runId:1,
+  encounter:{rulesVersion:'last-stand-waves-v1',tier:1,fitting:1}},pendingDefeat:null};
  const after=abandonedWaveSave(before),final=after.history.recent.at(-1);
  final.pausedMilliseconds+=1000;final.closedMilliseconds+=2000;final.activeMilliseconds+=50;final.speedMilliseconds[1]+=50;
  after.history.lifetime.activeMilliseconds+=50;after.history.tiers[0].activeMilliseconds+=50;

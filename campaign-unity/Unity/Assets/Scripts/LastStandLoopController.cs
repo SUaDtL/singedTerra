@@ -294,7 +294,7 @@ namespace SingedTerra.LastStand
             // terminal/background step. Audio admission never owns accounting.
             if (runShop != null && model == Session.Model)
             {
-                runShop.ObserveAuthoritativeKills(model.Kills,model.Wave,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
+                runShop.ObserveAuthoritativeKills(model,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
                 RecordActiveStep();
             }
             if (Phase != "battle" || Session.Paused || Session.Failure != "") return;
@@ -309,9 +309,9 @@ namespace SingedTerra.LastStand
             }
             SyncAudioAdmission();
             bool feedbackAllowed = !suppressCallbackFeedback && Session.CanRun;
+            if (feedbackAllowed) Audio.PlayEvents(model.Events);
             foreach (var evt in model.Events)
             {
-                if (feedbackAllowed) Audio.PlayEvent(evt.Kind, evt.Amount, !evt.Killed);
                 // Authoritative hit evidence is independent of audiovisual admission.
                 if (evt.Kind == EncounterEventKind.Cannon)
                     LastStandObservations.Hit(model);
@@ -389,7 +389,7 @@ namespace SingedTerra.LastStand
         void FinalizeShop(LastStandShopPurchaseLifecycle lifecycle, EncounterModel model)
         {
             if (runShop == null) return;
-            if (model != null) runShop.ObserveAuthoritativeKills(model.Kills,model.Wave,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
+            if (model != null) runShop.ObserveAuthoritativeKills(model,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
             FinalAccounting = runShop.FinalizeAccounting(lifecycle);
         }
 

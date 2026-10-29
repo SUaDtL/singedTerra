@@ -8,7 +8,7 @@ static class EconomyHorizonMeasurements
     static int Main()
     {
         Console.WriteLine("track,totalCap,permanentCap,firstCost,costThrough10,costThrough50,costThrough100,costThroughCap");
-        foreach(var row in LastStandUpgradeCatalog.Tracks)
+        foreach(var row in LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion).Tracks)
             Console.WriteLine(String.Join(",",new object[]{row.Key,row.TotalCap,row.PermanentCap,row.PermanentPrice(1),
                 CostThrough(row,10),CostThrough(row,50),CostThrough(row,100),CostThrough(row,row.PermanentCap)}));
         return 0;

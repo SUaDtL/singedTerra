@@ -4,8 +4,12 @@ These checks prove bounded catalog browsing, not rendered controls or gameplay a
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
 
 PROJECT = Path(__file__).resolve().parents[2]
 EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
@@ -20,7 +24,7 @@ def compile_checks(executable, source=SOURCE):
         "LastStandUpgradeCatalog.cs", "LastStandEconomyCatalog.cs", "MechanicsShopModel.cs", "LastStandTierCatalog.cs",
         "LastStandWaveCatalog.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs")]
     return subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+",
-                           f"-out:{executable}", str(source), *[str(p) for p in dependencies], str(CHECKS)],
+                           f"-out:{executable}", *map(str, complete_sources(SOURCE.parent, [source] + dependencies)), str(CHECKS)],
                           capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
 
 

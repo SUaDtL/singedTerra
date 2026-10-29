@@ -97,13 +97,15 @@ namespace SingedTerra.LastStand
         public int UnlockTier { get; }
         public int UnlockWave { get; }
         public bool InitiallyUnlocked => UnlockTier==0;
-        public LastStandFittingDefinition(LastStandFitting mechanic,string id,string name,string description,int unlockTier=0,int unlockWave=0)
+        public bool Playable { get; }
+        public LastStandFittingDefinition(LastStandFitting mechanic,string id,string name,string description,int unlockTier=0,int unlockWave=0,bool playable=true)
         {
             // Validate exactly the text and identity consumed by selectors.
             new LastStandSelectionOption(id,name,description);
             if(!Enum.IsDefined(typeof(LastStandFitting),mechanic)||unlockTier<0||unlockWave<0||(unlockTier==0)!=(unlockWave==0))
                 throw new ArgumentException("Invalid fitting mechanic or unlock.");
             Mechanic=mechanic;Id=id;Name=name;this.description=description;UnlockTier=unlockTier;UnlockWave=unlockWave;
+            Playable=playable;
             new LastStandSelectionOption(id,name,Description);
         }
         public LastStandSelectionOption Option(bool unlocked)=>new LastStandSelectionOption(Id,Name,Description,InitiallyUnlocked||unlocked);
@@ -111,13 +113,18 @@ namespace SingedTerra.LastStand
 
     public static class LastStandFittingCatalog
     {
-        public static IReadOnlyList<LastStandFittingDefinition> Definitions { get; } = Array.AsReadOnly(new[] {
+        public static IReadOnlyList<LastStandFittingDefinition> Legacy { get; } = Array.AsReadOnly(new[] {
             new LastStandFittingDefinition(LastStandFitting.Repair,"repair","Field Repair",
                 "Repairs hull during the run. Choose sustain alongside the automatic cannon."),
             new LastStandFittingDefinition(LastStandFitting.Launcher,"launcher","Auxiliary Launcher",
                 "Adds an independently firing launcher alongside the automatic cannon."),
             new LastStandFittingDefinition(LastStandFitting.Scattergun,"scattergun","Auxiliary Scattergun",
                 "Hits up to three nearby enemies per burst alongside the automatic cannon.",1,100)
+        });
+        public static IReadOnlyList<LastStandFittingDefinition> Definitions { get; } = Array.AsReadOnly(new[] {
+            Legacy[0],Legacy[1],Legacy[2],
+            new LastStandFittingDefinition(LastStandFitting.Mortar,"mortar","Mortar","Blasts clustered enemies around the nearest target. Armor reduces each hit; fires more slowly than the launcher.",1,500,true),
+            new LastStandFittingDefinition(LastStandFitting.Railgun,"railgun","Railgun","Ignores armor on one target, prioritizing the most armored enemy. Fires more slowly than the launcher.",2,100,true)
         });
         public static IReadOnlyList<LastStandSelectionOption> Options { get; } = OptionsFor(_=>false);
         public static string Id(LastStandFitting fitting)
@@ -134,7 +141,7 @@ namespace SingedTerra.LastStand
         {
             if(isUnlocked==null)throw new ArgumentNullException(nameof(isUnlocked));
             var result=new List<LastStandSelectionOption>();
-            foreach(var definition in Definitions)result.Add(definition.Option(isUnlocked(definition.Id)));
+            foreach(var definition in Definitions)if(definition.Playable)result.Add(definition.Option(isUnlocked(definition.Id)));
             return result.AsReadOnly();
         }
     }

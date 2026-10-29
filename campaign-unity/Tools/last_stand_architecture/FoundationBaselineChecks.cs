@@ -5,6 +5,17 @@ using System.IO;
 using SingedTerra.Encounter;
 using SingedTerra.LastStand;
 
+namespace SingedTerra.LastStand
+{
+    public sealed partial class LastStandProgression
+    {
+        // Test input codec only: the frozen cohort starts on its explicit old
+        // edition. Public TryDeploy is separately checked below for the new one.
+        public static object BaselineCheckpointJson(LastStandRunCheckpoint value)=>CheckpointJson(value);
+        public static object BaselineHistoryJson(LastStandRunHistory value)=>HistoryJson(value);
+    }
+}
+
 // Independent observations captured from the pinned pre-foundation production
 // owner. This is a synthetic cohort, not earned progression or endurance proof.
 static class FoundationBaselineChecks
@@ -45,7 +56,7 @@ static class FoundationBaselineChecks
     static void EconomicObservations()
     {
         foreach (string edition in new[] { LastStandUpgradeCatalog.LegacyEconomyVersion,
-            LastStandUpgradeCatalog.PreviousEconomyVersion, LastStandUpgradeCatalog.EconomyVersion })
+            LastStandUpgradeCatalog.PreviousEconomyVersion, LastStandUpgradeCatalog.RetainedEconomyVersion })
         {
             var economy = LastStandEconomyCatalog.Get(edition);
             foreach (int wave in new[] { 1, 10, 30, 200, 300, 2000, 5000 })
@@ -56,7 +67,7 @@ static class FoundationBaselineChecks
                     damage.PermanentPrice(level), damage.EffectAt(level, 1));
         }
         var shop = new LastStandShopState(31, LastStandFitting.Launcher,
-            new int[LastStandUpgradeCatalog.Tracks.Count]);
+            new int[8],LastStandUpgradeCatalog.RetainedEconomyVersion);
         shop.ObserveAuthoritativeKills(100);
         var buy = shop.TryPurchase(new LastStandShopPurchaseIntent(31, shop.Version,
             LastStandUpgradeTrackId.CannonAttack, LastStandBulkQuantity.Ten));
@@ -99,11 +110,16 @@ static class FoundationBaselineChecks
         raw["selectedFitting"] = "launcher";
         var levels = LastStandSaveJson.Object(raw["permanentLevels"]);
         foreach (var track in LastStandUpgradeCatalog.Tracks)
-            levels[track.Key] = track.Id == LastStandUpgradeTrackId.ScrapYield ? 0 :
+            levels[track.Key] = !track.Available || track.Id == LastStandUpgradeTrackId.ScrapYield ? 0 :
                 track.Id == LastStandUpgradeTrackId.CannonAttack ? 1000 : track.PermanentCap;
+        var retainedLevels=new int[8];foreach(var track in LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion).Tracks)
+            retainedLevels[(int)track.Id]=LastStandSaveJson.Integer(levels[track.Key]);
+        var initial=LastStandRunCheckpoint.Start(1,1,"launcher",retainedLevels,LastStandRunEdition.Legacy(LastStandUpgradeCatalog.RetainedEconomyVersion));
+        var history=new LastStandRunHistory();history.Begin(1,1,"launcher",LastStandUpgradeCatalog.RetainedEconomyVersion,"retained baseline");
+        raw["checkpoint"]=LastStandProgression.BaselineCheckpointJson(initial);raw["history"]=LastStandProgression.BaselineHistoryJson(history);raw["nextRunId"]=2;
         store.Raw = LastStandSaveJson.Write(raw);
         var profile = Load(store);
-        Require(profile.TryDeploy(), "Golden cohort could not deploy");
+        Require(profile.Checkpoint.Edition.IsLegacy, "Golden cohort must retain the pre-foundation edition");
         var model = profile.Checkpoint.RestoreModel();
         var shop = profile.Checkpoint.RestoreShop();
         for (int wave = 1; wave <= 30; wave++)
@@ -131,6 +147,8 @@ static class FoundationBaselineChecks
         Row("finalized", profile.Wallet, profile.FinalizedRunId, profile.HasCheckpoint,
             profile.HistorySnapshot.Lifetime.Runs);
         Require(profile.TryDeploy(), "Golden redeploy failed");
+        Require(profile.Checkpoint.Edition.RulesVersion==LastStandRunEdition.CurrentRulesVersion&&
+            profile.Checkpoint.Edition.ContentVersion==LastStandRunEdition.CurrentContentVersion,"New deployment selects current complete edition");
         ObserveProfile("redeploy", profile);
     }
     static int Main(string[] args)

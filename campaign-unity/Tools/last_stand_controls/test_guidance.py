@@ -5,8 +5,12 @@ Controller receipt admission and browser navigation require their integration ch
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
 
 PROJECT = Path(__file__).resolve().parents[2]
 EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
@@ -20,6 +24,7 @@ SOURCE_NAMES = ("LastStandGuidance.cs", "LastStandUpgradeCatalog.cs", "Mechanics
 def compile_checks(executable, overrides=None):
     overrides = overrides or {}
     sources = [overrides.get(name, SCRIPTS / name) for name in SOURCE_NAMES]
+    sources = complete_sources(SCRIPTS, sources)
     sources.append(Path(__file__).with_name("GuidanceChecks.cs"))
     command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{executable}"]
     command += [str(path) for path in sources]

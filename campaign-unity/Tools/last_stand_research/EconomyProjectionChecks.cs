@@ -8,7 +8,7 @@ static class EconomyProjectionChecks
     static int Main()
     {
         try {
-            foreach(string version in new[]{LastStandUpgradeCatalog.LegacyEconomyVersion,LastStandUpgradeCatalog.PreviousEconomyVersion,LastStandUpgradeCatalog.EconomyVersion}) {
+            foreach(string version in new[]{LastStandUpgradeCatalog.LegacyEconomyVersion,LastStandUpgradeCatalog.PreviousEconomyVersion,LastStandUpgradeCatalog.RetainedEconomyVersion,LastStandUpgradeCatalog.EconomyVersion}) {
                 var rules=LastStandUpgradeCatalog.ForEconomy(version);
                 var levels=new int[rules.Tracks.Count];levels[0]=100;
                 var shop=new LastStandShopState(17,LastStandFitting.Launcher,levels,version);
@@ -16,7 +16,8 @@ static class EconomyProjectionChecks
                 Check(model.CommittedCannonDamage==rules.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(100,1),"Deployment reinterprets pinned effect curve.");
                 shop.ObserveAuthoritativeKills(1000);
                 var view=LastStandShopPresentation.ProjectRun(shop,LastStandBulkQuantity.Hundred);
-                Check(view.Cards.Count==rules.Tracks.Count && view.Quantity==LastStandBulkQuantity.Hundred,"Run view changed pinned roster or quantity.");
+                int available=0;foreach(var definition in rules.Tracks)if(definition.Available)available++;
+                Check(view.Cards.Count==available && view.Quantity==LastStandBulkQuantity.Hundred,"Run view changed available edition roster or quantity.");
                 var card=view.Cards[0];
                 var result=shop.TryPurchase(new LastStandShopPurchaseIntent(view.RunId,view.Version,card.TrackId,view.Quantity));
                 Check(result.Accepted && result.PurchasedQuantity==card.PurchaseQuantity && result.ChargedScrap==card.QuotedCost,"Displayed bulk quote differs from charged transaction.");

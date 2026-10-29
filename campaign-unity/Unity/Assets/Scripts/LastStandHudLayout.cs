@@ -65,6 +65,7 @@ namespace SingedTerra.LastStand
             public ReadOnlyCollection<float> EffectHeights { get; private set; }
             public ReadOnlyCollection<float> RefusalHeights { get; private set; }
             public ReadOnlyCollection<float> ContributionHeights { get; private set; }
+            public ReadOnlyCollection<float> HeaderHeights { get; private set; }
             public float NoticeHeight { get; private set; }
             public float HeadingHeight { get; private set; }
             public float DetailHeight { get; private set; }
@@ -79,6 +80,11 @@ namespace SingedTerra.LastStand
             public ShopPanelInput(bool open, string[] cardKeys, float scrollOffset,
                 float[] effectHeights, float[] refusalHeights, float[] contributionHeights, float noticeHeight,
                 float headingHeight, float detailHeight)
+                :this(open,cardKeys,scrollOffset,effectHeights,refusalHeights,contributionHeights,noticeHeight,headingHeight,detailHeight,null) { }
+
+            public ShopPanelInput(bool open, string[] cardKeys, float scrollOffset,
+                float[] effectHeights, float[] refusalHeights, float[] contributionHeights, float noticeHeight,
+                float headingHeight, float detailHeight, float[] headerHeights)
             {
                 if (cardKeys == null) throw new ArgumentNullException(nameof(cardKeys));
                 if (float.IsNaN(scrollOffset) || float.IsInfinity(scrollOffset))
@@ -92,6 +98,7 @@ namespace SingedTerra.LastStand
                 EffectHeights = Heights(effectHeights,keys.Length,LineHeight);
                 RefusalHeights = Heights(refusalHeights,keys.Length,LineHeight);
                 ContributionHeights = Heights(contributionHeights,keys.Length,LineHeight);
+                HeaderHeights = Heights(headerHeights,keys.Length,HeadingLineHeight);
                 if (float.IsNaN(noticeHeight) || float.IsInfinity(noticeHeight) || noticeHeight < LineHeight)
                     throw new ArgumentOutOfRangeException(nameof(noticeHeight));
                 if (float.IsNaN(headingHeight) || float.IsInfinity(headingHeight) || headingHeight < LineHeight ||
@@ -557,18 +564,22 @@ namespace SingedTerra.LastStand
 
         static float ShopCardHeight(ShopPanelInput shop, int index)
         {
-            return 2 * ShopCardPadding + HeadingLineHeight + shop.ContributionHeights[index] +
+            return 2 * ShopCardPadding + ShopHeaderHeight(shop,index) + shop.ContributionHeights[index] +
                 shop.EffectHeights[index] + Math.Max(MinimumTargetSize,shop.RefusalHeights[index]) + 2 * ShopGap;
         }
+        static float ShopHeaderHeight(ShopPanelInput shop,int index) => Math.Max(HeadingLineHeight,shop.HeaderHeights[index]);
 
         static void ShopCard(List<Slot> slots, string id, float left, float top, float width, ShopPanelInput shop, int index)
         {
             Add(slots, id, "ShopContent", "panel", left, top, width, ShopCardHeight(shop,index));
             float x = left + ShopCardPadding, y = top + ShopCardPadding, inner = width - 2 * ShopCardPadding;
-            const float levelsWidth = 94;
-            Text(slots,id + "Title",id,x,y,inner - levelsWidth - ShopGap,HeadingLineHeight,BodyTextSize);
-            Text(slots,id + "Levels",id,x + inner - levelsWidth,y,levelsWidth,HeadingLineHeight);
-            y += HeadingLineHeight;
+            // Reserve the complete current level/cap, including four digits on
+            // both sides. Actual title wrapping supplies the shared row height.
+            const float levelsWidth = 136;
+            float headerHeight=ShopHeaderHeight(shop,index);
+            Text(slots,id + "Title",id,x,y,inner - levelsWidth - ShopGap,headerHeight,BodyTextSize);
+            Text(slots,id + "Levels",id,x + inner - levelsWidth,y,levelsWidth,headerHeight);
+            y += headerHeight;
             if (shop.ContributionHeights[index] > 0)
                 Text(slots,id + "NextEffect",id,x,y,inner,shop.ContributionHeights[index]);
             y += shop.ContributionHeights[index];

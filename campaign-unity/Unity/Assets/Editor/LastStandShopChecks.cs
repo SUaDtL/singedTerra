@@ -1068,6 +1068,94 @@ public static class LastStandShopChecks
             }
         }
     }
+    static void ShopHeaderLevelCapacity()
+    {
+        bool longPrice=false,longTitle=false;
+        foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
+        foreach(string fitting in new[]{"launcher","repair","scattergun"})
+        foreach(bool run in new[]{false,true})
+        using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=Save(new int[8],wallet:2000000000,allFittings:true)}))
+        {
+            Require(f.Game.Loop.Progression.TrySelectFitting(fitting),"header fixture selects its actual unlocked fitting");
+            Require(f.Game.Art.TrySelectFitting(fitting),"header fixture arranges matching authored fitting art");
+            f.Game.Loop.RestoreGaragePreview();f.Refresh();
+            Require(f.Game.Loop.FittingId==fitting,"header fixture controller agrees with selected fitting");
+            if(run){f.Game.Loop.Deploy();f.Refresh();}
+            f.Click("ShopEntry");
+            foreach(int level in new[]{0,10,100,2499,2500,4999,5000})
+            {
+                if(!run&&level>LastStandUpgradeCatalog.PermanentCap)continue;
+                // Disposable fixture arrangement; production projection still
+                // supplies every title, level, cap, price and measured glyph.
+                if(run)
+                {
+                    var owner=Shop(f.Game.Session);
+                    var tracks=(MechanicsShopTrack[])typeof(LastStandShopState).GetField("tracks",Private).GetValue(owner);
+                    foreach(var definition in owner.Definitions)
+                    {
+                        int current=Math.Min(level,definition.TotalCap),permanent=Math.Min(current,definition.PermanentCap);
+                        tracks[(int)definition.Id]=definition.CreateTrack(permanent,current-permanent);
+                    }
+                    typeof(LastStandShopState).GetProperty("Scrap").SetValue(owner,2000000000);
+                }
+                else
+                {
+                    var record=typeof(LastStandProgression).GetField("committed",Private).GetValue(f.Game.Loop.Progression);
+                    var levels=(int[])record.GetType().GetField("Levels").GetValue(record);
+                    foreach(var definition in LastStandUpgradeCatalog.Tracks)levels[(int)definition.Id]=Math.Min(level,definition.PermanentCap);
+                }
+                f.Refresh();
+                foreach(var quantity in new[]{LastStandBulkQuantity.One,LastStandBulkQuantity.Ten,LastStandBulkQuantity.Hundred,LastStandBulkQuantity.Max})
+                {
+                    Require(f.Game.Loop.ShopQuantity==quantity,"header checks retain actual bulk selection order");
+                    var view=run?LastStandShopPresentation.ProjectRun(Shop(f.Game.Session),quantity):
+                        LastStandShopPresentation.ProjectPermanent(f.Game.Loop.Progression,LastStandFittingCatalog.Parse(fitting),quantity);
+                    foreach(var category in new[]{LastStandUpgradeCategory.Attack,LastStandUpgradeCategory.Defense,LastStandUpgradeCategory.Utility})
+                    {
+                        f.Click("ShopTab"+category);f.Camera.Render();Canvas.ForceUpdateCanvases();
+                        foreach(var card in view.Cards)
+                        {
+                            if(card.Category!=category||!card.AppliesToFitting)continue;
+                            string id="ShopCard_"+card.Key,context=profile+" "+view.Mode+" "+card.Key+" level="+card.CurrentLevel+" cap="+card.Cap;
+                            var title=f.Text(id+"Title");var levels=f.Text(id+"Levels");
+                            Require(title.gameObject.activeInHierarchy&&levels.gameObject.activeInHierarchy,"actual selected header is active "+context);
+                            Require(title.text==card.Name&&levels.text=="Level "+card.CurrentLevel+" / "+card.Cap,"actual header identity "+context);
+                            Require(levels.preferredWidth<=levels.rectTransform.rect.width+1f,
+                                "complete level/cap fits actual imported font: "+context+" preferred="+levels.preferredWidth+" width="+levels.rectTransform.rect.width);
+                            Require(title.preferredHeight<=title.rectTransform.rect.height+1f&&levels.preferredHeight<=levels.rectTransform.rect.height+1f,
+                                "complete header glyph lines fit without vertical truncation "+context);
+                            var titleBounds=f.Bounds(title.rectTransform);var levelBounds=f.Bounds(levels.rectTransform);
+                            Require(!titleBounds.Overlaps(levelBounds),"title and level/cap remain separate "+context+" title="+titleBounds+" level="+levelBounds);
+                            var panel=f.Bounds((RectTransform)title.transform.parent);
+                            foreach(var text in new[]{title,levels,f.Text(id+"CurrentEffect"),f.Text(id+"Refusal")})
+                            {
+                                var bounds=f.Bounds(text.rectTransform);
+                                Require(bounds.xMin>=panel.xMin-1&&bounds.xMax<=panel.xMax+1&&bounds.yMin>=panel.yMin-1&&bounds.yMax<=panel.yMax+1,
+                                    "measured card contains "+text.name+" "+context);
+                                Require(text.preferredHeight<=text.rectTransform.rect.height+1f,"all actual text lines remain visible "+text.name+" "+context);
+                            }
+                            var buy=f.Bounds((RectTransform)f.Button(id+"Buy").transform);
+                            Require(buy.width>=43.99f&&buy.height>=43.99f,"header retains minimum purchase target "+context);
+                            longPrice|=card.QuotedCost>=100000;longTitle|=card.Name=="Scattergun Attack";
+                        }
+                    }
+                    f.Click("ShopQuantity");
+                }
+            }
+        }
+        Require(longPrice&&longTitle,"actual long aggregate prices and longest current fitting title were exercised");
+    }
+    public static void RunShopHeader()
+    {
+        bool failed=false;using(var preferencesScope=new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED");var factory=LastStandLoopController.StorageFactory;
+            bool background=Application.runInBackground;
+            try{NamedIncome("test_shop_header_level_capacity",ShopHeaderLevelCapacity,ref failed);}
+            finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
+        }
+        if(failed)EditorApplication.Exit(1);
+    }
     static void WaveInformationSurface()
     {
         foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})

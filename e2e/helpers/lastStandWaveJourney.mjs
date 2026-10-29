@@ -5,12 +5,12 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
   fetchBoundRuntime, assertServedBytes, readShopControlObservation, selectLastStandFitting,
-  assertIdleWaveSave, assertWaveSavePreserved, validateWaveAbandonSave } from './lastStandJourney.mjs';
+  assertIdleWaveSave, assertWaveSavePreserved, validateWaveAbandonSave, assertWaveRestoredState, WAVE_FITTINGS } from './lastStandJourney.mjs';
 import { tierJourneyControlGeometry } from './lastStandTierJourney.mjs';
 import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 
 const SAVE_KEY='singedTerra.lastStand.prototype.v1';
-const FITTINGS=['launcher','repair','scattergun'];
+const FITTINGS=WAVE_FITTINGS;
 export const WAVE_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs',
   'e2e/helpers/lastStandControlReveal.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
@@ -25,6 +25,7 @@ export function validateWaveResume({saved,afterResume,stable,afterStored,shop}) 
   assertWaveSavePreserved(saved,afterStored);
   const {runId,encounter:e,shop:s}=saved.checkpoint;
   for(const state of [afterResume,stable]) {
+    assertWaveRestoredState(state,saved);
     assert.equal(state.phase,'battle');assert.equal(state.saveState,'ready');
     assert.equal(state.profileVersion,e.rulesVersion);assert.equal(state.runId,runId);
     assert.equal(state.activeTier,e.tier);assert.equal(state.fittingId,FITTINGS[e.fitting]);
@@ -46,7 +47,8 @@ export function validateWaveCommit({before,after,state,repeatable,firstClear}) {
   const prior=before.checkpoint,current=after.checkpoint,e=current.encounter;
   assert.equal(current.runId,prior.runId);assert.equal(current.shop.runId,prior.runId);
   assert.equal(e.completedWave,prior.encounter.completedWave+1,'Exactly the next finite cohort commits');
-  assert.equal(e.wave,e.completedWave);assert.equal(e.rulesVersion,'last-stand-waves-v1');
+  assert.equal(e.wave,e.completedWave);assert.equal(e.rulesVersion,prior.encounter.rulesVersion);
+  assertWaveRestoredState(state,after);
   assert.equal(e.tier,prior.encounter.tier);assert.equal(e.fitting,prior.encounter.fitting);
   assert.ok(e.hull>0);assert.ok(e.kills>prior.encounter.kills);
   assert.equal(current.shop.uniqueKills,e.kills,'All cleared enemies enter the saved ledger');

@@ -114,5 +114,8 @@ class ShopLayoutTests(unittest.TestCase):
     def test_shop_measured_long_notice(self):
         self.case("shop_measured_long_notice")
 
+    def test_shop_measured_header(self):
+        self.case("shop_measured_header")
+
     def test_shop_short_landscape_closed_recovery(self):
         self.case("shop_short_landscape_closed_recovery")
