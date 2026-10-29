@@ -55,3 +55,12 @@
 - [ ] Run `npm run test:client`, `npm run check`, `npm run check:edge`, `npm run audit:deps`, `npm run build`, the isolated full Playwright suite, secret scan, and `git diff --check`.
 - [ ] Send the spec, plan, available test evidence, and final diff to an adversarial reviewer. Do not provide the H-05 sprint log.
 - [ ] Resolve all Critical, High, and merge-blocking findings, repeat exact-diff review after corrections, then use the commit and PR gates.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Later shared preparation frame. Current source/oracles: `client/src/ui/PreparationFrame.ts`, `client/src/ui/LobbyCreateView.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `cfa5fdf13c9d` (feat(pregame): add tactical deployment briefs). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

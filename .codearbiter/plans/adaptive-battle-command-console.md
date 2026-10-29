@@ -145,3 +145,12 @@ The candidate is rejected unless exact-head hosted CI, CodeQL, Edge tests, and r
 - [x] Fresh Pages online/CPU proof created a private two-seat operation with one Medium CPU, readied QA, and entered the real lockstep battle. The deployed console showed QA as the active commander, the real weapon/Angle/Power/Wind controls, exactly one Fire action, and the two-seat ledger. One ordinary human Baby Missile shot was followed by CPU play and control returned to QA at 40 health; this is direct observed handoff evidence only, not an inference about awards, authority, or broader network reliability. The test operation was returned to the lobby and left.
 
 Status: the adaptive battle-command console player outcome is delivered and production-verified. The unmarked historic RED rows are an explicit governance-record gap and do not claim unfinished product behavior. `career.initiative.0001` remains active for the next player-facing outcome.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Historical RED gaps; later console owner. Current source/oracles: `client/src/ui/battleConsole/lifecycle.ts`, `e2e/command-console-journey.spec.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `31ae2f869f8a` (docs(console): record production proof (#426)). The nine explicitly missing historical RED records remain missing. Later GREEN, source and merged delivery do not reconstruct those RED runs. Current console implementation is owned by the later semantic/lifecycle modules.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

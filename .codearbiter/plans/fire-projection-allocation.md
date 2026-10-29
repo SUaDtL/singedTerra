@@ -53,3 +53,12 @@
 - [ ] Require every hosted check green on the exact reviewed head, then use the standing PR-only merge authority.
 - [ ] Verify Pages exact-main provenance and live smoke; close issue #68 with the reviewed disposition.
 - [ ] Select the next highest-value bounded sprint cell.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `shared/src/engine/GameEngine.ts`, `scripts/checks/fire_projection.mjs`.
+
+The latest change to this historical plan reachable from `origin/main` is `ef602260b0d8` (Reuse stable fire projections during napalm decay (#243)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

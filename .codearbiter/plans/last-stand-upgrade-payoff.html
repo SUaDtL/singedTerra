@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: player controls, settings and game speed — sprint plan · codeArbiter</title><style>
 :root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
-</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-UPGRADE-PAYOFF-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-upgrade-payoff.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: player controls, settings and game speed — sprint plan</h1><p class="deck">Nine pending tasks: persistent preferences, fixed-step game speed, real menu/settings, ambient audio, display, opt-out guidance/help, save/account navigation, integration qualification and owner review.</p><div class="meta"><span>ST-LS-UPGRADE-PAYOFF-PLAN</span><span>Revision 69 · schema 0.3.2</span><span>44 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-UPGRADE-PAYOFF-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>2b2565bceaf31f51ebcca69028bef1651a52c01754b60e7d36c560b30d42a2dc</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2>
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-UPGRADE-PAYOFF-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-upgrade-payoff.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: player controls, settings and game speed — sprint plan</h1><p class="deck">Nine pending tasks: persistent preferences, fixed-step game speed, real menu/settings, ambient audio, display, opt-out guidance/help, save/account navigation, integration qualification and owner review.</p><div class="meta"><span>ST-LS-UPGRADE-PAYOFF-PLAN</span><span>Revision 71 · schema 0.3.2</span><span>45 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-UPGRADE-PAYOFF-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>2b2565bceaf31f51ebcca69028bef1651a52c01754b60e7d36c560b30d42a2dc</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2>
 <!-- CA:BEGIN:PRE-OWNER-APPROVAL -->
 <article class="record" id="PRE-OWNER-APPROVAL" data-ca-symbol="PRE-OWNER-APPROVAL" data-ca-kind="prerequisites"><div class="record-head"><a class="id" href="#PRE-OWNER-APPROVAL">PRE-OWNER-APPROVAL</a><h3>Careful approval of the widened sprint</h3></div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Requirement</span>The owner approves the concrete revised player-controls/settings/music/speed proposal before implementation. Agreement that it is a great candidate and selecting included features establish scope, not permission to skip the requested careful review.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-REQUEST">SRC-REQUEST</a></li><li><a href="#SRC-WIDER">SRC-WIDER</a></li><li><a href="#SRC-MUSIC">SRC-MUSIC</a></li><li><a href="#SRC-SPEED">SRC-SPEED</a></li></ul></div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-OBSERVE">T-OBSERVE</a></li><li><a href="#T-SPEED">T-SPEED</a></li><li><a href="#T-MENU">T-MENU</a></li><li><a href="#T-AUDIO">T-AUDIO</a></li><li><a href="#T-DISPLAY">T-DISPLAY</a></li><li><a href="#T-CUE">T-CUE</a></li><li><a href="#T-DATA">T-DATA</a></li><li><a href="#T-VERIFY">T-VERIFY</a></li><li><a href="#T-REVIEW">T-REVIEW</a></li></ul></div><details><summary>Recorded prerequisite assessment</summary><div class="fields"><div class="field"><span class="label">Definition current</span>true</div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Kind</span>decision</div><div class="field"><span class="label">Needs decision</span>false</div><div class="field"><span class="label">Observation</span><div class="fields"><div class="field"><span class="label">Definition sha256</span>6b25f2eebfc092c166896b469a6e7237dfa3fe2009f2b03331a9bd7dd97aefc0</div><div class="field"><span class="label">Origin</span>user_statement</div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-21T22:44:32Z</div><div class="field"><span class="label">Source</span>Current conversation user message on 2026-10-21: Approved</div><div class="field"><span class="label">Summary</span>Owner approved the revised nine-task player-controls/settings/music/speed sprint. This is implementation authorization, not final owner acceptance or merge/publication authority.</div></div></div><div class="field"><span class="label">Outcome</span>satisfied</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded state</span>not_satisfied</div><div class="field"><span class="label">Requirement</span>The owner approves the concrete revised player-controls/settings/music/speed proposal before implementation. Agreement that it is a great candidate and selecting included features establish scope, not permission to skip the requested careful review.</div><div class="field"><span class="label">Scope</span>tasks</div><div class="field"><span class="label">Task refs</span><ul class="items"><li><a href="#T-OBSERVE">T-OBSERVE</a></li><li><a href="#T-SPEED">T-SPEED</a></li><li><a href="#T-MENU">T-MENU</a></li><li><a href="#T-AUDIO">T-AUDIO</a></li><li><a href="#T-DISPLAY">T-DISPLAY</a></li><li><a href="#T-CUE">T-CUE</a></li><li><a href="#T-DATA">T-DATA</a></li><li><a href="#T-VERIFY">T-VERIFY</a></li><li><a href="#T-REVIEW">T-REVIEW</a></li></ul></div><div class="field"><span class="label">Title</span>Careful approval of the widened sprint</div></div></details></article>
 <!-- CA:END:PRE-OWNER-APPROVAL -->
@@ -109,6 +109,10 @@
 <!-- CA:BEGIN:SEC-DRAFT-VALIDATION -->
 <article class="record" id="SEC-DRAFT-VALIDATION" data-ca-symbol="SEC-DRAFT-VALIDATION" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-DRAFT-VALIDATION">SEC-DRAFT-VALIDATION</a><h3>Draft status and manual review</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Structural/ready validation checks the completeness of the draft, not execution approval. The owner prerequisite remains unsatisfied. T-REVIEW includes a real read-only PR-status command for its delivery check; that command cannot satisfy the separate actual owner listening/usability review. No tests or implementation have run for this plan.</p></div></div></article>
 <!-- CA:END:SEC-DRAFT-VALIDATION -->
+
+<!-- CA:BEGIN:SEC-MAINTENANCE-20261029 -->
+<article class="record" id="SEC-MAINTENANCE-20261029" data-ca-symbol="SEC-MAINTENANCE-20261029" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-MAINTENANCE-20261029">SEC-MAINTENANCE-20261029</a><h3>2026-10-29 maintenance reconciliation</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Controls/settings/campaign retirement implementation, maintained through architecture. Menu/settings, speed, graphics/fullscreen, real audio preferences, prompt opt-outs, scalable selectors, module callouts and Ash Road retirement are implemented. Later research owns earned speeds beyond1x and later combat owns additional modules/environments. T-REVIEW and T-VERIFY must not imply unrecorded owner listening, motion or device acceptance.</p></div><div class="block"><p>Scope reviewed against source af17d905 plus the owned PR547 maintenance diff. This dated note reconciles current ownership; it does not fabricate historical RED, native receipts, acceptance, merge or deployment. Original task state and historical evidence remain intact. The current release-readiness record names remaining delivery proof.</p></div><div class="block"><ul class="items"><li>Current source: campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs</li><li>Current source: campaign-unity/Unity/Assets/Scripts/Platform/LastStandPlatform.cs</li><li>Current source: campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md</li></ul></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Task</th><th scope="col">Recorded implementation state</th><th scope="col">Existing recorded qualification/reason</th></tr></thead><tbody><tr><td>T-OBSERVE</td><td>REVIEW</td><td>Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners.</td></tr><tr><td>T-SPEED</td><td>REVIEW</td><td>Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners.</td></tr><tr><td>T-MENU</td><td>REVIEW</td><td>Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners.</td></tr><tr><td>T-AUDIO</td><td>REVIEW</td><td>Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners.</td></tr><tr><td>T-DISPLAY</td><td>REVIEW</td><td>Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners.</td></tr><tr><td>T-CUE</td><td>REVIEW</td><td>Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners.</td></tr><tr><td>T-DATA</td><td>REVIEW</td><td>Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners.</td></tr><tr><td>T-VERIFY</td><td>REVIEW</td><td>Implementation reported complete; verification and review are not assessed by this progress update.</td></tr><tr><td>T-REVIEW</td><td>PENDING</td><td>Original recorded state preserved; no acceptance inferred from this maintenance review.</td></tr><tr><td>T-SELECTORS</td><td>REVIEW</td><td>Implementation reported complete; verification and review are not assessed by this progress update.</td></tr><tr><td>T-ENVIRONMENTS</td><td>REVIEW</td><td>Implementation reported complete; verification and review are not assessed by this progress update.</td></tr><tr><td>T-GARAGE</td><td>REVIEW</td><td>Implementation reported complete; verification and review are not assessed by this progress update.</td></tr><tr><td>T-CAMPAIGN</td><td>REVIEW</td><td>Implementation reported complete; verification and review are not assessed by this progress update.</td></tr></tbody></table></div></div></div></article>
+<!-- CA:END:SEC-MAINTENANCE-20261029 -->
 </section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
 <!-- CA:BEGIN:SRC-REQUEST -->
 <article class="record" id="SRC-REQUEST" data-ca-symbol="SRC-REQUEST" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-REQUEST">SRC-REQUEST</a><h3>Owner request: plan the next Last Stand sprint</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-21</div><div class="field"><span class="label">Note</span>Planning only. The owner explicitly requires careful approval before execution; codeArbiter #1013 must merge before #1016.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
@@ -177,7 +181,7 @@
 <!-- CA:BEGIN:SRC-CAMPAIGN-ONLY -->
 <article class="record" id="SRC-CAMPAIGN-ONLY" data-ca-symbol="SRC-CAMPAIGN-ONLY" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CAMPAIGN-ONLY">SRC-CAMPAIGN-ONLY</a><h3>Owner retires Ash Road code in this PR</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-22</div><div class="field"><span class="label">Note</span>Owner: This PR can go ahead and drop Ash Road, Last Stand IS the campaign. Clarification: remove the ash road code too. This supersedes older Ash Road preservation requirements for the removed feature.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
 <!-- CA:END:SRC-CAMPAIGN-ONLY -->
-</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>0698acba1c0bd6c550f99333f4e467d0332893a4</div><div class="field"><span class="label">Observed date</span>2026-10-21</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group" id="group-verification_inputs"><a class="back" href="#main-content">Top</a><h2>Verification inputs</h2><div class="fields"><div class="field"><span class="label">Exclude directories</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Roots</span><ul class="items"><li>campaign-unity/docs/PLAYER-CONTROLS-VALIDATION.md</li><li>campaign-unity/Unity/Assets/Scripts/LastStandPreferences.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandPreferencesStore.cs</li><li>campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib</li><li>campaign-unity/Tools/last_stand_controls/test_preferences.py</li><li>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs</li><li>campaign-unity/Unity/Assets/Scripts/EncounterSession.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandSpeedPolicy.cs</li><li>campaign-unity/Tools/last_stand_controls/test_speed.py</li><li>campaign-unity/Tools/last_stand_ui/test_background_clock.py</li><li>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs</li><li>campaign-unity/Tools/last_stand_controls/test_menu.py</li><li>campaign-unity/Tools/make_web_entry.py</li><li>campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandMusic.cs</li><li>campaign-unity/Tools/last_stand_controls/test_audio_settings.py</li><li>campaign-unity/Unity/Assets/Scripts/EncounterView.cs</li><li>campaign-unity/Unity/Assets/Scripts/LastStandDisplaySettings.cs</li><li>campaign-unity/Unity/Assets/Plugins/WebGL/LastStandDisplay.jslib</li><li>campaign-unity/Tools/last_stand_controls/test_display.py</li><li>campaign-unity/Unity/Assets/Scripts/LastStandGuidance.cs</li><li>campaign-unity/Tools/last_stand_controls/test_guidance.py</li><li>client/src/ui/Lobby.ts</li><li>client/src/ui/Lobby.account.test.ts</li><li>client/src/ui/commandCenter/LastStandCommandView.ts</li><li>campaign-unity/Tools/last_stand_controls/test_navigation.py</li><li>e2e/helpers/lastStandTierJourney.mjs</li><li>scripts/last-stand-controls.mjs</li><li>scripts/last-stand-first-session.mjs</li><li>campaign-unity/Tools/build_web.py</li><li>client/public/last-stand</li><li>scripts/assets/verify-last-stand-source.mjs</li><li>scripts/assets/verify-last-stand.mjs</li><li>e2e/helpers/lastStandJourney.mjs</li><li>campaign-unity/docs/LAST-STAND-ROADMAP.md</li></ul></div></div></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: b87c55b6bb72d759d51a3af5a65b1360428c110e1eb03e3bd9a4a626d6995239<br>Model SHA-256: abff00649bc7b85ad1c96dc264e58c60bfd93f233a4fd4d9892133e2730060b3</p></footer></main></div>
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>0698acba1c0bd6c550f99333f4e467d0332893a4</div><div class="field"><span class="label">Observed date</span>2026-10-21</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group" id="group-verification_inputs"><a class="back" href="#main-content">Top</a><h2>Verification inputs</h2><div class="fields"><div class="field"><span class="label">Exclude directories</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Roots</span><ul class="items"><li>campaign-unity/Unity/Assets</li><li>campaign-unity/Unity/Packages</li><li>campaign-unity/Unity/ProjectSettings</li><li>campaign-unity/Tools</li><li>campaign-unity/docs</li><li>client</li><li>shared</li><li>scripts</li><li>e2e</li><li>package.json</li><li>package-lock.json</li><li>.github/workflows</li></ul></div></div></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 6174fe1f6845b6813d585680198882c705f2834f5923966322b2f9bc88a4f1f0<br>Model SHA-256: 994c3bfe44dbcb80acd9d615b0328b689a19a6a2d45e2a2719c9695bcb033ab0</p></footer></main></div>
 <script id="ca-artifact-model" type="application/json">
 {
   "artifact_id": "ST-LS-UPGRADE-PAYOFF-PLAN",
@@ -1072,9 +1076,9 @@
     "state": "draft"
   },
   "integrity": {
-    "model_sha256": "abff00649bc7b85ad1c96dc264e58c60bfd93f233a4fd4d9892133e2730060b3",
-    "normative_sha256": "b87c55b6bb72d759d51a3af5a65b1360428c110e1eb03e3bd9a4a626d6995239",
-    "symbol_count": 44
+    "model_sha256": "994c3bfe44dbcb80acd9d615b0328b689a19a6a2d45e2a2719c9695bcb033ab0",
+    "normative_sha256": "6174fe1f6845b6813d585680198882c705f2834f5923966322b2f9bc88a4f1f0",
+    "symbol_count": 45
   },
   "kind": "plan",
   "normative": {
@@ -1319,6 +1323,107 @@
         ],
         "id": "SEC-DRAFT-VALIDATION",
         "title": "Draft status and manual review"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Controls/settings/campaign retirement implementation, maintained through architecture. Menu/settings, speed, graphics/fullscreen, real audio preferences, prompt opt-outs, scalable selectors, module callouts and Ash Road retirement are implemented. Later research owns earned speeds beyond1x and later combat owns additional modules/environments. T-REVIEW and T-VERIFY must not imply unrecorded owner listening, motion or device acceptance.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Scope reviewed against source af17d905 plus the owned PR547 maintenance diff. This dated note reconciles current ownership; it does not fabricate historical RED, native receipts, acceptance, merge or deployment. Original task state and historical evidence remain intact. The current release-readiness record names remaining delivery proof.",
+            "type": "paragraph"
+          },
+          {
+            "items": [
+              "Current source: campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs",
+              "Current source: campaign-unity/Unity/Assets/Scripts/Platform/LastStandPlatform.cs",
+              "Current source: campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md"
+            ],
+            "refs": [],
+            "type": "list"
+          },
+          {
+            "columns": [
+              "Task",
+              "Recorded implementation state",
+              "Existing recorded qualification/reason"
+            ],
+            "refs": [],
+            "rows": [
+              [
+                "T-OBSERVE",
+                "REVIEW",
+                "Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners."
+              ],
+              [
+                "T-SPEED",
+                "REVIEW",
+                "Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners."
+              ],
+              [
+                "T-MENU",
+                "REVIEW",
+                "Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners."
+              ],
+              [
+                "T-AUDIO",
+                "REVIEW",
+                "Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners."
+              ],
+              [
+                "T-DISPLAY",
+                "REVIEW",
+                "Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners."
+              ],
+              [
+                "T-CUE",
+                "REVIEW",
+                "Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners."
+              ],
+              [
+                "T-DATA",
+                "REVIEW",
+                "Approved implementation is present. Focused source checks and ten imported-scene cases pass; independent correction review cleared critical/high source findings. Integrated Web/media qualification and final owner acceptance remain separate and pending. Verification definitions now name actual maintained runners."
+              ],
+              [
+                "T-VERIFY",
+                "REVIEW",
+                "Implementation reported complete; verification and review are not assessed by this progress update."
+              ],
+              [
+                "T-REVIEW",
+                "PENDING",
+                "Original recorded state preserved; no acceptance inferred from this maintenance review."
+              ],
+              [
+                "T-SELECTORS",
+                "REVIEW",
+                "Implementation reported complete; verification and review are not assessed by this progress update."
+              ],
+              [
+                "T-ENVIRONMENTS",
+                "REVIEW",
+                "Implementation reported complete; verification and review are not assessed by this progress update."
+              ],
+              [
+                "T-GARAGE",
+                "REVIEW",
+                "Implementation reported complete; verification and review are not assessed by this progress update."
+              ],
+              [
+                "T-CAMPAIGN",
+                "REVIEW",
+                "Implementation reported complete; verification and review are not assessed by this progress update."
+              ]
+            ],
+            "type": "table"
+          }
+        ],
+        "id": "SEC-MAINTENANCE-20261029",
+        "title": "2026-10-29 maintenance reconciliation"
       }
     ],
     "sources": [
@@ -2829,47 +2934,18 @@
     "verification_inputs": {
       "exclude_directories": [],
       "roots": [
-        "campaign-unity/docs/PLAYER-CONTROLS-VALIDATION.md",
-        "campaign-unity/Unity/Assets/Scripts/LastStandPreferences.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandPreferencesStore.cs",
-        "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib",
-        "campaign-unity/Tools/last_stand_controls/test_preferences.py",
-        "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs",
-        "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandSpeedPolicy.cs",
-        "campaign-unity/Tools/last_stand_controls/test_speed.py",
-        "campaign-unity/Tools/last_stand_ui/test_background_clock.py",
-        "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs",
-        "campaign-unity/Tools/last_stand_controls/test_menu.py",
-        "campaign-unity/Tools/make_web_entry.py",
-        "campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandMusic.cs",
-        "campaign-unity/Tools/last_stand_controls/test_audio_settings.py",
-        "campaign-unity/Unity/Assets/Scripts/EncounterView.cs",
-        "campaign-unity/Unity/Assets/Scripts/LastStandDisplaySettings.cs",
-        "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandDisplay.jslib",
-        "campaign-unity/Tools/last_stand_controls/test_display.py",
-        "campaign-unity/Unity/Assets/Scripts/LastStandGuidance.cs",
-        "campaign-unity/Tools/last_stand_controls/test_guidance.py",
-        "client/src/ui/Lobby.ts",
-        "client/src/ui/Lobby.account.test.ts",
-        "client/src/ui/commandCenter/LastStandCommandView.ts",
-        "campaign-unity/Tools/last_stand_controls/test_navigation.py",
-        "e2e/helpers/lastStandTierJourney.mjs",
-        "scripts/last-stand-controls.mjs",
-        "scripts/last-stand-first-session.mjs",
-        "campaign-unity/Tools/build_web.py",
-        "client/public/last-stand",
-        "scripts/assets/verify-last-stand-source.mjs",
-        "scripts/assets/verify-last-stand.mjs",
-        "e2e/helpers/lastStandJourney.mjs",
-        "campaign-unity/docs/LAST-STAND-ROADMAP.md"
+        "campaign-unity/Unity/Assets",
+        "campaign-unity/Unity/Packages",
+        "campaign-unity/Unity/ProjectSettings",
+        "campaign-unity/Tools",
+        "campaign-unity/docs",
+        "client",
+        "shared",
+        "scripts",
+        "e2e",
+        "package.json",
+        "package-lock.json",
+        ".github/workflows"
       ]
     }
   },
@@ -2882,7 +2958,7 @@
     "renderer": "codearbiter-html/0.1.0",
     "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
   },
-  "revision": 69,
+  "revision": 71,
   "schema_version": "0.3.2",
   "slug": "last-stand-upgrade-payoff"
 }

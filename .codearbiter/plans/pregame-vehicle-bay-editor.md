@@ -128,3 +128,12 @@ Stage only the spec, plan, Lobby source, Lobby Garage unit test, and Garage brow
 - Spec coverage: Tasks 1 and 2 implement identity, uniform and mixed summaries, grouped controls, preserved interactions, and compact geometry. Task 3 carries every delivery gate.
 - Placeholder scan: no deferred implementation text or unspecified test work remains.
 - Type consistency: Task 1 introduces every class consumed by Task 2. Existing `TankLoadout` and catalog constants remain the only state inputs.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Later Garage owner. Current source/oracles: `client/src/ui/LobbyGarageView.ts`, `client/src/ui/LobbyGarageView.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `c35fd15726a8` (feat(pregame): compose the Vehicle Bay editor). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

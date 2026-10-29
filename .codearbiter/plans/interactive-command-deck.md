@@ -113,3 +113,12 @@
   standing authority. Require the final governance head to re-clear hosted CI and
   exact-package adversarial review, squash merge, then verify exact merge-SHA Pages
   provenance, HTTP 200, hosted smoke, and localhost hygiene.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded Command Deck layout. Current source/oracles: `client/src/ui/battleConsole/lifecycle.ts`, `e2e/command-console-journey.spec.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `018956ab2c2d` (feat(hud): make Command Deck interactive (#277)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

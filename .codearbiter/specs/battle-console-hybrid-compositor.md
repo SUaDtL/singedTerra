@@ -241,3 +241,10 @@ Only the maintainer may accept the finished visual surface.
 - Asset or WebGL failure falls back to readable DOM rather than blocking play.
 - The old implementation is removed incrementally only after each replacement
   clears its acceptance contract.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+The original pending fresh-session implementation-plan review describes an earlier stage. Current semantic mounting/lifecycle and optional Pixi compositor source exists under client/src/ui/battleConsole. ADR-0018 retains semantic ownership; the owner explicitly resolved the recovery-loading variance on2026-10-29 through ADR-0020 (startup semantic code, battle-only mounting, lazy Pixi).
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.

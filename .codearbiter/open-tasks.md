@@ -27,10 +27,10 @@ action-shape, turn-gate/bot-proxy/per-seat-buy auth); resync buffer drops alread
 budget harness (`flightticks.mjs`, worst 700 vs 10k cap); AI-plan determinism harness
 (`ai_determinism.mjs`). See `.codearbiter/specs/stabilize-and-juice.md`.
 
-- Harden referee turn-gate trust: `actingPlayerId`/`nextActiveIndex`/`roundOver` are client-reported and only weakly bounds-checked, yet they set the authoritative cursor — a buggy/malicious client can stall a room. Re-derive the next seat from the roster + log instead of trusting the wire (referee can't run physics but can skip eliminated seats). `submit_action/index.ts:137-181, 261-273`. [M/S]
-- Bound action-log replay on join/reconnect: `initialize()` fetches the full log and replays every shot synchronously (up to 10k ticks each), freezing the tab for late joiners / long matches. Add periodic state checkpoints/snapshots, or at least chunk-and-yield. `client/src/client/NetworkClient.ts:200-218`. [M/M]
-- Add one retry to best-effort `finish_game` POST: a transient failure means match standings are never persisted; the `UNIQUE(room_id)` on `match_scores` already makes it idempotent. `client/src/client/NetworkClient.ts:918-948`. [L/S]
-- Improve rematch successor recovery: the non-initiating peer polls 8×150ms then gives up silently if replication lags >1.2s, stranding the player on the finished room. Increase budget or add a manual "rejoin rematch" affordance; also add a reaper for dangling `rematch_room_id` from partial `restart_game` failure. `client/src/client/NetworkClient.ts:565-590`, `supabase/functions/restart_game/index.ts:85-173`. [L/M]
+- [x] maintenance.reconciled.0001 - Harden referee turn-gate trust: `actingPlayerId`/`nextActiveIndex`/`roundOver` are client-reported and only weakly bounds-checked, yet they set the authoritative cursor — a buggy/malicious client can stall a room. Re-derive the next seat from the roster + log instead of trusting the wire (referee can't run physics but can skip eliminated seats). `submit_action/index.ts:137-181, 261-273`. [M/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0002 - Bound action-log replay on join/reconnect: `initialize()` fetches the full log and replays every shot synchronously (up to 10k ticks each), freezing the tab for late joiners / long matches. Add periodic state checkpoints/snapshots, or at least chunk-and-yield. `client/src/client/NetworkClient.ts:200-218`. [M/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0003 - Add one retry to best-effort `finish_game` POST: a transient failure means match standings are never persisted; the `UNIQUE(room_id)` on `match_scores` already makes it idempotent. `client/src/client/NetworkClient.ts:918-948`. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0004 - Improve rematch successor recovery: the non-initiating peer polls 8×150ms then gives up silently if replication lags >1.2s, stranding the player on the finished room. Increase budget or add a manual "rejoin rematch" affordance; also add a reaper for dangling `rematch_room_id` from partial `restart_game` failure. `client/src/client/NetworkClient.ts:565-590`, `supabase/functions/restart_game/index.ts:85-173`. [L/M]  (done 2026-10-29)
 
 ## Performance & scaling
 
@@ -44,17 +44,17 @@ hot-seat initial bundle; remove the dead `/socket.io` dev proxy; trim napalm
 determinism harnesses. See `sprint-log.md`.
 
 - **Deferred (attempted in PR #25, found NOT equivalent):** start `applyGravity`'s column passes at the crater's `yStart` instead of y=0. The crater top (`deform`'s `yMin`, the topmost CLEARED pixel) does NOT bound the topmost SOLID pixel that must fall — a hillside leaves a floating overhang above `yStart`, so raising the scan's lower bound strands those solids and changes the compacted bitmap (a determinism break). Needs a per-column topmost-solid bound, not `yStart`. `shared/src/engine/Terrain.ts` settleStep. [M/M]
-- Coarse-then-refine the AI shot search: `hard` sweeps ~6800 candidates × up to 1600 ticks each, run synchronously on EVERY client in networked mode → frame stalls in bot rooms. Coarse grid then fine-search around the best; early-out on near-target. Keep search order deterministic. `shared/src/engine/AI.ts:269-340`. [M/M]
+- [x] maintenance.reconciled.0005 - Coarse-then-refine the AI shot search: `hard` sweeps ~6800 candidates × up to 1600 ticks each, run synchronously on EVERY client in networked mode → frame stalls in bot rooms. Coarse grid then fine-search around the best; early-out on near-target. Keep search order deterministic. `shared/src/engine/AI.ts:269-340`. [M/M]  (done 2026-10-29)
 
 - Swap Realtime transport from Postgres Changes to Realtime **Broadcast**: have the referee broadcast the committed action row directly instead of relying on the WAL/replication listener — cuts broadcast latency and per-room replication cost at scale. Decided direction (CONFIRM-03 = stay Supabase, optimize in place). `client/src/client/NetworkClient.ts` channel setup, `supabase/functions/submit_action/index.ts`. [M/M]
-- Document Cloudflare Durable Objects / PartyKit as the DESIGNATED transport successor with an explicit trigger condition (Realtime connection-limit pressure OR move toward a serious/mobile release). Capture the migration sketch (DO = per-room coordinator: in-memory seq, WebSocket fan-out, action-log in DO storage; engine + `shared/net/replay.ts` unchanged). Governance note, not code. [L/S]
+- [x] maintenance.reconciled.0006 - Document Cloudflare Durable Objects / PartyKit as the DESIGNATED transport successor with an explicit trigger condition (Realtime connection-limit pressure OR move toward a serious/mobile release). Capture the migration sketch (DO = per-room coordinator: in-memory seq, WebSocket fan-out, action-log in DO storage; engine + `shared/net/replay.ts` unchanged). Governance note, not code. [L/S]  (done 2026-10-29)
 
 ## Physics & visual (deterministic-safe unless flagged)
 
-- Animate terrain collapse instead of instant teleport: `applyGravity` snaps unsupported columns to the bottom in one tick; make it a fixed-step multi-tick settle during RESOLVING so dirt cascades and tanks bury progressively. `shared/src/engine/Terrain.ts:244-261`, `GameEngine.ts` RESOLVING loop. [H/M]
-- Add wall/boundary modes (wrap / bounce / concrete) via `GameOptions.walls`; OOB is currently always a flat miss. Bank shots are a signature SE mechanic. `shared/src/engine/Physics.ts` collide/stepProjectile, `GameOptions.ts`. [H/M] (corroborated: physics + feature)
-- Add tunneling/digger weapons (Sandhog/Tunneler): detonate then bore a tunnel of discs along a deterministic path before a final blast — counters burial/walls, reuses `deform()`. `shared/src/engine/WeaponSystem.ts`, `GameEngine.ts`. [M/M] (corroborated: physics + feature)
-- Add a small deterministic projectile drag term so wind asymptotes to a terminal drift (currently wind accelerates a shell without bound; arcs are perfectly parabolic). Retune + re-pin affected harness seeds. `shared/src/engine/Physics.ts` stepProjectile. [M/S]
+- [x] maintenance.reconciled.0007 - Animate terrain collapse instead of instant teleport: `applyGravity` snaps unsupported columns to the bottom in one tick; make it a fixed-step multi-tick settle during RESOLVING so dirt cascades and tanks bury progressively. `shared/src/engine/Terrain.ts:244-261`, `GameEngine.ts` RESOLVING loop. [H/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0008 - Add wall/boundary modes (wrap / bounce / concrete) via `GameOptions.walls`; OOB is currently always a flat miss. Bank shots are a signature SE mechanic. `shared/src/engine/Physics.ts` collide/stepProjectile, `GameOptions.ts`. [H/M] (corroborated: physics + feature)  (done 2026-10-29)
+- [x] maintenance.reconciled.0009 - Add tunneling/digger weapons (Sandhog/Tunneler): detonate then bore a tunnel of discs along a deterministic path before a final blast — counters burial/walls, reuses `deform()`. `shared/src/engine/WeaponSystem.ts`, `GameEngine.ts`. [M/M] (corroborated: physics + feature)  (done 2026-10-29)
+- [x] maintenance.reconciled.0010 - Add a small deterministic projectile drag term so wind asymptotes to a terminal drift (currently wind accelerates a shell without bound; arcs are perfectly parabolic). Retune + re-pin affected harness seeds. `shared/src/engine/Physics.ts` stepProjectile. [M/S]  (done 2026-10-29)
 ✅ **4½ completed in PR #21 (`stabilize-and-juice` sprint), 2026-06-20** (all render/audio-only):
 terrain strata coloring; client-side projectile smoke trail (ring buffer); tank damage states
 (<33% HP scorch/smoke) + turret-pop/wreck on death; explosion light-flash (reduce-motion gated)
@@ -62,13 +62,13 @@ terrain strata coloring; client-side projectile smoke trail (ring buffer); tank 
 **Deferred (the ½):** terrain-thud vs tank-clang impacts — needs an engine signal on
 `ExplosionEvent` (hit surface), out of that sprint's "render-only" safe cut. See below.
 
-- Audio: distinct terrain-thud vs tank-clang impacts (deferred from PR #21) — surface `hit.type==='ground'|'tank'` on `ExplosionEvent` and split the impact sound. Small additive engine field, guarded by the determinism harnesses. `shared/src/engine/GameEngine.ts`, `shared/src/types/GameState.ts`, `client/src/audio/AudioEngine.ts`. [M/S]
+- [x] maintenance.reconciled.0011 - Audio: distinct terrain-thud vs tank-clang impacts (deferred from PR #21) — surface `hit.type==='ground'|'tank'` on `ExplosionEvent` and split the impact sound. Small additive engine field, guarded by the determinism harnesses. `shared/src/engine/GameEngine.ts`, `shared/src/types/GameState.ts`, `client/src/audio/AudioEngine.ts`. [M/S]  (done 2026-10-29)
 ✅ **Completed in PR #180:** falling debris now uses swept render-only collision against the live
 terrain bitmap, rests and fades on the surface, and resumes falling when support is deformed away.
 `client/src/renderer/EffectsRenderer.ts`, `debrisMotion.ts`.
-- Heavier juice on big detonations: brief hit-stop + directional screen-kick (already reduced-motion gated). `client/src/renderer/Renderer.ts`. [L/S]
-- Anti-alias destruction edges in the render only (keep collision on the crisp bitmap): soften boundary-pixel alpha in `rebuild`. `client/src/renderer/TerrainRenderer.ts`. [L/M]
-- (Larger) Water/lava terrain hazard: a second bitmap value for indestructible+lethal pools; touches collision, collapse, and serialization. `shared/src/engine/Terrain.ts`, `Physics.ts`, `GameState` serialization. [M/L]
+- [x] maintenance.reconciled.0012 - Heavier juice on big detonations: brief hit-stop + directional screen-kick (already reduced-motion gated). `client/src/renderer/Renderer.ts`. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0013 - Anti-alias destruction edges in the render only (keep collision on the crisp bitmap): soften boundary-pixel alpha in `rebuild`. `client/src/renderer/TerrainRenderer.ts`. [L/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0014 - (Larger) Water/lava terrain hazard: a second bitmap value for indestructible+lethal pools; touches collision, collapse, and serialization. `shared/src/engine/Terrain.ts`, `Physics.ts`, `GameState` serialization. [M/L]  (done 2026-10-29)
 
 ## Feature expansion (Scorched Earth homage)
 
@@ -83,18 +83,18 @@ referee — `batteries.mjs` + 3 new referee Deno cases). Spec: `.codearbiter/spe
 button for Batteries (`HUD.ts` store is `WeaponType`-keyed; accessory rows need a small generalization);
 (b) backend redeploy (`npm run deploy:backend`) for the battery referee shape (additive/back-compat).
 
-- Tank movement on fuel — the single biggest missing SE pillar: add a `move` action (logged, so lockstep replays it) consuming `fuel`; integer px steps against existing bitmap collision; buy fuel via the catalog Fuel Tank. `shared/src/types/PlayerAction.ts`, `shared/src/net/replay.ts`, `GameEngine.ts`, `Tank.ts`. [H/M]
-- Parachutes: purchasable accessory that limits fall damage when a crater drops your tank (pure threshold in the post-terrain tank-resolution loop). Counters undermining. `GameEngine.ts` detonate(), `WeaponSystem.ts`. [H/S] — **NOTE (se-parity-economy scoping, 2026-06-21): the `[H/S]` undercounts this.** There is currently NO fall damage at all (`resolveTanksToTerrain` drops a tank onto the new floor harmlessly), so a faithful parachute first needs a NEW fall-damage gameplay mechanic (drop-distance threshold → damage) + retuning of the burial/collapse harness seeds. Treat as `[H/M]`, its own physics sprint with a playtest gate. The Battery accessory path (`buy.accessory`) is now in place to hang it on.
-- Room browser UI over the existing `list_rooms` Edge Function: surface open public rooms (players, rounds, status) so players don't have to share a code out-of-band. Lobby/UI only. `client/src/ui/Lobby.ts`. [H/M]
-- Teams mode (2v2): add `team` to `GameOptions.players`; win condition → last team standing, optional friendly fire. Roster already supports 4; win-check is centralized. `GameEngine.ts` endRoundIfDecided/computeMatchWinner. [H/M]
-- Tracer / ranging shot: cheap zero-damage preview shell reusing the AI's `simulateImpact` forward-sim to show the arc; strong onboarding + skill tool (log it like any fire if it ends the turn). `shared/src/engine/WeaponSystem.ts`, `AI.ts`, `Renderer.ts`. [M/M]
+- [x] maintenance.reconciled.0015 - Tank movement on fuel — the single biggest missing SE pillar: add a `move` action (logged, so lockstep replays it) consuming `fuel`; integer px steps against existing bitmap collision; buy fuel via the catalog Fuel Tank. `shared/src/types/PlayerAction.ts`, `shared/src/net/replay.ts`, `GameEngine.ts`, `Tank.ts`. [H/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0016 - Parachutes: purchasable accessory that limits fall damage when a crater drops your tank (pure threshold in the post-terrain tank-resolution loop). Counters undermining. `GameEngine.ts` detonate(), `WeaponSystem.ts`. [H/S] — **NOTE (se-parity-economy scoping, 2026-06-21): the `[H/S]` undercounts this.** There is currently NO fall damage at all (`resolveTanksToTerrain` drops a tank onto the new floor harmlessly), so a faithful parachute first needs a NEW fall-damage gameplay mechanic (drop-distance threshold → damage) + retuning of the burial/collapse harness seeds. Treat as `[H/M]`, its own physics sprint with a playtest gate. The Battery accessory path (`buy.accessory`) is now in place to hang it on.  (done 2026-10-29)
+- [x] maintenance.reconciled.0017 - Room browser UI over the existing `list_rooms` Edge Function: surface open public rooms (players, rounds, status) so players don't have to share a code out-of-band. Lobby/UI only. `client/src/ui/Lobby.ts`. [H/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0018 - Teams mode (2v2): add `team` to `GameOptions.players`; win condition → last team standing, optional friendly fire. Roster already supports 4; win-check is centralized. `GameEngine.ts` endRoundIfDecided/computeMatchWinner. [H/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0019 - Tracer / ranging shot: cheap zero-damage preview shell reusing the AI's `simulateImpact` forward-sim to show the arc; strong onboarding + skill tool (log it like any fire if it ends the turn). `shared/src/engine/WeaponSystem.ts`, `AI.ts`, `Renderer.ts`. [M/M]  (done 2026-10-29)
 - Multiple shield classes: add Heavy Shield (bigger pool) and Mag Deflector (reflects shots off a deterministic shield-circle normal via `reflectVelocity`, no RNG). `shared/src/engine/WeaponSystem.ts`, `GameEngine.ts`. [M/M]
 - Spectator mode: join-as-observer that read-only replays the `room_actions` log (RLS already allows member SELECT) — nearly free under lockstep; lets eliminated players keep watching. `client/src/client/NetworkClient.ts`, RLS tweak. [M/M]
-- Emotes / quick-chat over a SEPARATE Realtime broadcast channel (ephemeral, NEVER on the action log so it stays out of the deterministic seq). `client/src/client/NetworkClient.ts`, `Lobby.ts`. [M/S]
-- Interactive tutorial / onboarding: guided first shot (aim → power → read wind → fire) + aim-assist tier reusing the forward-sim; controls are currently undiscoverable (REVIEW_BACKLOG P3-13). Client UI. [M/M]
-- AI personalities: 2-3 flavors (aggressive nuke, conservative dirt-builder, area-denial napalm) by varying weapon-preference weights in the deterministic `chooseLoadout` ranking. `shared/src/engine/AI.ts`. [L/S]
+- [x] maintenance.reconciled.0020 - Emotes / quick-chat over a SEPARATE Realtime broadcast channel (ephemeral, NEVER on the action log so it stays out of the deterministic seq). `client/src/client/NetworkClient.ts`, `Lobby.ts`. [M/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0021 - Interactive tutorial / onboarding: guided first shot (aim → power → read wind → fire) + aim-assist tier reusing the forward-sim; controls are currently undiscoverable (REVIEW_BACKLOG P3-13). Client UI. [M/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0022 - AI personalities: 2-3 flavors (aggressive nuke, conservative dirt-builder, area-denial napalm) by varying weapon-preference weights in the deterministic `chooseLoadout` ranking. `shared/src/engine/AI.ts`. [L/S]  (done 2026-10-29)
 - (Larger) Guidance systems: bake a target coord into the `fire` action and apply a fixed-formula per-tick course correction (NOT live steering — that would need new mid-flight network actions). `shared/src/net/replay.ts`, `Physics.ts`. [H/L] — determinism caveat
-- (Larger) Persistent profiles / ranked-ish W/L: session-token-keyed rating to give online play retention; needs auth/persistence design (see open-questions on identity). [M/L]
+- [x] maintenance.reconciled.0023 - (Larger) Persistent profiles / ranked-ish W/L: session-token-keyed rating to give online play retention; needs auth/persistence design (see open-questions on identity). [M/L]  (done 2026-10-29)
 
 ## Housekeeping / governance
 
@@ -110,7 +110,7 @@ button for Batteries (`HUD.ts` store is `WeaponType`-keyed; accessory rows need 
 in-flight-flush paths A (projectile-in-flight → instant flush), B (game-ending → GAME_OVER), and
 D (fire-burning); `postOnceWithRetry` gained an inter-attempt backoff + `attempts<1` clamp,
 covered by three new `netretry.mjs` cases.
-- KNOWN DEVIATION (accepted, documented): same-tick multi-detonation now collides blast #2 against blast #1's un-compacted overhang (deferred-settle trade-off — deterministic, NOT a desync). If pre-animated-collapse gameplay parity is ever wanted, the only clean route is compact-immediately + replay-the-collapse-delta-as-overlay (a larger redesign). Revisit only if playtest shows it matters. `shared/src/engine/GameEngine.ts` path-A comment. [M/L]
+- [x] maintenance.reconciled.0024 - KNOWN DEVIATION (accepted, documented): same-tick multi-detonation now collides blast #2 against blast #1's un-compacted overhang (deferred-settle trade-off — deterministic, NOT a desync). If pre-animated-collapse gameplay parity is ever wanted, the only clean route is compact-immediately + replay-the-collapse-delta-as-overlay (a larger redesign). Revisit only if playtest shows it matters. `shared/src/engine/GameEngine.ts` path-A comment. [M/L]  (done 2026-10-29)
 - Manual 2-browser networked playtest owed: confirm (a) animated collapse renders + a tank visibly sinks during RESOLVING; (b) join/reconnect mid-RESOLVING replays cleanly (NetworkClient `FIRING||RESOLVING` fix); (c) buffered back-to-back shots flush correctly after the settle (rAF `wasBusy` fix). Tuning: `COLLAPSE_PX_PER_TICK=4` feel.
 
 ## Checkpoint 2026-06-21 findings (6-reviewer sweep → `.codearbiter/checkpoints/2026-06-21.md`)
@@ -121,45 +121,45 @@ Items tagged **(quick-kill → sprint)** are batched into the `checkpoint-quick-
 Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-05 ADRs).
 
 ### Security & client
-- **Stored XSS** — `buildScoreboard` interpolates peer-controlled `playerName` into `innerHTML`; a `<svg/onload=…>` name (≤20 chars, the server limit) broadcasts via the roster, replays, and executes as live HTML in every opponent's GAME_OVER/ROUND_OVER scoreboard. Build rows via `createElement` + `.textContent` (or HTML-escape); optionally strip `<>` in the server name validators. `client/src/ui/HUD.ts:1024` (src `client/src/client/NetworkClient.ts:962`). [H/S] **(quick-kill → sprint)**
-- `console.error` logs the full ephemeral `playerId` (the de-facto identity token); truncate or drop it. `client/src/client/NetworkClient.ts:370`. [L/S] **(quick-kill → sprint)**
-- `[auth] enabled=true` + `enable_signup=true` in committed `supabase/config.toml` contradicts the no-auth design (local-dev scaffold; no evidence deployed); set `enabled=false` / comment as local-only. `supabase/config.toml:29-38`. [L/S] **(quick-kill → sprint)**
-- Untrusted `p.color` → `dot.style.background`, validated only non-empty/unique; safe today (DOM setter discards invalid) but unvalidated — add a hex/`rgb()` allowlist in the server validators. `client/src/ui/Lobby.ts:1243,1668`. [L/S]
-- Room code: 4-char/36-symbol via `b%36` (slight modulo bias); accepted non-security CSPRNG tradeoff (controls §41) — no action unless room confidentiality ever matters. `supabase/functions/_shared/mod.ts:147-153`. [—] accepted
+- [x] maintenance.reconciled.0025 - **Stored XSS** — `buildScoreboard` interpolates peer-controlled `playerName` into `innerHTML`; a `<svg/onload=…>` name (≤20 chars, the server limit) broadcasts via the roster, replays, and executes as live HTML in every opponent's GAME_OVER/ROUND_OVER scoreboard. Build rows via `createElement` + `.textContent` (or HTML-escape); optionally strip `<>` in the server name validators. `client/src/ui/HUD.ts:1024` (src `client/src/client/NetworkClient.ts:962`). [H/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.reconciled.0026 - `console.error` logs the full ephemeral `playerId` (the de-facto identity token); truncate or drop it. `client/src/client/NetworkClient.ts:370`. [L/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.reconciled.0027 - `[auth] enabled=true` + `enable_signup=true` in committed `supabase/config.toml` contradicts the no-auth design (local-dev scaffold; no evidence deployed); set `enabled=false` / comment as local-only. `supabase/config.toml:29-38`. [L/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.reconciled.0028 - Untrusted `p.color` → `dot.style.background`, validated only non-empty/unique; safe today (DOM setter discards invalid) but unvalidated — add a hex/`rgb()` allowlist in the server validators. `client/src/ui/Lobby.ts:1243,1668`. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0029 - Room code: 4-char/36-symbol via `b%36` (slight modulo bias); accepted non-security CSPRNG tradeoff (controls §41) — no action unless room confidentiality ever matters. `supabase/functions/_shared/mod.ts:147-153`. [—] accepted  (done 2026-10-29)
 
 ### Tooling & dependencies
-- `tsx` is undeclared/unversioned yet runs all 38 `npm run check` harnesses via `npx tsx` (no lockfile integrity) — the sole pre-deploy gate. Add `tsx` to root `devDependencies` (^4.19.0) to pin it. `package.json`. [H/S] **(quick-kill → sprint)**
-- Pin the floating Deno import `@supabase/supabase-js@2` → `@2.107.0` (re-resolves on any `deno cache --reload`, affects all 10 functions). `supabase/functions/_shared/mod.ts:13`. [L/S] **(quick-kill → sprint)**
-- Bump `http-proxy-middleware` past 3.0.6 (dev-only, transitive via `netlify-cli`): GHSA-gcq2-9pq2-cxqm CRLF (CVSS 7.5, fixed 3.0.7); `npm update http-proxy-middleware --depth 10` or await a netlify-cli bump. [M/S]
-- Remove the phantom `iceberg-js@0.8.1` entry from `deno.lock` (imported nowhere) — find+remove the originating import then `deno cache --reload`, or drop manually. [L/S]
-- Remove the extraneous `server` workspace from `package-lock.json:17827-17840` (references deleted socket.io/express/tsx); regenerate via `npm install`. [L/S]
-- Resolve the `node-forge` 1.4.0 license note (dev-only transitive): it carries `(BSD-3-Clause OR GPL-2.0)` — acknowledge the copyleft disjunct vs MIT intent, or pursue removal via netlify-cli. [L/S]
-- LOW deprecations, dev-only transitive: `postcss-values-parser@6.0.2` (MPL-2.0), `glob@10.5.0`, `node-domexception@1.0.0` — acknowledge / monitor netlify-cli updates. [L/—]
+- [x] maintenance.reconciled.0030 - `tsx` is undeclared/unversioned yet runs all 38 `npm run check` harnesses via `npx tsx` (no lockfile integrity) — the sole pre-deploy gate. Add `tsx` to root `devDependencies` (^4.19.0) to pin it. `package.json`. [H/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.reconciled.0031 - Pin the floating Deno import `@supabase/supabase-js@2` → `@2.107.0` (re-resolves on any `deno cache --reload`, affects all 10 functions). `supabase/functions/_shared/mod.ts:13`. [L/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.reconciled.0032 - Bump `http-proxy-middleware` past 3.0.6 (dev-only, transitive via `netlify-cli`): GHSA-gcq2-9pq2-cxqm CRLF (CVSS 7.5, fixed 3.0.7); `npm update http-proxy-middleware --depth 10` or await a netlify-cli bump. [M/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0033 - Remove the phantom `iceberg-js@0.8.1` entry from `deno.lock` (imported nowhere) — find+remove the originating import then `deno cache --reload`, or drop manually. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0034 - Remove the extraneous `server` workspace from `package-lock.json:17827-17840` (references deleted socket.io/express/tsx); regenerate via `npm install`. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0035 - Resolve the `node-forge` 1.4.0 license note (dev-only transitive): it carries `(BSD-3-Clause OR GPL-2.0)` — acknowledge the copyleft disjunct vs MIT intent, or pursue removal via netlify-cli. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0036 - LOW deprecations, dev-only transitive: `postcss-values-parser@6.0.2` (MPL-2.0), `glob@10.5.0`, `node-domexception@1.0.0` — acknowledge / monitor netlify-cli updates. [L/—]  (done 2026-10-29)
 
 ### Migrations (committed migrations are IMMUTABLE — fixes ship as a NEW migration 005 + backend deploy)
-- Add `SET LOCAL lock_timeout='3s'` to `submit_room_action`: the per-room `FOR UPDATE` lock has no timeout, so a wedged caller head-of-line-stalls all submits + rematch/finish for that room (the seq race itself IS closed correctly). `supabase/migrations/004_atomic_submit_action.sql:50-58`. [M/S]
-- Guard the `CREATE OR REPLACE FUNCTION` signature footgun: a future arg-signature change spawns a new overload that re-acquires default `PUBLIC EXECUTE` → anon-callable. Add schema-level `ALTER DEFAULT PRIVILEGES … REVOKE EXECUTE … FROM PUBLIC` or single-source the signature. `004…:35`. [M/S]
-- Reword the `submit_room_action` SECURITY RATIONALE comment: it claims RLS still applies, but the sole caller is service_role (bypasses RLS) — the real control is `REVOKE PUBLIC` / `GRANT service_role`. `004…:43`. [L/S]
-- (Optional) Add one-line data-classification comments per table (no-PII / random-ids by design). `001_init.sql`, `003_match_scores.sql`. [L/S]
+- [x] maintenance.reconciled.0037 - Add `SET LOCAL lock_timeout='3s'` to `submit_room_action`: the per-room `FOR UPDATE` lock has no timeout, so a wedged caller head-of-line-stalls all submits + rematch/finish for that room (the seq race itself IS closed correctly). `supabase/migrations/004_atomic_submit_action.sql:50-58`. [M/S]  (done 2026-10-29)
+- [x] maintenance.database.0001 - Guard the `CREATE OR REPLACE FUNCTION` signature footgun: a future arg-signature change spawns a new overload that re-acquires default `PUBLIC EXECUTE` → anon-callable. Add schema-level `ALTER DEFAULT PRIVILEGES … REVOKE EXECUTE … FROM PUBLIC` or single-source the signature. `004…:35`. [M/S]  (done 2026-10-29)
+- [x] maintenance.database.0002 - Reword the `submit_room_action` SECURITY RATIONALE comment: it claims RLS still applies, but the sole caller is service_role (bypasses RLS) — the real control is `REVOKE PUBLIC` / `GRANT service_role`. `004…:43`. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0038 - (Optional) Add one-line data-classification comments per table (no-PII / random-ids by design). `001_init.sql`, `003_match_scores.sql`. [L/S]  (done 2026-10-29)
 
 ### Test coverage
-- finish_game `sanitizeScoreboard` bounds-checking untested (malformed array / invalid tankId / OOB seat / non-finite damage clamp). `supabase/functions/finish_game/index.ts`. [M/M]
-- join_room authz + roster mutation untested (success / 404 / finished-rejected / duplicate / maxPlayers). `supabase/functions/join_room/index.ts`. [M/M]
-- ready_up / leave_room / restart_game flows untested — consolidate one Deno test file. [M/M]
-- create_room handler (DB-mutating; `validate.test.ts` covers only option coercion), heartbeat, list_rooms, update_player (incl. self-only 403) untested. [M/M]
-- `Random.ts` has no dedicated harness (only indirect via `wind.mjs`) — add `scripts/checks/random.mjs` (same-seed-identical / independent-streams / edge-seeds). [L/S] **(quick-kill → sprint)**
-- `seqGuard.ts` `resync_guard.mjs` lacks boundary cases (`seq==nextExpected`, `seq-1`, `Infinity`). [L/S] **(quick-kill → sprint)**
-- `math.ts` `clamp()` NaN-preservation has no explicit test (a maintainer could "fix" the intentional NaN passthrough) — add `scripts/checks/math.mjs`. [L/S] **(quick-kill → sprint)**
-- `replay.ts` edge cases untested (OOB angle, buy with both weapon+accessory, empty payload). [L/S]
-- (NEEDS-TRIAGE — integration/manual, no unit harness practical) NetworkClient buffering/seq/reconnect; canvas renderers; AudioEngine; InputHandler — hard to test without Supabase/Canvas/DOM mocks. NOTE: all `scripts/checks/*.mjs` verified wired into the `npm run check` &&-chain (no silently-skipped harness).
+- [x] maintenance.reconciled.0039 - finish_game `sanitizeScoreboard` bounds-checking untested (malformed array / invalid tankId / OOB seat / non-finite damage clamp). `supabase/functions/finish_game/index.ts`. [M/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0040 - join_room authz + roster mutation untested (success / 404 / finished-rejected / duplicate / maxPlayers). `supabase/functions/join_room/index.ts`. [M/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0041 - ready_up / leave_room / restart_game flows untested — consolidate one Deno test file. [M/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0042 - create_room handler (DB-mutating; `validate.test.ts` covers only option coercion), heartbeat, list_rooms, update_player (incl. self-only 403) untested. [M/M]  (done 2026-10-29)
+- [x] maintenance.reconciled.0043 - `Random.ts` has no dedicated harness (only indirect via `wind.mjs`) — add `scripts/checks/random.mjs` (same-seed-identical / independent-streams / edge-seeds). [L/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.reconciled.0044 - `seqGuard.ts` `resync_guard.mjs` lacks boundary cases (`seq==nextExpected`, `seq-1`, `Infinity`). [L/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.reconciled.0045 - `math.ts` `clamp()` NaN-preservation has no explicit test (a maintainer could "fix" the intentional NaN passthrough) — add `scripts/checks/math.mjs`. [L/S] **(quick-kill → sprint)**  (done 2026-10-29)
+- [x] maintenance.replay.0001 - `replay.ts` edge cases untested (OOB angle, buy with both weapon+accessory, empty payload). [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0046 - (NEEDS-TRIAGE — integration/manual, no unit harness practical) NetworkClient buffering/seq/reconnect; canvas renderers; AudioEngine; InputHandler — hard to test without Supabase/Canvas/DOM mocks. NOTE: all `scripts/checks/*.mjs` verified wired into the `npm run check` &&-chain (no silently-skipped harness).  (done 2026-10-29)
 
 ### Doc consistency / informational
-- The `.env.example` var-name mismatch is ALREADY fixed (now `SUPABASE_SERVICE_ROLE_KEY`) — the `security-controls.md:36` text describing it is now stale; update the text and close the prior open-task. [L/S]
-- `active_player_index` is commented "advisory only / may be removed in V1" (`001_init.sql:20-23`) but migration 004 writes it as the authoritative turn cursor — reconcile the comment; the column is load-bearing. [L/S]
-- (informational, no action) `submit_action` lets any room member proxy any bot/ai seat — within documented design (controls §26), exactly-once via the seq cursor; threat-model awareness only.
-- (informational, no action) `REPLICA IDENTITY FULL` on rooms/room_actions = WAL write-amplification, justified for Realtime; revisit only if WAL cost grows.
+- [x] maintenance.reconciled.0047 - The `.env.example` var-name mismatch is ALREADY fixed (now `SUPABASE_SERVICE_ROLE_KEY`) — the `security-controls.md:36` text describing it is now stale; update the text and close the prior open-task. [L/S]  (done 2026-10-29)
+- [x] maintenance.database.0003 - `active_player_index` is commented "advisory only / may be removed in V1" (`001_init.sql:20-23`) but migration 004 writes it as the authoritative turn cursor — reconcile the comment; the column is load-bearing. [L/S]  (done 2026-10-29)
+- [x] maintenance.reconciled.0048 - (informational, no action) `submit_action` lets any room member proxy any bot/ai seat — within documented design (controls §26), exactly-once via the seq cursor; threat-model awareness only.  (done 2026-10-29)
+- [x] maintenance.reconciled.0049 - (informational, no action) `REPLICA IDENTITY FULL` on rooms/room_actions = WAL write-amplification, justified for Realtime; revisit only if WAL cost grows.  (done 2026-10-29)
 
-- (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
+- [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
 - [x] ci.regression.0001 - Wait for each campaign aim and power readout update before the browser test sends the next adjustment, preserving the exact reload checkpoint assertions.  (from pr529-postmerge)  (done 2026-10-03)
 - [x] ui.copy.0001 - T02's design review noted two unchanged OrientationGate fallback strings using em dashes as prose separators. This is outside the surface-lifecycle slice and does not affect behavior.  (from sprint:command-center-launcher-overhaul#triage-1)  (done 2026-10-03)
@@ -184,7 +184,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Boundaries: shared-engine
 - [x] database.types.0001 - Complete generated database typings for service-only verified deployment contract tables and drain RPCs with read-only or never mutation surfaces.  (from commander-career-milestone-2 final migration review)  (done 2026-10-03)
   - Boundaries: database-contract
-- [ ] Carry authenticated identity coherently into online lobby flows: suppress the incorrect 'sign in to record future matches' CTA when a valid session exists, and prefill or eliminate redundant host/join name entry from the account display name while preserving an explicit override only if product policy requires it. [H/S]  (from user steering 2026-08-10)
+- [x] maintenance.reconciled.0051 - Carry authenticated identity coherently into online lobby flows: suppress the incorrect 'sign in to record future matches' CTA when a valid session exists, and prefill or eliminate redundant host/join name entry from the account display name while preserving an explicit override only if product policy requires it. [H/S]  (from user steering 2026-08-10)  (done 2026-10-29)
   - Boundaries: authentication, display-identity
 - [~] career.initiative.0001 - Deliver the Commander Career Loop as a sustained initiative: earned rank identity, trusted promotion payoff, tactical objectives, and a coherent reason to return.  (from standing improvement goal)  (started 2026-08-10)
 - [x] ux.hud.0002 - Show battlefield-safe tactical intel for every arsenal weapon on focus or selection across mouse, keyboard, and touch  (from post-remediation-adversarial-player-audit-2026-08-10)  (done 2026-08-10)
@@ -220,7 +220,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Boundaries: client, ui
 - [x] mvp2.progression.0007 - Acknowledge a server-confirmed hot-seat progression record in the After Action Report without inventing client-owned XP.  (from user-persistent-progression-and-ux-roadmap)  (done 2026-08-09)
   - Boundaries: client, account-ui
-- [~] ux.menu.0002 - Carry the menu-system overhaul through ranked player-facing slices after Command Menu foundation.  (from user-steering-2026-08-09)  (started 2026-08-09)
+- [x] ux.menu.0002 - Carry the menu-system overhaul through ranked player-facing slices after Command Menu foundation.  (from user-steering-2026-08-09)  (done 2026-10-29)
   - Boundaries: client, ui
 - [x] impact.mobile.0001 - Restore the tactile Impact Monitor on landscape touch play and prove its magnified post-shot view remains visible, reachable, and non-obscuring.  (from user-mobile-impact-window)  (done 2026-08-09)
   - Boundaries: client, rendering
@@ -239,7 +239,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Boundaries: dependency, build-toolchain
 - [x] mvp2.progression.0003 - Show server-derived XP and level progress for authenticated accounts  (from mvp2.identity.0001)  (done 2026-08-04)
   - Boundaries: Supabase Auth JWT, derived progression rules, persisted match attribution, account UI
-- [ ] Add an injectable limiter seam and causal 429/fail-open tests for shared Edge request handling.  (from review:account-progression-summary)
+- [x] maintenance.reconciled.0052 - Add an injectable limiter seam and causal 429/fail-open tests for shared Edge request handling.  (from review:account-progression-summary)  (done 2026-10-29)
   - Boundaries: rate-limiting, service-role
 - [x] mvp2.progression.0002 - Show server-derived matches played and wins for authenticated accounts  (from mvp2.identity.0001)  (done 2026-08-04)
   - Boundaries: Supabase Auth JWT, match attribution, owner-private progression read, account UI

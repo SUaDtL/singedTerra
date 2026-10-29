@@ -6,8 +6,39 @@ The primary owner decisions are in `sources/01-PRODUCT-DIRECTION.md` revision 15
 and `sources/04-DECISIONS-AND-OPEN-QUESTIONS.md` in the September 25, 2026 source
 pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 `ea7bfac6d5b089e18580741bc701afbf6d73323ccdff4e7247c639c1628e40f1`).
-The current in-repo visual scope is
+The initial in-repo visual scope was
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
+
+## Current candidate and release work — October 29, 2026
+
+The current implementation is the [combat-depth candidate](../../.codearbiter/plans/last-stand-combat-depth.html),
+building on the [architecture foundation](LAST-STAND-ARCHITECTURE.md), research/farming
+and waves/resume work. Last Stand is the campaign; Ash Road's implementation is
+retired. The classic hot-seat and online artillery modes remain separate.
+
+The current catalog has four playable tiers and five fittings. Cinder Basin and
+Storm Foundry extend the earlier battlefields; Mortar and Railgun add distinct
+combat roles beside Field Repair, Launcher and Scattergun. Enemy roles, elites,
+milestones and progression descriptions share the authored content and run edition.
+Save version 6 retains legacy profile and active-run editions rather than repricing
+an existing paid run. Clearing the required wave unlocks a tier; it does not force
+the player to leave the tier they are farming.
+
+Application coordinators now own run, purchase and research transitions around one
+durable profile transaction. Shared UI primitives, modal/focus/scroll owners and
+platform adapters support consistent feature views. The target-aware build tool
+supports WebGL, Windows and Android development candidates from the same project.
+
+The next release work is evidence, not a new claim of feature completion: qualify
+the actual Android device lifecycle, controls, audio, sustained performance and
+long farming sessions; review the rendered player experience; complete the stacked
+PR delivery and verify deployment separately. Existing model calibration and
+hosted CI are useful evidence but do not substitute for those observations.
+
+The dated entries below preserve decisions and candidate status at their recorded
+dates. Earlier time-based goals, manual claims, two-tier limits, missing run resume
+and deferred Android setup are historical, superseded by the implementations above.
+The maintained native plans retain any unresolved acceptance obligations.
 
 ## Research and farming sprint candidate — October 24, 2026
 

@@ -89,3 +89,10 @@ Separately authorized room lifecycle fix: user chose 10 minutes after all humans
 Rollback: retain existing user work and the last compatible published client. Revert local candidate edits only within their owned scope. Applied schema and immutable results are preserved; production repair is a separately approved compatible rollback or fix-forward. No destructive cleanup, protection bypass or override is inferred. R11/R17/R18 and all P-series work remain outside the finite goal.
 
 Preserved execution-history SHA-256: `a3b3e87516902cf1add30f4a9858702ec44167fe3ebbc50c560892c6c3be3780`.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+The pre-PR delivery-pending table is an earlier checkpoint. Later recovery correction and publication records are retained in reassessment-v3.md (including merged #474–#477 and #505–#513 history). Its finite campaign closeout explicitly carries human/physical-device/product/distribution work to the current board. No broad production proof is inferred from this note, and the preserved execution-history bytes remain unchanged.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.

@@ -24,3 +24,12 @@
 - [x] Obtain the single adversary's exact-package and coverage verdict; fix all Critical, High, Medium, and merge blockers.
 - [ ] Pass commit/PR gates, exact-head hosted CI, standing-authority squash merge, deployment provenance, and live smoke.
 - [ ] Update issue #70 and select the next bounded cell.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded temporary compiler project. Current source/oracles: `client/tsconfig.json`, `client/src/renderer/TankPartArt.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `8adaa7cda180` (test(client): enforce tank visual fixture bounds (#262)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

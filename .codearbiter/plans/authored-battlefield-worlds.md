@@ -114,3 +114,12 @@ built-in image generation, local image encoding.
   `$ca-pr`, preserve the branch/worktree, log the PR-specific merge override only
   after the behavior head is green, require the final receipt head to re-clear CI
   and review, squash merge, and prove Pages provenance plus live smoke.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `client/src/renderer/BattlefieldBackdrop.ts`, `client/src/renderer/Renderer.battlefieldBackdrop.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `8475fbd42c52` (feat: add authored battlefield worlds (#282)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

@@ -32,3 +32,12 @@
 - [ ] Commit only after fresh security/migration passes and the commit gate.
 - [ ] Open the PR through the sanctioned PR lane; require exact-head CI, CodeQL, and reviewer status green before merge.
 - [ ] Merge under standing authority, verify exact-main Pages provenance and production health, then persist a delivery receipt and select the next SMARTS improvement.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current casual/verified trust split. Current source/oracles: `client/src/client/AccountSession.ts`, `client/src/ui/HUD.victoryReport.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `769d6c7f420f` (feat(progression): name the next level milestone). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

@@ -471,3 +471,12 @@ Order: T-01 → T-02; T-03 may proceed after plan approval; T-04 depends on T-01
 **Verification:** `npm run test:client`, `npm run check`, `npm run check:edge`, `npm run typecheck`, `npx playwright test --workers=4`, `git diff --check`, and the state-free CodeArbiter secret scan
 **Maps to:** O-07 coherent player journey
 **Status:** IN_PROGRESS — local implementation and complete local verification are GREEN; adversarial review, hosted delivery, deployment, and production proof remain open. `career.initiative.0001` remains active.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Verified implementation; finite umbrella acceptance remains. Current source/oracles: `client/src/client/verifiedDeployment.ts`, `e2e/verified-deployment.spec.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `b142f26540ec` (feat(combat): build the battle command surface (#425)). Later accepted T09–T14 receipts in this file supersede the matching earlier local-only delivery statements. The career umbrella still needs its finite cross-context human/physical-device outcome assessment; see board item B081 in the report. Unmatched historical RED/review/deployment checkboxes remain unclaimed.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

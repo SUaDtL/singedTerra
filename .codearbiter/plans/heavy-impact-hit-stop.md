@@ -26,3 +26,12 @@ pausing or mutating deterministic simulation.
 - [x] Commit through the governed gate and open a ready PR.
 - [ ] Merge only after exact-head hosted CI/CodeQL and final adversarial review;
   then prove exact-SHA Pages deployment and live smoke.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `client/src/renderer/impactHitStop.ts`, `client/src/renderer/impactHitStop.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `8d8b8c27517b` (feat(renderer): add heavy impact hit-stop (#273)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

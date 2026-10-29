@@ -80,3 +80,12 @@ Standing approval applies. Comparative production runs established 23/23 garage 
 - [ ] Assemble the adversarial review package containing this spec, this plan, the sprint-log exception, tests, and exact final diff.
 - [ ] Resolve every Critical, High, and merge-blocking finding, then rerun affected tests and exact-final-diff review.
 - [ ] Exit through `$ca-commit` and `$ca-pr`, require green hosted checks on the exact reviewed head, merge with an expected-head guard under standing authority, verify Pages provenance and production health, and persist a delivery receipt.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Later Command Center and normalized match owners. Current source/oracles: `client/src/ui/Lobby.ts`, `client/src/ui/Lobby.quickDuel.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `0af6ca137d23` (feat(lobby): add one-click CPU duel). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

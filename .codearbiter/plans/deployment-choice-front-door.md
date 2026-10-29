@@ -38,3 +38,12 @@
 - [x] Give the single adversarial reviewer the approved spec, plan, evidence report, exact tests, and final diff. Resolve every Critical, High, and merge-blocking finding and re-review the corrected diff.
 - [x] Mark `ux.pregame.0005` done through the sanctioned task helper.
 - [ ] Run commit gate, open the PR, require exact-reviewed-head hosted CI green, merge under standing authority, verify Pages production, and add a delivery receipt through the governed docs lane.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded flat chooser. Current source/oracles: `client/src/ui/commandCenter/CommandCenterShell.ts`, `e2e/pregame-command-center.spec.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `1b7ef2d934b3` (feat(lobby): focus pre-game deployment choices (#392)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.
