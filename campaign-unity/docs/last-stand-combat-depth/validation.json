@@ -3,7 +3,7 @@
   "foundationCommit": "1893bbd92135555eeb021656b38f532eb9a0cbcb",
   "checkedWorktreeHead": "db0fe0f5edd8f0b523a455621dd50b2d803bcba7",
   "identityNote": "Checks/builds bind dirty approved source bytes, not a claim that checkedWorktreeHead contains implementation. Build receipts carry complete inventories.",
-  "status": "Calibrated candidate built and browser checked; hosted, native interaction and endurance qualification remain separately pending.",
+  "status": "Calibrated candidate built and browser checked; previous pushed head passes hosted CI. Final verifier follow-up requires its own exact-head CI; native interaction and endurance qualification remain pending.",
   "builds": [
     {
       "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261029T014444Z-a8e42f/result.json",
@@ -486,7 +486,7 @@
     }
   },
   "qualification": {
-    "hostedExactHeadCI": "pending candidate push",
+    "hostedExactHeadCI": "8543e883 passes all24 CI jobs and CodeQL; final verifier follow-up pending exact-head hosted verification after push. Current PR checks remain authoritative.",
     "windowsInteraction": "pending current player restart/abnormal termination on isolated profile",
     "androidPhysicalDevice": "pending; adb reports no connected devices",
     "hardwareAudio": "pending current candidate",
@@ -516,6 +516,11 @@
       "cryptoCompliance": "pass; standard SHA256 test/build provenance only",
       "commit": "00a07b0cb46e324a44963bd582de24779bd40ad1",
       "reviewTiming": "PASS delivered before commit; exact reviewed patch and file identities verified in receipt persisted afterward."
+    },
+    "schemaFollowup": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-schema-followup-security-final.json",
+      "sha256": "abb93058532c852b93eec8aaf24c77d0a0f7856b827f5cd47251d35338a8320a",
+      "scope": "Ten verifier/test-tooling paths; independent evidence-integrity and crypto applicability review. See bound receipt."
     }
   },
   "verifierHistory": {
@@ -523,16 +528,15 @@
     "sha256": "07e68e6f70adec4eacf3a0cd839b97dec43ca4bf27343caf6a7a8316128b1814"
   },
   "hosted": {
-    "head": "414fca7d6a6e1cb14b18bb7784249597568f2b8d",
-    "ciRun": 40806278594,
-    "ciStatus": "failed",
-    "codeqlRun": 40806278494,
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-8543e883-hosted-green.json",
+    "sha256": "ef18b6abdd98a87d10825f8532afb767294e12aeb41928f8ff8b9bd1e8e9ba39",
+    "head": "8543e883c3badb68fa9c81f0099a845e3a0ba71e",
+    "ciRun": 40810246254,
+    "ciStatus": "passed",
+    "codeqlRun": 40810247822,
     "codeqlStatus": "passed",
-    "details": {
-      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-initial-failures.json",
-      "sha256": "73ae200db03674c92c311db6e3456501d0cabc4abdc34961b72c4f7e2c75708b"
-    },
-    "scope": "Twelve lifecycle jobs failed the stale historical compiler source list; tier journey failed stale milestone assertions. All 80 portable combat/domain checks passed on Linux before those lifecycle failures. This is not overall CI acceptance; exact repaired-head verification remains pending."
+    "jobsPassed": 24,
+    "scope": "All24 CI jobs including12 lifecycle shards and final aggregate passed; head was freshly rechecked unchanged. Final verifier follow-up is not covered by this older head. See PR checks for final candidate state."
   },
   "ordinaryFirstSessions": [
     {
@@ -662,5 +666,201 @@
         "sha256": "4e8af3e4e5d6c5f53ff946744b6e73f74273b2d7ea5814129370ce251a8d58a0"
       }
     ]
-  }
+  },
+  "followupHistory": {
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pre-pr547-schema-followup-validation.json",
+    "sha256": "378308d786944e483799b05c8b5ca526bf073778b87f9b656065564712ee1a1c"
+  },
+  "verifierSchemaFollowup": {
+    "paths": [
+      "scripts/last-stand-wave-endurance.mjs",
+      "scripts/ci/lastStandEndurance.test.mjs",
+      "scripts/last-stand-combat-feedback.mjs",
+      "scripts/last-stand-wave-milestones.mjs",
+      "scripts/ci/lastStandMilestoneSetup.test.mjs",
+      "campaign-unity/Tools/last_stand_waves/test_earned_milestone_fixtures.py",
+      "campaign-unity/Tools/last_stand_waves/generate_earned_milestone_fixtures.py",
+      "campaign-unity/Tools/last_stand_architecture/test_milestone_fixtures.py",
+      "campaign-unity/Tools/last_stand_test_runtime.py",
+      "campaign-unity/Tools/last_stand_architecture/test_test_runtime.py"
+    ],
+    "result": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-milestone-history-fix-results-v2.json",
+      "sha256": "c4d033d61db463a30dc7885466735b9655bb12a557652b2c3204575e379c766c"
+    },
+    "priorResults": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-schema-twins-fix-results-v2.json",
+      "sha256": "99934579fb89ebe206ce79620167b081101f142770c715664ff79c6239b427a6"
+    },
+    "changes": [
+      "Require current v6 envelopes and complete current/retained checkpoint editions at actual browser callers.",
+      "Bind all33 generated inputs, use the shared compiler, and retain explicit editor operation when automatic discovery is unavailable.",
+      "Validate exact1x active milliseconds and speed bin against committed ticks; independently bound pause/closed time; preserve every other durable field through the unchanged shared save validator.",
+      "Reject paused-prefix tick/phase/save faults and invalid active tick progression. Keep original endurance/purchase/sample bounds."
+    ],
+    "localChecks": [
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-milestone-prefix-green.log",
+        "sha256": "d356e8e5d3a9b014c37462f877c977b19e23646b6a20bb6220707165862b4c6b",
+        "status": "pass",
+        "tests": 33
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-shared-runtime-architecture-green.log",
+        "sha256": "91c6eba646a433c4ccae6f682080215103f9bbbb9a2cc44bece18919ba7770c3",
+        "status": "pass",
+        "tests": 48,
+        "applicability": "Compiler/runtime/domain inputs unchanged; later generator wording and stricter JavaScript history checks have their own fresh generation, Node and replay proof."
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-milestone-generator-mcs-green-v2.log",
+        "sha256": "6e855b67fe5052bf3910f06497dbf0a1c060fc5b5c9ad59706b895fa331dcf16",
+        "status": "pass",
+        "tests": 5,
+        "scope": "Windows embedded mcs, not Linux proof."
+      }
+    ],
+    "recordedReplay": {
+      "result": {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-milestone-prefix-replay-green.log",
+        "sha256": "d84a4888f0a1c03bb6d67ed6c28721516b973587fe4e7b36992d28a2352ed2af"
+      },
+      "legitimateCapturedCasesAccepted": 5,
+      "alteredPausedPrefixCasesRejected": 15,
+      "scope": "Current verifier over unchanged retained browser records; not a fresh live browser run."
+    }
+  },
+  "milestoneBrowser": {
+    "path": "campaign-unity/Evidence/waves-milestones/2026-10-29T04-05-12-975Z/result.json",
+    "sha256": "e297f5d53689427e72759fcd6739382c6f4f5a809d1250ffb886fea2448fd3ff",
+    "status": "pass",
+    "seeded": true,
+    "normalSpeed": true,
+    "scope": "Real rendered 1x milestone, unlock and fitting behavior after accelerated production-earned setup; no normal-player duration, native media or endurance claim.",
+    "cases": [
+      {
+        "fitting": "repair",
+        "targetWave": 100,
+        "status": "pass",
+        "historyTiming": {
+          "activeMilliseconds": 50650,
+          "pausedMilliseconds": 1221,
+          "closedMilliseconds": 6367,
+          "pausedBounds": [
+            1183,
+            1239
+          ],
+          "closedBounds": [
+            3773,
+            6548
+          ],
+          "runId": 1,
+          "timeOrigin": 1793246713316.3,
+          "resumeTick": 76531,
+          "committedTick": 77544
+        }
+      },
+      {
+        "fitting": "repair",
+        "targetWave": 300,
+        "status": "pass",
+        "historyTiming": {
+          "activeMilliseconds": 81550,
+          "pausedMilliseconds": 1233,
+          "closedMilliseconds": 78981,
+          "pausedBounds": [
+            1198,
+            1254
+          ],
+          "closedBounds": [
+            76330,
+            79166
+          ],
+          "runId": 2,
+          "timeOrigin": 1793246785873.1,
+          "resumeTick": 272971,
+          "committedTick": 274602
+        }
+      },
+      {
+        "fitting": "launcher",
+        "targetWave": 100,
+        "status": "pass",
+        "historyTiming": {
+          "activeMilliseconds": 28300,
+          "pausedMilliseconds": 1235,
+          "closedMilliseconds": 180930,
+          "pausedBounds": [
+            1201,
+            1255
+          ],
+          "closedBounds": [
+            178365,
+            181112
+          ],
+          "runId": 2,
+          "timeOrigin": 1793246888986.6,
+          "resumeTick": 37464,
+          "committedTick": 38030
+        }
+      },
+      {
+        "fitting": "launcher",
+        "targetWave": 300,
+        "status": "pass",
+        "historyTiming": {
+          "activeMilliseconds": 47300,
+          "pausedMilliseconds": 1202,
+          "closedMilliseconds": 230579,
+          "pausedBounds": [
+            1166,
+            1221
+          ],
+          "closedBounds": [
+            227928,
+            230761
+          ],
+          "runId": 3,
+          "timeOrigin": 1793246938549.6,
+          "resumeTick": 166759,
+          "committedTick": 167705
+        }
+      }
+    ],
+    "finalVerifierApplicability": "Captured with the preceding history validator; all four complete records pass the final stricter paused-prefix validator in separately recorded actual-caller replay. Runtime/package unchanged."
+  },
+  "fiveTimesSmoke": {
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-calibrated-5x-smoke-v6/result.json",
+    "sha256": "2f002793061555e400f017683a74017bf1da3fc9eaf762e322a05ef3f19966e5",
+    "status": "smoke-pass",
+    "scope": "180-second bounded smoke diagnostic; cannot qualify endurance. One headless Chromium document at researched 5x from a declared mature development profile. Rendered purchases and speed controls only; no time acceleration beyond the actual game setting. No native audio or physical-device claim.",
+    "activeMilliseconds": 180557.7148,
+    "samples": 174,
+    "periodicPurchases": [
+      {
+        "atActiveMs": 41710.155999999995,
+        "key": "cannonAttack",
+        "quantity": 30,
+        "cost": 2835,
+        "runId": 2,
+        "tick": 4844
+      }
+    ],
+    "errors": 0,
+    "finalBindingsVerified": true,
+    "storageLatencyVerified": true,
+    "enduranceQualified": false
+  },
+  "retainedDiagnosticAttempts": [
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-calibrated-5x-smoke-v4/result.json",
+      "sha256": "06c32865b71037625a4bb4e384b7dbc933668968c2e206cdae89680f535a855b",
+      "result": "failed: periodic purchase remained stale after bounded retries while another browser diagnostic ran; cause unproven. Solo repeat keeps the same bounds; no gameplay purchase change."
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-calibrated-5x-smoke-v5/result.json",
+      "sha256": "54103cde7ce232db2a73344e0c543f9e7545561000cd10a5adb82d97da4477d4",
+      "result": "failed at119945.6952 active milliseconds: shared verifier changed during observation. Source-drift refusal preserved; rerun only after source freeze."
+    }
+  ]
 }

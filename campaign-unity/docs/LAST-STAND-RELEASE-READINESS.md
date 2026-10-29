@@ -92,7 +92,7 @@ errors and verify their source, fixture and package bindings. These development
 profiles establish the observed browser behaviors; their gifted funding is not
 ordinary earned progression or native/endurance evidence.
 
-Current local verification includes 80 combat/domain checks, 42 pure architecture
+Current local verification includes 80 combat/domain checks, 48 pure architecture
 checks, six retained economy checks, 14 independently rerun armament regressions,
 and a passing production build/typecheck. The expanded CI/tooling run passed
 441 of 443 named checks. Both failures then passed focused reruns: one stale
@@ -122,11 +122,32 @@ historical compiler caller omitted new dependencies, and the tier journey used
 stale milestone labels. CodeQL and all 80 Linux combat/domain checks passed.
 The repaired compiler shares the full 16-source list and matches the unchanged
 13,904-row, 13-field historical reference. Current combat/research browser
-journeys have been rerun with the repaired drivers. Exact repaired-head hosted
-CI remains pending, separately from current Windows interaction, physical
-Android, hardware audio and real-duration farming/performance qualification.
-One current preview is retained on port 4174. No merge, publication or store
-acceptance follows from these results.
+journeys have been rerun with the repaired drivers. Hosted CI at `8543e883`
+then passed all 24 jobs, including 12 lifecycle shards and the final aggregate;
+CodeQL also passed, with the head freshly confirmed unchanged. The subsequent
+verifier-only follow-up requires its own exact-head checks after push; the PR's
+current checks are authoritative.
+
+The final verifier follow-up passes 33 focused Node checks and preserves the
+48-check architecture and five-check portable compiler results on their unchanged
+inputs. It requires current save envelopes and complete retained editions, binds
+all 33 milestone generator inputs, and supports an explicit compiler when
+automatic discovery is unavailable. Actual browser milestone cases pass for both
+Repair and Launcher at waves 100 and 300, from declared accelerated earned setup.
+The final stricter timing validator separately accepts all four complete captures
+and rejects altered paused activity; recorded replay is not a new live journey.
+
+The current standalone 180-second 5x smoke passes with a rendered purchase,
+verified source/package bindings and successful checkpoint write/readback checks.
+This is a bounded development-profile diagnostic, not real-duration farming or
+device performance qualification. The earlier parallel attempt exhausted purchase
+retries; its cause remains unproven. Another attempt correctly refused a verifier
+source change during observation. Both failures are retained, and the passing
+repeat uses unchanged sampling, timing and purchase bounds.
+
+Current Windows interaction, physical Android, hardware audio and real-duration
+farming/performance qualification remain pending. One current preview is retained
+on port 4174. No merge, publication or store acceptance follows from these results.
 
 ## Target-aware build entry
 
