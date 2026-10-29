@@ -1,7 +1,7 @@
 // Run directly with Node. Uses an isolated PostgreSQL 15 container with no ports.
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,6 +20,23 @@ const sql = (input) => docker(
 const file = (path) => sql(readFileSync(resolve(root, path), 'utf8'));
 const json = (query) => JSON.parse(sql(query).trim().split(/\r?\n/).at(-1));
 const scalar = (query) => sql(query).trim().split(/\r?\n/).at(-1) ?? '';
+
+const assertPublicRoutineAcl = () => {
+  // Owner-scoped delivery guard, not a global database/default-privilege change.
+  // Include every overload created by the migration role; pgcrypto and other
+  // extension members deliberately keep their independently managed grants.
+  const unsafe = json(`SELECT COALESCE(jsonb_agg(signature ORDER BY signature),'[]'::jsonb)
+    FROM (SELECT p.oid::regprocedure::text AS signature
+      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+      WHERE n.nspname='public' AND p.proowner=(SELECT oid FROM pg_roles WHERE rolname=current_user)
+        AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid='pg_proc'::regclass
+          AND d.objid=p.oid AND d.refclassid='pg_extension'::regclass AND d.deptype='e')
+        AND (EXISTS (SELECT 1 FROM aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) a
+            WHERE a.grantee=0 AND a.privilege_type='EXECUTE')
+          OR has_function_privilege('anon',p.oid,'EXECUTE')
+          OR has_function_privilege('authenticated',p.oid,'EXECUTE'))) routines;`);
+  assert.deepEqual(unsafe, [], 'Application public routine ACL must deny browser callers');
+};
 
 const openPsqlSession = (label) => {
   const child = spawn('docker',
@@ -103,12 +120,18 @@ try {
     }
   }
   sql(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
-    CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);`);
-  for (const migration of ['001_init', '002_rematch', '003_match_scores',
-    '004_atomic_submit_action', '007_apply_room_reap', '009_reap_status_guard',
-    '010_room_seats', '018_atomic_rematch', '021_atomic_room_commands',
-    '022_atomic_casual_completion']) {
-    file(`supabase/migrations/${migration}.sql`);
+    CREATE SCHEMA auth;
+    CREATE TABLE auth.users(id uuid PRIMARY KEY, raw_user_meta_data jsonb NOT NULL DEFAULT '{}');
+    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULL::uuid $$;`);
+  // Apply the complete inventory so a future migration cannot silently sit
+  // outside the routine-ACL delivery guard. Auth here is only a schema fixture.
+  const migrationFiles = readdirSync(resolve(root, 'supabase/migrations'))
+    .filter(path => path.endsWith('.sql')).sort();
+  for (const migration of migrationFiles) {
+    assert.match(migration, /^\d{3}_[a-z0-9_]+\.sql$/, 'unexpected SQL migration must not be silently excluded');
+  }
+  for (const migration of migrationFiles.filter(path => path < '023_')) {
+    file(`supabase/migrations/${migration}`);
   }
   sql(`GRANT SELECT, INSERT, UPDATE, DELETE ON public.rooms TO service_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.room_seats TO service_role;
@@ -146,6 +169,236 @@ try {
   }
 
   file('supabase/migrations/023_room_lifecycle.sql');
+  for (const migration of migrationFiles.filter(path => path > '023_room_lifecycle.sql')) {
+    file(`supabase/migrations/${migration}`);
+  }
+
+  // B047: a new signature obtains PUBLIC EXECUTE even when the old overload
+  // was revoked. Demonstrate real anonymous execution, then require the guard
+  // to catch both a new function and an overload. These are disposable fixtures.
+  assertPublicRoutineAcl();
+  const routineAclBefore = scalar(`SELECT jsonb_agg(jsonb_build_object('oid',oid,'acl',proacl) ORDER BY oid)
+    FROM pg_proc WHERE pronamespace='public'::regnamespace;`);
+  sql(`CREATE FUNCTION public.maintenance_acl_probe() RETURNS integer LANGUAGE sql AS $$ SELECT 7 $$;
+    CREATE FUNCTION public.update_room_player(integer) RETURNS integer LANGUAGE sql AS $$ SELECT $1 $$;`);
+  assert.equal(scalar(`SET ROLE anon; SELECT public.maintenance_acl_probe();`), '7');
+  assert.equal(scalar(`SET ROLE authenticated; SELECT public.update_room_player(9);`), '9');
+  assert.throws(assertPublicRoutineAcl, error => /Application public routine ACL/.test(error.message)
+    && /maintenance_acl_probe\(\)/.test(error.message) && /update_room_player\(integer\)/.test(error.message),
+    'ACL guard must detect newly-created public function and overload');
+  sql(`REVOKE ALL ON FUNCTION public.maintenance_acl_probe(), public.update_room_player(integer)
+      FROM PUBLIC,anon,authenticated;
+    GRANT EXECUTE ON FUNCTION public.maintenance_acl_probe(), public.update_room_player(integer) TO service_role;`);
+  assertPublicRoutineAcl();
+  for (const role of ['anon', 'authenticated']) {
+    assert.throws(() => sql(`SET ROLE ${role}; SELECT public.maintenance_acl_probe();`), /permission denied for function maintenance_acl_probe/);
+    assert.throws(() => sql(`SET ROLE ${role}; SELECT public.update_room_player(9);`), /permission denied for function update_room_player/);
+  }
+  assert.equal(scalar(`SET ROLE service_role; SELECT public.maintenance_acl_probe() + public.update_room_player(9);`), '16');
+  // An explicit browser-role grant is also unsafe, even with PUBLIC revoked.
+  sql(`GRANT EXECUTE ON FUNCTION public.maintenance_acl_probe() TO authenticated;`);
+  assert.throws(assertPublicRoutineAcl, /Application public routine ACL/);
+  sql(`REVOKE EXECUTE ON FUNCTION public.maintenance_acl_probe() FROM authenticated;`);
+  assertPublicRoutineAcl();
+  sql(`DROP FUNCTION public.maintenance_acl_probe(); DROP FUNCTION public.update_room_player(integer);`);
+  assert.equal(scalar(`SELECT jsonb_agg(jsonb_build_object('oid',oid,'acl',proacl) ORDER BY oid)
+    FROM pg_proc WHERE pronamespace='public'::regnamespace;`), routineAclBefore,
+  'authorization fixtures must not alter existing routine grants');
+  assert.ok(Number(scalar(`SELECT count(*) FROM pg_proc p JOIN pg_depend d ON d.objid=p.oid
+    WHERE p.pronamespace='public'::regnamespace AND d.classid='pg_proc'::regclass
+      AND d.refclassid='pg_extension'::regclass AND d.deptype='e';`)) > 0,
+  'the guard must run in a schema containing deliberately excluded extension routines');
+  // Its boundary is this role's public application routines, not all schemas or
+  // all future owners. Demonstrate both exclusions without changing defaults.
+  sql(`CREATE SCHEMA maintenance_private_probe;
+    CREATE FUNCTION maintenance_private_probe.probe() RETURNS integer LANGUAGE sql AS $$ SELECT 1 $$;
+    CREATE ROLE maintenance_other_owner;
+    GRANT USAGE,CREATE ON SCHEMA public TO maintenance_other_owner;
+    SET ROLE maintenance_other_owner;
+    CREATE FUNCTION public.maintenance_other_owner_probe() RETURNS integer LANGUAGE sql AS $$ SELECT 1 $$;
+    RESET ROLE;`);
+  assertPublicRoutineAcl();
+  sql(`DROP FUNCTION public.maintenance_other_owner_probe();
+    REVOKE USAGE,CREATE ON SCHEMA public FROM maintenance_other_owner; DROP ROLE maintenance_other_owner;
+    DROP FUNCTION maintenance_private_probe.probe(); DROP SCHEMA maintenance_private_probe;`);
+  assertPublicRoutineAcl();
+
+  // B048/B060: live metadata corrects the historical prose without rewriting
+  // applied migrations or implying that the thin referee runs engine physics.
+  assert.equal(scalar(`SELECT obj_description('public.submit_room_action(uuid,text,jsonb,boolean,integer,integer)'::regprocedure,'pg_proc');`),
+    'Historical SECURITY INVOKER routine: service_role bypasses RLS; EXECUTE ACLs, not RLS, bounded application access. Migration 023 revoked EXECUTE from PUBLIC, anon, authenticated and service_role. Live legacy submissions use submit_room_action_for_seat with seat and locked-turn checks.');
+  assert.equal(scalar(`SELECT col_description('public.rooms'::regclass,attnum) FROM pg_attribute
+    WHERE attrelid='public.rooms'::regclass AND attname='active_player_index';`),
+    'classification: PUBLIC - client-reported successor cursor persisted by the thin referee and used for current-actor gating (ADR-0008); not a seat credential. Clients retain engine turn-order authority; the referee does not validate physics, aliveness or round phase.');
+  assert.equal(scalar(`SELECT col_description('public.rooms'::regclass,attnum) FROM pg_attribute
+    WHERE attrelid='public.rooms'::regclass AND attname='turn';`),
+    'classification: PUBLIC - monotonic referee turn counter used to reject stale legacy submissions under the room lock; not a seat credential or server-authoritative engine state.');
+  console.log(`Public routine ACL guard PASS: ${migrationFiles.length} migrations, current owner, extension exclusion, new-function/overload and explicit-role negative controls; forward metadata comments verified.`);
+
+  // Two handlers can have authorized the same captured turn before either
+  // transaction obtains the lock. Both human and CPU-proxy requests must be
+  // checked against the current turn under that lock, not just assigned seqs.
+  for (const proxy of [false, true]) {
+    const id = proxy ? '65000000-0000-4000-8000-000000000002' : '65000000-0000-4000-8000-000000000001';
+    const actor = proxy ? 'race-a-bot' : 'race-a';
+    const active = proxy ? 2 : 0;
+    sql(`INSERT INTO public.rooms(id,code,seed,status,options,players,active_player_index,turn)
+      VALUES('${id}','${proxy ? 'LGC2' : 'LGC1'}',1,'active',
+        '{"maxPlayers":3,"commandProtocolVersion":1}','${players('race-a','race-b')}',${active},7);
+      INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+        ('${id}','race-a','race-token-a'),('${id}','race-b','race-token-b');`);
+    const first = openPsqlSession(`legacy-${proxy}-first`);
+    first.send(`BEGIN; SELECT id FROM public.rooms WHERE id='${id}' FOR UPDATE;
+      \\echo LEGACY_LOCKED\n`);
+    await first.waitFor('LEGACY_LOCKED');
+    const second = openPsqlSession(`legacy-${proxy}-second`);
+    const secondResult = second.exited.then(() => ({ rejected: false }), error => ({ rejected: true, error }));
+    second.send(`SET ROLE service_role; SELECT public.submit_room_action_for_seat(
+      '${id}','${proxy ? 'race-b' : 'race-a'}','${proxy ? 'race-token-b' : 'race-token-a'}','${actor}',
+      '{"type":"fire","angle":45,"power":50,"weapon":"baby_missile"}',true,1,8);\n`);
+    await waitForBlockedBy(second, first, `legacy-${proxy}`);
+    first.send(`SET LOCAL ROLE service_role; SELECT public.submit_room_action_for_seat(
+      '${id}','race-a','race-token-a','${actor}',
+      '{"type":"fire","angle":45,"power":50,"weapon":"baby_missile"}',true,1,8);
+      COMMIT;\n`);
+    first.close(); second.close();
+    await first.exited;
+    const loser = await secondResult;
+    assert.equal(scalar(`SELECT count(*) FROM public.room_actions WHERE room_id='${id}';`), '1',
+      `same captured legacy ${proxy ? 'CPU' : 'human'} turn must append only once`);
+    assert.equal(loser.rejected, true, 'the stale request must be refused');
+    assert.match(String(loser.error), /stale legacy turn/);
+    assert.equal(scalar(`SELECT turn || ':' || active_player_index FROM public.rooms WHERE id='${id}';`), '8:1');
+  }
+
+  // Preserve the legacy ROUND_OVER per-seat shop and membership-only next-round
+  // exceptions. A stale normal actor and forged shop actor still append nothing.
+  const legacyId = '65000000-0000-4000-8000-000000000001';
+  const legacyAction = (actor, action) => `SET ROLE service_role;
+    SELECT public.submit_room_action_for_seat('${legacyId}','race-a','race-token-a',
+    '${actor}','${JSON.stringify(action)}',false,1,8);`;
+  assert.equal(scalar(legacyAction('race-a', { type: 'buy', weapon: 'baby_missile', tankId: 'p1' })), '1');
+  assert.equal(scalar(legacyAction('race-a-bot', { type: 'buy', accessory: 'battery', tankId: 'p3' })), '2');
+  assert.equal(scalar(legacyAction('race-a', { type: 'next_round' })), '3');
+  for (const [action, error] of [
+    [{ type: 'move', delta: 1 }, /stale legacy turn/],
+    [{ type: 'buy', weapon: 'baby_missile', tankId: 'p2' }, /actor unavailable/],
+  ]) {
+    assert.throws(() => sql(legacyAction('race-a', action)), error);
+    assert.equal(scalar(`SELECT count(*) FROM public.room_actions WHERE room_id='${legacyId}';`), '4');
+  }
+
+  // Real boundary replacement for the six retired applyPlayerUpdate helper
+  // assertions: errors, self-name, trim/color/lease, other-seat preservation,
+  // and bounded loadout replacement. Refusals leave both roster and lease alone.
+  const editId = '66000000-0000-4000-8000-000000000001';
+  const baseRoster = [
+    { id: 'edit-a', name: 'Ana', color: '#f00', ready: false, lastSeen: 1 },
+    { id: 'edit-b', name: 'Bo', color: '#0f0', ready: false, lastSeen: 2 },
+  ];
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('${editId}','EDT1',1,'waiting','{"maxPlayers":4,"roomLifecycleVersion":1}','${JSON.stringify(baseRoster)}');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+    ('${editId}','edit-a','edit-token-a'),('${editId}','edit-b','edit-token-b'),('${editId}','ghost','ghost-token');`);
+  const edit = (changes, player = 'edit-a', token = 'edit-token-a') => json(`SET ROLE service_role;
+    SELECT public.update_room_player('${editId}','${player}','${token}','${JSON.stringify(changes)}');`);
+  const editState = () => json(`SELECT jsonb_build_object('players',players,'leases',
+    (SELECT jsonb_agg(jsonb_build_object('id',seat_id,'seen',last_seen_at) ORDER BY seat_id)
+      FROM public.room_seats WHERE room_id=rooms.id)) FROM public.rooms WHERE id='${editId}';`);
+  for (const [changes, player, token, error] of [
+    [{ name: 'X' }, 'ghost', 'ghost-token', 'player_not_in_room'],
+    [{ name: '  bo  ' }, 'edit-a', 'edit-token-a', 'name_conflict'],
+    [{ color: '#0f0' }, 'edit-a', 'edit-token-a', 'color_conflict'],
+    [{ name: 'X' }, 'edit-a', 'wrong-token', 'invalid_seat_token'],
+  ]) {
+    const before = editState();
+    assert.deepEqual(edit(changes, player, token), { ok: false, error });
+    assert.deepEqual(editState(), before);
+  }
+  for (const changes of [null, [], {}, { ready: true }, { name: '' }, { color: 'red' },
+    { loadout: null }, { loadout: { treads: 'bad', hull: 'foundry', turret: 'foundry', barrel: 'foundry' } }]) {
+    const before = editState();
+    assert.deepEqual(edit(changes), { ok: false, error: 'invalid_changes' });
+    assert.deepEqual(editState(), before);
+  }
+  const sameName = edit({ name: 'Ana' });
+  assert.equal(sameName.ok, true);
+  assert.equal(sameName.players[0].name, 'Ana');
+  assert.ok(sameName.players[0].lastSeen > 1);
+  const changed = edit({ name: '  Cy  ', color: '#00f' });
+  assert.equal(changed.ok, true);
+  assert.deepEqual(changed.players[0], { ...baseRoster[0], name: 'Cy', color: '#00f', lastSeen: changed.players[0].lastSeen });
+  assert.deepEqual(changed.players[1], baseRoster[1]);
+  const loadout = { treads: 'jackal', hull: 'bulwark', turret: 'foundry', barrel: 'jackal' };
+  const equipped = edit({ loadout });
+  assert.equal(equipped.ok, true);
+  assert.deepEqual(equipped.players[0].loadout, loadout);
+  assert.notEqual(equipped.players[0].loadout, loadout);
+  assert.deepEqual(equipped.players[1], baseRoster[1]);
+  assert.equal(scalar(`SELECT (floor(extract(epoch FROM s.last_seen_at)*1000)=(r.players->0->>'lastSeen')::numeric)::text
+    FROM public.room_seats s JOIN public.rooms r ON r.id=s.room_id WHERE r.id='${editId}' AND s.seat_id='edit-a';`), 'true');
+
+  // Same lock order as the live ready/start/join/leave/edit/revoke transactions.
+  // Prove actual blocking with pg_blocking_pids, then inspect committed rows.
+  for (const [index, transition] of ['ready', 'start', 'join', 'leave', 'edit', 'revoke'].entries()) {
+    const id = `67000000-0000-4000-8000-00000000000${index}`;
+    const roster = baseRoster.map(p => ({ ...p, ready: transition === 'start' && p.id === 'edit-b' }));
+    sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+      ('${id}','ER${index}X',1,'waiting','{"maxPlayers":4,"roomLifecycleVersion":1}','${JSON.stringify(roster)}');
+      INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('${id}','edit-a','edit-token-a'),('${id}','edit-b','edit-token-b');`);
+    const holder = openPsqlSession(`${transition}-before-edit`);
+    holder.send(`BEGIN; SELECT id FROM public.rooms WHERE id='${id}' FOR UPDATE; \\echo EDIT_LOCKED\n`);
+    await holder.waitFor('EDIT_LOCKED');
+    const waiter = openPsqlSession(`edit-after-${transition}`);
+    waiter.send(`SET ROLE service_role; SELECT public.update_room_player('${id}','edit-a','edit-token-a','{"name":"Updated A"}');\n`);
+    await waitForBlockedBy(waiter, holder, `${transition}-before-edit`);
+    const mutation = {
+      ready: `SELECT public.room_lifecycle('${id}','edit-b','edit-token-b','ready');`,
+      start: `SELECT public.room_lifecycle('${id}','edit-a','edit-token-a','ready');`,
+      join: `SELECT public.admit_room_seat('${id}','${JSON.stringify(roster)}',
+        '${JSON.stringify([...roster, { id: 'edit-c', name: 'C', color: '#abc', ready: false }])}','edit-c','edit-token-c');`,
+      leave: `SELECT public.room_lifecycle('${id}','edit-b','edit-token-b','leave');`,
+      edit: `SELECT public.update_room_player('${id}','edit-b','edit-token-b','{"name":"Updated B"}');`,
+      revoke: `DELETE FROM public.room_seats WHERE room_id='${id}' AND seat_id='edit-a';`,
+    }[transition];
+    holder.send(`SET LOCAL ROLE service_role; ${mutation} COMMIT;\n`);
+    holder.close(); waiter.close();
+    await Promise.all([holder.exited, waiter.exited]);
+    const result = JSON.parse(waiter.output().trim().split(/\r?\n/).at(-1));
+    const state = json(`SELECT jsonb_build_object('status',status,'players',players) FROM public.rooms WHERE id='${id}';`);
+    if (transition === 'start' || transition === 'revoke') {
+      assert.deepEqual(result, { ok: false, error: transition === 'start' ? 'room_not_waiting' : 'invalid_seat_token' });
+      assert.equal(state.players[0].name, 'Ana');
+      if (transition === 'start') {
+        assert.equal(state.status, 'active');
+        assert.equal(state.players.every(p => p.ready), true);
+      }
+    } else {
+      assert.equal(result.ok, true);
+      assert.equal(state.status, 'waiting');
+      assert.equal(state.players[0].name, 'Updated A');
+      if (transition === 'ready') assert.equal(state.players[1].ready, true);
+      if (transition === 'join') {
+        assert.deepEqual(state.players[2], { id: 'edit-c', name: 'C', color: '#abc', ready: false });
+        assert.equal(scalar(`SELECT count(*) FROM public.room_seats WHERE room_id='${id}' AND seat_id='edit-c';`), '1');
+      }
+      if (transition === 'leave') assert.equal(state.players.length, 1);
+      if (transition === 'edit') assert.equal(state.players[1].name, 'Updated B');
+    }
+  }
+  for (const signature of ['update_room_player(uuid,text,text,jsonb)',
+    'submit_room_action_for_seat(uuid,text,text,text,jsonb,boolean,integer,integer)']) {
+    assert.equal(scalar(`SELECT has_function_privilege('service_role','public.${signature}','EXECUTE')::text || ':' ||
+      has_function_privilege('anon','public.${signature}','EXECUTE')::text || ':' ||
+      has_function_privilege('authenticated','public.${signature}','EXECUTE')::text;`), 'true:false:false');
+    assert.equal(scalar(`SELECT (prosecdef AND proconfig @> ARRAY['search_path=""','lock_timeout=3s'])::text
+      FROM pg_proc WHERE oid='public.${signature}'::regprocedure;`), 'true');
+  }
+  for (const role of ['anon', 'authenticated']) {
+    assert.throws(() => sql(`SET ROLE ${role}; SELECT public.update_room_player('${editId}','edit-a','edit-token-a','{"name":"Denied"}');`), /permission denied for function update_room_player/);
+  }
+  console.log('Atomic mutation regressions PASS: real human/CPU stale-turn races; legacy shop; player validation, ACL and ready/start/join/leave/edit/revocation races.');
 
   // The contract is service-only and uses a fixed, hardened search path.
   assert.equal(sql(`SELECT has_function_privilege('service_role',
@@ -229,6 +482,9 @@ try {
   assert.equal(scalar(`SET ROLE service_role; SELECT public.submit_room_action_for_seat(
     '62000000-0000-4000-8000-00000000000e','v1-a','v1-token-a','v1-a',
     '{"type":"move","delta":1}',false,0,0);`).trim(), '0');
+  // A CPU proxy remains legal on that CPU's turn; the previous fixture called
+  // this while the human was active and therefore exercised the old lock gap.
+  sql(`UPDATE public.rooms SET active_player_index=2 WHERE code='V1P1';`);
   assert.equal(scalar(`SET ROLE service_role; SELECT public.submit_room_action_for_seat(
     '62000000-0000-4000-8000-00000000000e','v1-a','v1-token-a','v1-a-bot',
     '{"type":"move","delta":1}',false,0,0);`).trim(), '1');

@@ -27,8 +27,7 @@ import { commandVersionCompatibility, resolveStoredCommandVersion } from '../_sh
 // Success:  data is the INT returned by the plpgsql function (the seq).
 //           PostgREST may deliver it as a bare number or as an array whose
 //           first element is the number — handle both defensively.
-// 23505:    Postgres unique violation → 409 seq_conflict (same contract as
-//           the old separate INSERT path).
+// 23505/40001: unique violation or stale locked turn → retryable 409 seq_conflict.
 // Any other error → 500 with a safe message (no internal detail exposed).
 // ---------------------------------------------------------------------------
 export interface RpcResult {
@@ -49,7 +48,7 @@ export function rpcResultToResponse(result: RpcResult, context: RpcLogContext = 
 
   if (error) {
     if (error.code === '42501') return json({ ok: false, error: 'invalid_seat_token' }, 403)
-    if (error.code === '23505') {
+    if (error.code === '23505' || error.code === '40001') {
       // Info-level signal (obs-003): seq-conflicts are expected + self-healing (the
       // client retries), but with ZERO log a conflict flood (a misbehaving/looping
       // client) is invisible until it surfaces as user-reported stuck turns.
@@ -352,15 +351,14 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
 
   // Atomically allocate seq, insert the action, and (when turn-ending) advance
   // the active-player cursor — all inside a single Postgres transaction via the
-  // submit_room_action plpgsql function (migration 004).
+  // submit_room_action_for_seat function (migration 025).
   //
   // The function uses FOR UPDATE on the rooms row to serialise concurrent submits
-  // per room, so no two callers can compute the same seq.  The UNIQUE(room_id,seq)
-  // constraint is retained as a final safety net.
+  // per room, rechecking the captured turn, actor and credential before append.
+  // The UNIQUE(room_id,seq) constraint is retained as a final safety net.
   //
-  // Compute next-cursor inputs.  For non-turn-ending actions p_ends_turn is false
-  // and the index/turn arguments are ignored by the plpgsql function; passing the
-  // current values is harmless but 0 would be equally correct.
+  // Compute next-cursor inputs. The current turn for non-turn-ending actions,
+  // and next turn minus one for ending actions, bind the captured snapshot.
   const isTurnEnding = endsTurn(validatedAction.type)
   const { index: p_next_index, turn: p_next_turn } = isTurnEnding
     ? nextCursor({

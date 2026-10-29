@@ -4,6 +4,46 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { handleJoinRoom, joinRoomHandler } from './index.ts'
 
+Deno.test('join admission failures log only public correlation and a fixed failure code', async () => {
+  const roomId = '11111111-1111-4111-8111-111111111111'
+  let playerId: unknown
+  let seatToken: unknown
+  const rooms = {
+    select: () => rooms,
+    eq: () => rooms,
+    maybeSingle: () => Promise.resolve({ data: {
+      id: roomId, seed: 42, options: { maxPlayers: 2 },
+      players: [{ id: 'host', name: 'Host', color: '#fff', lastSeen: Date.now() }],
+    }, error: null }),
+  }
+  const logs: unknown[][] = []
+  const originalError = console.error
+  console.error = (...args: unknown[]) => { logs.push(args) }
+  try {
+    const serviceClient = {
+      from: () => rooms,
+      rpc: (_name: string, args: { p_player_id: string; p_token: string }) => {
+        playerId = args.p_player_id
+        seatToken = args.p_token
+        return Promise.resolve({ data: null, error: {
+          message: `private RPC arguments ${args.p_token}`, details: 'synthetic-service-key',
+        } })
+      },
+    }
+    const response = await joinRoomHandler({ serviceClient: serviceClient as never })({
+      code: 'ABCD', playerName: 'Joiner', color: '#000',
+    })
+    assertEquals(response.status, 500)
+    assertEquals(await response.json(), { error: 'Failed to join room' })
+    assertEquals(typeof playerId, 'string')
+    assertEquals(logs, [['join_room: admission transaction failed', {
+      operation: 'join', roomId, playerId,
+    }]])
+    assertEquals(JSON.stringify(logs).includes(String(seatToken)), false)
+    assertEquals(JSON.stringify(logs).includes('synthetic-service-key'), false)
+  } finally { console.error = originalError }
+})
+
 Deno.test('RL-08: legacy join cannot enter a room that requires active presence', async () => {
   const host = { id: 'host', name: 'Ana', color: '#e84d4d', ready: false, lastSeen: Date.now() }
   let mutations = 0

@@ -103,6 +103,10 @@ for (const result of [
         assertEquals(await response.json(), { error: 'Failed to update room' })
       }, result)
       assertEquals(JSON.stringify(logs).includes(token), false)
+      assertEquals(JSON.stringify(logs).includes('synthetic-service-key'), false)
+      assertEquals(logs, [['room lifecycle transaction failed', {
+        operation: 'leave', roomId, playerId,
+      }]])
     } finally { console.error = originalError }
   })
 }

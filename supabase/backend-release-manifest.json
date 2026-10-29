@@ -7,7 +7,7 @@
   },
   "functionShared": {
     "path": "supabase/functions/_shared",
-    "sha256": "8d9eb7e94f92c392c646b437d7cc3fa76754c5dfef6ce69aaddd5d2c38fef675"
+    "sha256": "c092b03e2be98061456754484e68443e649956c784a46ab0513e0266ce0d516d"
   },
   "verifiedReplayShared": {
     "path": "shared/src",
@@ -109,6 +109,10 @@
     {
       "path": "supabase/migrations/024_verified_challenge_rewards.sql",
       "sha256": "dbce599cdab94e581bac55ea8e904835167a963ba8b957f2fde40851ad123f70"
+    },
+    {
+      "path": "supabase/migrations/025_atomic_room_mutation_followups.sql",
+      "sha256": "fc527e2379a2bff2cfc5afc2deb4423c57c687a6b6f2c8cf7989de6d9bedab5b"
     }
   ],
   "functions": [
@@ -176,7 +180,7 @@
       "name": "join_room",
       "path": "supabase/functions/join_room",
       "verifyJwt": false,
-      "sha256": "f76d7bb40cdcca7d63acd9bb8881d13b0947b62445b41e5e97c793e3fca37f91"
+      "sha256": "14fd97afcda5362e23e3ba5c99bb7cccfb7a0494f89dd2ac65d5b824f95245b8"
     },
     {
       "name": "leave_room",
@@ -224,13 +228,13 @@
       "name": "submit_action",
       "path": "supabase/functions/submit_action",
       "verifyJwt": false,
-      "sha256": "ff6c97d76b89564afe3fec29ccc4f1b01d2a81cea1046c5a894c65b696c7083c"
+      "sha256": "9328f5d1ef6fe1afba8e0ffd5ff983742426540cadef376938af8b7dcf6d12e4"
     },
     {
       "name": "update_player",
       "path": "supabase/functions/update_player",
       "verifyJwt": false,
-      "sha256": "762ab826457c3b1969df904717b516c7ced23d7af75cf42024b51bfef7ab774d"
+      "sha256": "6c6f81354cce2fc19fe0adae8024738ead4395131c76d82351c8e80298ac0dca"
     },
     {
       "name": "verified_career_summary",
