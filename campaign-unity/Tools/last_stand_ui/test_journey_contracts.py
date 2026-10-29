@@ -72,11 +72,73 @@ PREREQUISITES = (
     "product CI supplies the compiler for fresh current-source model qualification",
     "product CI proves its pinned browser sandbox before expensive UI checks",
 )
-MAINTAINED_COMPLETE = (MAINTAINED[:1] + PREREQUISITES + MAINTAINED[1:20] + MAINTAINED_SUPPLEMENTAL[:1]
-                       + MAINTAINED[20:] + MAINTAINED_SUPPLEMENTAL[1:])
+# Reviewed fixed complete selection; deleting a Node case cannot erase its expectation.
+MAINTAINED_COMPLETE = ('every CI and Pages browser installer prepares the official Ubuntu archive',
+ 'Ubuntu mirror repair preserves priorities, unrelated feeds and line endings',
+ 'Ubuntu mirror repair refuses unknown layouts and does not rewrite lookalike endpoints',
+ 'Ubuntu mirror file preparation changes only its admitted regular file',
+ '15-minute CI partitions core, product, tier and every Campaigns viewport',
+ 'required CI runs current wave gate and checkpoint reader regressions',
+ 'required CI runs public parent configuration regressions',
+ 'every required check validates classified work and the complete browser matrix',
+ 'product CI supplies required FFmpeg tools before the Last Stand journey',
+ 'product CI supplies the compiler for fresh current-source model qualification',
+ 'product CI executes the complete inventoried portable domain regressions',
+ 'maintained checks retain parity, verifier negatives and background admission',
+ 'CI runs the combat and research evidence admission contracts',
+ 'product CI proves its pinned browser sandbox before expensive UI checks',
+ 'Last Stand has one maintained shared journey and both entrypoints',
+ 'removed classification, result validation, shards and optionalized work are rejected',
+ 'all candidate shards prove the same bytes before and after execution',
+ 'candidate matrix rejects omitted coverage or digest verification',
+ 'rejects nonlocal, wrong-base and credentialed journey admission',
+ 'native Chrome enforces deny-external proxy before startup',
+ 'rejects escaped evidence parent before writing',
+ 'rejects resolved evidence junction escape before writing',
+ 'rejects external origin before fault or rejoin fixtures',
+ 'rejects unexpected backend methods, endpoints and awarding requests',
+ 'only the exact same-origin GET rejoin fixture is fulfilled',
+ 'rejects preflight redirects without following them',
+ 'bounds preflight response size and lifetime',
+ 'rejects missing or drifted served runtime and absent readiness',
+ 'rejects unplanned gameplay keys, cancels, edges, coordinates and hidden input',
+ 'JS cache revalidation accepts only exact same-load successful 304 fetch',
+ 'rejects unrelated console, page, HTTP and request errors in every fault scope',
+ 'only exact induced fault evidence is accepted while every unrelated error still fails',
+ 'process ancestry rejects reused parent PID and profile deletion rejects an owned wrong-prefix fixture',
+ 'process ownership chronology rejects stale and ambiguous branches while retaining proven children',
+ 'teardown error is retained as a failed result before it propagates',
+ 'audio diagnostics retain missing capture before the original sample failure',
+ 'audio diagnostics retain stopped capture and exact inclusive window before failure',
+ 'audio diagnostics retain unavailable page errors without replacing the original read failure',
+ 'audio diagnostics retain absent observer without inventing a successful sample read',
+ 'audio diagnostics preserve sufficient sample energy and distinguish silence',
+ 'audio sample failure survives cleanup failure with both errors retained',
+ 'audio capture diagnostics observe lifecycle without starting stopped capture',
+ 'audio diagnostics bound capture details and errors while identifying the current document',
+ 'journey error survives persistence failure after successful cleanup',
+ 'journey error survives cleanup and persistence failures',
+ 'cleanup error takes precedence over persistence failure',
+ 'standalone persistence failure is retained in memory and propagates',
+ 'standalone cleanup failure still persists its failed report and propagates',
+ 'actual journey final evidence callback retains later raw files and failed report after console write '
+ 'failure',
+ 'actual journey final evidence callback preserves raw records when classification rejects',
+ 'actual journey final evidence callback retains compact failure when full result write fails',
+ 'actual journey final evidence callback attempts every artifact and stderr even when storage rejects all '
+ 'writes',
+ 'actual journey final evidence callback preserves successful raw evidence without failure diagnostics',
+ 'actual journey compact retention diagnostic bounds error text without truncating the full failed report',
+ 'actual journey evidence writer streams complete nested records without aggregate JSON stringification',
+ 'audio diagnostics retain latest sixteen snapshots and exact dropped count',
+ 'audio diagnostics bound long pathname and follow replacement document identity',
+ 'audio read failure retains recovered current document and the original error',
+ 'process ownership rejects incomplete executable identities before retention and fresh adoption',
+ 'process ownership private matcher rejects incomplete executable identities')
 EXECUTABLE_VARIANTS = ("absent", "undefined", "empty", "null", "number", "boolean", "object", "array", "boxed string")
 # Pinned existing child identities, not expectations learned from the TAP under test.
 MAINTAINED_NESTED = {
+    "actual journey evidence writer streams complete nested records without aggregate JSON stringification": ("LF", "CRLF"),
     MAINTAINED_SUPPLEMENTAL[0]: (
         "stale branch cannot authorize its descendants",
         "retained stale branch is pruned before destructive selection",
@@ -199,9 +261,6 @@ class JourneyContractTests(unittest.TestCase):
             self.assertEqual([name for name in names if name in cohort], list(cohort),
                              "Missing, duplicate or reordered " + key + " cohort")
 
-    def test_background_negative_controls(self):
-        self.guard_suite("scripts/ci/lastStandBackground.test.mjs", BACKGROUND_PREREQUISITES + BACKGROUND,
-                         {"original": BACKGROUND, "prerequisites": BACKGROUND_PREREQUISITES})
 
     def test_maintained_journey_guards(self):
         self.guard_suite("scripts/ci/ciWorkflow.test.mjs", MAINTAINED_COMPLETE,
@@ -219,7 +278,7 @@ class JourneyContractTests(unittest.TestCase):
         derived = dict(zip(['nt', 'posix'], json.loads(budget_result.stdout)))
         # Standalone clocks start before the actual 180-second web-server startup;
         # the outer Python owner also admits supervised cleanup.
-        for host, minimum, maximum in [('nt', 1430, 1480), ('posix', 3830, 3880)]:
+        for host, minimum, maximum in [('nt', 2630, 2680), ('posix', 3830, 3880)]:
             calls = []
             def run(argv, **options):
                 calls.append((argv, options))

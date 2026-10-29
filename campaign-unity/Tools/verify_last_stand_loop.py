@@ -409,7 +409,11 @@ def verify_shop_presentation_states(report, directory):
             'Presentation fixtures use stale runtime/source')
     source_paths = ('e2e/helpers/lastStandJourney.mjs', 'scripts/last-stand-playable-loop.mjs',
                     'campaign-unity/Tools/verify_last_stand_loop.py', 'campaign-unity/Tools/last_stand_shop/test_shop_player.py',
-                    'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py')
+                    'campaign-unity/Tools/last_stand_shop/test_shop_player_portable.py',
+                    'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
+                    'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
+                    'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
+                    'campaign-unity/Tools/contracts/last-stand-observation-v1.json')
     require(binding['input_files'] == {name: digest(ROOT.parent / name) for name in source_paths}, 'Stale presentation-state driver')
     served = dict(manifest['files'], **{'index.html': manifest['wrapperSha256'], 'asset-manifest.json': digest(manifest_path)})
     require(set(binding['served']) == set(served) and all(binding['served'][name]['sha256'] == value for name, value in served.items()),
@@ -598,7 +602,11 @@ def verify_shop_vertical(report):
     source_paths = ('e2e/helpers/lastStandJourney.mjs', 'scripts/last-stand-playable-loop.mjs',
                     'campaign-unity/Tools/verify_last_stand_loop.py',
                     'campaign-unity/Tools/last_stand_shop/test_shop_player.py',
-                    'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py')
+                    'campaign-unity/Tools/last_stand_shop/test_shop_player_portable.py',
+                    'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
+                    'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
+                    'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
+                    'campaign-unity/Tools/contracts/last-stand-observation-v1.json')
     require(binding.get('input_files') == {name: digest(worktree / name) for name in source_paths},
             'Shop journey driver source changed')
     expected_served = dict(manifest['files'], **{'index.html': manifest['wrapperSha256'],
@@ -1213,7 +1221,11 @@ def verify_shop_recovery(report, require_native=False):
          and documentary['package']['sanitizedReceiptSha256'] == expected['receipt_sha256'], 'Stale recovery runtime/export binding')
     paths = ('e2e/helpers/lastStandJourney.mjs', 'scripts/last-stand-playable-loop.mjs',
              'campaign-unity/Tools/verify_last_stand_loop.py', 'campaign-unity/Tools/last_stand_shop/test_shop_player.py',
-             'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py')
+                    'campaign-unity/Tools/last_stand_shop/test_shop_player_portable.py',
+                    'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
+             'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
+             'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
+             'campaign-unity/Tools/contracts/last-stand-observation-v1.json')
     need(binding.get('input_files') == {name: digest(worktree / name) for name in paths}, 'Recovery source changed')
     served = dict(manifest['files'], **{'index.html': manifest['wrapperSha256'], 'asset-manifest.json': expected['manifest_sha256']})
     need(set(binding.get('served', {})) == set(served) and all(binding['served'][key].get('sha256') == value
@@ -1889,7 +1901,7 @@ class LastStandWebTests(unittest.TestCase):
         # its historical method name does not select the v3 Shop-only runner.
         runner = ROOT.parent / 'scripts' / 'last-stand-playable-loop.mjs'
         completed = subprocess.run(['node', str(runner)], cwd=ROOT.parent,
-                                   capture_output=True, text=True, timeout=1480 if os.name == 'nt' else 3880)
+                                   capture_output=True, text=True, timeout=2680 if os.name == 'nt' else 3880)
         print(completed.stdout, end='', flush=True)
         if completed.stderr:
             print(completed.stderr, end='', flush=True)

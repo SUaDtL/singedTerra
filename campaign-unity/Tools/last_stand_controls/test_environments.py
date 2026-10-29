@@ -6,19 +6,16 @@ Doubles prove routing/ownership only. Imported scenes and browser pixels are
 separate evidence, and none records owner acceptance of the environments.
 """
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
 from last_stand_source_closure import complete_sources
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Assets/Scripts"
 IMPORTED_CASES = (
     "authored_environment_roots_and_lighting", "invalid_and_missing_environment_refuse",
@@ -226,9 +223,7 @@ def compile_checks(folder, review_source=None):
         if Path(source) != target:
             target.write_bytes(Path(source).read_bytes())
         copies.append(str(target))
-    argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{executable}",
-            *copies, str(folder / "UnityDoubles.cs"), str(folder / "EnvironmentSourceChecks.cs")]
-    result = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+    result = compile_csharp(executable, [*copies, folder / "UnityDoubles.cs", folder / "EnvironmentSourceChecks.cs"], warnings_as_errors=True, timeout_seconds=60)
     if result.returncode:
         raise AssertionError("Actual-source compile failed (not behavioral RED):\n" + result.stdout + result.stderr)
     return executable
@@ -245,8 +240,7 @@ class EnvironmentSourceTests(unittest.TestCase):
         cls.folder.cleanup()
 
     def case(self, name, executable=None):
-        result = subprocess.run([str(MONO), str(executable or self.executable), name],
-                                capture_output=True, text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(executable or self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
@@ -268,8 +262,7 @@ class EnvironmentSourceTests(unittest.TestCase):
             candidate = Path(folder) / "BattlefieldReview.cs"
             candidate.write_text(source.replace(before, after), encoding="utf-8")
             executable = compile_checks(folder, candidate)
-            result = subprocess.run([str(MONO), str(executable), case], capture_output=True,
-                                    text=True, encoding="utf-8-sig", timeout=30)
+            result = run_csharp(executable, [case], timeout_seconds=30)
             self.assertNotEqual(result.returncode, 0, "Compiled fault was not detected")
             self.assertIn(message, result.stderr)
 

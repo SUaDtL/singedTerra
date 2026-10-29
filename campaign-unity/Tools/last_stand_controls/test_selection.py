@@ -3,18 +3,15 @@
 These checks prove bounded catalog browsing, not rendered controls or gameplay admission.
 """
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
 from last_stand_source_closure import complete_sources
 
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SOURCE = PROJECT / "Unity/Assets/Scripts/LastStandSelection.cs"
 CHECKS = Path(__file__).with_name("SelectionChecks.cs")
 
@@ -23,9 +20,7 @@ def compile_checks(executable, source=SOURCE):
     dependencies = [SOURCE.parent / name for name in (
         "LastStandUpgradeCatalog.cs", "LastStandEconomyCatalog.cs", "MechanicsShopModel.cs", "LastStandTierCatalog.cs",
         "LastStandWaveCatalog.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs")]
-    return subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+",
-                           f"-out:{executable}", *map(str, complete_sources(SOURCE.parent, [source] + dependencies)), str(CHECKS)],
-                          capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+    return compile_csharp(executable, complete_sources(SOURCE.parent, [source] + dependencies) + [CHECKS], warnings_as_errors=True, timeout_seconds=60)
 
 
 class SelectionTests(unittest.TestCase):
@@ -43,8 +38,7 @@ class SelectionTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
@@ -81,8 +75,7 @@ class SelectionTests(unittest.TestCase):
             executable = Path(folder) / "SelectionFault.exe"
             compiled = compile_checks(executable, source)
             self.assertEqual(compiled.returncode, 0, "Compile failure is not detection:\n" + compiled.stdout + compiled.stderr)
-            result = subprocess.run([str(MONO), str(executable), case], capture_output=True,
-                                    text=True, encoding="utf-8-sig", timeout=30)
+            result = run_csharp(executable, [case], timeout_seconds=30)
             self.assertNotEqual(result.returncode, 0, "Deliberate fault escaped the behavior check")
             self.assertIn(assertion, result.stderr)
 

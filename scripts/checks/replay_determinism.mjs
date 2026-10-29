@@ -141,5 +141,30 @@ if (snapA.terrainDigest !== snapB.terrainDigest) {
   log(`PASS: terrain digest identical (${snapA.terrainDigest}).`);
 }
 
+// Legacy finite out-of-range aim is normalized by the shared engine. Compare
+// complete settled outcomes with independently specified boundary angles.
+for (const [angle, expectedAngle] of [[-45, 0], [225, 180]]) {
+  const replayed = freshEngine();
+  const bounded = freshEngine();
+  replayNetworkAction(replayed, { type: 'fire', angle, power: 45, weapon: 'baby_missile' });
+  replayNetworkAction(bounded, { type: 'fire', angle: expectedAngle, power: 45, weapon: 'baby_missile' });
+  tickToCompletion(replayed);
+  tickToCompletion(bounded);
+  if (JSON.stringify(snapshot(replayed)) !== JSON.stringify(snapshot(bounded))) {
+    fail(`out-of-range replay angle ${angle} differs from boundary ${expectedAngle}`);
+  } else {
+    log(`PASS: replay angle ${angle} preserves the ${expectedAngle}-degree outcome.`);
+  }
+}
+
+// Empty purchases never debit currency, grant inventory or advance the turn.
+// External malformed fire/action payloads are refused before logging by the
+// submit_action validator; this pins the replay consumer's empty-buy boundary.
+const emptyBuy = freshEngine();
+const beforeEmptyBuy = JSON.stringify(snapshot(emptyBuy));
+replayNetworkAction(emptyBuy, { type: 'buy' });
+if (JSON.stringify(snapshot(emptyBuy)) !== beforeEmptyBuy) fail('empty replay purchase mutated game state');
+else log('PASS: empty replay purchase has no state or inventory effect.');
+
 if (failed) { log('\nREPLAY DETERMINISM CHECK: FAILED'); process.exit(1); }
 else { log('\nREPLAY DETERMINISM CHECK: PASSED'); process.exit(0); }

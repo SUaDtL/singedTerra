@@ -12,6 +12,21 @@ from last_stand_test_runtime import MONO, CSC, COMPILER_MODE, compile_csharp, di
 
 
 class TestRuntimeTests(unittest.TestCase):
+    def test_explicit_defines_preserve_preprocessor_contract_without_raw_flags(self):
+        with tempfile.TemporaryDirectory(prefix="st-runner-defines-") as folder:
+            folder = Path(folder); source = folder / "Check.cs"; target = folder / "Check.exe"
+            source.write_text('class Check { static void Main() {\n'
+                              '#if UNITY_EDITOR\nSystem.Console.WriteLine("editor");\n'
+                              '#else\nSystem.Console.WriteLine("player");\n#endif\n} }')
+            compile_csharp(target, [source])
+            self.assertEqual(run_csharp(target).stdout.strip(), "player")
+            build = compile_csharp(target, [source], defines=("UNITY_EDITOR",))
+            self.assertIn("-define:UNITY_EDITOR", build.argv)
+            self.assertEqual(run_csharp(target).stdout.strip(), "editor")
+            for invalid in (("UNITY_EDITOR;-r:other",), ("-out:elsewhere",), ("",), "UNITY_EDITOR"):
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    compile_csharp(target, [source], defines=invalid)
+
     def test_explicit_tools_survive_unavailable_default_discovery(self):
         with tempfile.TemporaryDirectory(prefix="st-runner-custom-only-") as folder:
             folder = Path(folder)

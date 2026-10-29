@@ -4,18 +4,15 @@ Run: C:/Python314/python.exe -B -m unittest discover -s campaign-unity/Tools/las
 Controller receipt admission and browser navigation require their integration checks.
 """
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
 from last_stand_source_closure import complete_sources
 
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 SOURCE_NAMES = ("LastStandGuidance.cs", "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs",
                 "LastStandRunClock.cs", "LastStandSpeedPolicy.cs", "LastStandEconomyCatalog.cs")
@@ -26,9 +23,7 @@ def compile_checks(executable, overrides=None):
     sources = [overrides.get(name, SCRIPTS / name) for name in SOURCE_NAMES]
     sources = complete_sources(SCRIPTS, sources)
     sources.append(Path(__file__).with_name("GuidanceChecks.cs"))
-    command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{executable}"]
-    command += [str(path) for path in sources]
-    return subprocess.run(command, capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+    return compile_csharp(executable, sources, warnings_as_errors=True, timeout_seconds=60)
 
 
 class GuidanceTests(unittest.TestCase):
@@ -46,8 +41,7 @@ class GuidanceTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
@@ -82,8 +76,7 @@ class GuidanceTests(unittest.TestCase):
             result = compile_checks(executable, {source.name: mutant})
             self.assertEqual(result.returncode, 0, "Fault fixture must compile:\n" + result.stdout + result.stderr)
             case = "navigation_requires_ready_noncatchup"
-            result = subprocess.run([str(MONO), str(executable), case], capture_output=True,
-                                    text=True, encoding="utf-8-sig", timeout=30)
+            result = run_csharp(executable, [case], timeout_seconds=30)
             self.assertNotEqual(result.returncode, 0, "Navigation fault escaped behavioral detection")
             self.assertIn("unconfirmed save must remain: save-error", result.stderr, result.stdout + result.stderr)
             self.assertNotIn("PASS " + case, result.stdout)

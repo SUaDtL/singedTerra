@@ -4,14 +4,14 @@ Run: C:/Python314/python.exe -B -m unittest discover -s campaign-unity/Tools/las
 No Unity Editor process is started. These checks do not qualify browser storage.
 """
 from pathlib import Path
-import subprocess
+import sys
 import tempfile
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
+
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 SOURCE_NAMES = ("LastStandStore.cs", "LastStandPreferences.cs", "LastStandPreferencesStore.cs")
 
@@ -20,9 +20,7 @@ def compile_checks(executable, overrides=None):
     overrides = overrides or {}
     sources = [overrides.get(name, SCRIPTS / name) for name in SOURCE_NAMES]
     sources.append(Path(__file__).with_name("PreferencesChecks.cs"))
-    command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", "-define:UNITY_EDITOR",
-               f"-out:{executable}"] + [str(path) for path in sources]
-    return subprocess.run(command, capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+    return compile_csharp(executable, sources, warnings_as_errors=True, timeout_seconds=60, defines=('UNITY_EDITOR',))
 
 
 class PreferencesTests(unittest.TestCase):
@@ -41,8 +39,7 @@ class PreferencesTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
@@ -88,8 +85,7 @@ class PreferencesTests(unittest.TestCase):
             executable = Path(folder) / "PreferencesFault.exe"
             result = compile_checks(executable, {source_name: mutant})
             self.assertEqual(result.returncode, 0, "Fault fixture must compile:\n" + result.stdout + result.stderr)
-            result = subprocess.run([str(MONO), str(executable), case], capture_output=True,
-                                    text=True, encoding="utf-8-sig", timeout=30)
+            result = run_csharp(executable, [case], timeout_seconds=30)
             self.assertNotEqual(result.returncode, 0, "Fault escaped behavioral detection: " + case)
             self.assertIn(expected_assertion, result.stderr, result.stdout + result.stderr)
             self.assertNotIn("PASS " + case, result.stdout)

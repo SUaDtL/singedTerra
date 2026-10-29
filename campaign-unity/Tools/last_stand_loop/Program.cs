@@ -35,8 +35,8 @@ internal static class Program
             case "reload":
                 Need(model.TryDeploy(),"Reserve.");var restored=Load(storage);
                 Need(restored.SaveState=="ready"&&restored.HasCheckpoint&&restored.NextRunId==2&&restored.Checkpoint.CompletedWave==0,"Restore starting boundary.");
-                Need(storage.Value.StartsWith("{\"version\":5,")&&storage.Value.Contains("\"scrapYield\":0")&&storage.Value.Contains("\"research\":")&&storage.Value.Contains("\"history\":"),"Complete current schema.");
-                foreach(string bad in new[]{storage.Value.Replace("\"version\":5","\"version\":6"),storage.Value.Replace("\"nextRunId\":2","\"nextRunId\":1"),Legacy(false).Replace("\"version\":1","\"version\":01"),Legacy(false)+"\v"})
+                Need(storage.Value.StartsWith("{\"version\":6,")&&storage.Value.Contains("\"scrapYield\":0")&&storage.Value.Contains("\"research\":")&&storage.Value.Contains("\"history\":"),"Complete current schema.");
+                foreach(string bad in new[]{storage.Value.Replace("\"version\":6","\"version\":7"),storage.Value.Replace("\"nextRunId\":2","\"nextRunId\":1"),Legacy(false).Replace("\"version\":1","\"version\":01"),Legacy(false)+"\v"})
                 {var invalid=new FakeStorage{Value=bad};Need(Load(invalid).SaveState=="blocked"&&invalid.Value==bad,"Malformed bytes preserved.");}break;
             case "failure":
                 storage.Value=Legacy(true);model=Load(storage);storage.FailWrite=true;

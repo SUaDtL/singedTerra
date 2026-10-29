@@ -7,18 +7,15 @@ lets the actual session own all simulation calls.
 from pathlib import Path
 import sys
 import os
-import subprocess
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
 from last_stand_source_closure import complete_sources
 
 
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 
 
@@ -52,9 +49,7 @@ class SpeedTests(unittest.TestCase):
             sources[sources.index(actual)] = temporary
         sources.append(Path(__file__).with_name("SpeedChecks.cs"))
         sources = complete_sources(SCRIPTS, sources)
-        argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
-        build = subprocess.run(argv + [str(path) for path in sources], capture_output=True,
-                               text=True, encoding="utf-8-sig", timeout=60)
+        build = compile_csharp(cls.executable, sources, warnings_as_errors=True, timeout_seconds=60)
         if build.returncode:
             cls.output.cleanup()
             raise AssertionError("Compilation failed, not behavioral RED:\n" + build.stdout + build.stderr)
@@ -64,8 +59,7 @@ class SpeedTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 

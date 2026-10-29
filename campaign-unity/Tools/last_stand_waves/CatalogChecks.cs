@@ -12,7 +12,7 @@ static class CatalogChecks
         try {
             switch (args[0]) {
                 case "rosters":
-                    Require(LastStandTierCatalog.All.Count == 2, "Only two real tiers ship.");
+                    Require(LastStandTierCatalog.All.Count == 4, "Current authored campaign has four tiers.");
                     Require(LastStandTierCatalog.Get(2).RequiredWave == 300, "Tier two unlock is wave 300.");
                     foreach (var tier in LastStandTierCatalog.All) {
                         var roster = LastStandWaveCatalog.ForWave(tier, 100);
@@ -22,7 +22,8 @@ static class CatalogChecks
                         Require(reward.RepeatableSalvage > 0 && reward.FirstClearSalvage > 0, "Separate reward classes.");
                     }
                     Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(1),100).Milestone.UnlockFittingId == "scattergun", "Authored armament unlock.");
-                    Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(2),300).Milestone.UnlockTierId == 0, "No phantom tier three.");
+                    Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(2),300).Milestone.UnlockTierId == 3, "Current tier three unlock follows tier two.");
+                    Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(4),300).Milestone.UnlockTierId == 0, "No phantom tier five.");
                     break;
                 case "expansion":
                     var tiers = new List<LastStandTierDefinition>();

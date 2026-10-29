@@ -14,7 +14,10 @@ const SHOP_RUNTIME_PROBE = `(() => {
 })();`;
 const SHOP_PLAYER_INPUTS = ['e2e/helpers/lastStandJourney.mjs','scripts/last-stand-playable-loop.mjs',
   'campaign-unity/Tools/verify_last_stand_loop.py','campaign-unity/Tools/last_stand_shop/test_shop_player.py',
+  'campaign-unity/Tools/last_stand_shop/test_shop_player_portable.py',
+  'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
   'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
+  'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete

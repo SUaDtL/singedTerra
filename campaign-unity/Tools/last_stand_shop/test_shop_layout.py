@@ -16,9 +16,8 @@ import uuid
 
 sys.dont_write_bytecode = True
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import MONO, CSC, COMPILER_MODE
 SOURCE = PROJECT / "Unity/Assets/Scripts/LastStandHudLayout.cs"
 DRIVER = Path(__file__).with_name("ShopLayoutChecks.cs")
 
@@ -52,7 +51,9 @@ class ShopLayoutTests(unittest.TestCase):
             archive.mkdir()
             for source in sources + [Path(__file__).resolve()]:
                 (archive / source.name).write_bytes(source.read_bytes())
-        argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
+        # The custom evidence recorder retains PID and raw process output.
+        argv = ([str(MONO), str(CSC)] if COMPILER_MODE == "managed" else [str(CSC)])
+        argv += ["-nologo", "-warnaserror+", f"-out:{cls.executable}"]
         argv.extend(str(source) for source in sources)
         build = cls.run_bound(argv, timeout=60)
         cls.record("compile", argv, build)
