@@ -567,9 +567,11 @@ export class AccountSession {
 
   async signOut(): Promise<void> {
     await this.initialize()
-    if (!this.backend || this.current.busy || this.disposed) return
+    if (!this.backend || (this.current.busy && this.current.status !== 'loading') || this.disposed) return
     this.clearVerifiedCompletionState()
-    this.update({ ...this.current, busy: true, error: '' })
+    this.update(this.current.status === 'loading'
+      ? { status: 'anonymous', busy: true, error: '' }
+      : { ...this.current, busy: true, error: '' })
     const operation = ++this.generation
     try {
       await this.backend.signOut()
@@ -687,6 +689,8 @@ export class AccountSession {
       const delivery = await postOnceWithRetry(
         () => backend.recordHotSeatMatch(result),
         2,
+        undefined,
+        () => this.isAuthenticatedAccount(accountGeneration, accountId),
       )
       if (!delivery.ok) return null
       if (
@@ -822,12 +826,16 @@ export class AccountSession {
 
   private async applyAuthUser(user: AccountUser | null, operation = ++this.generation): Promise<void> {
     if (!this.isCurrent(operation)) return
-    this.clearVerifiedCompletionState()
-    this.invalidateVerifiedCareer(user?.id ?? null, true)
+    // Revoke the previous identity before publishing dependent state or awaiting
+    // the new profile: the SDK already uses the replacement Auth session.
     if (!user) {
       this.update({ status: 'anonymous', busy: false, error: '' })
-      return
+    } else if (this.current.status !== 'authenticated' || this.current.profile.id !== user.id) {
+      this.update({ status: 'loading', busy: true, error: '' })
     }
+    this.clearVerifiedCompletionState()
+    this.invalidateVerifiedCareer(user?.id ?? null, true)
+    if (!user) return
     this.authLoads += 1
     try {
       const profile = await this.backend?.loadProfile(user.id)

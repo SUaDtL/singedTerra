@@ -79,7 +79,10 @@ export function createLastStandCommandView<Context>(host: HTMLElement): MountedC
       const raw = document.defaultView?.localStorage.getItem('singedTerra.lastStand.prototype.v1');
       if (!raw || raw.length > 262144) return;
       const save: unknown = JSON.parse(raw);
-      if (!save || typeof save !== 'object' || !('version' in save) || save.version !== 4 || !('checkpoint' in save)) return;
+      // LastStandProgressionSave retains checkpoint envelopes 4 and 5 and writes 6.
+      // Unknown editions remain Unity's responsibility, including future saves.
+      if (!save || typeof save !== 'object' || !('version' in save) || typeof save.version !== 'number' ||
+        ![4, 5, 6].includes(save.version) || !('checkpoint' in save)) return;
       const checkpoint = save.checkpoint;
       if (!checkpoint || typeof checkpoint !== 'object' || !('runId' in checkpoint) || !Number.isSafeInteger(checkpoint.runId) ||
         Number(checkpoint.runId) < 1 || !('encounter' in checkpoint)) return;
