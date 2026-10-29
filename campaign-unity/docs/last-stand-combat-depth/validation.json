@@ -1,0 +1,493 @@
+{
+  "schema": "last-stand-combat-depth-validation/v1",
+  "foundationCommit": "1893bbd92135555eeb021656b38f532eb9a0cbcb",
+  "checkedWorktreeHead": "db0fe0f5edd8f0b523a455621dd50b2d803bcba7",
+  "identityNote": "Checks/builds bind dirty approved source bytes, not a claim that checkedWorktreeHead contains implementation. Build receipts carry complete inventories.",
+  "status": "Calibrated candidate built and browser checked; hosted, native interaction and endurance qualification remain separately pending.",
+  "builds": [
+    {
+      "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261029T014444Z-a8e42f/result.json",
+      "sha256": "9193f45f227597313ba2da6c933f76a08ba442ac3f7d9eb146a2adeca743815c",
+      "target": "webgl",
+      "configuration": "release",
+      "status": "pass",
+      "sourceSha256": "68935f3aa6e0d5663730caff05195997ee42e60419bd60c3bd4aa0159a2f551b",
+      "output": "campaign-unity/Builds/Web-20261029T014444Z-a8e42f",
+      "artifacts": {
+        "Build/Web-20261029T014444Z-a8e42f.data": "775802464904da7ae307fc6078dde8980b9160b370c5d0e54a7aeb57f65f7dce",
+        "Build/Web-20261029T014444Z-a8e42f.framework.js": "2e61452fc49e847b67e83382535f8498726eb078bd8a9c339aa6861441ed4d5a",
+        "Build/Web-20261029T014444Z-a8e42f.loader.js": "51d3a81734a93600be1eac9caa107d5c5e7aadbd7917b9420420ca60d7316127",
+        "Build/Web-20261029T014444Z-a8e42f.wasm": "62dbf014bd3644f53d9d7133f670a906dfd98a64234fc583dee00f4284a1ce0a",
+        "index.html": "537cff6665dd00002f80a6f98bb41e32051374453206e6e6f3e908a652e9253b",
+        "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+      }
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261029T014625Z-6fd1cd/result.json",
+      "sha256": "7ca5a0af552b7d32b1b22a9aa1b7ebbae022556c5c329f13d1b54a99b89cd101",
+      "target": "windows",
+      "configuration": "release",
+      "status": "pass",
+      "sourceSha256": "68935f3aa6e0d5663730caff05195997ee42e60419bd60c3bd4aa0159a2f551b",
+      "output": "campaign-unity/Builds/LastStand-windows-20261029T014625Z-6fd1cd",
+      "artifactCount": 164,
+      "artifactInventorySha256": "eacbd84b2915646f7759c20609b7f1dc85587ee6fd3a572c7dab4e53b90fca18",
+      "primaryArtifacts": {
+        "LastStand.exe": "e1a9d9e062bbcdb91f76983fae8bb1e4fb8036d55289318ef91033f130d38ecc"
+      },
+      "artifactInventoryNote": "Full artifact names and hashes retained in the source-bound build receipt referenced above; summary avoids duplicating its DLL inventory."
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-architecture/build-android-20261029T015601Z-27464f/result.json",
+      "sha256": "ff0ac245269170f260e40a5e3d64bbc4b9de0e56e79b56d6d20b75c54ab51891",
+      "target": "android",
+      "configuration": "development",
+      "status": "pass",
+      "sourceSha256": "68935f3aa6e0d5663730caff05195997ee42e60419bd60c3bd4aa0159a2f551b",
+      "output": "campaign-unity/Builds/LastStand-android-20261029T015601Z-27464f",
+      "artifacts": {
+        "LastStand.apk": "d17631e638c646e14b92e4f688b1e26f15f6e13dcdca598427c5bfdaf10423cd"
+      }
+    }
+  ],
+  "browserJourneys": [
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/player-journey-calibrated-v1/result.json",
+      "sha256": "7163a328387b626d5eccb85a582baa6c98c5f3f21c536935b3cecdce9e034271",
+      "status": "passed",
+      "scope": "Isolated development profiles, actual packaged rendering/input/save observations. Not earned progression, native/device audio or endurance acceptance.",
+      "checks": [
+        {
+          "name": "attached repair callout 1366",
+          "pass": true
+        },
+        {
+          "name": "attached launcher callout 1366",
+          "pass": true
+        },
+        {
+          "name": "attached scattergun callout 1366",
+          "pass": true
+        },
+        {
+          "name": "attached mortar callout 1366",
+          "pass": true
+        },
+        {
+          "name": "attached railgun callout 1366",
+          "pass": true
+        },
+        {
+          "name": "attached repair callout 390",
+          "pass": true
+        },
+        {
+          "name": "attached launcher callout 390",
+          "pass": true
+        },
+        {
+          "name": "attached scattergun callout 390",
+          "pass": true
+        },
+        {
+          "name": "attached mortar callout 390",
+          "pass": true
+        },
+        {
+          "name": "attached railgun callout 390",
+          "pass": true
+        },
+        {
+          "name": "attached repair callout 568",
+          "pass": true
+        },
+        {
+          "name": "attached launcher callout 568",
+          "pass": true
+        },
+        {
+          "name": "attached scattergun callout 568",
+          "pass": true
+        },
+        {
+          "name": "attached mortar callout 568",
+          "pass": true
+        },
+        {
+          "name": "attached railgun callout 568",
+          "pass": true
+        },
+        {
+          "name": "repair uses current edition in actual player",
+          "pass": true
+        },
+        {
+          "name": "repair exposes wave combat and value stats",
+          "pass": true
+        },
+        {
+          "name": "launcher uses current edition in actual player",
+          "pass": true
+        },
+        {
+          "name": "launcher exposes wave combat and value stats",
+          "pass": true
+        },
+        {
+          "name": "scattergun uses current edition in actual player",
+          "pass": true
+        },
+        {
+          "name": "scattergun exposes wave combat and value stats",
+          "pass": true
+        },
+        {
+          "name": "mortar uses current edition in actual player",
+          "pass": true
+        },
+        {
+          "name": "mortar exposes wave combat and value stats",
+          "pass": true
+        },
+        {
+          "name": "mortar purchase charges the displayed price and updates its effect",
+          "pass": true
+        },
+        {
+          "name": "mortar resumes the saved wave boundary",
+          "pass": true
+        },
+        {
+          "name": "railgun uses current edition in actual player",
+          "pass": true
+        },
+        {
+          "name": "railgun exposes wave combat and value stats",
+          "pass": true
+        },
+        {
+          "name": "railgun purchase charges the displayed price and updates its effect",
+          "pass": true
+        },
+        {
+          "name": "railgun resumes the saved wave boundary",
+          "pass": true
+        },
+        {
+          "name": "wave 50 lists the actual elite under reduced effects",
+          "pass": true
+        },
+        {
+          "name": "retained run restores original rules and progress",
+          "pass": true
+        }
+      ],
+      "sourceInputs": {
+        "scripts/last-stand-combat-depth-journey.mjs": "5d656a65e4f6ba0153211cab56025cb27c5d0d7e26bbf133665337020c50770f",
+        "e2e/helpers/lastStandBrowserActor.mjs": "fd1755c875b0f0f602eb82fe838b739272d5485837792e29d4f35720fa3a9c5d",
+        "e2e/helpers/lastStandJourney.mjs": "e302bddee94655055a04d6f830a3f64b3f03a6fd79c31b8207c6ccb588834f7a",
+        "e2e/helpers/lastStandTierJourney.mjs": "9de9a1691ad3679b98a7ee77e09584ee335c933ef58e12dfcfc022e6e87c6ad4",
+        "e2e/helpers/lastStandWaveJourney.mjs": "ea8a28ae03d7279e7c6d52a973914df4d102d3ac09fb714ff27f6f36c0ca1590",
+        "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d"
+      },
+      "packaged": {
+        "client/public/last-stand/asset-manifest.json": "1fcdf2d0bf9fb0f0d3dbb6ad49285d524611f3f9eee44e8f39cbccefea7b1e43",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "bf81e46aaf8fe34c750da654e5f635f1edbe6ab85fdeac8dfdec66e237fa6edf",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "f6018541bd761cf25fde8926481d54d5c43735d04b1d91d30717e3751b1195eb",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.data": "775802464904da7ae307fc6078dde8980b9160b370c5d0e54a7aeb57f65f7dce",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.framework.js": "2e61452fc49e847b67e83382535f8498726eb078bd8a9c339aa6861441ed4d5a",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.loader.js": "51d3a81734a93600be1eac9caa107d5c5e7aadbd7917b9420420ca60d7316127",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.wasm": "62dbf014bd3644f53d9d7133f670a906dfd98a64234fc583dee00f4284a1ce0a",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "de7ae8063af6e027db694fc178c5bafa5fe4e63bb09de769577827dd9610fb90",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "fixtureManifest": {
+        "sha256": "979bea796ee9df6863e36f3b6b7fca2b7adf57d9964c4994f51597a9bc0fc45b"
+      },
+      "screenshots": 53,
+      "closedCompletionObserved": null
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/research-player-journey-calibrated-v1/result.json",
+      "sha256": "ae4094bfc856e5f7a5b456521b2c2a0db46eba060bd54aeff3b99b68601e51af",
+      "status": "passed",
+      "scope": "Source-bound headless browser input, save and rendered screenshots. Development seeds are not ordinary earned progression, elapsed endurance, native acceptance or owner visual approval.",
+      "checks": [
+        {
+          "name": "closed tab retains funding and advances only research",
+          "pass": true
+        },
+        {
+          "name": "visible Start uses shared wallet once",
+          "pass": true
+        },
+        {
+          "name": "one funded queued project",
+          "pass": true
+        },
+        {
+          "name": "Suspend refunds active and promotes paid queue",
+          "pass": true
+        },
+        {
+          "name": "Switch keeps partial time and reconciles refund/replacement cost",
+          "pass": true
+        },
+        {
+          "name": "second tab remains read-only while the original owns the profile",
+          "pass": true
+        },
+        {
+          "name": "original owner retains its wallet and funded project",
+          "pass": true
+        },
+        {
+          "name": "reloaded second tab acquires ownership and funds one queue",
+          "pass": true
+        },
+        {
+          "name": "bulk selection is free and one click buys displayed aggregate",
+          "pass": true
+        },
+        {
+          "name": "ordinary fresh profile exposes locked Labs without purchasable action",
+          "pass": true
+        },
+        {
+          "name": "earned maximum stops at five",
+          "pass": true
+        },
+        {
+          "name": "half-step slowdown reaches pause",
+          "pass": true
+        },
+        {
+          "name": "explicit abandon finalizes one observed run",
+          "pass": true
+        }
+      ],
+      "sourceInputs": {
+        "scripts/last-stand-research-journey.mjs": "2c6fe85ac9512a0359a356df0157ab65492a612c8692535a85673602e690a9f1",
+        "e2e/helpers/lastStandJourney.mjs": "e302bddee94655055a04d6f830a3f64b3f03a6fd79c31b8207c6ccb588834f7a",
+        "e2e/helpers/lastStandTierJourney.mjs": "9de9a1691ad3679b98a7ee77e09584ee335c933ef58e12dfcfc022e6e87c6ad4",
+        "e2e/helpers/lastStandWaveJourney.mjs": "ea8a28ae03d7279e7c6d52a973914df4d102d3ac09fb714ff27f6f36c0ca1590",
+        "e2e/helpers/lastStandBrowserActor.mjs": "fd1755c875b0f0f602eb82fe838b739272d5485837792e29d4f35720fa3a9c5d",
+        "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d"
+      },
+      "packaged": {
+        "client/public/last-stand/asset-manifest.json": "1fcdf2d0bf9fb0f0d3dbb6ad49285d524611f3f9eee44e8f39cbccefea7b1e43",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "bf81e46aaf8fe34c750da654e5f635f1edbe6ab85fdeac8dfdec66e237fa6edf",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "f6018541bd761cf25fde8926481d54d5c43735d04b1d91d30717e3751b1195eb",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.data": "775802464904da7ae307fc6078dde8980b9160b370c5d0e54a7aeb57f65f7dce",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.framework.js": "2e61452fc49e847b67e83382535f8498726eb078bd8a9c339aa6861441ed4d5a",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.loader.js": "51d3a81734a93600be1eac9caa107d5c5e7aadbd7917b9420420ca60d7316127",
+        "client/public/last-stand/Build/Web-20261029T014444Z-a8e42f.wasm": "62dbf014bd3644f53d9d7133f670a906dfd98a64234fc583dee00f4284a1ce0a",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "de7ae8063af6e027db694fc178c5bafa5fe4e63bb09de769577827dd9610fb90",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "fixtureManifest": {
+        "sha256": "f52312d88de294509daac514a44cfe1e70d427e25ea90e38ef2d5b7d49a41fd0"
+      },
+      "screenshots": 11,
+      "closedCompletionObserved": true
+    }
+  ],
+  "localChecks": [
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-node-admission.log",
+      "sha256": "d8bb6ebde2de10d5e93f762b81695f83848c580311d6ad083cf5eb654e4f1241",
+      "status": "pass",
+      "tests": 431,
+      "seconds": 1.9723817
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-architecture-checks.log",
+      "sha256": "cd8f496b5b3313e765fa0774f22e38b858e6bbe8c12eebdf563f41e1cd3bd885",
+      "status": "pass",
+      "tests": 41,
+      "seconds": 19.871
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/armament-calibration-independent-green.log",
+      "sha256": "03eae42a0ffa46c686b1267ab231912f50f80db1f49869d710cdc06b6dfb7807",
+      "status": "pass",
+      "tests": 14,
+      "seconds": 2.086
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/combat-depth-calibrated-full-suite.log",
+      "sha256": "1a2dce2e8a3e2b71d0dbd96e68887ae590f8268cb09400c369a44f1070398e9f",
+      "status": "pass",
+      "tests": 80,
+      "seconds": 57.639
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-retained-economy-checks.log",
+      "sha256": "899a01a6120106c6e303012f558c7acb7cc6e5782c0c3464083270b0ababcff3",
+      "status": "pass",
+      "tests": 6,
+      "suites": [
+        {
+          "tests": 3,
+          "seconds": 54.389
+        },
+        {
+          "tests": 3,
+          "seconds": 2.201
+        }
+      ]
+    }
+  ],
+  "localChecksNote": "Focused checks overlap; counts are not a unique total or a coverage percentage. Full combat suite and measurement review are recorded with balance results.",
+  "reviewMedia": [
+    {
+      "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-garage-390-mortar.png",
+      "sha256": "0cac69afa9a36211d7ab223f9a91339ef33fc1c739b8b130425cb60dfc6dffcc"
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-environment-1366-4.png",
+      "sha256": "e4f6c509bf04c133d408432849c8b9d2659c1bc7f50da74a3c527c1458b62dae"
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-purchased-mortar.png",
+      "sha256": "b8e7def38281f5e461347e68a99e55bc82f1dc52cf171c85e9d26461ed282bb5"
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-purchased-railgun.png",
+      "sha256": "7768b6f5fc31928434122497e334113c3c43f1b32cf5391a63a4c751bdb3e42f"
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-combat-depth/review/tier2-before-elite-elite-reduced-effects-battle.png",
+      "sha256": "c9a40b07c8a7471faba3ec2e01fad0773b9cad2705387e34ab24ea94dd5d5df0"
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-combat-depth/review/tier2-before-elite-elite-wave-stats.png",
+      "sha256": "9dd385d89d1b455f27e47285a0a0a49c663fb24c13c6d7ced094f04f13b739e6"
+    }
+  ],
+  "androidSignature": {
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-android-signature.log",
+    "sha256": "5eaaec5b29ba5d516d638b441edc64fc048c37f78362aa6feb7fbae44aeef276",
+    "status": "verified development v2 signature",
+    "apkSha256": "d17631e638c646e14b92e4f688b1e26f15f6e13dcdca598427c5bfdaf10423cd",
+    "bytes": 52076242,
+    "storeSigned": false
+  },
+  "retainedFailedAttempt": {
+    "path": "campaign-unity/Evidence/last-stand-architecture/build-android-20261029T014656Z-c60183/result.json",
+    "reason": "18 inherited TraceVirtualOffset package shader warnings; player marker succeeded but strict scanner rejected this attempt. Unchanged retry passed; clean-import repeatability remains unproven."
+  },
+  "webPackage": {
+    "path": "client/public/last-stand/asset-manifest.json",
+    "sha256": "1fcdf2d0bf9fb0f0d3dbb6ad49285d524611f3f9eee44e8f39cbccefea7b1e43",
+    "productionBuild": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-web-package.log",
+      "sha256": "744ab6b78dfb05cc874988538db761981bb98ef01ea608a2ce81712cfe8c1750"
+    },
+    "preview": "http://127.0.0.1:4174/singedTerra/last-stand/"
+  },
+  "balance": {
+    "status": "Actual-model calibration and independent accounting/comparison review pass within the disclosed earned budgets, horizons and available cells.",
+    "baseline": {
+      "path": "campaign-unity/docs/last-stand-combat-depth/combat-balance-baseline-report.json",
+      "sha256": "97faf58f8898d2f75fd53876950792884cc29266a5e77283f31663b9b778efc7"
+    },
+    "calibrated": {
+      "path": "campaign-unity/docs/last-stand-combat-depth/combat-balance-calibrated-report.json",
+      "sha256": "072c83cf31ff8a7fa321027cb46b6b344c49d2cbf2c1a02fbf32ad660d67eaa4"
+    },
+    "crowdedBaseline": {
+      "path": "campaign-unity/docs/last-stand-combat-depth/crowded-wave-baseline-report.json",
+      "sha256": "630c3ae910d2a21598420dfbe81944b09d46a2d948682ab65dc362ba321ec098"
+    },
+    "crowdedCalibrated": {
+      "path": "campaign-unity/docs/last-stand-combat-depth/crowded-wave-calibrated-report.json",
+      "sha256": "f7f0d70044d36afed14288975a116a93ccdeb937eadf8f325096411bcbd648e9"
+    },
+    "generatedObserver": {
+      "path": "campaign-unity/docs/last-stand-combat-depth/crowded-wave-generated-observer.cs.txt",
+      "sha256": "f8003f46c7de409ec27670e99b791997e3cf5aadb93cbc201d41136cd0e70da4"
+    },
+    "policy": {
+      "path": "campaign-unity/docs/last-stand-combat-depth/balance.md",
+      "sha256": "2d2fa198b636a40f440e89a73566f4299b49c42b0e2df0913f3108bf487956b8"
+    },
+    "measurementSeconds": 1076.4593055999721,
+    "measurementInputs": 37,
+    "limits": "3600cells retained:196defeats,1tick-limit,3403unavailable under disclosed earned-access and aggregate caps. Mature10-12h pacing is gifted modeledT1, not earned Tier10 or live endurance. Current mcs host temp launch/read failed before execution; Linux qualification belongs to hostedCI.",
+    "independentReview": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-report-independent-review.json",
+      "sha256": "9ba2dac715be7a90ae309f610cd306bcc6dbfd5da7e7167efa88bbc19f060bdc",
+      "result": "scoped pass; no open findings"
+    },
+    "observerReview": {
+      "reviewer": "foundation_security acting security reviewer",
+      "result": "scoped pass; no open findings",
+      "checks": "4/4 independent report/binding checks; exact generated harness and all13finalpacket identities verified; priorP2controls preserved",
+      "packet": {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/combat-calibrated-final-packet.json",
+        "sha256": "5937af3a732aa6418c03b62e9b069f07da9df98b112f567de76a2a2f3eeb9478"
+      }
+    }
+  },
+  "qualification": {
+    "hostedExactHeadCI": "pending candidate push",
+    "windowsInteraction": "pending current player restart/abnormal termination on isolated profile",
+    "androidPhysicalDevice": "pending; adb reports no connected devices",
+    "hardwareAudio": "pending current candidate",
+    "performanceAndEndurance": "pending sustained5x frame/step/memory and physical thermal measurements and actual long farming observation",
+    "androidCleanImport": "first attempt rejected18probe-shaderwarnings; same-source unchanged-scanner retry passed; clean-import warning-free unproven",
+    "merge": "not authorized or performed",
+    "publication": "not authorized or performed"
+  },
+  "historicalEvidence": {
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pre-calibration-validation.json",
+    "sha256": "24c07010171fc9107288e56610756f027e75243e3b73c97eb3205f55703669cb"
+  },
+  "evidencePhase": "Builds, browser journeys and review media above are the calibrated production candidate. Preserved earlier attempts are historical and are not substituted for current-source proof.",
+  "reviews": {
+    "authCrypto": {
+      "result": "pass;no findings",
+      "scope": "28 staged/pending paths; SHA256 build/test provenance with existing standard Node/Python/.NETproviders only",
+      "reviewedStagedScopeSha256": "4bb096f958398e914b7ccec7d437e16f61c883c086b886cf97831de34da4d9bb",
+      "gate": "canonical marker recorded after independentreview; initial H09b refusal retained"
+    },
+    "coverage": "Scoped independent coverage and calibration review passed; no quantitative C#coverage claim",
+    "ciSecurity": "Existing independentreview passed; permissions,secrets,compilerordering and requiredaggregate remain enforced"
+  }
+}

@@ -68,6 +68,49 @@ This clears the combat-depth sprint's browser integration dependency; the
 platform, audio and endurance gaps below remain open. Earlier pending/failure
 observations above retain their original historical scope.
 
+## Combat-depth candidate, October 29
+
+The approved combat-depth implementation adds Mortar and Railgun, three enemy
+roles, Cinder Basin and Storm Foundry, and saved-rule compatibility. Its
+[validation inventory](last-stand-combat-depth/validation.json) binds current
+source, builds, browser observations and representative review images.
+
+WebGL and Windows release builds and an Android ARM64 development build passed
+with source inventory `68935f3aa6e0d5663730caff05195997ee42e60419bd60c3bd4aa0159a2f551b` unchanged through all three builds.
+The Android APK is 52,076,242 bytes and has a verified Android Debug v2 signature.
+The first Android import was rejected for 18 inherited probe-shader warnings;
+an unchanged-source retry passed the unchanged strict scanner. Warning-free
+clean-import repeatability and store signing remain unproven.
+
+The calibrated packaged-browser combat journey passed 31 checks with 53
+screenshots: five fittings, four environments, desktop/portrait/short landscape,
+touch and keyboard, quoted Mortar/Railgun purchases, saved-wave reload,
+retained-version recovery, and wave-50 elite statistics and rendering with
+reduced effects. The research journey passed 13 checks, including completion
+during an actual closed tab and writer-lock handoff. Both report zero browser
+errors and verify their source, fixture and package bindings. These development
+profiles establish the observed browser behaviors; their gifted funding is not
+ordinary earned progression or native/endurance evidence.
+
+Current local verification includes 80 combat/domain checks, 431 CI/tooling
+checks, 41 pure architecture checks, six retained economy checks, 14 independently
+rerun armament regressions, and a passing production build/typecheck. Existing independent review closed the three new browser
+evidence findings and passed the CI security review. Final combat-model and
+observer checks are recorded in the validation inventory and balance report.
+
+The full calibrated actual-model measurement preserves earned funding, research
+and saved seeds. Current-edition Scattergun uses 22m interception with unchanged
+damage growth; Mortar uses a 10m radius and the measured level-growth correction.
+Legacy saved runs retain their original rules. The
+[balance report](last-stand-combat-depth/balance.md) separates earned observations,
+bounded survival limits and hypothetical mature pacing. It does not establish
+real-duration farming, globally optimal builds or device performance.
+
+Candidate exact-head hosted CI, current Windows interaction, physical Android,
+hardware audio and real-duration farming/performance qualification remain open.
+One current preview is retained on port 4174. No merge, publication or store
+acceptance follows from these results.
+
 ## Target-aware build entry
 
 `Tools/build_last_stand.py` supports `webgl`, `windows` and `android`, with
