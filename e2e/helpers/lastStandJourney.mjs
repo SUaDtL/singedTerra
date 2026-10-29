@@ -1282,7 +1282,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, appendFileSync, ex
 import { resolve, join, relative, isAbsolute, dirname } from 'node:path';
 import { tmpdir, release, arch, uptime } from 'node:os';
 import { gunzipSync } from 'node:zlib';
-import { buildWaveOracle } from './lastStandWaveOracle.mjs';
+import { buildWaveOracle, WAVE_ORACLE_SOURCES } from './lastStandWaveOracle.mjs';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const SAVE_KEY = 'singedTerra.lastStand.prototype.v1';
@@ -1873,6 +1873,7 @@ export function encounterOracleToolchain(platform=process.platform) {
   return {mono:join(editor,'bin/mono.exe'),csc:join(editor,'lib/mono/msbuild/Current/bin/Roslyn/csc.exe')};
 }
 function qualifyCurrentEncounterSource(sources) {
+  assert.deepEqual(Object.keys(sources),ENCOUNTER_COMPILATION_SOURCES,'Current model compilation source closure differs');
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
   const receiptPath=join(ROOT,manifest.source.receipt);
@@ -1916,9 +1917,9 @@ function readEncounterReferenceBytes(bundle,sourceHashes) {
   assert.equal(bundle.format,'st-last-stand-actual-model-oracle/1','Unknown model reference format');
   const sources=sourceHashes??Object.fromEntries(Object.keys(bundle.source_lf_sha256).map(name=>[name,
     hash(readFileSync(join(ROOT,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n'))]));
-  if(sourceHashes===undefined && JSON.stringify(sources)!==JSON.stringify(bundle.source_lf_sha256)) {
+  if(sourceHashes===undefined) {
     assert.deepEqual(bundle,ENCOUNTER_ORACLE_PACKAGE,'Historical model reference package changed');
-    qualifyCurrentEncounterSource(sources);
+    qualifyCurrentEncounterSource(encounterCompilationSourceBinding().source_lf_sha256);
     Object.assign(sources,bundle.source_lf_sha256);
   }
   assert.deepEqual(sources,bundle.source_lf_sha256,'Model reference/source binding differs');
@@ -1960,9 +1961,9 @@ export function admitEncounterOracleOutput(raw,bundle=ENCOUNTER_ORACLE_PACKAGE,s
     reference:bytes(reference),actual:bytes(raw),canonical_sha256:hash(actual),
     rows:Object.values(profiles).reduce((count,profile)=>count+Object.keys(profile).length,0),fields_per_row:13}};
 }
-const ENCOUNTER_COMPILATION_SOURCES=Object.freeze(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
-  'LastStandWaveCatalog.cs','LastStandUpgradeCatalog.cs','LastStandEconomyCatalog.cs','MechanicsShopModel.cs','LastStandShopState.cs',
-  'LastStandRunClock.cs','LastStandSpeedPolicy.cs']);
+// Both actual-model compilers consume the same maintained domain closure. The
+// historical CSV still retains its original two-source provenance and bytes.
+const ENCOUNTER_COMPILATION_SOURCES=WAVE_ORACLE_SOURCES;
 export function encounterCompilationSourceBinding() {
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));

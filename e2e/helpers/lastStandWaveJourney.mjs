@@ -190,8 +190,10 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     await matrix('wave-combat-paused');await click('Menu');await until(()=>current(report.states)?.menu==='menu');
     await click('MenuMilestones');await until(()=>current(report.states)?.menu==='milestones');await matrix('wave-milestones');
     const milestoneText=JSON.parse(current(report.layouts).raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics.find(g=>g.path.endsWith('/SettingsBody')&&g.active)?.text;
-    assert.match(milestoneText,/UPCOMING/);assert.match(milestoneText,/One-time bonus/);assert.match(milestoneText,/Repeatable wave reward/);
-    assert.match(milestoneText,/WAVE 100 /);assert.match(milestoneText,/scattergun/);assert.match(milestoneText,/WAVE 300 /);assert.match(milestoneText,/Unlock Tier 2/);
+    assert.match(milestoneText,/UPCOMING/);assert.match(milestoneText,/One-time bonus/);
+    assert.match(milestoneText,/repeatable Salvage/);assert.match(milestoneText,/Base wave reward/);
+    assert.match(milestoneText,/WAVE 100 /);assert.match(milestoneText,/Unlock Auxiliary Scattergun/);
+    assert.match(milestoneText,/WAVE 300 /);assert.match(milestoneText,/Unlock Tier 2/);
     await click('SettingsClose');await until(()=>current(report.states)?.menu==='');
     await click('ShopEntry');await until(()=>current(report.shops)?.open);
     await click('ShopTabAttack');await until(()=>current(report.shops)?.category==='Attack');

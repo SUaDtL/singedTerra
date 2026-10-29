@@ -9,6 +9,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
+import { WAVE_ORACLE_SOURCES } from '../../e2e/helpers/lastStandWaveOracle.mjs';
 
 // A clean checkout has no ignored journey evidence directories. Initialize the
 // fixed repository-owned parent; the production admission still proves its
@@ -815,17 +816,33 @@ async function assertCurrentDeploymentHitSelection() {
   const end=unique('    await page.waitForTimeout(750);');
   assert.ok(untilBegin>0 && untilEnd>untilBegin && begin>0 && end>begin,'Actual maintained baseline hit caller required');
   const run=new Function('assert','Date','page','hits','native','output','screenshot','phaseMatrix','mark','gameClick','check','startMotion','observerError',
-    'return (async()=>{const player=true;'+observerGuard+'let motion;'+callerSource.slice(untilBegin,untilEnd)+callerSource.slice(begin,end)+'return first;})();');
-  const current={load:16,timeOrigin:1791536368822};
-  const hit={tick:60,cannonDamage:20,firstFoeHull:10,kills:0,t:3000,...current,scope:'healthy'};
+    'journey','encounters','callbackRecords','cues','modelOracle',
+    'return (async()=>{const player=true;const {observeFirstCannonImpact,observeFreshCannonAudio}=journey;'+
+    observerGuard+'let motion;'+callerSource.slice(untilBegin,untilEnd)+callerSource.slice(begin,end)+'return {first,firstSound};})();');
+  const oracle=journey.readBoundEncounterOracle()['repair:20'];
+  const firstCannon=Object.values(oracle).find(row=>row.cannon>0);
+  assert.equal(firstCannon.cannon,1);
+  const current={load:16,timeOrigin:1791536368822,scope:'healthy'};
+  const hit={tick:firstCannon.tick,cannonDamage:20,firstFoeHull:10,kills:firstCannon.kills,t:3000,...current};
   const old={...hit,load:15,timeOrigin:1791536308831.7};
   const fresh={...hit,t:4000};
+  const deployed={...current,t:1010,action:'deploy',phase:'battle',profileVersion:'last-stand-waves-v1',saveState:'ready',
+    runId:7,sessionRun:1,tick:0,activeTier:1,fittingId:'repair',cannonDamage:20,paused:false,speed:1};
+  const model={...current,...oracle[0],t:1000,action:'deploy',run:1,fitting:'repair',rules:'last-stand-waves-v1:playable-prototype-v1'};
+  const callback={...current,id:1,run:1,fromTick:firstCannon.tick-5,timestamp:4.25,previousTimestamp:3.75,
+    priorPending:0,elapsed:.5,focused:true,applicationPaused:false,paused:false,failed:false};
+  const cannon={...callback,action:'cue',cue:'cannon',tick:firstCannon.tick,steps:5,ordinal:1,
+    played:true,reason:'played',admittedAt:4.25,t:3995};
+  const callbackRecords=[{...callback,action:'begin',tick:callback.fromTick,steps:0,pending:.5,t:3990},cannon,
+    {...cannon,cue:'impact',ordinal:2,t:3997},
+    {...callback,action:'end',tick:callback.fromTick+10,steps:10,pending:0,t:4010}];
+  const cues=[{...current,t:3996,text:'ST_LS_AUDIO event=cannon\n'},{...current,t:3998,text:'ST_LS_AUDIO event=impact\n'}];
   const cases=[
     {name:'old-document-before-boundary',before:[old],during:[],reject:true},
     {name:'same-document-before-boundary',before:[hit],during:[],reject:true},
     {name:'wrong-load-after-boundary',before:[],during:[{...fresh,load:15}],reject:true},
     {name:'wrong-origin-after-boundary',before:[],during:[{...fresh,timeOrigin:old.timeOrigin}],reject:true},
-    {name:'wrong-damage-current',before:[],during:[{...fresh,cannonDamage:30}],reject:true},
+    {name:'wrong-damage-current',before:[],during:[{...fresh,cannonDamage:30}],reject:true,impactMismatch:true},
     {name:'fresh-current-during-deploy',before:[old,hit],during:[fresh],reject:false},
   ];
   const rows=[],failures=[];
@@ -834,14 +851,25 @@ async function assertCurrentDeploymentHitSelection() {
     const page={evaluate:async()=>{},waitForTimeout:async ms=>{assert.equal(ms,40);now+=ms;}};
     const deploy=async(name,action)=>{
       assert.equal(name,'Deploy');assert.equal(action,'deploy');deployCalls++;
-      hits.push(...fixture.during);return {phase:'battle',cannonDamage:20,...current};
+      hits.push(...fixture.during);return deployed;
     };
     try {selected=await run(assert,{now:()=>now},page,hits,{context:{}},'explicit-inert-output',
-      async()=>{},async()=>{},async()=>now,deploy,(ok,name)=>assert.ok(ok,name),async()=>null);}
-    catch(cause){if(cause.message!=='Expected real runtime observation absent')throw cause;error=cause;}
+      async()=>{},async()=>{},async()=>now,deploy,(ok,name)=>assert.ok(ok,name),async()=>null,undefined,
+      journey,[model],callbackRecords,cues,{'1:repair:20':oracle});}
+    catch(cause){
+      if(fixture.impactMismatch)assert.match(cause.message,/First authoritative cannon impact differs from deployment\/oracle/);
+      else if(cause.message!=='Expected real runtime observation absent')throw cause;
+      error=cause;
+    }
     assert.equal(deployCalls,1,'Actual baseline Deploy caller must execute');
-    const passed=fixture.reject?Boolean(error):selected===fresh;
-    if(error)assert.equal(now-1000,45000,'Actual unchanged45s timeout must reject absent current hit');
+    const passed=fixture.reject?Boolean(error):selected?.first===fresh;
+    if(error)assert.equal(now-1000,fixture.impactMismatch?0:45000,
+      'Actual polling retains45s for absent hits; an observed contradictory impact fails immediately');
+    if(!fixture.reject){
+      assert.equal(selected.firstSound.events[0],cues[0]);assert.equal(selected.firstSound.events[1],cues[1]);
+      assert.equal(selected.firstSound.callback.begin,callbackRecords[0]);
+      assert.equal(selected.firstSound.callback.end,callbackRecords.at(-1));
+    }
     const row={name:fixture.name,passed,rejected:Boolean(error),selected:selected??null,elapsedMs:now-1000,deployCalls};
     rows.push(row);if(!passed)failures.push(row);
   }
@@ -1214,36 +1242,59 @@ test('Linux current-source qualification reaches fresh model compilation', () =>
   const end=callerSource.indexOf('\nfunction canonicalEncounterCsv(',begin);
   assert.ok(begin>0 && end>begin,'The maintained current-source qualifier is required');
   const root=resolve('.');
-  const sources=Object.fromEntries(['EncounterModel.cs','EncounterProfile.cs'].map(name=>[name,
+  const completeSources=Object.fromEntries(WAVE_ORACLE_SOURCES.map(name=>[name,
     createHash('sha256').update(readFileSync(join(root,'campaign-unity/Unity/Assets/Scripts',name),'utf8').replace(/\r\n/g,'\n')).digest('hex')]));
   // Explicit inert Linux-host dispatch fixture. Export/source checks use real
   // files; compiler bytes/output below are mocks, never a compilation receipt.
-  const exercise=({fresh=true,rows=13904,fields=13,compilerError=false,drift=false}={})=>{
+  const exercise=({fresh=true,rows=13904,fields=13,compilerError=false,drift=false,
+    subset=false,missingExport=false,wrongExport=false,dependencyDrift=false}={})=>{
     let compiled=0,toolRevision=0;
     const written=[];
+    const sources=subset?Object.fromEntries(Object.entries(completeSources).slice(0,2)):{...completeSources};
+    const manifestPath=join(root,'client/public/last-stand/asset-manifest.json');
+    const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
+    const receiptPath=join(root,manifest.source.receipt);
+    const receipt=JSON.parse(readFileSync(receiptPath,'utf8'));
+    const dependency='Content/LastStandEnemyCatalog.cs',entry=`Unity/Assets/Scripts/${dependency}`;
+    if(missingExport)delete receipt.sourceFiles[entry];
+    if(wrongExport)receipt.sourceFiles[entry].sha256='0'.repeat(64);
+    const fixtureBytes=path=>{
+      if(path===receiptPath)return Buffer.from(JSON.stringify(receipt));
+      if(path===manifestPath)return Buffer.from(JSON.stringify({...manifest,source:{...manifest.source,
+        receiptSha256:createHash('sha256').update(JSON.stringify(receipt)).digest('hex')}}));
+      return readFileSync(path);
+    };
     const tools={mono:'/usr/bin/mono',csc:'/usr/lib/mono/4.5/mcs.exe'};
     const digest=path=>createHash('sha256').update(Object.values(tools).includes(path)
-      ? Buffer.from(`inert-linux-tool-${toolRevision}`):readFileSync(path)).digest('hex');
+      ? Buffer.from(`inert-linux-tool-${toolRevision}`):fixtureBytes(path)).digest('hex');
     const context={assert,process:{platform:'linux'},ROOT:root,join,Object,sources,
+      ENCOUNTER_COMPILATION_SOURCES:WAVE_ORACLE_SOURCES,
       encounterOracleToolchain:()=>tools,fileHash:digest,randomUUID:()=> 'inert-linux-qualifier',
       admitEvidenceParent:()=>tmpdir(),mkdirSync:()=>{},
       readFileSync:(path,...args)=>path.endsWith('model-oracle/binding.json') || path.endsWith('model-oracle\\binding.json')
-        ? JSON.stringify({fresh_host_compilation:fresh,comparison:{rows,fields_per_row:fields}}):readFileSync(path,...args),
+        ? JSON.stringify({fresh_host_compilation:fresh,comparison:{rows,fields_per_row:fields}}):fixtureBytes(path).toString('utf8'),
       writeFileSync:(path,text)=>written.push({path,record:JSON.parse(text)}),
       buildEncounterOracle:()=>{compiled++;if(compilerError)throw new Error('Inert compiler failed');},
-      changeTool:()=>{toolRevision++;}};
+      changeTool:()=>{toolRevision++;},
+      changeDependency:()=>{sources[dependency]='1'.repeat(64);receipt.sourceFiles[entry].sha256=sources[dependency];}};
     runInNewContext('let currentEncounterQualification;let qualifyingCurrentEncounter=false;'+
       callerSource.slice(begin,end)+'\nqualifyCurrentEncounterSource(sources);'+
-      (drift?'changeTool();':'')+'qualifyCurrentEncounterSource(sources);',context);
+      (drift?'changeTool();':'')+(dependencyDrift?'changeDependency();':'')+'qualifyCurrentEncounterSource(sources);',context);
     assert.equal(compiled,1,'Current inputs qualify once; cached inputs must still be checked');
     assert.equal(written.length,1);
     assert.equal(written[0].record.baseline.rows,13904);
     assert.equal(written[0].record.baseline.fields_per_row,13);
+    return written[0].record;
   };
-  assert.doesNotThrow(()=>exercise(),'Linux must reach fresh current-model compilation and strict baseline admission');
+  assert.deepEqual(exercise().identity.sources,completeSources,
+    'Inert Linux dispatch must bind all actual sources before fresh compilation and strict baseline admission');
   for(const invalid of [{fresh:false},{rows:13903},{fields:12}])assert.throws(()=>exercise(invalid),/baseline|parity/i);
   assert.throws(()=>exercise({compilerError:true}),/compiler failed/i);
   assert.throws(()=>exercise({drift:true}),/inputs drifted/i);
+  assert.throws(()=>exercise({subset:true}),/compilation source closure/i);
+  assert.throws(()=>exercise({missingExport:true}),/absent from genuine export/i);
+  assert.throws(()=>exercise({wrongExport:true}),/absent from genuine export/i);
+  assert.throws(()=>exercise({dependencyDrift:true}),/inputs drifted/i);
 });
 
 test('background guards reject frozen ticks and require separate native blur and hidden evidence', async () => {

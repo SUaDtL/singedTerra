@@ -7,6 +7,23 @@ import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs'
 
 // Invented observations exercise the acceptance reader, never qualify a player.
 const clone=value=>structuredClone(value);
+test('wave milestone assertions admit current displayed labels and reject missing disclosures',()=>{
+  const source=readFileSync(new URL('../../e2e/helpers/lastStandWaveJourney.mjs',import.meta.url),'utf8');
+  const start=source.indexOf('    assert.match(milestoneText,');
+  const end=source.indexOf("    await click('SettingsClose')",start);
+  assert.ok(start>0&&end>start,'Exercise the actual journey milestone assertions');
+  const validate=new Function('assert','milestoneText',source.slice(start,end));
+  // Relevant text transcribed from PR547 job123226012352's rendered-menu failure.
+  // This tests reader admission; it is not a replacement browser qualification.
+  const text='Every completed wave pays repeatable Salvage. Bonuses below are earned once per tier. '+
+    'Base rewards exclude Salvage Recovery research. Unlocking a tier never ends or moves your run.\n\n'+
+    'WAVE 100 / UPCOMING\nOne-time bonus: +50 Salvage / Unlock Auxiliary Scattergun\nBase wave reward: +2 Salvage\n\n'+
+    'WAVE 300 / UPCOMING\nOne-time bonus: +150 Salvage / Unlock Tier 2\nBase wave reward: +4 Salvage\n';
+  assert.doesNotThrow(()=>validate(assert,text));
+  for(const label of ['UPCOMING','One-time bonus','repeatable Salvage','Base wave reward',
+    'WAVE 100 /','Unlock Auxiliary Scattergun','WAVE 300 /','Unlock Tier 2'])
+    assert.throws(()=>validate(assert,text.replaceAll(label,'missing')),label);
+});
 function fixture(){
   const levels={cannonAttack:0,launcherAttack:0,hullCapacity:0,armor:0,cannonCycle:0,fieldRepair:0,scattergunAttack:0,scrapYield:0};
   const encounter={rulesVersion:'last-stand-waves-v1',tier:1,fitting:1,wave:1,completedWave:1,tick:201,hull:114,kills:6,committedCannonDamage:20};
