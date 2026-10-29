@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 import { assertPackageReleaseScripts, loadAndValidateManifest } from '../ci/backendRelease.mjs';
+import { readSecurityPolicy } from './context_policy.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const configPath = join(root, 'supabase', 'config.toml');
@@ -35,7 +36,6 @@ const accountSummaryFunctionPath = join(root, 'supabase', 'functions', 'account_
 const recordHotseatMatchFunctionPath = join(root, 'supabase', 'functions', 'record_hotseat_match', 'index.ts');
 const verifiedReplayProbeFunctionPath = join(root, 'supabase', 'functions', 'verified_replay_probe', 'index.ts');
 const sharedModPath = join(root, 'supabase', 'functions', '_shared', 'mod.ts');
-const securityControlsPath = join(root, '.codearbiter', 'security-controls.md');
 const casualHotseatAdrPath = join(
   root,
   '.codearbiter',
@@ -342,7 +342,7 @@ const startDefaultsToRegister = startDefault !== undefined
   && ts.isIdentifier(startDefault)
   && startDefault.text === 'registerVerifiedReplayProbe';
 const sharedMod = await readFile(sharedModPath, 'utf8');
-const securityControls = await readFile(securityControlsPath, 'utf8');
+const securityControls = await readSecurityPolicy(root);
 let casualHotseatAdr;
 try {
   casualHotseatAdr = await readFile(casualHotseatAdrPath, 'utf8');

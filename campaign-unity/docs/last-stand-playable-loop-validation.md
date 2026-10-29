@@ -154,7 +154,7 @@ proof. The manifest adds only the pinned editor's built-in
 `com.unity.modules.audio` 1.0.0 module, required for the approved audio scope;
 no third-party package was installed.
 
-The repository's [Testing profile](../../.codearbiter/tech-stack.md#testing)
+The repository's [Testing profile](https://github.com/SUaDtL/singedTerra/blob/af17d905138c017822c802c658069223e97b5bf4/.codearbiter/tech-stack.md#testing)
 defines deterministic TypeScript helpers, Deno Edge tests, Vitest client tests
 and CI for those three layers. Its coverage command is
 `npm run coverage:client` with `@vitest/coverage-v8` 5.0.0.

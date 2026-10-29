@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Tech stack · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">CTX-TECH-STACK</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-records">Records</a><a href="#group-notes">Notes</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / knowledge</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Tech stack</h1><p class="deck">Runtime, frameworks, tooling and declared commands.</p><div class="meta"><span>CTX-TECH-STACK</span><span>Revision 25 · schema 0.3.2</span><span>31 addressable records</span></div></header><section class="group" id="group-records"><a class="back" href="#main-content">Top</a><h2>Records</h2>
+<!-- CA:BEGIN:CMD-TYPECHECK -->
+<article class="record" id="CMD-TYPECHECK" data-ca-symbol="CMD-TYPECHECK" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-TYPECHECK">CMD-TYPECHECK</a><h3>Typecheck both TypeScript workspaces</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;typecheck&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>typecheck</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-TYPECHECK -->
+
+<!-- CA:BEGIN:CMD-CLIENT-TESTS -->
+<article class="record" id="CMD-CLIENT-TESTS" data-ca-symbol="CMD-CLIENT-TESTS" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-CLIENT-TESTS">CMD-CLIENT-TESTS</a><h3>Client DOM and fetch regressions</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;test:client&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-CLIENT-TESTS -->
+
+<!-- CA:BEGIN:CMD-CLIENT-COVERAGE -->
+<article class="record" id="CMD-CLIENT-COVERAGE" data-ca-symbol="CMD-CLIENT-COVERAGE" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-CLIENT-COVERAGE">CMD-CLIENT-COVERAGE</a><h3>Client V8 coverage with existing denominator</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;coverage:client&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-CLIENT-COVERAGE -->
+
+<!-- CA:BEGIN:CMD-ENGINE-CHECKS -->
+<article class="record" id="CMD-ENGINE-CHECKS" data-ca-symbol="CMD-ENGINE-CHECKS" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-ENGINE-CHECKS">CMD-ENGINE-CHECKS</a><h3>Engine and compatibility checks</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;check&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-ENGINE-CHECKS -->
+
+<!-- CA:BEGIN:CMD-EDGE-CHECKS -->
+<article class="record" id="CMD-EDGE-CHECKS" data-ca-symbol="CMD-EDGE-CHECKS" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-EDGE-CHECKS">CMD-EDGE-CHECKS</a><h3>Edge Function regressions</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;check:edge&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-EDGE-CHECKS -->
+
+<!-- CA:BEGIN:CMD-DATABASE-CHECKS -->
+<article class="record" id="CMD-DATABASE-CHECKS" data-ca-symbol="CMD-DATABASE-CHECKS" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-DATABASE-CHECKS">CMD-DATABASE-CHECKS</a><h3>Isolated PostgreSQL behavior and race checks</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;check:database&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-DATABASE-CHECKS -->
+
+<!-- CA:BEGIN:CMD-WEB-BUILD -->
+<article class="record" id="CMD-WEB-BUILD" data-ca-symbol="CMD-WEB-BUILD" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-WEB-BUILD">CMD-WEB-BUILD</a><h3>Verify and package browser application</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;build&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>build</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-WEB-BUILD -->
+
+<!-- CA:BEGIN:CMD-DEPENDENCY-AUDIT -->
+<article class="record" id="CMD-DEPENDENCY-AUDIT" data-ca-symbol="CMD-DEPENDENCY-AUDIT" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-DEPENDENCY-AUDIT">CMD-DEPENDENCY-AUDIT</a><h3>Runtime and tooling dependency audit</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;audit:deps&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-DEPENDENCY-AUDIT -->
+
+<!-- CA:BEGIN:CMD-BACKEND-PROPOSAL -->
+<article class="record" id="CMD-BACKEND-PROPOSAL" data-ca-symbol="CMD-BACKEND-PROPOSAL" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-BACKEND-PROPOSAL">CMD-BACKEND-PROPOSAL</a><h3>Credential-free backend release proposal validation</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;backend:release:check&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-BACKEND-PROPOSAL -->
+
+<!-- CA:BEGIN:CMD-BROWSER-TESTS -->
+<article class="record" id="CMD-BROWSER-TESTS" data-ca-symbol="CMD-BROWSER-TESTS" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-BROWSER-TESTS">CMD-BROWSER-TESTS</a><h3>Browser product journeys</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;test:e2e&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-BROWSER-TESTS -->
+
+<!-- CA:BEGIN:CMD-CONSOLE-ASSETS -->
+<article class="record" id="CMD-CONSOLE-ASSETS" data-ca-symbol="CMD-CONSOLE-ASSETS" data-ca-kind="records"><div class="record-head"><a class="id" href="#CMD-CONSOLE-ASSETS">CMD-CONSOLE-ASSETS</a><h3>Battle console asset contracts</h3><span class="badge">command</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Command</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;test:assets:battle-console&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Purpose</span>test</div><div class="field"><span class="label">Run state</span>unrun</div></div></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-COMMANDS">SRC-COMMANDS</a></li></ul></div><div class="field"><span class="label">Statement</span>Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.</div></article>
+<!-- CA:END:CMD-CONSOLE-ASSETS -->
+
+<!-- CA:BEGIN:STACK-SCOPE -->
+<article class="record" id="STACK-SCOPE" data-ca-symbol="STACK-SCOPE" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-SCOPE">STACK-SCOPE</a><h3>Tech stack</h3><span class="badge">scope</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span># Tech stack
+
+Derived from manifests, lockfiles, and npm scripts (brownfield extraction 2026-06-20).
+
+</div></article>
+<!-- CA:END:STACK-SCOPE -->
+
+<!-- CA:BEGIN:STACK-RUNTIMES -->
+<article class="record" id="STACK-RUNTIMES" data-ca-symbol="STACK-RUNTIMES" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-RUNTIMES">STACK-RUNTIMES</a><h3>Languages &amp; runtimes</h3><span class="badge">dependency</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Languages &amp; runtimes
+
+- **TypeScript** 7.0.2 is installed as `@typescript/native` and drives `tsc`; the `typescript` package name aliases Microsoft’s `@typescript/typescript6` 6.0.2 compatibility package for structural harnesses until TypeScript 7 ships its replacement API. Configuration is `strict: true`, target/lib **ES2022**, `module: ESNext`, `moduleResolution: Bundler` (`tsconfig.base.json`). Workspace path aliases are project-root-relative; TypeScript 7 removed `baseUrl`.
+- **Node** `24.18.0` LTS (`.nvmrc`; root `engines: &gt;=24.15.0 &lt;25`); `@types/node` `24.13.4`.
+- **Deno** — runtime for Supabase Edge Functions. CI selects the Deno v2.x line rather than an exact patch; there is no `deno.json`, and `deno.lock` is intentionally ignored. Edge Functions import deps over HTTPS (`https://esm.sh/@supabase/supabase-js@2`, exactly pinned to `2.116.0`).
+- **Postgres 15** (`supabase/config.toml` `major_version = 15`).
+- **Unity/C# Last Stand:** Unity 6000.3.24f1, revision 4e7b9b5b6244, and embedded URP 17.3.0 are current reproducibility pins. Target-aware tooling supports WebGL, Windows and Android. Python 3 tools and a discovered Mono/C# compiler run the pure domain harnesses; Unity modules and Android JDK/SDK/NDK must already be installed. No numeric C# coverage command is currently declared in the repository.
+
+</div></article>
+<!-- CA:END:STACK-RUNTIMES -->
+
+<!-- CA:BEGIN:STACK-PROJECTS -->
+<article class="record" id="STACK-PROJECTS" data-ca-symbol="STACK-PROJECTS" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-PROJECTS">STACK-PROJECTS</a><h3>Repo shape — npm workspaces monorepo</h3><span class="badge">component</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Repo shape — npm workspaces monorepo
+
+Two workspaces (`package.json` `workspaces`):
+
+- **`@singedterra/client`** (`client/`) — Vite/Canvas 2D app: renderer, input, UI, audio, `NetworkClient`. Depends on `@singedterra/shared`.
+- **`@singedterra/shared`** (`shared/`) — the deterministic engine + types. Exports `./*` → `./src/*`. **Depends on nothing.**
+- `supabase/functions/` is **not** a workspace — separate Deno runtime (thin referees).
+
+Both workspace packages are `private: true`.
+
+`campaign-unity/Unity` is a separate Unity project, not an npm workspace. Its C# domain, application, content, UI and platform owners implement Last Stand. The npm build verifies and packages the receipt-bound Web export under `client/public/last-stand`; it does not invoke Unity.
+
+</div></article>
+<!-- CA:END:STACK-PROJECTS -->
+
+<!-- CA:BEGIN:STACK-LIBRARIES -->
+<article class="record" id="STACK-LIBRARIES" data-ca-symbol="STACK-LIBRARIES" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-LIBRARIES">STACK-LIBRARIES</a><h3>Key libraries</h3><span class="badge">dependency</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Key libraries
+
+- **Vite** `8.3.4` (Rolldown/Oxc-powered client dev server + production build).
+- **@supabase/supabase-js** `2.116.0` (browser client); Edge Functions use the same exact `2.116.0` through esm.sh.
+- **lucide** `1.44.0` (client-only exact named SVG icon nodes). The package has
+  no runtime transitives; importing its all-icons registry is prohibited.
+- Canvas 2D — browser API for the gameplay world (sky, terrain, tanks,
+  projectiles, explosions, and world-space effects).
+- **Preact** is installed in the client workspace. ADR-0018 gives the in-scope
+  battle console one semantic tree with typed presentation state and intents,
+  portal/focus ownership. ADR-0020 records the owner&#39;s2026-10-29 choice to retain startup-loaded semantic code/CSS for deployment recovery, while controls mount only on battle entry. Pixi remains optional and deferred. It supersedes ADR-0017&#39;s
+  imperative node/callback preservation, retaining its visual boundary.
+- **Battle-HUD visual tooling (ADR-0017, retained by ADR-0018):** exact `pixi.js@8.20.1` is
+  installed in the client workspace for a lazy-loaded visual compositor, and
+  exact `sharp@0.35.5` is installed at the root as a development-only
+  deterministic asset compiler. Initial adoption passed the 2026-08-21 dependency review,
+  signature/attestation verification, high-severity audit, Windows/Node 24
+  install check, and production build. Pixi is visual/non-interactive;
+  Preact semantic DOM remains the input, text, focus, and accessibility owner. Sharp
+  and libvips are not shipped in the browser bundle. Static Vite/GitHub Pages
+  hosting is unchanged. The 2026-10-15 Sharp maintenance update passed independent
+  dependency review and retains the existing development-only license scope.
+- Root tooling: `concurrently`, `typescript`, `@types/node`.
+- **tsx** `4.23.13` — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step).
+- **Supabase CLI** `2.105.0` — exact development-only deployment tool pinned in `package-lock.json`; deploy scripts use the local binary so CLI defaults cannot drift between reviewed and applied configuration.
+
+</div></article>
+<!-- CA:END:STACK-LIBRARIES -->
+
+<!-- CA:BEGIN:STACK-COMMAND-GUIDE -->
+<article class="record" id="STACK-COMMAND-GUIDE" data-ca-symbol="STACK-COMMAND-GUIDE" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-COMMAND-GUIDE">STACK-COMMAND-GUIDE</a><h3>Commands (root `package.json`)</h3><span class="badge">convention</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Commands (root `package.json`)
+
+| Purpose | Command | Definition |
+|---|---|---|
+| Dev server | `npm run dev` | `npm -w @singedterra/client run dev` (Vite, :5173) |
+| Typecheck | `npm run typecheck` | shared `tsc --noEmit` then client `tsc --noEmit` |
+| Build | `npm run build` | `typecheck &amp;&amp; vite build` → `client/dist` |
+| **Test (engine)** | `npm run check` | `typecheck` + the `npx tsx scripts/checks/*.mjs` determinism harnesses (chained `&amp;&amp;`) |
+| **Test (edge fns)** | `npm run check:edge` | `deno test --allow-env supabase/functions/` (current package script) |
+| **Test (client)** | `npm run test:client` | `vitest run` (jsdom env) — DOM + fetch-mock unit tests under `client/src/**/*.test.{ts,tsx}` |
+| **Coverage (client)** | `npm run coverage:client` | `vitest run --coverage --maxWorkers=4` (v8 provider; worker bound avoids V8 coverage oversubscription); the refactor gate reads this |
+| **Dependency audit** | `npm run audit:deps` | `npm audit --audit-level=high` across runtime and build/test dependencies; the primary CI job runs it after `npm ci` |
+| Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
+| Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` after successful main-push CI completion (no CLI script) |
+| Secrets scan | `gitleaks git --pre-commit --staged --redact --no-banner` | Scan the explicitly staged change with Gitleaks (verified locally with 8.30.1). Stage every intended new/modified file before this check; unstaged and untracked work is not covered. codeArbiter 0.21.0 removed the former `preview.py` scanner. |
+| Backend release proposal check | `npm run backend:release:check` | Credential-free validation of the pinned CLI, manifest, migration/config/function inventory, and release-source identity. It does not deploy. |
+| Deploy backend | `npm run deploy:backend` | Validates first, then uses the lockfile-pinned CLI to run `db push --linked --yes`, `config push --yes`, and the manifest&#39;s explicit function list. It is credentialed and is not a production-approval path. |
+| Deploy all | `npm run deploy` | Alias for the backend command only. Client publication is the Pages workflow after an approved merge to `main`. |
+
+</div></article>
+<!-- CA:END:STACK-COMMAND-GUIDE -->
+
+<!-- CA:BEGIN:STACK-TESTING -->
+<article class="record" id="STACK-TESTING" data-ca-symbol="STACK-TESTING" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-TESTING">STACK-TESTING</a><h3>Testing</h3><span class="badge">convention</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Testing
+
+Verification layers have distinct scopes; a pass in one is not acceptance for another:
+
+- **Engine / pure helpers** — deterministic harnesses in `scripts/checks/*.mjs`, run via `tsx`
+  (`npm run check`), asserting byte-identical replay of `(seed + ordered action log)`. Cover the
+  `shared/` engine and the pure client helpers (browseLabels, inputGate, ringBuffer,
+  fastForward, strata, audioEdges, …).
+- **Edge Functions** — Deno `*.test.ts` (`npm run check:edge` → `deno test --allow-env`), covering the pure
+  referee logic (validate/authorize/coerce/reap) extracted from the handlers.
+- **Client (DOM + fetch)** — **Vitest** `5.0.5` with the **jsdom** environment (`npm run test:client`),
+  giving the DOM- and `fetch`-heavy client code (Lobby, HUD, NetworkClient) a seam the tsx harnesses
+  cannot reach. **Coverage:** `@vitest/coverage-v8` `5.0.5` via
+  `npm run coverage:client` — this is the command the
+  `/ca:refactor` Phase-2 gate reads. Added 2026-07-03 to unblock the client refactor backlog
+  (#85/#87/#91); vitest/vite/esbuild are dev-only (not in the shipped bundle).
+  Coverage uses AST-aware v8 remapping, so percentages are not directly
+  comparable to Vitest 2 reports; the executable test set remains the governing
+  compatibility oracle until a global threshold is adopted.
+- CI runs engine, Edge and client layers (`.github/workflows/ci.yml`). Last Stand also has pure C# harnesses launched through Python, imported Unity checks, rendered browser journeys, native player builds and physical-device observations. Current suite selection is maintained separately from historical receipts; not every historical tool is a portable CI test.
+- The existing stage-1 client policy keeps a 60% floor over the assertable-logic denominator in `client/vite.config.ts`. V8 reports lines and branches; production exclusions are unchanged. The Windows baseline at af17d905 measured 94.91% lines and 84.79% branches with 2,405 passing tests. This is one source/host observation, not a new global coverage policy or a result for later changes. Shared engine, Edge and C#/Python numeric coverage remain unmeasured by that client command. The repository does not currently declare numeric coverage commands for those separate trees.
+
+</div></article>
+<!-- CA:END:STACK-TESTING -->
+
+<!-- CA:BEGIN:STACK-ASSET-CHECKS -->
+<article class="record" id="STACK-ASSET-CHECKS" data-ca-symbol="STACK-ASSET-CHECKS" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-ASSET-CHECKS">STACK-ASSET-CHECKS</a><h3>Battle console asset verification</h3><span class="badge">convention</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>### Battle console asset verification
+
+Run `npm run test:assets:battle-console` for deterministic generation, source-bound geometry, responsive pixel preservation, and repaired instrument faces. Run `npx playwright test -c playwright.product-completion.config.ts` for the five-profile browser suite. CI runs this separately from the general game journeys. Local runs reuse the one requested preview after checking its owner and build. Do not assume a fixed historical port or start a second server silently.
+
+</div></article>
+<!-- CA:END:STACK-ASSET-CHECKS -->
+
+<!-- CA:BEGIN:STACK-LICENSE -->
+<article class="record" id="STACK-LICENSE" data-ca-symbol="STACK-LICENSE" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-LICENSE">STACK-LICENSE</a><h3>License</h3><span class="badge">fact</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## License
+
+**MIT (open-source).** The repository has a root `LICENSE` and all package
+manifests declare MIT. Third-party notices are retained in
+`THIRD_PARTY_NOTICES.md`.
+</div></article>
+<!-- CA:END:STACK-LICENSE -->
+
+<!-- CA:BEGIN:STACK-POLICY-EXPORT -->
+<article class="record" id="STACK-POLICY-EXPORT" data-ca-symbol="STACK-POLICY-EXPORT" data-ca-kind="records"><div class="record-head"><a class="id" href="#STACK-POLICY-EXPORT">STACK-POLICY-EXPORT</a><h3>Regenerate the source-bound security policy projection</h3><span class="badge">convention</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-POLICY-EXPORT">SRC-POLICY-EXPORT</a></li></ul></div><div class="field"><span class="label">Statement</span>The native security-controls document remains the sole policy owner. CI consumes scripts/checks/fixtures/security-controls-policy.json, a generated projection bound to the exact native HTML SHA-256 and model identity, rather than parsing HTML or requiring codeArbiter to be installed. After an authorized native policy edit, regenerate from repository root with `python3 -B scripts/checks/export_security_policy.py --plugin-root &lt;installed-ca-codex-root&gt;`, replacing the placeholder with the selected installed plugin directory. The exporter uses supported native reads and refuses a policy that changes during the export. Regeneration records no policy decision or CI success. The runtime reader rejects missing, malformed or source-mismatched projections. This command template is descriptive, not a claim that this context-writing agent executed the exporter.</div></article>
+<!-- CA:END:STACK-POLICY-EXPORT -->
+</section><section class="group" id="group-notes"><a class="back" href="#main-content">Top</a><h2>Notes</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2><span class="missing">None recorded</span></section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-COMMANDS -->
+<article class="record" id="SRC-COMMANDS" data-ca-symbol="SRC-COMMANDS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-COMMANDS">SRC-COMMANDS</a><h3>Declared test, build and verification commands</h3></div><div class="field"><span class="label">Locator</span>package.json; client/package.json; client/vite.config.ts; .github/workflows/ci.yml; campaign-unity/Tools/build_last_stand.py; campaign-unity/Tools/last_stand_test_runtime.py</div><div class="field"><span class="label">Note</span>Source inspection during the authorized 2026-10-29 maintenance refresh; implementation is not release acceptance.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-COMMANDS -->
+
+<!-- CA:BEGIN:SRC-CONVERTED-NARRATIVE -->
+<article class="record" id="SRC-CONVERTED-NARRATIVE" data-ca-symbol="SRC-CONVERTED-NARRATIVE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a><h3>Preserved stack narrative with source-backed maintenance refresh</h3></div><div class="field"><span class="label">Locator</span>Git af17d905:.codearbiter/tech-stack.md; package.json; client/package.json; client/vite.config.ts; .github/workflows/ci.yml; campaign-unity/Tools/build_last_stand.py</div><div class="field"><span class="label">Note</span>Current descriptive versions and commands were checked from source; historical note bytes remain in the native journal. No new coverage profile or publication approval is implied.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CONVERTED-NARRATIVE -->
+
+<!-- CA:BEGIN:SRC-POLICY-EXPORT -->
+<article class="record" id="SRC-POLICY-EXPORT" data-ca-symbol="SRC-POLICY-EXPORT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-POLICY-EXPORT">SRC-POLICY-EXPORT</a><h3>Source-bound CI policy projection</h3></div><div class="field"><span class="label">Locator</span>scripts/checks/export_security_policy.py; scripts/checks/context_policy.mjs; scripts/checks/fixtures/security-controls-policy.json</div><div class="field"><span class="label">Note</span>Current repository tool reads native records through the selected installed ArtifactClient, verifies a stable native identity and raw HTML digest, and generates the CI input. Native security knowledge remains the sole policy owner.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-POLICY-EXPORT -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>af17d905138c017822c802c658069223e97b5bf4</div><div class="field"><span class="label">Observed date</span>2026-10-29</div><div class="field"><span class="label">Repository</span><span class="missing">Not yet supplied</span></div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2>
+<!-- CA:BEGIN:NOTE-IMPORT-01 -->
+<article class="record retired" id="NOTE-IMPORT-01" data-ca-symbol="NOTE-IMPORT-01" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-01">NOTE-IMPORT-01</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-SCOPE; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>13</div></article>
+<!-- CA:END:NOTE-IMPORT-01 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-02 -->
+<article class="record retired" id="NOTE-IMPORT-02" data-ca-symbol="NOTE-IMPORT-02" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-02">NOTE-IMPORT-02</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-RUNTIMES; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>14</div></article>
+<!-- CA:END:NOTE-IMPORT-02 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-03 -->
+<article class="record retired" id="NOTE-IMPORT-03" data-ca-symbol="NOTE-IMPORT-03" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-03">NOTE-IMPORT-03</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-PROJECTS; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>15</div></article>
+<!-- CA:END:NOTE-IMPORT-03 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-04 -->
+<article class="record retired" id="NOTE-IMPORT-04" data-ca-symbol="NOTE-IMPORT-04" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-04">NOTE-IMPORT-04</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-LIBRARIES; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>16</div></article>
+<!-- CA:END:NOTE-IMPORT-04 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-05 -->
+<article class="record retired" id="NOTE-IMPORT-05" data-ca-symbol="NOTE-IMPORT-05" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-05">NOTE-IMPORT-05</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-COMMAND-GUIDE; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>17</div></article>
+<!-- CA:END:NOTE-IMPORT-05 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-06 -->
+<article class="record retired" id="NOTE-IMPORT-06" data-ca-symbol="NOTE-IMPORT-06" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-06">NOTE-IMPORT-06</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-TESTING; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>18</div></article>
+<!-- CA:END:NOTE-IMPORT-06 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-07 -->
+<article class="record retired" id="NOTE-IMPORT-07" data-ca-symbol="NOTE-IMPORT-07" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-07">NOTE-IMPORT-07</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-ASSET-CHECKS; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>19</div></article>
+<!-- CA:END:NOTE-IMPORT-07 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-08 -->
+<article class="record retired" id="NOTE-IMPORT-08" data-ca-symbol="NOTE-IMPORT-08" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-08">NOTE-IMPORT-08</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to STACK-LICENSE; original section remains in history.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>20</div></article>
+<!-- CA:END:NOTE-IMPORT-08 -->
+</section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 4dfe14d0c01833edf8e40e0a53bdc1c10a454221cd2a19bd860ac219c3698cfc<br>Model SHA-256: 6a4ca750f8afa9606022988778f24631e881a44a5af7686f162b266dce723c0e</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "CTX-TECH-STACK",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "6a4ca750f8afa9606022988778f24631e881a44a5af7686f162b266dce723c0e",
+    "normative_sha256": "4dfe14d0c01833edf8e40e0a53bdc1c10a454221cd2a19bd860ac219c3698cfc",
+    "symbol_count": 31
+  },
+  "kind": "knowledge",
+  "normative": {
+    "baseline": {
+      "commit": "af17d905138c017822c802c658069223e97b5bf4",
+      "observed_date": "2026-10-29",
+      "repository": null
+    },
+    "notes": [],
+    "records": [
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "typecheck"
+          ],
+          "cwd": ".",
+          "purpose": "typecheck",
+          "run_state": "unrun"
+        },
+        "id": "CMD-TYPECHECK",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "client",
+            "shared"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Typecheck both TypeScript workspaces",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "test:client"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-CLIENT-TESTS",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "client/src"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Client DOM and fetch regressions",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "coverage:client"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-CLIENT-COVERAGE",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "client/src",
+            "client/vite.config.ts"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Client V8 coverage with existing denominator",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "check"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-ENGINE-CHECKS",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "shared",
+            "scripts/checks"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Engine and compatibility checks",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "check:edge"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-EDGE-CHECKS",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "supabase/functions"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Edge Function regressions",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "check:database"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-DATABASE-CHECKS",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "supabase/migrations",
+            "scripts/checks"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Isolated PostgreSQL behavior and race checks",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": ".",
+          "purpose": "build",
+          "run_state": "unrun"
+        },
+        "id": "CMD-WEB-BUILD",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "client",
+            "shared"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Verify and package browser application",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "audit:deps"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-DEPENDENCY-AUDIT",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "package.json",
+            "package-lock.json",
+            "client/package.json"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Runtime and tooling dependency audit",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "backend:release:check"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-BACKEND-PROPOSAL",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "supabase",
+            "scripts/ci/backendRelease.mjs"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Credential-free backend release proposal validation",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "test:e2e"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-BROWSER-TESTS",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "e2e",
+            "client"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Browser product journeys",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "command": {
+          "argv": [
+            "npm",
+            "run",
+            "test:assets:battle-console"
+          ],
+          "cwd": ".",
+          "purpose": "test",
+          "run_state": "unrun"
+        },
+        "id": "CMD-CONSOLE-ASSETS",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "scripts/assets",
+            "client/src/ui/battleConsole"
+          ]
+        },
+        "source_refs": [
+          "SRC-COMMANDS"
+        ],
+        "statement": "Declared command from package scripts. Inspect its requirements and current source before execution; no result is implied by this declaration.",
+        "title": "Battle console asset contracts",
+        "type": "command"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-SCOPE",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "# Tech stack\r\n\r\nDerived from manifests, lockfiles, and npm scripts (brownfield extraction 2026-06-20).\r\n\r\n",
+        "title": "Tech stack",
+        "type": "scope"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-RUNTIMES",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Languages \u0026 runtimes\n\n- **TypeScript** 7.0.2 is installed as `@typescript/native` and drives `tsc`; the `typescript` package name aliases Microsoft’s `@typescript/typescript6` 6.0.2 compatibility package for structural harnesses until TypeScript 7 ships its replacement API. Configuration is `strict: true`, target/lib **ES2022**, `module: ESNext`, `moduleResolution: Bundler` (`tsconfig.base.json`). Workspace path aliases are project-root-relative; TypeScript 7 removed `baseUrl`.\n- **Node** `24.18.0` LTS (`.nvmrc`; root `engines: \u003e=24.15.0 \u003c25`); `@types/node` `24.13.4`.\n- **Deno** — runtime for Supabase Edge Functions. CI selects the Deno v2.x line rather than an exact patch; there is no `deno.json`, and `deno.lock` is intentionally ignored. Edge Functions import deps over HTTPS (`https://esm.sh/@supabase/supabase-js@2`, exactly pinned to `2.116.0`).\n- **Postgres 15** (`supabase/config.toml` `major_version = 15`).\n- **Unity/C# Last Stand:** Unity 6000.3.24f1, revision 4e7b9b5b6244, and embedded URP 17.3.0 are current reproducibility pins. Target-aware tooling supports WebGL, Windows and Android. Python 3 tools and a discovered Mono/C# compiler run the pure domain harnesses; Unity modules and Android JDK/SDK/NDK must already be installed. No numeric C# coverage command is currently declared in the repository.\n\n",
+        "title": "Languages \u0026 runtimes",
+        "type": "dependency"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-PROJECTS",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Repo shape — npm workspaces monorepo\n\nTwo workspaces (`package.json` `workspaces`):\n\n- **`@singedterra/client`** (`client/`) — Vite/Canvas 2D app: renderer, input, UI, audio, `NetworkClient`. Depends on `@singedterra/shared`.\n- **`@singedterra/shared`** (`shared/`) — the deterministic engine + types. Exports `./*` → `./src/*`. **Depends on nothing.**\n- `supabase/functions/` is **not** a workspace — separate Deno runtime (thin referees).\n\nBoth workspace packages are `private: true`.\n\n`campaign-unity/Unity` is a separate Unity project, not an npm workspace. Its C# domain, application, content, UI and platform owners implement Last Stand. The npm build verifies and packages the receipt-bound Web export under `client/public/last-stand`; it does not invoke Unity.\n\n",
+        "title": "Repo shape — npm workspaces monorepo",
+        "type": "component"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-LIBRARIES",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Key libraries\n\n- **Vite** `8.3.4` (Rolldown/Oxc-powered client dev server + production build).\n- **@supabase/supabase-js** `2.116.0` (browser client); Edge Functions use the same exact `2.116.0` through esm.sh.\n- **lucide** `1.44.0` (client-only exact named SVG icon nodes). The package has\n  no runtime transitives; importing its all-icons registry is prohibited.\n- Canvas 2D — browser API for the gameplay world (sky, terrain, tanks,\n  projectiles, explosions, and world-space effects).\n- **Preact** is installed in the client workspace. ADR-0018 gives the in-scope\n  battle console one semantic tree with typed presentation state and intents,\n  portal/focus ownership. ADR-0020 records the owner's2026-10-29 choice to retain startup-loaded semantic code/CSS for deployment recovery, while controls mount only on battle entry. Pixi remains optional and deferred. It supersedes ADR-0017's\n  imperative node/callback preservation, retaining its visual boundary.\n- **Battle-HUD visual tooling (ADR-0017, retained by ADR-0018):** exact `pixi.js@8.20.1` is\n  installed in the client workspace for a lazy-loaded visual compositor, and\n  exact `sharp@0.35.5` is installed at the root as a development-only\n  deterministic asset compiler. Initial adoption passed the 2026-08-21 dependency review,\n  signature/attestation verification, high-severity audit, Windows/Node 24\n  install check, and production build. Pixi is visual/non-interactive;\n  Preact semantic DOM remains the input, text, focus, and accessibility owner. Sharp\n  and libvips are not shipped in the browser bundle. Static Vite/GitHub Pages\n  hosting is unchanged. The 2026-10-15 Sharp maintenance update passed independent\n  dependency review and retains the existing development-only license scope.\n- Root tooling: `concurrently`, `typescript`, `@types/node`.\n- **tsx** `4.23.13` — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step).\n- **Supabase CLI** `2.105.0` — exact development-only deployment tool pinned in `package-lock.json`; deploy scripts use the local binary so CLI defaults cannot drift between reviewed and applied configuration.\n\n",
+        "title": "Key libraries",
+        "type": "dependency"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-COMMAND-GUIDE",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Commands (root `package.json`)\n\n| Purpose | Command | Definition |\n|---|---|---|\n| Dev server | `npm run dev` | `npm -w @singedterra/client run dev` (Vite, :5173) |\n| Typecheck | `npm run typecheck` | shared `tsc --noEmit` then client `tsc --noEmit` |\n| Build | `npm run build` | `typecheck \u0026\u0026 vite build` → `client/dist` |\n| **Test (engine)** | `npm run check` | `typecheck` + the `npx tsx scripts/checks/*.mjs` determinism harnesses (chained `\u0026\u0026`) |\n| **Test (edge fns)** | `npm run check:edge` | `deno test --allow-env supabase/functions/` (current package script) |\n| **Test (client)** | `npm run test:client` | `vitest run` (jsdom env) — DOM + fetch-mock unit tests under `client/src/**/*.test.{ts,tsx}` |\n| **Coverage (client)** | `npm run coverage:client` | `vitest run --coverage --maxWorkers=4` (v8 provider; worker bound avoids V8 coverage oversubscription); the refactor gate reads this |\n| **Dependency audit** | `npm run audit:deps` | `npm audit --audit-level=high` across runtime and build/test dependencies; the primary CI job runs it after `npm ci` |\n| Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |\n| Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` after successful main-push CI completion (no CLI script) |\n| Secrets scan | `gitleaks git --pre-commit --staged --redact --no-banner` | Scan the explicitly staged change with Gitleaks (verified locally with 8.30.1). Stage every intended new/modified file before this check; unstaged and untracked work is not covered. codeArbiter 0.21.0 removed the former `preview.py` scanner. |\n| Backend release proposal check | `npm run backend:release:check` | Credential-free validation of the pinned CLI, manifest, migration/config/function inventory, and release-source identity. It does not deploy. |\n| Deploy backend | `npm run deploy:backend` | Validates first, then uses the lockfile-pinned CLI to run `db push --linked --yes`, `config push --yes`, and the manifest's explicit function list. It is credentialed and is not a production-approval path. |\n| Deploy all | `npm run deploy` | Alias for the backend command only. Client publication is the Pages workflow after an approved merge to `main`. |\n\n",
+        "title": "Commands (root `package.json`)",
+        "type": "convention"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-TESTING",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Testing\n\nVerification layers have distinct scopes; a pass in one is not acceptance for another:\n\n- **Engine / pure helpers** — deterministic harnesses in `scripts/checks/*.mjs`, run via `tsx`\n  (`npm run check`), asserting byte-identical replay of `(seed + ordered action log)`. Cover the\n  `shared/` engine and the pure client helpers (browseLabels, inputGate, ringBuffer,\n  fastForward, strata, audioEdges, …).\n- **Edge Functions** — Deno `*.test.ts` (`npm run check:edge` → `deno test --allow-env`), covering the pure\n  referee logic (validate/authorize/coerce/reap) extracted from the handlers.\n- **Client (DOM + fetch)** — **Vitest** `5.0.5` with the **jsdom** environment (`npm run test:client`),\n  giving the DOM- and `fetch`-heavy client code (Lobby, HUD, NetworkClient) a seam the tsx harnesses\n  cannot reach. **Coverage:** `@vitest/coverage-v8` `5.0.5` via\n  `npm run coverage:client` — this is the command the\n  `/ca:refactor` Phase-2 gate reads. Added 2026-07-03 to unblock the client refactor backlog\n  (#85/#87/#91); vitest/vite/esbuild are dev-only (not in the shipped bundle).\n  Coverage uses AST-aware v8 remapping, so percentages are not directly\n  comparable to Vitest 2 reports; the executable test set remains the governing\n  compatibility oracle until a global threshold is adopted.\n- CI runs engine, Edge and client layers (`.github/workflows/ci.yml`). Last Stand also has pure C# harnesses launched through Python, imported Unity checks, rendered browser journeys, native player builds and physical-device observations. Current suite selection is maintained separately from historical receipts; not every historical tool is a portable CI test.\n- The existing stage-1 client policy keeps a 60% floor over the assertable-logic denominator in `client/vite.config.ts`. V8 reports lines and branches; production exclusions are unchanged. The Windows baseline at af17d905 measured 94.91% lines and 84.79% branches with 2,405 passing tests. This is one source/host observation, not a new global coverage policy or a result for later changes. Shared engine, Edge and C#/Python numeric coverage remain unmeasured by that client command. The repository does not currently declare numeric coverage commands for those separate trees.\n\n",
+        "title": "Testing",
+        "type": "convention"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-ASSET-CHECKS",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "### Battle console asset verification\n\nRun `npm run test:assets:battle-console` for deterministic generation, source-bound geometry, responsive pixel preservation, and repaired instrument faces. Run `npx playwright test -c playwright.product-completion.config.ts` for the five-profile browser suite. CI runs this separately from the general game journeys. Local runs reuse the one requested preview after checking its owner and build. Do not assume a fixed historical port or start a second server silently.\n\n",
+        "title": "Battle console asset verification",
+        "type": "convention"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-LICENSE",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## License\r\n\r\n**MIT (open-source).** The repository has a root `LICENSE` and all package\r\nmanifests declare MIT. Third-party notices are retained in\r\n`THIRD_PARTY_NOTICES.md`.\r\n",
+        "title": "License",
+        "type": "fact"
+      },
+      {
+        "basis": "source-observed",
+        "id": "STACK-POLICY-EXPORT",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "scripts/checks/export_security_policy.py",
+            "scripts/checks/context_policy.mjs",
+            "scripts/checks/fixtures/security-controls-policy.json"
+          ]
+        },
+        "source_refs": [
+          "SRC-POLICY-EXPORT"
+        ],
+        "statement": "The native security-controls document remains the sole policy owner. CI consumes scripts/checks/fixtures/security-controls-policy.json, a generated projection bound to the exact native HTML SHA-256 and model identity, rather than parsing HTML or requiring codeArbiter to be installed. After an authorized native policy edit, regenerate from repository root with `python3 -B scripts/checks/export_security_policy.py --plugin-root \u003cinstalled-ca-codex-root\u003e`, replacing the placeholder with the selected installed plugin directory. The exporter uses supported native reads and refuses a policy that changes during the export. Regeneration records no policy decision or CI success. The runtime reader rejects missing, malformed or source-mismatched projections. This command template is descriptive, not a claim that this context-writing agent executed the exporter.",
+        "title": "Regenerate the source-bound security policy projection",
+        "type": "convention"
+      }
+    ],
+    "retired_symbols": [
+      {
+        "id": "NOTE-IMPORT-01",
+        "reason": "Preserved meaning promoted to STACK-SCOPE; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 13
+      },
+      {
+        "id": "NOTE-IMPORT-02",
+        "reason": "Preserved meaning promoted to STACK-RUNTIMES; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 14
+      },
+      {
+        "id": "NOTE-IMPORT-03",
+        "reason": "Preserved meaning promoted to STACK-PROJECTS; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 15
+      },
+      {
+        "id": "NOTE-IMPORT-04",
+        "reason": "Preserved meaning promoted to STACK-LIBRARIES; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 16
+      },
+      {
+        "id": "NOTE-IMPORT-05",
+        "reason": "Preserved meaning promoted to STACK-COMMAND-GUIDE; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 17
+      },
+      {
+        "id": "NOTE-IMPORT-06",
+        "reason": "Preserved meaning promoted to STACK-TESTING; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 18
+      },
+      {
+        "id": "NOTE-IMPORT-07",
+        "reason": "Preserved meaning promoted to STACK-ASSET-CHECKS; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 19
+      },
+      {
+        "id": "NOTE-IMPORT-08",
+        "reason": "Preserved meaning promoted to STACK-LICENSE; original section remains in history.",
+        "replacement_ref": null,
+        "retired_in_revision": 20
+      }
+    ],
+    "sections": [],
+    "sources": [
+      {
+        "id": "SRC-COMMANDS",
+        "locator": "package.json; client/package.json; client/vite.config.ts; .github/workflows/ci.yml; campaign-unity/Tools/build_last_stand.py; campaign-unity/Tools/last_stand_test_runtime.py",
+        "note": "Source inspection during the authorized 2026-10-29 maintenance refresh; implementation is not release acceptance.",
+        "title": "Declared test, build and verification commands",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CONVERTED-NARRATIVE",
+        "locator": "Git af17d905:.codearbiter/tech-stack.md; package.json; client/package.json; client/vite.config.ts; .github/workflows/ci.yml; campaign-unity/Tools/build_last_stand.py",
+        "note": "Current descriptive versions and commands were checked from source; historical note bytes remain in the native journal. No new coverage profile or publication approval is implied.",
+        "title": "Preserved stack narrative with source-backed maintenance refresh",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-POLICY-EXPORT",
+        "locator": "scripts/checks/export_security_policy.py; scripts/checks/context_policy.mjs; scripts/checks/fixtures/security-controls-policy.json",
+        "note": "Current repository tool reads native records through the selected installed ArtifactClient, verifies a stable native identity and raw HTML digest, and generates the CI input. Native security knowledge remains the sole policy owner.",
+        "title": "Source-bound CI policy projection",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "summary": "Runtime, frameworks, tooling and declared commands.",
+    "title": "Tech stack"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 25,
+  "schema_version": "0.3.2",
+  "slug": "tech-stack"
+}
+</script>
+</body></html>
