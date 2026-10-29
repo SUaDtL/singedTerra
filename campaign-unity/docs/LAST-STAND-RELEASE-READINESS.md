@@ -92,7 +92,7 @@ errors and verify their source, fixture and package bindings. These development
 profiles establish the observed browser behaviors; their gifted funding is not
 ordinary earned progression or native/endurance evidence.
 
-Current local verification includes 80 combat/domain checks, 48 pure architecture
+Current local verification includes 82 combat/domain checks, 48 pure architecture
 checks, six retained economy checks, 14 independently rerun armament regressions,
 and a passing production build/typecheck. The expanded CI/tooling run passed
 441 of 443 named checks. Both failures then passed focused reruns: one stale
@@ -127,6 +127,16 @@ then passed all 24 jobs, including 12 lifecycle shards and the final aggregate;
 CodeQL also passed, with the head freshly confirmed unchanged. The subsequent
 verifier-only follow-up requires its own exact-head checks after push; the PR's
 current checks are authoritative.
+
+The subsequent `ce0cbf58` run failed all 12 lifecycle jobs because frozen balance
+admission still required the original compiler helper. Correction `3433c0a5`
+preserves all four reports and all 35 historical identities, keeps 34 model,
+policy and closure inputs pinned, and records the current helper separately.
+All 82 combat-domain checks pass. A fresh five-run, 100-wave observer execution
+exactly matches the complete retained outcomes; source drift, altered outcomes
+and overwriting frozen references are refused. Independent review passes. Its
+corrected-head hosted CI and the supplementary full-model repeat are separate
+checks; neither result is asserted by this pre-push record.
 
 The final verifier follow-up passes 33 focused Node checks and preserves the
 48-check architecture and five-check portable compiler results on their unchanged

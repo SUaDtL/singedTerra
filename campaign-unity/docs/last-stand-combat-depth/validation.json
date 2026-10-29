@@ -3,7 +3,7 @@
   "foundationCommit": "1893bbd92135555eeb021656b38f532eb9a0cbcb",
   "checkedWorktreeHead": "db0fe0f5edd8f0b523a455621dd50b2d803bcba7",
   "identityNote": "Checks/builds bind dirty approved source bytes, not a claim that checkedWorktreeHead contains implementation. Build receipts carry complete inventories.",
-  "status": "Calibrated candidate built and browser checked; previous pushed head passes hosted CI. Final verifier follow-up requires its own exact-head CI; native interaction and endurance qualification remain pending.",
+  "status": "Playable build/browser candidate retained. Current82-test combat suite and observer parity pass after historical/current execution identity repair; corrected-head hosted CI pending. Native interaction, physical device, audio and endurance qualification remain separate.",
   "builds": [
     {
       "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261029T014444Z-a8e42f/result.json",
@@ -486,7 +486,7 @@
     }
   },
   "qualification": {
-    "hostedExactHeadCI": "8543e883 passes all24 CI jobs and CodeQL; final verifier follow-up pending exact-head hosted verification after push. Current PR checks remain authoritative.",
+    "hostedExactHeadCI": "ce0cbf58 failed canonical compiler-helper identity admission; correction3433c0a5 passes local82domain checks and independent review. Corrected-head hosted CI pending push; current PR checks are authoritative.",
     "windowsInteraction": "pending current player restart/abnormal termination on isolated profile",
     "androidPhysicalDevice": "pending; adb reports no connected devices",
     "hardwareAudio": "pending current candidate",
@@ -528,15 +528,14 @@
     "sha256": "07e68e6f70adec4eacf3a0cd839b97dec43ca4bf27343caf6a7a8316128b1814"
   },
   "hosted": {
-    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-8543e883-hosted-green.json",
-    "sha256": "ef18b6abdd98a87d10825f8532afb767294e12aeb41928f8ff8b9bd1e8e9ba39",
-    "head": "8543e883c3badb68fa9c81f0099a845e3a0ba71e",
-    "ciRun": 40810246254,
-    "ciStatus": "passed",
-    "codeqlRun": 40810247822,
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-ce0cbf58-hosted-failure.json",
+    "sha256": "54d59052e7f15ef3435891b19f81ff35a13857ff2c536a83f32afcfa6b1b4965",
+    "head": "ce0cbf58c63bcb8786d680702f3fb1b3eae8ce5c",
+    "ciRun": 40817175951,
+    "ciStatus": "failed",
+    "codeqlRun": 40817175899,
     "codeqlStatus": "passed",
-    "jobsPassed": 24,
-    "scope": "All24 CI jobs including12 lifecycle shards and final aggregate passed; head was freshly rechecked unchanged. Final verifier follow-up is not covered by this older head. See PR checks for final candidate state."
+    "scope": "All12 lifecycle jobs failed frozen canonical admission on changed compiler helper; finalaggregate failed. Other11 CI jobs passed. Two-file correction3433c0a5 now passes current82-test domain suite; exact corrected-head hosted CI still required."
   },
   "ordinaryFirstSessions": [
     {
@@ -862,5 +861,47 @@
       "sha256": "54103cde7ce232db2a73344e0c543f9e7545561000cd10a5adb82d97da4477d4",
       "result": "failed at119945.6952 active milliseconds: shared verifier changed during observation. Source-drift refusal preserved; rerun only after source freeze."
     }
-  ]
+  ],
+  "canonicalRepairHistory": {
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pre-pr547-canonical-repair-validation.json",
+    "sha256": "7ba0fe4f05173c97be9721c35d4879c98619d465f7bf9cbe8407b53bb3d94002"
+  },
+  "previousHosted": {
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-8543e883-hosted-green.json",
+    "sha256": "ef18b6abdd98a87d10825f8532afb767294e12aeb41928f8ff8b9bd1e8e9ba39",
+    "head": "8543e883c3badb68fa9c81f0099a845e3a0ba71e",
+    "ciRun": 40810246254,
+    "ciStatus": "passed",
+    "codeqlRun": 40810247822,
+    "codeqlStatus": "passed",
+    "jobsPassed": 24,
+    "scope": "All24 CI jobs including12 lifecycle shards and final aggregate passed; head was freshly rechecked unchanged. Final verifier follow-up is not covered by this older head. See PR checks for final candidate state."
+  },
+  "canonicalExecutionRepair": {
+    "commit": "3433c0a59733ec47d015257371739903e067446f",
+    "result": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-canonical-execution-fix-results.json",
+      "sha256": "655ea7a80707ec5b2a107179c5916ccea059f0ad358d3f328991432d05017685"
+    },
+    "review": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-canonical-execution-security-final.json",
+      "sha256": "93e9cbcef56cebd7e9224d5298f913e3b72cf0e5b0beeac584a534fe36f6e63a"
+    },
+    "domain": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-canonical-runner-domain-green.log",
+      "sha256": "e7d422ae54ee792514999ac01438165ea44e342b650341f95ea8c21b577f46d3",
+      "tests": 82,
+      "status": "pass"
+    },
+    "observation": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-current-runner-crowded.json",
+      "sha256": "dfffde1bd3904d7d90df114ed335c3d1d3004c1f1f6e79162416a9c965189968",
+      "runs": 5,
+      "waves": 100,
+      "completeSemanticParity": true
+    },
+    "historicalReports": "Allfour frozen full/crowded reports and original35identity maps remain byte-for-byte unchanged. Other34 model/policy/closure inputs remain pinned; only current compiler helper provenance is separate.",
+    "outputProtection": "Observer requires explicit output and refuses allfour frozen references, including hardlink aliases.",
+    "fullMatrixRepeat": "Fresh complete matrix measurement is tracked separately; this committed record makes no claim about its pending result."
+  }
 }
