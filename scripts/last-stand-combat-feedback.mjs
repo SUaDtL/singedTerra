@@ -7,7 +7,7 @@ import { resolve, join } from 'node:path';
 import { chromium } from '@playwright/test';
 import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
   fetchBoundRuntime, assertServedBytes, readShopControlObservation, selectLastStandFitting,
-  changeLastStandSetting, validateCompactCombatControls } from '../e2e/helpers/lastStandJourney.mjs';
+  changeLastStandSetting, validateCompactCombatControls, assertWaveCheckpointEdition } from '../e2e/helpers/lastStandJourney.mjs';
 import { tierJourneyControlGeometry } from '../e2e/helpers/lastStandTierJourney.mjs';
 
 const baseline = process.argv.includes('--baseline');
@@ -135,7 +135,9 @@ for (const fitting of ['repair', 'launcher']) for (const effects of baseline ? [
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('singedTerra.lastStand.prototype.v1')));
     if(baseline)assert.equal(saved.credits,0,'Archived pre-wave capture has no banked wave income');
     else {
-      assert.equal(saved.version,4);assert.ok(saved.checkpoint?.encounter.completedWave>0,'Current capture completed a durable wave');
+      assert.equal(saved.version,6,'Current capture requires save version 6');
+      assert.ok(saved.checkpoint?.encounter.completedWave>0,'Current capture completed a durable wave');
+      assertWaveCheckpointEdition(saved.checkpoint);
       assert.ok(saved.credits>0,'Cleared waves bank income during the run');
       assert.equal(saved.credits,state().wallet,'Stored wave income matches live wallet');
     }

@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {performance} from 'node:perf_hooks';
 import {admitMilestoneFixtures} from './last-stand-wave-milestones.mjs';
 import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
-  fetchBoundRuntime,assertServedBytes,readShopControlObservation} from '../e2e/helpers/lastStandJourney.mjs';
+  fetchBoundRuntime,assertServedBytes,readShopControlObservation,assertWaveCheckpointEdition} from '../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../e2e/helpers/lastStandTierJourney.mjs';
 
 export const ENDURANCE_POLICY=Object.freeze({activeTargetMs:10*60*60*1000,wallLimitMs:12*60*60*1000,
@@ -207,6 +207,15 @@ const inputHashes=()=>Object.fromEntries(inputPaths.map(path=>[path,sha(readFile
 const compactState=state=>Object.fromEntries(['phase','saveState','runId','activeTier','wave','completedWave','checkpointWave','hasCheckpoint',
   'checkpointBlocked','tick','hull','kills','wallet','paused','speed','fittingId'].map(key=>[key,state?.[key]??null]));
 
+// Current generated seeds and post-migration browser readbacks use the same
+// envelope as the production serializer. Retained runs preserve their complete
+// combat/content/economy edition inside that current envelope, not an old schema.
+export function assertCurrentEnduranceSave(saved){
+  assert.equal(saved?.version,6,'Current endurance requires save version 6');
+  if(saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint);
+  return saved;
+}
+
 export function admitResearchFixtures(fixtures,manifestPath,sourceRoot=root){
   assert.equal(fixtures.schema,'last-stand-research-qualification-fixtures/v1');
   assert.equal(fixtures.storageKey,saveKey);
@@ -222,7 +231,7 @@ export function admitResearchFixtures(fixtures,manifestPath,sourceRoot=root){
     assert.equal(fixture.savePath,fixture.id+'.json','Fixture uses its named sibling file');
     const location=resolve(directory,fixture.savePath);assert.equal(realpathSync(location),location);
     assert.equal(sha(readFileSync(location)),fixture.saveSha256,'Fixture bytes changed');
-    const save=JSON.parse(readFileSync(location));assert.equal(save.version,5);
+    const save=assertCurrentEnduranceSave(JSON.parse(readFileSync(location)));
     if(fixture.id==='mature-5x'){
       assert.equal(fixture.requestedSpeed,5);assert.equal(save.research.completedRanks.gameSpeed,8,'Five times speed must be earned in fixture');
       assert.equal(save.checkpoint,null,'Mature fixture deploys through rendered input');
@@ -262,8 +271,10 @@ async function main(){
       firstPurchaseRealSeconds:options.mode==='smoke'?30:900,
       note:options.mode==='smoke'?'Early rendered purchase diagnostic; cannot qualify endurance.':'Measured fifteen-minute cadence.'}:null,
     command:[process.execPath,...process.argv.slice(1)],
-    scope:options.research?'One headless Chromium document, ten real active hours at researched 5x from a declared mature development profile. Rendered purchases and speed controls only; no time acceleration beyond the actual game setting. No native audio or physical-device claim.':
-      'One long-lived headless Chromium document with real elapsed gameplay at shipped 1x. Accelerated production-earned initial save; rendered Continue/redeploy after natural defeat. No purchases, clock changes, offline simulation, 5x farming-duration, native media or physical-device claim.',
+    scope:(options.mode==='smoke'?`${options.smokeSeconds}-second bounded smoke diagnostic; cannot qualify endurance. `:
+      'Endurance observation with a target of ten real active hours; completion remains subject to measured final admission. ')+
+      (options.research?'One headless Chromium document at researched 5x from a declared mature development profile. Rendered purchases and speed controls only; no time acceleration beyond the actual game setting. No native audio or physical-device claim.':
+      'One long-lived headless Chromium document with real elapsed gameplay at shipped 1x. Accelerated production-earned initial save; rendered Continue/redeploy after natural defeat. No purchases, clock changes, offline simulation, 5x farming-duration, native media or physical-device claim.'),
     startedAt:new Date().toISOString(),fixtureManifest:manifestPath,fixtureSha256:sha(manifestBytes),saveSha256:fixture.saveSha256,
     inputs:sources,packaged,host:process.platform,ledger,actions:[],actionsTotal:0,actionsDropped:0,errors:[],errorsTotal:0,errorsDropped:0,
     callback:{count:0,maximumSteps:0,maximumElapsedSeconds:0,maximumPendingSeconds:0},audioCueTelemetry:{events:0,byName:{}},
@@ -387,8 +398,8 @@ async function main(){
         storageLatency.readbacks.unconfirmed===0&&!storageLatency.pending;
       const metrics=await cdp.send('Performance.getMetrics');const values=Object.fromEntries(metrics.metrics.map(item=>[item.name,item.value]));
       const raw=await page.evaluate(key=>localStorage.getItem(key),saveKey);assert.ok(raw&&raw.length<128*1024,'Bounded saved checkpoint');
-      const saved=JSON.parse(raw);assert.equal(saved.version,5);assert.equal(saved.pendingDefeat,null,'Current runs never create legacy Claim rewards');
-      if(saved.checkpoint){assert.equal(saved.checkpoint.encounter.rulesVersion,'last-stand-waves-v1');
+      const saved=assertCurrentEnduranceSave(JSON.parse(raw));assert.equal(saved.pendingDefeat,null,'Current runs never create legacy Claim rewards');
+      if(saved.checkpoint){
         if(lastCheckpoint?.runId===saved.checkpoint.runId)assert.ok(saved.checkpoint.encounter.completedWave>=lastCheckpoint.wave,'Committed checkpoint cannot go backwards');
         lastCheckpoint={runId:saved.checkpoint.runId,wave:saved.checkpoint.encounter.completedWave};}
       const record={sequence:report.summaries++,at:new Date().toISOString(),elapsedMs:performance.now()-started,final,

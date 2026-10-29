@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 
@@ -13,6 +12,7 @@ PROJECT = DIRECTORY.parents[1]
 REPO = PROJECT.parent
 sys.path.insert(0, str(DIRECTORY.parent))
 from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import discover_toolchain, compile_csharp, run_csharp
 
 EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
@@ -22,37 +22,40 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def generate(editor=EDITOR):
+def generate(editor=None):
     sources = complete_sources(SCRIPTS, [SCRIPTS / name for name in (
         "EncounterModel.cs", "EncounterProfile.cs", "LastStandProgression.cs", "LastStandStore.cs",
         "LastStandRunClock.cs", "LastStandSpeedPolicy.cs", "LastStandShopState.cs")])
-    sources += [DIRECTORY / "EarnedMilestoneFixtures.cs", Path(__file__), DIRECTORY.parent / "last_stand_source_closure.py"]
+    sources += [DIRECTORY / "EarnedMilestoneFixtures.cs", Path(__file__), DIRECTORY.parent / "last_stand_source_closure.py",
+                DIRECTORY.parent / "last_stand_test_runtime.py"]
     hashes = lambda: {path.relative_to(REPO).as_posix(): sha(path.read_bytes()) for path in sources}
     before = hashes()
     with tempfile.TemporaryDirectory(prefix="st-earned-milestones-") as folder:
         executable = Path(folder) / "EarnedMilestones.exe"
-        mono = editor / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-        compiler = editor / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
-        commands = [[str(mono), str(compiler), "-nologo", "-warnaserror+", f"-out:{executable}",
-                     *[str(path) for path in sources if path.suffix == ".cs"]], [str(mono), str(executable)]]
-        outputs = []
-        for command in commands:
-            result = subprocess.run(command, cwd=REPO, capture_output=True, text=True, encoding="utf-8-sig", timeout=120)
-            if result.returncode:
-                raise RuntimeError(f"Command failed ({result.returncode}): {command}\n{result.stdout}{result.stderr}")
-            outputs.append(result.stdout)
+        if editor is None:
+            mono, compiler, mode = discover_toolchain()
+        else:
+            mono = editor / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
+            compiler = editor / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
+            mode = "managed"
+        build = compile_csharp(executable, [path for path in sources if path.suffix == ".cs"],
+                               warnings_as_errors=True, timeout_seconds=120, mono=mono, compiler=compiler, compiler_mode=mode)
+        result = run_csharp(executable, timeout_seconds=120, mono=mono)
+        commands = [list(build.argv), [str(mono), str(executable)]]
+        if result.returncode:
+            raise RuntimeError(f"Command failed ({result.returncode}): {commands[-1]}\n{result.stdout}{result.stderr}")
     if hashes() != before:
         raise RuntimeError("Production or generator sources changed during execution; regenerate with stable sources.")
-    result = json.loads(outputs[-1])
+    result = json.loads(result.stdout)
     if {(item["fitting"], item["targetWave"]) for item in result["cases"]} != {
             (fitting, wave) for fitting in ("repair", "launcher") for wave in (100, 300)}:
         raise RuntimeError("Missing earned prerequisite fixture.")
     return dict(schema="last-stand-earned-milestone-fixtures/v1", generatedAt=datetime.now(timezone.utc).isoformat(),
                 scope="Accelerated deterministic production-earned development setup; seeded browser fixtures, not ordinary player, elapsed endurance, native or media acceptance.",
                 storageKey="singedTerra.lastStand.prototype.v1", sourceSha256=before,
-                commands=commands, commandWorkingDirectory=REPO.as_posix(),
+                commands=commands, commandWorkingDirectory=Path.cwd().as_posix(),
                 policy="Start empty; buy cheapest eligible run track after kills, tie order cannon/hull/cadence/armor/auxiliary. After natural defeat, buy cheapest eligible permanent tracks using only committed Salvage. Save each actual wave. Independently restore each fixture and clear the next wave without purchases.",
-                expectedComparison="Every parsed save field must match expected next-wave output except checkpoint.shop.purchaseSequence, a validated volatile quote/lifecycle epoch rebased on restore and affected by browser pause/catch-up. No fixture save field is rewritten.",
+                expectedComparison="Every parsed save field must match expected next-wave output except checkpoint.shop.purchaseSequence (validated volatile quote epoch), monotonic idle research clock/profile revision metadata validated by assertWaveSavePreserved, and current-run time buckets independently validated against exact committed 1x ticks, native resume/unpause observations and seed/load UTC bounds. Research ranks, projects, queues and all non-temporal gameplay, history and reward fields remain exact. No fixture save field is rewritten.",
                 **result)
 
 
@@ -73,7 +76,7 @@ def write(result, destination):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--editor", type=Path, default=EDITOR)
+    parser.add_argument("--editor", type=Path, help="Use this explicit Unity Editor's Mono/Roslyn; otherwise discover the host toolchain.")
     parser.add_argument("--output", type=Path, required=True, help="New directory; refuses overwrite.")
     args = parser.parse_args()
     result = generate(args.editor)

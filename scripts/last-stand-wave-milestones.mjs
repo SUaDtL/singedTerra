@@ -7,20 +7,106 @@ import {mkdirSync,readFileSync,writeFileSync,realpathSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
-  fetchBoundRuntime,assertServedBytes,readShopControlObservation} from '../e2e/helpers/lastStandJourney.mjs';
+  fetchBoundRuntime,assertServedBytes,readShopControlObservation,assertWaveCheckpointEdition,assertWaveSavePreserved} from '../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../e2e/helpers/lastStandTierJourney.mjs';
 import {WAVE_JOURNEY_PROBE} from '../e2e/helpers/lastStandWaveJourney.mjs';
+import {WAVE_ORACLE_SOURCES} from '../e2e/helpers/lastStandWaveOracle.mjs';
 
 const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototype.v1';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const MILESTONE_FIXTURE_SOURCES=Object.freeze([
-  ...['EncounterModel','EncounterProfile','LastStandProgression','LastStandStore','LastStandRunClock',
-    'LastStandSpeedPolicy','LastStandShopState','LastStandWaveCatalog','LastStandUpgradeCatalog','LastStandTierCatalog',
-    'LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave','LastStandSaveJson',
-    'LastStandRewardCatalog','MechanicsShopModel','LastStandSelection'].map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
+  ...WAVE_ORACLE_SOURCES.map(name=>'campaign-unity/Unity/Assets/Scripts/'+name),
+  ...['LastStandProgression','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
+    'LastStandSaveJson','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
+    'LastStandResearchState','LastStandResearchCatalog','LastStandResearchClock','Content/LastStandResearchDefinitions']
+    .map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
   'campaign-unity/Tools/last_stand_waves/EarnedMilestoneFixtures.cs',
   'campaign-unity/Tools/last_stand_waves/generate_earned_milestone_fixtures.py',
-  'campaign-unity/Tools/last_stand_source_closure.py']);
+  'campaign-unity/Tools/last_stand_source_closure.py','campaign-unity/Tools/last_stand_test_runtime.py']);
+export function admitMilestoneSaves(saved,expected,fixture){
+  for(const value of [saved,expected]){
+    assert.equal(value?.version,6,'Current milestone requires save version 6');
+    assertWaveCheckpointEdition(value.checkpoint);
+  }
+  assert.deepEqual(assertWaveCheckpointEdition(saved.checkpoint),assertWaveCheckpointEdition(expected.checkpoint),
+    'Expected milestone must retain its saved edition');
+  assert.equal(saved.checkpoint.encounter.completedWave,fixture.targetWave-1);
+  assert.equal(expected.checkpoint.encounter.completedWave,fixture.targetWave);
+}
+export function assertMilestoneHistoryTiming(saved,expected,actual,fixture,{states,input,actions}){
+  const keys=['activeMilliseconds','pausedMilliseconds','closedMilliseconds'],before=saved.history.current,
+    planned=expected.history.current,after=actual.history.current,run=saved.checkpoint.runId;
+  assert.ok(Number.isSafeInteger(run)&&run>0);
+  for(const row of [before,planned,after]){
+    assert.equal(row.runId,run,'History retains the resumed run');
+    for(const key of keys)assert.ok(Number.isSafeInteger(row[key])&&row[key]>=0,'Integral nonnegative history time');
+    assert.equal(row.speedMilliseconds.length,10);
+    assert.ok(row.speedMilliseconds.every(v=>Number.isSafeInteger(v)&&v>=0));
+    assert.equal(row.speedMilliseconds.reduce((a,b)=>a+b,0),row.activeMilliseconds,'Speed bins sum to active time');
+  }
+  for(const key of [...keys,'speedMilliseconds'])assert.deepEqual(planned[key],before[key],'Pure-model oracle adds no wall time');
+  const unique=(predicate,label)=>{const matches=states.filter(predicate);assert.equal(matches.length,1,'Unique '+label);return matches[0];};
+  const ready=unique(s=>s.action==='ready','initial ready witness'),
+    resume=unique(s=>s.action==='resume','initial resume witness'),
+    commit=unique(s=>s.action==='wave-committed'&&s.completedWave===fixture.targetWave,'milestone commit witness');
+  const origin=ready.timeOrigin;
+  assert.ok(Number.isFinite(origin)&&origin>0);
+  let previous=-1;
+  for(const row of states){
+    assert.ok(Number.isFinite(row.t)&&row.t>=0&&row.t>=previous&&row.timeOrigin===origin,'One ordered document observation stream');
+    previous=row.t;
+    if(row.t>=ready.t&&row.t<=commit.t)assert.equal(row.runId,run,'Observed run cannot change');
+  }
+  assert.ok(ready.t<resume.t&&resume.t<commit.t);
+  assert.ok(['garage','workshop'].includes(ready.phase));assert.equal(ready.saveState,'ready');
+  assert.equal(resume.phase,'battle');assert.equal(resume.saveState,'ready');
+  assert.equal(resume.tick,saved.checkpoint.encounter.tick);assert.equal(resume.paused,true);assert.equal(resume.speed,0);
+  assert.equal(commit.tick,expected.checkpoint.encounter.tick);assert.equal(commit.checkpointWave,fixture.targetWave);
+  assert.equal(commit.phase,'battle');assert.equal(commit.saveState,'ready');
+  const active=states.find(s=>s.t>resume.t&&s.t<=commit.t&&!s.paused);
+  assert.ok(active,'Observed initial unpause required');
+  assert.equal(active.tick,resume.tick,'Initial unpause begins at the restored tick');
+  let previousTick=resume.tick;
+  for(const row of states.filter(s=>s.t>=resume.t&&s.t<=commit.t)){
+    assert.equal(row.phase,'battle');assert.equal(row.saveState,'ready','Observed history requires confirmed save ownership');
+    assert.ok(Number.isSafeInteger(row.tick)&&row.tick>=previousTick&&row.tick<=commit.tick,'Observed ticks remain monotonic within the committed interval');
+    previousTick=row.tick;
+    assert.equal(typeof row.paused,'boolean');assert.equal(row.speed,row.paused?0:1,'Observed pause and 1x selection agree');
+    if(row.t<active.t){assert.equal(row.paused,true);assert.equal(row.tick,resume.tick,'Paused prefix cannot advance combat');}
+  }
+  for(const row of states.filter(s=>s.t>=active.t&&s.t<=commit.t)){
+    assert.equal(row.phase,'battle');assert.equal(row.paused,false);assert.equal(row.speed,1,'Only observed 1x time is admitted');
+  }
+  const pointerUp=(index,names)=>{
+    const action=actions[index];assert.ok(action&&names.includes(action.name),'Expected initial rendered action');
+    assert.ok(Number.isSafeInteger(action.inputStart)&&Number.isSafeInteger(action.inputEnd)&&action.inputStart>=0&&action.inputEnd<=input.length);
+    const edges=input.slice(action.inputStart,action.inputEnd).filter(e=>['pointerdown','pointerup'].includes(e.kind));
+    assert.deepEqual(edges.map(e=>e.kind),['pointerdown','pointerup']);
+    assert.ok(edges.every(e=>e.trusted===true&&e.target==='unity-canvas'&&e.timeOrigin===origin&&
+      Number.isFinite(e.t)&&e.t>=0&&Math.abs(e.x-action.x)<1&&Math.abs(e.y-action.y)<1));
+    assert.ok(edges[0].t<=edges[1].t);return edges[1];
+  };
+  const deploy=pointerUp(0,['Deploy','Redeploy']),unpause=pointerUp(1,['SpeedRate']);
+  assert.ok(ready.t<=deploy.t&&deploy.t<=resume.t&&resume.t<=unpause.t&&unpause.t<=active.t&&active.t<commit.t);
+  assert.ok(actions[0].inputEnd<=actions[1].inputStart,'Initial action ranges cannot overlap');
+  const tickDelta=commit.tick-resume.tick;
+  assert.ok(Number.isSafeInteger(tickDelta)&&tickDelta>0);assert.equal(tickDelta,fixture.nextWaveTicks);
+  const added=Object.fromEntries(keys.map(key=>[key,after[key]-before[key]]));
+  assert.ok(Object.values(added).every(v=>Number.isSafeInteger(v)&&v>=0),'History counters cannot roll back');
+  assert.equal(added.activeMilliseconds,tickDelta*50,'Exact committed 1x steps fund active time');
+  for(let n=0;n<10;n++)assert.equal(after.speedMilliseconds[n]-before.speedMilliseconds[n],n===1?tickDelta*50:0,'Only the 1x bin advances');
+  // Console witnesses bracket native actions. The single millisecond allowance
+  // is integer-floor rounding, not an extra frame or elapsed-time allowance.
+  const pausedBounds=[Math.max(0,Math.floor(unpause.t-resume.t)-1),Math.ceil(active.t-deploy.t)+1];
+  assert.ok(added.pausedMilliseconds>=pausedBounds[0]&&added.pausedMilliseconds<=pausedBounds[1],'Paused time is the initial resume-to-1x interval');
+  const seedUtc=saved.research.lastObservedUtcMilliseconds;
+  assert.ok(Number.isSafeInteger(seedUtc)&&seedUtc>=0&&seedUtc<=origin+ready.t+1,'Stable initial UTC clock');
+  const closedBounds=[Math.max(0,Math.floor(origin-seedUtc)-1),Math.max(0,Math.ceil(origin+ready.t-seedUtc)+1)];
+  assert.ok(added.closedMilliseconds>=closedBounds[0]&&added.closedMilliseconds<=closedBounds[1],'Closed time is bracketed by document load and initial ready UTC');
+  assert.ok(added.activeMilliseconds<=Math.ceil(commit.t-unpause.t)+1,'Active time cannot exceed observed 1x wall time');
+  assert.ok(added.activeMilliseconds+added.pausedMilliseconds<=Math.ceil(commit.t-deploy.t)+2,'Active and paused time cannot double count the observed interval');
+  return {...added,pausedBounds,closedBounds,runId:run,timeOrigin:origin,resumeTick:resume.tick,committedTick:commit.tick};
+}
 export function admitMilestoneFixtures(fixtures,manifestPath,sourceRoot=root){
   assert.equal(fixtures.schema,'last-stand-earned-milestone-fixtures/v1');
   assert.equal(fixtures.storageKey,key);
@@ -38,6 +124,7 @@ export function admitMilestoneFixtures(fixtures,manifestPath,sourceRoot=root){
       assert.equal(realpathSync(fixture[field]),expected,'Fixture cannot follow a link outside its manifest directory');
       assert.equal(hash(readFileSync(expected)),fixture[shaField],'Fixture bytes changed');
     }
+    admitMilestoneSaves(JSON.parse(readFileSync(fixture.savePath)),JSON.parse(readFileSync(fixture.expectedSavePath)),fixture);
     assert.ok(Number.isSafeInteger(fixture.nextWaveTicks)&&fixture.nextWaveTicks>0&&fixture.nextWaveTicks<=24000);
     assert.equal(fixture.expectedUnlockTier,fixture.targetWave===300?2:0);
     assert.equal(fixture.expectedUnlockFitting,fixture.targetWave===100?'scattergun':null);
@@ -59,7 +146,7 @@ for(const [path,sha]of Object.entries({...runtime.files,'index.html':runtime.wra
 const output=resolve(root,'campaign-unity/Evidence/waves-milestones',new Date().toISOString().replace(/[:.]/g,'-'));
 mkdirSync(output,{recursive:true});
 const inputs=['scripts/last-stand-wave-milestones.mjs','e2e/helpers/lastStandWaveJourney.mjs',
-  'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs'];
+  'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs'];
 const hashes=()=>Object.fromEntries(inputs.map(path=>[path,hash(readFileSync(resolve(root,path)))]));
 const report={status:'running',scope:'Real rendered 1x milestone, unlock and fitting behavior after accelerated production-earned setup; no normal-player duration, native media or endurance claim.',
   seeded:true,normalSpeed:true,host:process.platform,fixtureManifest:manifestPath,fixtureSha256:hash(fixtureBytes),inputs:hashes(),packaged,cases:[]};
@@ -71,8 +158,7 @@ try {
     const bytes=readFileSync(fixture.savePath),expectedBytes=readFileSync(fixture.expectedSavePath);
     assert.equal(hash(bytes),fixture.saveSha256);assert.equal(hash(expectedBytes),fixture.expectedSaveSha256);
     const saved=JSON.parse(bytes),expected=JSON.parse(expectedBytes);
-    assert.equal(saved.version,4);assert.equal(saved.checkpoint.encounter.completedWave,fixture.targetWave-1);
-    assert.equal(expected.checkpoint.encounter.completedWave,fixture.targetWave);
+    admitMilestoneSaves(saved,expected,fixture);
     const context=await browser.newContext({viewport:{width:1366,height:768}});
     const page=await context.newPage(),states=[],layouts=[],input=[],errors=[];
     const item={fitting:fixture.fitting,targetWave:fixture.targetWave,status:'running',states,layouts,input,actions:[],shots:[],errors};
@@ -126,7 +212,7 @@ try {
       const resume=layout().controls.find(c=>c.active&&c.interactable&&['Deploy','Redeploy'].includes(c.name));assert.ok(resume);
       await click(resume.name);await until(()=>state()?.phase==='battle'&&state().paused);
       assert.equal(state().tick,saved.checkpoint.encounter.tick);assert.equal(state().hull,saved.checkpoint.encounter.hull);
-      assert.deepEqual(JSON.parse(await page.evaluate(k=>localStorage.getItem(k),key)),saved);
+      assertWaveSavePreserved(saved,JSON.parse(await page.evaluate(k=>localStorage.getItem(k),key)));
       await click('SpeedRate');await until(()=>state()?.speed===1&&!state().paused);
       const begin=Date.now();await until(()=>state()?.completedWave===fixture.targetWave,fixture.nextWaveTicks*.05+45);
       await click('SpeedRate');await until(()=>state()?.paused);item.realWaveMilliseconds=Date.now()-begin;
@@ -134,7 +220,11 @@ try {
       const normalized=value=>{const copy=structuredClone(value);const shop=copy.checkpoint.shop;
         assert.ok(Number.isSafeInteger(shop.purchaseSequence)&&shop.purchaseSequence>=Object.values(shop.runPurchases).reduce((a,b)=>a+b,0));
         delete shop.purchaseSequence;return copy;};
-      assert.deepEqual(normalized(actual),normalized(expected),'Every durable field except the volatile quote epoch matches independently restored production execution');
+      item.historyTiming=assertMilestoneHistoryTiming(saved,expected,actual,fixture,item);
+      const comparable=structuredClone(actual);
+      for(const key of ['activeMilliseconds','pausedMilliseconds','closedMilliseconds','speedMilliseconds'])
+        comparable.history.current[key]=structuredClone(expected.history.current[key]);
+      assertWaveSavePreserved(normalized(expected),normalized(comparable));
       assert.equal(actual.credits,saved.credits+fixture.expectedRepeatable+fixture.expectedFirstClear);
       const graphics=()=>JSON.parse(layout().raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
       const receipt=()=>graphics().find(g=>g.active&&g.path.endsWith('/WaveReceipt'))?.text;

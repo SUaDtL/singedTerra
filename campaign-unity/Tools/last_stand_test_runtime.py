@@ -45,7 +45,12 @@ def discover_toolchain(environ=None, platform=None, finder=None):
     return mono, compiler, mode
 
 
-MONO, CSC, COMPILER_MODE = discover_toolchain()
+try:
+    MONO, CSC, COMPILER_MODE = discover_toolchain()
+except RuntimeError:
+    # Importing a caller with explicit tools must not require automatic tools.
+    # Default use below repeats discovery and preserves its actionable failure.
+    MONO = CSC = COMPILER_MODE = None
 
 
 @dataclass(frozen=True)
@@ -78,6 +83,11 @@ def compile_csharp(target, sources, *, warnings_as_errors=True,
     before = _source_hashes(sources)
     if len(before) != len(sources):
         raise ValueError("Duplicate source paths in compilation")
+    if mono is None or compiler is None:
+        found_mono, found_compiler, found_mode = discover_toolchain()
+        mono = found_mono if mono is None else mono
+        if compiler is None:
+            compiler, compiler_mode = found_compiler, compiler_mode or found_mode
     for tool in (mono, compiler):
         if not Path(tool).is_file():
             raise RuntimeError(f"C# tool is unavailable: {tool}")
@@ -112,6 +122,8 @@ def run_csharp(executable, args=(), *, timeout_seconds=120, mono=MONO):
         raise ValueError("Execution requires a positive timeout")
     if not Path(executable).is_file():
         raise AssertionError(f"Compiled C# executable is unavailable: {executable}")
+    if mono is None:
+        mono = discover_toolchain()[0]
     return subprocess.run([str(mono), str(executable), *map(str, args)],
                           capture_output=True, text=True, encoding="utf-8-sig",
                           timeout=timeout_seconds)

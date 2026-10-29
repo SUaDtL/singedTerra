@@ -1,5 +1,6 @@
 """Execution failure controls for the shared pure C# runner."""
 import hashlib
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -7,10 +8,40 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from last_stand_test_runtime import compile_csharp, discover_toolchain, run_csharp
+from last_stand_test_runtime import MONO, CSC, COMPILER_MODE, compile_csharp, discover_toolchain, run_csharp
 
 
 class TestRuntimeTests(unittest.TestCase):
+    def test_explicit_tools_survive_unavailable_default_discovery(self):
+        with tempfile.TemporaryDirectory(prefix="st-runner-custom-only-") as folder:
+            folder = Path(folder)
+            environment = dict(os.environ, ST_CSHARP_MONO=str(folder / "absent-mono"),
+                               ST_CSHARP_COMPILER=str(folder / "absent-compiler"))
+            script = """
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from last_stand_test_runtime import MONO, CSC, compile_csharp, run_csharp
+assert MONO is None and CSC is None
+folder, mono, compiler, mode = Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]), sys.argv[5]
+source, target = folder / 'Check.cs', folder / 'Check.exe'
+source.write_text('class Check { static void Main() { System.Console.WriteLine("explicit-tools-pass"); } }')
+build = compile_csharp(target, [source], mono=mono, compiler=compiler, compiler_mode=mode)
+assert '-warnaserror+' in build.argv
+result = run_csharp(target, mono=mono)
+assert result.returncode == 0 and result.stdout.strip() == 'explicit-tools-pass'
+for call in (lambda: compile_csharp(folder / 'Default.exe', [source]), lambda: run_csharp(target)):
+    try: call()
+    except RuntimeError as error: assert 'tool is unavailable' in str(error)
+    else: raise AssertionError('Missing automatic tools must still fail at default use')
+print('explicit-tools-pass; missing-defaults-refused')
+"""
+            result = subprocess.run([sys.executable, "-c", script, str(Path(__file__).resolve().parents[1]),
+                                     str(folder), str(MONO), str(CSC), COMPILER_MODE],
+                                    env=environment, text=True, capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('missing-defaults-refused', result.stdout)
+
     def test_discovery_uses_explicit_tools_or_path_without_silent_skip(self):
         with tempfile.TemporaryDirectory(prefix="st-runner-discovery-") as folder:
             folder = Path(folder); mono = folder / "mono"; mcs = folder / "mcs"
