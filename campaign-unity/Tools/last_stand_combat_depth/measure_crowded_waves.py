@@ -94,6 +94,15 @@ BINDINGS = {
     "baseline": {"raw": BASELINE_RAW_SHA, "lf": BASELINE_LF_SHA, "inputs": BASELINE_INPUT_LF_SHA, "report": PROJECT / "docs/last-stand-combat-depth/combat-balance-baseline-report.json"},
     "calibrated": {"raw": CALIBRATED_RAW_SHA, "lf": CALIBRATED_LF_SHA, "inputs": CALIBRATED_INPUT_LF_SHA, "report": REPORT},
 }
+# Frozen captures retain their original execution helper identity. A new run
+# uses the current helper, bound separately, while all 34 model/policy/closure
+# inputs must still match the selected historical capture.
+EXECUTION_HELPER = "Tools/last_stand_test_runtime.py"
+CROWDED_REFERENCES = {
+    "baseline": ("crowded-wave-baseline-report.json", "c9618825f2461fdc4e761d00082b3425f1e202a16da9325462a07acc129acb52"),
+    "calibrated": ("crowded-wave-calibrated-report.json", "8a92fc61adca7f5af7c89f4f77c6973c338fb93c5247c856bf1c09ea57606889"),
+}
+RESULT_FIELDS = ("policyId", "parentProfileSha256", "cumulativeEarnedSalvage", "runs")
 ARCHIVE = PROJECT / "Evidence/combat-depth-planning-20261028/combat-balance-expanded-v2"
 ANCHOR = "int priorKills=model.Kills;model.Step();effects.Observe(model);shop.ObserveAuthoritativeKills(model,p.ResearchRank(LastStandResearchTrackId.ScrapLogistics));"
 INSERT = "int priorKills=model.Kills;CrowdedWaveMeasurements.Before(model,shop);model.Step();effects.Observe(model);shop.ObserveAuthoritativeKills(model,p.ResearchRank(LastStandResearchTrackId.ScrapLogistics));CrowdedWaveMeasurements.After(model,shop);"
@@ -130,9 +139,33 @@ def admit_canonical(data, project=PROJECT, archive=None, binding_name="calibrate
         raise ValueError("Canonical input closure changed")
     for rel, digest in binding["inputs"].items():
         source = project / rel
-        if not source.is_file() or hashlib.sha256(source.read_bytes().replace(b"\r\n", b"\n")).hexdigest() != digest:
+        if not source.is_file() or rel != EXECUTION_HELPER and hashlib.sha256(source.read_bytes().replace(b"\r\n", b"\n")).hexdigest() != digest:
             raise ValueError("Canonical source changed: " + rel)
     return canonical
+
+
+def crowded_reference(binding_name, project=PROJECT):
+    name, digest = CROWDED_REFERENCES[binding_name]
+    path = project / "docs/last-stand-combat-depth" / name
+    data = path.read_bytes()
+    if hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest() != digest:
+        raise ValueError("Frozen crowded parity reference changed")
+    return path, data, json.loads(data)
+
+
+def assert_crowded_parity(report, reference):
+    if set(report) != set(RESULT_FIELDS) or report != {key: reference[key] for key in RESULT_FIELDS}:
+        raise ValueError("Current execution differs from complete frozen crowded outcomes")
+
+
+def admit_destination(destination):
+    destination = Path(destination).resolve()
+    references = [row["report"] for row in BINDINGS.values()] + [
+        PROJECT / "docs/last-stand-combat-depth" / row[0] for row in CROWDED_REFERENCES.values()]
+    for reference in references:
+        if destination == reference.resolve() or destination.exists() and reference.exists() and destination.samefile(reference):
+            raise ValueError("Output cannot overwrite an immutable measurement reference")
+    return destination
 
 
 def validate(report, canonical):
@@ -204,10 +237,12 @@ def validate(report, canonical):
 
 
 def measure(destination, binding_name="calibrated"):
+    destination = admit_destination(destination)
     binding = BINDINGS[binding_name]
     report_path = binding["report"]
     data = report_path.read_bytes()
     canonical = admit_canonical(data, archive=ARCHIVE if binding_name == "baseline" else None, binding_name=binding_name)
+    parity_path, parity_data, parity_reference = crowded_reference(binding_name)
     seed = next(c["seed"] for c in canonical["unlockCohorts"] if c["trigger"] == "final-earned")
     paths = sources() + [HERE / "CrowdedWaveMeasurements.cs", Path(__file__), HERE / "test_crowded_waves.py", HERE / "measure_combat_balance.py", TOOLS / "last_stand_source_closure.py", TOOLS / "last_stand_test_runtime.py"]
     before = hashes(paths)
@@ -225,8 +260,9 @@ def measure(destination, binding_name="calibrated"):
         elapsed = time.monotonic() - start
         report = json.loads(result.stdout)
         validate(report, canonical)
+        assert_crowded_parity(report, parity_reference)
         generated_bytes = generated.read_bytes()
-    if hashes(paths) != before or tools != {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in (CSC, MONO)} or report_path.read_bytes() != data:
+    if hashes(paths) != before or tools != {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in (CSC, MONO)} or report_path.read_bytes() != data or parity_path.read_bytes() != parity_data:
         raise RuntimeError("Observer sources/toolchain/canonical report changed")
     retained = PROJECT / ("Evidence/combat-depth-planning-20261028/crowded-wave-" + binding_name + "-generated-observer.cs")
     retained.parent.mkdir(parents=True, exist_ok=True)
@@ -235,7 +271,11 @@ def measure(destination, binding_name="calibrated"):
                   canonicalReportObservedRawSha256=hashlib.sha256(data).hexdigest(), canonicalReportLfSha256=binding["lf"],
                   sourceLfSha256={str(p.relative_to(PROJECT)).replace("\\", "/"): hashlib.sha256(p.read_bytes().replace(b"\r\n", b"\n")).hexdigest() for p in paths},
                   canonicalSourceHistoricalRawSha256=canonical["sourceSha256"], canonicalSourceLfSha256=binding["inputs"],
-                  sourceAdmission="Historical raw digests remain unchanged. Mandatory frozen report/input LF digests accept only CRLF-to-LF checkout conversion; observed raw and LF digests are recorded separately.",
+                  executionHelperSource={"path": EXECUTION_HELPER, "historicalLfSha256": binding["inputs"][EXECUTION_HELPER],
+                    "observedRawSha256": before[EXECUTION_HELPER], "observedLfSha256": hashlib.sha256((PROJECT / EXECUTION_HELPER).read_bytes().replace(b"\r\n", b"\n")).hexdigest()},
+                  crowdedParityReferenceObservedRawSha256=hashlib.sha256(parity_data).hexdigest(),
+                  crowdedParityReferenceLfSha256=CROWDED_REFERENCES[binding_name][1],
+                  sourceAdmission="Historical report and all35 capture identities remain unchanged. All34 model, measurement policy and closure inputs retain their frozen LF pins; the current execution helper is separately bound before/after with actual tool binaries and argv. Fresh complete crowded outcomes must exactly equal the immutable crowded reference.",
                   generatedHarnessSha256=hashlib.sha256(generated_bytes).hexdigest(), generatedHarnessPath=str(retained), compileArgv=list(build.argv),
                   executionSeconds=elapsed, command=[sys.executable, *sys.orig_argv[1:]], cwd=str(Path.cwd()),
                   qualification="Bounded actual production-model observation; no coefficient change or live player/performance claim.",
@@ -248,8 +288,6 @@ def measure(destination, binding_name="calibrated"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binding", choices=tuple(BINDINGS), default="calibrated")
-    parser.add_argument("--output", type=Path)
+    parser.add_argument("--output", type=Path, required=True, help="Separate observation output; immutable references are refused.")
     args = parser.parse_args()
-    if args.binding == "baseline" and args.output is None:
-        parser.error("Historical baseline replay requires an explicit output; preserved reports are never overwritten")
-    measure(args.output or PROJECT / "docs/last-stand-combat-depth/crowded-wave-calibrated-report.json", args.binding)
+    measure(args.output, args.binding)
