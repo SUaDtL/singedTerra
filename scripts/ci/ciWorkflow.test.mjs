@@ -230,6 +230,29 @@ test('product CI supplies the compiler for fresh current-source model qualificat
   for(const removed of [' mono-mcs','/usr/bin/mono --version','/usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version'])
     assert.throws(()=>assertCompiler(setup.replace(removed,'')),removed);
 });
+test('product CI executes the current combat-depth domain regressions', () => {
+  const inspect = source => {
+    const browser = job(source, 'browser');
+    const step = browser.match(/      - name: Verify Last Stand combat depth regressions\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+    assert.ok(step, 'Current combat-depth tests must be selected in hosted CI');
+    assert.match(step, /if: matrix\.suite == 'campaigns'/);
+    assert.ok(step.includes("python3 -B -m unittest discover -s campaign-unity/Tools/last_stand_combat_depth -p 'test_*.py' -v"));
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*(true|:)/);
+    assert.ok(browser.indexOf('name: Install Last Stand media tools') < browser.indexOf('name: Verify Last Stand combat depth regressions'));
+  };
+  inspect(ci);
+  for (const removed of ['Verify Last Stand combat depth regressions', 'campaign-unity/Tools/last_stand_combat_depth'])
+    assert.throws(() => inspect(ci.replace(removed, 'removed')), removed);
+});
+test('CI runs the combat and research evidence admission contracts',()=>{
+  const required=['lastStandCombatDepthJourney.test.mjs','lastStandResearchJourney.test.mjs','lastStandObservationContract.test.mjs'];
+  const inspect=source=>{
+    const step=job(source,'scope').match(/      - name: Scope and required-result regressions\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+    assert.ok(step);for(const file of required)assert.ok(step.includes('scripts/ci/'+file),file);
+    assert.doesNotMatch(step,/continue-on-error|\|\|\s*(true|:)/);
+  };
+  inspect(ci);for(const file of required)assert.throws(()=>inspect(ci.replace(file,'removed')));
+});
 function assertLastStandSandbox(source) {
   const browser=job(source,'browser');
   const setup=browser.match(/      - name: Prepare Last Stand browser sandbox\n([\s\S]*?)(?=      - name:|$)/)?.[1];
