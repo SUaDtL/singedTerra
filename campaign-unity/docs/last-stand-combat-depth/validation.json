@@ -63,8 +63,8 @@
   ],
   "browserJourneys": [
     {
-      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/player-journey-calibrated-v1/result.json",
-      "sha256": "7163a328387b626d5eccb85a582baa6c98c5f3f21c536935b3cecdce9e034271",
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/player-journey-calibrated-v2/result.json",
+      "sha256": "c13bdf53852d9b392a07e0ba878149da442e0622054158e58291c803b7812d00",
       "status": "passed",
       "scope": "Isolated development profiles, actual packaged rendering/input/save observations. Not earned progression, native/device audio or endurance acceptance.",
       "checks": [
@@ -196,9 +196,9 @@
       "sourceInputs": {
         "scripts/last-stand-combat-depth-journey.mjs": "5d656a65e4f6ba0153211cab56025cb27c5d0d7e26bbf133665337020c50770f",
         "e2e/helpers/lastStandBrowserActor.mjs": "fd1755c875b0f0f602eb82fe838b739272d5485837792e29d4f35720fa3a9c5d",
-        "e2e/helpers/lastStandJourney.mjs": "e302bddee94655055a04d6f830a3f64b3f03a6fd79c31b8207c6ccb588834f7a",
+        "e2e/helpers/lastStandJourney.mjs": "85950c4977b1831fd6ba355c3e2a3c5e0ee34448da9af4438e1574c7f5af2756",
         "e2e/helpers/lastStandTierJourney.mjs": "9de9a1691ad3679b98a7ee77e09584ee335c933ef58e12dfcfc022e6e87c6ad4",
-        "e2e/helpers/lastStandWaveJourney.mjs": "ea8a28ae03d7279e7c6d52a973914df4d102d3ac09fb714ff27f6f36c0ca1590",
+        "e2e/helpers/lastStandWaveJourney.mjs": "a2956773381005d4cc37764cec7dca6c78cddef4b1b3947e95f8cb0808d75f05",
         "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d"
       },
       "packaged": {
@@ -231,8 +231,8 @@
       "closedCompletionObserved": null
     },
     {
-      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/research-player-journey-calibrated-v1/result.json",
-      "sha256": "ae4094bfc856e5f7a5b456521b2c2a0db46eba060bd54aeff3b99b68601e51af",
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/research-player-journey-calibrated-v2/result.json",
+      "sha256": "084b4824b382c33414cd33ff6fa07c00f07d71dfad0a7f930a9965551d707bdc",
       "status": "passed",
       "scope": "Source-bound headless browser input, save and rendered screenshots. Development seeds are not ordinary earned progression, elapsed endurance, native acceptance or owner visual approval.",
       "checks": [
@@ -291,9 +291,9 @@
       ],
       "sourceInputs": {
         "scripts/last-stand-research-journey.mjs": "2c6fe85ac9512a0359a356df0157ab65492a612c8692535a85673602e690a9f1",
-        "e2e/helpers/lastStandJourney.mjs": "e302bddee94655055a04d6f830a3f64b3f03a6fd79c31b8207c6ccb588834f7a",
+        "e2e/helpers/lastStandJourney.mjs": "85950c4977b1831fd6ba355c3e2a3c5e0ee34448da9af4438e1574c7f5af2756",
         "e2e/helpers/lastStandTierJourney.mjs": "9de9a1691ad3679b98a7ee77e09584ee335c933ef58e12dfcfc022e6e87c6ad4",
-        "e2e/helpers/lastStandWaveJourney.mjs": "ea8a28ae03d7279e7c6d52a973914df4d102d3ac09fb714ff27f6f36c0ca1590",
+        "e2e/helpers/lastStandWaveJourney.mjs": "a2956773381005d4cc37764cec7dca6c78cddef4b1b3947e95f8cb0808d75f05",
         "e2e/helpers/lastStandBrowserActor.mjs": "fd1755c875b0f0f602eb82fe838b739272d5485837792e29d4f35720fa3a9c5d",
         "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d"
       },
@@ -321,27 +321,13 @@
         "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
       },
       "fixtureManifest": {
-        "sha256": "f52312d88de294509daac514a44cfe1e70d427e25ea90e38ef2d5b7d49a41fd0"
+        "sha256": "f6c3ec37285d74198fdaa67ceffa7ac83383e1244b4c4e279f0224a6e46e073e"
       },
       "screenshots": 11,
       "closedCompletionObserved": true
     }
   ],
   "localChecks": [
-    {
-      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-node-admission.log",
-      "sha256": "d8bb6ebde2de10d5e93f762b81695f83848c580311d6ad083cf5eb654e4f1241",
-      "status": "pass",
-      "tests": 431,
-      "seconds": 1.9723817
-    },
-    {
-      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-architecture-checks.log",
-      "sha256": "cd8f496b5b3313e765fa0774f22e38b858e6bbe8c12eebdf563f41e1cd3bd885",
-      "status": "pass",
-      "tests": 41,
-      "seconds": 19.871
-    },
     {
       "path": "campaign-unity/Evidence/combat-depth-planning-20261028/armament-calibration-independent-green.log",
       "sha256": "03eae42a0ffa46c686b1267ab231912f50f80db1f49869d710cdc06b6dfb7807",
@@ -371,13 +357,45 @@
           "seconds": 2.201
         }
       ]
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-architecture-checks.log",
+      "sha256": "fcccef5d56b72a3e85d65c6f8d7a29dd5c29f890ab3ec24432a86da8a70095aa",
+      "status": "pass",
+      "tests": 42,
+      "seconds": 22.737
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-node-admission.log",
+      "sha256": "d7264d9bdcd8a5578199ee3bd40276e8eff9f5d27f70c824a67762a116f82f01",
+      "status": "initial failure; both failed named cases subsequently pass",
+      "tests": 443,
+      "passed": 441,
+      "failed": 2,
+      "seconds": 80.3795116,
+      "resolutions": [
+        {
+          "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-background-caller-green.log",
+          "sha256": "57419108b85885a9e6b681afcd03dd2b09bdc67ccb8f9f5738242fcf0198f148",
+          "status": "pass",
+          "tests": 1,
+          "reason": "Actual helper closure restored in stale extracted-caller fixture; six selection negatives retained."
+        },
+        {
+          "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-native-foreground-retry.log",
+          "sha256": "4e8af3e4e5d6c5f53ff946744b6e73f74273b2d7ea5814129370ce251a8d58a0",
+          "status": "pass",
+          "tests": 1,
+          "reason": "Unchanged source and 10-second PowerShell limit; earlier passive helper timeout did not reproduce. Owned disposable native-window guard, not game device acceptance."
+        }
+      ]
     }
   ],
-  "localChecksNote": "Focused checks overlap; counts are not a unique total or a coverage percentage. Full combat suite and measurement review are recorded with balance results.",
+  "localChecksNote": "443 CI/tooling named checks have passing results from the initial 441 passes plus two focused reruns. This is not a fresh all443 run. Other focused suites overlap; counts are not a unique total or coverage percentage.",
   "reviewMedia": [
     {
       "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-garage-390-mortar.png",
-      "sha256": "0cac69afa9a36211d7ab223f9a91339ef33fc1c739b8b130425cb60dfc6dffcc"
+      "sha256": "49fe611503ab8514b0f512368c84bba665aa70ec3595022539df638f5760b5b2"
     },
     {
       "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-environment-1366-4.png",
@@ -385,19 +403,19 @@
     },
     {
       "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-purchased-mortar.png",
-      "sha256": "b8e7def38281f5e461347e68a99e55bc82f1dc52cf171c85e9d26461ed282bb5"
+      "sha256": "8bbabb73c95c1fdd985857d6fecfbf310b47dd398b16f1c12985c45c831c8710"
     },
     {
       "path": "campaign-unity/docs/last-stand-combat-depth/review/roster-ready-purchased-railgun.png",
-      "sha256": "7768b6f5fc31928434122497e334113c3c43f1b32cf5391a63a4c751bdb3e42f"
+      "sha256": "14cce8386e7a4469d6102726010b184789d5278bbd4f2fd35c2ed43ef6a7ec47"
     },
     {
       "path": "campaign-unity/docs/last-stand-combat-depth/review/tier2-before-elite-elite-reduced-effects-battle.png",
-      "sha256": "c9a40b07c8a7471faba3ec2e01fad0773b9cad2705387e34ab24ea94dd5d5df0"
+      "sha256": "f61a821f1c37b0a25168657f1e9ba61f22330ccb8bd793149e07055db4d0b484"
     },
     {
       "path": "campaign-unity/docs/last-stand-combat-depth/review/tier2-before-elite-elite-wave-stats.png",
-      "sha256": "9dd385d89d1b455f27e47285a0a0a49c663fb24c13c6d7ced094f04f13b739e6"
+      "sha256": "18295e6b2e51469d4340912ecbdfd786763f24780506cc1e6986e8fc75eee895"
     }
   ],
   "androidSignature": {
@@ -416,10 +434,12 @@
     "path": "client/public/last-stand/asset-manifest.json",
     "sha256": "1fcdf2d0bf9fb0f0d3dbb6ad49285d524611f3f9eee44e8f39cbccefea7b1e43",
     "productionBuild": {
-      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/calibrated-web-package.log",
-      "sha256": "744ab6b78dfb05cc874988538db761981bb98ef01ea608a2ce81712cfe8c1750"
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-project-base-build.log",
+      "sha256": "9c941720ec7d4c5bd18489a9eb6936182ab9ce635c57d8873482647b74fcc48d"
     },
-    "preview": "http://127.0.0.1:4174/singedTerra/last-stand/"
+    "preview": "http://127.0.0.1:4174/singedTerra/last-stand/",
+    "base": "/singedTerra/",
+    "localPreviewCorrection": "Local build was refreshed with VITE_BASE matching the existing preview. The first ordinary-return run failed with root-path asset404s; retained under pr547-first-session. No product or wrapper navigation change."
   },
   "balance": {
     "status": "Actual-model calibration and independent accounting/comparison review pass within the disclosed earned budgets, horizons and available cells.",
@@ -488,6 +508,159 @@
       "gate": "canonical marker recorded after independentreview; initial H09b refusal retained"
     },
     "coverage": "Scoped independent coverage and calibration review passed; no quantitative C#coverage claim",
-    "ciSecurity": "Existing independentreview passed; permissions,secrets,compilerordering and requiredaggregate remain enforced"
+    "ciSecurity": "Existing independentreview passed; permissions,secrets,compilerordering and requiredaggregate remain enforced",
+    "verifierRepair": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-verifier-security-review-final.json",
+      "sha256": "80c3f9bd2704cb598020bfd3809605ce6bc76428e963b9d26d4f048916fb8f7f",
+      "result": "pass; no findings",
+      "cryptoCompliance": "pass; standard SHA256 test/build provenance only",
+      "commit": "00a07b0cb46e324a44963bd582de24779bd40ad1",
+      "reviewTiming": "PASS delivered before commit; exact reviewed patch and file identities verified in receipt persisted afterward."
+    }
+  },
+  "verifierHistory": {
+    "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pre-pr547-verifier-validation.json",
+    "sha256": "07e68e6f70adec4eacf3a0cd839b97dec43ca4bf27343caf6a7a8316128b1814"
+  },
+  "hosted": {
+    "head": "414fca7d6a6e1cb14b18bb7784249597568f2b8d",
+    "ciRun": 40806278594,
+    "ciStatus": "failed",
+    "codeqlRun": 40806278494,
+    "codeqlStatus": "passed",
+    "details": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-initial-failures.json",
+      "sha256": "73ae200db03674c92c311db6e3456501d0cabc4abdc34961b72c4f7e2c75708b"
+    },
+    "scope": "Twelve lifecycle jobs failed the stale historical compiler source list; tier journey failed stale milestone assertions. All 80 portable combat/domain checks passed on Linux before those lifecycle failures. This is not overall CI acceptance; exact repaired-head verification remains pending."
+  },
+  "ordinaryFirstSessions": [
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-first-session-v2/repair/wave-observations.json",
+      "sha256": "00ebf759826a1cdda9523804fc60ee6d7befb7f231acad47cf8c99b12f4fced3",
+      "fitting": "repair",
+      "status": "pass",
+      "seeded": false,
+      "normalSpeed": true,
+      "checks": [
+        {
+          "name": "First locked tier is a preview with no further tier or deploy action",
+          "pass": true
+        },
+        {
+          "name": "Defeated finite cohort banks one wave and its reward before the next wave",
+          "pass": true
+        },
+        {
+          "name": "Partial-wave purchase spends Scrap and increases the actual run upgrade",
+          "pass": true
+        },
+        {
+          "name": "Explicit resume restores HP, wave, upgrades and resources together and starts paused",
+          "pass": true
+        },
+        {
+          "name": "Confirmed abandon preserves banked rewards and cannot resurrect the checkpoint",
+          "pass": true
+        }
+      ],
+      "screenshots": 15,
+      "errors": 0,
+      "scope": "Ordinary empty browser save, actual earned first wave and ordinary input. Not native/device or long-term/endurance acceptance."
+    },
+    {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-first-session-v2/launcher/wave-observations.json",
+      "sha256": "52706921df4ef9565e518e492ff2d2dce403e1a6267c562386978fb55f38637f",
+      "fitting": "launcher",
+      "status": "pass",
+      "seeded": false,
+      "normalSpeed": true,
+      "checks": [
+        {
+          "name": "First locked tier is a preview with no further tier or deploy action",
+          "pass": true
+        },
+        {
+          "name": "Defeated finite cohort banks one wave and its reward before the next wave",
+          "pass": true
+        },
+        {
+          "name": "Partial-wave purchase spends Scrap and increases the actual run upgrade",
+          "pass": true
+        },
+        {
+          "name": "Explicit resume restores HP, wave, upgrades and resources together and starts paused",
+          "pass": true
+        },
+        {
+          "name": "Confirmed abandon preserves banked rewards and cannot resurrect the checkpoint",
+          "pass": true
+        }
+      ],
+      "screenshots": 15,
+      "errors": 0,
+      "scope": "Ordinary empty browser save, actual earned first wave and ordinary input. Not native/device or long-term/endurance acceptance."
+    }
+  ],
+  "verifierRepair": {
+    "scope": [
+      "e2e/helpers/lastStandJourney.mjs",
+      "e2e/helpers/lastStandWaveJourney.mjs",
+      "scripts/ci/lastStandBackground.test.mjs",
+      "scripts/ci/lastStandWaveJourney.test.mjs",
+      "campaign-unity/Tools/last_stand_architecture/test_encounter_oracle.py"
+    ],
+    "sourceClosure": 16,
+    "immutableReferenceRows": 13904,
+    "immutableReferenceFields": 13,
+    "baselineUnchanged": true,
+    "oracleResults": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-oracle-fix-results.json",
+      "sha256": "a72637fd96846d3ec88ece82885d911cc349adb3d223361c8f18a2401592a17a"
+    },
+    "followupResults": {
+      "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-background-followup-results.json",
+      "sha256": "7bfd078190ac13e5b3e7b4b89b9c811d8350aa9416b0cbd1a20a67cb0af7abff"
+    },
+    "regressionFailures": [
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-encounter-oracle-red.log",
+        "sha256": "52055048d55902b232e9b1271ae20ea67ba53ba1770f5747f09b334ee4fcf1d3"
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-oracle-binding-red.log",
+        "sha256": "4656cf425b0fcae8d2fd8630701d4678b731e4145585261704db600f0f65ff00"
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-milestone-red.log",
+        "sha256": "d0a838c7448581c65f3ebbf146be7eb5da4235faa3f9d07328588a2dcbba0201"
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-background-caller-red.log",
+        "sha256": "62119e3168255c440720e07704c3229febe3aeb37146bffe93a2d4ea7d900ea7"
+      }
+    ],
+    "passes": [
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-encounter-oracle-green-v2.log",
+        "sha256": "8645d4131b69aba9d263ab359d79d799641f6e95985360ccbed6379d324190d1"
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-oracle-binding-green-v2.log",
+        "sha256": "217b8d6d3227389900fdf770e55d735f561a08c85bfa138345d028457fbf045c"
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-milestone-green.log",
+        "sha256": "54d09a71d0246045931eb3a91d747da1779d9dd11053361159b09ffd6e19b0c8"
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-background-caller-green.log",
+        "sha256": "57419108b85885a9e6b681afcd03dd2b09bdc67ccb8f9f5738242fcf0198f148"
+      },
+      {
+        "path": "campaign-unity/Evidence/combat-depth-planning-20261028/pr547-native-foreground-retry.log",
+        "sha256": "4e8af3e4e5d6c5f53ff946744b6e73f74273b2d7ea5814129370ce251a8d58a0"
+      }
+    ]
   }
 }

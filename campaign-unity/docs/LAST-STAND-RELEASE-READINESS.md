@@ -92,9 +92,13 @@ errors and verify their source, fixture and package bindings. These development
 profiles establish the observed browser behaviors; their gifted funding is not
 ordinary earned progression or native/endurance evidence.
 
-Current local verification includes 80 combat/domain checks, 431 CI/tooling
-checks, 41 pure architecture checks, six retained economy checks, 14 independently
-rerun armament regressions, and a passing production build/typecheck. Existing independent review closed the three new browser
+Current local verification includes 80 combat/domain checks, 42 pure architecture
+checks, six retained economy checks, 14 independently rerun armament regressions,
+and a passing production build/typecheck. The expanded CI/tooling run passed
+441 of 443 named checks. Both failures then passed focused reruns: one stale
+extracted-caller fixture was corrected to use the actual impact/audio helpers;
+one passive Windows helper timeout did not recur under the unchanged 10-second
+limit. This is not a fresh all-443 run. Existing independent review closed the three new browser
 evidence findings and passed the CI security review. Final combat-model and
 observer checks are recorded in the validation inventory and balance report.
 
@@ -106,8 +110,21 @@ Legacy saved runs retain their original rules. The
 bounded survival limits and hypothetical mature pacing. It does not establish
 real-duration farming, globally optimal builds or device performance.
 
-Candidate exact-head hosted CI, current Windows interaction, physical Android,
-hardware audio and real-duration farming/performance qualification remain open.
+Two ordinary first-session browser journeys also pass, starting from empty saves
+with repair and launcher at normal speed. Each records five checks and 15
+screenshots with no errors, covering earned first-wave rewards, purchases, return
+to Campaigns, paused checkpoint resume and confirmed abandonment. The first
+local attempt exposed a mismatched preview base path; rebuilding with
+`VITE_BASE=/singedTerra/` corrected local assets without changing navigation code.
+
+Initial combat-depth CI at `414fca7d` failed 12 lifecycle jobs because the
+historical compiler caller omitted new dependencies, and the tier journey used
+stale milestone labels. CodeQL and all 80 Linux combat/domain checks passed.
+The repaired compiler shares the full 16-source list and matches the unchanged
+13,904-row, 13-field historical reference. Current combat/research browser
+journeys have been rerun with the repaired drivers. Exact repaired-head hosted
+CI remains pending, separately from current Windows interaction, physical
+Android, hardware audio and real-duration farming/performance qualification.
 One current preview is retained on port 4174. No merge, publication or store
 acceptance follows from these results.
 
