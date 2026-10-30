@@ -485,11 +485,39 @@ async function assertPhysicalCaptionProofControls() {
   return faults.length;
 }
 
+function nativeProbeForInertCompilation() {
+  let script;
+  if(process.env.LAST_STAND_OBSERVATION_SOURCE)script=callerSource; // Explicit archived fault override only.
+  else {
+    const emitted=[];
+    const driver=journey.createLastStandNativeDriver({process:{platform:'win32'},uptime:()=>1000,
+      powershell:value=>{emitted.push(value);return '{}';}});
+    assert.deepEqual(driver.ownedNativeWindowSnapshot({root:{pid:41001},profile:'inert-probe-profile'}),{});
+    assert.equal(emitted.length,1,'Capture the actual emitted probe without running PowerShell');
+    script=emitted[0];
+  }
+  const source=script.split("    Add-Type -TypeDefinition @'\n")[1]?.split("\n'@")[0];
+  assert.ok(source,'Actual native driver probe required for inert compilation');
+  return source;
+}
+
+test('native caption compiler fixtures receive the actual probe without invoking Windows APIs',()=>{
+  const source=nativeProbeForInertCompilation();
+  assert.match(source,/public class LastStandAwayWindowProbe/);
+  assert.ok((source.match(/\[DllImport/g)??[]).length>=20);
+});
+
+test('inert native caption compilation preserves exposure, physical and dynamic fault controls',{skip:process.platform!=='win32'},async()=>{
+  await assertOwnedCaptionExposureControls();
+  await assertPhysicalCaptionNativeSeamControls();
+  await assertPhysicalCaptionDynamicSeamControls();
+});
+
 async function assertOwnedCaptionExposureControls() {
   if(process.platform!=='win32')return;
   // Execute the maintained preparation, physical input and finally paths with inert externs.
   // This is behavioral evidence, never a native foreground or gameplay outcome.
-  let source=callerSource.split("    Add-Type -TypeDefinition @'\n")[1]?.split("\n'@")[0];
+  let source=nativeProbeForInertCompilation();
   assert.ok(source,'Actual native preparation source required');
   let replaced=0;
   source=source.replace(/^  \[DllImport[^\n]+\] public static extern (.+?) (\w+)\((.*)\);$/gm,
@@ -573,7 +601,7 @@ async function assertPhysicalCaptionNativeSeamControls() {
   if(process.platform!=='win32')return;
   // Compile the actual driver control flow with every extern replaced by a bounded inert seam.
   // No user32 entry point remains, no real window exists and no native input is sent.
-  let source=callerSource.split("    Add-Type -TypeDefinition @'\n")[1]?.split("\n'@")[0];
+  let source=nativeProbeForInertCompilation();
   assert.ok(source,'Actual native driver source required');
   let replaced=0;
   source=source.replace(/^  \[DllImport[^\n]+\] public static extern (.+?) (\w+)\((.*)\);$/gm,
@@ -659,7 +687,7 @@ async function assertPhysicalCaptionDynamicSeamControls() {
   if(process.platform!=='win32')return;
   // Dynamic faults execute the actual compiled driver. Every native extern is
   // inert before Add-Type; no real HWND, browser, cursor or SendInput exists.
-  let source=callerSource.split("    Add-Type -TypeDefinition @'\n")[1]?.split("\n'@")[0];
+  let source=nativeProbeForInertCompilation();
   assert.ok(source,'Actual native driver source required for dynamic proof');
   let replaced=0;
   source=source.replace(/^  \[DllImport[^\n]+\] public static extern (.+?) (\w+)\((.*)\);$/gm,
@@ -1241,19 +1269,7 @@ test('Linux current-source qualification reaches fresh model compilation', () =>
   assert.throws(()=>exercise({dependencyDrift:true}),/inputs drifted/i);
 });
 
-test('background guards reject frozen ticks and require separate native blur and hidden evidence', async () => {
-  await assertPrecleanupNativeAdmission();
-  await assertOriginalNativeForegroundPreconditions();
-  const frozen=background();frozen.after.tick=20;
-  assert.throws(()=>journey.validateBackgroundInterval(frozen), /background|elapsed|tick/i);
-  assert.doesNotThrow(()=>journey.validateBackgroundInterval(background()));
-  const blur=background();blur.kind='blur';blur.events=[event(1010,'blur',false,false),event(1350,'focus',false,true)];
-  assert.doesNotThrow(()=>journey.validateBackgroundInterval(blur));
-  for(const mutate of [x=>x.events=[],x=>x.kind='blur',x=>x.after.load=2,x=>x.after.timeOrigin++,
-    x=>x.after.paused=true,x=>x.after.tick=38,x=>x.after.catchingUp=true,x=>x.after.callbackSteps=129,
-    x=>x.after.hp=119,x=>x.after.kills=1,x=>x.after.cannon=1,x=>x.oracle=null]) {
-    const invalid=background();mutate(invalid);assert.throws(()=>journey.validateBackgroundInterval(invalid));
-  }
+test('encounter serialization and fresh compilation preserve strict source admission', () => {
   const bundle=journey.encounterOraclePackage(),bound=journey.readBoundEncounterOracle();
   const reference=gunzipSync(Buffer.from(bundle.gzip_base64,'base64'));
   const digest=raw=>createHash('sha256').update(raw).digest('hex');
@@ -1265,7 +1281,16 @@ test('background guards reject frozen ticks and require separate native blur and
   // Execute the actual maintained compilation caller's admission statement on
   // the exact bytes of the preserved first failure (reference[3:]). This is an
   // explicit serialization fixture, never a replacement model/compiler output.
-  const actualAdmission=journey.createEncounterOracle({writeFileSync:()=>{}}).runEncounterOracleAdmission;
+  // Reuse the real, source-qualified admission owner. A fresh owner's writer
+  // also owns Program.cs during qualification; replacing it with a no-op would
+  // prevent that compilation. Only this explicit serialization sink is inert.
+  const actualAdmission=journey.createEncounterOracle({
+    admitEncounterOracleOutput:journey.admitEncounterOracleOutput,
+    writeFileSync:(path,raw)=>{
+      assert.equal(path,join('explicit-serialization-fixture','actual-model.csv'));
+      assert.ok(Buffer.isBuffer(raw));
+    },
+  }).runEncounterOracleAdmission;
   const admitThroughCaller=raw=>actualAdmission({execute:()=>raw,exe:'fixture-exe',directory:'explicit-serialization-fixture'}).admission;
   assert.doesNotThrow(()=>admitThroughCaller(noBOM),
     'Actual production admission must accept the unchanged first failed non-BOM CSV bytes');
@@ -1275,8 +1300,16 @@ test('background guards reject frozen ticks and require separate native blur and
   const parent=process.env.LAST_STAND_JOURNEY_GUARD_EVIDENCE??tmpdir();mkdirSync(parent,{recursive:true});
   const output=mkdtempSync(join(parent,'compiled-model-'));
   console.log('ST_LS_MODEL_ORACLE='+output);
+  const compilerAdmissions=[];
+  const compiler=journey.createEncounterOracle({
+    readBoundEncounterOracle:journey.readBoundEncounterOracle,
+    admitEncounterOracleOutput:raw=>{
+      compilerAdmissions.push(raw);
+      return journey.admitEncounterOracleOutput(raw);
+    },
+  });
   let compiled;
-  assert.doesNotThrow(()=>{compiled=journey.buildEncounterOracle(output);},
+  assert.doesNotThrow(()=>{compiled=compiler.buildEncounterOracle(output);},
     'Fresh unchanged model output must admit one optional leading UTF-8 BOM');
   assert.deepEqual(compiled,bound,'All compiled profile/model fields must equal the unchanged reference');
   const binding=JSON.parse(readFileSync(join(output,'model-oracle/binding.json'),'utf8'));
@@ -1314,14 +1347,30 @@ test('background guards reject frozen ticks and require separate native blur and
   assert.throws(()=>journey.admitEncounterOracleOutput(noBOM,{...bundle,output_sha256:digest(noBOM)}),/reference|bytes/i);
   assert.throws(()=>journey.admitEncounterOracleOutput(noBOM,bundle,
     {...bundle.source_lf_sha256,'EncounterModel.cs':'0'.repeat(64)}),/source|binding/i);
-  assert.match(callerSource,/const admission=admitEncounterOracleOutput\(raw\);/,
-    'The real compiler caller must use the maintained serialization boundary');
+  assert.deepEqual(compilerAdmissions,[readFileSync(join(output,'model-oracle/actual-model.csv'))],
+    'The real compiler caller must submit its exact output once to the maintained serialization boundary');
   assert.deepEqual(bound['repair:20'][20],oracle[20]);assert.deepEqual(bound['repair:20'][28],oracle[28]);
   assert.throws(()=>journey.readBoundEncounterOracle({...bundle,output_sha256:'0'.repeat(64)}),/reference|bytes/i);
   const wrongSource={...bundle.source_lf_sha256,'EncounterModel.cs':'0'.repeat(64)};
   assert.throws(()=>journey.readBoundEncounterOracle(bundle,wrongSource),/source|binding/i);
   const broken=structuredClone(bundle);broken.source_lf_sha256['EncounterProfile.cs']='0'.repeat(64);
   assert.throws(()=>journey.readBoundEncounterOracle(broken),/source|binding/i);
+
+});
+
+test('background guards reject frozen ticks and require separate native blur and hidden evidence', async () => {
+  await assertPrecleanupNativeAdmission();
+  await assertOriginalNativeForegroundPreconditions();
+  const frozen=background();frozen.after.tick=20;
+  assert.throws(()=>journey.validateBackgroundInterval(frozen), /background|elapsed|tick/i);
+  assert.doesNotThrow(()=>journey.validateBackgroundInterval(background()));
+  const blur=background();blur.kind='blur';blur.events=[event(1010,'blur',false,false),event(1350,'focus',false,true)];
+  assert.doesNotThrow(()=>journey.validateBackgroundInterval(blur));
+  for(const mutate of [x=>x.events=[],x=>x.kind='blur',x=>x.after.load=2,x=>x.after.timeOrigin++,
+    x=>x.after.paused=true,x=>x.after.tick=38,x=>x.after.catchingUp=true,x=>x.after.callbackSteps=129,
+    x=>x.after.hp=119,x=>x.after.kills=1,x=>x.after.cannon=1,x=>x.oracle=null]) {
+    const invalid=background();mutate(invalid);assert.throws(()=>journey.validateBackgroundInterval(invalid));
+  }
 
   // Exact unchanged owner ticks20/21 prove the real cadence seam: return the
   // actually paired tick20 with its own timestamp; never relabel it as tick21.
@@ -1356,9 +1405,6 @@ test('background guards reject frozen ticks and require separate native blur and
   assert.equal(records.states.at(-1).sessionRun,null,'Different document cannot borrow the prior observed run');
   await assertOwnedCaptionProofControls();
   await assertPhysicalCaptionProofControls();
-  await assertOwnedCaptionExposureControls();
-  await assertPhysicalCaptionNativeSeamControls();
-  await assertPhysicalCaptionDynamicSeamControls();
   await assertOwnedNativeStartup();
   await assertNativeLaunchOptions();
   await assertConfiguredRejoinBoundary();

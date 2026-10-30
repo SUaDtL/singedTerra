@@ -1,12 +1,12 @@
 {
   "schema": "singedterra-last-stand-local-validation-summary/v1",
   "kind": "Summary of existing local receipts; not a native acceptance receipt or release approval",
-  "recordedUtc": "2026-10-30T21:04:42.137322+00:00",
+  "recordedUtc": "2026-10-30T21:24:42.027040+00:00",
   "status": "scoped-local-checks-pass; release-qualification-incomplete",
   "candidate": {
     "build": "Web-20261030T202703Z-cf836c",
     "sourceHeadAtBuild": "e0a71becc44143d1393206299521005c0a87ebde",
-    "sourceHeadLimit": "The unchanged game export includes consolidation changes made after its recorded build base. Current verification helpers include the CI repair after 97b15c7a684d8f9fa86e2a7a524c3690c183135d. Source/package digests identify both scopes; no baseline hosted result qualifies the repair.",
+    "sourceHeadLimit": "The unchanged game export includes consolidation changes after its build base. Verification helpers retain the reviewed repair after 97b15c7a; the later repair after 4ac7a297 changes only lastStandBackground.test.mjs. Each receipt retains its original input hashes; no earlier hosted result qualifies the final test repair.",
     "sourceBeforeSha256": "d52360c4dbc55f87067951662044996928b8b55c5de69915076b7487f9c0d609",
     "sourceAfterSha256": "d52360c4dbc55f87067951662044996928b8b55c5de69915076b7487f9c0d609",
     "packageBindings": {
@@ -55,6 +55,7 @@
       "e2e/helpers/lastStandWaveJourney.mjs": "2c0bd05879969c631d073bf28d3f6f36297f62a850089eee080cb117d0bc586c",
       "e2e/last-stand-playable-loop.spec.ts": "8b4023a04a7fbf6294342eac1aab63bcebdc3534ac2364f3af71283fd9d553a4",
       "scripts/ci/browserMatrix.test.mjs": "7e8afbb0bdc1a57feabe87c72b1665ff0c82fc05d303ee88cd14eb0f28dbdfe4",
+      "scripts/ci/lastStandBackground.test.mjs": "571462df7e5f0b0f6a1a985d738e455cf2fe826f99def9a386df5b0f32b89d8a",
       "scripts/ci/lastStandDependencyFreeFixture.mjs": "829856cd8e597447e978c9240218d20cc52d584770c4924ab856525078a46e15",
       "scripts/ci/lastStandQualification.mjs": "b92e63a9bdded259bad917eb252d4e4f792fac9a7d1751cde373637ed07c5267",
       "scripts/ci/lastStandQualification.test.mjs": "c7917e54c37c56cf3c21b937fb106d494933f3127c4b07ae289965504d9de071",
@@ -68,8 +69,8 @@
       "scripts/last-stand-wave-endurance.mjs": "ffca42df453d36aa593fdb6f1e40825e80df9b389954cb88aede0687cc9a71b8",
       "scripts/last-stand-wave-milestones.mjs": "6bc189f8560da76125b68b8d67bc16ded8e23264872eecb9f447da52c7306e13"
     },
-    "bindingLimit": "Raw SHA-256 of refreshed browser inputs, review inputs and all 21 packaged artifacts was rechecked for this summary. Unity source and exported game bytes are unchanged by the CI repair; their tracked source-lock and packaging receipt remain applicable. Future source or package changes require renewed admission.",
-    "verificationBaseCommit": "97b15c7a684d8f9fa86e2a7a524c3690c183135d"
+    "bindingLimit": "All prior 34 source and 21 package hashes still match. The current background-test source is bound separately. Browser, game, package, imported-scene, portable and earlier review receipts retain their original unchanged scopes. The focused fixture and affected-cohort receipts below qualify the new test-only change locally; they do not establish hosted Linux or native-window acceptance.",
+    "verificationBaseCommit": "4ac7a2976f4f6bfae98c307e649d58edefa7e628"
   },
   "buildAndAdmission": {
     "status": "pass",
@@ -277,16 +278,16 @@
     },
     "affectedVerificationCohort": {
       "status": "pass",
-      "tests": 492,
+      "tests": 495,
       "failed": 0,
       "skipped": 0,
       "receipt": {
-        "path": "campaign-unity/Evidence/consolidation-matrix-cohort-final.log",
-        "sha256": "9e5156b795d380fe1d4e5dc615ff5a28725ce2abeb9f2cd272b8d53ed81d16f3",
+        "path": "campaign-unity/Evidence/consolidation-linux-admission-cohort.log",
+        "sha256": "0bc2e0f1439c21b4be112e57ca0ebdfb26c41f7be8295f6b028d8a1270bd39ef",
         "availability": "local ignored Evidence; not bundled in this summary"
       },
       "command": "node --test --test-skip-pattern='background guards reject frozen ticks' scripts/ci/browserMatrix.test.mjs scripts/ci/releaseWorkflow.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/lastStand*.test.mjs",
-      "scope": "Selected affected verification guards; native-background qualification is excluded and remains unqualified despite this log reporting zero skipped cases"
+      "scope": "Current selected affected cohort. Model serialization/fresh compilation and three inert native compiler fault suites now execute in independent tests on Windows. The remaining real-window group is still filtered; zero skipped cases is not whole-file or native-window qualification."
     },
     "preinstallImportPolicy": {
       "status": "pass",
@@ -299,10 +300,41 @@
         "availability": "local ignored Evidence; not bundled in this summary"
       },
       "scope": "Independent built-in-only import-policy run, including the isolated pre-install fixture executing the original 16 matrix tests with TypeScript and Playwright absent"
+    },
+    "modelAndInertNativeFixtures": {
+      "status": "pass",
+      "tests": 4,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-model-native-fixtures-green.log",
+        "sha256": "a705cfd126a1e338dda30f6fc42b195ce0e1e41c323c7593868112891d208202",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "modelRows": 13904,
+      "fieldsPerRow": 13,
+      "scope": "Local Windows run: real Mono model compilation, retained raw-byte/hash negative controls, and all three compiled native fault suites with inert externs. No real HWND, input, browser or hardware-audio qualification; hosted Linux must independently pass.",
+      "redReceipts": [
+        {
+          "path": "campaign-unity/Evidence/consolidation-serialization-red.log",
+          "sha256": "1ca38297346d7da9b6b9620c497ee25c3ffe3939a3c7d49abcabad99fa7e29ae",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        },
+        {
+          "path": "campaign-unity/Evidence/consolidation-serialization-caller-red.log",
+          "sha256": "77e2467393945f4ca6a953587bfe208458527449b5af4957cb5a40fb128fec62",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        },
+        {
+          "path": "campaign-unity/Evidence/consolidation-native-probe-source-red.log",
+          "sha256": "f44c72df2034ad750e3e3bf6717c5730ffb49380133322d8b65b56cf9d91649f",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        }
+      ]
     }
   },
   "independentReview": {
-    "status": "PASS within the original and follow-up reviewed scopes; no open findings",
+    "status": "PASS within the original review and both frozen follow-up scopes; no open findings",
     "currentFollowupReview": {
       "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-review-ci-followup.md",
       "sha256": "1d70424e7338db6e85644f62e9274044d0e3244c68cf2271211f00e4593bec38",
@@ -329,7 +361,33 @@
       "reviewedSourceFiles": 27,
       "scope": "Auth/Crypto and Security review; final 27-source freeze rechecked. Not a security marker, secret-scan receipt, native acceptance or release authorization."
     },
-    "scope": "Original 27-file review remains historical. Its changed files are covered by the frozen seven-file follow-up; unchanged original inputs and all follow-up inputs were rechecked against current bytes. Neither review is a secret-scan receipt, security marker, native acceptance or release authorization."
+    "scope": "Original 27-file, seven-file CI fixture follow-up and one-file Linux fixture follow-up keep separate input maps and scopes. Production helpers and prior reviewed inputs are unchanged by the final test-only repair. No review is a secret-scan receipt, security marker, native acceptance or release authorization.",
+    "currentTestOnlyFollowup": {
+      "status": "PASS within the frozen one-file scope; no open findings",
+      "review": {
+        "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-review-linux-followup.md",
+        "sha256": "5282f0d4c6dbc177815ebb3d0d0b28d3c2dd6b21a78a3d52655a9b7f3b8bd2dc",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "inputMap": {
+        "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-linux-followup-inputs.json",
+        "sha256": "bb4485f1721b0e6c069c13625a6a8d3c2493e47a17a7538b2f2d063284e15037",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "reviewedSourceFiles": 1,
+      "focusedRun": {
+        "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-linux-followup-focused.log",
+        "sha256": "404269e25997cfc8dd07836daa6fe896ac5f54d981b33fb866b003aacc61344b",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "checksPassed": 4,
+      "actualWindowsModelBinding": {
+        "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-linux-followup-model/compiled-model-WofSHj/model-oracle/binding.json",
+        "sha256": "f03c200a16a9e862ed1b5ea69fcbb39d157d41364df9a6a2a2d1b1396e6045bb",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Independent Windows Mono compilation observed 13,904 rows with 13 fields and raw/hash negative cases; all three inert compiled-native fault suites ran. The Linux dispatch fixture is inert and is not hosted Linux proof. Compiled-native tests explicitly skip on non-Windows instead of claiming a false pass. Real-window/native gameplay qualification remains open."
+    }
   },
   "stillPending": [
     "Existing owned-Windows-browser native-background timeout",
@@ -342,27 +400,54 @@
     "Exact final repair-commit hosted CI",
     "Separately authorized merge, publication/deployment and live-host checks"
   ],
-  "historyPolicy": "This summary does not rewrite or promote historical receipts, source maps, contracts or retained editions. Current obligations remain in LAST-STAND-RELEASE-READINESS.md.",
+  "historyPolicy": "This summary preserves earlier receipt references and their original scopes; it does not rewrite historical receipts, source maps, contracts or retained editions. Current obligations remain in LAST-STAND-RELEASE-READINESS.md.",
   "hostedCi": {
+    "priorAttempts": [
+      {
+        "commit": "97b15c7a684d8f9fa86e2a7a524c3690c183135d",
+        "runId": 41125483235,
+        "url": "https://github.com/SUaDtL/singedTerra/actions/runs/41125483235",
+        "conclusion": "failure",
+        "failure": "Three browser-matrix fixtures still depended on moved helper source. Local reproduction passed 13 of 16 tests; a new isolated pre-install regression also exposed a TypeScript package import.",
+        "localRedReceipt": {
+          "path": "campaign-unity/Evidence/consolidation-browser-matrix-red.log",
+          "sha256": "c49beaaa8e0cb957925987cad0fa6a620f3013f5f5f8eb380ba4d6b731ef1342",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        },
+        "preinstallRedReceipt": {
+          "path": "campaign-unity/Evidence/consolidation-matrix-dependency-red.log",
+          "sha256": "81e453b64e3c6fac8722ff171f58b8bd082eefe8488596d9dc079c524792ab37",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        },
+        "localRepair": "Converted moved-source fixtures and related Return, journal, resume and release-profile checks to shared local seams. Branch ownership checks use built-in parse-only guard inspection; the isolated fixture verifies unavailable dependencies. No game C# or exported package bytes changed."
+      }
+    ],
     "lastObserved": {
-      "commit": "97b15c7a684d8f9fa86e2a7a524c3690c183135d",
-      "runId": 41125483235,
-      "url": "https://github.com/SUaDtL/singedTerra/actions/runs/41125483235",
-      "conclusion": "failure",
-      "failure": "Three browser-matrix fixtures still depended on moved helper source. Local reproduction passed 13 of 16 tests; a new isolated pre-install regression also exposed a TypeScript package import.",
-      "localRedReceipt": {
-        "path": "campaign-unity/Evidence/consolidation-browser-matrix-red.log",
-        "sha256": "c49beaaa8e0cb957925987cad0fa6a620f3013f5f5f8eb380ba4d6b731ef1342",
-        "availability": "local ignored Evidence; not bundled in this summary"
+      "commit": "4ac7a2976f4f6bfae98c307e649d58edefa7e628",
+      "runId": 41128798482,
+      "url": "https://github.com/SUaDtL/singedTerra/actions/runs/41128798482",
+      "runStatusAtObservation": "in_progress",
+      "failedJob": {
+        "jobId": 124315063195,
+        "name": "browser (last-stand-1)",
+        "conclusion": "failure",
+        "backgroundGuardTests": 12,
+        "passed": 11,
+        "failed": 1,
+        "url": "https://github.com/SUaDtL/singedTerra/actions/runs/41128798482/job/124315063195"
       },
-      "preinstallRedReceipt": {
-        "path": "campaign-unity/Evidence/consolidation-matrix-dependency-red.log",
-        "sha256": "81e453b64e3c6fac8722ff171f58b8bd082eefe8488596d9dc079c524792ab37",
+      "failure": "The serialization-admission fixture suppressed writeFileSync; a nested fresh model qualification then could not read model-oracle/Program.cs. This Linux fixture failure is distinct from the unresolved Windows native-background timeout.",
+      "jobLog": {
+        "path": "campaign-unity/Evidence/consolidation-linux-admission-job.log",
+        "sha256": "49c834e10e7a25073e5a08222eaef365fbff8774a96b93a9c6697fcaea061344",
         "availability": "local ignored Evidence; not bundled in this summary"
       }
     },
-    "repair": "Converted moved-source fixtures and related Return, journal, resume and release-profile checks to shared local seams. Branch ownership checks use built-in parse-only guard inspection; the isolated fixture verifies unavailable dependencies. No game C# or exported package bytes changed.",
-    "currentRepairHostedStatus": "pending: exact new-head hosted CI has not yet been observed"
+    "repair": "Test-only change removes the model-write suppression, executes actual fresh model admission, and separates serialization/compilation from the filtered real-window group. Native compiler fixtures consume the actual emitted probe without invoking its Windows APIs. Production helpers, C#, package and browser inputs are unchanged.",
+    "recordedUtc": "2026-10-30T21:24:42.027040+00:00",
+    "statusScope": "Recorded snapshot, not continuously maintained CI state. Consult PR #547's live checks for the current exact-head outcome; this evidence document need not change after every CI transition.",
+    "liveChecksUrl": "https://github.com/SUaDtL/singedTerra/pull/547/checks",
+    "repairStatusAtSnapshot": "pending: final test-only repair is not yet pushed or observed in hosted CI"
   },
   "priorLocalScope": {
     "scope": "Preserved earlier receipts for the consolidation snapshot before the CI fixture repair; they do not supersede refreshed helper-bound runs above.",
@@ -415,6 +500,20 @@
           "availability": "local ignored Evidence; not bundled in this summary"
         }
       }
+    },
+    "ciMatrixFollowupAffectedCohort": {
+      "status": "pass",
+      "tests": 492,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-matrix-cohort-final.log",
+        "sha256": "9e5156b795d380fe1d4e5dc615ff5a28725ce2abeb9f2cd272b8d53ed81d16f3",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "command": "node --test --test-skip-pattern='background guards reject frozen ticks' scripts/ci/browserMatrix.test.mjs scripts/ci/releaseWorkflow.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/lastStand*.test.mjs",
+      "scope": "Historical selected cohort. Its command excluded the test named 'background guards reject frozen ticks'; that test also contained the Linux serialization fixture that later failed in hosted CI. Zero skipped cases in the summary did not qualify that excluded branch. The separate Windows native timeout also remains unqualified."
     }
-  }
+  },
+  "stillPendingScope": "Outstanding at this recorded snapshot. PR #547 live checks provide the current exact-head CI state; native/device/audio/endurance and owner acceptance require their separately scoped evidence."
 }
