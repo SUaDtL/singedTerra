@@ -1526,7 +1526,7 @@ test('background guards reject duplicate terminal staging and manual Claim award
 async function assertNativeAudioBoundaries() {
   const begin=callerSource.indexOf('    const noReplay=async('),end=callerSource.indexOf('    const saveAudio=',begin);
   assert.ok(begin>0 && end>begin,'Actual maintained away/noReplay caller required');
-  const run=new Function('native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
+  const run=new Function('process','native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
     'energy','validateNoReplayAudio','validateAwayAudioReturn','reference','activateOwnedNativeWindow',
     'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind','callbackRecords',
     callerSource.slice(begin,end)+'return away(kind,6000);');
@@ -1602,7 +1602,9 @@ async function assertNativeAudioBoundaries() {
     const energy=async(a,b)=>{const selected=samples.filter(s=>a<=s.t && s.t<=b);windows.push([a,b]);
       return {samples:selected.length,maximum_rms:Math.max(...selected.map(s=>s.rms)),mean_rms:0};};
     let error;
-    try {await run(native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
+    // Inert Windows capability fixture, independent of the test runner's host.
+    // The real caller's non-Windows refusal is exercised separately below.
+    try {await run({platform:'win32'},native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
       report,'explicit-inert-output',trace,cues,states,encounters,identity.load,energy,journey.validateNoReplayAudio,
       journey.validateAwayAudioReturn,()=>oracle,async()=>{},async()=>{assert.ok(focused && !hidden);},async()=>{},
       async({other,session})=>{await other?.close();await session?.detach();},kind,callbackRecords);}
@@ -1631,7 +1633,7 @@ async function assertNativeAudioTerminalReturns() {
   assert.ok(begin>0 && end>begin && selectorBegin>0 && selectorEnd>selectorBegin,'Actual maintained away/noReplay and selector required');
   const selector=new Function('assert','validateModelObservation',callerSource.slice(selectorBegin,selectorEnd)
     .replace(/^export /,'')+'return validateAwayAudioReturn;')(assert,journey.validateModelObservation);
-  const run=new Function('native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
+  const run=new Function('process','native','page','observation','check','mark','report','output','trace','cues','states','encounters','load',
     'energy','validateNoReplayAudio','validateAwayAudioReturn','reference','activateOwnedNativeWindow',
     'ensureOwnedNativeForeground','retainAwayFailure','cleanupAwayAuxiliary','kind','callbackRecords',
     callerSource.slice(begin,end)+'return away(kind,6000);');
@@ -1715,7 +1717,7 @@ async function assertNativeAudioTerminalReturns() {
       return {samples:selected.length,maximum_rms:Math.max(...selected.map(s=>s.rms)),mean_rms:0};
     };
     let error;
-    try {await run(native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
+    try {await run({platform:'win32'},native,page,async()=>before,(ok,name)=>assert.ok(ok,name),async()=>{marks++;return marks===1?(time=1250):recovered;},
       report,'explicit-inert-output',trace,cues,states,encounters,identity.load,energy,journey.validateNoReplayAudio,
       selector,()=>oracle,async()=>{},async()=>{assert.ok(focused && !hidden);},async()=>{},
       async({other,session})=>{await other?.close();await session?.detach();},kind,callbackRecords);}
@@ -1732,6 +1734,24 @@ async function assertNativeAudioTerminalReturns() {
     fixture:'honest inert current-document terminal records and actual source-bound model; no gameplay or rendered-audio qualification'}));
   assert.equal(failures.length,0,'Actual away/noReplay must admit only source-supported fresh foreground terminal cues');
 }
+
+test('native audio caller refuses unsupported blur hosts before creating auxiliary windows', async () => {
+  const begin=callerSource.indexOf('    const away=async(',callerSource.indexOf('export async function runLastStandJourney('));
+  const end=callerSource.indexOf('    const saveAudio=',begin);
+  assert.ok(begin>0 && end>begin,'Actual maintained native away caller required');
+  const run=new Function('process','native','page','observation','check','trace','ensureOwnedNativeForeground',
+    callerSource.slice(begin,end)+'return away("blur",6000);');
+  for(const platform of ['linux','darwin']) {
+    let auxiliaryCalls=0,nativeGateCalls=0;
+    const native={browser:{newBrowserCDPSession:async()=>{auxiliaryCalls++;}},
+      context:{newPage:async()=>{auxiliaryCalls++;},waitForEvent:async()=>{auxiliaryCalls++;}}};
+    await assert.rejects(run({platform},native,{bringToFront:async()=>{},waitForFunction:async()=>{}},
+      async()=>({}),(ok,message)=>assert.ok(ok,message),[],async()=>{nativeGateCalls++;}),
+      /Real visible window-blur capability is required/);
+    assert.equal(auxiliaryCalls,0,'Unsupported host cannot create native-away auxiliary state');
+    assert.equal(nativeGateCalls,0,'Unsupported host cannot claim native foreground admission');
+  }
+});
 
 test('background guards reject replay cues and empty rendered audio evidence', async () => {
   await assertCurrentDeploymentHitSelection();
