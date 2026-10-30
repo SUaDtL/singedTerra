@@ -106,5 +106,5 @@ class PreferencesTests(unittest.TestCase):
     def test_fault_external_record_overwrite_is_detected(self):
         self.assert_fault_detected("LastStandPreferences.cs",
             "basisKnown ? observed != basis : observed != null",
-            "basisKnown ? false : observed != null",
+            "basisKnown ? observed != basis && observed == basis : observed != null",
             "cross_tab_conflict_does_not_overwrite", "external preference record was overwritten")

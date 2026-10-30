@@ -81,7 +81,7 @@ class SelectionTests(unittest.TestCase):
 
     def test_negative_control_hidden_tiers_are_detected(self):
         self.assert_fault_detected("if (firstLockedPreview && !option.Unlocked) previewBoundary = true;",
-                                   "if (firstLockedPreview && option.Unlocked && false) previewBoundary = true;",
+                                   "if (firstLockedPreview && !option.Unlocked) previewBoundary = false;",
                                    "locked_preview", "visibility stops after first locked preview")
 
     def test_negative_control_locked_commit_is_detected(self):

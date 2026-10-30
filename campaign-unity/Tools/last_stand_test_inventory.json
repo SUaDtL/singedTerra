@@ -589,6 +589,8 @@
       "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
       "cases": [
         "QualificationFixtureTests.test_bound_sources_relative_paths_and_exact_saved_bytes",
+        "QualificationFixtureTests.test_default_generation_honors_explicit_toolchain",
+        "QualificationFixtureTests.test_explicit_editor_is_not_replaced_by_discovery",
         "QualificationFixtureTests.test_lab_funded_active_and_queue_near_actual_completion",
         "QualificationFixtureTests.test_mature_ranks_funding_and_deployment_seed"
       ]

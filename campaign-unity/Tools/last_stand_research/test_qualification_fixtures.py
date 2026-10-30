@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from generate_qualification_fixtures import generate, write, REPO
 
 
@@ -12,6 +13,18 @@ class QualificationFixtureTests(unittest.TestCase):
     def setUpClass(cls):
         cls.utc = 1792800000000
         cls.report = generate(utc_ms=cls.utc)
+
+    def test_default_generation_honors_explicit_toolchain(self):
+        with tempfile.TemporaryDirectory(prefix="st-missing-tool-") as directory:
+            missing = str(Path(directory) / "unavailable-mono")
+            with patch.dict("os.environ", {"ST_CSHARP_MONO": missing}):
+                with self.assertRaisesRegex(RuntimeError, "C# tool is unavailable"):
+                    generate(utc_ms=self.utc)
+
+    def test_explicit_editor_is_not_replaced_by_discovery(self):
+        with tempfile.TemporaryDirectory(prefix="st-missing-editor-") as directory:
+            with self.assertRaisesRegex(RuntimeError, "C# tool is unavailable"):
+                generate(editor=Path(directory), utc_ms=self.utc)
 
     def test_mature_ranks_funding_and_deployment_seed(self):
         case = next(item for item in self.report["cases"] if item["id"] == "mature-5x")

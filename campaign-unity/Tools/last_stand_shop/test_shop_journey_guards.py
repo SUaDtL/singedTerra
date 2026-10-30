@@ -1316,14 +1316,18 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         """Exercise actual selection/mkdir code; intercept before any write."""
         import ast
         import hashlib
+        import tempfile
         from unittest.mock import patch
 
         worktree = TOOLS.parents[1]
-        closed = Path(r'C:/Users/brenn/codearbiter-review-integration-20261006/mechanics-shop-feature-20261009/t21-evidence/observer-failure-fix').resolve()
+        workspace = tempfile.TemporaryDirectory(prefix='st-shop-output-policy-')
+        self.addCleanup(workspace.cleanup)
+        closed = Path(workspace.name).resolve() / 'closed-observer-input'
         followup = closed.parent / 'observer-proof-followup'
         artifact_guard = Path(__file__).with_name('test_shop_artifact_guards.py').resolve()
         candidate = Path(os.environ.get('ST_SHOP_OBSERVER_GUARD_SOURCE', str(artifact_guard))).resolve()
-        self.assertTrue(candidate == artifact_guard or candidate.is_relative_to(followup),
+        retained_followup = Path(r'C:/Users/brenn/codearbiter-review-integration-20261006/mechanics-shop-feature-20261009/t21-evidence/observer-proof-followup').resolve()
+        self.assertTrue(candidate == artifact_guard or candidate.is_relative_to(retained_followup),
                         'Only actual guard or a task-owned private guard copy is inspected')
         text = candidate.read_text(encoding='utf8')
         tree = ast.parse(text)
@@ -1334,7 +1338,22 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         stop = next(i for i, node in enumerate(method.body)
                     if isinstance(node, ast.Assign)
                     and any(isinstance(t, ast.Name) and t.id == 'script' for t in node.targets))
-        prefix = ast.Module(body=method.body[:stop], type_ignores=[])
+        setup = method.body[:stop]
+        fixture_index = next(i for i, node in enumerate(setup) if isinstance(node, ast.Assign)
+                             and any(isinstance(t, ast.Name) and t.id == 'fixture' for t in node.targets))
+        self.assertEqual(ast.unparse(setup[fixture_index + 1]),
+                         "self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), "
+                         "'fbcff4394f756eb91c9f63a5189c6005512d4d84e42b92303e990f3f2b3a6123')",
+                         'Only the separate historical receipt check may be excluded from this policy probe')
+        # This portable probe covers output admission, not historical receipt bytes.
+        # Preserve every policy statement and the actual mkdir; substitute only the
+        # inert evidence location and omit its separate receipt read/digest assertion.
+        setup = setup[:fixture_index] + setup[fixture_index + 2:]
+        evidence_nodes = [node for node in setup if isinstance(node, ast.Assign)
+                          and any(isinstance(t, ast.Name) and t.id == 'evidence' for t in node.targets)]
+        self.assertEqual(len(evidence_nodes), 1, 'Unique retained evidence location')
+        evidence_nodes[0].value = ast.Name(id='portable_evidence', ctx=ast.Load())
+        prefix = ast.Module(body=setup, type_ignores=[])
         actual = compile(ast.fix_missing_locations(prefix), str(candidate), 'exec')
         print('OUTPUT_SETUP_PASS actual observer setup/selection/mkdir captured; source=' +
               hashlib.sha256(candidate.read_bytes()).hexdigest(), flush=True)
@@ -1359,7 +1378,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
                         lambda path: path.resolve() == closed_marker if closed_marker is not None
                         and path.name == 'SEALED.json' else actual_is_file(path)):
                     try:
-                        exec(actual, dict(globals(), self=self))
+                        exec(actual, dict(globals(), self=self, portable_evidence=closed))
                     except InterceptedCreation:
                         pass
                     except AssertionError as error:

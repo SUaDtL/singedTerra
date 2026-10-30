@@ -47,7 +47,7 @@ internal static class TierProgressionChecks
 
     static LastStandProgression StrongProfile(TierStorage storage)
     {
-        var model=LastStandProgression.Load(storage);
+        LastStandProgression.Load(storage);
         foreach(var track in LastStandUpgradeCatalog.Tracks)
             storage.Value=storage.Value.Replace("\""+track.Key+"\":0","\""+track.Key+"\":"+track.PermanentCap);
         return LastStandProgression.Load(storage);
