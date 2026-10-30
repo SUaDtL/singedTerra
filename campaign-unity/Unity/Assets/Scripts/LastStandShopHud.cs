@@ -111,6 +111,12 @@ namespace SingedTerra.LastStand
             return (loop.Phase == "garage" || loop.Phase == "workshop") && loop.Session?.Model == null &&
                 progress != null && progress.PendingDefeat == null;
         }
+        public void OpenPermanentFromPlanner()
+        {
+            if(loop.MenuOpen||!CanOpenPermanentShop())return;
+            if(shopOpen){shopMode=LastStandShopMode.Permanent;SetShopScrollOffset(0);refresh();return;}
+            OpenShop();
+        }
         void OpenShop()
         {
             if (shopOpen) { CloseShop(); return; }

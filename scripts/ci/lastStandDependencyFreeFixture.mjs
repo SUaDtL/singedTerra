@@ -10,7 +10,8 @@ import {fileURLToPath} from 'node:url';
 const sources=['scripts/last-stand-wave-milestones.mjs','scripts/last-stand-wave-endurance.mjs',
   'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandMatrix.mjs','e2e/helpers/lastStandTierJourney.mjs',
   'e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs','scripts/assets/verify-last-stand-source.mjs',
-  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 const repository=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 
 export function assertDependencyFreeWaveGuards(program){

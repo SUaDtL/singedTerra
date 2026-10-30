@@ -6,23 +6,25 @@ import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
 import {readShopControlObservation} from '../../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
+import {lastStandObservedControls} from '../../e2e/helpers/lastStandBrowserActor.mjs';
 import {admitResearchFixtures,researchJourneyInputHashes} from '../last-stand-research-journey.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const clone=value=>structuredClone(value);
 const observationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v1.json',import.meta.url),'utf8'));
+const currentObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v2.json',import.meta.url),'utf8'));
 // Invented telemetry tests only the admission reader; it cannot qualify a UI.
-function observation(){
-  const groups=Object.fromEntries(observationContract.inventories.map(({field,names})=>[field,names]));
+function observation(contract=observationContract){
+  const groups=Object.fromEntries(contract.inventories.map(({field,names})=>[field,names]));
   return {phase:'garage',coordinates:'top-left',selection:'',width:1366,height:664,pixelRatio:1,scrollOffset:0,maximumScrollOffset:0,
     settingsScrollOffset:0,settingsMaximumScrollOffset:0,
     ...Object.fromEntries(Object.entries(groups).map(([key,names])=>[key,names.map(name=>({name,label:name,accessibleLabel:name,mode:key,trackKey:'',x:0,y:0,width:44,height:44,active:false,interactable:false}))])),
-    graphics:[],researchScrollOffset:0,researchMaximumScrollOffset:0,historyScrollOffset:0,historyMaximumScrollOffset:0};
+    graphics:[],...Object.fromEntries(contract.tail.map(key=>[key,0]))};
 }
 const raw=value=>'ST_LS_HUD_LAYOUT '+JSON.stringify(value);
 
-test('research journey binds its actual observation contract and detects changed bytes',t=>{
-  const contract='campaign-unity/Tools/contracts/last-stand-observation-v1.json';
+for(const version of [1,2])test('research journey binds observation v'+version+' and detects changed bytes',t=>{
+  const contract='campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json';
   const current=researchJourneyInputHashes();assert.ok(Object.hasOwn(current,contract));
   assert.equal(current[contract],sha(readFileSync(contract)));
   const root=mkdtempSync(join(tmpdir(),'st-research-source-hashes-'));t.after(()=>rmSync(root,{recursive:true}));
@@ -30,7 +32,7 @@ test('research journey binds its actual observation contract and detects changed
   const before=researchJourneyInputHashes(root);writeFileSync(join(root,contract),'changed contract');
   assert.notEqual(researchJourneyInputHashes(root)[contract],before[contract]);
 });
-test('current complete telemetry contains every unique owner including Lab/history/bulk and wave info',()=>{
+test('retained v1 complete telemetry contains every unique Lab/history/bulk and wave info owner',()=>{
   const result=readShopControlObservation(raw(observation()));
   assert.equal(result.researchControls.length,17);assert.equal(result.historyControls.length,2);
   assert.equal(result.shopControls.length,16);assert.equal(result.graphicsTruncated,false);
@@ -39,7 +41,7 @@ test('current complete telemetry contains every unique owner including Lab/histo
   assert.ok(result.controls.some(control=>control.name==='WaveInfo'));
   assert.ok(result.settingsControls.some(control=>control.name==='MenuWaveInfo'));
 });
-test('current telemetry refuses missing, duplicate, unknown, invalid and truncated data',()=>{
+test('retained v1 telemetry refuses missing, duplicate, unknown, invalid and truncated data',()=>{
   for(const mutate of [v=>delete v.researchControls,v=>v.researchControls.pop(),v=>v.researchControls[1].name=v.researchControls[0].name,
     v=>v.controls=v.controls.filter(control=>control.name!=='WaveInfo'),v=>v.settingsControls=v.settingsControls.filter(control=>control.name!=='MenuWaveInfo'),
     v=>v.shopControls[2].name='invented',v=>v.controls[0].width=-1,v=>v.historyScrollOffset=-1,
@@ -48,6 +50,53 @@ test('current telemetry refuses missing, duplicate, unknown, invalid and truncat
   }
   const text=raw(observation());assert.throws(()=>readShopControlObservation(text.slice(0,-20)));
   assert.throws(()=>readShopControlObservation(text.slice(0,8190)));
+});
+test('retained v1 and exact v2 observations remain distinct complete contracts',()=>{
+  const retained=readShopControlObservation(raw(observation()));
+  assert.equal(retained.historyControls.length,2);assert.equal(Object.hasOwn(retained,'plannerControls'),false);
+  const value=observation(currentObservationContract),result=readShopControlObservation(raw(value));
+  assert.equal(result.historyControls.length,9);assert.equal(result.plannerControls.length,16);
+  assert.ok(result.settingsControls.some(item=>item.name==='MenuPlanner'));
+  assert.equal(lastStandObservedControls(result).filter(item=>item.name==='PlannerPin').length,1);
+  for(const mutate of [v=>delete v.plannerControls,v=>delete v.plannerMaximumScrollOffset,
+    v=>v.plannerControls.pop(),v=>v.plannerControls.push({...v.plannerControls[0]}),
+    v=>v.historyControls.pop(),v=>v.historyControls[1].name=v.historyControls[0].name,
+    v=>v.plannerControls[0].width='44',v=>v.plannerControls[0].active=1,
+    v=>v.settingsControls=v.settingsControls.filter(item=>item.name!=='MenuPlanner'),
+    v=>v.unknown='extra',v=>v.plannerScrollOffset=-1,v=>v.plannerControls[0].unexpected=true]){
+    const bad=clone(value);mutate(bad);assert.throws(()=>readShopControlObservation(raw(bad)));
+  }
+  const packet=raw(value);
+  for(const duplicate of [packet.replace('"phase":"garage"','"phase":"garage","phase":"garage"'),
+    packet.replace('"width":44','"width":44,"width":44'),
+    packet.replace('"phase":"garage"','"phase":"garage","ph\\u0061se":"garage"')])
+    assert.throws(()=>readShopControlObservation(duplicate),/Duplicate/,'repeated JSON keys are not repaired by parsing');
+});
+
+function scrollingModalGeometry(owner){
+  const name=owner==='Planner'?'PlannerPin':'RunHistoryRunANext';
+  const field=owner==='Planner'?'plannerControls':'historyControls';
+  const clip={x:20,y:100,width:400,height:100};
+  const item={name,x:28,y:220,width:384,height:44,active:true,interactable:true};
+  const path=owner+'Modal/'+owner+'Panel/'+owner+'Viewport';
+  const graphics=[{path,kind:'LastStandConsoleSurface',active:true,hasClip:true,clip},
+    {...item,path:path+'/'+owner+'Content/'+name,kind:'LastStandConsoleSurface',hasClip:true,clip}];
+  const scroll=owner==='Planner'?'planner':'history';
+  return {layout:{width:800,height:600,controls:[],shopControls:[],settingsControls:[],researchControls:[],historyControls:[],plannerControls:[],
+    [field]:[item],[scroll+'ScrollOffset']:0,[scroll+'MaximumScrollOffset']:200,graphicsTruncated:false,raw:raw({graphics})},
+    graphics,canvas:{width:800,height:600},item,scroll};
+}
+for(const owner of ['Planner','RunHistory'])test(owner+' geometry proves own pane reach and refuses false clipping',()=>{
+  const value=scrollingModalGeometry(owner);assert.equal(tierJourneyControlGeometry(value.layout,value.canvas)[0].full,false);
+  value.item.y-=100;value.graphics[1].y-=100;value.layout[value.scroll+'ScrollOffset']=100;value.layout.raw=raw({graphics:value.graphics});
+  assert.equal(tierJourneyControlGeometry(value.layout,value.canvas)[0].full,true);
+  for(const mutate of [v=>v.graphics[1].path='Other/'+v.graphics[1].path,v=>v.graphics[1].clip={...v.graphics[1].clip,y:101},
+    v=>v.layout.settingsControls.push({active:true}),v=>v.layout.controls.push({active:false,interactable:true}),
+    v=>v.graphics.push(clone(v.graphics[0])),v=>v.layout[v.scroll+'MaximumScrollOffset']=20,
+    v=>v.item.height=120,v=>v.layout[v.scroll+'ScrollOffset']=-1]){
+    const bad=scrollingModalGeometry(owner);mutate(bad);bad.layout.raw=raw({graphics:bad.graphics});
+    assert.throws(()=>tierJourneyControlGeometry(bad.layout,bad.canvas));
+  }
 });
 function labGeometry(){
   const clip={x:20,y:100,width:400,height:400},name='ResearchStart0';

@@ -14,7 +14,8 @@ const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototyp
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const inputs=['scripts/last-stand-combat-depth-journey.mjs','e2e/helpers/lastStandBrowserActor.mjs',
   'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
-  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 const hashes=()=>Object.fromEntries(inputs.map(p=>[p,sha(readFileSync(resolve(root,p)))]));
 const fits=['repair','launcher','scattergun','mortar','railgun'];
 const environments=['sunlit-ash','iron-perimeter','cinder-basin','storm-foundry'];

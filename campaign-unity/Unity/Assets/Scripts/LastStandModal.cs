@@ -13,6 +13,7 @@ namespace SingedTerra.LastStand
         readonly LastStandUiPrimitives ui;
         readonly Sprite surface;
         float sx=1,sy=1;
+        bool statusInContent;
         public readonly RectTransform Shade,Panel;
         public readonly Text Title,Status;
         public readonly Button Close;
@@ -34,7 +35,12 @@ namespace SingedTerra.LastStand
         public Button Button(string name,string label,Transform parent,Action handler)
         {var button=ui.Button(name,label,parent,handler);Buttons.Add(button);return button;}
         public void Style(Button button,bool available,bool selected)=>LastStandUiPrimitives.Style(button,available,selected);
-        public LastStandScrollPane Pane(string name)=>new LastStandScrollPane(name,Panel,surface);
+        public LastStandScrollPane Pane(string name,bool scrollStatus=false)
+        {
+            var pane=new LastStandScrollPane(name,Panel,surface);
+            if(scrollStatus){Status.transform.SetParent(pane.Content,false);statusInContent=true;}
+            return pane;
+        }
         public void Place(Component item,float x,float y,float w,float h)=>Position((RectTransform)item.transform,x*sx,y*sy,w*sx,h*sy);
         public float Preferred(Text text,float width)=>ui.Preferred(text,width,sx,sy);
         public float Layout(float width,float height,float unitsX,float unitsY,float maxWidth)
@@ -43,7 +49,8 @@ namespace SingedTerra.LastStand
             Position(Shade,0,0,width*sx,height*sy);Position(Panel,(width-w)/2*sx,8*sy,w*sx,PanelHeight*sy);
             ui.ScaleText(sy);
             Place(Title,12,12,w-124,44);Place(Close,w-104,12,92,44);
-            float statusHeight=Preferred(Status,w-24)+8;Place(Status,12,64,w-24,statusHeight);HeaderBottom=64+statusHeight+8;
+            if(statusInContent)HeaderBottom=64;
+            else{float statusHeight=Preferred(Status,w-24)+8;Place(Status,12,64,w-24,statusHeight);HeaderBottom=64+statusHeight+8;}
             return w;
         }
     }

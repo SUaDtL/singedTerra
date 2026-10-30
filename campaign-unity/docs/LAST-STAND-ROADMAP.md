@@ -9,7 +9,25 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The initial in-repo visual scope was
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
-## Current candidate and release work — October 29, 2026
+## Progression planning and run intelligence — October 30, 2026
+
+The owner requested completion of applicable plans and another implemented sprint
+on the existing PR. The [new specification](../../.codearbiter/specs/last-stand-progression-intelligence.html)
+and [plan](../../.codearbiter/plans/last-stand-progression-intelligence.html) add a
+player-invoked Progression Planner to the floating Menu. Players can pin one fixed
+tier, fitting, Workshop-level or Research-rank goal, compare alternatives spending
+the same Salvage, and open the existing action surface. Pins are local settings;
+they neither spend currency nor reserve prices, change checkpoints or grant rewards.
+
+Run History now groups exact saved conditions and compares tiers within that group.
+A median requires three complete runs of at least five active minutes; incomplete,
+short and mixed-condition samples are disclosed instead of becoming an optimal-tier
+recommendation. Two-run comparisons show wave, time and repeatable-income deltas,
+with milestone income separate. Retained rules and the version-6 progression save
+remain unchanged. The [plan closure report](../../.codearbiter/reports/last-stand-plan-closure-2026-10-30.md)
+distinguishes completed implementation from outstanding player/device evidence.
+
+## Combat-depth candidate and release work — October 29, 2026
 
 The current implementation is the [combat-depth candidate](../../.codearbiter/plans/last-stand-combat-depth.html),
 building on the [architecture foundation](LAST-STAND-ARCHITECTURE.md), research/farming

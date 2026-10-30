@@ -30,6 +30,8 @@ from visual_review_checks import artifact_hashes, digest, pointer, require
 from visual_review_motion import MotionCapture
 
 OBSERVATION_CONTRACT = json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v1.json').read_text(encoding='utf8'))
+OBSERVATION_CONTRACTS = (OBSERVATION_CONTRACT,
+    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v2.json').read_text(encoding='utf8')))
 ROOT = Path(__file__).resolve().parents[1]
 EDITOR = Path('C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe')
 EVIDENCE = ROOT / 'Evidence' / 'last-stand-playable-loop' / 't03'
@@ -413,7 +415,8 @@ def verify_shop_presentation_states(report, directory):
                     'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
                     'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
                     'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
-                    'campaign-unity/Tools/contracts/last-stand-observation-v1.json')
+                    'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+                    'campaign-unity/Tools/contracts/last-stand-observation-v2.json')
     require(binding['input_files'] == {name: digest(ROOT.parent / name) for name in source_paths}, 'Stale presentation-state driver')
     served = dict(manifest['files'], **{'index.html': manifest['wrapperSha256'], 'asset-manifest.json': digest(manifest_path)})
     require(set(binding['served']) == set(served) and all(binding['served'][name]['sha256'] == value for name, value in served.items()),
@@ -606,7 +609,8 @@ def verify_shop_vertical(report):
                     'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
                     'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
                     'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
-                    'campaign-unity/Tools/contracts/last-stand-observation-v1.json')
+                    'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+                    'campaign-unity/Tools/contracts/last-stand-observation-v2.json')
     require(binding.get('input_files') == {name: digest(worktree / name) for name in source_paths},
             'Shop journey driver source changed')
     expected_served = dict(manifest['files'], **{'index.html': manifest['wrapperSha256'],
@@ -628,28 +632,39 @@ def verify_shop_vertical(report):
         payload = raw[len(tag):]
         boundary = payload.find(',"graphics":[')
         require(boundary > 0, 'Controls were not complete before graphics')
-        fields = json.loads(payload[:boundary] + '}')
-        headers = set(OBSERVATION_CONTRACT['header'])
-        tails = set(OBSERVATION_CONTRACT['tail'])
+        def unique_object(pairs):
+            result = {}
+            for key, value in pairs:
+                require(key not in result, 'Duplicate JSON key: ' + key)
+                result[key] = value
+            return result
+        complete = json.loads(payload, object_pairs_hook=unique_object)
+        require(isinstance(complete, dict), 'Expected diagnostic object')
+        contract = OBSERVATION_CONTRACTS[1 if 'plannerControls' in complete else 0]
+        fields = json.loads(payload[:boundary] + '}', object_pairs_hook=unique_object)
+        headers = set(contract['header'])
+        tails = set(contract['tail'])
         require(set(fields) - tails == headers and fields['coordinates'] == 'top-left'
                 and isinstance(fields['phase'], str) and isinstance(fields['selection'], str), 'Invalid controls header')
-        complete = json.loads(payload)
         require(set(complete) == headers | tails | {'graphics'} and isinstance(complete['graphics'], list), 'Unexpected diagnostic tail')
         fields.update({key: complete[key] for key in tails})
         require(all(type(fields[key]) in (int, float) and math.isfinite(fields[key]) and fields[key] >= 0
-                    for key in OBSERVATION_CONTRACT['numeric'])
+                    for key in contract['numeric'])
                 and min(fields['width'], fields['height'], fields['pixelRatio']) > 0, 'Invalid control dimensions')
-        expected = {group['field']: set(group['names']) for group in OBSERVATION_CONTRACT['inventories']}
+        expected = {group['field']: set(group['names']) for group in contract['inventories']}
+        all_names = set()
         for key, names in expected.items():
             values = fields[key]
             require(isinstance(values, list) and len(values) == len(names)
                     and {item['name'] for item in values} == names, 'Missing or repeated observed controls')
             for item in values:
-                require(set(item) == set(OBSERVATION_CONTRACT['controlStrings'] + OBSERVATION_CONTRACT['controlNumbers'] + OBSERVATION_CONTRACT['controlBooleans'])
-                        and all(isinstance(item[name], str) for name in OBSERVATION_CONTRACT['controlStrings'])
-                        and all(type(item[name]) in (int, float) and math.isfinite(item[name]) for name in OBSERVATION_CONTRACT['controlNumbers'])
+                require(item['name'] not in all_names, 'Control identity appears in one owner')
+                all_names.add(item['name'])
+                require(set(item) == set(contract['controlStrings'] + contract['controlNumbers'] + contract['controlBooleans'])
+                        and all(isinstance(item[name], str) for name in contract['controlStrings'])
+                        and all(type(item[name]) in (int, float) and math.isfinite(item[name]) for name in contract['controlNumbers'])
                         and min(item['width'], item['height']) >= 0
-                        and all(type(item[name]) is bool for name in OBSERVATION_CONTRACT['controlBooleans']), 'Malformed control field')
+                        and all(type(item[name]) is bool for name in contract['controlBooleans']), 'Malformed control field')
         return dict(fields, observationScope='complete-controls-only', graphicsTruncated=False, raw=raw)
 
     tags = {'ST_LS_SHOP_STATE ': 'shopStates', 'ST_LS_SHOP_PURCHASE ': 'purchases',
@@ -1225,7 +1240,8 @@ def verify_shop_recovery(report, require_native=False):
                     'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
              'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
              'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
-             'campaign-unity/Tools/contracts/last-stand-observation-v1.json')
+             'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+             'campaign-unity/Tools/contracts/last-stand-observation-v2.json')
     need(binding.get('input_files') == {name: digest(worktree / name) for name in paths}, 'Recovery source changed')
     served = dict(manifest['files'], **{'index.html': manifest['wrapperSha256'], 'asset-manifest.json': expected['manifest_sha256']})
     need(set(binding.get('served', {})) == set(served) and all(binding['served'][key].get('sha256') == value
@@ -1254,7 +1270,8 @@ def verify_shop_recovery(report, require_native=False):
             if key == 'controlsOnly':
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
-                expected_sets = {group['field']: set(group['names']) for group in OBSERVATION_CONTRACT['inventories']}
+                contract = OBSERVATION_CONTRACTS[1 if 'plannerControls' in value else 0]
+                expected_sets = {group['field']: set(group['names']) for group in contract['inventories']}
                 need(all(isinstance(value.get(key), list) and len(value[key]) == len(expected)
                     and {control['name'] for control in value[key]} == expected for key, expected in expected_sets.items()),
                     'Incomplete recovery controls')

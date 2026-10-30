@@ -33,6 +33,8 @@ DEPENDENCIES = {
     "LastStandPurchaseCoordinator.cs": ("LastStandProgression.cs", "LastStandShopState.cs", "LastStandUpgradeCatalog.cs", "Application/ILastStandPurchaseSession.cs"),
     "ILastStandPurchaseSession.cs": ("EncounterModel.cs", "LastStandShopState.cs"),
     "LastStandShopPresentation.cs": ("LastStandProgression.cs", "LastStandShopState.cs"),
+    "LastStandProgressionPlanner.cs": ("LastStandProgression.cs", "LastStandShopPresentation.cs", "LastStandResearchPresentation.cs", "LastStandSelection.cs", "LastStandTierCatalog.cs"),
+    "LastStandHistoryComparison.cs": ("LastStandRunHistory.cs",),
     "EncounterSession.cs": ("EncounterModel.cs", "LastStandRunClock.cs", "LastStandRunCheckpoint.cs", "Application/ILastStandPurchaseSession.cs"),
 }
 

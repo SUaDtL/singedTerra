@@ -36,7 +36,7 @@ class WebArtifactBindingTests(unittest.TestCase):
                 "normative_sha256": "b" * 64} for kind in ("SPEC", "PLAN")}
 
     def test_current_depth_and_retained_sprint_identities_are_metadata(self):
-        for scope in ("DEPTH", "ARCH", "RESEARCH", "WAVES", "LOOP"):
+        for scope in ("INTEL", "DEPTH", "ARCH", "RESEARCH", "WAVES", "LOOP"):
             with self.subTest(scope=scope), self.assertRaises(Admitted):
                 self.admission(self.pair(scope))
 

@@ -17,12 +17,13 @@ export function tierJourneyControlGeometry(layout, canvas) {
   const settingsControls = (layout.settingsControls ?? []).filter(item => item.active);
   const researchControls = (layout.researchControls ?? []).filter(item => item.active);
   const historyControls = (layout.historyControls ?? []).filter(item => item.active);
+  const plannerControls = (layout.plannerControls ?? []).filter(item => item.active);
   const settingsOpen = settingsControls.length > 0;
-  const researchOpen=researchControls.length>0,historyOpen=historyControls.length>0;
-  assert.ok(Number(settingsOpen)+Number(researchOpen)+Number(historyOpen)<=1,'Exactly one progression/settings modal owns input');
-  if (settingsOpen||researchOpen||historyOpen) assert.ok(backgroundControls.every(item => !item.interactable),
+  const researchOpen=researchControls.length>0,historyOpen=historyControls.length>0,plannerOpen=plannerControls.length>0;
+  assert.ok(Number(settingsOpen)+Number(researchOpen)+Number(historyOpen)+Number(plannerOpen)<=1,'Exactly one progression/settings modal owns input');
+  if (settingsOpen||researchOpen||historyOpen||plannerOpen) assert.ok(backgroundControls.every(item => !item.interactable),
     'Modal must disable every underlying control');
-  const controls = settingsOpen ? settingsControls : researchOpen?researchControls:historyOpen?historyControls:backgroundControls.filter(item => item.active);
+  const controls = settingsOpen ? settingsControls : researchOpen?researchControls:historyOpen?historyControls:plannerOpen?plannerControls:backgroundControls.filter(item => item.active);
   let graphics;
   const projected = controls.map(item => {
     assert.ok(item.width * canvas.width / layout.width >= 43.99 && item.height * canvas.height / layout.height >= 43.99,
@@ -30,11 +31,14 @@ export function tierJourneyControlGeometry(layout, canvas) {
     let clip = screen;
     const settingsContent = settingsOpen && !['SettingsClose','ChoicePrevious','ChoiceNext'].includes(item.name) && !/^SettingsTab[0-3]$/.test(item.name);
     const researchContent=researchOpen&&!['ResearchClose','ResearchFilter','ResearchBack'].includes(item.name);
-    if (settingsContent || researchContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
+    const historyContent=historyOpen&&Object.hasOwn(layout,'plannerControls')&&item.name!=='RunHistoryClose';
+    const plannerContent=plannerOpen&&item.name!=='PlannerClose';
+    if (settingsContent || researchContent || historyContent || plannerContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
       assert.equal(layout.graphicsTruncated, false, 'Complete graphics required to qualify clipped controls');
       graphics ??= JSON.parse(layout.raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
       const viewportName = settingsContent ? 'SettingsViewport' : researchContent?
-        item.name.startsWith('ResearchProject-')?'ResearchListViewport':'ResearchDetailViewport':'ShopViewport';
+        item.name.startsWith('ResearchProject-')?'ResearchListViewport':'ResearchDetailViewport':
+        historyContent?'RunHistoryViewport':plannerContent?'PlannerViewport':'ShopViewport';
       // The shared chamfered chrome is an Image subclass; decorative frames
       // and text are not the control's hit surface or its clipping owner.
       const surface = g => ['Image','LastStandConsoleSurface'].includes(g.kind) && g.active;
@@ -52,8 +56,10 @@ export function tierJourneyControlGeometry(layout, canvas) {
       assert.ok(inside(clip, screen) && clip.width > 0 && clip.height > 0, 'Clip lies inside the Canvas');
       for (const key of ['x', 'y', 'width', 'height'])
         assert.ok(Math.abs(item[key] - graphic[key]) < .5, 'Control and graphic bounds agree: ' + item.name);
-      const scrollOffset = settingsContent ? layout.settingsScrollOffset : researchContent?layout.researchScrollOffset:layout.scrollOffset;
-      const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : researchContent?layout.researchMaximumScrollOffset:layout.maximumScrollOffset;
+      const scrollOffset = settingsContent ? layout.settingsScrollOffset : researchContent?layout.researchScrollOffset:
+        historyContent?layout.historyScrollOffset:plannerContent?layout.plannerScrollOffset:layout.scrollOffset;
+      const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : researchContent?layout.researchMaximumScrollOffset:
+        historyContent?layout.historyMaximumScrollOffset:plannerContent?layout.plannerMaximumScrollOffset:layout.maximumScrollOffset;
       assert.ok(Number.isFinite(scrollOffset) && Number.isFinite(maximumScrollOffset) && maximumScrollOffset >= 0 &&
         scrollOffset >= 0 && scrollOffset <= maximumScrollOffset + .5, 'Finite bounded actual scroll range');
       assert.ok(item.x >= clip.x - .5 && item.x + item.width <= clip.x + clip.width + .5 && item.height <= clip.height + .5,

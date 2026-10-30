@@ -15,7 +15,8 @@ const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototyp
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const inputs=['scripts/last-stand-research-journey.mjs','e2e/helpers/lastStandJourney.mjs',
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandBrowserActor.mjs',
-  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 export function researchJourneyInputHashes(sourceRoot=root){return Object.fromEntries(inputs.map(path=>[path,sha(readFileSync(resolve(sourceRoot,path)))]));}
 const hashes=researchJourneyInputHashes;
 const tracks=['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'];

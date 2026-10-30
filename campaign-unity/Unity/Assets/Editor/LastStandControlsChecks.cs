@@ -123,6 +123,8 @@ public static class LastStandControlsChecks
             Check("test_idle_controls_restore_after_focus_and_visibility",IdleControlsRestoreAfterFocusAndVisibility);
             Check("test_display_owns_runtime_pipeline_clone",DisplayOwnsRuntimePipelineClone);
             Check("test_guidance_optout_and_audio_sample_admission",GuidanceOptoutAndAudioSampleAdmission);
+            Check("test_planner_navigation_preserves_progression_and_pause",PlannerNavigationPreservesProgressionAndPause);
+            Check("test_planning_panes_fit_compact_height",PlanningPanesFitCompactHeight);
         }
         finally
         {
@@ -130,6 +132,73 @@ public static class LastStandControlsChecks
             LastStandLoopController.PreferencesStorageFactory=preferencesFactory;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
             QualitySettings.renderPipeline=pipeline;Application.runInBackground=background;
+        }
+    }
+
+    static void PlannerNavigationPreservesProgressionAndPause()
+    {
+        var f=new Fixture();string gameplay=f.Game.Value;
+        f.Click("Menu");f.Click("MenuPlanner");
+        Require(f.Loop.MenuPage=="planner","menu routes to shared planner");
+        Require(!f.Button("MenuResume").IsActive(),"underlying menu is not an input owner");
+        string preferences=f.Preferences.Value;
+        f.Click("PlannerPin");
+        Require(f.Preferences.Value!=preferences&&f.Game.Value==gameplay,"pin writes preferences only");
+        f.Click("PlannerBudget");
+        Require(f.Button("PlannerWorkshopNext").IsActive()&&f.Button("PlannerResearchNext").IsActive(),"both budget alternatives have scalable selectors");
+        f.Click("PlannerResearchNext");f.Click("PlannerWorkshopNext");
+        Require(f.Game.Value==gameplay,"comparing alternatives cannot spend or advance progression");
+        f.Click("PlannerClose");Require(f.Loop.MenuPage=="","planner close uses menu lifecycle");
+        f.Click("Menu");f.Click("MenuHistory");
+        string historyRead=f.Game.Value;f.Click("RunHistoryView");f.Click("RunHistoryView");
+        Require(f.Game.Value==historyRead,"history comparison navigation only refreshes read-only views");
+        f.Click("RunHistoryClose");
+        f.Click("Deploy");f.Click("SpeedRate");
+        f.Click("Menu");f.Click("MenuHistory");
+        string historyText=f.Canvas.GetComponentsInChildren<Text>().Single(t=>t.name=="RunHistoryBody").text;
+        Require(historyText.Contains("Field Repair")&&!historyText.Contains("research-v1:")&&
+            !historyText.Contains(LastStandUpgradeCatalog.EconomyVersion),"history uses player-facing labels instead of serialized build identities");
+        f.Click("RunHistoryClose");
+        f.Click("Menu");f.Click("MenuPlanner");
+        Require(f.Loop.Session.ManualPaused&&f.Loop.Session.MenuPaused,"planner retains independent pause holds");
+        f.Click("PlannerClose");
+        Require(f.Loop.Session.ManualPaused&&!f.Loop.Session.MenuPaused,"closing planner releases only menu hold");
+    }
+
+    static void PlanningPanesFitCompactHeight()
+    {
+        foreach(var size in new[]{new Vector2Int(568,142),new Vector2Int(568,196),new Vector2Int(320,568),new Vector2Int(844,266)})
+        {
+            var f=new Fixture();var camera=f.Art.view;var texture=new RenderTexture(size.x,size.y,16);
+            try
+            {
+                camera.targetTexture=texture;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
+                f.Canvas.planeDistance=1;f.Canvas.GetComponent<CanvasScaler>().enabled=false;
+                f.Canvas.scaleFactor=Mathf.Sqrt((size.x/1280f)*(size.y/720f));UnityEngine.Canvas.ForceUpdateCanvases();
+                foreach(var page in new[]{"planner","history"})
+                {
+                    f.Loop.OpenMenu(page);
+                    // Match the established imported-scene geometry harness:
+                    // edit mode does not follow the repositioned garage camera.
+                    f.Canvas.renderMode=RenderMode.ScreenSpaceOverlay;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
+                    UnityEngine.Canvas.ForceUpdateCanvases();f.Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
+                    string prefix=page=="planner"?"Planner":"RunHistory";
+                    var rects=f.Canvas.GetComponentsInChildren<RectTransform>(true);
+                    var viewport=ScreenBounds(f,rects.Single(r=>r.name==prefix+"Viewport"));
+                    var panel=ScreenBounds(f,rects.Single(r=>r.name==prefix+"Panel"));
+                    Require(viewport.height>=43.9f&&viewport.yMin>=panel.yMin-.5f&&viewport.yMax<=panel.yMax+.5f,
+                        size+" "+page+" full44px scroll viewport remains inside panel; viewport="+viewport+" panel="+panel);
+                    foreach(var button in f.Canvas.GetComponentsInChildren<Button>().Where(b=>b.IsActive()&&b.name.StartsWith(prefix)))
+                    {
+                        var bounds=ScreenBounds(f,button.GetComponent<RectTransform>());
+                        Require(bounds.width>=43.9f&&bounds.height>=43.9f,size+" touch target "+button.name);
+                    }
+                    var keyboard=f.Canvas.GetComponentInChildren<LastStandHudKeyboard>(true);
+                    keyboard.NavigateKeyboard("scroll-end");keyboard.NavigateKeyboard("scroll-start");
+                    f.Loop.CloseMenu();
+                }
+            }
+            finally{camera.targetTexture=null;UnityEngine.Object.DestroyImmediate(texture);}
         }
     }
 
@@ -349,15 +418,18 @@ public static class LastStandControlsChecks
     static void SelectorEnvironmentPreflightPreservesSave()
     {
         var f=new Fixture(gameplay:EarnedSecondTierSave());string save=f.Game.Value;int writes=f.Game.Writes;
-        var review=f.Art.GetComponent<BattlefieldReview>();var iron=review.ironEnvironment;
-        review.ironEnvironment=null;
-        f.Loop.SelectTier(2);
+        var review=f.Art.GetComponent<BattlefieldReview>();
+        var binding=review.environmentBindings.Single(row=>row.environmentId=="iron-perimeter");var iron=binding.root;
+        // The current authored registry supersedes the two-environment fallback.
+        // Remove the actual selected binding, not an unused compatibility field.
+        binding.root=null;
+        try{f.Loop.SelectTier(2);}finally{binding.root=iron;}
         Require(f.Loop.Progression.SelectedTier==1&&f.Game.Value==save&&f.Game.Writes==writes&&f.Loop.EnvironmentId=="sunlit-ash",
             "controller environment preflight rejects missing content before saving a tier");
         var footer=f.Canvas.GetComponentsInChildren<Text>(true).Single(t=>t.name=="GarageSave");
         Require(footer.isActiveAndEnabled&&footer.text.Contains("Battlefield unavailable"),
             "failed environment preflight remains visible in the actual quiet garage footer");
-        review.ironEnvironment=iron;f.Loop.SelectTier(1);
+        f.Loop.SelectTier(1);
         Require(!footer.text.Contains("unavailable")&&footer.text.Contains("SALVAGE "+f.Loop.Progression.Wallet)&&f.Game.Value==save&&f.Game.Writes==writes,
             "successful current-tier retry clears the error without saving or reserving a run");
     }

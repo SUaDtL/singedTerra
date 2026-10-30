@@ -11,7 +11,8 @@ import {idleWaveFields} from './lastStandWaveSaveFixtures.mjs';
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
-  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 function firstImpactFixture(damage=20){
   const identity={load:3,timeOrigin:1000,scope:'healthy'};

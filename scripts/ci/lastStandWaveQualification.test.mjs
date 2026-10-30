@@ -21,7 +21,8 @@ const hash='a'.repeat(64),head='b'.repeat(40),clone=value=>structuredClone(value
 const profiles=waveOracleProfileKeys();
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
-  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 for(const path of controlInputPaths)test('source closure: wave producer binds actual '+path,()=>{
   const wave=readFileSync(new URL('../../e2e/helpers/lastStandWaveJourney.mjs',import.meta.url),'utf8');

@@ -16,14 +16,15 @@ from unity_check_runner import ROOT, PROJECT, run_checks
 
 class ObservationContractTests(unittest.TestCase):
     def test_actual_emitter_shared_contract_and_consumers(self):
-        contract_path = TOOLS / "contracts/last-stand-observation-v1.json"
+        contract_path = TOOLS / "contracts/last-stand-observation-v2.json"
         contract = json.loads(contract_path.read_text(encoding="utf8"))
+        retained = json.loads((TOOLS / "contracts/last-stand-observation-v1.json").read_text(encoding="utf8"))
         output = ROOT / "campaign-unity/Evidence/architecture-foundations" / ("observations-" + uuid.uuid4().hex + ".json")
         output.parent.mkdir(parents=True, exist_ok=True)
         previous = os.environ.get("ST_LS_OBSERVATION_OUTPUT")
         os.environ["ST_LS_OBSERVATION_OUTPUT"] = str(output)
         try:
-            code, log = run_checks("LastStandObservationContractChecks.Run", [contract_path, Path(__file__), TOOLS / "verify_last_stand_loop.py",
+            code, log = run_checks("LastStandObservationContractChecks.Run", [contract_path, TOOLS / "contracts/last-stand-observation-v1.json", Path(__file__), TOOLS / "verify_last_stand_loop.py",
                 ROOT / "e2e/helpers/lastStandJourney.mjs"])
         finally:
             if previous is None:
@@ -33,12 +34,12 @@ class ObservationContractTests(unittest.TestCase):
         self.assertEqual(code, 0, log[-10000:])
         self.assertIn("ST_LS_OBSERVATION_CONTRACT_PASS", log)
         packets = json.loads(output.read_text(encoding="utf8"))["packets"]
-        self.assertEqual(len(packets), 4)
+        self.assertEqual(len(packets), 5)
         # Execute the maintained parser body without starting its browser server.
         source = ast.parse((TOOLS / "verify_last_stand_loop.py").read_text(encoding="utf8"))
         owner = next(n for n in source.body if isinstance(n, ast.FunctionDef) and n.name == "verify_shop_vertical")
         functions = [n for n in owner.body if isinstance(n, ast.FunctionDef) and n.name in ("require", "read_controls")]
-        namespace = {"json": json, "math": math, "OBSERVATION_CONTRACT": contract}
+        namespace = {"json": json, "math": math, "OBSERVATION_CONTRACTS": (retained, contract)}
         exec(compile(ast.Module(body=functions, type_ignores=[]), "<maintained observation reader>", "exec"), namespace)
         for raw in packets:
             admitted = namespace["read_controls"](raw)

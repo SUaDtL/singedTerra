@@ -41,6 +41,7 @@ namespace SingedTerra.LastStand
         LastStandSettingsHud settings=>modals.Settings;
         LastStandResearchHud research=>modals.Research;
         LastStandRunHistoryHud history=>modals.History;
+        LastStandPlannerHud planner=>modals.Planner;
         bool CanOpenRunShop()=>shop.CanOpenRunShop();
         bool CanOpenPermanentShop()=>shop.CanOpenPermanentShop();
         static float PreferredPixelRatio()=>LastStandHudDisplay.PreferredPixelRatio();
@@ -176,8 +177,9 @@ namespace SingedTerra.LastStand
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;
-            public Control[] controls,shopControls,settingsControls,researchControls,historyControls; public GraphicObservation[] graphics;
+            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls; public GraphicObservation[] graphics;
             public float researchScrollOffset,researchMaximumScrollOffset,historyScrollOffset,historyMaximumScrollOffset;
+            public float plannerScrollOffset,plannerMaximumScrollOffset;
         }
         string NodePath(Transform node)
         {
@@ -202,11 +204,30 @@ namespace SingedTerra.LastStand
                 controls[i] = new Control { name = button.name, label = label, accessibleLabel = button == shopClose ? "Close" : button==menu ? "Menu" :
                     button==tierPrevious?"Previous tier":button==tierNext?"Next tier":button==fittingPrevious?"Previous fitting":button==fittingNext?"Next fitting":
                     button==shopQuantity?"Purchase quantity "+loop.ShopQuantity+". Cycle 1, 10, 100 or Max":
-                    button==waveInfo?"Current wave enemy stats. "+label:label,
+                    button==waveInfo?"Current wave enemy stats. "+label:PlanningControlLabel(button.name,label),
                     mode = mode, trackKey = track, x = bounds.x, y = bounds.y, width = bounds.width, height = bounds.height,
                     active = button.gameObject.activeInHierarchy, interactable = button.IsInteractable() };
             }
             return controls;
+        }
+        static string PlanningControlLabel(string name,string fallback)
+        {
+            switch(name)
+            {
+                case "PlannerPrevious":return "Previous progression goal";
+                case "PlannerNext":return "Next progression goal";
+                case "PlannerWorkshopPrevious":return "Previous Workshop alternative";
+                case "PlannerWorkshopNext":return "Next Workshop alternative";
+                case "PlannerResearchPrevious":return "Previous Research alternative";
+                case "PlannerResearchNext":return "Next Research alternative";
+                case "RunHistoryConditionPrevious":return "Previous farming conditions";
+                case "RunHistoryConditionNext":return "Next farming conditions";
+                case "RunHistoryRunAPrevious":return "Previous run A";
+                case "RunHistoryRunANext":return "Next run A";
+                case "RunHistoryRunBPrevious":return "Previous run B";
+                case "RunHistoryRunBNext":return "Next run B";
+                default:return fallback;
+            }
         }
         // Read-only capture is shared by runtime emission and the Editor contract
         // check; it cannot issue a purchase, advance a clock, or write storage.
@@ -235,12 +256,14 @@ namespace SingedTerra.LastStand
                 pixelRatio = PreferredPixelRatio(), controls = ObserveControls(coreActions,"Core"), shopControls = ObserveControls(shopActions,shopMode.ToString()),
                 settingsControls = ObserveControls(settings.Buttons,"Settings"),
                 researchControls=ObserveControls(research.Buttons,"Research"),historyControls=ObserveControls(history.Buttons,"History"),
+                plannerControls=ObserveControls(planner.Buttons,"Planner"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
             layout.settingsScrollOffset = settings.ScrollOffset;
             layout.settingsMaximumScrollOffset = settings.MaximumScrollOffset;
             layout.researchScrollOffset=research.ScrollOffset;layout.researchMaximumScrollOffset=research.MaximumScrollOffset;
             layout.historyScrollOffset=history.ScrollOffset;layout.historyMaximumScrollOffset=history.MaximumScrollOffset;
+            layout.plannerScrollOffset=planner.ScrollOffset;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset;
             return layout;
         }
         public void ReportLayout()

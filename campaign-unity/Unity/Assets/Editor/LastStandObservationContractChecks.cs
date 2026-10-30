@@ -67,7 +67,7 @@ public static class LastStandObservationContractChecks
     }
     static void Check(object snapshot,Contract contract)
     {
-        Same(snapshot.GetType().GetFields().Select(f=>f.Name),contract.header.Concat(contract.tail).Concat(new[]{"graphics"}),"Emitter fields differ from v1 contract");
+        Same(snapshot.GetType().GetFields().Select(f=>f.Name),contract.header.Concat(contract.tail).Concat(new[]{"graphics"}),"Emitter fields differ from v2 contract");
         var all=new HashSet<string>();
         foreach(var inventory in contract.inventories)
         {
@@ -91,9 +91,9 @@ public static class LastStandObservationContractChecks
         {
             using(var scope=new LastStandTestPreferencesScope())
             {
-                string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v1.json"));
+                string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v2.json"));
                 var contract=JsonUtility.FromJson<Contract>(File.ReadAllText(path));
-                Require(contract.schema=="singedterra-last-stand-observation/v1"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
+                Require(contract.schema=="singedterra-last-stand-observation/v2"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
                 var storage=new Storage();LastStandLoopController.StorageFactory=()=>storage;
                 EditorSceneManager.OpenScene("Assets/Scenes/LastStandPrototype.unity",OpenSceneMode.Single);
                 var art=UnityEngine.Object.FindFirstObjectByType<TankPresentation>();
@@ -105,7 +105,7 @@ public static class LastStandObservationContractChecks
                 var observations=hud.GetType().GetField("observations",Private).GetValue(hud);
                 var capture=observations.GetType().GetMethod("CaptureLayoutSnapshot",Private);
                 var packets=new List<string>();
-                foreach(string page in new[]{"","settings","research","history"})
+                foreach(string page in new[]{"","settings","research","history","planner"})
                 {
                     if(page!="")loop.OpenMenu(page);else loop.CloseMenu();loop.RefreshControls();
                     var snapshot=capture.Invoke(observations,new object[]{null});Check(snapshot,contract);

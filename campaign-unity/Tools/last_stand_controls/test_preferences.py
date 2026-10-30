@@ -73,6 +73,9 @@ class PreferencesTests(unittest.TestCase):
     def test_store_isolates_gameplay_key(self):
         self.case("store_isolates_gameplay_key")
 
+    def test_pinned_goal_roundtrip_and_protection(self):
+        self.case("pinned_goal_roundtrip_and_protection")
+
     def assert_fault_detected(self, source_name, before, after, case, expected_assertion):
         """Mutate only a disposable copy; compile errors never establish detection."""
         source_path = SCRIPTS / source_name

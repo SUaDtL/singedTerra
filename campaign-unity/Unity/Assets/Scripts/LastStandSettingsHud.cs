@@ -55,6 +55,7 @@ namespace SingedTerra.LastStand
             Button("MenuWaveInfo","CURRENT WAVE ENEMIES",content,() => loop.OpenMenu("wave"));
             Button("MenuResearch","RESEARCH LAB",content,loop.OpenResearch);
             Button("MenuHistory","RUN HISTORY",content,loop.OpenHistory);
+            Button("MenuPlanner","PROGRESSION PLANNER",content,() => loop.OpenMenu("planner"));
             Button("MenuNewRun","NEW RUN",content,() => loop.RequestConfirmation("new-run"));
             Button("MenuAbandon","ABANDON RUN",content,() => loop.RequestConfirmation("abandon"));
             Button("MenuCampaigns","RETURN TO CAMPAIGNS",content,() => loop.RequestNavigation(false));
@@ -97,7 +98,7 @@ namespace SingedTerra.LastStand
         void ClampScroll()=>pane.Clamp();
         public void Refresh()
         {
-            bool visiblePage=loop.MenuOpen && loop.MenuPage!="research" && loop.MenuPage!="history";
+            bool visiblePage=loop.MenuOpen && loop.MenuPage!="research" && loop.MenuPage!="history" && loop.MenuPage!="planner";
             shade.gameObject.SetActive(visiblePage); if (!visiblePage) { previousPage=""; return; }
             if (previousPage != loop.MenuPage) { ResetScroll(); previousPage=loop.MenuPage; }
             foreach (var b in buttons) b.gameObject.SetActive(false);
@@ -127,6 +128,7 @@ namespace SingedTerra.LastStand
                     Show("MenuWaveInfo",enabled:loop.CanInspectWave);
                     Show("MenuResearch",loop.Progression.GetBestWave(1)>=25?"RESEARCH LAB":"RESEARCH LAB - T1 WAVE 25");
                     Show("MenuHistory");
+                    Show("MenuPlanner");
                     if(loop.Progression.HasCheckpoint)Show("MenuNewRun",enabled:canLeave);
                     Show("MenuAbandon",enabled:canLeave && loop.Progression.ActiveRunId != 0);
                     if(loop.Platform.CanNavigate)Show("MenuCampaigns",enabled:canLeave); Show("MenuAbout"); break;
@@ -201,7 +203,7 @@ namespace SingedTerra.LastStand
         { Show(name+"Minus",name.ToUpperInvariant()+" " + value + "%  -",value>0); Show(name+"Plus",name.ToUpperInvariant()+" " + value + "%  +",value<100); }
         public void Layout(float width, float height, float unitsX, float unitsY)
         {
-            if (!loop.MenuOpen || loop.MenuPage=="research" || loop.MenuPage=="history") return;
+            if (!loop.MenuOpen || loop.MenuPage=="research" || loop.MenuPage=="history" || loop.MenuPage=="planner") return;
             scaleX=unitsX; scaleY=unitsY;
             Place(shade,0,0,width*unitsX,height*unitsY);
             if(loop.SelectionOpen)

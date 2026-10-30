@@ -5,6 +5,63 @@ It is not a publication, store-submission or device-qualification receipt. The
 current Unity project declares player version `1.0`; the repository package is
 `0.0.0`. Neither is a newly approved public game version.
 
+## Progression planning candidate, October 30
+
+The [new sprint](../../.codearbiter/plans/last-stand-progression-intelligence.html)
+adds advisory goal pins, Workshop/Research budget alternatives and conservative
+run-history comparisons through existing shared owners. It changes neither the
+version-6 progression save nor a combat, economy or reward edition. The
+[plan closure report](../../.codearbiter/reports/last-stand-plan-closure-2026-10-30.md)
+records 69 completed implementation obligations while retaining unresolved player,
+device and owner-decision work.
+
+Local model checks pass: six planner, fourteen preferences, eighteen history,
+two architecture-boundary and two export-binding checks (overlapping the broader
+inventory). The complete portable run exercised 71 modules/476 cases: 70 modules
+passed and the crowded-wave module rejected the newly extended closure helper.
+The correction separately binds that helper, requires exactly the original 32
+measured C# inputs, and preserves all eight historical maps/constants. All nine
+affected checks pass, including new add/omit/duplicate/redirect and execution-drift
+controls. The current inventory contains 477 portable cases; this is not a fresh
+all-477 result.
+
+Actual imported Unity controls pass all 21 named cases. A packaged-browser check
+found that its page header left only 142px of game height in a 568x266 window.
+The new regression failed with the scroll viewport below the canvas; the shared
+modal now places Planner and History status text in scroll content, retaining the
+fixed Close control and full 44px targets. The unchanged regression passes at
+142px, 196px, portrait and landscape sizes. Independent model, UI and evidence
+reviews pass. The actual Unity observation emitter also passes both maintained
+readers, including rejection of an omitted control. The frozen v1 observation
+contract is unchanged; current planner/history controls use v2.
+
+WebGL release `Web-20261030T161006Z-530738` passes source/toolchain checks, official
+packaging, asset/source admission and the production site build. The new package
+is the sole local preview on port 4174. No new Windows or Android player build is
+claimed for this sprint. The final isolated, empty-profile browser journey passes
+11 checks with six screenshots and zero browser errors: pin/reload/clear, real
+Workshop/Lab budget descriptions, mouse/touch/keyboard navigation at desktop,
+portrait and 142px canvas height, existing Shop routing, provisional-history
+disclosure and unchanged checkpoint/currency/manual pause. All 13 recorded Tab
+actions retain both trusted key edges. The browser uses real input; it supplies
+no earned mature-farming or physical-device evidence. Player labels replace raw
+serialized build identities without changing comparison keys. Exact-head hosted
+CI remains separate; existing device/audio/performance/endurance gaps remain.
+
+The earlier Linux CI audio-fixture failure is corrected by giving its inert
+Windows-capability fixture an explicit platform. An additional actual-caller
+regression proves Linux/macOS refusal before auxiliary-window creation. Focused
+audio-boundary checks pass. The full local background run retains its separate
+Windows native-window snapshot timeout; fixture success does not qualify that
+native boundary. No timeout or native ownership check was relaxed.
+
+The old caption refusal and later snapshot timeout are distinct: the earlier host
+refused an obstructed caption without inserting input; the later setup activation
+succeeded before an observation-only snapshot timed out. A bounded read-only phase
+probe completed in 1.44 seconds but did not reproduce the owned-Chrome boundary.
+The responsible helper bodies are unchanged. No source defect is asserted from
+that unresolved timeout, and no native qualification is inferred from the probe.
+
 Current follow-up, October 28: CI run `40625861839` at `c6b32cde` completed
 with failed Last Stand lifecycle checks; CodeQL passed. The retained shard 3
 trace reaches its deferred terminal result, then the idle-result validator

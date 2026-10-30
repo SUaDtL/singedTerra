@@ -98,6 +98,10 @@ BINDINGS = {
 # uses the current helper, bound separately, while all 34 model/policy/closure
 # inputs must still match the selected historical capture.
 EXECUTION_HELPER = "Tools/last_stand_test_runtime.py"
+SOURCE_CLOSURE_HELPER = "Tools/last_stand_source_closure.py"
+# Current helper adds Planner/HistoryComparison entries outside this measurement.
+# This separate binding never replaces either historical capture's input map.
+CURRENT_SOURCE_CLOSURE_LF_SHA = "fcff111c523846ae63ed272101cf5e6cc4f1441c7a6322415187db237eb0d099"
 CROWDED_REFERENCES = {
     "baseline": ("crowded-wave-baseline-report.json", "c9618825f2461fdc4e761d00082b3425f1e202a16da9325462a07acc129acb52"),
     "calibrated": ("crowded-wave-calibrated-report.json", "8a92fc61adca7f5af7c89f4f77c6973c338fb93c5247c856bf1c09ea57606889"),
@@ -116,11 +120,12 @@ def instrument(source):
     return source.replace(ANCHOR, INSERT).replace("public static int Main(string[] args)", "public static int CanonicalMain(string[] args)")
 
 
-def compile_observer(folder):
+def compile_observer(folder, canonical_sources=None):
     canonical = HERE / "CombatBalanceMeasurements.cs"
     generated = folder / "CombatBalanceMeasurements.observed.cs"
     generated.write_text(instrument(canonical.read_text()), encoding="utf-8", newline="\n")
-    paths = [generated if p == canonical else p for p in sources()] + [HERE / "CrowdedWaveMeasurements.cs"]
+    selected = sources() if canonical_sources is None else canonical_sources
+    paths = [generated if p == canonical else p for p in selected] + [HERE / "CrowdedWaveMeasurements.cs"]
     exe = folder / "CrowdedWaves.exe"
     return exe, compile_csharp(exe, paths, warnings_as_errors=True), generated
 
@@ -139,9 +144,21 @@ def admit_canonical(data, project=PROJECT, archive=None, binding_name="calibrate
         raise ValueError("Canonical input closure changed")
     for rel, digest in binding["inputs"].items():
         source = project / rel
-        if not source.is_file() or rel != EXECUTION_HELPER and hashlib.sha256(source.read_bytes().replace(b"\r\n", b"\n")).hexdigest() != digest:
+        admitted = {digest, CURRENT_SOURCE_CLOSURE_LF_SHA} if rel == SOURCE_CLOSURE_HELPER else {digest}
+        if not source.is_file() or rel != EXECUTION_HELPER and hashlib.sha256(source.read_bytes().replace(b"\r\n", b"\n")).hexdigest() not in admitted:
             raise ValueError("Canonical source changed: " + rel)
     return canonical
+
+
+def admit_source_closure(paths, binding_name="calibrated", project=PROJECT):
+    """A changed helper may not add, omit, duplicate or redirect measured sources."""
+    expected = {rel for rel in BINDINGS[binding_name]["inputs"] if rel.endswith(".cs")}
+    try:
+        actual = [path.resolve().relative_to(project.resolve()).as_posix() for path in paths]
+    except ValueError:
+        raise ValueError("Current measurement source closure differs from frozen inputs") from None
+    if len(actual) != len(expected) or set(actual) != expected:
+        raise ValueError("Current measurement source closure differs from frozen inputs")
 
 
 def crowded_reference(binding_name, project=PROJECT):
@@ -244,12 +261,14 @@ def measure(destination, binding_name="calibrated"):
     canonical = admit_canonical(data, archive=ARCHIVE if binding_name == "baseline" else None, binding_name=binding_name)
     parity_path, parity_data, parity_reference = crowded_reference(binding_name)
     seed = next(c["seed"] for c in canonical["unlockCohorts"] if c["trigger"] == "final-earned")
-    paths = sources() + [HERE / "CrowdedWaveMeasurements.cs", Path(__file__), HERE / "test_crowded_waves.py", HERE / "measure_combat_balance.py", TOOLS / "last_stand_source_closure.py", TOOLS / "last_stand_test_runtime.py"]
+    canonical_sources = sources()
+    admit_source_closure(canonical_sources, binding_name)
+    paths = canonical_sources + [HERE / "CrowdedWaveMeasurements.cs", Path(__file__), HERE / "test_crowded_waves.py", HERE / "measure_combat_balance.py", TOOLS / "last_stand_source_closure.py", TOOLS / "last_stand_test_runtime.py"]
     before = hashes(paths)
     tools = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in (CSC, MONO)}
     with tempfile.TemporaryDirectory(prefix="st-crowded-waves-") as temp:
         folder = Path(temp)
-        exe, build, generated = compile_observer(folder)
+        exe, build, generated = compile_observer(folder, canonical_sources)
         profile = folder / "earned-profile.json"
         profile.write_text(seed["profileJson"], encoding="utf-8", newline="")
         args = [profile, seed["calendarMilliseconds"], seed["permanentSpent"], seed["researchSpent"], seed["cumulativeEarnedSalvage"]]
@@ -273,9 +292,13 @@ def measure(destination, binding_name="calibrated"):
                   canonicalSourceHistoricalRawSha256=canonical["sourceSha256"], canonicalSourceLfSha256=binding["inputs"],
                   executionHelperSource={"path": EXECUTION_HELPER, "historicalLfSha256": binding["inputs"][EXECUTION_HELPER],
                     "observedRawSha256": before[EXECUTION_HELPER], "observedLfSha256": hashlib.sha256((PROJECT / EXECUTION_HELPER).read_bytes().replace(b"\r\n", b"\n")).hexdigest()},
+                  executionSourceClosure={"path": SOURCE_CLOSURE_HELPER, "historicalLfSha256": binding["inputs"][SOURCE_CLOSURE_HELPER],
+                    "admittedCurrentLfSha256": CURRENT_SOURCE_CLOSURE_LF_SHA, "observedRawSha256": before[SOURCE_CLOSURE_HELPER],
+                    "observedLfSha256": hashlib.sha256((PROJECT / SOURCE_CLOSURE_HELPER).read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
+                    "measuredPaths": sorted(path.relative_to(PROJECT).as_posix() for path in canonical_sources)},
                   crowdedParityReferenceObservedRawSha256=hashlib.sha256(parity_data).hexdigest(),
                   crowdedParityReferenceLfSha256=CROWDED_REFERENCES[binding_name][1],
-                  sourceAdmission="Historical report and all35 capture identities remain unchanged. All34 model, measurement policy and closure inputs retain their frozen LF pins; the current execution helper is separately bound before/after with actual tool binaries and argv. Fresh complete crowded outcomes must exactly equal the immutable crowded reference.",
+                  sourceAdmission="Historical report and all35 capture identities remain unchanged. All33 model and measurement policy inputs retain their frozen LF pins. The closure helper accepts its historical or separately reviewed current pin and must select exactly the same32 C# paths. Both current helpers are separately bound before/after with actual tool binaries and argv. Fresh complete crowded outcomes must exactly equal the immutable crowded reference.",
                   generatedHarnessSha256=hashlib.sha256(generated_bytes).hexdigest(), generatedHarnessPath=str(retained), compileArgv=list(build.argv),
                   executionSeconds=elapsed, command=[sys.executable, *sys.orig_argv[1:]], cwd=str(Path.cwd()),
                   qualification="Bounded actual production-model observation; no coefficient change or live player/performance claim.",

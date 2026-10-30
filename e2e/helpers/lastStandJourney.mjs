@@ -1,5 +1,5 @@
 // Versioned diagnostics contract; player actions and state remain in production owners.
-const OBSERVATION_CONTRACT=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v1.json',import.meta.url),'utf8'));
+const OBSERVATION_CONTRACTS=[1,2].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
 const SHOP_RUNTIME_PROBE = `(() => {
@@ -18,7 +18,8 @@ const SHOP_PLAYER_INPUTS = ['e2e/helpers/lastStandJourney.mjs','scripts/last-sta
   'campaign-unity/Tools/last_stand_shop/test_shop_delivery.py',
   'campaign-unity/Tools/last_stand_shop/test_shop_journey_guards.py',
   'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
-  'campaign-unity/Tools/contracts/last-stand-observation-v1.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
 // presentation matrix. Preserve every value, streaming JSON in bounded batches.
@@ -48,33 +49,50 @@ export function writeShopPresentationJson(path,value){
 // Admit the complete current controls and scroll fields without repairing a
 // truncated Unity log. Geometry qualification additionally checks raw graphics.
 export function readShopControlObservation(raw) {
-  const tag=OBSERVATION_CONTRACT.tag;
+  const tag=OBSERVATION_CONTRACTS[0].tag;
   assert.ok(typeof raw==='string' && raw.startsWith(tag),'Expected actual HUD control emission');
   const payload=raw.slice(tag.length),boundary=payload.indexOf(',"graphics":[');
   assert.ok(boundary>0,'Complete controls must precede the graphics array');
+  const complete=JSON.parse(payload);
+  // JSON.parse alone silently keeps the last repeated key. Refuse duplicates
+  // before projecting evidence, including escaped spellings of the same key.
+  const objects=[];
+  for(let i=0;i<payload.length;i++){
+    const c=payload[i];
+    if(c==='{'||c==='[')objects.push(c==='{'?new Set():null);
+    else if(c==='}'||c===']')objects.pop();
+    else if(c==='"'){
+      const start=i;for(i++;i<payload.length;i++){if(payload[i]==='\\')i++;else if(payload[i]==='"')break;}
+      let after=i+1;while(/\s/.test(payload[after]??'')&&after<payload.length)after++;
+      if(payload[after]===':'){
+        const key=JSON.parse(payload.slice(start,i+1)),keys=objects.at(-1);
+        assert.ok(keys&&!keys.has(key),'Duplicate JSON key: '+key);keys.add(key);
+      }
+    }
+  }
+  const contract=OBSERVATION_CONTRACTS[Object.hasOwn(complete,'plannerControls')?1:0];
   const prefix=JSON.parse(payload.slice(0,boundary)+'}');
-  const {header,tail}=OBSERVATION_CONTRACT;
+  const {header,tail}=contract;
   assert.deepEqual(Object.keys(prefix).filter(key=>!tail.includes(key)).sort(),[...header].sort(),'Exact complete controls header');
   // Research/history offsets follow graphics in the Unity record. A truncated
   // packet cannot qualify those panes: keep the raw failure rather than infer it.
-  const complete=JSON.parse(payload);
   assert.deepEqual(Object.keys(complete).sort(),[...header,'graphics',...tail].sort(),'Exact current HUD observation');
   assert.ok(Array.isArray(complete.graphics),'Complete observed graphics required');
   const fields={...prefix,...Object.fromEntries(tail.map(key=>[key,complete[key]]))};
   assert.ok(fields.coordinates==='top-left' && typeof fields.phase==='string' && typeof fields.selection==='string');
-  for(const name of OBSERVATION_CONTRACT.numeric)
+  for(const name of contract.numeric)
     assert.ok(Number.isFinite(fields[name]) && fields[name]>=0,'Finite control coordinate: '+name);
   assert.ok(fields.width>0 && fields.height>0 && fields.pixelRatio>0);
-  const names=OBSERVATION_CONTRACT.inventories.map(({field,names})=>[field,names]);
+  const names=contract.inventories.map(({field,names})=>[field,names]);
   const allNames=new Set();
   for(const [key,expected]of names) {
     const items=fields[key];assert.ok(Array.isArray(items) && items.length===expected.length,'Complete '+key);
     assert.deepEqual(items.map(item=>item.name).sort(),[...expected].sort(),'Unique known '+key);
     for(const item of items) {
       assert.ok(!allNames.has(item.name),'Control identity appears in one owner');allNames.add(item.name);
-      assert.deepEqual(Object.keys(item).sort(),[...OBSERVATION_CONTRACT.controlStrings,...OBSERVATION_CONTRACT.controlNumbers,...OBSERVATION_CONTRACT.controlBooleans].sort());
-      for(const name of OBSERVATION_CONTRACT.controlStrings)assert.equal(typeof item[name],'string');
-      for(const name of OBSERVATION_CONTRACT.controlNumbers)assert.ok(Number.isFinite(item[name]),'Finite control bounds');
+      assert.deepEqual(Object.keys(item).sort(),[...contract.controlStrings,...contract.controlNumbers,...contract.controlBooleans].sort());
+      for(const name of contract.controlStrings)assert.equal(typeof item[name],'string');
+      for(const name of contract.controlNumbers)assert.ok(Number.isFinite(item[name]),'Finite control bounds');
       assert.ok(item.width>=0 && item.height>=0 && typeof item.active==='boolean' && typeof item.interactable==='boolean');
     }
   }
@@ -3391,6 +3409,7 @@ export function persistLastStandJourneyEvidence(report,observations,write,diagno
 export const LAST_STAND_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'e2e/helpers/lastStandControlReveal.mjs',
   'e2e/helpers/lastStandTierJourney.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
   'e2e/helpers/lastStandMatrix.mjs','scripts/ci/browserMatrix.mjs','scripts/ci/lastStandMatrixResult.mjs',

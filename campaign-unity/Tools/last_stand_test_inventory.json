@@ -118,6 +118,17 @@
       ]
     },
     {
+      "path": "last_stand_architecture/test_observation_versions.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Strict current and retained diagnostic schema admission against maintained readers; no player qualification",
+      "cases": [
+        "ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired",
+        "ObservationVersionTests.test_incomplete_extra_repeated_and_malformed_current_refused",
+        "ObservationVersionTests.test_retained_and_current_complete_shapes"
+      ]
+    },
+    {
       "path": "last_stand_architecture/test_test_runtime.py",
       "lane": "portable",
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
@@ -245,6 +256,7 @@
         "CrowdedWaveTests.test_actual_wave_metrics_and_readonly_state_parity",
         "CrowdedWaveTests.test_calibrated_and_historical_bindings_are_not_interchangeable",
         "CrowdedWaveTests.test_complete_crowded_parity_rejects_plausible_but_changed_role_measurements",
+        "CrowdedWaveTests.test_current_closure_cannot_add_omit_duplicate_or_redirect_measured_sources",
         "CrowdedWaveTests.test_current_execution_helper_does_not_relabel_frozen_capture",
         "CrowdedWaveTests.test_fresh_lf_checkout_without_archive_creates_owned_destinations",
         "CrowdedWaveTests.test_observer_rejects_changed_or_missing_canonical_seam",
@@ -428,6 +440,7 @@
         "PreferencesTests.test_fault_external_record_overwrite_is_detected",
         "PreferencesTests.test_fault_gameplay_key_write_is_detected",
         "PreferencesTests.test_fault_protected_record_overwrite_is_detected",
+        "PreferencesTests.test_pinned_goal_roundtrip_and_protection",
         "PreferencesTests.test_protected_records_need_confirmed_reset",
         "PreferencesTests.test_read_failure_cannot_overwrite_unseen_settings",
         "PreferencesTests.test_readback_mismatch_is_not_saved",
@@ -559,6 +572,25 @@
       ]
     },
     {
+      "path": "last_stand_research/test_history_comparison.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual production C# projections and behavior; no rendered or platform acceptance",
+      "cases": [
+        "HistoryComparisonTests.test_exact_conditions_and_normalized_speed",
+        "HistoryComparisonTests.test_legacy_short_and_provisional_exclusions",
+        "HistoryComparisonTests.test_minimum_samples_and_per_tier_medians",
+        "HistoryComparisonTests.test_mixed_edition_median_is_withheld",
+        "HistoryComparisonTests.test_negative_control_mixed_edition_pooling",
+        "HistoryComparisonTests.test_negative_control_provisional_rate",
+        "HistoryComparisonTests.test_negative_control_two_sample_median",
+        "HistoryComparisonTests.test_pair_measurement_limits",
+        "HistoryComparisonTests.test_pair_rates_and_condition_differences",
+        "HistoryComparisonTests.test_projection_never_mutates_history",
+        "HistoryComparisonTests.test_signed_cleared_wave_deltas_and_boundaries"
+      ]
+    },
+    {
       "path": "last_stand_research/test_periodic_bulk.py",
       "lane": "calibration",
       "owner": "Calibration owner: separately bound execution and report destination",
@@ -580,6 +612,20 @@
         "ResearchPresentationTests.test_garage_targets_and_battle_separation",
         "ResearchPresentationTests.test_suspended_time_and_cost_disclosed",
         "ResearchPresentationTests.test_timer_and_effect_readouts"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_progression_planner.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual production C# projections and behavior; no rendered or platform acceptance",
+      "cases": [
+        "ProgressionPlannerTests.test_active_queued_and_suspended_research_funding",
+        "ProgressionPlannerTests.test_caps_fitting_save_failure_and_active_checkpoint",
+        "ProgressionPlannerTests.test_catalog_goal_provenance_and_no_mutation",
+        "ProgressionPlannerTests.test_completed_and_unsupported_research_snapshot",
+        "ProgressionPlannerTests.test_exact_shared_budget_effects_and_shortfall",
+        "ProgressionPlannerTests.test_fixed_pin_completion_clear_and_missing_catalog"
       ]
     },
     {

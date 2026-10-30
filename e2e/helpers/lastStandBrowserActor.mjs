@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {readShopControlObservation} from './lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from './lastStandTierJourney.mjs';
 const key='singedTerra.lastStand.prototype.v1';
-export const lastStandObservedControls=layout=>['controls','shopControls','settingsControls','researchControls','historyControls'].flatMap(key=>layout?.[key]??[]);
+export const lastStandObservedControls=layout=>['controls','shopControls','settingsControls','researchControls','historyControls','plannerControls'].flatMap(key=>layout?.[key]??[]);
 const controls=lastStandObservedControls;
 
 export async function createLastStandBrowserActor({context,id,report,output,base,persist,saveState='ready'}){
@@ -44,6 +44,18 @@ export async function createLastStandBrowserActor({context,id,report,output,base
         const point=item=>({x:observed.canvas.x+(item.x+item.width/2)*observed.canvas.width/observed.layout.width,
           y:observed.canvas.y+(item.y+item.height/2)*observed.canvas.height/observed.layout.height});
         if(!target.full){
+          if(target.clip.height<item.height*2){
+            // A wheel detent can skip the small fully-visible range in a short
+            // pane. Ordinary Tab navigation uses the game's focus/reveal owner.
+            const start=run.inputs.length;
+            await page.keyboard.press('Tab');
+            await until(()=>run.inputs.slice(start).some(event=>event.kind==='keyup'),5);
+            const edges=run.inputs.slice(start).filter(event=>['keydown','keyup'].includes(event.kind));
+            assert.deepEqual(edges.map(event=>event.kind),['keydown','keyup']);
+            assert.ok(edges.every(event=>event.trusted&&event.code==='Tab'));
+            run.actions.push({name:'tab-to-'+name,at:Date.now(),inputStart:start,inputEnd:run.inputs.length});
+            await page.waitForTimeout(100);continue;
+          }
           const center=point(target.clip);await page.mouse.move(center.x,center.y);
           await page.mouse.wheel(0,(item.y<target.clip.y?-1:1)*Math.min(180,target.clip.height/2));
           await page.waitForTimeout(100);continue;

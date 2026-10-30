@@ -14,10 +14,12 @@ namespace SingedTerra.LastStand
         public readonly LastStandSettingsHud Settings;
         public readonly LastStandResearchHud Research;
         public readonly LastStandRunHistoryHud History;
+        public readonly LastStandPlannerHud Planner;
         public readonly Button Menu;
         public readonly Button[] Buttons;
         Button returnFocus;bool wasOpen,changed;string wasPage;
-        public LastStandModalHost(LastStandLoopController loop,RectTransform root,Font font,Texture2D metal,Sprite surface,LastStandHudElements elements)
+        public LastStandModalHost(LastStandLoopController loop,RectTransform root,Font font,Texture2D metal,Sprite surface,LastStandHudElements elements,
+            Action openWorkshop,Func<bool> canOpenWorkshop)
         {
             this.loop=loop;Menu=elements.Action("Menu","Menu",root,()=>loop.OpenMenu());
             for(int i=0;i<3;i++)
@@ -25,8 +27,9 @@ namespace SingedTerra.LastStand
              var image=bar.gameObject.AddComponent<Image>();image.color=LastStandUiPrimitives.Paper;image.raycastTarget=false;}
             Settings=new LastStandSettingsHud(loop,root,font,metal,surface);
             Research=new LastStandResearchHud(root,font,loop.CloseMenu,loop.RefreshResearch,loop.SubmitResearch,metal,surface);
-            History=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshResearch,metal,surface);
-            var buttons=new List<Button>(Settings.Buttons);buttons.AddRange(Research.Buttons);buttons.AddRange(History.Buttons);Buttons=buttons.ToArray();
+            History=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshControls,metal,surface);
+            Planner=new LastStandPlannerHud(loop,root,font,openWorkshop,canOpenWorkshop,metal,surface);
+            var buttons=new List<Button>(Settings.Buttons);buttons.AddRange(Research.Buttons);buttons.AddRange(History.Buttons);buttons.AddRange(Planner.Buttons);Buttons=buttons.ToArray();
         }
         public void BindKeyboard(LastStandHudKeyboard keyboard)
         {Research.FocusRequested=keyboard.Focus;keyboard.Escape=()=>{if(loop.MenuOpen)loop.CloseMenu();else loop.OpenMenu();};keyboard.ScrollContent=Scroll;}
@@ -40,19 +43,19 @@ namespace SingedTerra.LastStand
         public void Refresh(LastStandHudKeyboard keyboard,Button[] background)
         {
             Settings.Refresh();Research.Refresh(loop.MenuPage=="research",loop.ResearchSnapshot,loop.Progression.GetBestWave(1),loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus);
-            History.Refresh(loop.MenuPage=="history",loop.RunHistorySnapshot);keyboard.TrapFocus=loop.MenuOpen;
+            History.Refresh(loop.MenuPage=="history",loop.RunHistorySnapshot);Planner.Refresh();keyboard.TrapFocus=loop.MenuOpen;
             if(loop.MenuOpen)foreach(var button in background)button.interactable=false;
         }
         public void AfterRefresh(LastStandHudKeyboard keyboard,Button tierNext,Button fittingNext)
         {
-            if(changed)keyboard.Focus(loop.MenuOpen?loop.MenuPage=="research"?Research.InitialFocus:loop.MenuPage=="history"?History.InitialFocus:Settings.InitialFocus:
+            if(changed)keyboard.Focus(loop.MenuOpen?loop.MenuPage=="research"?Research.InitialFocus:loop.MenuPage=="history"?History.InitialFocus:loop.MenuPage=="planner"?Planner.InitialFocus:Settings.InitialFocus:
                 wasPage=="tier"?tierNext:wasPage=="fitting"?fittingNext:returnFocus??Menu);
             wasOpen=loop.MenuOpen;wasPage=loop.MenuPage;
         }
         public void Layout(float w,float h,float sx,float sy)
-        {Settings.Layout(w,h,sx,sy);Research.Layout(w,h,sx,sy);History.Layout(w,h,sx,sy);}
-        public void Reveal(Button button){Settings.Reveal(button);Research.Reveal(button);History.Reveal(button);}
+        {Settings.Layout(w,h,sx,sy);Research.Layout(w,h,sx,sy);History.Layout(w,h,sx,sy);Planner.Layout(w,h,sx,sy);}
+        public void Reveal(Button button){Settings.Reveal(button);Research.Reveal(button);History.Reveal(button);Planner.Reveal(button);}
         public void Scroll(string direction)
-        {if(loop.MenuPage=="research")Research.ScrollKeyboard(direction);else if(loop.MenuPage=="history")History.ScrollKeyboard(direction);else Settings.ScrollKeyboard(direction);}
+        {if(loop.MenuPage=="research")Research.ScrollKeyboard(direction);else if(loop.MenuPage=="history")History.ScrollKeyboard(direction);else if(loop.MenuPage=="planner")Planner.ScrollKeyboard(direction);else Settings.ScrollKeyboard(direction);}
     }
 }

@@ -35,6 +35,17 @@ def _current_control_fixture():
         card.update(name='ShopCard_' + key + 'Buy', label='ShopCard_' + key + 'Buy',
                     accessibleLabel='ShopCard_' + key + 'Buy')
         fixture['shopControls'].append(card)
+    # Extend only this synthetic parser input; the frozen v1 file stays intact.
+    def control(name, mode):
+        return dict(name=name, label=name, accessibleLabel=name, mode=mode, trackKey='',
+                    x=0, y=0, width=44, height=44, active=False, interactable=False)
+    fixture['settingsControls'].append(control('MenuPlanner', 'Settings'))
+    fixture['historyControls'] += [control('RunHistory' + suffix, 'History') for suffix in
+        ('View', 'ConditionPrevious', 'ConditionNext', 'RunAPrevious', 'RunANext', 'RunBPrevious', 'RunBNext')]
+    fixture['plannerControls'] = [control('Planner' + suffix, 'Planner') for suffix in
+        ('Close', 'Goals', 'Budget', 'Category', 'Previous', 'Next', 'Pin', 'Clear', 'Open',
+         'WorkshopPrevious', 'WorkshopNext', 'ResearchPrevious', 'ResearchNext', 'WorkshopOpen', 'ResearchOpen', 'Back')]
+    fixture['plannerScrollOffset'] = fixture['plannerMaximumScrollOffset'] = 0
     return fixture
 
 
@@ -1112,6 +1123,7 @@ class ShopJourneyGuardTests(unittest.TestCase):
         self.assertIn('campaign-unity/Tools/last_stand_shop/test_shop_player_portable.py', inputs)
         self.assertIn('campaign-unity/Tools/last_stand_shop/test_shop_delivery.py', inputs)
         self.assertIn('campaign-unity/Tools/contracts/last-stand-observation-v1.json', inputs)
+        self.assertIn('campaign-unity/Tools/contracts/last-stand-observation-v2.json', inputs)
         for reader in (verifier.verify_shop_presentation_states, verifier.verify_shop_vertical, verifier.verify_shop_recovery):
             tree = ast.parse(textwrap.dedent(inspect.getsource(reader)))
             assignments = [node for node in ast.walk(tree) if isinstance(node, ast.Assign)
@@ -1203,7 +1215,7 @@ class ShopJourneyGuardTests(unittest.TestCase):
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
-const [source,fixture]=process.argv.slice(1);
+const source=process.argv[1],fixture=readFileSync(0,'utf8');
 const actual=await import(pathToFileURL(source));
 const current=JSON.parse(fixture);
 const raw='ST_LS_HUD_LAYOUT '+JSON.stringify({...current,graphics:[{text:'synthetic parser fixture '.repeat(1000)}]});
@@ -1215,8 +1227,8 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,16);assert.equal(controls.settingsControls.length,40);assert.equal(controls.researchControls.length,17);assert.equal(controls.historyControls.length,2);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls].map(c=>c.name)).size,95);
+assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,16);assert.equal(controls.settingsControls.length,41);assert.equal(controls.researchControls.length,17);assert.equal(controls.historyControls.length,9);assert.equal(controls.plannerControls.length,16);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls].map(c=>c.name)).size,119);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
@@ -1252,8 +1264,8 @@ assert.throws(()=>actual.retainRuntimeObservation({text:truncated,t:1,timeOrigin
   {states:[],encounters:[],hits:[],layouts:[],cues:[]}),SyntaxError,'Original full-layout parser stays strict');
 console.log('PASS controls_only_preserves_original_strict_parser');
 """
-        result = subprocess.run([NODE, '--input-type=module', '-e', script,
-                                 str(source), json.dumps(fixture)], cwd=TOOLS.parents[1], capture_output=True, timeout=30)
+        result = subprocess.run([NODE, '--input-type=module', '-e', script, str(source)],
+                                input=json.dumps(fixture).encode('utf8'), cwd=TOOLS.parents[1], capture_output=True, timeout=30)
         if os.environ.get('ST_SHOP_TEST_EVIDENCE'):
             output = Path(os.environ['ST_SHOP_TEST_EVIDENCE'])
             output.mkdir(parents=True, exist_ok=True)
@@ -1269,7 +1281,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         owner = next(node for node in source.body if isinstance(node, ast.FunctionDef) and node.name == 'verify_shop_vertical')
         functions = [node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name in ('require', 'read_controls')]
         self.assertEqual({node.name for node in functions}, {'require', 'read_controls'})
-        namespace = {'json': json, 'math': math, 'OBSERVATION_CONTRACT': verifier.OBSERVATION_CONTRACT}
+        namespace = {'json': json, 'math': math, 'OBSERVATION_CONTRACTS': verifier.OBSERVATION_CONTRACTS}
         exec(compile(ast.Module(body=functions, type_ignores=[]), '<actual Shop verifier pure reader>', 'exec'), namespace)
         value = _current_control_fixture()
         raw = 'ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[]), separators=(',', ':'))
@@ -1278,7 +1290,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         truncated = ('ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[{'text': 'synthetic parser fixture ' * 1000}]), separators=(',', ':')))[:8190]
         with self.assertRaisesRegex(AssertionError, 'Controls were not complete'):
             namespace['read_controls'](truncated)
-        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls'):
+        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls', 'plannerControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = deepcopy(value)
                 if fault == 'missing': candidate[key].pop()
@@ -1298,11 +1310,11 @@ console.log('PASS controls_only_preserves_original_strict_parser');
                      and ast.unparse(node.test) == "key == 'controlsOnly'")
         code = compile(ast.Module(body=block.body, type_ignores=[]), '<actual recovery inventory block>', 'exec')
         def admit(value):
-            namespace = {'value': dict(value, graphics=[]), 'need': verifier._recovery_need, 'OBSERVATION_CONTRACT': verifier.OBSERVATION_CONTRACT,
+            namespace = {'value': dict(value, graphics=[]), 'need': verifier._recovery_need, 'OBSERVATION_CONTRACTS': verifier.OBSERVATION_CONTRACTS,
                          'observation': {'text': 'synthetic current controls'}}
             exec(code, namespace)
         admit(_current_control_fixture())
-        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls'):
+        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls', 'plannerControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = _current_control_fixture()
                 if fault == 'missing': candidate[key].pop()

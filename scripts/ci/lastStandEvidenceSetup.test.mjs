@@ -43,7 +43,8 @@ function copyAdmissionInputs(checkout) {
   // Setup-only containment cases retain their empty campaign tree.
   for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/helpers/lastStandMatrix.mjs',
     'e2e/helpers/lastStandWaveOracle.mjs', 'scripts/assets/verify-last-stand-source.mjs',
-    'campaign-unity/Tools/contracts/last-stand-observation-v1.json']) {
+    'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json']) {
     mkdirSync(dirname(join(checkout, path)), { recursive: true });
     copyFileSync(join(root, path), join(checkout, path));
   }

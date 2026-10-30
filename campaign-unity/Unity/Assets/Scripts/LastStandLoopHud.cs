@@ -60,7 +60,7 @@ namespace SingedTerra.LastStand
             garage=new LastStandGarageView(loop,canvas,root,elements);
             shop=new LastStandShopHud(loop,root,elements,Refresh,Layout,b=>keyboard.Focus(b),combat.SetSummary,
                 (activation,intent,result)=>observations.ObservePurchase(activation,intent,result));
-            modals=new LastStandModalHost(loop,root,font,metalGrain,metalSurface,elements);settings=modals.Settings;
+            modals=new LastStandModalHost(loop,root,font,metalGrain,metalSurface,elements,shop.OpenPermanentFromPlanner,shop.CanOpenPermanentShop);settings=modals.Settings;
             actions=new[]{combat.Fitting,combat.Deploy,combat.Claim,combat.Purchase,combat.Redeploy,combat.Retry,combat.Pause,combat.Mute,combat.Tier,combat.Effects,
                 modals.Menu,combat.SpeedMinus,combat.SpeedRate,combat.SpeedPlus,garage.TierPrevious,garage.TierNext,garage.FittingPrevious,garage.FittingNext,garage.ResearchEntry};
             var core=new List<Button>(actions);core.Add(combat.WaveInfo);coreActions=core.ToArray();

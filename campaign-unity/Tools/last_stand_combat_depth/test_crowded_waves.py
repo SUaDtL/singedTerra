@@ -8,10 +8,27 @@ import sys
 import hashlib
 import os
 from pathlib import Path
+from unittest.mock import patch
+import measure_crowded_waves as crowded_measurement
 from measure_crowded_waves import HERE, PROJECT, REPORT, BINDINGS, RESULT_FIELDS, admit_canonical, assert_crowded_parity, compile_observer, instrument, run_csharp, validate
 
 
 class CrowdedWaveTests(unittest.TestCase):
+    def test_current_closure_cannot_add_omit_duplicate_or_redirect_measured_sources(self):
+        selected = crowded_measurement.sources()
+        crowded_measurement.admit_source_closure(selected)
+        with tempfile.TemporaryDirectory(prefix="st-crowded-closure-") as temp:
+            outside = Path(temp) / "EncounterModel.cs"
+            for name, altered in (("added", selected + [HERE / "CrowdedWaveMeasurements.cs"]),
+                                  ("omitted", selected[:-1]),
+                                  ("duplicate", selected + [selected[0]]),
+                                  ("redirected", selected[:-1] + [outside])):
+                output = Path(temp) / (name + ".json")
+                with self.subTest(fault=name), patch.object(crowded_measurement, "sources", return_value=altered):
+                    with self.assertRaisesRegex(ValueError, "source closure differs from frozen inputs"):
+                        crowded_measurement.measure(output)
+                    self.assertFalse(output.exists(), "Rejected closure cannot publish a report")
+
     def test_current_execution_helper_does_not_relabel_frozen_capture(self):
         data = REPORT.read_bytes()
         historical = json.loads(data)
@@ -98,6 +115,12 @@ class CrowdedWaveTests(unittest.TestCase):
                     self.assertEqual(measured["executionHelperSource"]["historicalLfSha256"], BINDINGS["calibrated"]["inputs"][helper])
                     self.assertEqual(measured["executionHelperSource"]["observedRawSha256"], hashlib.sha256((project / helper).read_bytes()).hexdigest())
                     self.assertNotEqual(measured["executionHelperSource"]["observedLfSha256"], measured["executionHelperSource"]["historicalLfSha256"])
+                    closure = crowded_measurement.SOURCE_CLOSURE_HELPER
+                    self.assertEqual(measured["executionSourceClosure"]["historicalLfSha256"], BINDINGS["calibrated"]["inputs"][closure])
+                    self.assertEqual(measured["executionSourceClosure"]["observedRawSha256"], hashlib.sha256((project / closure).read_bytes()).hexdigest())
+                    self.assertEqual(measured["executionSourceClosure"]["observedLfSha256"], crowded_measurement.CURRENT_SOURCE_CLOSURE_LF_SHA)
+                    self.assertEqual(measured["executionSourceClosure"]["measuredPaths"], sorted(rel for rel in canonical["sourceSha256"] if rel.endswith(".cs")))
+                    self.assertNotEqual(measured["executionSourceClosure"]["observedLfSha256"], measured["executionSourceClosure"]["historicalLfSha256"])
             runner = str(project / "Tools/last_stand_combat_depth/measure_crowded_waves.py")
             reference_bytes = {p: p.read_bytes() for p in (copied_report, copied_crowded)}
             alias = project / "owned-reference-hardlink.json"
@@ -116,6 +139,7 @@ class CrowdedWaveTests(unittest.TestCase):
             helper = project / "Tools/last_stand_test_runtime.py"
             helper_bytes = helper.read_bytes()
             for fault, expected_error in (("helper-drift", "sources/toolchain/canonical report changed"),
+                                          ("closure-drift", "sources/toolchain/canonical report changed"),
                                           ("role-metrics", "complete frozen crowded outcomes")):
                 output = Path(temp) / (fault + ".json")
                 injection = """
@@ -125,8 +149,8 @@ import measure_crowded_waves as m
 original = m.run_csharp
 def observed(*args, **kwargs):
     result = original(*args, **kwargs)
-    if sys.argv[3] == 'helper-drift':
-        helper = m.PROJECT / m.EXECUTION_HELPER
+    if sys.argv[3] in ('helper-drift', 'closure-drift'):
+        helper = m.PROJECT / (m.EXECUTION_HELPER if sys.argv[3] == 'helper-drift' else m.SOURCE_CLOSURE_HELPER)
         helper.write_bytes(helper.read_bytes() + b'\\n# owned drift discriminator\\n')
     else:
         data = json.loads(result.stdout)
@@ -142,6 +166,7 @@ m.measure(pathlib.Path(sys.argv[2]))
                 self.assertIn(expected_error, result.stderr)
                 self.assertFalse(output.exists(), "Rejected execution cannot publish a report")
                 helper.write_bytes(helper_bytes)
+                (project / crowded_measurement.SOURCE_CLOSURE_HELPER).write_bytes((PROJECT / crowded_measurement.SOURCE_CLOSURE_HELPER).read_bytes().replace(b"\r\n", b"\n"))
             changed = project / "Unity/Assets/Scripts/EncounterModel.cs"
             changed.write_bytes(changed.read_bytes() + b"\n// different source\n")
             result = subprocess.run([sys.executable, "-B", runner, "--output", str(Path(temp) / "refused-source.json")], capture_output=True, text=True, cwd=temp, timeout=30)
