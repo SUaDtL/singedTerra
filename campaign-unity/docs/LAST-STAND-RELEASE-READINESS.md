@@ -1,9 +1,63 @@
 # Last Stand release readiness
 
-This inventory describes the release-foundation implementation on 2026-10-27.
-It is not a publication, store-submission or device-qualification receipt. The
-current Unity project declares player version `1.0`; the repository package is
-`0.0.0`. Neither is a newly approved public game version.
+## Current qualification matrix
+
+Updated October 30 for the [consolidation and screen-clarity sprint](../../.codearbiter/plans/last-stand-consolidation-and-clarity.html).
+This is the current index of acceptance work. Each row has one
+responsible area and an existing plan owner; the dated records below retain the
+evidence and original failures. A result covers only its recorded source, package,
+host and scenario. Completing an implementation task does not close a row.
+
+The current playable candidate is **`Web-20261030T202703Z-cf836c`**. Its
+[local validation summary](last-stand-consolidation/validation.json) binds the final
+source/package hashes and identifies the local receipts. Unity WebGL packaging,
+source admission, strict TypeScript/Vite and the complete portable inventory pass
+(71 modules, 478 declared cases). The final Research browser journey passes 13
+checks with 12 screenshots; Planner passes 15 with nine screenshots. Both enforce
+zero browser errors. Six quote checks, four imported Research checks, 23 imported
+Controls checks, five actual observation packets through both readers and the
+selected Node guard suites pass. These suites overlap and their counts are not
+additive. The scoped independent Auth/Crypto and Security review passes.
+
+**Local consolidation verification is complete within those scopes. Release
+qualification remains incomplete.** The Windows native-background timeout,
+current native/device, hardware audio, real-duration endurance and owner acceptance
+remain open below. Exact final-head hosted CI remains pending. The pre-sprint head
+`e0a71becc44143d1393206299521005c0a87ebde` passed
+[CI 41088994426](https://github.com/SUaDtL/singedTerra/actions/runs/41088994426) and
+[CodeQL 41088994464](https://github.com/SUaDtL/singedTerra/actions/runs/41088994464);
+those results cover that baseline, not the new consolidation changes.
+The player's declared `1.0` and repository `0.0.0` are not newly approved public
+versions. Publication and store submission remain separate decisions.
+
+| Acceptance obligation | Responsible area / plan owner | Current evidence and limit | Evidence needed to close |
+| --- | --- | --- | --- |
+| <a id="q-package"></a>**Q-PACKAGE — matching playable candidate** | Build delivery / [Architecture T-DELIVERY](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-DELIVERY) | **Complete for this local candidate.** The [source lock](last-stand-web/source-lock.json), [packaging receipt](last-stand-web/receipt-sanitized.json) and [validation summary](last-stand-consolidation/validation.json) bind `Web-20261030T202703Z-cf836c`. Build, asset/source admission and production build pass; the sole reported preview at verification is port 4174 (PID 50400). | Rebind and recheck if source or package bytes change. This local export does not establish hosted CI, deployment or a native-platform qualification. |
+| <a id="q-browser"></a>**Q-BROWSER — actual browser loop and background behavior** | Browser verification / [Waves T-QUALIFY](../../.codearbiter/plans/last-stand-waves-and-resume.html#T-QUALIFY) | [Final local browser receipts](last-stand-consolidation/validation.json) pass 13 Research and 15 Planner checks against the matching package, including closed-tab research completion, cross-tab ownership, queue/switch/suspend, bulk buying and pause. Ordinary fresh-profile and seeded cases are identified separately. The owned-Windows-browser native-background snapshot timeout remains unresolved. | Resolve the native-window background failure and complete remaining current-package ordinary earn/buy/clear/resume/invest and audio-admission branches. Headless passes do not replace the owned-window check or hide its failed branch. |
+| <a id="q-windows"></a>**Q-WINDOWS — current native player** | Windows platform verification / [Architecture T-PLATFORM](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-PLATFORM) | [Earlier native observations](#delivery-state-on-2026-10-28) cover controls, purchases and checkpoint/preferences restart on identified older players. [Combat-depth builds](last-stand-combat-depth/validation.json) do not prove current-player interaction. | Current native-player input/display checks, ordinary and abnormal termination/relaunch, research-clock behavior and retained checkpoint/preferences observations on an isolated profile. |
+| <a id="q-android"></a>**Q-ANDROID — physical-device lifecycle** | Android device verification / [Architecture T-PLATFORM](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-PLATFORM) | [Android build evidence](last-stand-combat-depth/validation.json) identifies a development APK and debug signature. No physical-device session qualifies the current candidate. | Install the identified candidate on a recorded device/OS; exercise fresh/returning profiles, background/foreground, forced termination, clocks, interrupted writes, preferences and hardware audio. |
+| <a id="q-recovery"></a>**Q-RECOVERY — understandable save failure and retry** | Recovery/support UX / [Mechanics Shop T-22](../../.codearbiter/plans/last-stand-mechanics-shop.html#T-22) | [Architecture adapter checks](last-stand-architecture/validation.json) and browser ownership tests cover bounded corruption/conflict cases. They do not establish the complete packaged failure/retry/support experience on every supported target. | Actual-target failed-save, safe retry, conflict and restart journeys showing understandable status, preserved progress and useful diagnostics without sensitive data. |
+| <a id="q-endurance"></a>**Q-ENDURANCE — real-duration farming and performance** | Performance verification / [Research T-QUALIFY](../../.codearbiter/plans/last-stand-research-and-farming.html#T-QUALIFY) | The [180-second smoke](last-stand-combat-depth/validation.json) is a development-profile diagnostic. Its frame/JavaScript-heap samples exclude full WebAssembly/native memory and thermal qualification. | Real elapsed farming against the approved 5x pacing goal, including sustained frame/memory/thermal measurements on declared targets and repeated save/recovery observations. Accelerated model runs and short smoke tests do not close this row. |
+| <a id="q-balance"></a>**Q-BALANCE — earned progression and release content** | Game design/economy / [Combat depth T-BALANCE](../../.codearbiter/plans/last-stand-combat-depth.html#T-BALANCE) | The [balance summary](last-stand-combat-depth/balance.md) records earned paths, spending limits and unavailable/hypothetical cases. It does not establish mature earned farming, long-term feel or accepted release depth. | Representative earned research/Workshop/fitting choices and farming observations, with explicit scope acceptance for tiers, waves, rewards and armaments. |
+| <a id="q-ux"></a>**Q-UX — screen clarity, input and accessibility** | Product UX/accessibility / [Clarity T-MODALS](../../.codearbiter/plans/last-stand-consolidation-and-clarity.html#T-MODALS) | [Current UI checks and browser captures](last-stand-consolidation/validation.json) cover four imported Research checks, 23 Controls checks including the compact-selector regression, five actual observation packets through both readers, and 21 browser screenshots. Locked Research now identifies its unlock path; shared quotes and actions replace the misleading AVAILABLE state. These checks establish bounded behavior and layout, not owner comprehension. | Owner review of corrected Research, Planner and sibling screens; retain actual-target checks of locked/empty/shortfall/failed-save states, focus/scroll and 44px targets as platform qualification proceeds. |
+| <a id="q-audio"></a>**Q-AUDIO — rendered sound and listening** | Audio verification / [Player controls T-AUDIO](../../.codearbiter/plans/last-stand-upgrade-payoff.html#T-AUDIO) | [Audio and background observations](#delivery-state-on-2026-10-28) and source regressions remain bounded to their recordings. Logs, cue counters and inert fixtures do not prove hardware audibility or listening acceptance. | Source-bound normal-play media and target listening checks for master/effects/music controls, silence, background admission, no replay/bursts and stable pitch at game speeds; record owner feedback separately. |
+| <a id="q-art"></a>**Q-ART — visual treatment and shipped rights** | Art/product / [First-session DEC-VISUAL](../../.codearbiter/specs/last-stand-first-session-polish.html#DEC-VISUAL) | [Plan-closure report](../../.codearbiter/reports/last-stand-plan-closure-2026-10-30.md) retains the unresolved visual-treatment choice. Later garage/chrome feedback is not that decision. Existing assets/builds do not establish final rights and visual acceptance. | Record the actual visual-treatment decision and matched normal-speed review, plus provenance/license review for shipped art/audio and explicit exceptions. |
+| <a id="q-delivery"></a>**Q-DELIVERY — final review, hosted CI and distribution** | Delivery/release owner / [Architecture T-DELIVERY](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-DELIVERY) | [Local validation and independent scoped review](last-stand-consolidation/validation.json) pass for the bound candidate. The hosted green results above are baseline-only; exact final-head hosted CI remains pending. The [maintenance record](../../.codearbiter/reports/project-maintenance-2026-10-29.md) preserves ADR acceptance and the true-merge requirement. | Exact final-head hosted checks; separately authorized merge retaining ADR source ancestry, then separately authorized deployment/publication and live-host checks. Store signing, version and submission require their own decisions. |
+
+The historical plans retain their own criteria, implementation progress and check
+records. Their new current-qualification pointers map overlapping obligations to
+this matrix; they do not recreate tests, close unrun acceptance, or revive retired
+Ash Road/manual-claim behavior. The [new sprint specification](../../.codearbiter/specs/last-stand-consolidation-and-clarity.html)
+owns the current consolidation changes. Account, cloud-save and purchase controls
+still require real implemented services before being presented to players.
+
+
+## Dated evidence history
+
+Everything below is retained historical evidence with its original scope. Words
+such as “current” and “pending” inside a dated record refer to that record's
+candidate, not automatically to today's branch. Use the matrix above for the
+current outstanding work.
 
 ## Progression planning candidate, October 30
 
@@ -501,7 +555,10 @@ an existing compatible SDK while installing only missing reviewed components.
 Installation and actual target qualification need their own current receipts as
 delivery proceeds; presence of the SDK/JDK/NDK does not supply the Unity module.
 
-## Remaining qualification and release gaps
+## Historical release-gap assessment — October 28
+
+This earlier assessment is retained for traceability. Its status is not maintained
+in parallel with the [current qualification matrix](#current-qualification-matrix).
 
 This is the delivery/readiness assessment required by `ST-LS-ARCH-SPEC#CR-DELIVERY`
 and `CR-PLATFORM`, under the existing plan's `T-DELIVERY`. It does not create new

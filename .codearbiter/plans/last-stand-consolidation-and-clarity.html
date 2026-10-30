@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: consolidation and screen clarity sprint · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-CLARITY-PLAN</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-spec_ref">Specification binding</a><a href="#group-prerequisites">Prerequisites</a><a href="#group-tasks">Tasks</a><a href="#group-checkpoints">Checkpoints</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../specs/last-stand-consolidation-and-clarity.html">Open companion specification</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / plan</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: consolidation and screen clarity sprint</h1><p class="deck">Six coherent packages with unchanged authority boundaries and actual per-surface evidence.</p><div class="meta"><span>ST-LS-CLARITY-PLAN</span><span>Revision 29 · schema 0.3.2</span><span>8 addressable records</span></div></header><section class="group" id="group-spec_ref"><a class="back" href="#main-content">Top</a><h2>Specification binding</h2><div class="fields"><div class="field"><span class="label">Artifact id</span>ST-LS-CLARITY-SPEC</div><div class="field"><span class="label">Binding mode</span>draft_preview</div><div class="field"><span class="label">Normative sha256</span>b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f</div></div></section><section class="group" id="group-prerequisites"><a class="back" href="#main-content">Top</a><h2>Prerequisites</h2><span class="missing">None recorded</span></section><section class="group" id="group-tasks"><a class="back" href="#main-content">Top</a><h2>Tasks</h2>
+<!-- CA:BEGIN:T-VERIFY -->
+<article class="record" id="T-VERIFY" data-ca-symbol="T-VERIFY" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-VERIFY">T-VERIFY</a><h3>Verification responsibility modules</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-IMPLEMENT</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-VERIFY">ST-LS-CLARITY-SPEC#CR-VERIFY</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-PRESERVE">ST-LS-CLARITY-SPEC#CR-PRESERVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Referenced outcomes implemented and applicable observed checks reported with remaining limits.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-IMPLEMENT</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>e2e/helpers</code></td></tr><tr><td>modify</td><td><code>scripts/ci</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert scoped implementation only; preserve save data, unrelated work and historical evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Run unchanged characterization before extraction.</li><li>Extract coherent platform/browser/model owners and test actual exports with explicit dependencies.</li><li>Preserve assertions and guards, then run affected test suites.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;--test-skip-pattern=background guards reject frozen ticks&#34;,&#34;scripts/ci/lastStandQualification.test.mjs&#34;,&#34;scripts/ci/lastStandBackground.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Existing qualification and portable background assertions remain enforced after modular extraction; native group separately reported.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>actual first-hit callers reject a later reused foe slot and wrong deployment identity</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;--test&#34;,&#34;--test-skip-pattern=background guards reject frozen ticks&#34;,&#34;scripts/ci/lastStand*.test.mjs&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:15Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>0d8ede2c01be649d9ed1fdab2b38dea993be29ad2de13da0e87bd0da1deec657</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-parity-final.log</div><div class="field"><span class="label">Summary</span>275 selected guard cases pass;193 CI-workflow and123 overlapping runner-focused cases also pass. Main helper4709 to2074 lines;11 modules and direct imports. Standalone TDZ and missing Tier source closure found and corrected with regression evidence. Auth/Crypto and Security independent review PASS; retained native-window combined timeout remains excluded and pending, not passed.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-VERIFY -->
+
+<!-- CA:BEGIN:T-QUOTE -->
+<article class="record" id="T-QUOTE" data-ca-symbol="T-QUOTE" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-QUOTE">T-QUOTE</a><h3>Shared research quote</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-IMPLEMENT</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-QUOTE">ST-LS-CLARITY-SPEC#CR-QUOTE</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-PRESERVE">ST-LS-CLARITY-SPEC#CR-PRESERVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Referenced outcomes implemented and applicable observed checks reported with remaining limits.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-IMPLEMENT</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandResearchPresentation.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandProgressionPlanner.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Tools/last_stand_research</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert scoped implementation only; preserve save data, unrelated work and historical evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Introduce structured quote projection in existing owner.</li><li>Use it in Lab and Planner without transaction changes.</li><li>Test partial, queued, capped and normal states.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_progression_planner.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Actual compiled projection preserves exact pricing, partial time, legality and read-only behavior.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_active_queued_and_suspended_research_funding</li><li>test_exact_shared_budget_effects_and_shortfall</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_progression_planner.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T19:59:06Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>abff1314b1026807411235733970ef9ff95a88ecf5271df06139a6029972eef5</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>Root execution 2026-10-30</div><div class="field"><span class="label">Summary</span>Six real compiled planner tests passed before extraction and after shared quote plus locked/shortfall/save-state cases; most recent run6/6 in1.357s.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_research&#34;,&#34;-p&#34;,&#34;test_progression_planner.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:16Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>c997f64a28b6b2eae9c88cf9b20c4180aa1c4fb110d7cdb8218ec675c5d64a5a</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-quotes-final.log</div><div class="field"><span class="label">Summary</span>Six compiled production-model tests pass, including exact funding/partial time, affordable switches through refunds, same-track queue cancellation, mixed-track promotion and no wallet/state mutation.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-QUOTE -->
+
+<!-- CA:BEGIN:T-MODALS -->
+<article class="record" id="T-MODALS" data-ca-symbol="T-MODALS" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-MODALS">T-MODALS</a><h3>Shared modal navigation and sister-screen clarity</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-IMPLEMENT</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-MODALS">ST-LS-CLARITY-SPEC#CR-MODALS</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-SCREENS">ST-LS-CLARITY-SPEC#CR-SCREENS</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-PRESERVE">ST-LS-CLARITY-SPEC#CR-PRESERVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Referenced outcomes implemented and applicable observed checks reported with remaining limits.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-IMPLEMENT</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandControlsChecks.cs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert scoped implementation only; preserve save data, unrelated work and historical evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Register typed current pages and use shared header/selector primitives.</li><li>Fix confirmed ambiguous actions and empty-state overload in Planner/History/Shop/Settings.</li><li>Run actual control/focus/scroll and model checks.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_controls&#34;,&#34;-p&#34;,&#34;test_menu.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Actual Unity modal/control behavior preserves focus, scroll, header and sister-screen clarity.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_imported_scene_controls</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_controls&#34;,&#34;-p&#34;,&#34;test_menu.py&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:25:08Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>f18cccf48426eb445d67f0d38fccda65801a82221bc8311b98a0bca5b03b6743</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/last-stand-controls/20261030T202137Z-724de81a/result.json</div><div class="field"><span class="label">Summary</span>23 actual imported Unity controls cases pass, including regression-first compact PlannerBudget at568x142. RED showed70px arrow in50px viewport; shared selector now keeps44px arrows centered in wrapped label row.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-planning-journey.mjs&#34;,&#34;campaign-unity/Evidence/consolidation-clarity/planning-final&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:18Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>f18cccf48426eb445d67f0d38fccda65801a82221bc8311b98a0bca5b03b6743</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-clarity/planning-final/result.json</div><div class="field"><span class="label">Summary</span>15 actual empty-profile browser checks,9 screenshots,zero errors. Locked Research/help, empty History/help, labeled goals/budgets, pin/reload/clear, desktop/portrait/compact geometry, touch/keyboard input, original shop routing and preserved checkpoint/currency/manual pause.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-MODALS -->
+
+<!-- CA:BEGIN:T-RESEARCH -->
+<article class="record" id="T-RESEARCH" data-ca-symbol="T-RESEARCH" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-RESEARCH">T-RESEARCH</a><h3>Research task-first presentation</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-IMPLEMENT</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-RESEARCH">ST-LS-CLARITY-SPEC#CR-RESEARCH</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-QUOTE">ST-LS-CLARITY-SPEC#CR-QUOTE</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-PRESERVE">ST-LS-CLARITY-SPEC#CR-PRESERVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-QUOTE">T-QUOTE</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Referenced outcomes implemented and applicable observed checks reported with remaining limits.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-IMPLEMENT</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Scripts/LastStandResearchHud.cs</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor/LastStandShopChecks.cs</code></td></tr><tr><td>modify</td><td><code>scripts/last-stand-research-journey.mjs</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert scoped implementation only; preserve save data, unrelated work and historical evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Test locked, affordable, shortfall and active Lab states.</li><li>Show unlock requirement or selected upgrade and primary action first; put detailed rules behind explicit help.</li><li>Preserve actual per-slot intents, saved partial progress, keyboard and responsive reachability.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_shop&#34;,&#34;-p&#34;,&#34;test_shop_ui.py&#34;,&#34;-k&#34;,&#34;shop_price_line&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Actual Unity research controls explain locked/unlocked/funding states and start through the shared transaction.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_shop_price_line</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe&#34;,&#34;-B&#34;,&#34;-m&#34;,&#34;unittest&#34;,&#34;discover&#34;,&#34;-s&#34;,&#34;campaign-unity/Tools/last_stand_shop&#34;,&#34;-p&#34;,&#34;test_shop_ui.py&#34;,&#34;-k&#34;,&#34;shop_price_line&#34;,&#34;-v&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:17Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>3e64e08f63f46085cdf9d7fcbf2a0ae73543c4964a0d9dbdb216350a93cf40aa</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-research-final3.log</div><div class="field"><span class="label">Summary</span>Four actual Unity ResearchSprint cases pass. Locked preview/help, start cost/time and one charge, idle-lab first, impossible funding actions hidden, stale-action reason, responsive geometry and sibling shop/history behavior checked.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;node&#34;,&#34;scripts/last-stand-research-journey.mjs&#34;,&#34;campaign-unity/Evidence/consolidation-clarity/research-fixtures-final/manifest.json&#34;,&#34;campaign-unity/Evidence/consolidation-clarity/research-final&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:18Z</div><div class="field"><span class="label">Recorded scoped inputs sha256</span>3e64e08f63f46085cdf9d7fcbf2a0ae73543c4964a0d9dbdb216350a93cf40aa</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>declared_task_paths_and_known_build_inputs_only</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-clarity/research-final/result.json</div><div class="field"><span class="label">Summary</span>13 actual headless-browser checks,12 screenshots,zero browser errors. Closed-tab completion observed, start/queue/suspend/switch exact funding, original/second-tab writer ownership and read-only inspection, bulk purchase, ordinary locked profile and 5x speed/pause. Development seeds explicitly separate from earned progression/device/endurance.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-RESEARCH -->
+
+<!-- CA:BEGIN:T-READINESS -->
+<article class="record" id="T-READINESS" data-ca-symbol="T-READINESS" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-READINESS">T-READINESS</a><h3>Current acceptance matrix</h3><span class="badge">Implementation complete (checks not assessed)</span></div><div class="field"><span class="label">Checkpoint</span>CP-IMPLEMENT</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-READINESS">ST-LS-CLARITY-SPEC#CR-READINESS</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-PRESERVE">ST-LS-CLARITY-SPEC#CR-PRESERVE</a></li></ul></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Referenced outcomes implemented and applicable observed checks reported with remaining limits.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-IMPLEMENT</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md</code></td></tr><tr><td>modify</td><td><code>.codearbiter/plans</code></td></tr><tr><td>modify</td><td><code>.gitattributes</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert scoped implementation only; preserve save data, unrelated work and historical evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Summarize pending obligations once with owners/evidence links in existing readiness document.</li><li>Point older native plans to current matrix using typed section updates.</li><li>Keep historical evidence bytes and observed statuses intact.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;git&#34;,&#34;diff&#34;,&#34;--check&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Whitespace validity plus source inspection of current acceptance matrix, links and unchanged historical reports.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><span class="missing">None recorded</span></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span>User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.</div><div class="field"><span class="label">State</span>DONE</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Evidence/consolidation-clarity-readiness/verify_readiness.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T19:59:07Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>consolidate_readiness agent and campaign-unity/Evidence/consolidation-clarity-readiness/</div><div class="field"><span class="label">Summary</span>11 current matrix rows,28 valid local/native links,10 valid plan pointer updates with unchanged task states,11 preserved report hashes and4 generated attributes passed.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Evidence/consolidation-clarity-readiness/verify_readiness.py&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>agent_report</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:19Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-clarity-readiness/verify_readiness.py</div><div class="field"><span class="label">Summary</span>Inspection passed:11 current matrix rows,29 valid links,10 native plans with unchanged states,11 preserved report hashes,four generated-report attributes. Current tracked validation summary separates local evidence from outstanding release qualifications; historical document suffix preserved.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-READINESS -->
+
+<!-- CA:BEGIN:T-QUALIFY -->
+<article class="record" id="T-QUALIFY" data-ca-symbol="T-QUALIFY" data-ca-kind="tasks"><div class="record-head"><a class="id" href="#T-QUALIFY">T-QUALIFY</a><h3>Integrated player and PR handoff</h3><span class="badge">IN_PROGRESS</span></div><div class="field"><span class="label">Checkpoint</span>CP-QUALIFY</div><div class="field"><span class="label">Acceptance criteria</span><ul class="items"><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-PRESERVE">ST-LS-CLARITY-SPEC#CR-PRESERVE</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-RESEARCH">ST-LS-CLARITY-SPEC#CR-RESEARCH</a></li><li><a href="../specs/last-stand-consolidation-and-clarity.html#CR-SCREENS">ST-LS-CLARITY-SPEC#CR-SCREENS</a></li></ul></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#T-VERIFY">T-VERIFY</a></li><li><a href="#T-QUOTE">T-QUOTE</a></li><li><a href="#T-MODALS">T-MODALS</a></li><li><a href="#T-RESEARCH">T-RESEARCH</a></li><li><a href="#T-READINESS">T-READINESS</a></li></ul></div><div class="field"><span class="label">Done when</span><ul class="items"><li>Referenced outcomes implemented and applicable observed checks reported with remaining limits.</li></ul></div><div class="field"><span class="label">Execution scope</span>CP-QUALIFY</div><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td>modify</td><td><code>campaign-unity/Tools</code></td></tr><tr><td>modify</td><td><code>campaign-unity/Unity/Assets/Editor</code></td></tr><tr><td>modify</td><td><code>client/public/last-stand</code></td></tr><tr><td>modify</td><td><code>scripts</code></td></tr><tr><td>modify</td><td><code>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md</code></td></tr></tbody></table></div></div><div class="field"><span class="label">Rollback</span>Revert scoped implementation only; preserve save data, unrelated work and historical evidence.</div><div class="field"><span class="label">Steps</span><ul class="items"><li>Run affected combined checks and inspect resulting diff.</li><li>Rebuild source-bound player and latest existing preview, inspect actual research and sister-screen states.</li><li>Record exact results/limits, commit only scoped changes through gate and update PR547 without merge.</li></ul></div><div class="field"><span class="label">Verification</span><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_test_inventory.py&#34;,&#34;--run&#34;,&#34;portable&#34;]</code></pre></div><div class="field"><span class="label">Assertion</span>Applicable portable suite passes; Unity build/browser results recorded separately with explicit device and endurance limits.</div><div class="field"><span class="label">Availability</span>existing</div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Expected exit</span>0</div><div class="field"><span class="label">Required tests</span><ul class="items"><li>test_exact_shared_budget_effects_and_shortfall</li></ul></div></div></div><details><summary>Execution record</summary><div class="fields"><div class="field"><span class="label">Evidence refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Reason</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">State</span>IN_PROGRESS</div></div></details><details><summary>Reported command checks (not independently verified)</summary><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_test_inventory.py&#34;,&#34;--run&#34;,&#34;portable&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>1</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:25:07Z</div><div class="field"><span class="label">Reported outcome</span>fail</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-portable.log</div><div class="field"><span class="label">Summary</span>71 portable modules executed. Three extraction-dependent wrapper modules failed; remaining modules passed. Affected wrappers subsequently passed 40+3+2 checks after imported-adapter conversion; final integrated result still pending. Preserved full initial log.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe&#34;,&#34;-B&#34;,&#34;campaign-unity/Tools/last_stand_test_inventory.py&#34;,&#34;--run&#34;,&#34;portable&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:20Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-portable-final.log</div><div class="field"><span class="label">Summary</span>Final stable-source portable inventory passes:71 modules,478 unittest cases,failed=[]. This resolves all three extraction-dependent failures from the first recorded run.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div><div class="fields"><div class="field"><span class="label">Command arguments (not executed by this tool)</span><pre><code>[&#34;npm&#34;,&#34;run&#34;,&#34;build&#34;]</code></pre></div><div class="field"><span class="label">Cwd</span>.</div><div class="field"><span class="label">Declared command</span>false</div><div class="field"><span class="label">Definition current</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Evidence assessed</span>false</div><div class="field"><span class="label">Exit code</span>0</div><div class="field"><span class="label">History trimmed</span>false</div><div class="field"><span class="label">Named tests verified</span>false</div><div class="field"><span class="label">Origin</span>tool_result</div><div class="field"><span class="label">Provenance</span>caller_reported</div><div class="field"><span class="label">Recorded at</span>2026-10-30T20:40:21Z</div><div class="field"><span class="label">Reported outcome</span>pass</div><div class="field"><span class="label">Scope coverage</span>attempted_unassessed</div><div class="field"><span class="label">Scope reason</span>source_scope_unassessed</div><div class="field"><span class="label">Source</span>campaign-unity/Evidence/consolidation-site-build-final.log</div><div class="field"><span class="label">Summary</span>Fresh WebGL release Web-20261030T202703Z-cf836c passed and was packaged through a frozen destination plan. Source/asset admission, strict TypeScript and production site build pass; only4174 preview serves current package. Both browser journeys bind exact served bytes. Actual emitter five packets pass both maintained readers and malformed/omitted-control rejection.</div><div class="field"><span class="label">Worktree freshness</span>unassessed</div></div></details></article>
+<!-- CA:END:T-QUALIFY -->
+</section><section class="group" id="group-checkpoints"><a class="back" href="#main-content">Top</a><h2>Checkpoints</h2>
+<!-- CA:BEGIN:CP-IMPLEMENT -->
+<article class="record" id="CP-IMPLEMENT" data-ca-symbol="CP-IMPLEMENT" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-IMPLEMENT">CP-IMPLEMENT</a><h3>Consolidation and screen implementation</h3></div><div class="field"><span class="label">Depends on</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Exit</span>Scoped implementation and observed local checks recorded; no release claim.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-VERIFY">T-VERIFY</a></li><li><a href="#T-QUOTE">T-QUOTE</a></li><li><a href="#T-MODALS">T-MODALS</a></li><li><a href="#T-RESEARCH">T-RESEARCH</a></li><li><a href="#T-READINESS">T-READINESS</a></li></ul></div></article>
+<!-- CA:END:CP-IMPLEMENT -->
+
+<!-- CA:BEGIN:CP-QUALIFY -->
+<article class="record" id="CP-QUALIFY" data-ca-symbol="CP-QUALIFY" data-ca-kind="checkpoints"><div class="record-head"><a class="id" href="#CP-QUALIFY">CP-QUALIFY</a><h3>Integrated qualification</h3></div><div class="field"><span class="label">Depends on</span><ul class="items"><li><a href="#CP-IMPLEMENT">CP-IMPLEMENT</a></li></ul></div><div class="field"><span class="label">Exit</span>Actual candidate checks and remaining external acceptance clearly reported.</div><div class="field"><span class="label">Tasks</span><ul class="items"><li><a href="#T-QUALIFY">T-QUALIFY</a></li></ul></div></article>
+<!-- CA:END:CP-QUALIFY -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2><span class="missing">None recorded</span></section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2><span class="missing">None recorded</span></section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Observed date</span>2026-10-30</div><div class="field"><span class="label">Repository</span><span class="missing">Not yet supplied</span></div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-criterion_dispositions"><a class="back" href="#main-content">Top</a><h2>Criterion dispositions</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: d775cf9fd73b766fe7084a8d799410715ee36e125711cda8fc8005b508e11ed4<br>Model SHA-256: 0d7be28200823296bc9a5f634c4e1f2bcf5b75f2a8530c07afb22333a40db381</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-CLARITY-PLAN",
+  "execution": {
+    "prerequisite_evidence": {},
+    "prerequisites": {},
+    "scopes": {},
+    "task_check_observations": {
+      "T-MODALS": [
+        {
+          "argv": [
+            "C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_controls",
+            "-p",
+            "test_menu.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "d48b10efba88c2c998e28a49e07ad4f70883f56b3066343141724323d310aae3",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:25:08Z",
+          "recording_operation_id": "clarity-02dd22e6dbd142dea7dc76ea3f6f4ee7",
+          "scoped_inputs_sha256": "f18cccf48426eb445d67f0d38fccda65801a82221bc8311b98a0bca5b03b6743",
+          "source": "campaign-unity/Evidence/last-stand-controls/20261030T202137Z-724de81a/result.json",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "23 actual imported Unity controls cases pass, including regression-first compact PlannerBudget at568x142. RED showed70px arrow in50px viewport; shared selector now keeps44px arrows centered in wrapped label row.",
+          "task_subject_sha256": "29c52cf0277cbfb7a61060c546f5f02542b481273cee715b1e56bf94b7608c0d"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-planning-journey.mjs",
+            "campaign-unity/Evidence/consolidation-clarity/planning-final"
+          ],
+          "criterion_subject_sha256": "d48b10efba88c2c998e28a49e07ad4f70883f56b3066343141724323d310aae3",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:18Z",
+          "recording_operation_id": "clarity-final-842d5592df004d4aa7d3d0d8c42a1374",
+          "scoped_inputs_sha256": "f18cccf48426eb445d67f0d38fccda65801a82221bc8311b98a0bca5b03b6743",
+          "source": "campaign-unity/Evidence/consolidation-clarity/planning-final/result.json",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "15 actual empty-profile browser checks,9 screenshots,zero errors. Locked Research/help, empty History/help, labeled goals/budgets, pin/reload/clear, desktop/portrait/compact geometry, touch/keyboard input, original shop routing and preserved checkpoint/currency/manual pause.",
+          "task_subject_sha256": "29c52cf0277cbfb7a61060c546f5f02542b481273cee715b1e56bf94b7608c0d"
+        }
+      ],
+      "T-QUALIFY": [
+        {
+          "argv": [
+            "C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+            "-B",
+            "campaign-unity/Tools/last_stand_test_inventory.py",
+            "--run",
+            "portable"
+          ],
+          "criterion_subject_sha256": "b62aba59f2423a26a3c8520d0774af6deceeac391defb7a0400f58aada95b497",
+          "cwd": ".",
+          "exit_code": 1,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "fail",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:25:07Z",
+          "recording_operation_id": "clarity-53b8dde30edd4f73aa1a1e2793ae6963",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/consolidation-portable.log",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "71 portable modules executed. Three extraction-dependent wrapper modules failed; remaining modules passed. Affected wrappers subsequently passed 40+3+2 checks after imported-adapter conversion; final integrated result still pending. Preserved full initial log.",
+          "task_subject_sha256": "13cabdf7dcb9b5f3dc9855c9a9c60558becd8dff1522ece7b371d0f16fc5ba84"
+        },
+        {
+          "argv": [
+            "C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+            "-B",
+            "campaign-unity/Tools/last_stand_test_inventory.py",
+            "--run",
+            "portable"
+          ],
+          "criterion_subject_sha256": "b62aba59f2423a26a3c8520d0774af6deceeac391defb7a0400f58aada95b497",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:20Z",
+          "recording_operation_id": "clarity-final-4129af84698e452a8d29d57afc50374f",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/consolidation-portable-final.log",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "Final stable-source portable inventory passes:71 modules,478 unittest cases,failed=[]. This resolves all three extraction-dependent failures from the first recorded run.",
+          "task_subject_sha256": "13cabdf7dcb9b5f3dc9855c9a9c60558becd8dff1522ece7b371d0f16fc5ba84"
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "criterion_subject_sha256": "b62aba59f2423a26a3c8520d0774af6deceeac391defb7a0400f58aada95b497",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:21Z",
+          "recording_operation_id": "clarity-final-90100d1fe78c4916a9d2e85087f56818",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/consolidation-site-build-final.log",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "Fresh WebGL release Web-20261030T202703Z-cf836c passed and was packaged through a frozen destination plan. Source/asset admission, strict TypeScript and production site build pass; only4174 preview serves current package. Both browser journeys bind exact served bytes. Actual emitter five packets pass both maintained readers and malformed/omitted-control rejection.",
+          "task_subject_sha256": "13cabdf7dcb9b5f3dc9855c9a9c60558becd8dff1522ece7b371d0f16fc5ba84"
+        }
+      ],
+      "T-QUOTE": [
+        {
+          "argv": [
+            "C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_research",
+            "-p",
+            "test_progression_planner.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "9763117eb8d9b2854a350302c2693ea1f976d043cda23afebe63fe9c4591d2c9",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T19:59:06Z",
+          "recording_operation_id": "clarity-check-20261030-t-quote",
+          "scoped_inputs_sha256": "abff1314b1026807411235733970ef9ff95a88ecf5271df06139a6029972eef5",
+          "source": "Root execution 2026-10-30",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "Six real compiled planner tests passed before extraction and after shared quote plus locked/shortfall/save-state cases; most recent run6/6 in1.357s.",
+          "task_subject_sha256": "5c4a12d6f862ff52ce080ccd0f19698fc0cd0f7c0fa053f1208b81e8ca08d962"
+        },
+        {
+          "argv": [
+            "C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_research",
+            "-p",
+            "test_progression_planner.py",
+            "-v"
+          ],
+          "criterion_subject_sha256": "9763117eb8d9b2854a350302c2693ea1f976d043cda23afebe63fe9c4591d2c9",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:16Z",
+          "recording_operation_id": "clarity-final-cae475536b2c40fea928537f15ffea50",
+          "scoped_inputs_sha256": "c997f64a28b6b2eae9c88cf9b20c4180aa1c4fb110d7cdb8218ec675c5d64a5a",
+          "source": "campaign-unity/Evidence/consolidation-quotes-final.log",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "Six compiled production-model tests pass, including exact funding/partial time, affordable switches through refunds, same-track queue cancellation, mixed-track promotion and no wallet/state mutation.",
+          "task_subject_sha256": "5c4a12d6f862ff52ce080ccd0f19698fc0cd0f7c0fa053f1208b81e8ca08d962"
+        }
+      ],
+      "T-READINESS": [
+        {
+          "argv": [
+            "C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+            "-B",
+            "campaign-unity/Evidence/consolidation-clarity-readiness/verify_readiness.py"
+          ],
+          "criterion_subject_sha256": "d18765d14aa78de4fdd9c8deb80df65f2a43bc8e4b7c44e8bff639fdcaebf035",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T19:59:07Z",
+          "recording_operation_id": "clarity-check-20261030-t-readiness",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "consolidate_readiness agent and campaign-unity/Evidence/consolidation-clarity-readiness/",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "11 current matrix rows,28 valid local/native links,10 valid plan pointer updates with unchanged task states,11 preserved report hashes and4 generated attributes passed.",
+          "task_subject_sha256": "709dfc96556729d403f1abb66d8a80f575e55aeea79682b1630c1b79a766d65f"
+        },
+        {
+          "argv": [
+            "C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+            "-B",
+            "campaign-unity/Evidence/consolidation-clarity-readiness/verify_readiness.py"
+          ],
+          "criterion_subject_sha256": "d18765d14aa78de4fdd9c8deb80df65f2a43bc8e4b7c44e8bff639fdcaebf035",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:19Z",
+          "recording_operation_id": "clarity-final-bae0c22b894546408475229f95f2d1c4",
+          "scope_unassessed_reason": "source_scope_unassessed",
+          "source": "campaign-unity/Evidence/consolidation-clarity-readiness/verify_readiness.py",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "Inspection passed:11 current matrix rows,29 valid links,10 native plans with unchanged states,11 preserved report hashes,four generated-report attributes. Current tracked validation summary separates local evidence from outstanding release qualifications; historical document suffix preserved.",
+          "task_subject_sha256": "709dfc96556729d403f1abb66d8a80f575e55aeea79682b1630c1b79a766d65f"
+        }
+      ],
+      "T-RESEARCH": [
+        {
+          "argv": [
+            "C:\\Users\\brenn\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "campaign-unity/Tools/last_stand_shop",
+            "-p",
+            "test_shop_ui.py",
+            "-k",
+            "shop_price_line",
+            "-v"
+          ],
+          "criterion_subject_sha256": "134c7b71d6e4042fb48abe6633703903c9d8cb0d91a16293739968e1e94b8e8a",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:17Z",
+          "recording_operation_id": "clarity-final-7df46826893b41daace2aca66927767b",
+          "scoped_inputs_sha256": "3e64e08f63f46085cdf9d7fcbf2a0ae73543c4964a0d9dbdb216350a93cf40aa",
+          "source": "campaign-unity/Evidence/consolidation-research-final3.log",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "Four actual Unity ResearchSprint cases pass. Locked preview/help, start cost/time and one charge, idle-lab first, impossible funding actions hidden, stale-action reason, responsive geometry and sibling shop/history behavior checked.",
+          "task_subject_sha256": "531c167ccd19742c29c35e7a781fa466f0a63104dbb28ae1c3f863068d4c4aee"
+        },
+        {
+          "argv": [
+            "node",
+            "scripts/last-stand-research-journey.mjs",
+            "campaign-unity/Evidence/consolidation-clarity/research-fixtures-final/manifest.json",
+            "campaign-unity/Evidence/consolidation-clarity/research-final"
+          ],
+          "criterion_subject_sha256": "134c7b71d6e4042fb48abe6633703903c9d8cb0d91a16293739968e1e94b8e8a",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "tool_result",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:18Z",
+          "recording_operation_id": "clarity-final-f2a9869d8a25403abda6de96cc5a2f2b",
+          "scoped_inputs_sha256": "3e64e08f63f46085cdf9d7fcbf2a0ae73543c4964a0d9dbdb216350a93cf40aa",
+          "source": "campaign-unity/Evidence/consolidation-clarity/research-final/result.json",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "13 actual headless-browser checks,12 screenshots,zero browser errors. Closed-tab completion observed, start/queue/suspend/switch exact funding, original/second-tab writer ownership and read-only inspection, bulk purchase, ordinary locked profile and 5x speed/pause. Development seeds explicitly separate from earned progression/device/endurance.",
+          "task_subject_sha256": "531c167ccd19742c29c35e7a781fa466f0a63104dbb28ae1c3f863068d4c4aee"
+        }
+      ],
+      "T-VERIFY": [
+        {
+          "argv": [
+            "node",
+            "--test",
+            "--test-skip-pattern=background guards reject frozen ticks",
+            "scripts/ci/lastStand*.test.mjs"
+          ],
+          "criterion_subject_sha256": "ff61cc20ef81f1ca6ff6ce424d388a4030b894f8c938f204fe4b2f6ecdd2c480",
+          "cwd": ".",
+          "exit_code": 0,
+          "history_trimmed": false,
+          "origin": "agent_report",
+          "outcome": "pass",
+          "provenance": "caller_reported",
+          "recorded_at": "2026-10-30T20:40:15Z",
+          "recording_operation_id": "clarity-final-20935869d3f54baebe9e2b65747b5f1f",
+          "scoped_inputs_sha256": "0d8ede2c01be649d9ed1fdab2b38dea993be29ad2de13da0e87bd0da1deec657",
+          "source": "campaign-unity/Evidence/consolidation-parity-final.log",
+          "source_normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+          "summary": "275 selected guard cases pass;193 CI-workflow and123 overlapping runner-focused cases also pass. Main helper4709 to2074 lines;11 modules and direct imports. Standalone TDZ and missing Tier source closure found and corrected with regression evidence. Auth/Crypto and Security independent review PASS; retained native-window combined timeout remains excluded and pending, not passed.",
+          "task_subject_sha256": "fc7bf104086eb7aeb88f8f42db37657ac1a66651a2454bef2eb6b003ba833969"
+        }
+      ]
+    },
+    "tasks": {
+      "T-MODALS": {
+        "evidence_refs": [],
+        "reason": "User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-QUALIFY": {
+        "evidence_refs": [],
+        "reason": null,
+        "state": "IN_PROGRESS"
+      },
+      "T-QUOTE": {
+        "evidence_refs": [],
+        "reason": "User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-READINESS": {
+        "evidence_refs": [],
+        "reason": "User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-RESEARCH": {
+        "evidence_refs": [],
+        "reason": "User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      },
+      "T-VERIFY": {
+        "evidence_refs": [],
+        "reason": "User authorized all four consolidation packages and Research/sister-screen fixes. Implementation completed with observed local checks and independent review; older plan progress and external qualification obligations are preserved. This progress update does not assert native/device/audio/endurance/owner acceptance or hosted CI. Implementation completion only; verification and review are not assessed.",
+        "state": "DONE"
+      }
+    }
+  },
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "0d7be28200823296bc9a5f634c4e1f2bcf5b75f2a8530c07afb22333a40db381",
+    "normative_sha256": "d775cf9fd73b766fe7084a8d799410715ee36e125711cda8fc8005b508e11ed4",
+    "symbol_count": 8
+  },
+  "kind": "plan",
+  "normative": {
+    "baseline": {
+      "commit": null,
+      "observed_date": "2026-10-30",
+      "repository": null
+    },
+    "checkpoints": [
+      {
+        "depends_on": [],
+        "exit": "Scoped implementation and observed local checks recorded; no release claim.",
+        "id": "CP-IMPLEMENT",
+        "tasks": [
+          "T-VERIFY",
+          "T-QUOTE",
+          "T-MODALS",
+          "T-RESEARCH",
+          "T-READINESS"
+        ],
+        "title": "Consolidation and screen implementation"
+      },
+      {
+        "depends_on": [
+          "CP-IMPLEMENT"
+        ],
+        "exit": "Actual candidate checks and remaining external acceptance clearly reported.",
+        "id": "CP-QUALIFY",
+        "tasks": [
+          "T-QUALIFY"
+        ],
+        "title": "Integrated qualification"
+      }
+    ],
+    "criterion_dispositions": [],
+    "prerequisites": [],
+    "retired_symbols": [],
+    "sections": [],
+    "sources": [],
+    "spec_ref": {
+      "artifact_id": "ST-LS-CLARITY-SPEC",
+      "binding_mode": "draft_preview",
+      "normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f"
+    },
+    "summary": "Six coherent packages with unchanged authority boundaries and actual per-surface evidence.",
+    "tasks": [
+      {
+        "checkpoint": "CP-IMPLEMENT",
+        "criterion_refs": [
+          "ST-LS-CLARITY-SPEC#CR-VERIFY",
+          "ST-LS-CLARITY-SPEC#CR-PRESERVE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Referenced outcomes implemented and applicable observed checks reported with remaining limits."
+        ],
+        "execution_scope": "CP-IMPLEMENT",
+        "id": "T-VERIFY",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "e2e/helpers"
+          },
+          {
+            "action": "modify",
+            "path": "scripts/ci"
+          }
+        ],
+        "rollback": "Revert scoped implementation only; preserve save data, unrelated work and historical evidence.",
+        "steps": [
+          "Run unchanged characterization before extraction.",
+          "Extract coherent platform/browser/model owners and test actual exports with explicit dependencies.",
+          "Preserve assertions and guards, then run affected test suites."
+        ],
+        "title": "Verification responsibility modules",
+        "verification": [
+          {
+            "argv": [
+              "node",
+              "--test",
+              "--test-skip-pattern=background guards reject frozen ticks",
+              "scripts/ci/lastStandQualification.test.mjs",
+              "scripts/ci/lastStandBackground.test.mjs"
+            ],
+            "assertion": "Existing qualification and portable background assertions remain enforced after modular extraction; native group separately reported.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "actual first-hit callers reject a later reused foe slot and wrong deployment identity"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-IMPLEMENT",
+        "criterion_refs": [
+          "ST-LS-CLARITY-SPEC#CR-QUOTE",
+          "ST-LS-CLARITY-SPEC#CR-PRESERVE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Referenced outcomes implemented and applicable observed checks reported with remaining limits."
+        ],
+        "execution_scope": "CP-IMPLEMENT",
+        "id": "T-QUOTE",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandResearchPresentation.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandProgressionPlanner.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools/last_stand_research"
+          }
+        ],
+        "rollback": "Revert scoped implementation only; preserve save data, unrelated work and historical evidence.",
+        "steps": [
+          "Introduce structured quote projection in existing owner.",
+          "Use it in Lab and Planner without transaction changes.",
+          "Test partial, queued, capped and normal states."
+        ],
+        "title": "Shared research quote",
+        "verification": [
+          {
+            "argv": [
+              "C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_research",
+              "-p",
+              "test_progression_planner.py",
+              "-v"
+            ],
+            "assertion": "Actual compiled projection preserves exact pricing, partial time, legality and read-only behavior.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_active_queued_and_suspended_research_funding",
+              "test_exact_shared_budget_effects_and_shortfall"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-IMPLEMENT",
+        "criterion_refs": [
+          "ST-LS-CLARITY-SPEC#CR-MODALS",
+          "ST-LS-CLARITY-SPEC#CR-SCREENS",
+          "ST-LS-CLARITY-SPEC#CR-PRESERVE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Referenced outcomes implemented and applicable observed checks reported with remaining limits."
+        ],
+        "execution_scope": "CP-IMPLEMENT",
+        "id": "T-MODALS",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandControlsChecks.cs"
+          }
+        ],
+        "rollback": "Revert scoped implementation only; preserve save data, unrelated work and historical evidence.",
+        "steps": [
+          "Register typed current pages and use shared header/selector primitives.",
+          "Fix confirmed ambiguous actions and empty-state overload in Planner/History/Shop/Settings.",
+          "Run actual control/focus/scroll and model checks."
+        ],
+        "title": "Shared modal navigation and sister-screen clarity",
+        "verification": [
+          {
+            "argv": [
+              "C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_controls",
+              "-p",
+              "test_menu.py",
+              "-v"
+            ],
+            "assertion": "Actual Unity modal/control behavior preserves focus, scroll, header and sister-screen clarity.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_imported_scene_controls"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-IMPLEMENT",
+        "criterion_refs": [
+          "ST-LS-CLARITY-SPEC#CR-RESEARCH",
+          "ST-LS-CLARITY-SPEC#CR-QUOTE",
+          "ST-LS-CLARITY-SPEC#CR-PRESERVE"
+        ],
+        "depends_on": [
+          "T-QUOTE"
+        ],
+        "done_when": [
+          "Referenced outcomes implemented and applicable observed checks reported with remaining limits."
+        ],
+        "execution_scope": "CP-IMPLEMENT",
+        "id": "T-RESEARCH",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Scripts/LastStandResearchHud.cs"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor/LastStandShopChecks.cs"
+          },
+          {
+            "action": "modify",
+            "path": "scripts/last-stand-research-journey.mjs"
+          }
+        ],
+        "rollback": "Revert scoped implementation only; preserve save data, unrelated work and historical evidence.",
+        "steps": [
+          "Test locked, affordable, shortfall and active Lab states.",
+          "Show unlock requirement or selected upgrade and primary action first; put detailed rules behind explicit help.",
+          "Preserve actual per-slot intents, saved partial progress, keyboard and responsive reachability."
+        ],
+        "title": "Research task-first presentation",
+        "verification": [
+          {
+            "argv": [
+              "C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "campaign-unity/Tools/last_stand_shop",
+              "-p",
+              "test_shop_ui.py",
+              "-k",
+              "shop_price_line",
+              "-v"
+            ],
+            "assertion": "Actual Unity research controls explain locked/unlocked/funding states and start through the shared transaction.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_shop_price_line"
+            ]
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-IMPLEMENT",
+        "criterion_refs": [
+          "ST-LS-CLARITY-SPEC#CR-READINESS",
+          "ST-LS-CLARITY-SPEC#CR-PRESERVE"
+        ],
+        "depends_on": [],
+        "done_when": [
+          "Referenced outcomes implemented and applicable observed checks reported with remaining limits."
+        ],
+        "execution_scope": "CP-IMPLEMENT",
+        "id": "T-READINESS",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md"
+          },
+          {
+            "action": "modify",
+            "path": ".codearbiter/plans"
+          },
+          {
+            "action": "modify",
+            "path": ".gitattributes"
+          }
+        ],
+        "rollback": "Revert scoped implementation only; preserve save data, unrelated work and historical evidence.",
+        "steps": [
+          "Summarize pending obligations once with owners/evidence links in existing readiness document.",
+          "Point older native plans to current matrix using typed section updates.",
+          "Keep historical evidence bytes and observed statuses intact."
+        ],
+        "title": "Current acceptance matrix",
+        "verification": [
+          {
+            "argv": [
+              "git",
+              "diff",
+              "--check"
+            ],
+            "assertion": "Whitespace validity plus source inspection of current acceptance matrix, links and unchanged historical reports.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": []
+          }
+        ]
+      },
+      {
+        "checkpoint": "CP-QUALIFY",
+        "criterion_refs": [
+          "ST-LS-CLARITY-SPEC#CR-PRESERVE",
+          "ST-LS-CLARITY-SPEC#CR-RESEARCH",
+          "ST-LS-CLARITY-SPEC#CR-SCREENS"
+        ],
+        "depends_on": [
+          "T-VERIFY",
+          "T-QUOTE",
+          "T-MODALS",
+          "T-RESEARCH",
+          "T-READINESS"
+        ],
+        "done_when": [
+          "Referenced outcomes implemented and applicable observed checks reported with remaining limits."
+        ],
+        "execution_scope": "CP-QUALIFY",
+        "id": "T-QUALIFY",
+        "paths": [
+          {
+            "action": "modify",
+            "path": "campaign-unity/Tools"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/Unity/Assets/Editor"
+          },
+          {
+            "action": "modify",
+            "path": "client/public/last-stand"
+          },
+          {
+            "action": "modify",
+            "path": "scripts"
+          },
+          {
+            "action": "modify",
+            "path": "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md"
+          }
+        ],
+        "rollback": "Revert scoped implementation only; preserve save data, unrelated work and historical evidence.",
+        "steps": [
+          "Run affected combined checks and inspect resulting diff.",
+          "Rebuild source-bound player and latest existing preview, inspect actual research and sister-screen states.",
+          "Record exact results/limits, commit only scoped changes through gate and update PR547 without merge."
+        ],
+        "title": "Integrated player and PR handoff",
+        "verification": [
+          {
+            "argv": [
+              "C:/Users/brenn/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+              "-B",
+              "campaign-unity/Tools/last_stand_test_inventory.py",
+              "--run",
+              "portable"
+            ],
+            "assertion": "Applicable portable suite passes; Unity build/browser results recorded separately with explicit device and endurance limits.",
+            "availability": "existing",
+            "cwd": ".",
+            "expected_exit": 0,
+            "required_tests": [
+              "test_exact_shared_budget_effects_and_shortfall"
+            ]
+          }
+        ]
+      }
+    ],
+    "title": "Last Stand: consolidation and screen clarity sprint"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../specs/last-stand-consolidation-and-clarity.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 29,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-consolidation-and-clarity"
+}
+</script>
+</body></html>

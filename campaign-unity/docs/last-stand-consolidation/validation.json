@@ -1,0 +1,301 @@
+{
+  "schema": "singedterra-last-stand-local-validation-summary/v1",
+  "kind": "Summary of existing local receipts; not a native acceptance receipt or release approval",
+  "recordedUtc": "2026-10-30T20:38:03.321973+00:00",
+  "status": "scoped-local-checks-pass; release-qualification-incomplete",
+  "candidate": {
+    "build": "Web-20261030T202703Z-cf836c",
+    "sourceHeadAtBuild": "e0a71becc44143d1393206299521005c0a87ebde",
+    "sourceHeadLimit": "Build includes then-uncommitted consolidation changes; source closure and input digests identify those bytes. This base commit's hosted CI is not current-candidate CI.",
+    "sourceBeforeSha256": "d52360c4dbc55f87067951662044996928b8b55c5de69915076b7487f9c0d609",
+    "sourceAfterSha256": "d52360c4dbc55f87067951662044996928b8b55c5de69915076b7487f9c0d609",
+    "packageBindings": {
+      "client/public/last-stand/asset-manifest.json": "81317d7e0c67d41344b978f9fdff05c3a2af7611b27227ffc36a578fd12c73ad",
+      "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "39ae19313900d2b7e7c8dbd236217450630cc48b7529ca86ba3b7d2e355a5730",
+      "campaign-unity/docs/last-stand-web/source-lock.json": "fd8c235be0677200fd7b1a9ccf14391392ee7770ae1cde4796c77c7a1bbf3d42",
+      "client/public/last-stand/Build/Web-20261030T202703Z-cf836c.data": "a6f8624bf163686f90ac3cabc64c972e8a356a06d241d51ebaaa77f87f296bcd",
+      "client/public/last-stand/Build/Web-20261030T202703Z-cf836c.framework.js": "eba2007a4f10ef4eb4a11c4f23c7ba2727e4767a28b4b0d86ec0b087e5e8fcae",
+      "client/public/last-stand/Build/Web-20261030T202703Z-cf836c.loader.js": "0c431354dc483ef276a75c5906b7dcdbb249fd8e69edf4e48b72c603d1f5811d",
+      "client/public/last-stand/Build/Web-20261030T202703Z-cf836c.wasm": "b49c416e5af67e0b48ee0c288110d5cf3cd8795acc9ab4426371f30fe51c8036",
+      "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+      "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+      "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+      "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+      "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+      "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+      "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+      "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+      "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+      "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+      "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+      "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+      "client/public/last-stand/index.html": "c89b516e60d9b588dc3a28565a44ed52a13a05428f4e222abc3d1359f780f906",
+      "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+    },
+    "sourceBindings": {
+      "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+      "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+      "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+      "campaign-unity/Tools/verify_last_stand_loop.py": "96851c9e9546e027be96916153ef6602437a0764973dc4837794864ec0a1fad3",
+      "e2e/helpers/lastStandBrowserActor.mjs": "ab185937ab1b33cc4a57515a38bc361abf09f908dcc87c486f006cbd87279574",
+      "e2e/helpers/lastStandControlReveal.mjs": "a5e31748021c8c99aee469f93e01139a56cd7dc0285aeec131f7eac22e3f3dab",
+      "e2e/helpers/lastStandEncounterOracle.mjs": "d3849dbbb85e9fbeaad56e6928119342ab9da0442dea51ee8f544c99e43d27e5",
+      "e2e/helpers/lastStandJourney.mjs": "1365bb913636ffddbca1f2d5109cb8074f70e4ee40f6aeb3803d3c06ce082c2b",
+      "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+      "e2e/helpers/lastStandJourneyHost.mjs": "d3c20f174ecebe6e3bffbc1eb896e6b841f0e97ac3c5688686e72c972edc5ef6",
+      "e2e/helpers/lastStandJourneyRuntime.mjs": "485184bcd292f79038d884116beaf4de7bcc6bc9aa4402d62af03637f3ad2e0d",
+      "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+      "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+      "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+      "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+      "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+      "e2e/helpers/lastStandRuntimeObservation.mjs": "c645ac7ebf6b27126726c2909801fa29a820ba2dd785c4a59a18fabef4e26088",
+      "e2e/helpers/lastStandTierJourney.mjs": "ad9d0a747f16ef530a57dae30cf8358594f7c08899cb1923008f5c49204f667e",
+      "e2e/helpers/lastStandWaveGuards.mjs": "8f31b64263937153f012245c01fc0bca84270b65a6d237242ea97302ed71e098",
+      "e2e/helpers/lastStandWaveJourney.mjs": "2c0bd05879969c631d073bf28d3f6f36297f62a850089eee080cb117d0bc586c",
+      "scripts/ci/lastStandQualification.mjs": "b92e63a9bdded259bad917eb252d4e4f792fac9a7d1751cde373637ed07c5267",
+      "scripts/ci/lastStandQualification.test.mjs": "c7917e54c37c56cf3c21b937fb106d494933f3127c4b07ae289965504d9de071",
+      "scripts/ci/lastStandResearchJourney.test.mjs": "bfefded0adf2ee9d9469c400706b178b19ce6727fecfac5ba452541db69944dc",
+      "scripts/last-stand-combat-feedback.mjs": "a4e7c25e4ffbfc89c6f9c0040a59ffbf74b7663ebb9fac842d5da669818cedde",
+      "scripts/last-stand-planning-journey.mjs": "cc05381bf00f5d384c05c060955f8ced5b44ace5179d5d9bd7e0c6ac51ed4ad0",
+      "scripts/last-stand-playable-loop.mjs": "2e6563cc70156002d6afbdfaeed668685038c3dd6d5c08bed81e69b3829f76c3",
+      "scripts/last-stand-research-journey.mjs": "4f594d9289c6b694f594e641631b69d98ade4c68ad4999d08e2fccd6e1b6fbce",
+      "scripts/last-stand-wave-endurance.mjs": "ffca42df453d36aa593fdb6f1e40825e80df9b389954cb88aede0687cc9a71b8",
+      "scripts/last-stand-wave-milestones.mjs": "6bc189f8560da76125b68b8d67bc16ded8e23264872eecb9f447da52c7306e13"
+    },
+    "bindingLimit": "Raw SHA-256 of final browser/review inputs and packaged artifacts was rechecked when this summary was written. The tracked source-lock and packaging receipt bind the Unity source closure. Future source or package changes require renewed admission."
+  },
+  "buildAndAdmission": {
+    "status": "pass",
+    "scope": "Unity WebGL build, frozen packaging/source admission, strict TypeScript checks and Vite production build",
+    "buildInvocation": {
+      "path": "campaign-unity/Evidence/consolidation-clarity/final-build-invocation.json",
+      "sha256": "9768ce7119a854a1079dcc82e207d4f09354a1dff7ca6b2d4181abf5651cdbd1",
+      "availability": "local ignored Evidence; not bundled in this summary"
+    },
+    "buildLog": {
+      "path": "campaign-unity/Evidence/consolidation-clarity/final-build.log",
+      "sha256": "e9c26b69e6b32b6fff8b8790fe4bd911ab0edfcc02a4d45de811d4014dd970ac",
+      "availability": "local ignored Evidence; not bundled in this summary"
+    },
+    "siteBuildLog": {
+      "path": "campaign-unity/Evidence/consolidation-site-build-final.log",
+      "sha256": "284438023380b418580a28e23754fd3ae8969de2f783cc954aa97956379bb2bc",
+      "availability": "local ignored Evidence; not bundled in this summary"
+    },
+    "previewAtVerification": "Sole reported game preview: 127.0.0.1:4174, PID 50400; process availability is transient, not a deployment claim"
+  },
+  "browser": {
+    "research": {
+      "status": "pass",
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-clarity/research-final/result.json",
+        "sha256": "108a8247bed274515e7f562646a7058c1110b84cbcbd83d8d0d80412a0b0bc1f",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Source-bound headless browser input, save and rendered screenshots. Development seeds are not ordinary earned progression, elapsed endurance, native acceptance or owner visual approval.",
+      "checksPassed": 13,
+      "runCount": 5,
+      "browserErrors": 0,
+      "screenshots": 12,
+      "checks": [
+        "closed tab retains funding and advances only research",
+        "visible Start uses shared wallet once",
+        "one funded queued project",
+        "Suspend refunds active and promotes paid queue",
+        "Switch keeps partial time and reconciles refund/replacement cost",
+        "second tab remains read-only while the original owns the profile",
+        "original owner retains its wallet and funded project",
+        "reloaded second tab acquires ownership and funds one queue",
+        "bulk selection is free and one click buys displayed aggregate",
+        "ordinary fresh profile exposes locked Labs without purchasable action",
+        "earned maximum stops at five",
+        "half-step slowdown reaches pause",
+        "explicit abandon finalizes one observed run"
+      ]
+    },
+    "planning": {
+      "status": "pass",
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-clarity/planning-final/result.json",
+        "sha256": "96bbdee9729a1cdf55797d448f91226b7b40a9ccbfd37e112ca4a32d1f3b2834",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Empty isolated profile; actual headless browser input, persistence and screenshots. No seeded rewards, device, hardware audio, endurance or owner acceptance.",
+      "checksPassed": 15,
+      "runCount": 1,
+      "browserErrors": 0,
+      "screenshots": 9,
+      "checks": [
+        "locked research explains the progression requirement before spending",
+        "research rules are available on request",
+        "empty history explains how to create a record",
+        "history methodology is available on request",
+        "planner offers current tier goal without spending",
+        "ordinary pin action saves stable goal identity",
+        "pin survives real reload",
+        "budget alternatives disclose actual costs and unlocks",
+        "compact ordinary scrolling reaches clear without changing progression",
+        "planner routes to existing permanent upgrade owner",
+        "one provisional run does not fabricate a comparison",
+        "farming view states insufficient measurements",
+        "comparison preserves checkpoint and currency",
+        "closing comparison preserves manual pause",
+        "no browser errors"
+      ]
+    },
+    "closedResearchCompletionObserved": true,
+    "limits": "Actual rendered headless browser interaction. Research includes an ordinary fresh locked profile and separately seeded research/economy cases; Planning uses an empty isolated profile. Neither is Windows native-background, device, hardware audio, earned long-term balance, endurance or owner visual acceptance."
+  },
+  "localChecks": {
+    "countingRule": "Counts describe overlapping suites and different units; never sum them as unique tests or infer numerical code coverage.",
+    "portableInventory": {
+      "status": "pass",
+      "modules": 71,
+      "declaredCases": 478,
+      "failedModules": [],
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-portable-final.log",
+        "sha256": "8b483cda14b2ccfa7cccee366cfcb726c5d1ba834e52503e0a1317b37d7b2d96",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Portable inventory; excludes native-browser and Unity-editor lanes"
+    },
+    "researchQuotes": {
+      "status": "pass",
+      "tests": 6,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-quotes-final.log",
+        "sha256": "bedf1c95b5f829c2378b9c6d6b1a7217da56ed411f2bd376961a61cab9d8e603",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      }
+    },
+    "researchImportedScene": {
+      "status": "pass",
+      "checks": [
+        "test_research_lab_history_modal_surfaces",
+        "test_research_bulk_shop_surfaces",
+        "test_shop_price_line",
+        "test_wave_information_surface"
+      ],
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-clarity-research/editor-20261030T202605Z-b6cb2cb0/result.json",
+        "sha256": "83a70ecbd1578249e9b043fd02171a183c366fb5c2e41e5ed031f8fe20c8da52",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/consolidation-clarity-research/editor-20261030T202605Z-b6cb2cb0/unity-editor.log",
+        "sha256": "7374cdbe6e1f741dee7398deb6897e350476d7dd0b51860d65c614f9e3c2d63d",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      }
+    },
+    "controlsImportedScene": {
+      "status": "pass",
+      "checks": [
+        "test_registered_modal_pages_own_input",
+        "test_sister_screens_explain_next_actions",
+        "test_planner_navigation_preserves_progression_and_pause",
+        "test_planning_panes_fit_compact_height",
+        "test_idle_controls_restore_after_focus_and_visibility",
+        "test_scalable_selector_entries",
+        "test_locked_tier_preview_preserves_admission",
+        "test_unlocked_tier_and_fitting_selection",
+        "test_selector_save_failure_restores_environment",
+        "test_selector_environment_preflight_preserves_save",
+        "test_selector_description_keyboard_scroll",
+        "test_failed_deploy_retry_preserves_menu_hold",
+        "test_existing_suite_preference_scope",
+        "test_existing_suite_pipeline_scope",
+        "test_settings_scroll_resets_and_content_contraction",
+        "test_preferences_applied_before_deploy",
+        "test_speed_and_independent_pause_holds",
+        "test_modal_core_input_and_cancel_focus",
+        "test_abandon_cancel_and_confirm_without_award",
+        "test_reset_defaults_preserves_gameplay_and_pause",
+        "test_failed_save_refuses_navigation",
+        "test_display_owns_runtime_pipeline_clone",
+        "test_guidance_optout_and_audio_sample_admission"
+      ],
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-controls/20261030T202137Z-724de81a/result.json",
+        "sha256": "36d3f0ed5005e4ed74bdbf526662ee28b8cebcadff02ecf18837bbce08ac4b58",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "23 checks including compact Planner selector regression; prior failing compact-height receipt remains historical"
+    },
+    "observationReaders": {
+      "status": "pass",
+      "actualUnityPackets": 5,
+      "readers": [
+        "Python",
+        "JavaScript"
+      ],
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-ui/editor-20261030T202622Z-ef4a77dc/result.json",
+        "sha256": "25d0446cf437a54af2c623a59e58c30bdf54b65e5566b6a8c9d080fab37e1ad4",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "readerRun": {
+        "path": "campaign-unity/Evidence/consolidation-observation-final3.log",
+        "sha256": "76c839f397404f51e6adbad4f8e9c0ed0427d40011182b644258d009cc777882",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Actual emitter inventory and malformed/omitted-control refusal; retained v1/v2 stay separate from current v3"
+    },
+    "selectedNodeGuards": {
+      "status": "pass",
+      "checks": 275,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-parity-final.log",
+        "sha256": "74180650bd4b81ccf3f10ec55eba46446fdd43ecd1f2c4a20748bbd5c2df8615",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      }
+    },
+    "ciWorkflowGuards": {
+      "status": "pass",
+      "checks": 193,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-ciworkflow-final.log",
+        "sha256": "67f3e33491f84ab55a727a1ee414e319a213e519a40fe0b1108973a0eae6ec07",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Local workflow guard tests, not hosted CI execution"
+    },
+    "runnerFocused": {
+      "status": "pass",
+      "checks": 123,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-runner-final.log",
+        "sha256": "a92696ebab29e4ee32732194b035b256bcfb9d6a449a68c747b8a55be520d69b",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      }
+    }
+  },
+  "independentReview": {
+    "status": "PASS within reviewed scope; no open findings",
+    "review": {
+      "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-review-consolidation.md",
+      "sha256": "5a41b35837b4a50b9f20a49da5184e0a0966b6814e6e6a0b1e5e1e0ccf391c62",
+      "availability": "local ignored Evidence; not bundled in this summary"
+    },
+    "inputMap": {
+      "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-consolidation-inputs.json",
+      "sha256": "b6f3e703e6f82b4e456dbc2b755e4a7bc96da8b33d7854c5af99437738c93a4e",
+      "availability": "local ignored Evidence; not bundled in this summary"
+    },
+    "reviewedSourceFiles": 27,
+    "scope": "Auth/Crypto and Security review; final 27-source freeze rechecked. Not a security marker, secret-scan receipt, native acceptance or release authorization."
+  },
+  "stillPending": [
+    "Existing owned-Windows-browser native-background timeout",
+    "Current Windows player interaction and restart qualification",
+    "Physical Android lifecycle and hardware checks",
+    "Hardware audio/listening acceptance",
+    "Real-duration farming, memory and thermal qualification",
+    "Owner screen-comprehension, visual-treatment and balance/content acceptance",
+    "Complete packaged save-failure/retry/support journeys on supported targets",
+    "Exact final-commit hosted CI",
+    "Separately authorized merge, publication/deployment and live-host checks"
+  ],
+  "historyPolicy": "This summary does not rewrite or promote historical receipts, source maps, contracts or retained editions. Current obligations remain in LAST-STAND-RELEASE-READINESS.md."
+}
