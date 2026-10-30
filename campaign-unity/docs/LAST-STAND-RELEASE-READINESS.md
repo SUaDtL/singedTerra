@@ -12,12 +12,13 @@ The current playable candidate is **`Web-20261030T202703Z-cf836c`**. Its
 [local validation summary](last-stand-consolidation/validation.json) binds the final
 source/package hashes and identifies the local receipts. Unity WebGL packaging,
 source admission, strict TypeScript/Vite and the complete portable inventory pass
-(71 modules, 478 declared cases). The final Research browser journey passes 13
+(71 modules, 478 declared cases). The refreshed Research browser journey passes 13
 checks with 12 screenshots; Planner passes 15 with nine screenshots. Both enforce
 zero browser errors. Six quote checks, four imported Research checks, 23 imported
 Controls checks, five actual observation packets through both readers and the
 selected Node guard suites pass. These suites overlap and their counts are not
-additive. The scoped independent Auth/Crypto and Security review passes.
+additive. The scoped independent Auth/Crypto and Security reviews pass, including the
+CI fixture follow-up. Game C# and package bytes are unchanged by that repair.
 
 **Local consolidation verification is complete within those scopes. Release
 qualification remains incomplete.** The Windows native-background timeout,
@@ -27,6 +28,14 @@ remain open below. Exact final-head hosted CI remains pending. The pre-sprint he
 [CI 41088994426](https://github.com/SUaDtL/singedTerra/actions/runs/41088994426) and
 [CodeQL 41088994464](https://github.com/SUaDtL/singedTerra/actions/runs/41088994464);
 those results cover that baseline, not the new consolidation changes.
+The first consolidation head `97b15c7a684d8f9fa86e2a7a524c3690c183135d` failed
+[CI 41125483235](https://github.com/SUaDtL/singedTerra/actions/runs/41125483235):
+three browser-matrix fixtures still depended on moved source. The repair and its
+pre-install dependency regression now pass the exact local classifier cohort
+(534 checks), affected verification cohort (492 checks), and independent import
+policy cohort (51 checks). Research, Planner and the portable inventory were
+rerun against the changed helpers. These local passes do not replace a successful
+hosted run for the repair.
 The player's declared `1.0` and repository `0.0.0` are not newly approved public
 versions. Publication and store submission remain separate decisions.
 
@@ -42,7 +51,7 @@ versions. Publication and store submission remain separate decisions.
 | <a id="q-ux"></a>**Q-UX — screen clarity, input and accessibility** | Product UX/accessibility / [Clarity T-MODALS](../../.codearbiter/plans/last-stand-consolidation-and-clarity.html#T-MODALS) | [Current UI checks and browser captures](last-stand-consolidation/validation.json) cover four imported Research checks, 23 Controls checks including the compact-selector regression, five actual observation packets through both readers, and 21 browser screenshots. Locked Research now identifies its unlock path; shared quotes and actions replace the misleading AVAILABLE state. These checks establish bounded behavior and layout, not owner comprehension. | Owner review of corrected Research, Planner and sibling screens; retain actual-target checks of locked/empty/shortfall/failed-save states, focus/scroll and 44px targets as platform qualification proceeds. |
 | <a id="q-audio"></a>**Q-AUDIO — rendered sound and listening** | Audio verification / [Player controls T-AUDIO](../../.codearbiter/plans/last-stand-upgrade-payoff.html#T-AUDIO) | [Audio and background observations](#delivery-state-on-2026-10-28) and source regressions remain bounded to their recordings. Logs, cue counters and inert fixtures do not prove hardware audibility or listening acceptance. | Source-bound normal-play media and target listening checks for master/effects/music controls, silence, background admission, no replay/bursts and stable pitch at game speeds; record owner feedback separately. |
 | <a id="q-art"></a>**Q-ART — visual treatment and shipped rights** | Art/product / [First-session DEC-VISUAL](../../.codearbiter/specs/last-stand-first-session-polish.html#DEC-VISUAL) | [Plan-closure report](../../.codearbiter/reports/last-stand-plan-closure-2026-10-30.md) retains the unresolved visual-treatment choice. Later garage/chrome feedback is not that decision. Existing assets/builds do not establish final rights and visual acceptance. | Record the actual visual-treatment decision and matched normal-speed review, plus provenance/license review for shipped art/audio and explicit exceptions. |
-| <a id="q-delivery"></a>**Q-DELIVERY — final review, hosted CI and distribution** | Delivery/release owner / [Architecture T-DELIVERY](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-DELIVERY) | [Local validation and independent scoped review](last-stand-consolidation/validation.json) pass for the bound candidate. The hosted green results above are baseline-only; exact final-head hosted CI remains pending. The [maintenance record](../../.codearbiter/reports/project-maintenance-2026-10-29.md) preserves ADR acceptance and the true-merge requirement. | Exact final-head hosted checks; separately authorized merge retaining ADR source ancestry, then separately authorized deployment/publication and live-host checks. Store signing, version and submission require their own decisions. |
+| <a id="q-delivery"></a>**Q-DELIVERY — final review, hosted CI and distribution** | Delivery/release owner / [Architecture T-DELIVERY](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-DELIVERY) | [Refreshed local checks and scoped reviews](last-stand-consolidation/validation.json) pass for the bound repair. First-head [CI 41125483235](https://github.com/SUaDtL/singedTerra/actions/runs/41125483235) failed three stale browser fixtures; local regression/repair and dependency-free import checks now pass. Exact repair-head hosted CI remains pending. The [maintenance record](../../.codearbiter/reports/project-maintenance-2026-10-29.md) preserves ADR acceptance and the true-merge requirement. | Exact repair-head hosted checks and final commit gates; separately authorized merge retaining ADR source ancestry, then separately authorized deployment/publication and live-host checks. Store signing, version and submission require their own decisions. |
 
 The historical plans retain their own criteria, implementation progress and check
 records. Their new current-qualification pointers map overlapping obligations to

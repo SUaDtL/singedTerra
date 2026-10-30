@@ -225,3 +225,15 @@ export async function purchaseJourneyCannon({gameKey,check,savedWave}) {
   const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');check(bought.wallet===savedWave.credits-2 && bought.level===1 && bought.cannonDamage===30,'two salvage commits Cannon Attack level1',bought);
   return bought;
 }
+
+export async function verifyRetiredCampaignReturn({report,selected,check,page}) {
+    report.retired_campaign_preservation.native_return='observed unchanged';
+    await selected('last-stand');
+    const campaignItems=await page.locator('.command-center__library-items [data-command-item]').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
+    check(campaignItems.length===1&&campaignItems[0]==='last-stand','native Return offers only Last Stand');
+    report.retired_campaign_preservation.retirement='observed Last Stand only';
+}
+export async function resumeReturnedJourney({resize,captureViewport,gameClick}) {
+  await resize(captureViewport);
+  return gameClick('Deploy','resume');
+}

@@ -1,12 +1,12 @@
 {
   "schema": "singedterra-last-stand-local-validation-summary/v1",
   "kind": "Summary of existing local receipts; not a native acceptance receipt or release approval",
-  "recordedUtc": "2026-10-30T20:38:03.321973+00:00",
+  "recordedUtc": "2026-10-30T21:04:42.137322+00:00",
   "status": "scoped-local-checks-pass; release-qualification-incomplete",
   "candidate": {
     "build": "Web-20261030T202703Z-cf836c",
     "sourceHeadAtBuild": "e0a71becc44143d1393206299521005c0a87ebde",
-    "sourceHeadLimit": "Build includes then-uncommitted consolidation changes; source closure and input digests identify those bytes. This base commit's hosted CI is not current-candidate CI.",
+    "sourceHeadLimit": "The unchanged game export includes consolidation changes made after its recorded build base. Current verification helpers include the CI repair after 97b15c7a684d8f9fa86e2a7a524c3690c183135d. Source/package digests identify both scopes; no baseline hosted result qualifies the repair.",
     "sourceBeforeSha256": "d52360c4dbc55f87067951662044996928b8b55c5de69915076b7487f9c0d609",
     "sourceAfterSha256": "d52360c4dbc55f87067951662044996928b8b55c5de69915076b7487f9c0d609",
     "packageBindings": {
@@ -40,10 +40,10 @@
       "e2e/helpers/lastStandBrowserActor.mjs": "ab185937ab1b33cc4a57515a38bc361abf09f908dcc87c486f006cbd87279574",
       "e2e/helpers/lastStandControlReveal.mjs": "a5e31748021c8c99aee469f93e01139a56cd7dc0285aeec131f7eac22e3f3dab",
       "e2e/helpers/lastStandEncounterOracle.mjs": "d3849dbbb85e9fbeaad56e6928119342ab9da0442dea51ee8f544c99e43d27e5",
-      "e2e/helpers/lastStandJourney.mjs": "1365bb913636ffddbca1f2d5109cb8074f70e4ee40f6aeb3803d3c06ce082c2b",
+      "e2e/helpers/lastStandJourney.mjs": "c83c52ef689dc190b1639dee00ab2719274c46e1731b79cf803f931de3f2f602",
       "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
       "e2e/helpers/lastStandJourneyHost.mjs": "d3c20f174ecebe6e3bffbc1eb896e6b841f0e97ac3c5688686e72c972edc5ef6",
-      "e2e/helpers/lastStandJourneyRuntime.mjs": "485184bcd292f79038d884116beaf4de7bcc6bc9aa4402d62af03637f3ad2e0d",
+      "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
       "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
       "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
       "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
@@ -53,9 +53,14 @@
       "e2e/helpers/lastStandTierJourney.mjs": "ad9d0a747f16ef530a57dae30cf8358594f7c08899cb1923008f5c49204f667e",
       "e2e/helpers/lastStandWaveGuards.mjs": "8f31b64263937153f012245c01fc0bca84270b65a6d237242ea97302ed71e098",
       "e2e/helpers/lastStandWaveJourney.mjs": "2c0bd05879969c631d073bf28d3f6f36297f62a850089eee080cb117d0bc586c",
+      "e2e/last-stand-playable-loop.spec.ts": "8b4023a04a7fbf6294342eac1aab63bcebdc3534ac2364f3af71283fd9d553a4",
+      "scripts/ci/browserMatrix.test.mjs": "7e8afbb0bdc1a57feabe87c72b1665ff0c82fc05d303ee88cd14eb0f28dbdfe4",
+      "scripts/ci/lastStandDependencyFreeFixture.mjs": "829856cd8e597447e978c9240218d20cc52d584770c4924ab856525078a46e15",
       "scripts/ci/lastStandQualification.mjs": "b92e63a9bdded259bad917eb252d4e4f792fac9a7d1751cde373637ed07c5267",
       "scripts/ci/lastStandQualification.test.mjs": "c7917e54c37c56cf3c21b937fb106d494933f3127c4b07ae289965504d9de071",
       "scripts/ci/lastStandResearchJourney.test.mjs": "bfefded0adf2ee9d9469c400706b178b19ce6727fecfac5ba452541db69944dc",
+      "scripts/ci/lastStandWaveQualification.test.mjs": "506a5668a62ace4ce1bdc03a245e9da26aa8d4f96415f0c3e9d2f99d08072313",
+      "scripts/ci/releaseWorkflow.test.mjs": "73d48d5fbe220eada2e5a3b67f50bb5b9971966c4d452e882536e24f9801f5ef",
       "scripts/last-stand-combat-feedback.mjs": "a4e7c25e4ffbfc89c6f9c0040a59ffbf74b7663ebb9fac842d5da669818cedde",
       "scripts/last-stand-planning-journey.mjs": "cc05381bf00f5d384c05c060955f8ced5b44ace5179d5d9bd7e0c6ac51ed4ad0",
       "scripts/last-stand-playable-loop.mjs": "2e6563cc70156002d6afbdfaeed668685038c3dd6d5c08bed81e69b3829f76c3",
@@ -63,7 +68,8 @@
       "scripts/last-stand-wave-endurance.mjs": "ffca42df453d36aa593fdb6f1e40825e80df9b389954cb88aede0687cc9a71b8",
       "scripts/last-stand-wave-milestones.mjs": "6bc189f8560da76125b68b8d67bc16ded8e23264872eecb9f447da52c7306e13"
     },
-    "bindingLimit": "Raw SHA-256 of final browser/review inputs and packaged artifacts was rechecked when this summary was written. The tracked source-lock and packaging receipt bind the Unity source closure. Future source or package changes require renewed admission."
+    "bindingLimit": "Raw SHA-256 of refreshed browser inputs, review inputs and all 21 packaged artifacts was rechecked for this summary. Unity source and exported game bytes are unchanged by the CI repair; their tracked source-lock and packaging receipt remain applicable. Future source or package changes require renewed admission.",
+    "verificationBaseCommit": "97b15c7a684d8f9fa86e2a7a524c3690c183135d"
   },
   "buildAndAdmission": {
     "status": "pass",
@@ -83,14 +89,24 @@
       "sha256": "284438023380b418580a28e23754fd3ae8969de2f783cc954aa97956379bb2bc",
       "availability": "local ignored Evidence; not bundled in this summary"
     },
-    "previewAtVerification": "Sole reported game preview: 127.0.0.1:4174, PID 50400; process availability is transient, not a deployment claim"
+    "previewAtVerification": "Sole reported game preview: 127.0.0.1:4174, PID 50400; process availability is transient, not a deployment claim",
+    "followupTypecheck": {
+      "status": "pass",
+      "command": "npm run typecheck",
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-typecheck-ci-followup.log",
+        "sha256": "afc88b1195eeda72f9fc07755c8e4d42e2d3db2d5e50977120a84385e17e7d2d",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Fresh strict TypeScript checks after the helper/fixture repair; unchanged game package was not rebuilt"
+    }
   },
   "browser": {
     "research": {
       "status": "pass",
       "receipt": {
-        "path": "campaign-unity/Evidence/consolidation-clarity/research-final/result.json",
-        "sha256": "108a8247bed274515e7f562646a7058c1110b84cbcbd83d8d0d80412a0b0bc1f",
+        "path": "campaign-unity/Evidence/consolidation-clarity/research-ci-followup/result.json",
+        "sha256": "291ef0777222103bf780e8b1566074d60ec084e7c4bf58edd812ffd6d6117a97",
         "availability": "local ignored Evidence; not bundled in this summary"
       },
       "scope": "Source-bound headless browser input, save and rendered screenshots. Development seeds are not ordinary earned progression, elapsed endurance, native acceptance or owner visual approval.",
@@ -117,8 +133,8 @@
     "planning": {
       "status": "pass",
       "receipt": {
-        "path": "campaign-unity/Evidence/consolidation-clarity/planning-final/result.json",
-        "sha256": "96bbdee9729a1cdf55797d448f91226b7b40a9ccbfd37e112ca4a32d1f3b2834",
+        "path": "campaign-unity/Evidence/consolidation-clarity/planning-ci-followup/result.json",
+        "sha256": "1542b4f36523a8e0d18d56206d03d38321df62c535fb860ff5f54e166dbdc4f5",
         "availability": "local ignored Evidence; not bundled in this summary"
       },
       "scope": "Empty isolated profile; actual headless browser input, persistence and screenshots. No seeded rewards, device, hardware audio, endurance or owner acceptance.",
@@ -155,11 +171,11 @@
       "declaredCases": 478,
       "failedModules": [],
       "receipt": {
-        "path": "campaign-unity/Evidence/consolidation-portable-final.log",
-        "sha256": "8b483cda14b2ccfa7cccee366cfcb726c5d1ba834e52503e0a1317b37d7b2d96",
+        "path": "campaign-unity/Evidence/consolidation-portable-ci-followup.log",
+        "sha256": "37e98274851aea7c480e5b0abf504d34c3d5130def9318da7f9fafa5bf2266f2",
         "availability": "local ignored Evidence; not bundled in this summary"
       },
-      "scope": "Portable inventory; excludes native-browser and Unity-editor lanes"
+      "scope": "Refreshed portable inventory; excludes native-browser and Unity-editor lanes"
     },
     "researchQuotes": {
       "status": "pass",
@@ -242,49 +258,78 @@
       },
       "scope": "Actual emitter inventory and malformed/omitted-control refusal; retained v1/v2 stay separate from current v3"
     },
-    "selectedNodeGuards": {
+    "exactCiClassifierCohort": {
       "status": "pass",
-      "checks": 275,
+      "tests": 534,
+      "failed": 0,
+      "skipped": 0,
       "receipt": {
-        "path": "campaign-unity/Evidence/consolidation-parity-final.log",
-        "sha256": "74180650bd4b81ccf3f10ec55eba46446fdd43ecd1f2c4a20748bbd5c2df8615",
-        "availability": "local ignored Evidence; not bundled in this summary"
-      }
-    },
-    "ciWorkflowGuards": {
-      "status": "pass",
-      "checks": 193,
-      "receipt": {
-        "path": "campaign-unity/Evidence/consolidation-ciworkflow-final.log",
-        "sha256": "67f3e33491f84ab55a727a1ee414e319a213e519a40fe0b1108973a0eae6ec07",
+        "path": "campaign-unity/Evidence/consolidation-clarity/classifier-followup.log",
+        "sha256": "f0f9c0d80ac6f4a5bd987fcec72e8b5e8fb1ff64eb8a42960b5000ca1cbc5bcf",
         "availability": "local ignored Evidence; not bundled in this summary"
       },
-      "scope": "Local workflow guard tests, not hosted CI execution"
-    },
-    "runnerFocused": {
-      "status": "pass",
-      "checks": 123,
-      "receipt": {
-        "path": "campaign-unity/Evidence/consolidation-runner-final.log",
-        "sha256": "a92696ebab29e4ee32732194b035b256bcfb9d6a449a68c747b8a55be520d69b",
+      "command": {
+        "path": "campaign-unity/Evidence/consolidation-clarity/classifier-followup-command.json",
+        "sha256": "77d94ed97e02f74592dcabb91b0f8cdc76a166855e0c42d58b1dc6abf63ff27c",
         "availability": "local ignored Evidence; not bundled in this summary"
-      }
+      },
+      "scope": "Exact 24-file Node cohort declared by the CI classification job, executed locally; not hosted CI"
+    },
+    "affectedVerificationCohort": {
+      "status": "pass",
+      "tests": 492,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-matrix-cohort-final.log",
+        "sha256": "9e5156b795d380fe1d4e5dc615ff5a28725ce2abeb9f2cd272b8d53ed81d16f3",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "command": "node --test --test-skip-pattern='background guards reject frozen ticks' scripts/ci/browserMatrix.test.mjs scripts/ci/releaseWorkflow.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/lastStand*.test.mjs",
+      "scope": "Selected affected verification guards; native-background qualification is excluded and remains unqualified despite this log reporting zero skipped cases"
+    },
+    "preinstallImportPolicy": {
+      "status": "pass",
+      "tests": 51,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": {
+        "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-ci-followup-import-restrictions.log",
+        "sha256": "f2e291d921ef3bf4aa04c29428f2060004952cd3fc1499e834f946247717780d",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "scope": "Independent built-in-only import-policy run, including the isolated pre-install fixture executing the original 16 matrix tests with TypeScript and Playwright absent"
     }
   },
   "independentReview": {
-    "status": "PASS within reviewed scope; no open findings",
-    "review": {
-      "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-review-consolidation.md",
-      "sha256": "5a41b35837b4a50b9f20a49da5184e0a0966b6814e6e6a0b1e5e1e0ccf391c62",
+    "status": "PASS within the original and follow-up reviewed scopes; no open findings",
+    "currentFollowupReview": {
+      "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-review-ci-followup.md",
+      "sha256": "1d70424e7338db6e85644f62e9274044d0e3244c68cf2271211f00e4593bec38",
       "availability": "local ignored Evidence; not bundled in this summary"
     },
-    "inputMap": {
-      "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-consolidation-inputs.json",
-      "sha256": "b6f3e703e6f82b4e456dbc2b755e4a7bc96da8b33d7854c5af99437738c93a4e",
+    "currentFollowupInputMap": {
+      "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-ci-followup-inputs.json",
+      "sha256": "f5c5355a4502ef724c5a75adaf6718e71381b1c105b55c31885a60b32e948354",
       "availability": "local ignored Evidence; not bundled in this summary"
     },
-    "reviewedSourceFiles": 27,
-    "scope": "Auth/Crypto and Security review; final 27-source freeze rechecked. Not a security marker, secret-scan receipt, native acceptance or release authorization."
+    "followupReviewedSourceFiles": 7,
+    "originalReview": {
+      "status": "PASS within reviewed scope; no open findings",
+      "review": {
+        "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-review-consolidation.md",
+        "sha256": "5a41b35837b4a50b9f20a49da5184e0a0966b6814e6e6a0b1e5e1e0ccf391c62",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "inputMap": {
+        "path": "campaign-unity/Evidence/project-maintenance-20261030/auth-crypto-consolidation-inputs.json",
+        "sha256": "b6f3e703e6f82b4e456dbc2b755e4a7bc96da8b33d7854c5af99437738c93a4e",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "reviewedSourceFiles": 27,
+      "scope": "Auth/Crypto and Security review; final 27-source freeze rechecked. Not a security marker, secret-scan receipt, native acceptance or release authorization."
+    },
+    "scope": "Original 27-file review remains historical. Its changed files are covered by the frozen seven-file follow-up; unchanged original inputs and all follow-up inputs were rechecked against current bytes. Neither review is a secret-scan receipt, security marker, native acceptance or release authorization."
   },
   "stillPending": [
     "Existing owned-Windows-browser native-background timeout",
@@ -294,8 +339,82 @@
     "Real-duration farming, memory and thermal qualification",
     "Owner screen-comprehension, visual-treatment and balance/content acceptance",
     "Complete packaged save-failure/retry/support journeys on supported targets",
-    "Exact final-commit hosted CI",
+    "Exact final repair-commit hosted CI",
     "Separately authorized merge, publication/deployment and live-host checks"
   ],
-  "historyPolicy": "This summary does not rewrite or promote historical receipts, source maps, contracts or retained editions. Current obligations remain in LAST-STAND-RELEASE-READINESS.md."
+  "historyPolicy": "This summary does not rewrite or promote historical receipts, source maps, contracts or retained editions. Current obligations remain in LAST-STAND-RELEASE-READINESS.md.",
+  "hostedCi": {
+    "lastObserved": {
+      "commit": "97b15c7a684d8f9fa86e2a7a524c3690c183135d",
+      "runId": 41125483235,
+      "url": "https://github.com/SUaDtL/singedTerra/actions/runs/41125483235",
+      "conclusion": "failure",
+      "failure": "Three browser-matrix fixtures still depended on moved helper source. Local reproduction passed 13 of 16 tests; a new isolated pre-install regression also exposed a TypeScript package import.",
+      "localRedReceipt": {
+        "path": "campaign-unity/Evidence/consolidation-browser-matrix-red.log",
+        "sha256": "c49beaaa8e0cb957925987cad0fa6a620f3013f5f5f8eb380ba4d6b731ef1342",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      },
+      "preinstallRedReceipt": {
+        "path": "campaign-unity/Evidence/consolidation-matrix-dependency-red.log",
+        "sha256": "81e453b64e3c6fac8722ff171f58b8bd082eefe8488596d9dc079c524792ab37",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      }
+    },
+    "repair": "Converted moved-source fixtures and related Return, journal, resume and release-profile checks to shared local seams. Branch ownership checks use built-in parse-only guard inspection; the isolated fixture verifies unavailable dependencies. No game C# or exported package bytes changed.",
+    "currentRepairHostedStatus": "pending: exact new-head hosted CI has not yet been observed"
+  },
+  "priorLocalScope": {
+    "scope": "Preserved earlier receipts for the consolidation snapshot before the CI fixture repair; they do not supersede refreshed helper-bound runs above.",
+    "researchBrowser": {
+      "path": "campaign-unity/Evidence/consolidation-clarity/research-final/result.json",
+      "sha256": "108a8247bed274515e7f562646a7058c1110b84cbcbd83d8d0d80412a0b0bc1f",
+      "availability": "local ignored Evidence; not bundled in this summary"
+    },
+    "planningBrowser": {
+      "path": "campaign-unity/Evidence/consolidation-clarity/planning-final/result.json",
+      "sha256": "96bbdee9729a1cdf55797d448f91226b7b40a9ccbfd37e112ca4a32d1f3b2834",
+      "availability": "local ignored Evidence; not bundled in this summary"
+    },
+    "portableInventory": {
+      "status": "pass",
+      "modules": 71,
+      "declaredCases": 478,
+      "receipt": {
+        "path": "campaign-unity/Evidence/consolidation-portable-final.log",
+        "sha256": "8b483cda14b2ccfa7cccee366cfcb726c5d1ba834e52503e0a1317b37d7b2d96",
+        "availability": "local ignored Evidence; not bundled in this summary"
+      }
+    },
+    "nodeCohorts": {
+      "selectedNodeGuards": {
+        "status": "pass",
+        "checks": 275,
+        "receipt": {
+          "path": "campaign-unity/Evidence/consolidation-parity-final.log",
+          "sha256": "74180650bd4b81ccf3f10ec55eba46446fdd43ecd1f2c4a20748bbd5c2df8615",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        }
+      },
+      "ciWorkflowGuards": {
+        "status": "pass",
+        "checks": 193,
+        "receipt": {
+          "path": "campaign-unity/Evidence/consolidation-ciworkflow-final.log",
+          "sha256": "67f3e33491f84ab55a727a1ee414e319a213e519a40fe0b1108973a0eae6ec07",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        },
+        "scope": "Local workflow guard tests, not hosted CI execution"
+      },
+      "runnerFocused": {
+        "status": "pass",
+        "checks": 123,
+        "receipt": {
+          "path": "campaign-unity/Evidence/consolidation-runner-final.log",
+          "sha256": "a92696ebab29e4ee32732194b035b256bcfb9d6a449a68c747b8a55be520d69b",
+          "availability": "local ignored Evidence; not bundled in this summary"
+        }
+      }
+    }
+  }
 }

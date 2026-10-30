@@ -1,3 +1,5 @@
+import {verifyRetiredCampaignReturn,resumeReturnedJourney} from './lastStandJourneyRuntime.mjs';
+export {verifyRetiredCampaignReturn,resumeReturnedJourney} from './lastStandJourneyRuntime.mjs';
 export {changeLastStandSetting,lastStandDeploymentControl,validateKeyboardSubmit} from './lastStandJourneyActions.mjs';
 import {admitJourneyPage,deployObservedJourney,purchaseJourneyCannon} from './lastStandJourneyRuntime.mjs';
 export {admitJourneyPage,runWaveJourneyTest,deployObservedJourney,purchaseJourneyCannon} from './lastStandJourneyRuntime.mjs';
@@ -1457,19 +1459,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
   let native, page, motion, modelOracle, load=0, scope='healthy', fault, rejoin=false, rejoinBinding, originalError;
   const observerFailures=[];let observerError;
   const throwObserverFailure=()=>throwJourneyObserverFailure(observerError);
-  let lastResultWrite=-Infinity;
-  const check = (condition, name, detail) => {
-    throwObserverFailure();
-    const observation={name,pass:Boolean(condition),detail};
-    report.checks.push(observation);
-    // Keep every assertion durable without repeatedly rewriting accumulated
-    // screenshots/layouts. Failure and the existing finally retain full state.
-    appendFileSync(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
-    if(!condition || Date.now()-lastResultWrite>=1000) {
-      writeShopPresentationJson(resultPath,report);lastResultWrite=Date.now();
-    }
-    assert.ok(condition,name);
-  };
+  const check=createJourneyCheck({report,resultPath,throwObserverFailure});
   const write = createJourneyEvidenceWriter(output);
   const retainObserverFailure=(record,error)=>{
     observerError??=error;originalError??=error;report.status='failed';
@@ -1703,16 +1693,12 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
     check(assertWaveSavePreserved(JSON.parse(returnSave),JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY))),'ordinary Return preserves complete checkpoint');
     check(await ashBytes()===originalAsh,'retired campaign bytes preserved through native Last Stand Return');
-    report.retired_campaign_preservation.native_return='observed unchanged';
-    await selected('last-stand');
-    const campaignItems=await page.locator('.command-center__library-items [data-command-item]').evaluateAll(items=>items.map(item=>item.dataset.commandItem));
-    check(campaignItems.length===1&&campaignItems[0]==='last-stand','native Return offers only Last Stand');
-    report.retired_campaign_preservation.retirement='observed Last Stand only';
+    await verifyRetiredCampaignReturn({report,selected,check,page});
     start=states.length;await outerPointer(page.locator('[data-command-action]'));
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.hasCheckpoint && restored.runId===returnBefore.runId && restored.phase==='garage',
       'unfinished Return offers explicit saved-run resume',restored);
-    await resize(captureViewport);await gameClick('Deploy','resume');
+    await resumeReturnedJourney({resize,captureViewport,gameClick});
     const checkpoint=JSON.parse(returnSave).checkpoint;
     await page.waitForTimeout(1200);
     check(states.at(-1).paused && states.at(-1).tick===checkpoint.encounter.tick,'Return resume waits paused at saved state');
@@ -2070,4 +2056,27 @@ export function createJourneyEvidenceWriter(output,overrides={}) {
 export function persistJourneyFinalEvidence({report,observations,write,output,logger=console}) {
   try {persistLastStandJourneyEvidence(report,observations,write,message=>logger.error(message));}
   finally {logger.log(`LAST_STAND_LOOP_EVIDENCE=${output}`);}
+}
+
+// Every check is journaled before admission; full snapshots remain bounded by
+// wall-clock cadence, with failures persisted immediately.
+export function createJourneyCheck({report,resultPath,throwObserverFailure,
+  writeSnapshot=writeShopPresentationJson,append=appendFileSync,now=Date.now}) {
+  let lastResultWrite=-Infinity;
+  return (condition, name, detail) => {
+    throwObserverFailure();
+    const observation={name,pass:Boolean(condition),detail};
+    report.checks.push(observation);
+    // Keep every assertion durable without repeatedly rewriting accumulated
+    // screenshots/layouts. Failure and the existing finally retain full state.
+    append(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
+    if(!condition || now()-lastResultWrite>=1000) {
+      writeSnapshot(resultPath,report);lastResultWrite=now();
+    }
+    assert.ok(condition,name);
+  };
+}
+export function lastStandJourneyConfiguration(environment=process.env) {
+  return {entrypoint:environment.LAST_STAND_ENTRYPOINT??'maintained-playwright',
+    profileName:environment.LAST_STAND_QUALIFICATION_PROFILE??'windows-player'};
 }

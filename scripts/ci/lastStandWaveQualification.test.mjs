@@ -384,11 +384,16 @@ test('current aggregate retains ten real wave lifecycles, entry, recovery and ex
   for(const mutate of mutations){const copy=clone(reports);mutate(copy);assert.throws(()=>assertLastStandWaveMatrix(copy,expected));}
 });
 
-test('current entry producer uses the exact nine Linux pointer actions and current aggregate rejects contract drift',()=>{
+test('current entry producer uses the exact nine Linux pointer actions and current aggregate rejects contract drift',async()=>{
   const begin=source.indexOf("    if(section.entry){\n    await gameClick('Deploy','deploy');"),end=source.indexOf('    if(section.lifecycle){',begin);
   assert.ok(begin>0&&end>begin);
   const block=source.slice(begin,end).replace(/    if\(player\)\{[^\n]+\}\n/g,'');
-  const actions=[...block.matchAll(/await gameClick\('([^']+)','([^']+)'/g)].map(([,name,action])=>[name,action]);
+  const actions=[];
+  for(const match of block.matchAll(/await (gameClick\('([^']+)','([^']+)'|resumeReturnedJourney\()/g)){
+    if(match[2])actions.push([match[2],match[3]]);
+    else await journey.resumeReturnedJourney({resize:async()=>{},captureViewport:{width:1280,height:720},
+      gameClick:async(...action)=>actions.push(action)});
+  }
   assert.deepEqual(actions,WAVE_ENTRY_ACTIONS);
   for(const mutate of [r=>r.actions.splice(1,1),r=>r.actions.push(clone(r.actions[0])),r=>r.actions[1].action='deploy',r=>r.lifecycle[0].layout.selection='ConfirmProceed']){
     const {reports,expected}=matrixFixture();mutate(reports[11]);assert.throws(()=>assertLastStandWaveMatrix(reports,expected));

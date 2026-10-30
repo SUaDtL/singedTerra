@@ -16,10 +16,10 @@ const sources=[...LAST_STAND_HELPER_INPUTS,'scripts/last-stand-wave-milestones.m
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json'];
 const repository=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 
-export function assertDependencyFreeWaveGuards(program){
+export function assertDependencyFreeWaveGuards(program,{additionalSources=[]}={}){
   const prefix=join(tmpdir(),'st-pure-wave-import-'),directory=mkdtempSync(prefix);
   try{
-    for(const path of sources){const destination=join(directory,path);mkdirSync(dirname(destination),{recursive:true});
+    for(const path of [...sources,...additionalSources]){const destination=join(directory,path);mkdirSync(dirname(destination),{recursive:true});
       copyFileSync(join(repository,path),destination);}
     assert.equal(existsSync(join(directory,'node_modules')),false);
     const result=spawnSync(process.execPath,['--input-type=module','--eval',`

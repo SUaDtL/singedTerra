@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { runInNewContext } from 'node:vm';
-import { lastStandQualificationProfile } from '../../e2e/helpers/lastStandJourney.mjs';
+import { lastStandQualificationProfile, lastStandJourneyConfiguration } from '../../e2e/helpers/lastStandJourney.mjs';
 
 function assertLastStandCandidateSetup(workflow) {
   const candidate = workflow.slice(workflow.indexOf('\n  candidate-test:'), workflow.indexOf('\n  freshness:'));
@@ -10,9 +9,8 @@ function assertLastStandCandidateSetup(workflow) {
     candidate.indexOf('      - name: Prove browser execution'));
   const profile = browser.match(/\n          LAST_STAND_QUALIFICATION_PROFILE: ([^\n]+)/)?.[1];
   const spec = readFileSync('e2e/last-stand-playable-loop.spec.ts', 'utf8');
-  const expression = spec.match(/profileName: ([^\n]+) \}\);/)?.[1];
-  assert.ok(expression, 'Use the maintained production runner profile selection');
-  const selected = runInNewContext(expression, { process: { env: profile ? { LAST_STAND_QUALIFICATION_PROFILE: profile } : {} } });
+  assert.match(spec,/\.\.\.lastStandJourneyConfiguration\(\)/,'Use the maintained runner configuration owner');
+  const selected = lastStandJourneyConfiguration(profile ? { LAST_STAND_QUALIFICATION_PROFILE: profile } : {}).profileName;
   assert.equal(lastStandQualificationProfile(selected, 'linux').name, 'linux-functional');
 
   const steps = [...candidate.matchAll(/      - [\s\S]*?(?=\n      - |$)/g)];
