@@ -4,7 +4,7 @@ import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {runInNewContext} from 'node:vm';
+import {assertCombatCaptureSave} from '../last-stand-combat-feedback.mjs';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import * as milestones from '../last-stand-wave-milestones.mjs';
 import {MILESTONE_FIXTURE_SOURCES,admitMilestoneFixtures} from '../last-stand-wave-milestones.mjs';
@@ -16,36 +16,20 @@ const checkpoint=(wave=99,legacy=false)=>({runId:1,contentVersion:legacy?'last-s
     ...(legacy?{}:{mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40})},
   shop:{economyVersion:legacy?'research-farming-economy-v3':'combat-depth-economy-v4'}});
 const save=(wave=99,legacy=false)=>({version:6,credits:2,checkpoint:checkpoint(wave,legacy),pendingDefeat:null,permanentLevels:{cannonAttack:0}});
-const source=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 
 function milestoneCaller(saved,expected){
-  const text=source('last-stand-wave-milestones.mjs'),begin=text.indexOf('    const bytes=readFileSync(fixture.savePath),'),
-    end=text.indexOf('    const context=await browser.newContext(',begin);
-  assert.ok(begin>0&&end>begin,'Exercise actual pre-browser milestone admission');
   const raw=Buffer.from(JSON.stringify(saved)),next=Buffer.from(JSON.stringify(expected));
   const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-  return runInNewContext(text.slice(begin,end),{...journey,...milestones,assert,JSON,
-    fixture:{savePath:'before',expectedSavePath:'after',saveSha256:sha(raw),expectedSaveSha256:sha(next),targetWave:100},
-    hash:sha,readFileSync:path=>path==='before'?raw:next});
+  return milestones.readMilestoneFixtureSaves({savePath:'before',expectedSavePath:'after',saveSha256:sha(raw),expectedSaveSha256:sha(next),targetWave:100},
+    {readFile:path=>path==='before'?raw:next});
 }
-
 async function combatSaveCaller(saved,{baseline=false,wallet=saved.credits}={}){
-  const text=source('last-stand-combat-feedback.mjs'),begin=text.indexOf('    const saved = await page.evaluate('),
-    end=text.indexOf('    assert.deepEqual(run.errors, []);',begin);
-  assert.ok(begin>0&&end>begin,'Exercise actual combat capture durable-save checks');
-  return runInNewContext('(async()=>{'+text.slice(begin,end)+'})()',{...journey,assert,baseline,
-    page:{evaluate:async()=>saved},state:()=>({wallet})});
+  return assertCombatCaptureSave({baseline,page:{evaluate:async()=>saved},state:()=>({wallet})});
 }
-
 async function milestoneReadbackCaller(before,actual,{afterWave=false,saved=before,item,fixture}={}){
-  const text=source('last-stand-wave-milestones.mjs');
-  const begin=text.indexOf(afterWave?'      const normalized=value=>':'      assert.equal(state().tick,');
-  const end=text.indexOf(afterWave?'      assert.equal(actual.credits,':"      await click('SpeedRate');",begin);
-  assert.ok(begin>0&&end>begin,'Exercise actual milestone durable comparison');
-  return runInNewContext('(async()=>{'+text.slice(begin,end)+'})()',{
-    ...journey,...milestones,assert,JSON,structuredClone,saved,expected:before,actual,item,fixture,key:'inert',
-    state:()=>({tick:before.checkpoint.encounter.tick,hull:before.checkpoint.encounter.hull}),
-    page:{evaluate:async()=>JSON.stringify(actual)}});
+  if(afterWave)return milestones.assertMilestoneCompletedReadback({saved,expected:before,actual,item,fixture});
+  return milestones.assertMilestoneResumeReadback({saved,state:()=>({tick:before.checkpoint.encounter.tick,hull:before.checkpoint.encounter.hull}),
+    page:{evaluate:async()=>JSON.stringify(actual)},key:'inert'});
 }
 
 function timedMilestone(){
@@ -158,17 +142,12 @@ test('actual milestone caller requires current input and expected envelopes with
 });
 
 test('actual milestone runner binds and rechecks the shared oracle source-list owner',()=>{
-  const text=source('last-stand-wave-milestones.mjs'),begin=text.indexOf('const inputs=['),end=text.indexOf('const report=',begin);
-  const checkBegin=text.indexOf('assert.deepEqual(hashes(),report.inputs);');
-  assert.ok(begin>0&&end>begin&&checkBegin>end,'Actual input inventory and final recheck required');
   let changed=false;
   const dependency='e2e/helpers/lastStandWaveOracle.mjs';
-  const hashes=runInNewContext(text.slice(begin,end)+'hashes',{
-    root:'inert-source-root',resolve:(_,path)=>path,
-    hash:bytes=>createHash('sha256').update(bytes).digest('hex'),
-    readFileSync:path=>Buffer.from(path+(changed&&path===dependency?' changed':''))});
+  const hashes=()=>milestones.hashMilestoneRunnerInputs({directory:'inert-source-root',resolvePath:(_,path)=>path,
+    readFile:path=>Buffer.from(path+(changed&&path===dependency?' changed':''))});
   const report={inputs:hashes()};assert.ok(Object.hasOwn(report.inputs,dependency),'Shared oracle source-list owner is bound');
-  const check=()=>runInNewContext(text.slice(checkBegin,checkBegin+'assert.deepEqual(hashes(),report.inputs);'.length),{assert,hashes,report});
+  const check=()=>milestones.assertMilestoneRunnerInputs(report,hashes);
   assert.doesNotThrow(check);changed=true;assert.throws(check);
   changed=false;delete report.inputs[dependency];assert.throws(check);
 });

@@ -1,3 +1,5 @@
+import {findLastStandSettingsViewport} from '../e2e/helpers/lastStandControlReveal.mjs';
+import {LAST_STAND_HELPER_INPUTS} from '../e2e/helpers/lastStandJourney.mjs';
 // Real Chromium touch input against the maintained Web export; no save fixtures.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -14,7 +16,9 @@ const output=resolve('campaign-unity/Evidence/player-controls/touch-'+new Date()
 for(const name of ['verify-last-stand-source.mjs','verify-last-stand.mjs'])
   execFileSync(process.execPath,[resolve('scripts/assets',name)],{stdio:'pipe'});
 const runtime=packagedRuntimeSnapshot(),manifest=JSON.parse(readFileSync('client/public/last-stand/asset-manifest.json','utf8'));
-const inputs=()=>Object.fromEntries(['scripts/last-stand-controls-touch.mjs','e2e/helpers/lastStandJourney.mjs',
+const inputs=()=>Object.fromEntries(['scripts/last-stand-controls-touch.mjs','e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandControlReveal.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'e2e/helpers/lastStandTierJourney.mjs'].map(path=>[path,createHash('sha256').update(readFileSync(path)).digest('hex')]));
 const served=async()=>{for(const [path,hash] of Object.entries({...manifest.files,'index.html':manifest.wrapperSha256}))
   assertServedBytes(await fetchBoundRuntime(base,path),hash);};
@@ -36,7 +40,7 @@ try {
   const items=()=>layout?[...layout.controls,...layout.shopControls,...layout.settingsControls]:[];
   const point=async(c)=>{const box=await page.locator('#unity-canvas').boundingBox();return{x:box.x+(c.x+c.width/2)*box.width/layout.width,y:box.y+(c.y+c.height/2)*box.height/layout.height};};
   const swipe=async(down=false)=>{
-    const viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&['Image','LastStandConsoleSurface'].includes(g.kind));
+    const viewport=findLastStandSettingsViewport(raw().graphics);
     assert.ok(viewport);const p=await point(viewport),box=await page.locator('#unity-canvas').boundingBox();
     const distance=Math.min(180,viewport.height*box.height/layout.height*.55),start=p.y+(down?-distance/2:distance/2);
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:p.x,y:start}]});
@@ -46,7 +50,7 @@ try {
   const tap=async(name)=>{
     await until(()=>items().some(c=>c.name===name&&c.active&&c.interactable));
     for(let i=0;i<12;i++){
-      const c=items().find(c=>c.name===name),viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&['Image','LastStandConsoleSurface'].includes(g.kind));
+      const c=items().find(c=>c.name===name),viewport=findLastStandSettingsViewport(raw().graphics);
       if(viewport&&c.mode==='Settings'&&!['ChoicePrevious','ChoiceNext'].includes(name)&&!/^Settings(?:Close|Tab[0-3])$/.test(name)&&(c.y<viewport.y||c.y+c.height>viewport.y+viewport.height)){
         await swipe(c.y<viewport.y);continue;
       }

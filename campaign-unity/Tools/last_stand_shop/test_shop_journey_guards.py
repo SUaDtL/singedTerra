@@ -575,20 +575,8 @@ import {readFileSync} from 'node:fs';
 import {join,basename} from 'node:path';
 import {runInNewContext} from 'node:vm';
 
-const source=readFileSync(process.argv[2],'utf8');
 const selected=process.argv[3]??'all';
-const begin=source.indexOf('async function runShopRecoveryJourney(');
-const end=source.indexOf('// Passive probes translated verbatim',begin);
-assert.ok(begin>=0&&end>begin,'Actual T22 producer boundary must exist');
-const producer=source.slice(begin,end);
-const between=(text,left,right)=>{
-  const first=text.indexOf(left),last=text.indexOf(right,first);
-  assert.ok(first>=0&&last>first,'Actual source closure boundary exists: '+left);
-  return text.slice(first,last);
-};
-const checkpoints=between(producer,'const persist=','  const check=');
-const controls=between(producer,'const placeOwned=','    const loadGame=');
-const retained=between(source,'function retainWindowFailure(','function ownedNativeWindowSnapshot(');
+const actual=await import((await import('node:url')).pathToFileURL(process.argv[2]));
 const outcomes=[];
 const test=async(name,body)=>{
   if(selected!=='all'&&selected!==name)return;
@@ -605,7 +593,7 @@ await test('checkpoints',async()=>{
   const report={status:'running',normal_speed:true,actions:[{name:'Pause'}],checks:[{name:'unit-check',pass:true}],records};
   const context={writeFileSync:(path,raw)=>writes.push({path:basename(path),raw}),path:'inert/result.json',join,
     output:'inert',report,records,messages,load:11};
-  const persist=runInNewContext('(()=>{'+checkpoints+';return persist;})()',context);
+  const persist=()=>actual.persistShopRecovery({...context,write:context.writeFileSync});
   const issues=[];
   const expect=(body)=>{try{body();}catch(error){issues.push(error.message);}};
   persist();
@@ -646,7 +634,7 @@ await test('failure_flush',async()=>{
     writeFileSync:(path,raw)=>writes.push({path:basename(path),raw}),
     bindShopPlayerRuntime:async()=>{throw new Error('controlled unit admission failure');},
     classifyBrowserEvidence:()=>({consoleErrors:[],requestErrors:[],httpErrors:[]})};
-  const run=runInNewContext('('+producer+')',context);
+  const run=options=>actual.runShopRecoveryJourney(options,context);
   const result=await run({baseURL:'http://unit.invalid/',chromium:{},fitting:'repair'});
   assert.equal(result.status,'failed');
   const full=writes.find(row=>row.path==='result.json');
@@ -663,7 +651,7 @@ await test('native_history',async()=>{
   const count=12,events=[],report={actions:[],checks:[]};let failNext=false;
   const layout={seq:0,timeOrigin:1,width:1366,height:768,controls:[{name:'Pause',x:5,y:5,width:100,height:50,active:true,interactable:true}],shopControls:[],settingsControls:[]};
   const records={controlsOnly:[layout],input:[],geometry:[]};let time=0,pointer={x:0,y:0};
-  const retain=runInNewContext('('+retained.trim()+')');
+  const retain=actual.createLastStandNativeDriver().retainWindowFailure;
   const page={
     async bringToFront(){},async waitForFunction(){},async waitForTimeout(){},
     async evaluate(value){
@@ -687,7 +675,7 @@ await test('native_history',async()=>{
       if(failNext)throw new Error('controlled unit foreground refusal');
       return row;
     }};
-  const click=runInNewContext('(()=>{'+controls+';return click;})()',context);
+  const {click}=actual.createShopRecoveryActions(context);
   for(let index=0;index<count;index++)await click('Pause');
   assert.equal(report.actions.length,count,'Actual recovery click closure completed every input');
   assert.equal(report.native_foreground_preconditions?.length,count,'Every actual input needs its own retained foreground witness beyond eight actions');
@@ -1117,8 +1105,11 @@ class ShopJourneyGuardTests(unittest.TestCase):
 
     def test_shop_guard_vertical_admission_entrypoint(self):
         import ast
-        producer = (TOOLS.parents[1] / 'e2e/helpers/lastStandJourney.mjs').read_text(encoding='utf8')
-        inputs = ast.literal_eval(re.search(r'const SHOP_PLAYER_INPUTS = (\[[\s\S]+?\]);', producer).group(1))
+        import subprocess
+        result = subprocess.run([NODE, '--input-type=module', '-e',
+                                 "import {SHOP_PLAYER_INPUTS} from './e2e/helpers/lastStandJourney.mjs';console.log(JSON.stringify(SHOP_PLAYER_INPUTS));"],
+                                cwd=TOOLS.parents[1], capture_output=True, text=True, timeout=30, check=True)
+        inputs = json.loads(result.stdout)
         self.assertIn('campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py', inputs)
         self.assertIn('campaign-unity/Tools/last_stand_shop/test_shop_player_portable.py', inputs)
         self.assertIn('campaign-unity/Tools/last_stand_shop/test_shop_delivery.py', inputs)

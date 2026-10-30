@@ -107,7 +107,10 @@ function assertSettlingPngDimensions(bytes,viewport){
   assert.equal(bytes.readUInt32BE(16),viewport.width,'Actual settling PNG width differs');
   assert.equal(bytes.readUInt32BE(20),viewport.height,'Actual settling PNG height differs');
 }
-export function verifyFiles(path,report) {
+const fileVerificationAdapters={dirname,resolve,basename,digest,readFileSync,read,encounterCompilationSourceBinding,
+  encounterOraclePackage,admitEncounterOracleOutput,validateSettlingTransition,verifyWaveFiles,assertSettlingPngDimensions};
+export function verifyMediaFiles(path,report,overrides={}) {
+  const {dirname,resolve,basename,digest,readFileSync,read}={...fileVerificationAdapters,...overrides};
   const directory=dirname(resolve(path));
   const verify=item=>{
     assert.ok(item && item.file===basename(item.file),'Evidence reference must be a file within its result directory');
@@ -131,6 +134,12 @@ export function verifyFiles(path,report) {
       'Motion presentation requires distinct increasing native timestamps');
     assert.ok(Math.abs(stamps.at(-1)-stamps[0]-motion.duration_seconds)<.000001,'Motion native duration changed');
   }
+}
+export function verifyFiles(path,report,overrides={}) {
+  const {dirname,resolve,basename,digest,readFileSync,read,encounterCompilationSourceBinding,
+    encounterOraclePackage,admitEncounterOracleOutput,validateSettlingTransition,verifyWaveFiles,assertSettlingPngDimensions}={...fileVerificationAdapters,...overrides};
+  const directory=dirname(resolve(path));
+  verifyMediaFiles(path,report,overrides);
   const model=read(resolve(directory,'model-oracle/binding.json'));
   assert.equal(model.host,report.qualification.host);assert.equal(model.fresh_host_compilation,true);
   assert.deepEqual(model.source_binding,encounterCompilationSourceBinding(),'Compiled model current source/export binding differs');
@@ -171,6 +180,15 @@ export function verifyFiles(path,report) {
   }
 }
 
+export function collectQualificationParents({git,linuxCheckout,head}) {
+  let linuxParents=[];
+  if(linuxCheckout!==head) {
+    assert.equal(git(['cat-file','-t',linuxCheckout]),'commit','Linux checkout must be a commit object');
+    linuxParents=git(['show','-s','--no-show-signature','--format=%P',linuxCheckout]).split(' ');
+  }
+  return linuxParents;
+}
+
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   assert.equal(process.argv.length,5,'Usage: node scripts/ci/lastStandQualification.mjs WINDOWS_RESULT LINUX_RESULT EXACT_HEAD');
   const [windowsPath,linuxPath,head]=process.argv.slice(2),windows=read(windowsPath),linux=read(linuxPath);
@@ -180,11 +198,7 @@ if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).
   const linuxCheckout=linux.binding?.current_head;
   assert.match(linuxCheckout??'',/^[a-f0-9]{40}$/,'Observed Linux checkout HEAD required');
   const baseHead=git(['rev-parse','origin/main']);
-  let linuxParents=[];
-  if(linuxCheckout!==head) {
-    assert.equal(git(['cat-file','-t',linuxCheckout]),'commit','Linux checkout must be a commit object');
-    linuxParents=git(['show','-s','--no-show-signature','--format=%P',linuxCheckout]).split(' ');
-  }
+  const linuxParents=collectQualificationParents({git,linuxCheckout,head});
   const result=assertCombinedWaveQualification({windows,linux,head,inputs:currentQualificationInputs(),
     ...currentWaveExpected(root),baseHead,linuxParents});
   verifyFiles(windowsPath,windows);verifyFiles(linuxPath,linux);

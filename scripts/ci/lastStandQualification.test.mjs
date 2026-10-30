@@ -1,3 +1,4 @@
+import {runStandaloneLastStandJourney} from '../last-stand-playable-loop.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -6,8 +7,46 @@ import { createHash } from 'node:crypto';
 import { dirname, resolve, basename } from 'node:path';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
-import { assertCombinedQualification, currentQualificationInputs } from './lastStandQualification.mjs';
+import { assertCombinedQualification, currentQualificationInputs, verifyFiles, verifyMediaFiles, collectQualificationParents } from './lastStandQualification.mjs';
 import {idleWaveFields} from './lastStandWaveSaveFixtures.mjs';
+
+test('standalone direct CLI initializes adapters before dispatch and retains an honest launch failure',async()=>{
+  const {execFileSync}=await import('node:child_process');
+  const script=`
+    import assert from 'node:assert/strict';
+    import {readFileSync} from 'node:fs';
+    import * as paths from 'node:path';
+    import * as urls from 'node:url';
+    import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
+    const cli=paths.resolve('scripts/last-stand-playable-loop.mjs'),writes=[],calls=[];
+    const processFixture={argv:['node',cli],pid:41,execPath:'inert-node',platform:'win32',env:{},stderr:{write(){}}};
+    const context=createContext({process:processFixture,console:{log(){}},Date,setTimeout,clearTimeout});
+    const module=values=>new SyntheticModule(Object.keys(values),function(){
+      for(const [name,value]of Object.entries(values))this.setExport(name,value);
+    },{context});
+    const modules=new Map([
+      ['node:assert/strict',module({default:assert})],['node:path',module(paths)],['node:url',module(urls)],
+      ['node:crypto',module({randomUUID:()=> 'inert-direct-entry-id'})],
+      ['node:fs',module({readFileSync,mkdirSync(){},writeFileSync:(path,value)=>writes.push({path,value})})],
+      ['node:child_process',module({spawn(){calls.push('spawn');throw new Error('inert direct entry launch refused');}})],
+      ['../e2e/helpers/lastStandJourney.mjs',module({admitEvidenceParent:()=> paths.resolve('inert-evidence'),
+        startOwnedSupervisor(){assert.fail('No child was created');},watchOwnedProcess(){assert.fail('Wrong branch');},
+        runLastStandShopJourney(){assert.fail('Wrong branch');},ownedProcessIdentity(){assert.fail('No child was created');},
+        finishOwnedSupervisorCleanup(){assert.fail('No child was admitted');},
+        lastStandJourneyTimeBudget:()=>({supervisorMs:1,runnerMs:1})})]
+    ]);
+    const actual=new SourceTextModule(readFileSync(cli,'utf8'),{context,identifier:cli,
+      initializeImportMeta:meta=>{meta.dirname=paths.dirname(cli);meta.url=urls.pathToFileURL(cli).href;}});
+    await actual.link(name=>{assert.ok(modules.has(name),'Known inert dependency: '+name);return modules.get(name);});
+    await actual.evaluate();
+    assert.deepEqual(calls,['spawn'],'Direct CLI must reach the real default runner');
+    const retained=JSON.parse(writes.find(item=>paths.basename(item.path)==='runner-result.json').value);
+    assert.equal(retained.status,'failed');assert.equal(retained.error,'Error: inert direct entry launch refused');
+    assert.equal(processFixture.exitCode,1);assert.equal(retained.cleanup,null);
+  `;
+  execFileSync(process.execPath,['--experimental-vm-modules','--input-type=module','-e',script],
+    {cwd:resolve(import.meta.dirname,'../..'),stdio:'pipe',timeout:10_000,windowsHide:true});
+});
 
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
@@ -35,21 +74,17 @@ function firstImpactFixture(damage=20){
   return {deployed,hits,encounters,callbackRecords,cues,oracle};
 }
 async function firstImpactCaller(x,{upgraded=false,player=false,rms=.01}={}){
-  const anchor=source.indexOf(upgraded?'const upgradedHit=':'const first=await',source.indexOf('const baselineHitStart='));
-  const end=source.indexOf(upgraded?"    await screenshot('07-upgraded-first-hit');":'    const changeSetting=',anchor);
-  assert.ok(anchor>=0 && end>anchor);
-  const measured=[];
-  const call=runInNewContext('(async()=>{'+source.slice(anchor,end)+';return {hit:'+ (upgraded?'upgradedHit':'first')+'};})',{
-    ...journey,...x,deployed:x.deployed,upgradedDeployment:x.deployed,baselineHitStart:0,hitStart:0,player,
-    modelOracle:{['1:repair:'+x.deployed.cannonDamage]:x.oracle},startAudio:1010,noCaptureStart:1010,
-    check:(value,label)=>assert.ok(value,label),mark:async()=>4200,battleLayouts:async()=>null,
-    page:{waitForTimeout:async()=>{},evaluate:async()=>[]},write:()=>{},
-    frameTiming:()=>({p95_ms:10}),report:{frame_timing:{capture_active:{'first-foe-before-impact':{p95_ms:10}}}},
-    energy:async(begin,end)=>{measured.push([begin,end]);return {maximum_rms:rms};},
-    until:async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;}
-  });
-  const value=await call();return {value,measured};
+  const measured=[],context={...x,start:0,player,check:(value,label)=>assert.ok(value,label),
+    noCaptureStart:1010,page:{waitForTimeout:async()=>{},evaluate:async()=>[]},write:()=>{},
+    measureFrames:()=>({p95_ms:10}),report:{frame_timing:{capture_active:{'first-foe-before-impact':{p95_ms:10}}}},
+    until:async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;}};
+  if(upgraded){const result=await journey.observeUpgradedImpact(context);return {value:{hit:result.upgradedHit},measured};}
+  const result=await journey.observeBaselineImpact(context);
+  await journey.measureBaselineImpact({...context,firstSound:result.firstSound,battleLayouts:async()=>null,
+    energy:async(begin,end)=>{measured.push([begin,end]);return {maximum_rms:rms};}});
+  return {value:{hit:result.first},measured};
 }
+
 test('actual first-hit callers reject a later reused foe slot and wrong deployment identity',async()=>{
   for(const damage of [20,30]){
     const options={upgraded:damage===30};await firstImpactCaller(firstImpactFixture(damage),options);
@@ -114,13 +149,9 @@ test('actual cannon audio callers reject duplicate or unidentified admission rec
 });
 test('actual decoded cannon recordings use the independent played-pair windows for both runs',async()=>{
   const windows={begin:4501,end:5753},calls=[];
-  for(const [start,end] of [["const firstAudio=await saveAudio('first-run'",'\n'],["if(player)await saveAudio('second-run'",';']]){
-    const at=source.indexOf(start),stop=source.indexOf(end,at);assert.ok(at>=0 && stop>at);
-    const call=runInNewContext('(async()=>{'+source.slice(at,stop+1)+'})',{
-      player:true,firstSound:windows,upgradedSound:windows,firstHit:4000,upgradedHit:{t:4000},naturalProof:{staged:{t:10000}},
-      saveAudio:async(name,value)=>{calls.push({name,value:JSON.parse(JSON.stringify(value))});return [];}
-    });await call();
-  }
+  for(const name of ['first-run','second-run'])await journey.saveJourneyCannonAudio({
+    saveAudio:async(name,value)=>{calls.push({name,value});return [];},name,sound:windows,
+    ...(name==='second-run'?{staged:{t:10000}}:{})});
   assert.deepEqual(calls.map(row=>row.value['cannon-impact']),[[4501,5753],[4501,5753]]);
 });
 
@@ -151,8 +182,6 @@ test('keyboard submit requires fresh exact selection and a current focused docum
   }
 });
 test('actual keyboard caller refuses retained wave-boundary focus migration before Enter',async()=>{
-  const begin=source.indexOf('    const gameKey=async('),end=source.indexOf('\n    const mark=',begin);
-  assert.ok(begin>=0 && end>begin);
   for(const [selection,delayed] of [['SpeedRate',false],['ShopEntry',false],['Menu',false],['SpeedRate',true],['ShopEntry',true]]){
     const value=keyboardSubmitFixture(),trace=[],states=[],encounters=[],downs=[],report={keyboard_actions:[],screenshots:[]};
     let now=10,freshWaits=0;
@@ -163,7 +192,7 @@ test('actual keyboard caller refuses retained wave-boundary focus migration befo
       evaluate:async code=>typeof code==='string'?null:{...value.documentState,t:now+10},
       keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=delayed?19:now+1;},
         down:async key=>{downs.push(key);states.push({action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
-    const run=runInNewContext(source.slice(begin,end)+';gameKey',{page,trace,states,encounters,layouts,report,
+    const run=journey.createJourneyActions({page,trace,states,encounters,layouts,report,
       geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720}}),keyboardFocus:async()=>{},
       projectedControls:tierJourneyControlGeometry,
       hudControls:layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls],
@@ -174,7 +203,7 @@ test('actual keyboard caller refuses retained wave-boundary focus migration befo
           value.layout.t=now+1;freshWaits++;assert.equal(predicate(value.layout),true,'Freshness wait must not wait for the expected target');
         }
         return items.slice(start).find(predicate);
-      },validateKeyboardSubmit:journey.validateKeyboardSubmit});
+      },validateKeyboardSubmit:journey.validateKeyboardSubmit}).gameKey;
     states.push(value.state);
     if(selection==='SpeedRate'){await run('SpeedRate','session',item=>item.paused);assert.deepEqual(downs,['Enter']);}
     else {await assert.rejects(run('SpeedRate','session',item=>item.paused));assert.deepEqual(downs,[]);}
@@ -376,7 +405,7 @@ test('legacy effects qualification selects real music-off control before measuri
   assert.deepEqual(fixture.calls,[['Menu','menu'],['MenuSettings','menu'],['MusicEnabled','preferences'],['SettingsClose','menu-close']]);
   assert.equal(result.preferences.musicEnabled,false);
   assert.equal(fixture.layout.settingsControls[0].active,false);
-  assert.ok(source.indexOf('report.effects_only_audio=await configureEffectsOnlyJourneyAudio')<source.indexOf("const startAudio=await mark();const deployed=await gameClick('Deploy','deploy')"));
+  assert.ok(source.indexOf('report.effects_only_audio=await configureEffectsOnlyJourneyAudio')<source.indexOf('=await startBaselineCapture('));
   assert.ok(source.includes("pauseSound.maximum_rms<.0005,'pause stops effects with ambient music explicitly disabled'"));
 });
 test('effects-only setup rejects unconfirmed settings or accidentally silenced effects',async()=>{
@@ -407,15 +436,11 @@ test('unfinished native Return cancellation preserves the run and requires Cance
 });
 
 async function ownedPortProbe(contents,{exitCode=null}={}){
-  const begin=source.indexOf("    const active = join(profile, 'DevToolsActivePort');"),
-    end=source.indexOf('    browser = await chromium.connectOverCDP',begin);
-  assert.ok(begin>0 && end>begin);
-  const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
   let clock=0,reads=0,delays=0;
-  const run=new AsyncFunction('join','profile','Date','existsSync','child','assert','delay','readFileSync',
-    source.slice(begin,end)+'return port;');
-  const port=await run((...parts)=>parts.join('/'),'owned-inert-profile',{now:()=>clock},()=>true,{exitCode},assert,
-    async ms=>{clock+=ms;delays++;},()=>contents[Math.min(reads++,contents.length-1)]);
+  const owner=journey.createLastStandNativeDriver({join:(...parts)=>parts.join('/'),
+    Date:{now:()=>clock},existsSync:()=>true,
+    delay:async ms=>{clock+=ms;delays++;},readFileSync:()=>contents[Math.min(reads++,contents.length-1)]});
+  const port=await owner.readOwnedDevToolsPort('owned-inert-profile',{exitCode});
   return {port,clock,reads,delays};
 }
 
@@ -434,12 +459,9 @@ test('owned Chrome port readiness preserves strict bounds, child liveness and or
 });
 
 function proceduralCueCheck(player,names){
-  const begin=source.indexOf('    const cueNames=messages.filter'),end=source.indexOf('    }\n    if(section.recovery){',begin);
-  assert.ok(begin>0 && end>begin);
   const checks=[],report={qualification:{procedural_cues:player?'pending':'unexecuted-requires-windows'}};
   const check=(pass,name,detail)=>{checks.push({pass,name,detail});assert.ok(pass,name);};
-  new Function('messages','check','player','report',source.slice(begin,end))(
-    names.map(name=>({text:'ST_LS_AUDIO event='+name})),check,player,report);
+  journey.checkProceduralJourneyCues({messages:names.map(name=>({text:'ST_LS_AUDIO event='+name})),check,player,report});
   return {report,checks};
 }
 
@@ -494,13 +516,12 @@ test('wasm classification refuses missing, duplicate, stale, unrelated or unboun
 });
 
 async function motionFixture(timestamps=[3,1,2]){
-  const begin=source.indexOf('async function startMotion('),end=source.indexOf('\nfunction decodedAudio(',begin);
-  assert.ok(begin>0 && end>begin);const files=new Map();let receive;
+  const files=new Map();let receive;
   const session={on:(_event,callback)=>receive=callback,detach:async()=>{},send:async method=>{
     if(method==='Page.startScreencast')for(const [i,timestamp]of timestamps.entries())
       await receive({sessionId:i,data:Buffer.from('explicit inert image '+i).toString('base64'),metadata:{timestamp}});
   }};
-  const start=runInNewContext(source.slice(begin,end)+';startMotion',{
+  const {startMotion:start}=journey.createLastStandMediaCapture({
     assert,Buffer,join:(...parts)=>parts.join('/'),mkdirSync:()=>{},
     writeFileSync:(path,data)=>files.set(path,data),fileHash:()=> 'inert-digest',
     runTool:tool=>tool==='ffprobe'?JSON.stringify({streams:[{nb_read_frames:timestamps.length,
@@ -527,13 +548,11 @@ test('actual recorder still rejects duplicate or nonfinite native timestamps wit
 });
 
 test('offline motion verification requires intact raw trace and a complete native presentation permutation',()=>{
-  const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
-  const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('  const model=',begin);
   const bytes=Buffer.from('explicit inert retained media'),sha=createHash('sha256').update(bytes).digest('hex');
-  const run=runInNewContext(reader.slice(begin,end)+'};verifyFiles',{
+  const run=((path,report)=>verifyMediaFiles(path,report,{
     assert,dirname,resolve,basename,readFileSync:()=>bytes,digest:()=>sha,
     read:()=>({frames:[{timestamp:3},{timestamp:1},{timestamp:2}]}),
-  });
+  }));
   for(const fault of ['none','raw','timeline','duplicate-index','missing-index','wrong-order','duration']){
     const media={file:'inert.mp4',sha256:sha},motion={...media,frames:3,duration_seconds:2,
       raw:'normal-speed-repair/frames.json',raw_sha256:sha,presentation_order:[1,2,0],
@@ -583,13 +602,9 @@ function settlingFixture(){
 }
 
 test('portable wave settling observes the real transient transition without a late pointer command',async()=>{
-  const begin=source.indexOf('    const terminalBefore=await observation()'),end=source.indexOf("    await phaseMatrix('result');",begin);
-  assert.ok(begin>0&&end>begin);
   const before={tick:10},naturalResult={phase:'result'},saved={version:4},states=[],encounters=[],layouts=[],report={lifecycle:[]};
   const oracle={100:{tick:100,status:'Defeated'}};
-  const run=new Function('player','observation','states','reference','check','armGameClick','until','load',
-    'phaseMatrix','gameClick','page','SAVE_KEY','validateWaveTerminal','encounters','layouts','report',
-    'return(async()=>{'+source.slice(begin,end)+'return naturalResult;})()');
+  const run=((player,observation,states,reference,check,armGameClick,until,load,phaseMatrix,gameClick,page,SAVE_KEY,validateWaveTerminal,encounters,layouts,report)=>journey.observeNaturalTerminal({player,observation,states,reference,check,armGameClick,until,load,phaseMatrix,gameClick,page,saveKey:SAVE_KEY,validateTerminal:validateWaveTerminal,encounters,layouts,report}).then(value=>value.naturalResult));
   const result=await run(false,async()=>before,states,()=>oracle,(ok,name)=>assert.ok(ok,name),
     ()=>assert.fail('Portable observer cannot issue a late settling pointer'),async()=>naturalResult,1,
     ()=>assert.fail('Portable observer cannot promise a paused five-viewport interval'),()=>assert.fail('No late pointer'),
@@ -846,10 +861,6 @@ test('focus acknowledgement anchor preserves identity, latest focus and silent h
 });
 
 async function battleLayoutFixture(player=false,fault,withMute=false){
-  const begin=source.indexOf('    const battleLayouts=async()=>{');
-  const end=source.indexOf('    // Ordinary Return and reload preserve the checkpoint',begin);
-  const callBegin=source.indexOf("    if(player)check(sound.maximum_rms");
-  const callEnd=source.indexOf(withMute?'    const pauseStart=':'    const changeSetting=',callBegin);
   const base={t:100,timeOrigin:10000,load:1,run:1,tick:10,hull:120,kills:0,terminalElapsed:0,
     status:'Running',paused:false,loop:{phase:'battle'}};
   const rows=[base,{...base,t:200,paused:true},{...base,t:800,paused:true},
@@ -861,9 +872,15 @@ async function battleLayoutFixture(player=false,fault,withMute=false){
     paused:{...base,t:200,paused:true,reason:'user'},returned:{...base,t:11200,paused:true,reason:'user'},
     resumed:{...base,t:11300,tick:11},after:{...base,t:12100,tick:26},events:[],oracle:{}});
   let paused=false,muted=false;const calls=[],report={lifecycle:[]};
-  const run=new Function('player','check','sound','screenshot','phaseMatrix','observation','gameClick','mark',
-    'reference','validateModelObservation','sameDocument','elapsedTicks','report','matrix','assert','page','energy','gameKey','changeLastStandSetting','layouts',
-    'return (async()=>{'+(begin<0?'':source.slice(begin,end))+source.slice(callBegin,callEnd)+'})()');
+  const run=async(player,check,sound,screenshot,phaseMatrix,observation,gameClick,mark,
+    reference,validateModelObservation,sameDocument,elapsedTicks,report,matrix,assert,page,energy,gameKey,changeLastStandSetting,layouts)=>{
+    if(player)check(sound.maximum_rms>.0005,'rendered cannon/impact output measured',sound);
+    const actions=journey.createJourneyActions({player,check,screenshot,phaseMatrix,observation,gameClick,mark,reference,
+      validateModelObservation,sameDocument,elapsedTicks,report,matrix,assert,page,energy,gameKey,layouts});
+    const layoutPause=await actions.battleLayouts();
+    if(withMute)await journey.prepareJourneyPause({player,check,layoutPause,gameClick,layouts,states:[],mark,page,energy,observation,gameKey,
+      changeSetting:changeLastStandSetting});
+  };
   await run(player,(ok,name)=>assert.ok(ok,name),{maximum_rms:1},async()=>{
     assert.equal(paused,!player,'Linux battle screenshot must be publicly paused; Windows stays live');calls.push('screenshot');
   },async label=>{
@@ -898,16 +915,13 @@ test('actual Linux mute and Pause preparation reuse the real paused layout inter
 });
 
 test('actual Windows live layout inspection uses the resumed run before checkpoint-preserving reload',async()=>{
-  const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
-  assert.ok(begin>0 && end>begin,'Separate actual live layout owner required');
-  const call=source.indexOf('await liveBattleLayouts();',end),reload=source.indexOf('load++;await page.reload',call);
-  assert.ok(call>0 && reload>call && reload<source.indexOf('    const baselineHitStart=',call),
+  const call=source.indexOf('await liveBattleLayouts();'),reload=source.indexOf('load++;await page.reload',call);
+  assert.ok(call>0 && reload>call && reload<source.indexOf('=await startBaselineCapture(',call),
     'Live layout caller must use the existing real unfinished reload before canonical recording');
   for(const player of [false,true]){
     const base={t:50,load:1,timeOrigin:10000,run:1,tick:1,paused:false,loop:{phase:'battle'}},
       after={...base,t:1050,tick:21},states=[{phase:'battle',paused:false}],report={lifecycle:[]},calls=[];
-    const run=new Function('player','observation','check','phaseMatrix','states','report','matrix',
-      'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
+    const run=((player,observation,check,phaseMatrix,states,report,matrix,validateModelObservation,reference,elapsedTicks,mark)=>(journey.createJourneyActions({player,observation,check,phaseMatrix,states,report,matrix,validateModelObservation,reference,elapsedTicks,mark}).liveBattleLayouts()));
     let next=base;
     await run(player,async()=>{const value=next;next=after;return value;},(ok,name)=>assert.ok(ok,name),
       async label=>calls.push(label),states,report,{phaseViewports:['standard','wide','portrait','compact','small'].map(name=>({name}))},
@@ -918,11 +932,8 @@ test('actual Windows live layout inspection uses the resumed run before checkpoi
 });
 
 test('live layout elapsed endpoints require fresh post-advance tick observations',async()=>{
-  const begin=source.indexOf('    const liveBattleLayouts=async()=>{'),end=source.indexOf('    const battleLayouts=',begin);
-  const clockBegin=source.indexOf('function sameDocument('),clockEnd=source.indexOf('const MODEL_FIELDS=',clockBegin);
-  const elapsed=runInNewContext(source.slice(clockBegin,clockEnd).replaceAll('export function ','function ')+';elapsedTicks',{assert});
-  const run=new Function('player','observation','check','phaseMatrix','report','matrix',
-    'validateModelObservation','reference','elapsedTicks','mark',source.slice(begin,end)+'return liveBattleLayouts();');
+  const elapsed=journey.createRuntimeObservation().elapsedTicks;
+  const run=((player,observation,check,phaseMatrix,report,matrix,validateModelObservation,reference,elapsedTicks,mark)=>(journey.createJourneyActions({player,observation,check,phaseMatrix,report,matrix,validateModelObservation,reference,elapsedTicks,mark}).liveBattleLayouts()));
   const id={load:15,timeOrigin:100000,run:1,paused:false,catchingUp:false,callbackSteps:1,loop:{phase:'battle'}};
   // Explicit inert model/visibility rows use the retained failure's clock values.
   const before={...id,t:6548.2,tick:20},visibility={...id,t:27053.2,tick:429,callbackSteps:0},
@@ -991,37 +1002,27 @@ test('central workload budget separates web-server startup and bounds actual own
     for(const needle of needles)assert.ok(text.includes(needle),file+' uses actual derived '+needle);
   }
   assert.ok(source.includes("ownedChrome(chromium,output,'native',lastStandJourneyTimeBudget().browserMs)"));
-  assert.ok(source.includes("mode='native', lifetimeMs=640_000"),'Unrelated generic Chrome default stays unchanged');
+  assert.ok(journey.ownedChrome.toString().includes("mode='native', lifetimeMs=640_000"),'Unrelated generic Chrome default stays unchanged');
   const config=readFileSync(new URL('../../playwright.config.ts',import.meta.url),'utf8');
   assert.ok(config.includes('timeout: 180_000'),'Budget agrees with actual webServer startup allowance');
 });
 test('wave wrapper admits the host capture budget before starting its real journey',async()=>{
-  const spec=readFileSync(new URL('../../e2e/last-stand-playable-loop.spec.ts',import.meta.url),'utf8');
-  const begin=spec.indexOf("test('Last Stand earned waves and complete checkpoints survive reload'");
-  const end=spec.indexOf("\ntest('Last Stand Campaigns journey",begin);
-  assert.ok(begin>=0 && end>begin,'Actual tier wrapper required');
   for(const host of ['linux','win32']) {
     const calls=[];let callback;
     const test=Object.assign((_name,_options,body)=>{callback=body;},{
       skip:condition=>assert.equal(condition,false),setTimeout:ms=>calls.push(['test',ms])});
-    runInNewContext(spec.slice(begin,end),{test,
-      lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget(host),
-      runLastStandWaveJourney:async()=>{calls.push(['journey']);}});
-    await callback({page:{setDefaultTimeout:ms=>calls.push(['action',ms])},baseURL:'http://127.0.0.1:4173/singedTerra/'},
-      {project:{name:'desktop-fine'}});
+    await journey.runWaveJourneyTest({test,page:{setDefaultTimeout:ms=>calls.push(['action',ms])},
+      baseURL:'http://127.0.0.1:4173/singedTerra/',testInfo:{project:{name:'desktop-fine'}},
+      budget:journey.lastStandJourneyTimeBudget(host),runJourney:async()=>{calls.push(['journey']);}});
     assert.deepEqual(calls,[['test',journey.lastStandJourneyTimeBudget(host).testMs],
       ['action',host==='linux'?60_000:10_000],['journey']],host+' owns capture and DOM allowances');
   }
 });
 
 test('actual maintained journey uses a finite host DOM allowance without changing game clocks',()=>{
-  const body=source.slice(source.indexOf('export async function runLastStandJourney('));
-  const statement=body.match(/page\.setDefaultTimeout\([^;]+\);/)?.[0];
-  assert.ok(statement,'Actual maintained DOM admission required');
   for(const [host,expected] of [['linux',60_000],['win32',10_000]]) {
     let observed;
-    runInNewContext(statement,{page:{setDefaultTimeout:ms=>{observed=ms;}},
-      lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget(host)});
+    journey.admitJourneyPage({setDefaultTimeout:ms=>{observed=ms;}},journey.lastStandJourneyTimeBudget(host));
     assert.equal(observed,expected,host+' admits software-renderer main-thread latency');
     const budget=journey.lastStandJourneyTimeBudget(host);
     assert.equal(budget.actionMs,observed);
@@ -1031,22 +1032,18 @@ test('actual maintained journey uses a finite host DOM allowance without changin
 });
 
 test('offline reader refuses an intact older oracle with stale current-source binding',()=>{
-  const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
-  const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('\nif(process.argv[1]',begin);
   const bytes=Buffer.from('explicit inert byte fixture'),sha=createHash('sha256').update(bytes).digest('hex');
   const model={host:'linux',fresh_host_compilation:true,output_sha256:sha,source_binding:{sources:'stale'},
     commands:[0,1].map(()=>({exit:0,error:null,stdout:'inert.stdout.txt',stderr:'inert.stderr.txt',stdout_sha256:sha,stderr_sha256:sha}))};
-  const run=runInNewContext(reader.slice(begin,end)+';verifyFiles',{
+  const run=((path,report)=>verifyFiles(path,report,{
     assert,dirname,resolve,basename,read:()=>model,readFileSync:()=>bytes,digest:()=>sha,
     encounterCompilationSourceBinding:()=>({sources:'current'}),admitEncounterOracleOutput:()=>{},
-  });
+  }));
   assert.throws(()=>run('/explicit-inert/result.json',{qualification:{profile:'linux-functional',host:'linux'},screenshots:[]}),
     /source|binding|differ/i);
 });
 
 test('offline reader checks retained compiler bytes and fixed streams using pure reference admission',()=>{
-  const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
-  const begin=reader.indexOf('function verifyFiles('),end=reader.indexOf('\nif(process.argv[1]',begin);
   const bytes=Buffer.from('explicit inert byte fixture'),sha=createHash('sha256').update(bytes).digest('hex');
   const binding={sources:'explicit current fixture'},reference={source_lf_sha256:{'inert.cs':sha}};
   for(const fault of ['none','stream-escape','driver','executable','run-output','wave-current','wave-stale']){
@@ -1059,14 +1056,14 @@ test('offline reader checks retained compiler bytes and fixed streams using pure
     if(fault==='driver')model.inputs['/explicit-inert/Program.cs']='bad';
     if(fault==='executable')model.exe_sha256='bad';
     if(fault==='run-output')model.commands[1].stdout_sha256='bad';
-    const run=runInNewContext(reader.slice(begin,end)+';verifyFiles',{
+    const run=((path,report)=>verifyFiles(path,report,{
       assert,dirname,resolve,basename,read:path=>path.endsWith('runtime-telemetry.json')?settling:model,readFileSync:()=>bytes,digest:()=>sha,
       encounterCompilationSourceBinding:()=>binding,encounterOraclePackage:()=>reference,
       validateSettlingTransition:journey.validateSettlingTransition,
       verifyWaveFiles:(_path,report)=>{waveReads++;assert.equal(report.contract,'last-stand-waves/v2','Stale wave contract rejected by current verifier');},
       admitEncounterOracleOutput:(_raw,bundle,sources)=>{parity++;assert.equal(bundle,reference);assert.equal(sources,reference.source_lf_sha256);
         return {profiles:{'repair:20':settling.oracle}};},
-    });
+    }));
     const call=()=>run('/explicit-inert/result.json',{qualification:{profile:'linux-functional',host:'linux'},screenshots:[],
       ...(fault.startsWith('wave-')?{contract:fault==='wave-current'?'last-stand-waves/v2':'last-stand-waves/v1'}:{}),
       lifecycle:[{kind:'settling-transition',evidence}]});
@@ -1077,10 +1074,8 @@ test('offline reader checks retained compiler bytes and fixed streams using pure
   }
 });
 test('functional no-replay observation retains cue refusal without inventing PCM',async()=>{
-  const begin=source.indexOf('    const noReplay=async('),end=source.indexOf('    const away=',begin);
-  assert.ok(begin>0 && end>begin);
-  const run=new Function('energy','report','cues','load','validateNoReplayAudio','check',
-    source.slice(begin,end)+'return noReplay(10,20);');
+  const run=(energy,report,cues,load,validateAudio,check)=>
+    journey.checkJourneyAudioReturn({energy,report,cues,load,validateAudio,check},10,20);
   const report={lifecycle:[]};
   const result=await run(async()=>null,report,[],1,journey.validateNoReplayAudio,(ok,message)=>assert.ok(ok,message));
   assert.equal(result.rendered_audio,'unexecuted-requires-windows');
@@ -1117,9 +1112,6 @@ function inertSupervisor({failWrite,stopRequested=true,host='win32'}={}) {
     if(failWrite?.(path)){files.set(path,'');throw Object.assign(new Error('injected ENOSPC: '+path),{code:'ENOSPC'});}
     files.set(path,String(text));
   };
-  const begin=source.includes('export function publishOwnedSupervisorJson(')
-    ?source.indexOf('export function publishOwnedSupervisorJson('):source.indexOf('export function startOwnedSupervisor(');
-  const end=source.indexOf('\nexport function nativeChromeArgs',begin);
   const context={assert,process:{pid:20,execPath:'inert-node',platform:host},ROOT:'/explicit-inert',
     admitEvidenceParent:()=>{},relative:()=> 'supervisor-inert.json',join:(...parts)=>parts.join('/'),
     randomUUID:()=> 'inert-id',ownedSupervisorLifetimeLimit:()=>journey.ownedSupervisorLifetimeLimit(host),
@@ -1133,8 +1125,8 @@ function inertSupervisor({failWrite,stopRequested=true,host='win32'}={}) {
     stopOwnedProcessTree:async known=>{cleanup.push(JSON.parse(JSON.stringify(known)));return{known,stopped:known,remaining:[]};},
     removeOwnedProfile:path=>{assert.equal(path,options.profile);profile=false;},
     readdirSync:()=>[],delay:async()=>{},spawn:()=>({unref(){}}),console:{error(){}}};
-  const actual=runInNewContext(source.slice(begin,end).replaceAll(/^export /gm,'')+
-    ';({startOwnedSupervisor,watchOwnedProcess,publishOwnedSupervisorJson})',context);
+  const adapters=Object.fromEntries(Object.entries(context).map(([key,value])=>[key,typeof value==='function'?(...args)=>context[key](...args):value]));
+  const actual=journey.createLastStandProcessSupervisor(adapters);
   return {...actual,options,files,cleanup,writes,renames,descriptors,context};
 }
 
@@ -1218,13 +1210,12 @@ test('owned supervisor parent rejects missing executable identity before admitti
 });
 
 test('owned Chrome startup retention failures clean only the child identity admitted before the write',async()=>{
-  const begin=source.indexOf('export async function ownedChrome('),end=source.indexOf('\nfunction frameTiming(',begin);
   for(const stage of ['initial-receipt','supervisor-options','inadmissible-parent','missing-executable']){
     const root={pid:40,ppid:stage==='inadmissible-parent'?999:20,start:'200',exe:stage==='missing-executable'?undefined:'inert-browser'};
     const reused={pid:40,ppid:20,start:'999',exe:'unrelated-reused-pid'},cleanup=[],removed=[];
     const failure=new Error('injected startup ENOSPC: '+stage);let current=root;
     const child={pid:40,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){}};
-    const run=runInNewContext(source.slice(begin,end).replace('export async','async')+';ownedChrome',{
+    const {ownedChrome:run}=journey.createLastStandNativeDriver({
       assert,process:{platform:'win32',pid:20,env:{ProgramFiles:'/explicit-inert'}},
       join:(...parts)=>parts.join('/'),tmpdir:()=>'/explicit-inert-temp',mkdtempSync:()=>'/explicit-inert-temp/st-ls-chrome-fixture',
       existsSync:()=>true,spawn:()=>child,nativeChromeArgs:()=>[],ownedProcessIdentity:()=>current,
@@ -1248,17 +1239,13 @@ test('owned Chrome startup retention failures clean only the child identity admi
 });
 
 test('standalone journey setup failure cleans its pre-write admitted child and cannot pass',async()=>{
-  const runner=readFileSync(new URL('../last-stand-playable-loop.mjs',import.meta.url),'utf8');
-  const begin=runner.indexOf("  const root=resolve(import.meta.dirname,'..');"),end=runner.lastIndexOf('\n}');
-  assert.ok(begin>=0 && end>begin,'Actual standalone runner body required');
-  const body=runner.slice(begin,end).replace('import.meta.dirname',"'/explicit-inert/scripts'");
   for(const stage of ['supervisor-options','inadmissible-parent','missing-executable']){
     const root={pid:40,ppid:stage==='inadmissible-parent'?999:20,start:'200',exe:stage==='missing-executable'?undefined:'inert-runner'};
     const reused={pid:40,ppid:20,start:'999',exe:'unrelated-reused-pid'},cleanup=[],files=new Map();
     const failure=new Error('injected runner options ENOSPC');let current=root;
     const child={pid:40,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){},once(){}};
     const processFixture={pid:20,execPath:'inert-node',platform:'win32',env:{},stderr:{write(){}},once(){}};
-    const report=await runInNewContext('(async()=>{'+body+';return report;})()',{
+    const report=await runStandaloneLastStandJourney({
       assert,process:processFixture,resolve:(...parts)=>parts.join('/'),join:(...parts)=>parts.join('/'),
       admitEvidenceParent:()=>'/explicit-inert',randomUUID:()=> 'inert-id',mkdirSync(){},spawn:()=>child,
       lastStandJourneyTimeBudget:()=>journey.lastStandJourneyTimeBudget('win32'),ownedProcessIdentity:()=>current,
@@ -1414,10 +1401,7 @@ test('GitHub merge checkout requires the exact candidate and current base as its
 });
 
 test('actual merge-parent collector refuses a blob before reading parent-like contents',()=>{
-  const reader=readFileSync(new URL('./lastStandQualification.mjs',import.meta.url),'utf8');
-  const begin=reader.search(/  (?:const|let) linuxParents=/),end=reader.indexOf('  const result=assertCombinedWaveQualification(',begin);
-  assert.ok(begin>0 && end>begin);
-  const run=new Function('git','linuxCheckout','head','assert',reader.slice(begin,end)+'return linuxParents;');
+  const run=(git,linuxCheckout,head)=>collectQualificationParents({git,linuxCheckout,head});
   const calls=[];
   const git=args=>{calls.push(args);return args[0]==='cat-file'?'blob':'d'.repeat(40)+' '+'b'.repeat(40);};
   assert.throws(()=>run(git,'c'.repeat(40),'b'.repeat(40),assert),/commit object/);
@@ -1435,19 +1419,14 @@ test('functional allocation keeps paused-time, manual Claim, purchase, save and 
 
 
 test('background wave caller awaits a post-return observation before collecting its checkpoint',async()=>{
-  const begin=source.indexOf('    const afterBackground=await observation('),end=source.indexOf('\n',begin);
-  assert.ok(begin>0&&end>begin,'Execute the maintained background checkpoint observation');
   const interval={recovered:1000,before:{run:2}},stale={t:999,run:2,tick:200},fresh={t:1010,run:2,tick:201};
-  const run=new Function('observation','reference','validateModelObservation','interval',
-    'return(async()=>{'+source.slice(begin,end)+'return afterBackground;})();');
+  const run=((observation,reference,validateModelObservation,interval)=>journey.observeReturnedWave({observation,reference,interval,validateObservation:validateModelObservation}));
   const observed=await run(async options=>options?.minT>=interval.recovered&&options.run===2?fresh:stale,
     ()=>({201:fresh}),(state,oracle)=>assert.deepEqual(oracle[state.tick],state,'Pre-return cached sample cannot establish a post-return checkpoint'),interval);
   assert.equal(observed,fresh);
 });
 
 test('background checkpoint capture remains coherent when a wave commits between model observation and durable read',async()=>{
-  const begin=source.indexOf('    const afterBackground=await observation('),end=source.indexOf('    const quietStart=',begin);
-  assert.ok(begin>0&&end>begin,'Execute the actual background capture including its native pause');
   const id={load:5,timeOrigin:1000,scope:'healthy'},rules='last-stand-waves-v1';
   const live={...id,t:56512.2,action:'session',sessionRun:1,runId:2,phase:'battle',saveState:'ready',wallet:2,
     tick:505,wave:2,completedWave:1,checkpointWave:1,paused:false,speed:1,pendingRunId:0,hasCheckpoint:true,
@@ -1462,9 +1441,7 @@ test('background checkpoint capture remains coherent when a wave commits between
   // The real trace crossed a complete wave after the coherent running pair.
   // Both asynchronous boundaries allow that legitimate intervening commit.
   const commit=()=>{if(states.at(-1)===live)states.push(committed);};
-  const run=new Function('observation','reference','validateModelObservation','interval','page','SAVE_KEY','states','check','report',
-    'gameKey','phaseMatrix','nextBoundary','validateBackgroundCheckpoint',
-    'return(async()=>{'+source.slice(begin,end)+'})();');
+  const run=((observation,reference,validateModelObservation,interval,page,SAVE_KEY,states,check,report,gameKey,phaseMatrix,nextBoundary,validateBackgroundCheckpoint)=>journey.captureBackgroundCheckpoint({observation,reference,interval,page,saveKey:SAVE_KEY,states,check,report,gameKey,phaseMatrix,nextBoundary,validateObservation:validateModelObservation,validateCheckpoint:validateBackgroundCheckpoint}));
   await run(async()=>after,()=>({505:after}),observed=>assert.equal(observed,after),interval,
     {evaluate:async()=>{commit();calls.push('read');return JSON.stringify(saved);}},'inert-key',states,
     (ok,message)=>assert.ok(ok,message),report,async(name,action,predicate)=>{
@@ -1515,16 +1492,13 @@ function waveCueFixture(){
   return withCueWitnesses(x);
 }
 test('actual audio return caller rejects contradictory wave/archive identity before recording evidence',async()=>{
-  const start=source.indexOf('    const noReplay=async('),end=source.indexOf('\n    const away=',start);
-  assert.ok(start>=0 && end>start);
   const run=async x=>{
     const report={lifecycle:[]};
-    const noReplay=runInNewContext(source.slice(start,end)+';noReplay',{
-      validateAwayAudioReturn:journey.validateAwayAudioReturn,validateNoReplayAudio:journey.validateNoReplayAudio,
+    const context={
       cues:x.cues,states:x.states,encounters:x.encounters,callbackRecords:x.callbackRecords,
       reference:()=>x.oracle,energy:async()=>null,check:(value,message)=>assert.ok(value,message),report,
-    });
-    await noReplay(x.begin,x.recovered,x);return report;
+    };
+    await journey.checkJourneyAudioReturn(context,x.begin,x.recovered,x);return report;
   };
   // Current and explicitly archived inputs both retain their intended lane.
   const archive=focusAckFixture();archive.before.rules='playable-prototype-v1';
@@ -1545,8 +1519,6 @@ test('actual audio return caller rejects contradictory wave/archive identity bef
 });
 
 test('actual observer and audio caller preserve the cleared-model result transition without admitting post-result activity',async()=>{
-  const start=source.indexOf('    const noReplay=async('),end=source.indexOf('\n    const away=',start);
-  assert.ok(start>=0 && end>start);
   const fixture=async(kind='hidden',refresh=false,repeated=false)=>{
     // Reduced current shard3 artifact12790561180: model clear emits a settling
     // HUD row before result publication. These inert bounds are not acceptance.
@@ -1574,12 +1546,11 @@ test('actual observer and audio caller preserve the cleared-model result transit
   };
   const run=async x=>{
     const report={lifecycle:[]};
-    const noReplay=runInNewContext(source.slice(start,end)+';noReplay',{
-      validateAwayAudioReturn:journey.validateAwayAudioReturn,validateNoReplayAudio:journey.validateNoReplayAudio,
+    const context={
       cues:x.cues,states:x.states,encounters:x.encounters,callbackRecords:x.callbackRecords,
       reference:()=>undefined,energy:async()=>null,check:(v,m)=>assert.ok(v,m),report,
-    });
-    await noReplay(x.begin,x.recovered,x);return report;
+    };
+    await journey.checkJourneyAudioReturn(context,x.begin,x.recovered,x);return report;
   };
   for(const kind of ['hidden','blur'])for(const refresh of [false,true])for(const repeated of [false,true]){
     const report=await run(await fixture(kind,refresh,repeated));

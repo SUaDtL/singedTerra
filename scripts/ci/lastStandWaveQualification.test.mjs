@@ -4,10 +4,9 @@ import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
-import {runInNewContext} from 'node:vm';
 import {LAST_STAND_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandJourney.mjs';
 import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
-import {WAVE_JOURNEY_INPUTS} from '../../e2e/helpers/lastStandWaveJourney.mjs';
+import {WAVE_JOURNEY_INPUTS,hashWaveJourneyInputs} from '../../e2e/helpers/lastStandWaveJourney.mjs';
 import {currentQualificationInputs} from './lastStandQualification.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 import {WAVE_ORACLE_SOURCES,CURRENT_WAVE_EDITION,waveOracleProfileKeys} from '../../e2e/helpers/lastStandWaveOracle.mjs';
@@ -25,10 +24,7 @@ const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/l
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 for(const path of controlInputPaths)test('source closure: wave producer binds actual '+path,()=>{
-  const wave=readFileSync(new URL('../../e2e/helpers/lastStandWaveJourney.mjs',import.meta.url),'utf8');
-  const begin=wave.indexOf('const hashInputs='),end=wave.indexOf('\n',begin);
-  assert.ok(begin>0&&end>begin,'Exercise the actual wave input recorder');
-  const recorded=runInNewContext(wave.slice(begin,end)+';hashInputs();',{WAVE_JOURNEY_INPUTS,createHash,readFileSync,resolve});
+  const recorded=hashWaveJourneyInputs();
   assert.equal(recorded[path],createHash('sha256').update(readFileSync(resolve(path))).digest('hex'),
     'Wave input recorder must include the actual consumed input: '+path);
 });
@@ -72,12 +68,8 @@ test('deployment control binds observed phase, checkpoint intent and the exact c
   }
 });
 test('actual earned checkpoint, purchase and terminal reload callers choose the observed primary control',async()=>{
-  const calls=[source.match(/const resumedCheckpoint=(await gameClick\([^;\n]+\));/),
-    source.match(/const hitStart=hits.length;const upgradedDeployment=(await gameClick\([^;\n]+\));/),
-    source.match(/kind:'terminal-reload',saved:[^\n]+state:finalReload\}\);\n\s*(await gameClick\([^;\n]+\));/)];
-  for(const [index,match]of calls.entries()){
-    assert.ok(match,'Actual reload deployment caller required: '+index);
-    const invoke=new Function('gameClick','states','layouts','lastStandDeploymentControl',`return (async()=>${match[1]})();`);
+  for(const index of [0,1,2]){
+    const invoke=(gameClick,states,layouts)=>journey.deployObservedJourney({gameClick,states,layouts},index===0?'resume':'deploy');
     for(const phase of ['garage','workshop']){
       const value=deploymentFixture(phase,index===0),observed=[];
       await invoke(async(...args)=>observed.push(args),[value.state],[value.layout],journey.lastStandDeploymentControl);
@@ -404,8 +396,7 @@ test('current entry producer uses the exact nine Linux pointer actions and curre
 });
 
 test('actual maintained wave purchase feeds current aggregate and rejects wallet, level and damage twins',async()=>{
-  const begin=source.indexOf("    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');"),end=source.indexOf('\n',begin);
-  assert.ok(begin>0&&end>begin);const run=new Function('gameKey','check','savedWave','return(async()=>{'+source.slice(begin,end)+'})();');
+  const run=(gameKey,check,savedWave)=>journey.purchaseJourneyCannon({gameKey,check,savedWave});
   for(const fault of [null,{wallet:1},{level:0},{cannonDamage:20}]){
     const {reports,expected}=matrixFixture(),observations=[];
     await run(async()=>({wallet:0,level:1,cannonDamage:30,...fault}),(pass,name,detail)=>observations.push({pass,name,detail}),{credits:2});

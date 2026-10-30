@@ -1,3 +1,4 @@
+import {LAST_STAND_HELPER_INPUTS} from '../../e2e/helpers/lastStandJourney.mjs';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {copyFileSync,existsSync,mkdtempSync,mkdirSync,rmSync} from 'node:fs';
@@ -7,11 +8,12 @@ import {fileURLToPath} from 'node:url';
 
 // Copy actual sources, including their complete local import closure, outside the
 // installed checkout. Pure CI guards must run before npm installs any packages.
-const sources=['scripts/last-stand-wave-milestones.mjs','scripts/last-stand-wave-endurance.mjs',
+const sources=[...LAST_STAND_HELPER_INPUTS,'scripts/last-stand-wave-milestones.mjs','scripts/last-stand-wave-endurance.mjs',
   'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandMatrix.mjs','e2e/helpers/lastStandTierJourney.mjs',
-  'e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs','scripts/assets/verify-last-stand-source.mjs',
+  'e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandWaveOracle.mjs','scripts/assets/verify-last-stand-source.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json'];
 const repository=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 
 export function assertDependencyFreeWaveGuards(program){

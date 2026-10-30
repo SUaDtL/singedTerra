@@ -1,3 +1,4 @@
+import {pathToFileURL} from 'node:url';
 // Historical artifact entry and detached watchdog for this task's owned trees.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -6,19 +7,9 @@ import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { admitEvidenceParent, startOwnedSupervisor, watchOwnedProcess, runLastStandShopJourney, lastStandJourneyTimeBudget, ownedProcessIdentity, finishOwnedSupervisorCleanup } from '../e2e/helpers/lastStandJourney.mjs';
 
-if(process.argv[2]==='--watch-owner') {
-  const path=resolve(process.argv[3]);admitEvidenceParent(path);
-  const options=JSON.parse(readFileSync(path,'utf8'));assert.equal(options.path,path);
-  await watchOwnedProcess(options);
-} else if(process.argv[2]==='--shop-player') {
-  assert.equal(process.argv.length,4,'Shop player requires exactly one fitting');
-  const fitting=process.argv[3];assert.ok(['launcher','repair'].includes(fitting),'Unknown Shop fitting');
-  const {chromium}=await import('@playwright/test');
-  const result=await runLastStandShopJourney({chromium,fitting,
-    baseURL:process.env.ST_SHOP_PLAYER_BASE_URL??'http://127.0.0.1:5203/'});
-  console.log(`SHOP_PLAYER_RESULT=${result.path}`);
-  process.exitCode=result.status==='pass'?0:1;
-} else {
+const standaloneAdapters={resolve,join,admitEvidenceParent,randomUUID,mkdirSync,spawn,lastStandJourneyTimeBudget,ownedProcessIdentity,startOwnedSupervisor,finishOwnedSupervisorCleanup,writeFileSync,process,Date,console,setTimeout,clearTimeout};
+export async function runStandaloneLastStandJourney(overrides={}) {
+  const {resolve,join,admitEvidenceParent,randomUUID,mkdirSync,spawn,lastStandJourneyTimeBudget,ownedProcessIdentity,startOwnedSupervisor,finishOwnedSupervisorCleanup,writeFileSync,process,Date,console,setTimeout,clearTimeout}={...standaloneAdapters,...overrides};
   const root=resolve(import.meta.dirname,'..');
   const output=join(admitEvidenceParent(),`artifact-${new Date().toISOString().replace(/[:.]/g,'-')}-${randomUUID().slice(0,8)}`);
   mkdirSync(output,{recursive:true});
@@ -54,4 +45,24 @@ if(process.argv[2]==='--watch-owner') {
     console.log(`LAST_STAND_LOOP_EVIDENCE=${output}`);
     process.exitCode=report.status==='pass'?0:(code||1);
   }
+  return report;
+}
+
+if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
+if(process.argv[2]==='--watch-owner') {
+  const path=resolve(process.argv[3]);admitEvidenceParent(path);
+  const options=JSON.parse(readFileSync(path,'utf8'));assert.equal(options.path,path);
+  await watchOwnedProcess(options);
+} else if(process.argv[2]==='--shop-player') {
+  assert.equal(process.argv.length,4,'Shop player requires exactly one fitting');
+  const fitting=process.argv[3];assert.ok(['launcher','repair'].includes(fitting),'Unknown Shop fitting');
+  const {chromium}=await import('@playwright/test');
+  const result=await runLastStandShopJourney({chromium,fitting,
+    baseURL:process.env.ST_SHOP_PLAYER_BASE_URL??'http://127.0.0.1:5203/'});
+  console.log(`SHOP_PLAYER_RESULT=${result.path}`);
+  process.exitCode=result.status==='pass'?0:1;
+} else {
+  await runStandaloneLastStandJourney();
+}
+
 }

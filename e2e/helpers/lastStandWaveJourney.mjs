@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
+import { LAST_STAND_HELPER_INPUTS, admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
   fetchBoundRuntime, assertServedBytes, readShopControlObservation, selectLastStandFitting,
   assertIdleWaveSave, assertWaveSavePreserved, validateWaveAbandonSave, assertWaveRestoredState, WAVE_FITTINGS } from './lastStandJourney.mjs';
 import { tierJourneyControlGeometry } from './lastStandTierJourney.mjs';
@@ -11,13 +11,14 @@ import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 
 const SAVE_KEY='singedTerra.lastStand.prototype.v1';
 const FITTINGS=WAVE_FITTINGS;
-export const WAVE_JOURNEY_INPUTS=Object.freeze(['e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs',
+export const WAVE_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs',
   'e2e/helpers/lastStandControlReveal.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-first-session.mjs']);
-const hashInputs=()=>Object.fromEntries(WAVE_JOURNEY_INPUTS.map(path=>[path,createHash('sha256').update(readFileSync(resolve(path))).digest('hex')]));
+export const hashWaveJourneyInputs=()=>Object.fromEntries(WAVE_JOURNEY_INPUTS.map(path=>[path,createHash('sha256').update(readFileSync(resolve(path))).digest('hex')]));
 
 // These assertions compare observations; Unity remains the sole save decoder
 // and simulation owner. No JS fixture can qualify a player or grant rewards.
@@ -87,7 +88,7 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
   const base=admitJourneyBase(baseURL),output=dirname(testInfo.outputPath('wave-observations.json'));
   for(const name of ['verify-last-stand-source.mjs','verify-last-stand.mjs'])
     execFileSync(process.execPath,[resolve('scripts/assets',name)],{encoding:'utf8'});
-  const packaged=packagedRuntimeSnapshot(),inputs=hashInputs(),oracle=buildWaveOracle(output);
+  const packaged=packagedRuntimeSnapshot(),inputs=hashWaveJourneyInputs(),oracle=buildWaveOracle(output);
   const manifest=JSON.parse(readFileSync(resolve('client/public/last-stand/asset-manifest.json'),'utf8'));
   for(const [path,expected]of Object.entries({...manifest.files,'index.html':manifest.wrapperSha256}))
     assertServedBytes(await fetchBoundRuntime(base,path),expected);
@@ -131,14 +132,8 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     const layout=current(report.layouts),canvas=await page.locator('#unity-canvas').boundingBox();assert.ok(canvas);
     return {layout,canvas,projected:tierJourneyControlGeometry(layout,canvas)};
   };
-  const {revealLastStandControl}=await import('./lastStandControlReveal.mjs');
-  const reveal=async name=>{
-    const start=report.inputsObserved.length,originalLoad=load;
-    return revealLastStandControl({name,page,geometry,assertUninterrupted:()=>assert.ok(load===originalLoad&&
-      !report.inputsObserved.slice(start).some(event=>event.globalTarget&&
-        (event.kind==='blur'||event.kind==='visibilitychange'&&event.hidden)),
-    'Scroll reveal refuses document, focus or visibility loss')});
-  };
+  const {revealObservedLastStandControl}=await import('./lastStandControlReveal.mjs');
+  const reveal=name=>revealObservedLastStandControl({name,page,geometry,trace:report.inputsObserved,readLoad:()=>load});
   const click=async name=>{
     const {layout,canvas}=await reveal(name);
     const control=[...layout.controls,...layout.shopControls,...layout.settingsControls].find(c=>c.name===name&&c.active&&c.interactable);
@@ -191,10 +186,7 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     await matrix('wave-combat-paused');await click('Menu');await until(()=>current(report.states)?.menu==='menu');
     await click('MenuMilestones');await until(()=>current(report.states)?.menu==='milestones');await matrix('wave-milestones');
     const milestoneText=JSON.parse(current(report.layouts).raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics.find(g=>g.path.endsWith('/SettingsBody')&&g.active)?.text;
-    assert.match(milestoneText,/UPCOMING/);assert.match(milestoneText,/One-time bonus/);
-    assert.match(milestoneText,/repeatable Salvage/);assert.match(milestoneText,/Base wave reward/);
-    assert.match(milestoneText,/WAVE 100 /);assert.match(milestoneText,/Unlock Auxiliary Scattergun/);
-    assert.match(milestoneText,/WAVE 300 /);assert.match(milestoneText,/Unlock Tier 2/);
+    validateWaveMilestoneText(milestoneText);
     await click('SettingsClose');await until(()=>current(report.states)?.menu==='');
     await click('ShopEntry');await until(()=>current(report.shops)?.open);
     await click('ShopTabAttack');await until(()=>current(report.shops)?.category==='Attack');
@@ -224,7 +216,7 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     check('Confirmed abandon preserves banked rewards and cannot resurrect the checkpoint',()=>validateWaveAbandon({before:cleared,after:abandoned,reloaded}));
     assert.ok(!current(report.layouts).controls.some(c=>c.active&&/RESUME RUN/.test(c.label)));
     if(observerError)throw observerError;assert.deepEqual(report.errors,[]);assert.ok(report.inputsObserved.some(e=>e.trusted));
-    assertPackagedRuntimeParity(packaged,packagedRuntimeSnapshot());assert.deepEqual(hashInputs(),inputs);
+    assertPackagedRuntimeParity(packaged,packagedRuntimeSnapshot());assert.deepEqual(hashWaveJourneyInputs(),inputs);
     report.status='pass';return report;
   } catch(error){report.status='failed';report.error=String(error);throw error;}
   finally {
@@ -233,4 +225,11 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     await testInfo.attach('Wave and checkpoint observations',{path,contentType:'application/json'});
     for(const shot of report.screenshots)await testInfo.attach(shot.label,{path:shot.path,contentType:'image/png'});
   }
+}
+
+export function validateWaveMilestoneText(milestoneText) {
+    assert.match(milestoneText,/UPCOMING/);assert.match(milestoneText,/One-time bonus/);
+    assert.match(milestoneText,/repeatable Salvage/);assert.match(milestoneText,/Base wave reward/);
+    assert.match(milestoneText,/WAVE 100 /);assert.match(milestoneText,/Unlock Auxiliary Scattergun/);
+    assert.match(milestoneText,/WAVE 300 /);assert.match(milestoneText,/Unlock Tier 2/);
 }

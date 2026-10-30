@@ -1,3 +1,4 @@
+import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -8,9 +9,6 @@ import { tierJourneyControlGeometry } from '../../e2e/helpers/lastStandTierJourn
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 
 function ownedStartupFixture({ready=false,missing=false}={}) {
-  const begin=source.indexOf('export async function ownedChrome(');
-  const end=source.indexOf('\nfunction frameTiming',begin);
-  assert.ok(begin>0 && end>begin,'Exercise the maintained owned browser launcher');
   const page={identity:'original startup tab'},pages=ready?[page]:[],receipts=[],calls=[];
   const root={pid:12345,ppid:6789,start:'100',exe:'/owned/chrome'};
   const unavailable=new Error('Original startup page did not arrive');
@@ -23,7 +21,7 @@ function ownedStartupFixture({ready=false,missing=false}={}) {
   },newPage:()=>assert.fail('Do not replace the original native startup tab')};
   const browser={contexts:()=>[context],close:async()=>calls.push('close-connection'),
     newBrowserCDPSession:async()=>({send:async method=>{assert.equal(method,'Browser.close');calls.push('close-browser');}})};
-  const launch=runInNewContext(source.slice(begin,end).replace('export async function','async function')+';ownedChrome',{
+  const {ownedChrome:launch}=journey.createLastStandNativeDriver({
     process:{platform:'linux',pid:root.ppid},join,assert,existsSync:()=>true,mkdtempSync:()=>'/owned/profile',tmpdir:()=>'/tmp',
     nativeChromeArgs:()=>['about:blank'],spawn:()=>({pid:12345,exitCode:null,stdout:{on(){}},stderr:{on(){}},on(){}}),
     ownedProcessIdentity:pid=>{assert.equal(pid,root.pid);return root;},
@@ -63,26 +61,16 @@ test('owned browser preserves an existing tab and cleans up when no original tab
   assert.deepEqual(missing.calls,['wait-page','close-browser','stop-owned-tree','close-connection']);
   assert.equal(missing.receipts.at(-1).status,'removed');
 });
-const controlContextBegin=source.indexOf('    const hudControls=');
-const controlContextEnd=source.indexOf('    const geometry=',controlContextBegin);
-assert.ok(controlContextBegin>0 && controlContextEnd>controlContextBegin,'Actual maintained control geometry helpers are required');
-const controlContext=source.slice(controlContextBegin,controlContextEnd);
-const begin=source.indexOf('    const focused=async label=>{');
-const end=source.indexOf('    const screenshot=',begin);
-assert.ok(begin>0 && end>begin,'Actual maintained focus caller is required');
-const run=new Function('process','page','native','report','ensureOwnedNativeForeground','check',
-  source.slice(begin,end)+'return focused("inert caller-order fixture");');
+const run=(process,page,native,report,ensureOwnedNativeForeground,check)=>journey.focusJourneyDocument(
+  {page,native,report,check,host:process.platform,ensureForeground:ensureOwnedNativeForeground},'inert caller-order fixture');
 
 async function returnKeyboardFixture({host='linux',initial='return',entryFails=false,outline='solid',measure=false,trap=false,loseFocus=false,
   initiallyUnfocused=false,restoreFocus=true}={}){
-  const begin=source.indexOf('    const keyboardFocus=async locator=>{',source.indexOf('export async function runLastStandJourney('));
-  const end=source.indexOf('    const dismissSplash=',begin);
-  assert.ok(begin>0 && end>begin);
   const target={id:'last-stand-return'},canvas={id:'unity-canvas'},keys=[];
   let lost=initiallyUnfocused,focusCalls=0;
   const document={activeElement:initial==='return'?target:canvas,hidden:false,hasFocus:()=>!lost,
     getElementById:id=>id==='unity-canvas'?canvas:null};let index=0,reads=0;
-  const read=(fn,element)=>{reads++;return fn(element);};
+  const read=(fn,element)=>{reads++;return runInNewContext('('+fn.toString()+')(element)',{document,window:{},getComputedStyle:()=>({outlineStyle:outline,outlineWidth:'2px'}),element});};
   // Inert reduction of the maintained wrapper: either direction into the canvas
   // invokes enter-first; previous from its first control exits to native Return.
   const context={document,window:{},process:{platform:host},focused:async()=>{focusCalls++;if(restoreFocus)lost=false;},check:(ok,name)=>assert.ok(ok,name),
@@ -95,8 +83,7 @@ async function returnKeyboardFixture({host='linux',initial='return',entryFails=f
       }}},
   };
   const locator={evaluate:async fn=>read(fn,target)};
-  const {runInNewContext}=await import('node:vm');
-  await runInNewContext('(async()=>{'+source.slice(begin,end)+'await keyboardFocus(locator);})()', {...context,locator});
+  await journey.createJourneyActions(context).keyboardFocus(locator);
   return measure?{keys,reads,focusCalls}:keys;
 }
 
@@ -179,14 +166,11 @@ test('native foreground refusal propagates before a DOM wait can proceed',async(
 });
 
 test('settling pointer prerequisites complete before the brief wave phase begins',async()=>{
-  const begin=source.indexOf("    if(player){\n      const prepared=await armGameClick('SpeedRate'"),end=source.indexOf('    const naturalResult=',begin);
-  assert.ok(begin>0&&end>begin,'Execute the maintained natural-terminal pointer preparation');
   let clock=0,armedAt=null,paused=false;const calls=[],states=[];
   const prepare=async()=>{clock+=900;armedAt=clock;calls.push('prepare');return async()=>{
     assert.ok(clock<500,'Slow foreground preparation missed the actual settling phase');paused=true;calls.push('input');return {paused};
   };};
-  const run=new Function('player','armGameClick','until','states','terminalStart','load','expectedTerminal','terminalBefore','phaseMatrix','gameClick',
-    'return(async()=>{let terminalPaused,terminalResumed;'+source.slice(begin,end)+'return {terminalPaused,terminalResumed};})();');
+  const run=((player,armGameClick,until,states,terminalStart,load,expectedTerminal,terminalBefore,phaseMatrix,gameClick)=>journey.prepareSettlingInteraction({player,armGameClick,until,states,terminalStart,load,expectedTerminal,terminalBefore,phaseMatrix,gameClick}));
   const result=await run(true,prepare,async()=>{clock=0;states.push({phase:'settling',load:7});calls.push('settling');},states,0,7,
     {tick:5000},{tick:1000},async()=>{assert.ok(paused,'Actual matrix requires acknowledged Pause');calls.push('matrix');},
     async()=>{assert.ok(paused);paused=false;calls.push('resume');return {paused};});
@@ -195,15 +179,13 @@ test('settling pointer prerequisites complete before the brief wave phase begins
 });
 
 test('prepared pointer follows the actual new control rectangle after the Shop entry disappears',async()=>{
-  const begin=source.indexOf('    const armGameClick='),end=source.indexOf('    const gameClick=',begin);
   const before={phase:'battle',load:1,timeOrigin:100,t:1,width:100,height:100,controls:[{name:'Pause',x:0,y:0,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
   const layouts=[before],states=[{phase:'battle',load:1,timeOrigin:100}];let point,pressed;
   const page={evaluate:async expression=>typeof expression==='function'?{focused:true,timeOrigin:100,
     canvas:{x:0,y:0,width:100,height:100,pixelWidth:100,pixelHeight:100}}:undefined,
     mouse:{move:async(x,y)=>point={x,y},down:async()=>pressed=point,up:async()=>{}},
     waitForTimeout:async()=>{},viewportSize:()=>({width:100,height:100})};
-  const run=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert','tierJourneyControlGeometry',
-    'let load=1;'+controlContext+source.slice(begin,end)+'return armGameClick("Pause","session");');
+  const run=((geometry,focused,page,trace,states,report,until,check,layouts,assert,tierJourneyControlGeometry)=>(journey.createJourneyActions({geometry,focused,page,trace,states,report,until,check,layouts,assert,tierJourneyControlGeometry,load:1}).armGameClick("Pause","session")));
   const click=await run(async()=>({canvas:{x:0,y:0,width:100,height:100},layout:before,item:before.controls[0]}),
     async()=>{},page,[],states,{actions:[]},async()=>({load:1,phase:'settling',paused:true}),(ok,message)=>assert.ok(ok,message),layouts,assert,tierJourneyControlGeometry);
   layouts.push({...before,t:2,phase:'settling',controls:[{...before.controls[0],x:50}]});
@@ -212,7 +194,6 @@ test('prepared pointer follows the actual new control rectangle after the Shop e
 });
 
 test('HUD-only pointer actions require a fresh same-document layout acknowledgement',async()=>{
-  const begin=source.indexOf('    const armGameClick='),end=source.indexOf('    const gameClick=',begin);
   for(const fault of [undefined,'absent','load','origin','time','predicate']){
     const before={phase:'workshop',load:1,timeOrigin:100,t:10,width:100,height:100,opened:true,
       controls:[],shopControls:[{name:'ShopEntry',x:0,y:0,width:44,height:44,active:true,interactable:true}],settingsControls:[],graphics:[]};
@@ -224,8 +205,7 @@ test('HUD-only pointer actions require a fresh same-document layout acknowledgem
       canvas:{x:0,y:0,width:100,height:100,pixelWidth:100,pixelHeight:100}}:undefined,
       mouse:{move:async()=>{},down:async()=>{inputs++;},up:async()=>{if(fault!=='absent')layouts.push(after);}},
       waitForTimeout:async()=>{},viewportSize:()=>({width:100,height:100})};
-    const run=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert','tierJourneyControlGeometry',
-      'let load=1;'+controlContext+source.slice(begin,end)+'return armGameClick("ShopEntry","hud-layout",item=>item.opened);');
+    const run=((geometry,focused,page,trace,states,report,until,check,layouts,assert,tierJourneyControlGeometry)=>(journey.createJourneyActions({geometry,focused,page,trace,states,report,until,check,layouts,assert,tierJourneyControlGeometry,load:1}).armGameClick("ShopEntry","hud-layout",item=>item.opened)));
     const click=await run(async()=>({canvas:{x:0,y:0,width:100,height:100},layout:before,item:before.shopControls[0]}),
       async()=>{},page,[],states,{actions:[]},async(rows,start,predicate)=>{
         assert.equal(rows,layouts,'HUD changes must await actual layouts, without invented gameplay states');
@@ -238,8 +218,6 @@ test('HUD-only pointer actions require a fresh same-document layout acknowledgem
 
 for(const loss of ['blur','hidden','reload','resize','used','document','origin','canvas','layout-origin','layout-dimensions',
   'layout-load','stale-layout','phase','missing','disabled','out-of-bounds'])test(`prepared pointer refuses ${loss} before sending input`,async()=>{
-  const begin=source.indexOf('    const armGameClick=');const end=source.indexOf('    const gameClick=',begin);
-  assert.ok(begin>0 && end>begin);
   const trace=[],states=[{load:1,timeOrigin:100,phase:'battle'}];let inputs=0,width=100;
   const layout={load:1,timeOrigin:100,t:1,phase:'battle',width:100,height:100,
     controls:[{name:'Pause',x:0,y:0,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
@@ -247,8 +225,7 @@ for(const loss of ['blur','hidden','reload','resize','used','document','origin',
   const page={evaluate:async expression=>typeof expression==='function'?{focused:loss!=='document',timeOrigin:loss==='origin'?101:100,
     canvas:{x:0,y:0,width:loss==='canvas'?200:100,height:100,pixelWidth:100,pixelHeight:100}}:undefined,
     mouse:{move:async()=>{},down:async()=>{inputs++;},up:async()=>{}},waitForTimeout:async()=>{},viewportSize:()=>({width,height:100})};
-  const compile=new Function('geometry','focused','page','trace','states','report','until','check','layouts','assert','tierJourneyControlGeometry',
-    'let load=1;'+controlContext+source.slice(begin,end)+'return {armGameClick,reload:()=>load++};');
+  const compile=((geometry,focused,page,trace,states,report,until,check,layouts,assert,tierJourneyControlGeometry)=>{let load=1;const state={geometry,focused,page,trace,states,report,until,check,layouts,assert,tierJourneyControlGeometry,get load(){return load;}};return {...journey.createJourneyActions(state),reload:()=>load++};});
   const fixture=compile(async()=>({canvas:{x:0,y:0,width:100,height:100},layout,item:layout.controls[0]}),
     async()=>{},page,trace,states,{actions:[]},async()=>({phase:'settling',paused:true}),(ok,message)=>assert.ok(ok,message),layouts,assert,tierJourneyControlGeometry);
   const click=await fixture.armGameClick('Pause','session');

@@ -714,21 +714,19 @@ test('standalone cleanup failure still persists its failed report and propagates
 });
 
 function actualJourneyFinalEvidenceCallback(report,{reject=[],messages=[{type:'log',text:'complete raw console',load:1,scope:'healthy'}]}={}) {
-  const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
-  const start=source.lastIndexOf('},()=>{'),end=source.indexOf('},originalError);',start);
-  assert.ok(start>=0 && end>start,'Actual journey final evidence callback required');
   const writes=new Map(),attempts=[],logged=[],errors=[];
   const raw={messages,failures:[],httpErrors:[],expectedFaults:[],observerFailures:[],
     states:[{action:'result',tick:123}],encounters:[{tick:123}],callbackRecords:[{pending:0}],
     hits:[{damage:30}],layouts:[{phase:'result'}],cues:[{cue:'defeat'}],
     trace:[{kind:'pointerup'}],requests:[{url:'http://127.0.0.1/inert'}]};
-  const context=createContext({...raw,report,output:'explicit-inert-evidence',
+  const context=({...raw,report,output:'explicit-inert-evidence',
     classifyBrowserEvidence:journey.classifyBrowserEvidence,
     persistLastStandJourneyEvidence:journey.persistLastStandJourneyEvidence,
     write:(name,data)=>{attempts.push(name);if(reject.includes(name))throw new Error('injected retention failure: '+name);
       writes.set(name,JSON.parse(JSON.stringify(data)));},
     console:{log:value=>logged.push(value),error:value=>errors.push(value)}});
-  const persist=runInContext('(()=>{'+source.slice(start+7,end)+'})',context);
+  const persist=()=>journey.persistJourneyFinalEvidence({report,observations:raw,write:context.write,
+    output:context.output,logger:context.console});
   return {persist,writes,attempts,logged,errors,raw};
 }
 
@@ -803,20 +801,14 @@ test('actual journey compact retention diagnostic bounds error text without trun
 });
 
 test('actual journey evidence writer streams complete nested records without aggregate JSON stringification',async t=>{
-  const original=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8');
   for(const [name,newline] of [['LF','\n'],['CRLF','\r\n']])await t.test(name,()=>{
-  const source=original.replace(/\r\n|\r|\n/g,newline);
-  const start=source.indexOf('export function writeShopPresentationJson('),end=source.indexOf('\nexport function readShopControlObservation(',start);
-  const main=source.slice(source.indexOf('export async function runLastStandJourney('));
-  const declaration=main.match(/const write = [^\n]+;/)?.[0];
-  assert.ok(start>=0 && end>start && declaration,'Real serializer and maintained caller are required');
   const chunks=[],opened=[],closed=[];
   const context=createContext({openSync:(path,mode)=>{opened.push([path,mode]);return 7;},
     writeSync:(fd,text)=>{assert.equal(fd,7);chunks.push(text);return Buffer.byteLength(text);},
     closeSync:fd=>closed.push(fd),join:(base,name)=>base+'/'+name,output:'explicit-inert',
     JSON:{stringify(value){assert.ok(value===null || typeof value!=='object','Aggregate JSON stringification is forbidden');
       return JSON.stringify(value);}}});
-  runInContext([source.slice(start,end).replace(/^export /,''),declaration,'globalThis.actualWrite=write;'].join('\n'),context);
+  context.actualWrite=journey.createJourneyEvidenceWriter(context.output,context);
   const values={records:Array.from({length:900},(_,seq)=>({seq,raw:'Observed glyph Ω\n'.repeat(180),
     values:[null,undefined,false,0,seq+.5,NaN,Infinity],nested:{empty:[],object:{},omitted:undefined}}))};
   context.actualWrite('raw.json',values);
@@ -1009,6 +1001,8 @@ test('process ownership rejects incomplete executable identities before retentio
 });
 
 test('process ownership private matcher rejects incomplete executable identities',async t=>{
+  let sandbox;
+  if(process.env.LAST_STAND_MATCHER_SOURCE){
   // Capture only the actual trusted private declarations, never process callbacks.
   // The source override admits archived/fault evidence without changing production.
   const sourceURL=process.env.LAST_STAND_MATCHER_SOURCE
@@ -1030,10 +1024,14 @@ test('process ownership private matcher rejects incomplete executable identities
   const declarations=block.trim().split(/\r?\n/);
   assert.equal(declarations.length,presenceCount+1,'Capture only the one or two private declarations');
   assert.ok(declarations.every(line=>line.startsWith(matcherMarker) || line.startsWith(presenceMarker)));
-  const sandbox=createContext({}, {codeGeneration:{strings:false,wasm:false}});
+  sandbox=createContext({}, {codeGeneration:{strings:false,wasm:false}});
   runInContext(`${block}\nglobalThis.authorize=(left,right)=>Boolean(sameProcess(left,right));`,sandbox,{timeout:1000});
+  } else {
+    const {sameProcess}=await import('../../e2e/helpers/lastStandProcessOwnership.mjs');
+    sandbox={authorize:(left,right)=>Boolean(sameProcess(left,right))};
+    console.log('PRIVATE_MATCHER_CAPTURE='+JSON.stringify({owner:'lastStandProcessOwnership.mjs',adapter:'direct-import'}));
+  }
   await t.test('actual private matcher capture succeeds in an inert context',()=>assert.equal(typeof sandbox.authorize,'function'));
-  console.log(`PRIVATE_MATCHER_CAPTURE=${JSON.stringify({source:sourceURL.href,begin,end,bytes:block.length,declarations:declarations.length})}`);
   const complete={pid:77,start:'100',exe:'owned-node'};
   const variants=[{name:'absent',absent:true},{name:'undefined',value:undefined},{name:'empty',value:''},
     {name:'null',value:null},{name:'number',value:0},{name:'boolean',value:true},

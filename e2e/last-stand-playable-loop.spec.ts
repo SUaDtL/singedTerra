@@ -1,5 +1,5 @@
 import { chromium, test } from '@playwright/test';
-import { runLastStandJourney, closeLastStandOwnedBrowsers, lastStandJourneyTimeBudget } from './helpers/lastStandJourney.mjs';
+import { runLastStandJourney, closeLastStandOwnedBrowsers, lastStandJourneyTimeBudget, runWaveJourneyTest } from './helpers/lastStandJourney.mjs';
 import { runLastStandWaveJourney } from './helpers/lastStandWaveJourney.mjs';
 
 // Retired storage is deliberately opaque. No removed parser or game is needed
@@ -12,11 +12,7 @@ const retiredCampaignRecord = { kind: 'campaign-storage-record', schemaVersion: 
 test.afterEach(async () => { await closeLastStandOwnedBrowsers(); });
 
 test('Last Stand earned waves and complete checkpoints survive reload', { tag: '@last-stand' }, async ({ page, baseURL }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop-fine', 'One journey owns the five-profile matrix');
-  test.setTimeout(lastStandJourneyTimeBudget().testMs);
-  page.setDefaultTimeout(lastStandJourneyTimeBudget().actionMs);
-  if (!baseURL) throw new Error('Production baseURL is required');
-  await runLastStandWaveJourney({ page, baseURL, testInfo });
+  await runWaveJourneyTest({test,page,baseURL,testInfo,runJourney:runLastStandWaveJourney});
 });
 
 test('Last Stand Campaigns journey preserves no-award exit and a stronger redeploy', { tag: '@last-stand' }, async ({ baseURL }, testInfo) => {

@@ -11,13 +11,15 @@ import unittest
 
 TOOLS = Path(__file__).resolve().parents[1]
 CONTRACTS = tuple(json.loads((TOOLS / f"contracts/last-stand-observation-v{version}.json").read_text(encoding="utf8"))
-                  for version in (1, 2))
+                  for version in (1, 2, 3))
 
 
 def packet(contract):
     value = {"phase": "garage", "coordinates": "top-left", "selection": "", "width": 800, "height": 600,
              "pixelRatio": 1, "scrollOffset": 0, "maximumScrollOffset": 0,
              "settingsScrollOffset": 0, "settingsMaximumScrollOffset": 0}
+    if "schema" in contract["header"]:
+        value = {"schema": contract["schema"], **value}
     for inventory in contract["inventories"]:
         value[inventory["field"]] = [dict(name=name, label=name, accessibleLabel=name, mode=inventory["field"],
             trackKey="", x=0, y=0, width=44, height=44, active=False, interactable=False) for name in inventory["names"]]
@@ -46,8 +48,8 @@ class ObservationVersionTests(unittest.TestCase):
             value = self.read_controls(source)
             self.assertEqual(value["raw"], source)
             self.assertFalse(value["graphicsTruncated"])
-            self.assertEqual(len(value["historyControls"]), 9 if contract is CONTRACTS[1] else 2)
-            self.assertEqual("plannerControls" in value, contract is CONTRACTS[1])
+            self.assertEqual(len(value["historyControls"]), (2, 9, 10)[CONTRACTS.index(contract)])
+            self.assertEqual("plannerControls" in value, contract is not CONTRACTS[0])
 
     def test_incomplete_extra_repeated_and_malformed_current_refused(self):
         changes = [lambda p: p.pop("plannerControls"), lambda p: p.pop("plannerMaximumScrollOffset"),
@@ -60,14 +62,29 @@ class ObservationVersionTests(unittest.TestCase):
             lambda p: p["plannerControls"][0].update(extra=True),
             lambda p: p.update(plannerScrollOffset=-1), lambda p: p.update(unknown=True),
             lambda p: p.update(graphics=None)]
-        for change in changes:
+        for contract in CONTRACTS[1:]:
+            for change in changes:
+                with self.subTest(schema=contract['schema'],change=change):
+                    value = packet(contract); change(value)
+                    with self.assertRaises((AssertionError, ValueError, KeyError, TypeError)):
+                        self.read_controls(raw(value))
+            source = raw(packet(contract))
+            with self.assertRaises((AssertionError, ValueError)):
+                self.read_controls(source[:-12])
+
+    def test_current_schema_cannot_be_downgraded_or_mislabeled(self):
+        for change in (lambda p: p.pop("schema"),
+                       lambda p: p.update(schema="singedterra-last-stand-observation/v2"),
+                       lambda p: p.update(schema="unknown"),
+                       lambda p: p["researchControls"].pop(next(i for i,row in enumerate(p["researchControls"]) if row['name']=='ResearchHelp')),
+                       lambda p: p["historyControls"].pop(next(i for i,row in enumerate(p["historyControls"]) if row['name']=='RunHistoryHelp')),
+                       lambda p: p.pop("researchListScrollOffset"),
+                       lambda p: p.update(researchDetailMaximumScrollOffset="400"),
+                       lambda p: p.update(researchListMaximumScrollOffset=-1)):
             with self.subTest(change=change):
-                value = packet(CONTRACTS[1]); change(value)
-                with self.assertRaises((AssertionError, ValueError, KeyError, TypeError)):
+                value=packet(CONTRACTS[-1]);change(value)
+                with self.assertRaises((AssertionError,ValueError,KeyError,TypeError)):
                     self.read_controls(raw(value))
-        source = raw(packet(CONTRACTS[1]))
-        with self.assertRaises((AssertionError, ValueError)):
-            self.read_controls(source[:-12])
 
     def test_duplicate_json_keys_are_not_silently_repaired(self):
         for contract in CONTRACTS:

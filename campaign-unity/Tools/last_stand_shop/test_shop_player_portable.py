@@ -107,12 +107,9 @@ assert.deepEqual(failures,[],'Actual recovery wait admitted stale/foreign/preter
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-const source=readFileSync(process.argv[1],'utf8'),start=source.indexOf('export function nativeChromeArgs(');
-const end=source.indexOf('\nconst windowError=',start);
-assert.ok(start>=0 && end>start);
-const body=source.slice(start,end).replace(/^export /,'');
+const {createLastStandNativeDriver}=await import((await import('node:url')).pathToFileURL(process.argv[1]));
 for(const platform of ['win32','linux']){
- const actual=runInNewContext('('+body+')',{process:{platform},assert});
+ const actual=createLastStandNativeDriver({process:{platform}}).nativeChromeArgs;
  const expected=['--user-data-dir=inert-profile','--remote-debugging-address=127.0.0.1',
    '--remote-debugging-port=0','--no-first-run','--no-default-browser-check',
    '--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost;[::1]',
@@ -142,6 +139,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
+import * as url from 'node:url';
 import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
 const cli=process.argv[1],source=readFileSync(cli,'utf8');
 for(const fitting of ['launcher','repair']) {
@@ -154,7 +152,7 @@ for(const fitting of ['launcher','repair']) {
     for(const [name,value]of Object.entries(values))this.setExport(name,value);
   },{context});
   const modules=new Map([
-    ['node:assert/strict',module({default:assert})],['node:path',module(path)],['node:crypto',module(crypto)],
+    ['node:assert/strict',module({default:assert})],['node:path',module(path)],['node:crypto',module(crypto)],['node:url',module(url)],
     ['node:fs',module({readFileSync,mkdirSync(){},writeFileSync(...args){writes.push(args);}})],
     ['node:child_process',module({spawn(){calls.push({mode:'classic'});throw new Error('Inert classic spawn intercepted');}})],
     ['@playwright/test',module({chromium:{inert:true}})],
@@ -167,7 +165,7 @@ for(const fitting of ['launcher','repair']) {
   ]);
   const resolve=async specifier=>{const item=modules.get(specifier);assert.ok(item,'Known inert dependency: '+specifier);return item;};
   const actual=new SourceTextModule(source,{context,identifier:cli,
-    initializeImportMeta:meta=>{meta.dirname=path.dirname(cli);},
+    initializeImportMeta:meta=>{meta.dirname=path.dirname(cli);meta.url=url.pathToFileURL(cli).href;},
     importModuleDynamically:async specifier=>{const item=await resolve(specifier);if(item.status==='unlinked')await item.link(resolve);
       if(item.status==='linked')await item.evaluate();return item;}});
   await actual.link(resolve);await actual.evaluate();

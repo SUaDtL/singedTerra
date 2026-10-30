@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {mkdirSync,readFileSync,writeFileSync,realpathSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
+import {LAST_STAND_HELPER_INPUTS,admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
   fetchBoundRuntime,assertServedBytes,readShopControlObservation,assertWaveCheckpointEdition,assertWaveSavePreserved} from '../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../e2e/helpers/lastStandTierJourney.mjs';
 import {WAVE_JOURNEY_PROBE} from '../e2e/helpers/lastStandWaveJourney.mjs';
@@ -145,9 +145,7 @@ for(const [path,sha]of Object.entries({...runtime.files,'index.html':runtime.wra
   assertServedBytes(await fetchBoundRuntime(base,path),sha);
 const output=resolve(root,'campaign-unity/Evidence/waves-milestones',new Date().toISOString().replace(/[:.]/g,'-'));
 mkdirSync(output,{recursive:true});
-const inputs=['scripts/last-stand-wave-milestones.mjs','e2e/helpers/lastStandWaveJourney.mjs',
-  'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs'];
-const hashes=()=>Object.fromEntries(inputs.map(path=>[path,hash(readFileSync(resolve(root,path)))]));
+const hashes=()=>hashMilestoneRunnerInputs();
 const report={status:'running',scope:'Real rendered 1x milestone, unlock and fitting behavior after accelerated production-earned setup; no normal-player duration, native media or endurance claim.',
   seeded:true,normalSpeed:true,host:process.platform,fixtureManifest:manifestPath,fixtureSha256:hash(fixtureBytes),inputs:hashes(),packaged,cases:[]};
 const {chromium}=await import('@playwright/test');
@@ -155,10 +153,7 @@ const browser=await chromium.launch({headless:true,chromiumSandbox:true,proxy:{s
 try {
   for(const fixture of fixtures.cases){
     assert.ok(['launcher','repair'].includes(fixture.fitting)&&[100,300].includes(fixture.targetWave));
-    const bytes=readFileSync(fixture.savePath),expectedBytes=readFileSync(fixture.expectedSavePath);
-    assert.equal(hash(bytes),fixture.saveSha256);assert.equal(hash(expectedBytes),fixture.expectedSaveSha256);
-    const saved=JSON.parse(bytes),expected=JSON.parse(expectedBytes);
-    admitMilestoneSaves(saved,expected,fixture);
+    const {bytes,saved,expected}=readMilestoneFixtureSaves(fixture);
     const context=await browser.newContext({viewport:{width:1366,height:768}});
     const page=await context.newPage(),states=[],layouts=[],input=[],errors=[];
     const item={fitting:fixture.fitting,targetWave:fixture.targetWave,status:'running',states,layouts,input,actions:[],shots:[],errors};
@@ -211,20 +206,12 @@ try {
       assert.equal(state().hasCheckpoint,true);assert.equal(state().checkpointWave,fixture.targetWave-1);
       const resume=layout().controls.find(c=>c.active&&c.interactable&&['Deploy','Redeploy'].includes(c.name));assert.ok(resume);
       await click(resume.name);await until(()=>state()?.phase==='battle'&&state().paused);
-      assert.equal(state().tick,saved.checkpoint.encounter.tick);assert.equal(state().hull,saved.checkpoint.encounter.hull);
-      assertWaveSavePreserved(saved,JSON.parse(await page.evaluate(k=>localStorage.getItem(k),key)));
+      await assertMilestoneResumeReadback({state,saved,page,key});
       await click('SpeedRate');await until(()=>state()?.speed===1&&!state().paused);
       const begin=Date.now();await until(()=>state()?.completedWave===fixture.targetWave,fixture.nextWaveTicks*.05+45);
       await click('SpeedRate');await until(()=>state()?.paused);item.realWaveMilliseconds=Date.now()-begin;
       const actual=JSON.parse(await page.evaluate(k=>localStorage.getItem(k),key));item.actualSave=actual;
-      const normalized=value=>{const copy=structuredClone(value);const shop=copy.checkpoint.shop;
-        assert.ok(Number.isSafeInteger(shop.purchaseSequence)&&shop.purchaseSequence>=Object.values(shop.runPurchases).reduce((a,b)=>a+b,0));
-        delete shop.purchaseSequence;return copy;};
-      item.historyTiming=assertMilestoneHistoryTiming(saved,expected,actual,fixture,item);
-      const comparable=structuredClone(actual);
-      for(const key of ['activeMilliseconds','pausedMilliseconds','closedMilliseconds','speedMilliseconds'])
-        comparable.history.current[key]=structuredClone(expected.history.current[key]);
-      assertWaveSavePreserved(normalized(expected),normalized(comparable));
+      assertMilestoneCompletedReadback({saved,expected,actual,fixture,item});
       assert.equal(actual.credits,saved.credits+fixture.expectedRepeatable+fixture.expectedFirstClear);
       const graphics=()=>JSON.parse(layout().raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
       const receipt=()=>graphics().find(g=>g.active&&g.path.endsWith('/WaveReceipt'))?.text;
@@ -249,8 +236,39 @@ try {
       assert.deepEqual(errors,[]);if(observerError)throw observerError;item.status='pass';
     }finally{await context.close();writeFileSync(resolve(output,'result.json'),JSON.stringify(report,null,2));}
   }
-  checkSources();assert.deepEqual(hashes(),report.inputs);assertPackagedRuntimeParity(packaged,packagedRuntimeSnapshot());report.status='pass';
+  checkSources();assertMilestoneRunnerInputs(report,hashes);assertPackagedRuntimeParity(packaged,packagedRuntimeSnapshot());report.status='pass';
 }catch(error){report.status='failed';report.error=String(error);process.exitCode=1;}
 finally{await browser.close();writeFileSync(resolve(output,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({status:report.status,output,error:report.error}));}
 }
+
+export function readMilestoneFixtureSaves(fixture,{readFile=readFileSync,hashBytes=hash}={}) {
+    const bytes=readFile(fixture.savePath),expectedBytes=readFile(fixture.expectedSavePath);
+    assert.equal(hashBytes(bytes),fixture.saveSha256);assert.equal(hashBytes(expectedBytes),fixture.expectedSaveSha256);
+    const saved=JSON.parse(bytes),expected=JSON.parse(expectedBytes);
+    admitMilestoneSaves(saved,expected,fixture);
+  return {bytes,saved,expected};
+}
+export async function assertMilestoneResumeReadback({state,saved,page,key}) {
+      assert.equal(state().tick,saved.checkpoint.encounter.tick);assert.equal(state().hull,saved.checkpoint.encounter.hull);
+      assertWaveSavePreserved(saved,JSON.parse(await page.evaluate(k=>localStorage.getItem(k),key)));
+}
+export function assertMilestoneCompletedReadback({saved,expected,actual,fixture,item}) {
+      const normalized=value=>{const copy=structuredClone(value);const shop=copy.checkpoint.shop;
+        assert.ok(Number.isSafeInteger(shop.purchaseSequence)&&shop.purchaseSequence>=Object.values(shop.runPurchases).reduce((a,b)=>a+b,0));
+        delete shop.purchaseSequence;return copy;};
+      item.historyTiming=assertMilestoneHistoryTiming(saved,expected,actual,fixture,item);
+      const comparable=structuredClone(actual);
+      for(const key of ['activeMilliseconds','pausedMilliseconds','closedMilliseconds','speedMilliseconds'])
+        comparable.history.current[key]=structuredClone(expected.history.current[key]);
+      assertWaveSavePreserved(normalized(expected),normalized(comparable));
+}
+export const MILESTONE_RUNNER_INPUTS=Object.freeze(['scripts/last-stand-wave-milestones.mjs','e2e/helpers/lastStandWaveJourney.mjs',
+  'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs',
+  ...LAST_STAND_HELPER_INPUTS,'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json']);
+export function hashMilestoneRunnerInputs({directory=root,readFile=readFileSync,resolvePath=resolve,hashBytes=hash}={}) {
+  return Object.fromEntries(MILESTONE_RUNNER_INPUTS.map(path=>[path,hashBytes(readFile(resolvePath(directory,path)))]));
+}
+export function assertMilestoneRunnerInputs(report,hashes=hashMilestoneRunnerInputs) { assert.deepEqual(hashes(),report.inputs); }
+
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))await main();

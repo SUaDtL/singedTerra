@@ -1,3 +1,4 @@
+import {LAST_STAND_HELPER_INPUTS} from '../e2e/helpers/lastStandJourney.mjs';
 // Declared development profiles reach late content; all player actions use
 // normal input in disposable contexts. This is not earned progression proof.
 import assert from 'node:assert/strict';
@@ -13,9 +14,10 @@ import {WAVE_JOURNEY_PROBE} from '../e2e/helpers/lastStandWaveJourney.mjs';
 const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototype.v1';
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const inputs=['scripts/last-stand-combat-depth-journey.mjs','e2e/helpers/lastStandBrowserActor.mjs',
-  'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
+  'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json'];
 const hashes=()=>Object.fromEntries(inputs.map(p=>[p,sha(readFileSync(resolve(root,p)))]));
 const fits=['repair','launcher','scattergun','mortar','railgun'];
 const environments=['sunlit-ash','iron-perimeter','cinder-basin','storm-foundry'];

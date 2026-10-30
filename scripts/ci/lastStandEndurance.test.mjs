@@ -30,13 +30,10 @@ const complete=()=>({...newEnduranceLedger(),activeMs:ENDURANCE_POLICY.activeTar
 const proof={completed:true,finalBindingsVerified:true,storageLatencyVerified:true};
 
 test('actual endurance report declares bounded smoke or an unfulfilled ten-hour target truthfully',()=>{
-  const text=readFileSync(new URL('../last-stand-wave-endurance.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
-  const begin=text.indexOf('  const ledger=newEnduranceLedger(expectedSpeed),report='),end=text.indexOf('  const resultPath=',begin);
-  assert.ok(begin>0&&end>begin,'Exercise the production report declaration');
   for(const mode of ['smoke','endurance'])for(const research of [false,true]){
-    const report=runInNewContext(text.slice(begin,end)+'report',{...endurance,options:{mode,research,smokeSeconds:180},
+    const {report}=endurance.createEnduranceReport({options:{mode,research,smokeSeconds:180},
       expectedSpeed:research?5:1,fixture:{qualificationPurchasePolicy:{},saveSha256:'inert-save'},
-      manifestPath:'inert',manifestBytes:Buffer.from('inert'),sha:()=> 'inert-hash',sources:{},packaged:{},process});
+      manifestPath:'inert',manifestBytes:Buffer.from('inert'),hash:()=> 'inert-hash',sources:{},packaged:{}});
     assert.equal(report.mode,mode);assert.equal(report.enduranceQualified,false);
     assert.equal(report.expectedSpeed,research?5:1);assert.equal(report.policy.activeTargetMs,36000000);
     assert.equal(report.policy.maximumSampleGapMs,5000);
@@ -287,9 +284,6 @@ function observationClock(){
 async function actualEnduranceOrchestration({screenshotMs=0,speed=5,transitions=false,
   probeFailure=null,actionFailure=null,cancelAt=Infinity,retained={},
   saved={version:6,pendingDefeat:null,checkpoint:null}}={}){
-  const source=readFileSync(new URL('../last-stand-wave-endurance.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
-  const begin=source.indexOf('    let nextSummary=0,'),end=source.indexOf('    await summary(true);');
-  assert.ok(begin>=0&&end>begin,'Extract the production orchestration, including its observation lifetime');
   const clock=observationClock(),ledger=newEnduranceLedger(speed),observations=[],actions=[];
   const report={summaries:0,screenshots:[],runsObserved:0,callback:{},audioCueTelemetry:{}};
   const card={key:'cannonAttack',level:0,cap:100,n:0,category:'Attack',canPurchase:true};
@@ -328,7 +322,7 @@ async function actualEnduranceOrchestration({screenshotMs=0,speed=5,transitions=
       else Object.assign(state,{phase:claimed===undefined?'result':'workshop',tick:100*speed,speed:0});
     }
     return state;}}});
-  const operation=runInNewContext('(async()=>{'+source.slice(begin,end)+'\n})()',globals);
+  const operation=endurance.observeEnduranceRun(globals);
   try{await clock.finish(operation);}finally{Object.assign(retained,{ledger,observations,actions,pending:clock.pending()});}
   return {ledger,observations,actions,report,completed:globals.completed};
 }

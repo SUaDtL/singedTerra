@@ -1,3 +1,4 @@
+import {LAST_STAND_HELPER_INPUTS} from '../../e2e/helpers/lastStandJourney.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
@@ -41,10 +42,11 @@ function fixture(t) {
 function copyAdmissionInputs(checkout) {
   // Import the real admission module with its complete code and data closure.
   // Setup-only containment cases retain their empty campaign tree.
-  for (const path of ['e2e/helpers/lastStandJourney.mjs', 'e2e/helpers/lastStandMatrix.mjs',
-    'e2e/helpers/lastStandWaveOracle.mjs', 'scripts/assets/verify-last-stand-source.mjs',
+  for (const path of [...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandJourney.mjs', 'e2e/helpers/lastStandMatrix.mjs',
+    'e2e/helpers/lastStandWaveOracle.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandControlReveal.mjs', 'scripts/assets/verify-last-stand-source.mjs',
     'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v2.json']) {
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+    'campaign-unity/Tools/contracts/last-stand-observation-v3.json']) {
     mkdirSync(dirname(join(checkout, path)), { recursive: true });
     copyFileSync(join(root, path), join(checkout, path));
   }

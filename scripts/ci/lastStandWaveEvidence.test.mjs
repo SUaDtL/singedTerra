@@ -45,18 +45,14 @@ test('actual foreground and background collectors select the current result tran
  const rows=[result,{...result,t:102,action:'session'},{...result,t:104,sessionRun:2},{...result,t:105,timeOrigin:2000}];
  for(const [name,saved,owner,start] of [['naturalResult','naturalSaved','terminalBefore','terminalStart'],
   ['backgroundResult','backgroundFinal','backgroundBefore','backgroundStart']]){
-  const begin=source.indexOf('    const '+name+'=await until('),end=source.indexOf('    const '+saved+'=',begin);
-  assert.ok(begin>0 && end>begin);
-  const run=new Function('until','states','load',owner,start,'expectedTerminal','isWaveResultFor',
-   'return(async()=>{'+source.slice(begin,end)+'return '+name+';})();');
+  const run=(until,states,load,before,start,expectedTerminal)=>journey.collectWaveResult({until,states,before,start,
+    ...(name==='naturalResult'?{expectedTerminal}:{})});
   const selected=await run(async(items,index,predicate)=>items.slice(index).filter(predicate).at(-1),rows,6,before,0,{tick:5080},journey.isWaveResultFor);
   assert.equal(selected,result,'Only the genuine current-session result transition may be collected');
  }
 });
 
 test('actual hidden terminal caller records its hidden boundary before native return and refuses early visibility',async()=>{
- const begin=source.indexOf('    const terminalAway=await away('),end=source.indexOf('    const backgroundFinal=',begin);
- assert.ok(begin>0 && end>begin);
  const before={load:6,timeOrigin:1000,scope:'healthy',run:1,t:10,tick:0},result={...before,t:100,action:'result',phase:'result',sessionRun:1};
  for(const earlyReturn of [false,true]){
   const events=[],order=[],states=[{...result,t:50,phase:'battle',action:'session'}];
@@ -69,16 +65,13 @@ test('actual hidden terminal caller records its hidden boundary before native re
    assert.equal(typeof options?.waitHidden,'function','The hidden boundary must be observed before native return');
    if(earlyReturn)events.push({...before,t:70,kind:'visibilitychange',hidden:false,globalTarget:true});
    await options.waitHidden({before,begin:20});order.push('visible');return {};};
-  const run=new Function('away','until','states','load','backgroundBefore','backgroundStart','backgroundExpected','trace','isWaveResultFor','assertWaveStillHidden',
-   'return(async()=>{'+source.slice(begin,end)+'return backgroundResult;})();');
+  const run=((away,until,states,load,backgroundBefore,backgroundStart,backgroundExpected,trace,isWaveResultFor,assertWaveStillHidden)=>journey.collectHiddenWaveResult({away,until,states,before:backgroundBefore,start:backgroundStart,expectedTerminal:backgroundExpected,trace}).then(value=>value.result));
   const work=run(away,until,states,6,before,0,{tick:5080},events,journey.isWaveResultFor,journey.assertWaveStillHidden);
   if(earlyReturn){await assert.rejects(work);assert.ok(!order.includes('visible'));}
   else {assert.equal(await work,result);assert.ok(order.indexOf('visible')<order.indexOf('observe'));}
  }
 });
 test('actual hidden terminal path retains throttled debt and requires deterministic completion after native return',async()=>{
- const begin=source.indexOf('    const terminalAway=await away('),end=source.indexOf('    const backgroundFinal=',begin);
- assert.ok(begin>0 && end>begin);
  // Retained source-bound shard4 artifact12786888769 (ZIP SHA256
  // ae313f87993791e4eed2a8732a65e112c9e25a8f80988003ad4b09a8eda2de2e):
  // after 60-second callbacks, the model is still running with all debt retained.
@@ -99,29 +92,23 @@ test('actual hidden terminal path retains throttled debt and requires determinis
   order.push('native-return');trace.push({...trace[0],t:327542.5,hidden:false,focused:true});
   states.push(result);return {before,begin:13165,recovered:327618,ms,events:trace};
  };
- const run=new Function('away','until','states','load','backgroundBefore','backgroundStart','backgroundExpected','trace',
-  'isWaveResultFor','assertWaveStillHidden',
-  'return(async()=>{'+source.slice(begin,end)+'return backgroundResult;})();');
+ const run=((away,until,states,load,backgroundBefore,backgroundStart,backgroundExpected,trace,isWaveResultFor,assertWaveStillHidden)=>journey.collectHiddenWaveResult({away,until,states,before:backgroundBefore,start:backgroundStart,expectedTerminal:backgroundExpected,trace}).then(value=>value.result));
  assert.equal(await run(away,until,states,6,before,0,{tick:5080},trace,journey.isWaveResultFor,
   journey.assertWaveStillHidden),result);
  assert.deepEqual(order,['hidden','native-return','observe']);
 });
 test('actual away owner verifies the hidden boundary after its minimum interval and before native return',async()=>{
- const begin=source.indexOf('    const away=async(',source.indexOf('export async function runLastStandJourney(')),end=source.indexOf('\n    const ',begin+10);
- assert.ok(begin>0 && end>begin);const order=[],before={t:10,load:1,timeOrigin:1000,scope:'healthy'},trace=[];
+ const order=[],before={t:10,load:1,timeOrigin:1000,scope:'healthy'},trace=[];
  const page={bringToFront:async()=>order.push('original-front'),waitForFunction:async()=>{},waitForTimeout:async()=>order.push('minimum-away')};
  const other={goto:async()=>{},bringToFront:async()=>order.push('hidden'),isClosed:()=>false,close:async()=>order.push('closed')};
  const native={context:{newPage:async()=>other}},report={},marks=[20,100];
- const run=new Function('trace','observation','page','process','check','native','report','mark','noReplay','waveIntervalEvents','cleanupAwayAuxiliary','assert',
-  source.slice(begin,end)+'return away;');
- const away=run(trace,async()=>before,page,{platform:'linux'},(condition,message)=>assert.ok(condition,message),native,report,
-  async()=>marks.shift(),async()=>order.push('audio'),journey.waveIntervalEvents,journey.cleanupAwayAuxiliary,assert);
+ const away=(kind,ms,options)=>journey.runJourneyAway({trace,observation:async()=>before,page,host:'linux',
+   check:(condition,message)=>assert.ok(condition,message),native,report,mark:async()=>marks.shift(),
+   noReplay:async()=>order.push('audio')},kind,ms,options);
  await away('hidden',60,{waitHidden:async()=>order.push('result')});
  assert.deepEqual(order.slice(0,5),['original-front','hidden','minimum-away','result','original-front']);
 });
 test('actual background terminal collector retains native edges from its verified model observation',()=>{
- const begin=source.indexOf('    const backgroundProof=validateWaveTerminal('),end=source.indexOf('    const reconciledAt=',begin);
- assert.ok(begin>0&&end>begin);
  const before={load:6,timeOrigin:1000,scope:'healthy',t:100},trace=[
   {...before,t:105,kind:'visibilitychange',hidden:true,globalTarget:true},
   {...before,t:106,kind:'visibilitychange',hidden:false,globalTarget:true},
@@ -129,7 +116,9 @@ test('actual background terminal collector retains native edges from its verifie
  const context={backgroundBefore:before,terminalAway:{before:{...before,t:107},recovered:200,events:trace.slice(2)},trace,
   backgroundResult:{},backgroundFinal:{},states:[],encounters:[],layouts:[],callbackRecords:[],cues:[],backgroundOracle:{},
   validateWaveTerminal:()=>({before}),validateBackgroundWaveTerminal:()=>({}),waveIntervalEvents:journey.waveIntervalEvents};
- const run=new Function('context','const {'+Object.keys(context).join(',')+'}=context;'+source.slice(begin,end)+'return terminalAway;');
+ const run=context=>{journey.retainHiddenWaveTerminal({interval:context.terminalAway,before:context.backgroundBefore,
+  proof:context.validateWaveTerminal(),trace:context.trace,callbackRecords:context.callbackRecords,states:context.states,
+  cues:context.cues,validateContinuation:context.validateBackgroundWaveTerminal});return context.terminalAway;};
  const interval=run(context);assert.deepEqual(interval.before,before);assert.deepEqual(interval.events,trace);
 });
 function csv(){return Buffer.from([1,2].flatMap(tier=>['repair','launcher','scattergun'].flatMap(fitting=>[20,30,40,50].flatMap(damage=>[

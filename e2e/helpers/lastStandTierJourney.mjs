@@ -4,10 +4,23 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { admitJourneyBase, packagedRuntimeSnapshot, assertPackagedRuntimeParity,
-  fetchBoundRuntime, assertServedBytes, readShopControlObservation, selectLastStandFitting } from './lastStandJourney.mjs';
+  fetchBoundRuntime, assertServedBytes } from './lastStandRuntimeAdmission.mjs';
 
 const inside = (a, b) => a.x >= b.x - .5 && a.y >= b.y - .5 &&
   a.x + a.width <= b.x + b.width + .5 && a.y + a.height <= b.y + b.height + .5;
+
+export async function tierJourneyInputHashes({firstSession=false,sourceRoot=resolve()}={}) {
+  // Actions imports this module for geometry. Read the shared closure only
+  // after module initialization so evidence binding introduces no static cycle.
+  const {LAST_STAND_HELPER_INPUTS}=await import('./lastStandJourney.mjs');
+  const inputs=['e2e/helpers/lastStandTierJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
+    'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
+    'e2e/helpers/lastStandMatrix.mjs','e2e/helpers/lastStandWaveOracle.mjs','e2e/helpers/lastStandControlReveal.mjs',
+    'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs',
+    ...[1,2,3].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json'),
+    ...(firstSession?['scripts/last-stand-first-session.mjs']:[])];
+  return Object.fromEntries(inputs.map(path=>[path,createHash('sha256').update(readFileSync(resolve(sourceRoot,path))).digest('hex')]));
+}
 
 // Active controls can be clipped by a genuine scroll viewport. Validate its
 // measured bounds and full scroll reach before testing visible intersections.
@@ -25,23 +38,33 @@ export function tierJourneyControlGeometry(layout, canvas) {
     'Modal must disable every underlying control');
   const controls = settingsOpen ? settingsControls : researchOpen?researchControls:historyOpen?historyControls:plannerOpen?plannerControls:backgroundControls.filter(item => item.active);
   let graphics;
+  const current=layout.schema==='singedterra-last-stand-observation/v3';
+  const surface = g => ['Image','LastStandConsoleSurface'].includes(g.kind) && g.active;
+  const measuredGraphics=()=>{
+    assert.equal(layout.graphicsTruncated,false,'Complete graphics required to qualify clipped controls');
+    return graphics??=JSON.parse(layout.raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
+  };
   const projected = controls.map(item => {
     assert.ok(item.width * canvas.width / layout.width >= 43.99 && item.height * canvas.height / layout.height >= 43.99,
       '44 CSS pixel target: ' + item.name);
     let clip = screen;
-    const settingsContent = settingsOpen && !['SettingsClose','ChoicePrevious','ChoiceNext'].includes(item.name) && !/^SettingsTab[0-3]$/.test(item.name);
-    const researchContent=researchOpen&&!['ResearchClose','ResearchFilter','ResearchBack'].includes(item.name);
+    const responsiveSettingsControl=['ChoicePrevious','ChoiceNext'].includes(item.name)||/^SettingsTab[0-3]$/.test(item.name);
+    let settingsContent = settingsOpen && item.name!=='SettingsClose' && !responsiveSettingsControl;
+    if(current&&settingsOpen&&responsiveSettingsControl){
+      const matches=measuredGraphics().filter(g=>g.path.endsWith('/'+item.name)&&surface(g));
+      assert.equal(matches.length,1,'One actual responsive control surface required');
+      settingsContent=matches[0].hasClip;
+    }
+    const researchContent=researchOpen&&(current?item.name!=='ResearchClose':!['ResearchClose','ResearchFilter','ResearchBack'].includes(item.name));
     const historyContent=historyOpen&&Object.hasOwn(layout,'plannerControls')&&item.name!=='RunHistoryClose';
     const plannerContent=plannerOpen&&item.name!=='PlannerClose';
     if (settingsContent || researchContent || historyContent || plannerContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
-      assert.equal(layout.graphicsTruncated, false, 'Complete graphics required to qualify clipped controls');
-      graphics ??= JSON.parse(layout.raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics;
+      measuredGraphics();
       const viewportName = settingsContent ? 'SettingsViewport' : researchContent?
-        item.name.startsWith('ResearchProject-')?'ResearchListViewport':'ResearchDetailViewport':
+        item.name.startsWith('ResearchProject-')||current&&item.name==='ResearchFilter'?'ResearchListViewport':'ResearchDetailViewport':
         historyContent?'RunHistoryViewport':plannerContent?'PlannerViewport':'ShopViewport';
       // The shared chamfered chrome is an Image subclass; decorative frames
       // and text are not the control's hit surface or its clipping owner.
-      const surface = g => ['Image','LastStandConsoleSurface'].includes(g.kind) && g.active;
       const viewports = graphics.filter(g => g.path.endsWith('/' + viewportName) && surface(g));
       const matches = graphics.filter(g => g.path.endsWith('/' + item.name) && surface(g));
       assert.equal(viewports.length,1,'One actual scroll viewport required');
@@ -56,9 +79,10 @@ export function tierJourneyControlGeometry(layout, canvas) {
       assert.ok(inside(clip, screen) && clip.width > 0 && clip.height > 0, 'Clip lies inside the Canvas');
       for (const key of ['x', 'y', 'width', 'height'])
         assert.ok(Math.abs(item[key] - graphic[key]) < .5, 'Control and graphic bounds agree: ' + item.name);
-      const scrollOffset = settingsContent ? layout.settingsScrollOffset : researchContent?layout.researchScrollOffset:
+      const researchPane=viewportName==='ResearchListViewport'?'List':'Detail';
+      const scrollOffset = settingsContent ? layout.settingsScrollOffset : researchContent?current?layout['research'+researchPane+'ScrollOffset']:layout.researchScrollOffset:
         historyContent?layout.historyScrollOffset:plannerContent?layout.plannerScrollOffset:layout.scrollOffset;
-      const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : researchContent?layout.researchMaximumScrollOffset:
+      const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : researchContent?current?layout['research'+researchPane+'MaximumScrollOffset']:layout.researchMaximumScrollOffset:
         historyContent?layout.historyMaximumScrollOffset:plannerContent?layout.plannerMaximumScrollOffset:layout.maximumScrollOffset;
       assert.ok(Number.isFinite(scrollOffset) && Number.isFinite(maximumScrollOffset) && maximumScrollOffset >= 0 &&
         scrollOffset >= 0 && scrollOffset <= maximumScrollOffset + .5, 'Finite bounded actual scroll range');
@@ -67,10 +91,9 @@ export function tierJourneyControlGeometry(layout, canvas) {
       // Layout's scroll offsets are CSS units; emitted rectangles are backing pixels.
       const scale = layout.height / canvas.height;
       const offset = scrollOffset * scale, maximum = maximumScrollOffset * scale;
-      // The Lab has independent list/detail scroll owners but reports the
-      // selected pane's offset. Each actual target still requires measured
-      // clipping here, and the browser journey proves reach with wheel input.
-      if(!researchContent)assert.ok(item.y + offset >= clip.y - .5 &&
+      // Retained Lab telemetry reports only the selected pane. Current v3
+      // measures both owners, so every current target proves its full reach.
+      if(!researchContent||current)assert.ok(item.y + offset >= clip.y - .5 &&
         item.y + offset - maximum + item.height <= clip.y + clip.height + .5,
         'Complete control target must be reachable in the real scroll range');
     } else assert.ok(inside(item, screen), 'Control outside Canvas: ' + item.name);
@@ -91,6 +114,7 @@ export function tierJourneyControlGeometry(layout, canvas) {
 // Ordinary input and passive observations only. Never seed a wallet, a record,
 // an unlock, the simulation clock or a gameplay callback.
 export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting = 'repair', firstSession = false }) {
+  const {readShopControlObservation,selectLastStandFitting}=await import('./lastStandJourney.mjs');
   assert.ok(['repair', 'launcher'].includes(fitting), 'Known player fitting required');
   const base = admitJourneyBase(baseURL);
   for (const name of ['verify-last-stand-source.mjs', 'verify-last-stand.mjs'])
@@ -100,13 +124,11 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
   for (const [path, expected] of Object.entries({ ...manifest.files, 'index.html': manifest.wrapperSha256 }))
     assertServedBytes(await fetchBoundRuntime(base, path), expected);
   const states = [], layouts = [], errors = [], shots = [];
-  const inputHashes = () => Object.fromEntries(['e2e/helpers/lastStandTierJourney.mjs', 'e2e/last-stand-playable-loop.spec.ts',
-    ...(firstSession ? ['scripts/last-stand-first-session.mjs'] : [])]
-    .map(path => [path, createHash('sha256').update(readFileSync(resolve(path))).digest('hex')]));
+  const inputHashes = () => tierJourneyInputHashes({firstSession});
   let load = 0, observerError;
   const report = { normalSpeed: true, seeded: false, host: process.platform, fitting, firstSession,
     scope: 'functional browser journey; no native audio or owner visual acceptance claim',
-    states, layouts, screenshots: [], actions: [], storage: [], profiles: [], errors, inputs: inputHashes(), manifest: before };
+    states, layouts, screenshots: [], actions: [], storage: [], profiles: [], errors, inputs: await inputHashes(), manifest: before };
   page.on('pageerror', error => errors.push(String(error)));
   page.on('console', message => {
     const raw = message.text();
@@ -295,7 +317,7 @@ export async function runLastStandTierJourney({ page, baseURL, testInfo, fitting
     await page.locator('[data-command-item="last-stand"][aria-current="true"]').waitFor({ state: 'visible' });
     assert.equal(errors.length, 0, errors.join('\n'));
     assertPackagedRuntimeParity(before, packagedRuntimeSnapshot());
-    assert.deepEqual(inputHashes(), report.inputs, 'Browser journey inputs changed while running');
+    assert.deepEqual(await inputHashes(), report.inputs, 'Browser journey inputs changed while running');
     report.status = 'pass';
   } catch (error) { report.status = 'failed'; report.error = String(error); throw error; }
   finally {
