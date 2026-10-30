@@ -4,6 +4,34 @@ using System.Globalization;
 
 namespace SingedTerra.LastStand
 {
+    // A read-only quote shared by the Lab and Planner. Funding still belongs to
+    // the research transaction, which revalidates the displayed intent.
+    public sealed class LastStandResearchQuote
+    {
+        public int Rank { get; }
+        public long Cost { get; }
+        public long DurationMilliseconds { get; }
+        public long EarnedMilliseconds { get; }
+        public long RemainingMilliseconds => Math.Max(0,DurationMilliseconds-EarnedMilliseconds);
+        public bool ResumesPartial { get; }
+        internal LastStandResearchQuote(int rank,long cost,long duration,long earned,bool resumesPartial)
+        {Rank=rank;Cost=cost;DurationMilliseconds=duration;EarnedMilliseconds=earned;ResumesPartial=resumesPartial;}
+    }
+
+    public sealed class LastStandResearchActionQuote
+    {
+        public LastStandResearchQuote Funding { get; }
+        public bool CanSubmit { get; }
+        public bool ValidWhenFunded { get; }
+        public long Refund { get; }
+        public long Shortfall { get; }
+        public bool RemovesQueuedProject { get; }
+        public bool StartsQueuedProject { get; }
+        internal LastStandResearchActionQuote(LastStandResearchQuote funding,bool canSubmit,bool valid,
+            long refund,long shortfall,bool removesQueued,bool startsQueued)
+        {Funding=funding;CanSubmit=canSubmit;ValidWhenFunded=valid;Refund=refund;Shortfall=shortfall;RemovesQueuedProject=removesQueued;StartsQueuedProject=startsQueued;}
+    }
+
     // Read-only presentation helpers use the engine for action legality. A quote
     // never charges the wallet; the parent submits its displayed revision.
     public static class LastStandResearchPresentation
@@ -64,19 +92,73 @@ namespace SingedTerra.LastStand
         }
         public static bool CanSubmit(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent,long wallet,int bestWave,LastStandResearchDefinitions definitions=null)
         {
-            return LastStandResearchState.TryRestore(snapshot,definitions??LastStandResearchCatalog.Definitions,out var state) && state.TryApply(intent,wallet,bestWave,out _);
+            return PreviewTransition(snapshot,intent,wallet,bestWave,definitions,out _);
+        }
+        static bool PreviewTransition(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent,long wallet,int bestWave,
+            LastStandResearchDefinitions definitions,out LastStandResearchTransition transition)
+        {
+            transition=null;
+            return LastStandResearchState.TryRestore(snapshot,definitions??LastStandResearchCatalog.Definitions,out var state)&&
+                state.TryApply(intent,wallet,bestWave,out transition);
+        }
+        public static LastStandResearchActionQuote ProjectAction(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent,
+            long wallet,int bestWave,LastStandResearchDefinitions definitions=null)
+        {
+            bool pays=intent.Action==LastStandResearchAction.Start||intent.Action==LastStandResearchAction.Queue||intent.Action==LastStandResearchAction.Switch;
+            var funding=pays?ProjectQuote(snapshot,intent.Track,intent.Rank,definitions):null;
+            bool possible=PreviewTransition(snapshot,intent,wallet,bestWave,definitions,out var transition);
+            // Ask the same pure engine about the offer with enough funds. This
+            // exposes refunds/canceled queues without duplicating switch rules
+            // or changing the actual wallet, clock or displayed intent.
+            bool valid=possible;
+            if(!valid&&funding!=null)valid=PreviewTransition(snapshot,intent,Math.Max(wallet,funding.Cost),bestWave,definitions,out transition);
+            long cost=funding?.Cost??0,refund=valid?transition.WalletDelta+cost:0;
+            bool removed=false,started=false;
+            if(valid&&snapshot.slots[intent.Slot].queued!=null)
+            {
+                long identity=snapshot.slots[intent.Slot].queued.identity;var next=transition.State.Snapshot().slots[intent.Slot];
+                started=next.active!=null&&next.active.identity==identity;
+                removed=!started&&(next.queued==null||next.queued.identity!=identity);
+            }
+            return new LastStandResearchActionQuote(funding,possible,valid,refund,Math.Max(0,cost-refund-wallet),removed,started);
+        }
+        public static LastStandResearchQuote ProjectQuote(LastStandResearchSnapshot snapshot,LastStandResearchTrackId track,
+            int rank,LastStandResearchDefinitions definitions=null)
+        {
+            if(snapshot==null)throw new ArgumentNullException(nameof(snapshot));
+            var catalog=definitions??LastStandResearchCatalog.Definitions;var definition=catalog.Get(track);
+            if(rank<1||rank>definition.MaximumRank)return null;
+            var partial=snapshot.Partial(track,catalog);if(partial!=null&&partial.rank!=rank)partial=null;
+            return new LastStandResearchQuote(rank,partial?.chargedCost??definition.Cost(rank),
+                partial?.durationMilliseconds??definition.DurationAtSpeedNumerator(rank,
+                    catalog.EffectNumerator(snapshot.completedRanks,LastStandResearchEffect.ResearchSpeed)),
+                partial?.earnedMilliseconds??0,partial!=null);
         }
         public static string Quote(LastStandResearchSnapshot snapshot,LastStandResearchIntent intent,LastStandResearchDefinitions definitions=null)
         {
-            var definition=(definitions??LastStandResearchCatalog.Definitions).Get(intent.Track);
-            if(intent.Rank>definition.MaximumRank)return "All ranks completed or funded.";
-            var partial=snapshot.Partial(intent.Track,definitions);if(partial!=null && partial.rank!=intent.Rank)partial=null;
-            long cost=partial?.chargedCost??definition.Cost(intent.Rank);
-            long duration=partial?.durationMilliseconds??definition.DurationAtSpeedNumerator(intent.Rank,(definitions??LastStandResearchCatalog.Definitions).EffectNumerator(snapshot.completedRanks,LastStandResearchEffect.ResearchSpeed));
-            long earned=partial?.earnedMilliseconds??0;
-            return "Rank "+intent.Rank+": "+cost.ToString("N0",CultureInfo.InvariantCulture)+" Salvage | "+Duration(duration-earned)+
-                (partial!=null?" remaining; repays refunded cost":" real time")+
-                (intent.Action==LastStandResearchAction.Queue && partial==null?" (estimate; duration locks on start)":"");
+            var quote=ProjectQuote(snapshot,intent.Track,intent.Rank,definitions);
+            if(quote==null)return "All ranks completed or funded.";
+            return "Rank "+quote.Rank+": "+quote.Cost.ToString("N0",CultureInfo.InvariantCulture)+" Salvage | "+Duration(quote.RemainingMilliseconds)+
+                (quote.ResumesPartial?" remaining; repays refunded cost":" real time")+
+                (intent.Action==LastStandResearchAction.Queue&&!quote.ResumesPartial?" (estimate; duration locks on start)":"");
+        }
+        public static string Availability(LastStandResearchSnapshot snapshot,LastStandResearchTrackId track,
+            long wallet,int bestTierOneWave,bool canAct)
+        {
+            string state=TrackState(snapshot,track);
+            if(state=="COMPLETE"||state.StartsWith("ACTIVE",StringComparison.Ordinal)||state.StartsWith("QUEUED",StringComparison.Ordinal))return state;
+            int unlocked=LastStandResearchCatalog.UnlockedSlots(bestTierOneWave);
+            if(unlocked==0)return "PREVIEW - RESEARCH LOCKED";
+            if(!canAct)return "SAVE REQUIRED";
+            long shortfall=long.MaxValue;
+            foreach(var action in new[]{LastStandResearchAction.Start,LastStandResearchAction.Queue,LastStandResearchAction.Switch})
+            for(int i=0;i<unlocked;i++)
+            {
+                var offer=ProjectAction(snapshot,Intent(snapshot,i,track,action),wallet,bestTierOneWave);
+                if(offer.CanSubmit)return action==LastStandResearchAction.Start?"READY TO START":action==LastStandResearchAction.Queue?"READY TO QUEUE":"CAN SWITCH PROJECT";
+                if(offer.ValidWhenFunded)shortfall=Math.Min(shortfall,offer.Shortfall);
+            }
+            return shortfall!=long.MaxValue&&shortfall>0?"NEED "+shortfall.ToString("N0",CultureInfo.InvariantCulture)+" SALVAGE":"LABS BUSY";
         }
     }
 

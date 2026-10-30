@@ -123,6 +123,7 @@
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
       "reason": "Strict current and retained diagnostic schema admission against maintained readers; no player qualification",
       "cases": [
+        "ObservationVersionTests.test_current_schema_cannot_be_downgraded_or_mislabeled",
         "ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired",
         "ObservationVersionTests.test_incomplete_extra_repeated_and_malformed_current_refused",
         "ObservationVersionTests.test_retained_and_current_complete_shapes"

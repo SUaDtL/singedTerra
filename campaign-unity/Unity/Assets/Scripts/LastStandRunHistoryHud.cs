@@ -14,14 +14,14 @@ namespace SingedTerra.LastStand
         readonly LastStandModal modal;
         readonly LastStandScrollPane pane;
         readonly Text body,conditionLabel,runALabel,runBLabel;
-        readonly Button filter,view,conditionPrevious,conditionNext,runAPrevious,runANext,runBPrevious,runBNext;
+        readonly Button filter,view,help,conditionPrevious,conditionNext,runAPrevious,runANext,runBPrevious,runBNext;
         readonly Action refresh;
         readonly List<int> tiers=new List<int>{0};
         readonly List<LastStandRunSummary> runs=new List<LastStandRunSummary>();
         IReadOnlyList<LastStandHistoryCohort> cohorts=new LastStandHistoryCohort[0];
         LastStandHistoryCohort selectedCondition;
         LastStandHistorySnapshot snapshot;
-        bool open,compareView,selectionInitialized;int selectedTier,runA,runB;
+        bool open,compareView,selectionInitialized,showHelp;int selectedTier,runA,runB;
         string saveStatus="";
         float width,height,unitsX=1,unitsY=1;
         public Button[] Buttons=>modal.Buttons.ToArray();
@@ -38,6 +38,8 @@ namespace SingedTerra.LastStand
             {int index=tiers.IndexOf(selectedTier);selectedTier=tiers[(index+1)%tiers.Count];pane.Reset();RefreshContent();this.refresh();});
             view=modal.Button("RunHistoryView","VIEW: TRENDS",pane.Content,()=>
             {compareView=!compareView;pane.Reset();RefreshContent();this.refresh();});
+            help=modal.Button("RunHistoryHelp","HOW COMPARISONS WORK",pane.Content,()=>
+            {showHelp=!showHelp;pane.Reset();RefreshContent();this.refresh();});
             conditionLabel=modal.Text("RunHistoryConditionLabel",pane.Content,16);
             runALabel=modal.Text("RunHistoryRunALabel",pane.Content,16);
             runBLabel=modal.Text("RunHistoryRunBLabel",pane.Content,16);
@@ -67,7 +69,7 @@ namespace SingedTerra.LastStand
             tiers.Sort();if(!tiers.Contains(selectedTier))selectedTier=0;
             modal.Title.text="RUN HISTORY";modal.Status.text="Latest "+snapshot.Recent.Count+" of "+snapshot.Lifetime.Runs+
                 " recorded runs. Progress saves at completed waves.";
-            if(justOpened)pane.Reset();RefreshContent();
+            if(justOpened){showHelp=false;pane.Reset();}RefreshContent();
         }
         int ConditionIndex()
         {
@@ -93,17 +95,27 @@ namespace SingedTerra.LastStand
             if(!open||snapshot==null)return;
             filter.GetComponentInChildren<Text>().text="TIER: "+(selectedTier==0?"ALL":selectedTier.ToString(CultureInfo.InvariantCulture))+"  >";
             view.GetComponentInChildren<Text>().text=compareView?"VIEW: TWO RUNS  >":"VIEW: TRENDS  >";
-            filter.gameObject.SetActive(!compareView);
-            conditionLabel.gameObject.SetActive(!compareView);conditionPrevious.gameObject.SetActive(!compareView);conditionNext.gameObject.SetActive(!compareView);
-            foreach(var item in new Component[]{runALabel,runBLabel,runAPrevious,runANext,runBPrevious,runBNext})item.gameObject.SetActive(compareView);
+            bool hasRuns=runs.Count>0;
+            filter.gameObject.SetActive(!showHelp&&!compareView&&hasRuns);
+            view.gameObject.SetActive(!showHelp);
+            conditionLabel.gameObject.SetActive(!showHelp&&!compareView&&hasRuns);
+            conditionPrevious.gameObject.SetActive(!showHelp&&!compareView&&hasRuns);conditionNext.gameObject.SetActive(!showHelp&&!compareView&&hasRuns);
+            foreach(var item in new Component[]{runALabel,runBLabel,runAPrevious,runANext,runBPrevious,runBNext})item.gameObject.SetActive(!showHelp&&compareView&&hasRuns);
+            help.GetComponentInChildren<Text>().text=showHelp?"BACK TO RUN HISTORY":"HOW COMPARISONS WORK";
             int conditionIndex=ConditionIndex();
             conditionLabel.text=conditionIndex==0?"ALL CONDITIONS": "CONDITIONS "+conditionIndex+" / "+cohorts.Count+"\nFROM RUN "+selectedCondition.Anchor.RunId;
             modal.Style(conditionPrevious,conditionIndex>0,false);modal.Style(conditionNext,conditionIndex<cohorts.Count,false);
             SetRunSelector(runA,"A",runALabel,runAPrevious,runANext);SetRunSelector(runB,"B",runBLabel,runBPrevious,runBNext);
             var text=new StringBuilder();if(saveStatus!="")text.Append(saveStatus).Append("\n\n");
-            if(compareView)AppendPair(text);else AppendTrends(text);
-            text.Append("\n\nMEASUREMENT LIMIT\nRates include repeatable wave Salvage plus its research bonus. One-time milestone bonuses are separate. Real active combat time includes a measured failed final wave and excludes pause/closed time.");
-            text.Append("\nAbrupt closure can lose measurements from the unfinished wave; resume restores the saved checkpoint. Since-update, provisional, unmeasured and under-5-minute runs cannot supply comparison rates. Only the latest ").Append(LastStandRunHistory.MaximumRecent).Append(" finalized runs retain condition detail; lifetime totals cannot be pooled into these comparisons.");
+            if(showHelp)
+            {
+                text.Append("HOW COMPARISONS WORK\n\nFinish runs to compare repeatable Salvage per real active hour. A tier needs 3 complete runs of at least 5 minutes with the same armament, upgrade states, reward rules and speed proportions before showing a median.");
+                text.Append("\n\nMEASUREMENT LIMIT\nRates include repeatable wave Salvage plus its research bonus. One-time milestone bonuses are separate. Real active combat time includes a measured failed final wave and excludes pause/closed time.");
+                text.Append("\n\nAbrupt closure can lose measurements from the unfinished wave; resume restores the saved checkpoint. Since-update, provisional, unmeasured and under-5-minute runs cannot supply comparison rates. Only the latest ").Append(LastStandRunHistory.MaximumRecent).Append(" finalized runs retain condition detail; lifetime totals cannot be pooled into these comparisons.");
+                text.Append("\n\nComparisons are observations, not proof of a best farming tier. Speed proportions must match exactly, even when displayed percentages round to the same value.");
+            }
+            else if(!hasRuns)text.Append("NO RUNS YET\n\nClose this window and deploy a run to start your history. Completed-wave progress is saved automatically.\n\nA run enters your history when it ends. Closing this window or the game keeps your checkpoint; it does not end the run.");
+            else if(compareView)AppendPair(text);else AppendTrends(text);
             body.text=text.ToString();if(width>0)Layout(width,height,unitsX,unitsY);
         }
         void SetRunSelector(int id,string label,Text text,Button previous,Button next)
@@ -122,10 +134,10 @@ namespace SingedTerra.LastStand
         }
         void AppendTrends(StringBuilder text)
         {
-            text.Append("FARMING CONDITIONS\n");
-            if(selectedCondition==null)text.Append("All recorded conditions. A tier with mixed conditions has no pooled median. Choose one condition group using the arrows.");
+            text.Append("FARMING RESULTS\n");
+            if(selectedCondition==null)text.Append("Choose matching run conditions with the arrows to compare tier results. Mixed conditions do not produce a shared median.");
             else text.Append(FittingName(selectedCondition.Anchor.Fitting)).Append(" | ").Append(RewardRules(selectedCondition.Anchor.EconomyVersion))
-                .Append("\n").Append(selectedCondition.Description).Append("\nTier is compared separately. Speed proportions must match exactly, even when displayed percentages round to the same value.");
+                .Append("\n").Append(selectedCondition.Description);
             bool any=false;
             foreach(int tier in tiers)if(tier>0&&(selectedTier==0||tier==selectedTier))
             {any=true;text.Append("\n\n").Append(LastStandHistoryComparison.ForTier(snapshot,tier,selectedCondition).Description);}
@@ -184,21 +196,20 @@ namespace SingedTerra.LastStand
             pane.Layout(12,top,panelWidth-24,Math.Max(44,modal.PanelHeight-top-12),sx,sy);
             float contentWidth=panelWidth-24,inner=contentWidth-24,y=modal.Preferred(modal.Status,inner);
             modal.Place(modal.Status,12,0,inner,y);y+=8;
-            float half=(inner-8)/2;
-            modal.Place(filter,12,y,half,44);modal.Place(view,compareView?12:20+half,y,compareView?inner:half,44);y+=56;
-            if(compareView)
+            if(view.gameObject.activeSelf)
             {
-                y=SelectorLayout(runALabel,runAPrevious,runANext,contentWidth,y);
-                y=SelectorLayout(runBLabel,runBPrevious,runBNext,contentWidth,y);
+                bool filtered=filter.gameObject.activeSelf;float half=(inner-8)/2;
+                if(filtered)modal.Place(filter,12,y,half,44);
+                modal.Place(view,filtered?20+half:12,y,filtered?half:inner,44);y+=56;
             }
-            else y=SelectorLayout(conditionLabel,conditionPrevious,conditionNext,contentWidth,y);
+            modal.Place(help,12,y,inner,44);y+=56;
+            if(runALabel.gameObject.activeSelf)
+            {
+                y=modal.Selector(runALabel,runAPrevious,runANext,12,y,inner);
+                y=modal.Selector(runBLabel,runBPrevious,runBNext,12,y,inner);
+            }
+            else if(conditionLabel.gameObject.activeSelf)y=modal.Selector(conditionLabel,conditionPrevious,conditionNext,12,y,inner);
             float textHeight=modal.Preferred(body,inner)+12;modal.Place(body,12,y,inner,textHeight);pane.Finish(y+textHeight+12);
-        }
-        float SelectorLayout(Text label,Button previous,Button next,float contentWidth,float y)
-        {
-            float centerWidth=contentWidth-128,row=Math.Max(44,modal.Preferred(label,centerWidth)+8);
-            modal.Place(previous,12,y,44,row);modal.Place(label,64,y,centerWidth,row);
-            modal.Place(next,contentWidth-56,y,44,row);return y+row+12;
         }
         public void Reveal(Button button)=>pane.Reveal(button);
         public void ScrollKeyboard(string direction){if(open)pane.ScrollKeyboard(direction);}

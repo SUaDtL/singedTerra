@@ -125,11 +125,8 @@ namespace SingedTerra.LastStand
                         "\nNo additional funding is required for this rank.","research",false,true,false,
                         project==slot.queued?"Queued":"Active",0,progression.Wallet);
             }
-            var partial=snapshot.Partial(definition.Id);if(partial!=null&&partial.rank!=target)partial=null;
-            long cost=partial?.chargedCost??definition.Cost(target);
-            long duration=partial?.durationMilliseconds??definition.DurationAtSpeedNumerator(target,
-                LastStandResearchCatalog.Definitions.EffectNumerator(snapshot.completedRanks,LastStandResearchEffect.ResearchSpeed));
-            long remaining=duration-(partial?.earnedMilliseconds??0);
+            var quote=LastStandResearchPresentation.ProjectQuote(snapshot,definition.Id,target);
+            long cost=quote.Cost,remaining=quote.RemainingMilliseconds;
             bool possible=false;
             int unlocked=LastStandResearchCatalog.UnlockedSlots(progression.GetBestWave(1));
             if(progression.SaveState=="ready"&&progression.PendingDefeat==null)
@@ -143,7 +140,7 @@ namespace SingedTerra.LastStand
                 unlocked==0?"Research unlocks at Tier 1 wave 25":possible?"Can fund in Research":
                 target!=rank+1?"Complete earlier ranks first":progression.Wallet<cost?"Not enough Salvage":"Open Research to review occupied labs and queues";
             string detail=effects+"\n"+Funding(cost,progression.Wallet)+"\n"+
-                LastStandResearchPresentation.Duration(remaining)+(partial==null?" real time (duration locks on start)":" remaining; resuming repays the refunded cost")+
+                LastStandResearchPresentation.Duration(remaining)+(!quote.ResumesPartial?" real time (duration locks on start)":" remaining; resuming repays the refunded cost")+
                 "\n"+availability;
             return new LastStandPlannerGoal(key,"Research",title,detail,"research",false,true,possible,availability,cost,progression.Wallet);
         }

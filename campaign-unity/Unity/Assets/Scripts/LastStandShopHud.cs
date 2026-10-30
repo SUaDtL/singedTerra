@@ -226,7 +226,7 @@ namespace SingedTerra.LastStand
                 controls.Refusal.text = purchaseFeedback != null && feedbackTrack == controls.TrackId ? purchaseFeedback :
                     cardView.Refusal==LastStandShopCardRefusal.None?cardView.QuotedCost.ToString("N0")+" "+shopView.CurrencyName+" total":cardView.Reason;
                 controls.Buy.GetComponentInChildren<Text>(true).text = cardView.Refusal==LastStandShopCardRefusal.AtCap?"MAX":
-                    "BUY x"+cardView.PurchaseQuantity;
+                    cardView.PurchaseQuantity==0?"UNAVAILABLE":"BUY x"+cardView.PurchaseQuantity;
                 StyleAction(controls.Buy,false,shopOpen && cardView.CanPurchase);
                 if(cardView.Refusal==LastStandShopCardRefusal.AtCap)
                 {controls.Buy.GetComponent<Image>().color=Brass;controls.Buy.GetComponentInChildren<Text>(true).color=Ink;}

@@ -62,9 +62,31 @@ static class ProgressionPlannerChecks
         var speed=Goal(view,"research:gameSpeed:1");
         Check(speed.Cost==20&&speed.Shortfall==20&&speed.Detail.Contains("10m")&&!speed.ActionAvailable,"research exact cost and duration");
         Check(speed.Detail.Contains("wave 25"),"lab locked prerequisite");
+        var quote=LastStandResearchPresentation.ProjectQuote(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,1);
+        Check(quote.Rank==1&&quote.Cost==20&&quote.DurationMilliseconds==600000&&quote.RemainingMilliseconds==600000&&
+            !quote.ResumesPartial,"shared quote exposes exact first-rank price and real-time duration");
+        Check(LastStandResearchPresentation.ProjectQuote(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,9)==null,
+            "no quote beyond authored research cap");
+        Check(LastStandResearchPresentation.Availability(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,1000,0,true)=="PREVIEW - RESEARCH LOCKED",
+            "affordable research is still only a preview before the lab unlock");
+        Check(LastStandResearchPresentation.Availability(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,19,25,true)=="NEED 1 SALVAGE",
+            "project list states the exact funding shortfall");
+        Check(LastStandResearchPresentation.Availability(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,20,25,false)=="SAVE REQUIRED",
+            "project list cannot promise availability while actions are blocked");
         store=Seed(20,25);p=Load(store);view=View(p);
         Check(Goal(view,"research:gameSpeed:1").ActionAvailable&&Goal(view,"research:gameSpeed:1").Shortfall==0,"exactly affordable research");
+        Check(LastStandResearchPresentation.Availability(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,20,25,true)=="READY TO START",
+            "unlocked affordable idle lab offers research");
         Check(Goal(view,"workshop:cannonAttack:1").ActionAvailable,"same wallet can fund workshop alternative");
+        p=Load(Seed(27,25));
+        var salvageIntent=LastStandResearchPresentation.Intent(p.ResearchSnapshot,0,LastStandResearchTrackId.SalvageRecovery,LastStandResearchAction.Start);
+        Check(p.TryResearchAction(salvageIntent,Time(p))&&p.Wallet==0,"funded alternate project fixture");
+        Check(LastStandResearchPresentation.Availability(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,0,25,true)=="CAN SWITCH PROJECT",
+            "refund-funded switch must not be mislabeled as an unaffordable project");
+        var switchOffer=LastStandResearchPresentation.ProjectAction(p.ResearchSnapshot,
+            LastStandResearchPresentation.Intent(p.ResearchSnapshot,0,LastStandResearchTrackId.GameSpeed,LastStandResearchAction.Switch),0,25);
+        Check(switchOffer.CanSubmit&&switchOffer.Refund==27&&switchOffer.Funding.Cost==20&&switchOffer.Shortfall==0,
+            "shared action preview accounts for refund before affordability");
     }
     static void FixedPinAndUnavailable()
     {
@@ -88,12 +110,30 @@ static class ProgressionPlannerChecks
         Check(active.Availability=="Active"&&queued.Availability=="Queued"&&active.Cost==0&&queued.Cost==0,
             "funded ranks must not request paying again");
         Check(!active.ActionAvailable&&!queued.ActionAvailable&&active.Shortfall==0&&queued.Shortfall==0,"funded legality");
+        var suspend=LastStandResearchPresentation.ProjectAction(p.ResearchSnapshot,
+            LastStandResearchPresentation.Intent(p.ResearchSnapshot,0,LastStandResearchTrackId.GameSpeed,LastStandResearchAction.Suspend),0,100);
+        Check(suspend.CanSubmit&&suspend.Refund==80&&suspend.RemovesQueuedProject,
+            "suspend preview includes the canceled queued successor refund");
+        var change=LastStandResearchPresentation.ProjectAction(p.ResearchSnapshot,
+            LastStandResearchPresentation.Intent(p.ResearchSnapshot,0,LastStandResearchTrackId.ResearchSpeed,LastStandResearchAction.Switch),0,100);
+        Check(change.CanSubmit&&change.Refund==80&&change.Funding.Cost==17&&change.RemovesQueuedProject,
+            "switch preview explains all refunded and canceled work");
         Check(store.Raw==saved&&store.Writes==writes,"reading funded research does not advance or respend");
         ResearchAction(p,LastStandResearchAction.RemoveQueued);
         Check(p.TryReconcileResearch(Time(p,300000)),"earn partial time");ResearchAction(p,LastStandResearchAction.Suspend);
         var partial=View(p,"research:gameSpeed:1").Pinned;
         Check(partial.Cost==20&&partial.Detail.Contains("5m")&&partial.Detail.Contains("refunded cost")&&partial.ActionAvailable,
             "resume quote must repay original charge and retain earned time");
+        var quote=LastStandResearchPresentation.ProjectQuote(p.ResearchSnapshot,LastStandResearchTrackId.GameSpeed,1);
+        Check(quote.ResumesPartial&&quote.Cost==20&&quote.EarnedMilliseconds==300000&&quote.RemainingMilliseconds==300000,
+            "shared Lab/Planner projection retains the paid duration and elapsed time");
+        ResearchAction(p,LastStandResearchAction.Start);
+        var different=LastStandResearchPresentation.Intent(p.ResearchSnapshot,0,LastStandResearchTrackId.ResearchSpeed,LastStandResearchAction.Queue);
+        Check(p.TryResearchAction(different,Time(p)),"queue a different track");
+        var promote=LastStandResearchPresentation.ProjectAction(p.ResearchSnapshot,
+            LastStandResearchPresentation.Intent(p.ResearchSnapshot,0,LastStandResearchTrackId.GameSpeed,LastStandResearchAction.Suspend),p.Wallet,100);
+        Check(promote.CanSubmit&&promote.Refund==20&&!promote.RemovesQueuedProject&&promote.StartsQueuedProject,
+            "suspend promotes a different queued track without inventing cancellation or a second refund");
     }
     static void CapsSaveAndActiveRun()
     {

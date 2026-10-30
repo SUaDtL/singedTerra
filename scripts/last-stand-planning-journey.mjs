@@ -5,14 +5,15 @@ import {createHash} from 'node:crypto';
 import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
-  fetchBoundRuntime,assertServedBytes} from '../e2e/helpers/lastStandJourney.mjs';
+  fetchBoundRuntime,assertServedBytes,LAST_STAND_HELPER_INPUTS} from '../e2e/helpers/lastStandJourney.mjs';
 import {createLastStandBrowserActor} from '../e2e/helpers/lastStandBrowserActor.mjs';
 import {WAVE_JOURNEY_PROBE} from '../e2e/helpers/lastStandWaveJourney.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 const inputs=['scripts/last-stand-planning-journey.mjs','e2e/helpers/lastStandBrowserActor.mjs',
-  'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
-  'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
+  'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json'];
 const hashes=()=>Object.fromEntries(inputs.map(path=>[path,createHash('sha256').update(readFileSync(resolve(root,path))).digest('hex')]));
 const base=admitJourneyBase(process.env.E2E_LIVE_URL??'http://127.0.0.1:4174/singedTerra/');
 for(const tool of ['verify-last-stand-source.mjs','verify-last-stand.mjs'])
@@ -40,8 +41,26 @@ try{
   const preferences=()=>actor.page.evaluate(()=>localStorage.getItem('singedTerra.lastStand.preferences.v1'));
   const text=name=>JSON.parse(actor.layout().raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics.find(g=>g.active&&g.path.endsWith('/'+name))?.text??'';
   const initial=await actor.stored('empty-profile');
+  await actor.click('ResearchEntry');await actor.select('gameSpeed');
+  check('locked research explains the progression requirement before spending',()=>{
+    assert.match(text('ResearchStatus'),/RESEARCH LOCKED.*wave 25/);
+    assert.match(text('ResearchDescription'),/Clear Tier 1, wave 25/);
+    assert.equal(text('ResearchHelpBody'),'');assert.equal(actor.state().wallet,0);
+  });
+  await actor.shot('research-locked-desktop');await actor.click('ResearchHelp');
+  check('research rules are available on request',()=>assert.match(text('ResearchHelpBody'),/queued project/));
+  await actor.shot('research-help');await actor.click('ResearchClose');
+  await actor.click('Menu');await actor.click('MenuHistory');
+  check('empty history explains how to create a record',()=>assert.match(text('RunHistoryBody'),/Deploy|deploy|complete a run|Complete a run/));
+  await actor.shot('history-empty');await actor.click('RunHistoryHelp');
+  check('history methodology is available on request',()=>assert.match(text('RunHistoryBody'),/HOW COMPARISONS WORK/));
+  await actor.click('RunHistoryClose');
   await actor.click('Menu');await actor.click('MenuPlanner');await actor.until(()=>actor.state().menu==='planner');
-  check('planner offers current tier goal without spending',()=>{assert.match(text('PlannerGoalDetail'),/Tier 2/);assert.equal(actor.state().wallet,0);});
+  check('planner offers current tier goal without spending',()=>{
+    assert.match(text('PlannerGoalLabel'),/Tier 2/);
+    assert.match(text('PlannerGoalDetail'),/Clear Tier 1 wave 300/);
+    assert.equal(actor.state().wallet,0);
+  });
   await actor.shot('desktop-goal');await actor.click('PlannerPin');
   const pin=JSON.parse(await preferences()).pinnedGoal;
   check('ordinary pin action saves stable goal identity',()=>assert.match(pin,/^tier:/));

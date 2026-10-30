@@ -30,6 +30,19 @@ public static class LastStandObservationContractChecks
     { string value;public string Read()=>value;public void Write(string next){value=next;} }
     static void Require(bool value,string message){if(!value)throw new InvalidOperationException(message);}
     static object Field(object value,string name)=>value.GetType().GetField(name).GetValue(value);
+    static Contract CurrentContract()
+    {
+        string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v3.json"));
+        var contract=JsonUtility.FromJson<Contract>(File.ReadAllText(path));
+        Require(contract.schema=="singedterra-last-stand-observation/v3"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
+        return contract;
+    }
+    internal static Dictionary<string,string[]> CurrentControlInventory()
+    {
+        var result=new Dictionary<string,string[]>(StringComparer.Ordinal);
+        foreach(var inventory in CurrentContract().inventories)result.Add(inventory.field,inventory.names);
+        return result;
+    }
     static void Same(IEnumerable<string> actual,IEnumerable<string> expected,string message)
     { Require(actual.OrderBy(x=>x).SequenceEqual(expected.OrderBy(x=>x)),message); }
     static string Capture(string tag,Action emit)
@@ -67,7 +80,8 @@ public static class LastStandObservationContractChecks
     }
     static void Check(object snapshot,Contract contract)
     {
-        Same(snapshot.GetType().GetFields().Select(f=>f.Name),contract.header.Concat(contract.tail).Concat(new[]{"graphics"}),"Emitter fields differ from v2 contract");
+        Same(snapshot.GetType().GetFields().Select(f=>f.Name),contract.header.Concat(contract.tail).Concat(new[]{"graphics"}),"Emitter fields differ from current contract");
+        Require((string)Field(snapshot,"schema")==contract.schema,"Emitter declares its exact current schema");
         var all=new HashSet<string>();
         foreach(var inventory in contract.inventories)
         {
@@ -91,9 +105,7 @@ public static class LastStandObservationContractChecks
         {
             using(var scope=new LastStandTestPreferencesScope())
             {
-                string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v2.json"));
-                var contract=JsonUtility.FromJson<Contract>(File.ReadAllText(path));
-                Require(contract.schema=="singedterra-last-stand-observation/v2"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
+                var contract=CurrentContract();
                 var storage=new Storage();LastStandLoopController.StorageFactory=()=>storage;
                 EditorSceneManager.OpenScene("Assets/Scenes/LastStandPrototype.unity",OpenSceneMode.Single);
                 var art=UnityEngine.Object.FindFirstObjectByType<TankPresentation>();

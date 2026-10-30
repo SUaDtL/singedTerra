@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
 UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
 CASES = (
+    "test_registered_modal_pages_own_input",
+    "test_sister_screens_explain_next_actions",
     "test_planner_navigation_preserves_progression_and_pause",
     "test_planning_panes_fit_compact_height",
     "test_idle_controls_restore_after_focus_and_visibility",

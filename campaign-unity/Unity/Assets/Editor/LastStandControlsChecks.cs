@@ -125,6 +125,8 @@ public static class LastStandControlsChecks
             Check("test_guidance_optout_and_audio_sample_admission",GuidanceOptoutAndAudioSampleAdmission);
             Check("test_planner_navigation_preserves_progression_and_pause",PlannerNavigationPreservesProgressionAndPause);
             Check("test_planning_panes_fit_compact_height",PlanningPanesFitCompactHeight);
+            Check("test_registered_modal_pages_own_input",RegisteredModalPagesOwnInput);
+            Check("test_sister_screens_explain_next_actions",SisterScreensExplainNextActions);
         }
         finally
         {
@@ -175,16 +177,19 @@ public static class LastStandControlsChecks
                 camera.targetTexture=texture;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
                 f.Canvas.planeDistance=1;f.Canvas.GetComponent<CanvasScaler>().enabled=false;
                 f.Canvas.scaleFactor=Mathf.Sqrt((size.x/1280f)*(size.y/720f));UnityEngine.Canvas.ForceUpdateCanvases();
-                foreach(var page in new[]{"planner","history"})
+                foreach(var surface in new[]{"planner","planner-budget","history","settings"})
                 {
+                    string page=surface=="planner-budget"?"planner":surface;
                     f.Loop.OpenMenu(page);
+                    if(page=="planner")f.Click(surface=="planner-budget"?"PlannerBudget":"PlannerGoals");
                     // Match the established imported-scene geometry harness:
                     // edit mode does not follow the repositioned garage camera.
                     f.Canvas.renderMode=RenderMode.ScreenSpaceOverlay;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
                     UnityEngine.Canvas.ForceUpdateCanvases();f.Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
-                    string prefix=page=="planner"?"Planner":"RunHistory";
+                    string prefix=page=="planner"?"Planner":page=="history"?"RunHistory":"Settings";
                     var rects=f.Canvas.GetComponentsInChildren<RectTransform>(true);
-                    var viewport=ScreenBounds(f,rects.Single(r=>r.name==prefix+"Viewport"));
+                    var viewportTransform=rects.Single(r=>r.name==prefix+"Viewport");
+                    var viewport=ScreenBounds(f,viewportTransform);
                     var panel=ScreenBounds(f,rects.Single(r=>r.name==prefix+"Panel"));
                     Require(viewport.height>=43.9f&&viewport.yMin>=panel.yMin-.5f&&viewport.yMax<=panel.yMax+.5f,
                         size+" "+page+" full44px scroll viewport remains inside panel; viewport="+viewport+" panel="+panel);
@@ -192,6 +197,9 @@ public static class LastStandControlsChecks
                     {
                         var bounds=ScreenBounds(f,button.GetComponent<RectTransform>());
                         Require(bounds.width>=43.9f&&bounds.height>=43.9f,size+" touch target "+button.name);
+                        if(button.transform.IsChildOf(viewportTransform))
+                            Require(bounds.width<=viewport.width+.1f&&bounds.height<=viewport.height+.1f,
+                                size+" "+surface+" complete scroll target can fit viewport: "+button.name+" target="+bounds+" viewport="+viewport);
                     }
                     var keyboard=f.Canvas.GetComponentInChildren<LastStandHudKeyboard>(true);
                     keyboard.NavigateKeyboard("scroll-end");keyboard.NavigateKeyboard("scroll-start");
@@ -200,6 +208,56 @@ public static class LastStandControlsChecks
             }
             finally{camera.targetTexture=null;UnityEngine.Object.DestroyImmediate(texture);}
         }
+    }
+
+    static void RegisteredModalPagesOwnInput()
+    {
+        var f=new Fixture();string gameplay=f.Game.Value;
+        var keyboard=f.Canvas.GetComponentInChildren<LastStandHudKeyboard>(true);
+        foreach(var page in new[]{new[]{"settings","Settings"},new[]{"research","Research"},
+            new[]{"history","RunHistory"},new[]{"planner","Planner"}})
+        {
+            f.Loop.OpenMenu(page[0]);var close=f.Button(page[1]+"Close");
+            Require(close.IsActive()&&keyboard.TrapFocus&&EventSystem.current.currentSelectedGameObject==close.gameObject,
+                "registered page receives initial focus: "+page[0]);
+            var panel=close.transform.parent;
+            foreach(var button in f.Canvas.GetComponentsInChildren<Button>().Where(b=>b.IsActive()&&b.IsInteractable()))
+                Require(button.transform.IsChildOf(panel),"only registered page owns input: "+page[0]+" / "+button.name);
+            for(int i=0;i<32;i++)
+            {
+                keyboard.NavigateKeyboard("next");var selected=EventSystem.current.currentSelectedGameObject;
+                Require(selected&&selected.transform.IsChildOf(panel),"registered page traps keyboard navigation: "+page[0]);
+            }
+            keyboard.NavigateKeyboard("scroll-end");keyboard.NavigateKeyboard("scroll-start");
+            f.Click(close.name);
+            Require(!keyboard.TrapFocus&&!f.Loop.MenuOpen&&f.Game.Value==gameplay,
+                "registered page closes without gameplay mutation: "+page[0]);
+        }
+    }
+
+    static void SisterScreensExplainNextActions()
+    {
+        var f=new Fixture();string gameplay=f.Game.Value;
+        Func<string,Text> text=name=>f.Canvas.GetComponentsInChildren<Text>(true).Single(t=>t.name==name);
+        f.Loop.OpenHistory();string history=text("RunHistoryBody").text;
+        Require(history.Contains("NO RUNS YET")&&history.Contains("deploy")&&!history.Contains("MEASUREMENT LIMIT"),
+            "empty history leads with the next player action, not measurement policy");
+        Require(!f.Button("RunHistoryConditionNext").IsActive()&&!f.Button("RunHistoryTier").IsActive(),
+            "empty history hides selectors without any choices");
+        f.Click("RunHistoryHelp");
+        Require(text("RunHistoryBody").text.Contains("MEASUREMENT LIMIT")&&text("RunHistoryBody").text.Contains("3 complete runs"),
+            "comparison methodology remains available on request");
+        f.Click("RunHistoryHelp");Require(!text("RunHistoryBody").text.Contains("MEASUREMENT LIMIT"),"history disclosure returns to results");
+        f.Click("RunHistoryClose");f.Loop.OpenMenu("planner");
+        Require(text("PlannerGoalLabel").text.Contains(" / "),"goal arrows identify their target and position");
+        Require(f.Button("PlannerOpen").GetComponent<RectTransform>().anchoredPosition.y>text("PlannerGoalDetail").rectTransform.anchoredPosition.y,
+            "planner primary action precedes detailed explanation");
+        f.Click("PlannerBudget");
+        Require(text("PlannerWorkshopLabel").text.StartsWith("WORKSHOP\n",StringComparison.Ordinal)&&
+            text("PlannerResearchLabel").text.StartsWith("RESEARCH\n",StringComparison.Ordinal),"budget arrow pairs identify their actual alternatives");
+        Require(f.Button("PlannerResearchOpen").GetComponent<RectTransform>().anchoredPosition.y>text("PlannerResearchDetail").rectTransform.anchoredPosition.y,
+            "research navigation is adjacent to its selector, before detailed quote text");
+        Require(f.Game.Value==gameplay,"reading disclosures and alternatives never spends or changes the gameplay save");
     }
 
     static void IdleControlsRestoreAfterFocusAndVisibility()

@@ -20,7 +20,7 @@ namespace SingedTerra.LastStand
         readonly List<Button> visible = new List<Button>();
         readonly Button[] tabs;
         string tab = "Audio", previousPage = "";
-        float scaleX = 1, scaleY = 1, viewportHeight;
+        float viewportHeight;
         public Button[] Buttons => buttons.ToArray();
         public float ScrollOffset => loop.MenuOpen ? pane.Offset : 0;
         public float MaximumScrollOffset => loop.MenuOpen ? pane.MaximumOffset : 0;
@@ -96,9 +96,8 @@ namespace SingedTerra.LastStand
         }
         void ResetScroll()=>pane.Reset();
         void ClampScroll()=>pane.Clamp();
-        public void Refresh()
+        public void Refresh(bool visiblePage)
         {
-            bool visiblePage=loop.MenuOpen && loop.MenuPage!="research" && loop.MenuPage!="history" && loop.MenuPage!="planner";
             shade.gameObject.SetActive(visiblePage); if (!visiblePage) { previousPage=""; return; }
             if (previousPage != loop.MenuPage) { ResetScroll(); previousPage=loop.MenuPage; }
             foreach (var b in buttons) b.gameObject.SetActive(false);
@@ -159,14 +158,15 @@ namespace SingedTerra.LastStand
                     else
                     {
                         body.text += "\nGameplay save: " + loop.Progression.SaveState + ". " + (loop.Progression.SaveError ?? "") +
-                            "\nProgress is saved locally and is not synced to an account. Each cleared wave saves hull, upgrades, Scrap and cooldowns. Leaving or reloading restores the last checkpoint; partial-wave spending and upgrades roll back together. Resume starts paused, without closed-tab catch-up.";
+                            "\nSaved on this device; account sync is not available. Each cleared wave saves your run. Resume returns to that checkpoint, paused.";
                         Show("DataRetry",enabled:loop.Progression.SaveState != "ready");
                         Show("PreferencesRetry",enabled:loop.Preferences.CanRetry);
                         if(loop.Platform.CanOpenAccount)Show("DataAccount",enabled:canLeave); Show("SettingsDefaults");
                     }
                     Show("SettingsBack"); break;
                 case "help": body.text = LastStandGuidance.Help+
-                    "\n\nRESEARCH & FARMING\nTemporary Scrap buys upgrades for this run. Persistent Salvage funds both Mechanics Shop starting upgrades and Lab research. Research uses real time, including while closed; combat speed changes combat only. Switching research keeps elapsed progress and refunds the paid Salvage; resuming pays that cost again.\nRun History compares repeatable Salvage per real active hour, with milestone bonuses shown separately. Comparisons disclose short runs, changing upgrades and checkpoint measurement limits.";
+                    "\n\nRESEARCH & FARMING\nTemporary Scrap buys upgrades for this run. Persistent Salvage funds both Mechanics Shop starting upgrades and Lab research. Research uses real time, including while closed; combat speed changes combat only. Switching research keeps elapsed progress and refunds the paid Salvage; resuming pays that cost again.\nRun History compares repeatable Salvage per real active hour, with milestone bonuses shown separately. Comparisons disclose short runs, changing upgrades and checkpoint measurement limits."+
+                    "\n\nSAVING A RUN\nEach cleared wave saves hull, upgrades, Scrap and cooldowns on this device. Leaving or reloading restores that checkpoint; partial-wave spending and upgrades roll back together. Resume starts paused, without closed-tab combat catch-up.";
                     Show("SettingsBack"); break;
                 case "wave":
                     title.text="ENEMY STATS";
@@ -203,49 +203,46 @@ namespace SingedTerra.LastStand
         { Show(name+"Minus",name.ToUpperInvariant()+" " + value + "%  -",value>0); Show(name+"Plus",name.ToUpperInvariant()+" " + value + "%  +",value<100); }
         public void Layout(float width, float height, float unitsX, float unitsY)
         {
-            if (!loop.MenuOpen || loop.MenuPage=="research" || loop.MenuPage=="history" || loop.MenuPage=="planner") return;
-            scaleX=unitsX; scaleY=unitsY;
-            Place(shade,0,0,width*unitsX,height*unitsY);
+            if (!shade.gameObject.activeSelf) return;
             if(loop.SelectionOpen)
             {
                 // A fixed footprint with the real battlefield visible behind it.
-                // Only the description scrolls; arrows and Close remain reachable.
-                float cw=Math.Min(420,width-16), ch=Math.Min(280,height-16);
-                Place(panel,(width-cw-8)*unitsX,(height-ch-8)*unitsY,cw*unitsX,ch*unitsY);
-                Place(title.rectTransform,12*unitsX,12*unitsY,(cw-124)*unitsX,44*unitsY);
-                Place((RectTransform)close.transform,(cw-104)*unitsX,12*unitsY,92*unitsX,44*unitsY);
-                Place((RectTransform)controls["ChoicePrevious"].transform,12*unitsX,68*unitsY,44*unitsX,44*unitsY);
-                Place((RectTransform)controls["ChoiceNext"].transform,(cw-56)*unitsX,68*unitsY,44*unitsX,44*unitsY);
-                Place(choiceName.rectTransform,64*unitsX,64*unitsY,(cw-128)*unitsX,52*unitsY);
-                viewportHeight=Math.Max(44,ch-132);
-                pane.Layout(12,120,cw-24,viewportHeight,unitsX,unitsY);
-                float bw=cw-40;body.fontSize=Mathf.CeilToInt(16*unitsY);
-                var textSettings=body.GetGenerationSettings(new Vector2(bw*unitsX,0));
-                float bh=body.cachedTextGeneratorForLayout.GetPreferredHeight(body.text,textSettings)/body.pixelsPerUnit+16*unitsY;
-                Place(body.rectTransform,8*unitsX,8*unitsY,bw*unitsX,bh);
-                pane.Finish(bh/unitsY+16);
+                // Short windows scroll the selector too, preserving a complete
+                // touch target instead of pushing its viewport off the panel.
+                float cw=modal.LayoutFloating(width,height,unitsX,unitsY,420,280);
+                bool compact=modal.PanelHeight<220;
+                var selectorParent=compact?content:panel;
+                foreach(var item in new Component[]{choiceName,controls["ChoicePrevious"],controls["ChoiceNext"]})
+                    if(item.transform.parent!=selectorParent)item.transform.SetParent(selectorParent,false);
+                float afterSelector=modal.Selector(choiceName,controls["ChoicePrevious"],controls["ChoiceNext"],
+                    compact?8:12,compact?8:modal.HeaderBottom,cw-(compact?40:24));
+                float contentTop=compact?modal.HeaderBottom:afterSelector;
+                viewportHeight=Math.Max(44,modal.PanelHeight-contentTop-12);
+                pane.Layout(12,contentTop,cw-24,viewportHeight,unitsX,unitsY);
+                float bw=cw-40,bh=modal.Preferred(body,bw)+16,bodyTop=compact?afterSelector:8;
+                modal.Place(body,8,bodyTop,bw,bh);
+                pane.Finish(bodyTop+bh+8);
                 ClampScroll();scroll.scrollSensitivity=44*unitsY;
-                foreach(var t in shade.GetComponentsInChildren<Text>(true))if(t!=body)t.fontSize=Mathf.CeilToInt((t==title?22:t==choiceName?18:16)*unitsY);
                 return;
             }
-            float w=Math.Min(700,width-16), h=height-16, x=(width-w)/2;
-            Place(panel,x*unitsX,8*unitsY,w*unitsX,h*unitsY);
-            Place(title.rectTransform,12*unitsX,12*unitsY,(w-124)*unitsX,44*unitsY);
-            Place((RectTransform)close.transform,(w-104)*unitsX,12*unitsY,92*unitsX,44*unitsY);
-            float y=64, inner=w-24;
+            float w=modal.Layout(width,height,unitsX,unitsY,700),h=modal.PanelHeight;
+            float y=modal.HeaderBottom,inner=w-24,bodyTopOffset=8;
             if (loop.MenuPage == "settings")
             {
-                int columns=w<500?2:4; float tw=(inner-(columns-1)*8)/columns;
-                for(int i=0;i<4;i++) Place((RectTransform)tabs[i].transform,(12+(i%columns)*(tw+8))*unitsX,(y+(i/columns)*52)*unitsY,tw*unitsX,44*unitsY);
-                y += (4/columns)*52;
+                bool compact=h<260;var tabParent=compact?content:panel;
+                int columns=w<500?2:4;float tabWidth=compact?inner-16:inner,tw=(tabWidth-(columns-1)*8)/columns;
+                for(int i=0;i<4;i++)
+                {if(tabs[i].transform.parent!=tabParent)tabs[i].transform.SetParent(tabParent,false);
+                 modal.Place(tabs[i],(compact?8:12)+(i%columns)*(tw+8),(compact?8:y)+(i/columns)*52,tw,44);}
+                if(compact)bodyTopOffset+=(4/columns)*52;else y+=(4/columns)*52;
             }
             viewportHeight=Math.Max(44,h-y-12); pane.Layout(12,y,inner,viewportHeight,unitsX,unitsY);
             float bodyWidth=inner-16;
             body.fontSize=Mathf.CeilToInt(16*unitsY);
             var settings=body.GetGenerationSettings(new Vector2(bodyWidth*unitsX,0));
             float bodyHeight=Math.Max(24,body.cachedTextGeneratorForLayout.GetPreferredHeight(body.text,settings)/body.pixelsPerUnit/unitsY)+12;
-            Place(body.rectTransform,8*unitsX,8*unitsY,bodyWidth*unitsX,bodyHeight*unitsY);
-            float row=bodyHeight+16;
+            Place(body.rectTransform,8*unitsX,bodyTopOffset*unitsY,bodyWidth*unitsX,bodyHeight*unitsY);
+            float row=bodyTopOffset+bodyHeight+8;
             for(int i=0;i<visible.Count;i++)
             {
                 var b=visible[i]; bool volume=b.name.EndsWith("Minus",StringComparison.Ordinal) && i+1<visible.Count;
@@ -258,7 +255,6 @@ namespace SingedTerra.LastStand
             // Preserve a valid reading position on same-page refreshes, but
             // repair the actual content when text or viewport bounds contract.
             ClampScroll();
-            foreach(var t in shade.GetComponentsInChildren<Text>(true)) if(t!=body) t.fontSize=Mathf.CeilToInt((t==title?22:16)*unitsY);
             scroll.scrollSensitivity=44*unitsY;
         }
         public void Reveal(Button button)=>pane.Reveal(button);

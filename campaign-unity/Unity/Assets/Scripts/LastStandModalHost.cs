@@ -10,7 +10,25 @@ namespace SingedTerra.LastStand
     // One owner for modal navigation/focus. Individual pages only render.
     internal sealed class LastStandModalHost
     {
+        // A page is registered once with the behavior the shell needs. The
+        // shell never needs another page-name branch when a screen is added.
+        sealed class Page
+        {
+            public readonly Button[] Buttons;
+            public readonly Func<Button> InitialFocus;
+            public readonly Action<bool> Refresh;
+            public readonly Action<float,float,float,float> Layout;
+            public readonly Action<Button> Reveal;
+            public readonly Action<string> Scroll;
+            public Page(Button[] buttons,Func<Button> initialFocus,Action<bool> refresh,
+                Action<float,float,float,float> layout,Action<Button> reveal,Action<string> scroll)
+            {Buttons=buttons;InitialFocus=initialFocus;Refresh=refresh;Layout=layout;Reveal=reveal;Scroll=scroll;}
+        }
         readonly LastStandLoopController loop;
+        readonly Dictionary<string,Page> pages=new Dictionary<string,Page>(StringComparer.Ordinal);
+        readonly List<Page> orderedPages=new List<Page>();
+        readonly Page settingsPage;
+        Page activePage;
         public readonly LastStandSettingsHud Settings;
         public readonly LastStandResearchHud Research;
         public readonly LastStandRunHistoryHud History;
@@ -29,8 +47,17 @@ namespace SingedTerra.LastStand
             Research=new LastStandResearchHud(root,font,loop.CloseMenu,loop.RefreshResearch,loop.SubmitResearch,metal,surface);
             History=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshControls,metal,surface);
             Planner=new LastStandPlannerHud(loop,root,font,openWorkshop,canOpenWorkshop,metal,surface);
-            var buttons=new List<Button>(Settings.Buttons);buttons.AddRange(Research.Buttons);buttons.AddRange(History.Buttons);buttons.AddRange(Planner.Buttons);Buttons=buttons.ToArray();
+            settingsPage=Register(null,new Page(Settings.Buttons,()=>Settings.InitialFocus,Settings.Refresh,Settings.Layout,Settings.Reveal,Settings.ScrollKeyboard));
+            Register("research",new Page(Research.Buttons,()=>Research.InitialFocus,
+                visible=>Research.Refresh(visible,loop.ResearchSnapshot,loop.Progression.GetBestWave(1),loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus),
+                Research.Layout,Research.Reveal,Research.ScrollKeyboard));
+            Register("history",new Page(History.Buttons,()=>History.InitialFocus,
+                visible=>History.Refresh(visible,loop.RunHistorySnapshot),History.Layout,History.Reveal,History.ScrollKeyboard));
+            Register("planner",new Page(Planner.Buttons,()=>Planner.InitialFocus,Planner.Refresh,Planner.Layout,Planner.Reveal,Planner.ScrollKeyboard));
+            var buttons=new List<Button>();foreach(var page in orderedPages)buttons.AddRange(page.Buttons);Buttons=buttons.ToArray();
         }
+        Page Register(string key,Page page)
+        {if(key!=null)pages.Add(key,page);orderedPages.Add(page);return page;}
         public void BindKeyboard(LastStandHudKeyboard keyboard)
         {Research.FocusRequested=keyboard.Focus;keyboard.Escape=()=>{if(loop.MenuOpen)loop.CloseMenu();else loop.OpenMenu();};keyboard.ScrollContent=Scroll;}
         public void BeforeRefresh(Button researchEntry,Button waveInfo)
@@ -42,20 +69,21 @@ namespace SingedTerra.LastStand
         }
         public void Refresh(LastStandHudKeyboard keyboard,Button[] background)
         {
-            Settings.Refresh();Research.Refresh(loop.MenuPage=="research",loop.ResearchSnapshot,loop.Progression.GetBestWave(1),loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus);
-            History.Refresh(loop.MenuPage=="history",loop.RunHistorySnapshot);Planner.Refresh();keyboard.TrapFocus=loop.MenuOpen;
+            activePage=loop.MenuOpen?(pages.TryGetValue(loop.MenuPage,out var selected)?selected:settingsPage):null;
+            foreach(var page in orderedPages)page.Refresh(activePage==page);
+            keyboard.TrapFocus=loop.MenuOpen;
             if(loop.MenuOpen)foreach(var button in background)button.interactable=false;
         }
         public void AfterRefresh(LastStandHudKeyboard keyboard,Button tierNext,Button fittingNext)
         {
-            if(changed)keyboard.Focus(loop.MenuOpen?loop.MenuPage=="research"?Research.InitialFocus:loop.MenuPage=="history"?History.InitialFocus:loop.MenuPage=="planner"?Planner.InitialFocus:Settings.InitialFocus:
+            if(changed)keyboard.Focus(activePage!=null?activePage.InitialFocus():
                 wasPage=="tier"?tierNext:wasPage=="fitting"?fittingNext:returnFocus??Menu);
             wasOpen=loop.MenuOpen;wasPage=loop.MenuPage;
         }
         public void Layout(float w,float h,float sx,float sy)
-        {Settings.Layout(w,h,sx,sy);Research.Layout(w,h,sx,sy);History.Layout(w,h,sx,sy);Planner.Layout(w,h,sx,sy);}
-        public void Reveal(Button button){Settings.Reveal(button);Research.Reveal(button);History.Reveal(button);Planner.Reveal(button);}
+        {activePage?.Layout(w,h,sx,sy);}
+        public void Reveal(Button button)=>activePage?.Reveal(button);
         public void Scroll(string direction)
-        {if(loop.MenuPage=="research")Research.ScrollKeyboard(direction);else if(loop.MenuPage=="history")History.ScrollKeyboard(direction);else if(loop.MenuPage=="planner")Planner.ScrollKeyboard(direction);else Settings.ScrollKeyboard(direction);}
+        {activePage?.Scroll(direction);}
     }
 }

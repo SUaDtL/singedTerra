@@ -16,21 +16,22 @@ from unity_check_runner import ROOT, PROJECT, run_checks
 
 class ObservationContractTests(unittest.TestCase):
     def test_actual_emitter_shared_contract_and_consumers(self):
-        contract_path = TOOLS / "contracts/last-stand-observation-v2.json"
+        contract_path = TOOLS / "contracts/last-stand-observation-v3.json"
         contract = json.loads(contract_path.read_text(encoding="utf8"))
+        previous_contract = json.loads((TOOLS / "contracts/last-stand-observation-v2.json").read_text(encoding="utf8"))
         retained = json.loads((TOOLS / "contracts/last-stand-observation-v1.json").read_text(encoding="utf8"))
         output = ROOT / "campaign-unity/Evidence/architecture-foundations" / ("observations-" + uuid.uuid4().hex + ".json")
         output.parent.mkdir(parents=True, exist_ok=True)
-        previous = os.environ.get("ST_LS_OBSERVATION_OUTPUT")
+        previous_output = os.environ.get("ST_LS_OBSERVATION_OUTPUT")
         os.environ["ST_LS_OBSERVATION_OUTPUT"] = str(output)
         try:
-            code, log = run_checks("LastStandObservationContractChecks.Run", [contract_path, TOOLS / "contracts/last-stand-observation-v1.json", Path(__file__), TOOLS / "verify_last_stand_loop.py",
+            code, log = run_checks("LastStandObservationContractChecks.Run", [contract_path, TOOLS / "contracts/last-stand-observation-v1.json", TOOLS / "contracts/last-stand-observation-v2.json", Path(__file__), TOOLS / "verify_last_stand_loop.py",
                 ROOT / "e2e/helpers/lastStandJourney.mjs"])
         finally:
-            if previous is None:
+            if previous_output is None:
                 os.environ.pop("ST_LS_OBSERVATION_OUTPUT", None)
             else:
-                os.environ["ST_LS_OBSERVATION_OUTPUT"] = previous
+                os.environ["ST_LS_OBSERVATION_OUTPUT"] = previous_output
         self.assertEqual(code, 0, log[-10000:])
         self.assertIn("ST_LS_OBSERVATION_CONTRACT_PASS", log)
         packets = json.loads(output.read_text(encoding="utf8"))["packets"]
@@ -39,7 +40,7 @@ class ObservationContractTests(unittest.TestCase):
         source = ast.parse((TOOLS / "verify_last_stand_loop.py").read_text(encoding="utf8"))
         owner = next(n for n in source.body if isinstance(n, ast.FunctionDef) and n.name == "verify_shop_vertical")
         functions = [n for n in owner.body if isinstance(n, ast.FunctionDef) and n.name in ("require", "read_controls")]
-        namespace = {"json": json, "math": math, "OBSERVATION_CONTRACTS": (retained, contract)}
+        namespace = {"json": json, "math": math, "OBSERVATION_CONTRACTS": (retained, previous_contract, contract)}
         exec(compile(ast.Module(body=functions, type_ignores=[]), "<maintained observation reader>", "exec"), namespace)
         for raw in packets:
             admitted = namespace["read_controls"](raw)

@@ -7,16 +7,17 @@ import {mkdirSync,readFileSync,writeFileSync,realpathSync} from 'node:fs';
 import {dirname,resolve,isAbsolute} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,fetchBoundRuntime,
-  assertServedBytes} from '../e2e/helpers/lastStandJourney.mjs';
+  assertServedBytes,LAST_STAND_HELPER_INPUTS} from '../e2e/helpers/lastStandJourney.mjs';
 import {createLastStandBrowserActor,lastStandObservedControls as controls} from '../e2e/helpers/lastStandBrowserActor.mjs';
 import {WAVE_JOURNEY_PROBE} from '../e2e/helpers/lastStandWaveJourney.mjs';
 
 const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototype.v1';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-const inputs=['scripts/last-stand-research-journey.mjs','e2e/helpers/lastStandJourney.mjs',
+const inputs=['scripts/last-stand-research-journey.mjs','e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs','e2e/helpers/lastStandBrowserActor.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json'];
 export function researchJourneyInputHashes(sourceRoot=root){return Object.fromEntries(inputs.map(path=>[path,sha(readFileSync(resolve(sourceRoot,path)))]));}
 const hashes=researchJourneyInputHashes;
 const tracks=['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'];
@@ -101,6 +102,7 @@ async function main(){
     });
     report.closedCompletionObserved=completionExpected;report.initialCompletionMayPrecedeFirstLoad=!completionExpected;
     await lab.click('ResearchEntry');await lab.select('salvageRecovery');const beforeStart=await lab.stored('before-start');
+    await lab.shot('ready-to-start');
     await lab.click('ResearchStart1');let saved=await lab.stored('started');
     check('visible Start uses shared wallet once',()=>{assert.equal(saved.research.slots[1].active.track,'salvageRecovery');assert.equal(saved.credits,beforeStart.credits-saved.research.slots[1].active.chargedCost);});
     await lab.select('researchSpeed');const beforeQueue=saved;await lab.click('ResearchQueue1');saved=await lab.stored('queued');
@@ -166,6 +168,8 @@ async function main(){
     check('ordinary fresh profile exposes locked Labs without purchasable action',()=>{
       assert.equal(freshSave.credits,0);assert.ok(Object.values(freshSave.research.completedRanks).every(rank=>rank===0));
       assert.ok(controls(fresh.layout()).filter(item=>/^Research(Start|Queue|Switch|Suspend|RemoveQueued)/.test(item.name)).every(item=>!item.active||!item.interactable));
+      assert.match(controls(fresh.layout()).find(item=>item.name==='ResearchProject-gameSpeed').label,/PREVIEW - RESEARCH LOCKED/);
+      assert.ok(controls(fresh.layout()).some(item=>item.name==='ResearchHelp'&&item.active&&item.interactable),'Rules remain available through explicit help');
     });await fresh.shot('locked-lab');await freshContext.close();
 
     const matureContext=await contextFor('mature-5x'),mature=await actor(matureContext,'mature-speed');

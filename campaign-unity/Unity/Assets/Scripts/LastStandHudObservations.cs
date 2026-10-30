@@ -174,11 +174,13 @@ namespace SingedTerra.LastStand
         }
         [Serializable] sealed class LayoutState
         {
+            public string schema="singedterra-last-stand-observation/v3";
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;
             public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls; public GraphicObservation[] graphics;
             public float researchScrollOffset,researchMaximumScrollOffset,historyScrollOffset,historyMaximumScrollOffset;
+            public float researchListScrollOffset,researchListMaximumScrollOffset,researchDetailScrollOffset,researchDetailMaximumScrollOffset;
             public float plannerScrollOffset,plannerMaximumScrollOffset;
         }
         string NodePath(Transform node)
@@ -262,6 +264,8 @@ namespace SingedTerra.LastStand
             layout.settingsScrollOffset = settings.ScrollOffset;
             layout.settingsMaximumScrollOffset = settings.MaximumScrollOffset;
             layout.researchScrollOffset=research.ScrollOffset;layout.researchMaximumScrollOffset=research.MaximumScrollOffset;
+            layout.researchListScrollOffset=research.ListScrollOffset;layout.researchListMaximumScrollOffset=research.ListMaximumScrollOffset;
+            layout.researchDetailScrollOffset=research.DetailScrollOffset;layout.researchDetailMaximumScrollOffset=research.DetailMaximumScrollOffset;
             layout.historyScrollOffset=history.ScrollOffset;layout.historyMaximumScrollOffset=history.MaximumScrollOffset;
             layout.plannerScrollOffset=planner.ScrollOffset;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset;
             return layout;
