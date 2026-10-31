@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -75,7 +77,7 @@ public static class LastStandFittingChecks
     static void Attached(Fixture f)
     {
         f.Callout.Refresh(true);Need(f.Callout.Visible,"visible active fitting has a leader");
-        var module=f.Art.showingLauncher?f.Art.launcherModule:f.Art.repairModule;
+        var module=f.Art.ActiveFittingModule;
         Need(f.Callout.TargetName==module.name,"leader follows exact active module identity");
         var expected=f.Art.view.WorldToScreenPoint(Bounds(module).center);
         var ui=f.Canvas.renderMode==RenderMode.ScreenSpaceOverlay?null:f.Canvas.worldCamera;
@@ -201,6 +203,33 @@ public static class LastStandFittingChecks
             f.Callout.Refresh(true);Need(!f.Callout.Visible,"independent encounter guard rejects caller error");
         }
     }
+    static void FiveModulesUseSharedProjection()
+    {
+        foreach(var size in new[]{new Vector2Int(1366,768),new Vector2Int(1920,1080),new Vector2Int(390,688),new Vector2Int(844,266),new Vector2Int(720,516)})
+        using(var f=new Fixture(size.x,size.y))
+        {
+            var modules=new Dictionary<string,GameObject>();
+            foreach(string id in new[]{"repair","launcher","scattergun","mortar","railgun"})
+            {
+                Need(f.Art.TrySelectFitting(id),"actual fitting selection: "+id);f.Refresh();Attached(f);
+                var module=f.Art.ActiveFittingModule;modules.Add(id,module);
+                Need(module.GetComponentsInChildren<MeshFilter>().Length>0&&f.Art.ActiveFittingRenderers.Length>0,"visible attachment geometry: "+id);
+                Need(f.Art.TrySelectFitting(id)&&f.Art.ActiveFittingModule==module,"same fitting reuses its owned module");
+                Invoke(f.Art,"Start");Need(f.Art.ActiveFittingModule==module&&f.Art.FittingId==id,"late Start cannot reset selected module");
+            }
+            Need(modules.Values.Distinct().Count()==5,"five independent module identities");
+            foreach(var item in modules)
+            {
+                Need(f.Art.TrySelectFitting(item.Key),"revisit fitting");f.Refresh();Attached(f);
+                Need(modules.Values.Count(m=>m.activeInHierarchy)==1,"one selected attachment only");
+            }
+            var selected=f.Art.ActiveFittingModule;
+            Need(!f.Art.TrySelectFitting("unknown")&&f.Art.ActiveFittingModule==selected,"unknown fitting does not mutate binding");
+            Need(f.Art.BeginEncounter(),"presentation encounter admitted");
+            foreach(string id in modules.Keys)Need(!f.Art.TrySelectFitting(id)&&f.Art.ActiveFittingModule==selected,"active encounter cannot replace fitting");
+            f.Art.EndEncounter();
+        }
+    }
     static void Check(string name,Action body)
     {
         try { body();Debug.Log("ST_LS_FITTING_PASS "+name); }
@@ -218,6 +247,7 @@ public static class LastStandFittingChecks
             Check("resize_same_owner_retains_actual_attachment",ResizeWithOneOwner);
             Check("inactive_behind_camera_offscreen_and_disabled",HiddenTargetsAndInvalidProjection);
             Check("actual_menu_and_encounter_lifecycle",OverlayAndEncounterLifecycle);
+            Check("five_modules_use_shared_projection",FiveModulesUseSharedProjection);
         }
         finally
         {

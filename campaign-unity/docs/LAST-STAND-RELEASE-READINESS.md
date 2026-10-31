@@ -1,9 +1,209 @@
 # Last Stand release readiness
 
-This inventory describes the release-foundation implementation on 2026-10-27.
-It is not a publication, store-submission or device-qualification receipt. The
-current Unity project declares player version `1.0`; the repository package is
-`0.0.0`. Neither is a newly approved public game version.
+## Current qualification matrix
+
+Updated October 31, 2026 UTC for the [player continuity and patched Unity sprint](../../.codearbiter/plans/last-stand-player-continuity.html).
+This is the current index of acceptance work. Each row retains its responsible
+area and plan owner. Results cover their recorded source, package, host and
+scenario; completed implementation does not close unrun acceptance. Dated
+records below preserve the earlier consolidation results and failures.
+
+Unity is now **6000.3.27f2**, revision `22188f149405`. The
+[dependency review](last-stand-continuity/unity-dependency-review.md) records the
+security basis and selected Android JDK. The continuity sprint adds local
+profile export, read-only import previews, explicit garage restore, save and
+recovery status, topic-based Help and optional progress guidance. Existing save
+ownership and transaction checks remain authoritative; backups exclude
+preferences and account data.
+
+The [continuity validation index](last-stand-continuity/validation.json) separates
+portable, imported Unity, native adapter and packaged-player evidence. The
+complete portable run passes **74 modules and 531 cases with zero skips**.
+Final imported Controls pass 31 checks in
+`compact-recovery/editor-20261031T015942Z-ef880e45`; observation run
+`editor-20261031T020114Z-d36e5c3f` emits eight actual packets checked by both
+maintained readers. Two Editor build producers changed after these imported
+checks and have separate reviewed, source-bound target-build proof. Game, UI and
+observation inputs still match. The final browser journey passes 89 checks with
+zero errors. These suites overlap and their counts are not additive.
+
+The real Windows adapter's export, import and cancellation passed using an
+explicit retained fixture and actual OS dialogs. Export and import matched all
+2,912 fixture bytes without loading the player's profile. These three checks
+qualify the adapter paths, not a full Windows player or Android device. The
+[independent Security/Auth-Crypto review](last-stand-continuity/security-review.md)
+passes for its recorded source identities.
+
+**Local continuity verification passes within the recorded scopes; release
+qualification remains incomplete.** WebGL `Web-20261031T021631Z-098558`, frozen
+packaging, source admission and the production site build pass. Windows
+`build-windows-20261031T022146Z-c8c3e5` and Android
+`build-android-20261031T022514Z-409a70` development builds also pass. Android's
+forced import records 36 exact reviewed Editor diagnostics, no blocking shader
+diagnostics and matched player phases. Its APK v2 signature verifies with one
+signer. Neither result supplies a physical-device session.
+
+Five earlier browser attempts and all failed build/import checks remain in the
+index. The final browser run includes fresh and earned-checkpoint profiles,
+real file export/import, explicit recovery, second-tab ownership and portable
+restore into an empty profile. The earlier Windows player journey is still
+blocked before confirmed game-control input: its fresh isolated garage rendered,
+but input routing twice reported another window. Four normal save-slot hashes
+stayed unchanged and the owned player was stopped. Final native builds do not
+close that journey, the existing background-window gap or device qualification.
+
+The pre-sprint baseline `f474b9c7cc65436e1292d640c42337bbb87287a5` passed
+[CI 41130994263](https://github.com/SUaDtL/singedTerra/actions/runs/41130994263) and
+[CodeQL 41130994173](https://github.com/SUaDtL/singedTerra/actions/runs/41130994173).
+Those results resolve the earlier consolidation repair-head CI gap. This report
+was recorded before continuity feature delivery and does not contain its hosted
+CI result. Use [PR #547 live checks](https://github.com/SUaDtL/singedTerra/pull/547/checks)
+and the PR delivery record for the current exact-head outcome. Release qualification, merge, deployment
+and publication remain separate states. The player's declared `1.0` and the
+repository's `0.0.0` are not newly approved public versions.
+
+| Acceptance obligation | Responsible area / plan owner | Current evidence and limit | Evidence needed to close |
+| --- | --- | --- | --- |
+| <a id="q-package"></a>**Q-PACKAGE: matching playable candidate** | Build delivery / [Architecture T-DELIVERY](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-DELIVERY) | **Complete for the captured local WebGL candidate.** The [source lock](last-stand-web/source-lock.json), [packaging receipt](last-stand-web/receipt-sanitized.json) and [continuity index](last-stand-continuity/validation.json) bind `Web-20261031T021631Z-098558`. Frozen packaging, source admission and production build pass; prior rejected exports and the earlier CP1252 reporting failure remain separate history. | Rebind and recheck on source/package change. A local export does not establish hosted CI, deployment or native-platform qualification. |
+| <a id="q-browser"></a>**Q-BROWSER: actual browser loop and background behavior** | Browser verification / [Waves T-QUALIFY](../../.codearbiter/plans/last-stand-waves-and-resume.html#T-QUALIFY) | The [final continuity journey](last-stand-continuity/validation.json) passes 89 checks with zero errors against the matching package. It covers Help/guidance, real file preview/replace/cancel, earned checkpoint and previous-save recovery, second-tab ownership and restore into an empty profile. Five failed attempts remain historical. Earlier Research/Planner journeys retain their [consolidation scope](last-stand-consolidation/validation.json). The owned-window background snapshot timeout is unresolved. | Requalify changed behavior on future candidates and complete remaining ordinary earn/buy/clear/resume/invest and audio-admission branches. Resolve the native-window background failure; isolated browser checks do not supply that proof. |
+| <a id="q-windows"></a>**Q-WINDOWS: current native player** | Windows platform verification / [Architecture T-PLATFORM](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-PLATFORM) | Final patched-editor [Windows development build](last-stand-continuity/validation.json) passes with unchanged source/tool inventories. The earlier isolated player rendered a fresh garage but input routing blocked its journey before any confirmed game-control click; four normal save slots were unchanged. Separate OS adapter fixtures pass export/import/cancel. No current-player input acceptance is claimed. | Resolve the input-routing obstruction and check final-player input/display, ordinary and abnormal termination/relaunch, research clocks, backup/restore and retained checkpoint/preferences on an isolated profile. Build/render and adapter GUI checks do not close this row. |
+| <a id="q-android"></a>**Q-ANDROID: physical-device lifecycle** | Android device verification / [Architecture T-PLATFORM](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-PLATFORM) | Final [Android development build](last-stand-continuity/validation.json) `build-android-20261031T022514Z-409a70` passes with unchanged source/tools, explicit shader reimport, 36 reviewed Editor-import diagnostics and zero blocking diagnostics. APK v2 signature verifies with one signer. Earlier compile/shader-guard failures remain retained. No physical-device session was run. | Install the identified candidate on a recorded device/OS. Exercise fresh/returning profiles, file-provider choices and cancellation, background/foreground, forced termination, clocks, interrupted writes, preferences and hardware audio. |
+| <a id="q-recovery"></a>**Q-RECOVERY: understandable save failure and retry** | Recovery/support UX / [Continuity plan](../../.codearbiter/plans/last-stand-player-continuity.html) | [Domain/transport, imported UI and final browser checks](last-stand-continuity/validation.json) cover read-only preview, explicit confirmation, retained checkpoint and previous-save restore, writer ownership, invalid-file refusal and unchanged preferences. Imported tests also prove bounded damaged-save repair while preserving rejected bytes. Save/Help status now explains the available action. Native player/device recovery remains unqualified. | Complete remaining actual-target failed-save, ambiguous-write retry, conflict and abnormal restart/support journeys with preserved progress and understandable status. Keep future/unreadable/oversized save refusals intact; browser success does not substitute for native/device lifecycle proof. |
+| <a id="q-endurance"></a>**Q-ENDURANCE: real-duration farming and performance** | Performance verification / [Research T-QUALIFY](../../.codearbiter/plans/last-stand-research-and-farming.html#T-QUALIFY) | The [180-second smoke](last-stand-combat-depth/validation.json) is a development-profile diagnostic. Its frame/JavaScript-heap samples exclude full WebAssembly/native memory and thermal qualification. | Real elapsed farming against the approved 5x pacing goal, including sustained frame/memory/thermal measurements on declared targets and repeated save/recovery observations. Accelerated model runs and short smoke tests do not close this row. |
+| <a id="q-balance"></a>**Q-BALANCE: earned progression and release content** | Game design/economy / [Combat depth T-BALANCE](../../.codearbiter/plans/last-stand-combat-depth.html#T-BALANCE) | The [balance summary](last-stand-combat-depth/balance.md) records earned paths, spending limits and unavailable/hypothetical cases. Continuity preserves retained run rules and research accounting; it does not establish mature earned farming, long-term feel or accepted release depth. | Representative earned research/Workshop/fitting choices and farming observations, with explicit scope acceptance for tiers, waves, rewards and armaments. |
+| <a id="q-ux"></a>**Q-UX: screen clarity, input and accessibility** | Product UX/accessibility / [Clarity T-MODALS](../../.codearbiter/plans/last-stand-consolidation-and-clarity.html#T-MODALS) and [Continuity plan](../../.codearbiter/plans/last-stand-player-continuity.html) | [Current verification](last-stand-continuity/validation.json) includes 31 imported Controls, eight actual observation packets, 11 guidance and five layout cases within the complete portable run, plus the 89-check browser journey. Shared compact recovery scrolling/keyboard routing and captions pass the final short-canvas checks. Earlier failures and Research/Planner captures retain their source scope. | Owner review of Research, Planner, Save, Help and sibling screens. Retain supported-platform locked/empty/shortfall/failed-save, focus/scroll and 44px-target checks. Automated layout checks and browser screenshots do not establish player comprehension. |
+| <a id="q-audio"></a>**Q-AUDIO: rendered sound and listening** | Audio verification / [Player controls T-AUDIO](../../.codearbiter/plans/last-stand-upgrade-payoff.html#T-AUDIO) | [Audio and background observations](#delivery-state-on-2026-10-28) and source regressions remain bounded to their recordings. Logs, cue counters and inert fixtures do not prove hardware audibility or listening acceptance. | Source-bound normal-play media and target listening checks for master/effects/music controls, silence, background admission, no replay/bursts and stable pitch at game speeds; record owner feedback separately. |
+| <a id="q-art"></a>**Q-ART: visual treatment and shipped rights** | Art/product / [First-session DEC-VISUAL](../../.codearbiter/specs/last-stand-first-session-polish.html#DEC-VISUAL) | [Plan-closure report](../../.codearbiter/reports/last-stand-plan-closure-2026-10-30.md) retains the unresolved visual-treatment choice. Later garage/chrome feedback is not that decision. Existing assets/builds do not establish final rights and visual acceptance. | Record the actual visual-treatment decision and matched normal-speed review, plus provenance/license review for shipped art/audio and explicit exceptions. |
+| <a id="q-delivery"></a>**Q-DELIVERY: final review, hosted CI and distribution** | Delivery/release owner / [Architecture T-DELIVERY](../../.codearbiter/plans/last-stand-architecture-foundations.html#T-DELIVERY) | Baseline `f474b9c7` passed [CI 41130994263](https://github.com/SUaDtL/singedTerra/actions/runs/41130994263) and [CodeQL 41130994173](https://github.com/SUaDtL/singedTerra/actions/runs/41130994173). Continuity's final [scoped reviews, builds and browser evidence](last-stand-continuity/validation.json) were recorded before feature delivery. This snapshot does not contain feature-head CI; use [PR #547 live checks](https://github.com/SUaDtL/singedTerra/pull/547/checks) and its delivery record for the live result. Earlier failed heads remain in dated history. The [maintenance record](../../.codearbiter/reports/project-maintenance-2026-10-29.md) preserves ADR acceptance and the true-merge requirement. | Finish final-candidate review and exact-head hosted checks, then separately authorized merge retaining ADR source ancestry. Deployment/publication, live-host checks and store version/signing/submission each retain their own decisions. |
+
+The [continuity specification](../../.codearbiter/specs/last-stand-player-continuity.html)
+owns this sprint's changes. Historical plans retain their criteria and evidence;
+their qualification pointers refer to this one matrix. Account, cloud-save and
+purchase controls still require real implemented services before being presented
+to players.
+
+
+## Dated evidence history
+
+Everything below is retained historical evidence with its original scope. Words
+such as “current” and “pending” inside a dated record refer to that record's
+candidate, not automatically to today's branch. Use the matrix above for the
+current outstanding work.
+
+## Consolidation and screen-clarity snapshot, October 30
+
+The following narrative preserves the prior snapshot. Its outstanding repair-head
+CI was subsequently resolved at `f474b9c7`; the current matrix records that result.
+Its candidate and evidence remain historical.
+
+Updated October 30 for the [consolidation and screen-clarity sprint](../../.codearbiter/plans/last-stand-consolidation-and-clarity.html).
+This is the current index of acceptance work. Each row has one
+responsible area and an existing plan owner; the dated records below retain the
+evidence and original failures. A result covers only its recorded source, package,
+host and scenario. Completing an implementation task does not close a row.
+This is a recorded snapshot. Use [PR #547 live checks](https://github.com/SUaDtL/singedTerra/pull/547/checks)
+for the current exact-head CI outcome; this document does not change after every
+CI transition.
+
+The current playable candidate is **`Web-20261030T202703Z-cf836c`**. Its
+[local validation summary](last-stand-consolidation/validation.json) binds the final
+source/package hashes and identifies the local receipts. Unity WebGL packaging,
+source admission, strict TypeScript/Vite and the complete portable inventory pass
+(71 modules, 478 declared cases). The refreshed Research browser journey passes 13
+checks with 12 screenshots; Planner passes 15 with nine screenshots. Both enforce
+zero browser errors. Six quote checks, four imported Research checks, 23 imported
+Controls checks, five actual observation packets through both readers and the
+selected Node guard suites pass. These suites overlap and their counts are not
+additive. The scoped independent Auth/Crypto and Security reviews pass, including the
+first CI fixture follow-up and the subsequent test-only Linux repair. Its four
+focused checks were independently rerun on Windows. Game C#, helpers and package
+bytes are unchanged by the final repair.
+
+**Local consolidation verification is complete within those scopes. Release
+qualification remains incomplete.** The Windows native-background timeout,
+current native/device, hardware audio, real-duration endurance and owner acceptance
+remain open below. At this recorded snapshot, final repair-head hosted CI had
+not yet run. The pre-sprint head
+`e0a71becc44143d1393206299521005c0a87ebde` passed
+[CI 41088994426](https://github.com/SUaDtL/singedTerra/actions/runs/41088994426) and
+[CodeQL 41088994464](https://github.com/SUaDtL/singedTerra/actions/runs/41088994464);
+those results cover that baseline, not the new consolidation changes.
+The first consolidation head `97b15c7a684d8f9fa86e2a7a524c3690c183135d` failed
+[CI 41125483235](https://github.com/SUaDtL/singedTerra/actions/runs/41125483235):
+three browser-matrix fixtures still depended on moved source. The repair and its
+pre-install dependency regression now pass the exact local classifier cohort
+(534 checks), affected verification cohort (492 checks), and independent import
+policy cohort (51 checks). Research, Planner and the portable inventory were
+rerun against the changed helpers. These local passes do not replace a successful
+hosted run for the repair.
+The next head `4ac7a2976f4f6bfae98c307e649d58edefa7e628` then failed the Linux
+[browser job in CI 41128798482](https://github.com/SUaDtL/singedTerra/actions/runs/41128798482/job/124315063195):
+11 of 12 background guards passed; the serialization fixture suppressed files
+needed by fresh model compilation. The earlier 492-check command excluded the
+named guard test containing that fixture, so its zero-skipped total did not
+cover this branch. The test-only repair now passes 495 selected checks plus four
+focused model/inert-compiler checks locally. The real-window group remains
+filtered and the Windows native timeout remains open. Unchanged game/browser
+receipts retain their prior scopes; final repair CI was outstanding at recording.
+The player's declared `1.0` and repository `0.0.0` are not newly approved public
+versions. Publication and store submission remain separate decisions.
+
+## Progression planning candidate, October 30
+
+The [new sprint](../../.codearbiter/plans/last-stand-progression-intelligence.html)
+adds advisory goal pins, Workshop/Research budget alternatives and conservative
+run-history comparisons through existing shared owners. It changes neither the
+version-6 progression save nor a combat, economy or reward edition. The
+[plan closure report](../../.codearbiter/reports/last-stand-plan-closure-2026-10-30.md)
+records 69 completed implementation obligations while retaining unresolved player,
+device and owner-decision work.
+
+Local model checks pass: six planner, fourteen preferences, eighteen history,
+two architecture-boundary and two export-binding checks (overlapping the broader
+inventory). The complete portable run exercised 71 modules/476 cases: 70 modules
+passed and the crowded-wave module rejected the newly extended closure helper.
+The correction separately binds that helper, requires exactly the original 32
+measured C# inputs, and preserves all eight historical maps/constants. All nine
+affected checks pass, including new add/omit/duplicate/redirect and execution-drift
+controls. The current inventory contains 477 portable cases; this is not a fresh
+all-477 result.
+
+Actual imported Unity controls pass all 21 named cases. A packaged-browser check
+found that its page header left only 142px of game height in a 568x266 window.
+The new regression failed with the scroll viewport below the canvas; the shared
+modal now places Planner and History status text in scroll content, retaining the
+fixed Close control and full 44px targets. The unchanged regression passes at
+142px, 196px, portrait and landscape sizes. Independent model, UI and evidence
+reviews pass. The actual Unity observation emitter also passes both maintained
+readers, including rejection of an omitted control. The frozen v1 observation
+contract is unchanged; current planner/history controls use v2.
+
+WebGL release `Web-20261030T161006Z-530738` passes source/toolchain checks, official
+packaging, asset/source admission and the production site build. The new package
+is the sole local preview on port 4174. No new Windows or Android player build is
+claimed for this sprint. The final isolated, empty-profile browser journey passes
+11 checks with six screenshots and zero browser errors: pin/reload/clear, real
+Workshop/Lab budget descriptions, mouse/touch/keyboard navigation at desktop,
+portrait and 142px canvas height, existing Shop routing, provisional-history
+disclosure and unchanged checkpoint/currency/manual pause. All 13 recorded Tab
+actions retain both trusted key edges. The browser uses real input; it supplies
+no earned mature-farming or physical-device evidence. Player labels replace raw
+serialized build identities without changing comparison keys. Exact-head hosted
+CI remains separate; existing device/audio/performance/endurance gaps remain.
+
+The earlier Linux CI audio-fixture failure is corrected by giving its inert
+Windows-capability fixture an explicit platform. An additional actual-caller
+regression proves Linux/macOS refusal before auxiliary-window creation. Focused
+audio-boundary checks pass. The full local background run retains its separate
+Windows native-window snapshot timeout; fixture success does not qualify that
+native boundary. No timeout or native ownership check was relaxed.
+
+The old caption refusal and later snapshot timeout are distinct: the earlier host
+refused an obstructed caption without inserting input; the later setup activation
+succeeded before an observation-only snapshot timed out. A bounded read-only phase
+probe completed in 1.44 seconds but did not reproduce the owned-Chrome boundary.
+The responsible helper bodies are unchanged. No source defect is asserted from
+that unresolved timeout, and no native qualification is inferred from the probe.
 
 Current follow-up, October 28: CI run `40625861839` at `c6b32cde` completed
 with failed Last Stand lifecycle checks; CodeQL passed. The retained shard 3
@@ -50,15 +250,114 @@ failed observation and supplies no performance or endurance acceptance.
 The same repair keeps one fresh sampler active during awaited shop/report/run
 transitions. All 22 focused checks and independent review pass, retaining the
 exact five-second bound. An isolated seeded rerun passes 180.767 active seconds,
-176 samples, a rendered 29-level purchase and 96 matching storage write/readbacks.
-It ends at wave 83 with no reported errors and verified final source bindings.
+176 samples and a rendered 29-level purchase. There are 96 matching storage
+write/readbacks from page start through the final summary (91 between the first
+and final summaries). The final summary shows wave 83; the latest observation
+during cleanup reaches wave 84. No errors are reported, and final source
+bindings are verified. Cleanup adds no active-time credit.
 This smoke precedes the final wallet-only review correction; its retained input
 hashes identify that exact driver snapshot. Its headless frame mean is 73.812 ms
 and sampled renderer JavaScript heap peaks at 11,165,320 bytes. These diagnostic
 measurements exclude WebAssembly memory and do not qualify device performance,
 CPU step cost, hardware audio or ten-hour endurance.
-The next combat-depth sprint is approved, with foundation qualification still
-required before new combat integration.
+Current hosted follow-up: foundation head `1893bbd9` passes CI run
+`40775828783`, all 24 jobs including ten lifecycle shards and the final combined
+rendering-guardrails check `123136622229`. CodeQL `40775828731` also passes.
+The PR head was freshly confirmed unchanged after both workflows completed.
+This clears the combat-depth sprint's browser integration dependency; the
+platform, audio and endurance gaps below remain open. Earlier pending/failure
+observations above retain their original historical scope.
+
+## Combat-depth candidate, October 29
+
+The approved combat-depth implementation adds Mortar and Railgun, three enemy
+roles, Cinder Basin and Storm Foundry, and saved-rule compatibility. Its
+[validation inventory](last-stand-combat-depth/validation.json) binds current
+source, builds, browser observations and representative review images.
+
+WebGL and Windows release builds and an Android ARM64 development build passed
+with source inventory `68935f3aa6e0d5663730caff05195997ee42e60419bd60c3bd4aa0159a2f551b` unchanged through all three builds.
+The Android APK is 52,076,242 bytes and has a verified Android Debug v2 signature.
+The first Android import was rejected for 18 inherited probe-shader warnings;
+an unchanged-source retry passed the unchanged strict scanner. Warning-free
+clean-import repeatability and store signing remain unproven.
+
+The calibrated packaged-browser combat journey passed 31 checks with 53
+screenshots: five fittings, four environments, desktop/portrait/short landscape,
+touch and keyboard, quoted Mortar/Railgun purchases, saved-wave reload,
+retained-version recovery, and wave-50 elite statistics and rendering with
+reduced effects. The research journey passed 13 checks, including completion
+during an actual closed tab and writer-lock handoff. Both report zero browser
+errors and verify their source, fixture and package bindings. These development
+profiles establish the observed browser behaviors; their gifted funding is not
+ordinary earned progression or native/endurance evidence.
+
+Current local verification includes 82 combat/domain checks, 48 pure architecture
+checks, six retained economy checks, 14 independently rerun armament regressions,
+and a passing production build/typecheck. The expanded CI/tooling run passed
+441 of 443 named checks. Both failures then passed focused reruns: one stale
+extracted-caller fixture was corrected to use the actual impact/audio helpers;
+one passive Windows helper timeout did not recur under the unchanged 10-second
+limit. This is not a fresh all-443 run. Existing independent review closed the three new browser
+evidence findings and passed the CI security review. Final combat-model and
+observer checks are recorded in the validation inventory and balance report.
+
+The full calibrated actual-model measurement preserves earned funding, research
+and saved seeds. Current-edition Scattergun uses 22m interception with unchanged
+damage growth; Mortar uses a 10m radius and the measured level-growth correction.
+Legacy saved runs retain their original rules. The
+[balance report](last-stand-combat-depth/balance.md) separates earned observations,
+bounded survival limits and hypothetical mature pacing. It does not establish
+real-duration farming, globally optimal builds or device performance.
+
+Two ordinary first-session browser journeys also pass, starting from empty saves
+with repair and launcher at normal speed. Each records five checks and 15
+screenshots with no errors, covering earned first-wave rewards, purchases, return
+to Campaigns, paused checkpoint resume and confirmed abandonment. The first
+local attempt exposed a mismatched preview base path; rebuilding with
+`VITE_BASE=/singedTerra/` corrected local assets without changing navigation code.
+
+Initial combat-depth CI at `414fca7d` failed 12 lifecycle jobs because the
+historical compiler caller omitted new dependencies, and the tier journey used
+stale milestone labels. CodeQL and all 80 Linux combat/domain checks passed.
+The repaired compiler shares the full 16-source list and matches the unchanged
+13,904-row, 13-field historical reference. Current combat/research browser
+journeys have been rerun with the repaired drivers. Hosted CI at `8543e883`
+then passed all 24 jobs, including 12 lifecycle shards and the final aggregate;
+CodeQL also passed, with the head freshly confirmed unchanged. The subsequent
+verifier-only follow-up requires its own exact-head checks after push; the PR's
+current checks are authoritative.
+
+The subsequent `ce0cbf58` run failed all 12 lifecycle jobs because frozen balance
+admission still required the original compiler helper. Correction `3433c0a5`
+preserves all four reports and all 35 historical identities, keeps 34 model,
+policy and closure inputs pinned, and records the current helper separately.
+All 82 combat-domain checks pass. A fresh five-run, 100-wave observer execution
+exactly matches the complete retained outcomes; source drift, altered outcomes
+and overwriting frozen references are refused. Independent review passes. Its
+corrected-head hosted CI and the supplementary full-model repeat are separate
+checks; neither result is asserted by this pre-push record.
+
+The final verifier follow-up passes 33 focused Node checks and preserves the
+48-check architecture and five-check portable compiler results on their unchanged
+inputs. It requires current save envelopes and complete retained editions, binds
+all 33 milestone generator inputs, and supports an explicit compiler when
+automatic discovery is unavailable. Actual browser milestone cases pass for both
+Repair and Launcher at waves 100 and 300, from declared accelerated earned setup.
+The final stricter timing validator separately accepts all four complete captures
+and rejects altered paused activity; recorded replay is not a new live journey.
+
+The current standalone 180-second 5x smoke passes with a rendered purchase,
+verified source/package bindings and successful checkpoint write/readback checks.
+This is a bounded development-profile diagnostic, not real-duration farming or
+device performance qualification. The earlier parallel attempt exhausted purchase
+retries; its cause remains unproven. Another attempt correctly refused a verifier
+source change during observation. Both failures are retained, and the passing
+repeat uses unchanged sampling, timing and purchase bounds.
+
+Current Windows interaction, physical Android, hardware audio and real-duration
+farming/performance qualification remain pending. One current preview is retained
+on port 4174. No merge, publication or store acceptance follows from these results.
 
 ## Target-aware build entry
 
@@ -345,7 +644,10 @@ an existing compatible SDK while installing only missing reviewed components.
 Installation and actual target qualification need their own current receipts as
 delivery proceeds; presence of the SDK/JDK/NDK does not supply the Unity module.
 
-## Remaining qualification and release gaps
+## Historical release-gap assessment — October 28
+
+This earlier assessment is retained for traceability. Its status is not maintained
+in parallel with the [current qualification matrix](#current-qualification-matrix).
 
 This is the delivery/readiness assessment required by `ST-LS-ARCH-SPEC#CR-DELIVERY`
 and `CR-PLATFORM`, under the existing plan's `T-DELIVERY`. It does not create new
@@ -356,7 +658,7 @@ areas, not an assignment to an unavailable person.
 
 | Gap and severity | Evidence / current limit | Responsible area | Exit evidence |
 | --- | --- | --- | --- |
-| High: remaining browser qualification | The earlier heartbeat package restored the existing paused wave7 checkpoint; that user profile remains untouched by the hit-observation follow-up. The new package passes 13 isolated browser checks for closed-tab research completion, funded transitions, tab ownership/transfer, bulk buying, speed and history. Focused background and first-hit regressions pass. Fresh hosted lifecycle completion remains pending. | Delivery / browser verification | Complete the corrected hosted journey; retain the declared seed limits and earlier successful journeys as historical evidence. Keep only the latest local preview. |
+| High: remaining browser qualification | The earlier heartbeat package restored the existing paused wave7 checkpoint; that user profile remains untouched by the hit-observation follow-up. The new package passes 13 isolated browser checks for closed-tab research completion, funded transitions, tab ownership/transfer, bulk buying, speed and history. Focused background and first-hit regressions pass. Current hosted lifecycle and combined evidence qualification passed at `1893bbd9`; native and endurance checks remain separate. | Delivery / browser verification | Retain the green hosted result, declared seed limits and earlier journeys; requalify affected behavior on the next candidate. Keep only the latest local preview. |
 | High: remaining native player qualification | Earlier pre-heartbeat Windows players passed controls, purchase, saved preference and checkpoint restart at 1024 by 768. Current-candidate interaction and broader device behavior remain unmeasured. | Delivery / platform verification | Recheck the current candidate and record supported input/display targets, abnormal termination and lifecycle behavior. Preserve both earlier native journeys as historical evidence. |
 | High â€” Android lifecycle and durability | No real-device session, suspend/resume, research-clock, interrupted-write or hardware-audio evidence for this candidate. Windows tests cannot qualify Android behavior. | Platform / device verification | Install the identified APK on a recorded device/OS, exercise fresh and returning profiles, background/foreground, forced termination/relaunch, clock behavior, preferences and audio; retain before/after save and observation evidence. |
 | High â€” performance and long-run reliability | A 180-second headless diagnostic frame/renderer-JS-heap baseline exists. Actual target frame time, full memory, thermal behavior and real-duration farming remain unmeasured. Accelerated model tests and this short smoke are not endurance proof. | Performance / platform / game design | Recorded target/device measurements and a real farming/endurance run against the approved pacing and stability goals, including save/recovery observations; retain existing background/audio obligations. |

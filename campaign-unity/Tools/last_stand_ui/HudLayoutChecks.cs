@@ -24,14 +24,14 @@ static class HudLayoutChecks
     static readonly int[,] Profiles = { {1366,768}, {1920,1080}, {390,844}, {844,390}, {720,640},
         {1366,664}, {1920,976}, {390,688}, {844,266}, {720,516} };
     static readonly Scenario[] Scenarios = {
-        new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry"} },
+        new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry","ResearchEntry"} },
         new Scenario { Phase="garage", SaveError=true, Controls=new[] {"Deploy","RetrySave","Menu"} },
         new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu"} }, // unresolved reserved run: recovery hierarchy
         new Scenario { Phase="battle", Controls=new[] {"Menu","SpeedMinus","SpeedRate","SpeedPlus","ShopEntry"} },
         new Scenario { Phase="settling", Controls=new[] {"Menu","SpeedMinus","SpeedRate","SpeedPlus"} },
         new Scenario { Phase="result", Controls=new[] {"Claim","Menu"} },
         new Scenario { Phase="result", SaveError=true, Controls=new[] {"Claim","RetrySave","Menu"} },
-        new Scenario { Phase="workshop", Controls=new[] {"Redeploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry"} },
+        new Scenario { Phase="workshop", Controls=new[] {"Redeploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry","ResearchEntry"} },
         new Scenario { Phase="workshop", SaveError=true, Controls=new[] {"Purchase","Redeploy","RetrySave","Menu"} },
         new Scenario { Phase="save-error", SaveError=true, Controls=new[] {"RetrySave","Menu"} }
     };
@@ -113,7 +113,9 @@ static class HudLayoutChecks
         // still pass the containment checks above; compare all visible cards,
         // controls and text for overlap rather than treating empty footer area
         // as opaque chrome. Recovery and combat panels remain fully checked.
-        var visible=boxes.Where(b=>!(scenario.InlineGarage&&b.Id=="LastStandDock")).ToList();
+        // Preview is the camera-framing rectangle behind the UI, not opaque
+        // chrome. Research may border that world region without hiding an action.
+        var visible=boxes.Where(b=>b.Kind!="preview"&&!(scenario.InlineGarage&&b.Id=="LastStandDock")).ToList();
         for(int i=0;i<visible.Count;i++) for(int j=i+1;j<visible.Count;j++)
             Require(!Intersects(visible[i],visible[j]) || Ancestor(visible[i],visible[j],boxes) || Ancestor(visible[j],visible[i],boxes),
                 context+": overlap "+visible[i].Id+" / "+visible[j].Id);
@@ -164,6 +166,60 @@ static class HudLayoutChecks
     }
     static void Run(string name)
     {
+        if(name=="short_recovery_preserves_summary_and_actions")
+        {
+            foreach(int width in new[]{500,568,640,844})
+            foreach(int height in new[]{142,160})
+            foreach(var scenario in Scenarios.Where(s=>!s.InlineGarage && s.Phase!="battle" && s.Phase!="settling"))
+            {
+                string context=width+"x"+height+" "+scenario.Phase;
+                var boxes=Observe(width,height,scenario);
+                var controls=boxes.Where(b=>b.Kind=="control").ToArray();
+                Require(controls.Length==scenario.Controls.Length,context+": every recovery control retained");
+                foreach(var control in controls)
+                {
+                    Require(control.Width>=44&&control.Height>=44,context+": recovery touch target "+control.Id);
+                    Require(control.X>=0&&control.Y>=0&&control.Right<=width+.01&&control.Bottom<=height+.01,context+": recovery control clipped "+control.Id);
+                }
+                for(int i=0;i<controls.Length;i++)for(int j=i+1;j<controls.Length;j++)
+                    Require(!Intersects(controls[i],controls[j]),context+": recovery controls overlap");
+                var viewport=boxes.Find(b=>b.Id=="RecoveryViewport");
+                var content=boxes.Find(b=>b.Id=="RecoveryContent");
+                Require(viewport!=null&&content!=null,context+": short recovery must retain a scrollable summary");
+                Require(viewport.Width>=240&&viewport.Height>=44&&viewport.Bottom<=height,context+": readable recovery viewport");
+                foreach(var control in controls)Require(!Intersects(viewport,control),context+": recovery viewport hides "+control.Id);
+                foreach(string id in new[]{"PhaseHeading","PhaseDetail","SaveStatus"})
+                {
+                    var text=boxes.Find(b=>b.Id==id);
+                    Require(text!=null&&text.Parent=="RecoveryContent",context+": retained scrolling summary "+id);
+                    Require(text.FontSize>=14&&text.Height>=text.FontSize&&Contains(content,text),context+": complete readable summary "+id);
+                }
+            }
+            return;
+        }
+        if(name=="short_garage_reserves_menu_and_all_actions")
+        {
+            foreach(int width in new[]{500,568,640,720,844})
+            foreach(int height in new[]{142,160,196,238})
+            foreach(var scenario in Scenarios.Where(s=>s.InlineGarage))
+            {
+                string context=width+"x"+height+" "+scenario.Phase;
+                var boxes=Observe(width,height,scenario);var controls=boxes.Where(b=>b.Kind=="control").ToArray();
+                Require(controls.Length==scenario.Controls.Length,context+": every garage control retained");
+                foreach(string id in scenario.Controls)Require(controls.Count(b=>b.Id==id)==1,context+": unique control "+id);
+                for(int i=0;i<controls.Length;i++)for(int j=i+1;j<controls.Length;j++)
+                    Require(!Intersects(controls[i],controls[j]),context+": control overlap "+controls[i].Id+" / "+controls[j].Id);
+                // The 3D framing rectangle is not an opaque UI surface. All
+                // actual cards, labels and controls still require containment.
+                Fit(boxes.Where(b=>b.Kind!="preview").ToList(),width,height,scenario,context);
+                foreach(var control in controls)Require(control.Width>=44 && control.Height>=44,context+": complete touch target "+control.Id);
+                foreach(var text in boxes.Where(b=>b.Kind=="text"))Require(text.FontSize>=14 && text.Height>=text.FontSize,
+                    context+": readable text region "+text.Id);
+                foreach(string id in new[]{"PhaseHeading","GarageTierName","GarageTierDetail","GarageFittingName","GarageSave"})
+                    Require(boxes.Any(b=>b.Kind=="text"&&b.Id==id),context+": essential label "+id);
+            }
+            return;
+        }
         for(int p=0;p<Profiles.GetLength(0);p++) foreach(var scenario in Scenarios)
         {
             if (p >= 5 && scenario.Phase != "battle" && scenario.Phase != "settling") continue;

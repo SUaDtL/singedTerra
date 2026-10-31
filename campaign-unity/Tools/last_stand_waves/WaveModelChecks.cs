@@ -8,9 +8,12 @@ static class WaveModelChecks
     static void Check(bool value,string message){if(!value)throw new Exception(message);}
     static EncounterModel Strong(LastStandFitting fitting=LastStandFitting.Launcher)
     {
-        var levels=new int[LastStandUpgradeCatalog.Tracks.Count];
-        foreach(var row in LastStandUpgradeCatalog.Tracks)levels[(int)row.Id]=row.PermanentCap;
-        return EncounterModel.CreatePlayable(fitting,1,new LastStandShopState(1,fitting,levels));
+        // Existing long-run and mutual-death regressions retain their original
+        // edition. New combat roles have separate current-edition regressions.
+        var rules=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion);
+        var levels=new int[rules.Tracks.Count];
+        foreach(var row in rules.Tracks)levels[(int)row.Id]=row.PermanentCap;
+        return EncounterModel.CreatePlayable(fitting,1,new LastStandShopState(1,fitting,levels,rules.Version));
     }
     static void ToClear(EncounterModel m){int budget=20000;while(!m.AwaitingWaveCommit && m.Status==EncounterStatus.Running && budget-->0)m.Step();Check(m.AwaitingWaveCommit,"Finite cohort must clear.");}
     static void Set(object target,string name,object value){target.GetType().GetField(name,BindingFlags.Instance|BindingFlags.NonPublic).SetValue(target,value);}
@@ -24,10 +27,10 @@ static class WaveModelChecks
                     var resolver=typeof(EncounterProfile).GetMethod("ForTier",new[]{typeof(int),typeof(IReadOnlyList<LastStandTierDefinition>)});
                     Check(resolver!=null,"The maintained tier resolver must accept authored catalogs without a two-tier branch.");
                     var strongLevels=new int[LastStandUpgradeCatalog.Tracks.Count];
-                    foreach(var row in LastStandUpgradeCatalog.Tracks)strongLevels[(int)row.Id]=row.PermanentCap;
+                    foreach(var row in LastStandUpgradeCatalog.Tracks)strongLevels[(int)row.Id]=row.Available?row.PermanentCap:0;
                     foreach(var definition in tiers) {
                         var profile=(EncounterProfile)resolver.Invoke(null,new object[]{definition.Id,tiers});
-                        Check(profile.Tier==definition.Id && profile.TierDefinition==definition && profile.Id==LastStandWaveCatalog.RulesVersion+":"+definition.EncounterProfileId,"Resolved identity must match every authored tier.");
+                        Check(profile.Tier==definition.Id && profile.TierDefinition==definition && profile.Id==LastStandRunEdition.CurrentRulesVersion+":"+definition.EncounterProfileId,"Resolved identity must match every authored tier.");
                         Check(profile.TierDefinition.EnvironmentId=="biome-"+definition.Id && profile.EnemyHull(10)==10*definition.Id,"Resolved environment and difficulty are not Tier 2 fallbacks.");
                         var model=new EncounterModel(LastStandFitting.Launcher,profile);
                         model.ApplyShopProjection(new LastStandShopState(1,LastStandFitting.Launcher,strongLevels));
@@ -41,8 +44,9 @@ static class WaveModelChecks
                         }
                     }
                     try {resolver.Invoke(null,new object[]{19,tiers});throw new Exception("Unknown tier resolved.");}catch(TargetInvocationException e){Check(e.InnerException is ArgumentOutOfRangeException,"Unknown tier rejects explicitly.");}
-                    Check(LastStandTierCatalog.All.Count==2,"Fixture adds no shipped tiers.");
-                    foreach(var shipped in LastStandTierCatalog.All)Check(EncounterProfile.ForTier(shipped.Id).TierDefinition==shipped,"Default resolver retains authored identity.");
+                    Check(LastStandTierCatalog.Legacy.Count==2&&LastStandTierCatalog.All.Count==4,"Historical identities and reserved campaign shape remain explicit.");
+                    foreach(var shipped in LastStandTierCatalog.All)if(shipped.Playable)Check(EncounterProfile.ForTier(shipped.Id).TierDefinition==shipped,"Default resolver retains available authored identity.");
+                    foreach(var retained in LastStandTierCatalog.Legacy)Check(EncounterProfile.ForTier(retained.Id,LastStandRunEdition.Legacy(LastStandUpgradeCatalog.RetainedEconomyVersion)).Id==LastStandWaveCatalog.RulesVersion+":"+retained.EncounterProfileId,"Retained profile identity is unchanged.");
                     break;
                 case "cohort":
                     var m=Strong();m.Step();
@@ -67,7 +71,7 @@ static class WaveModelChecks
                     break;
                 case "mutual":
                     var mutual=Strong(LastStandFitting.Repair);
-                    while(mutual.Kills<LastStandWaveCatalog.ForWave(1,1).EnemyCount-1)mutual.Step();
+                    while(mutual.Kills<LastStandWaveCatalog.ForWave(mutual.Profile.TierDefinition,1,mutual.Profile.Edition).EnemyCount-1)mutual.Step();
                     while(mutual.ActiveCount==0)mutual.Step();
                     var foe=mutual.Foes[0];foreach(var candidate in mutual.Foes)if(candidate.Alive){foe=candidate;break;}
                     foe.Distance=0;foe.Hull=1;foe.Damage=int.MaxValue;

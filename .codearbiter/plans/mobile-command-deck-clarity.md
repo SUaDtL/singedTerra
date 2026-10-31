@@ -82,3 +82,12 @@
 - [x] Obtain the designated adversarial review and correct every Critical, High, Medium, and merge-blocking finding.
 - [x] Commit through `$ca-commit`, open the PR, and require hosted CI green on the exact current head.
 - [ ] Under standing authority, log the PR-specific merge receipt, re-pass exact-head CI, squash merge, and verify Pages provenance plus live smoke.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded Command Deck layout. Current source/oracles: `client/src/ui/battleConsole/lifecycle.ts`, `e2e/hud-layout.spec.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `3c340ca8425b` (feat: make mobile command controls legible (#269)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

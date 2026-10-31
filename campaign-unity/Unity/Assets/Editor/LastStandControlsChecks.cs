@@ -23,29 +23,46 @@ public static class LastStandControlsChecks
     const string Funded = "{\"version\":1,\"credits\":9,\"permanentLevel\":0," +
         "\"nextRunId\":1,\"lastFinalizedRunId\":0,\"pendingDefeat\":null}";
 
-    sealed class Storage : ILastStandStorage
+    sealed class Storage : ILastStandStorage,ILastStandRestoreBackupStorage
     {
         public string Value;
         public bool DenyWrite;
         public int Writes;
+        public string Previous;
+        public string ReadRestoreBackup()=>Previous;
+        public void WriteRestoreBackup(string value){Previous=value;}
         public string Read() => Value;
         public void Write(string value)
         { Writes++; if(DenyWrite)throw new InvalidOperationException("controls test denied write"); Value=value; }
     }
+    sealed class BackupTransport : ILastStandBackupTransport
+    {
+        public byte[] Bytes;
+        public bool Available=>true;
+        public bool Busy=>false;
+        public void Export(byte[] value,Action<LastStandBackupTransferResult> completed)
+        {Bytes=(byte[])value.Clone();completed(new LastStandBackupTransferResult(LastStandBackupTransferStatus.Success));}
+        public void Import(Action<LastStandBackupTransferResult> completed)
+        {completed(new LastStandBackupTransferResult(LastStandBackupTransferStatus.Success,Bytes));}
+        public void Cancel(){}
+        public void Dispose(){}
+    }
     sealed class Fixture
     {
         public readonly Storage Game, Preferences;
+        public readonly BackupTransport Backup=new BackupTransport();
         public readonly LastStandLoopController Loop;
         public readonly TankPresentation Art;
         public readonly UniversalRenderPipelineAsset SourcePipeline;
         public readonly float SourceScale;
         public readonly Canvas Canvas;
-        public Fixture(LastStandPreferenceValues values=null, string gameplay=null)
+        public Fixture(LastStandPreferenceValues values=null, string gameplay=null,bool allowDamagedSave=false)
         {
             Game=new Storage { Value=gameplay }; Preferences=new Storage();
             if(values!=null)Require(LastStandPreferences.Load(Preferences).Apply(values),"seed isolated preferences through real writer");
             LastStandLoopController.StorageFactory=()=>Game;
             LastStandLoopController.PreferencesStorageFactory=()=>Preferences;
+            LastStandLoopController.BackupTransportFactory=_=>Backup;
             EditorSceneManager.OpenScene(Playable,OpenSceneMode.Single);
             Art=UnityEngine.Object.FindFirstObjectByType<TankPresentation>();
             Require(Art,"actual imported tank exists");
@@ -67,7 +84,7 @@ public static class LastStandControlsChecks
             Require(EventSystem.current,"actual scene EventSystem is enabled");
             Invoke(Canvas.GetComponent<GraphicRaycaster>(),"OnEnable");
             UnityEngine.Canvas.ForceUpdateCanvases();Loop.RefreshControls();
-            Require(Loop.Progression.SaveState=="ready" && Loop.Preferences.SaveState=="ready","isolated stores are ready");
+            Require((Loop.Progression.SaveState=="ready" || allowDamagedSave && Loop.Progression.SaveHealth==LastStandSaveHealth.InvalidData) && Loop.Preferences.SaveState=="ready","isolated stores have their expected state");
         }
         public Button Button(string name)
         {
@@ -100,10 +117,17 @@ public static class LastStandControlsChecks
     {
         var gameFactory=LastStandLoopController.StorageFactory;
         var preferencesFactory=LastStandLoopController.PreferencesStorageFactory;
+        var backupFactory=LastStandLoopController.BackupTransportFactory;
         var pipeline=QualitySettings.renderPipeline;
         bool background=Application.runInBackground;
         try
         {
+            Check("test_backup_preview_cancel_restore_and_cap",BackupPreviewCancelRestoreAndCap);
+            Check("test_pending_backup_restore_retry",PendingBackupRestoreRetry);
+            Check("test_return_to_garage_keeps_checkpoint",ReturnToGarageKeepsCheckpoint);
+            Check("test_help_topics_and_save_navigation",HelpTopicsAndSaveNavigation);
+            Check("test_compact_garage_labels_and_recovery_scroll",CompactGarageLabelsAndRecoveryScroll);
+            RunContinuityReviewChecks();
             Check("test_scalable_selector_entries",ScalableSelectorEntries);
             Check("test_locked_tier_preview_preserves_admission",LockedTierPreviewPreservesAdmission);
             Check("test_unlocked_tier_and_fitting_selection",UnlockedTierAndFittingSelection);
@@ -123,14 +147,317 @@ public static class LastStandControlsChecks
             Check("test_idle_controls_restore_after_focus_and_visibility",IdleControlsRestoreAfterFocusAndVisibility);
             Check("test_display_owns_runtime_pipeline_clone",DisplayOwnsRuntimePipelineClone);
             Check("test_guidance_optout_and_audio_sample_admission",GuidanceOptoutAndAudioSampleAdmission);
+            Check("test_planner_navigation_preserves_progression_and_pause",PlannerNavigationPreservesProgressionAndPause);
+            Check("test_planning_panes_fit_compact_height",PlanningPanesFitCompactHeight);
+            Check("test_registered_modal_pages_own_input",RegisteredModalPagesOwnInput);
+            Check("test_sister_screens_explain_next_actions",SisterScreensExplainNextActions);
         }
         finally
         {
             LastStandLoopController.StorageFactory=gameFactory;
             LastStandLoopController.PreferencesStorageFactory=preferencesFactory;
+            LastStandLoopController.BackupTransportFactory=backupFactory;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
             QualitySettings.renderPipeline=pipeline;Application.runInBackground=background;
         }
+    }
+
+    static void OpenSave(Fixture f)
+    {f.Click("Menu");f.Click("MenuSettings");f.Click("SettingsTab3");}
+    public static void RunContinuityReviewChecks()
+    {
+        int failures=0;
+        foreach(var check in new KeyValuePair<string,Action>[] {
+            new KeyValuePair<string,Action>("test_restore_comparison_includes_current_and_backup_research",RestoreComparisonResearch),
+            new KeyValuePair<string,Action>("test_previous_save_requires_readable_predecessor",PreviousSaveRequiresPredecessor),
+            new KeyValuePair<string,Action>("test_closing_backup_preview_clears_stale_instructions",ClosingBackupPreviewClearsInstructions) })
+            try { Check(check.Key,check.Value); } catch { failures++; }
+        if(failures>0)throw new InvalidOperationException("Continuity review regressions: "+failures);
+    }
+    static string ProfileWithResearchProjects()
+    {
+        var storage=new Storage {Value=System.IO.File.ReadAllText("../Tools/last_stand_architecture/fixtures/profile-v5-wave30.json")};
+        var profile=LastStandProgression.Load(storage);
+        var clock=new LastStandResearchClock(profile.ResearchSnapshot.lastObservedUtcMilliseconds);
+        long utc=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();double seconds=0;
+        Action<LastStandResearchAction,LastStandResearchTrackId> act=(action,track)=>{
+            Require(clock.TrySample(utc+(long)(seconds*1000),seconds,out var time),"research fixture clock");
+            var intent=LastStandResearchPresentation.Intent(profile.ResearchSnapshot,0,track,action);
+            Require(profile.TryResearchAction(intent,time)&&clock.Commit(time),"research fixture transaction "+action);seconds+=10;
+        };
+        act(LastStandResearchAction.Start,LastStandResearchTrackId.GameSpeed);
+        act(LastStandResearchAction.Suspend,LastStandResearchTrackId.GameSpeed);
+        act(LastStandResearchAction.Start,LastStandResearchTrackId.SalvageRecovery);
+        act(LastStandResearchAction.Queue,LastStandResearchTrackId.ResearchSpeed);
+        return storage.Value;
+    }
+    static void RestoreComparisonResearch()
+    {
+        string projects=ProfileWithResearchProjects();
+        var emptyStore=new Storage();var empty=LastStandProgression.Load(emptyStore);
+        Require(empty.TryExportBackup(out var emptyBytes,out _),"fresh backup fixture");
+        var f=new Fixture(gameplay:projects);OpenSave(f);f.Backup.Bytes=emptyBytes;string before=f.Game.Value;f.Click("DataImport");
+        string text=f.Loop.BackupComparison();
+        int split=text.IndexOf("BACKUP RESEARCH",StringComparison.Ordinal);
+        Require(split>0,"current and imported research have separate headings");
+        string current=text.Substring(0,split),imported=text.Substring(split);
+        Require(current.Contains("Active: Salvage Recovery")&&current.Contains("Queued: Research Speed")&&current.Contains("Suspended: Game Speed"),"current paid projects and suspended progress are disclosed");
+        Require(current.Contains("Salvage paid")&&current.Contains("Salvage to resume")&&current.Contains("refunded"),"funded and refunded work are distinguished");
+        Require(imported.Contains("No active, queued or suspended projects")&&f.Game.Value==before,"empty imported research and read-only preview");
+        f=new Fixture();OpenSave(f);f.Backup.Bytes=System.Text.Encoding.UTF8.GetBytes(LastStandBackupCodec.Header+projects);f.Click("DataImport");
+        text=f.Loop.BackupComparison();split=text.IndexOf("BACKUP RESEARCH",StringComparison.Ordinal);
+        Require(split>0&&text.Substring(split).Contains("Active: Salvage Recovery")&&text.Substring(split).Contains("Queued: Research Speed")&&text.Substring(split).Contains("Suspended: Game Speed"),"imported active queued and suspended work are disclosed");
+    }
+    static void PreviousSaveRequiresPredecessor()
+    {
+        var f=new Fixture();OpenSave(f);
+        Require(!f.Button("DataPrevious").IsActive(),"fresh profile does not offer nonexistent previous save");
+        f.Game.Previous=f.Game.Value;f.Loop.RefreshControls();
+        Require(f.Button("DataPrevious").IsActive()&&f.Button("DataPrevious").IsInteractable(),"valid predecessor is available");
+        f.Game.Previous="damaged";f.Loop.RefreshControls();Require(!f.Button("DataPrevious").IsActive(),"invalid predecessor is not offered as restorable");
+        string healthy=f.Game.Value;
+        f=new Fixture(gameplay:"damaged",allowDamagedSave:true);f.Game.Previous=healthy;OpenSave(f);
+        Require(f.Button("DataPrevious").IsActive()&&f.Button("DataPrevious").IsInteractable(),"valid predecessor can repair bounded damaged current save");
+        f.Click("DataPrevious");Require(f.Loop.BackupPreview.ReplacesDamagedSave,"damaged destination still requires preview");
+        f.Click("BackupReplace");Require(f.Loop.Progression.HasConfirmedSave&&f.Loop.Progression.SaveState=="ready"&&f.Game.Previous=="damaged","explicit recovery preserves rejected bytes");
+    }
+    static void ClosingBackupPreviewClearsInstructions()
+    {
+        var f=new Fixture();OpenSave(f);f.Click("DataExport");f.Click("DataImport");string saved=f.Game.Value;
+        f.Click("SettingsClose");OpenSave(f);
+        Require(f.Loop.BackupPreview==null&&!f.Loop.BackupStatus.Contains("Review the backup")&&f.Game.Value==saved,"closing preview removes stale instructions without restore");
+        f.Click("DataImport");f.Click("BackupReplace");
+        Require(!f.Loop.BackupStatus.Contains("Resume your checkpoint"),"checkpoint-free restore offers deployment, not nonexistent resume");
+    }
+    static void BackupPreviewCancelRestoreAndCap()
+    {
+        var f=new Fixture(gameplay:Funded);OpenSave(f);f.Click("DataExport");
+        Require(f.Backup.Bytes!=null,"real profile exported through transport");
+        Require(f.Loop.Progression.TryPurchasePermanent(LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.One,f.Loop.Progression.Revision),"isolated permanent investment");
+        string current=f.Game.Value,settings=f.Preferences.Value;
+        f.Loop.RefreshControls();f.Click("DataImport");
+        Require(f.Loop.MenuPage=="backup-preview"&&f.Game.Value==current,"preview does not restore");
+        f.Click("BackupCancel");Require(f.Game.Value==current,"cancel preserves all progress");
+        f.Click("DataImport");f.Loop.Session.GrantMaximumSpeed(5);f.Click("BackupReplace");
+        Require(f.Loop.Progression.Wallet==9&&f.Loop.Progression.CannonAttackLevel==0,"explicit replacement restores exact gameplay values");
+        Require(f.Game.Previous==current&&f.Preferences.Value==settings,"predecessor kept; device settings untouched");
+        Require(f.Loop.Progression.RestoreGeneration==1&&f.Loop.Session.Model==null,"restore installs once into garage");
+        Require(f.Loop.Session.MaximumSpeed==1&&f.Loop.Session.LastPositiveSpeed<=1,"restored research cap replaces stale runtime cap");
+    }
+    static void PendingBackupRestoreRetry()
+    {
+        var f=new Fixture(gameplay:Funded);OpenSave(f);f.Click("DataExport");
+        Require(f.Loop.Progression.TryPurchasePermanent(LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.One,f.Loop.Progression.Revision),"isolated investment");
+        string current=f.Game.Value;f.Click("DataImport");f.Game.DenyWrite=true;f.Click("BackupReplace");
+        Require(f.Loop.Progression.RestorePending&&f.Game.Value==current,"failed replacement remains pending without lost original");
+        f.Game.DenyWrite=false;f.Click("DataRetry");
+        Require(!f.Loop.Progression.RestorePending&&f.Loop.Progression.Wallet==9&&f.Loop.Progression.RestoreGeneration==1,"retry installs restored owners once");
+    }
+    static void ReturnToGarageKeepsCheckpoint()
+    {
+        var f=new Fixture();OpenSave(f);f.Click("DataExport");f.Click("DataImport");f.Click("BackupCancel");
+        Require(f.Loop.BackupStatus.Contains("Restore cancelled"),"previous cancelled operation is represented");
+        f.Click("SettingsClose");f.Click("Deploy");string saved=f.Game.Value;int run=f.Loop.Progression.ActiveRunId;
+        OpenSave(f);Require(!f.Button("DataImport").IsInteractable(),"live combat blocks replacement");
+        f.Click("DataGarage");Require(f.Loop.MenuPage=="confirm","checkpoint return is explicit");f.Click("ConfirmProceed");
+        Require(f.Loop.Session.Model==null&&f.Loop.Progression.ActiveRunId==run&&f.Game.Value==saved,"garage keeps the checkpoint without abandon or reward");
+        var body=f.Canvas.GetComponentsInChildren<Text>(true).Single(t=>t.name=="SettingsBody"&&t.gameObject.activeInHierarchy).text;
+        Require(body.Contains("Checkpoint kept")&&!body.Contains("Restore cancelled"),"garage return replaces stale backup-operation status on the rendered Save page");
+        f.Click("SettingsClose");f.Click("Deploy");
+        Require(f.Loop.Session.Model!=null&&f.Loop.Session.Paused&&f.Loop.Progression.ActiveRunId==run,"same run resumes paused");
+    }
+    static void HelpTopicsAndSaveNavigation()
+    {
+        var f=new Fixture(LastStandPreferenceValues.Defaults.With(tutorialTips:false,purchaseSuggestions:false));
+        string saved=f.Game.Value;f.Click("Menu");Require(!f.Button("MenuGuidance").IsActive(),"disabled tips stay hidden");f.Click("MenuHelp");
+        for(int i=1;i<LastStandGuidance.HelpTopics.Count;i++)f.Click("HelpNext");
+        Require(!f.Button("HelpNext").IsInteractable()&&f.Button("HelpAction").IsInteractable(),"last Help topic has a usable save action");
+        f.Click("HelpAction");Require(f.Loop.MenuPage=="save"&&f.Button("DataExport").IsActive(),"Help opens real save controls");
+        f.Click("SettingsTab0");Require(f.Button("SettingsMute").IsActive(),"Save shortcut does not trap the selected tab");
+        Require(f.Game.Value==saved,"Help and tabs cannot change gameplay");
+    }
+
+    static void CompactGarageLabelsAndRecoveryScroll()
+    {
+        foreach(int width in new[]{500,568})
+        {
+            var f=new Fixture();var camera=f.Art.view;var texture=new RenderTexture(width,142,16);
+            var expanded=new RenderTexture(1280,696,16);
+            try
+            {
+                camera.targetTexture=texture;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
+                f.Canvas.planeDistance=1;f.Canvas.GetComponent<CanvasScaler>().enabled=false;
+                f.Canvas.scaleFactor=Mathf.Sqrt((width/1280f)*(142/720f));UnityEngine.Canvas.ForceUpdateCanvases();
+                f.Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
+                // Edit-mode camera repositioning needs the same explicit
+                // Canvas rebind as the maintained compact-pane checks.
+                f.Canvas.renderMode=RenderMode.ScreenSpaceOverlay;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
+                UnityEngine.Canvas.ForceUpdateCanvases();f.Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
+                foreach(string id in new[]{"Deploy","ShopEntry","ResearchEntry"})
+                {
+                    var button=f.Button(id);var text=button.GetComponentInChildren<Text>();
+                    Require(text.preferredWidth<=text.rectTransform.rect.width+.1f,width+" compact caption fits one line: "+id+
+                        " preferred="+text.preferredWidth+" available="+text.rectTransform.rect.width);
+                    var bounds=ScreenBounds(f,(RectTransform)button.transform);
+                    Require(bounds.width>=43.9f&&bounds.height>=43.9f,width+" compact action retains touch target "+id+" "+bounds);
+                }
+                // Reach the actual saved-checkpoint recovery view through the
+                // same deployment and confirmed-return actions as the player.
+                f.Click("Deploy");OpenSave(f);f.Click("DataGarage");f.Click("ConfirmProceed");f.Click("SettingsClose");
+                f.Canvas.renderMode=RenderMode.ScreenSpaceOverlay;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
+                UnityEngine.Canvas.ForceUpdateCanvases();f.Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
+                string saved=f.Game.Value;
+                var viewport=f.Canvas.GetComponentsInChildren<RectTransform>(true).Single(r=>r.name=="RecoveryViewport");
+                var scroll=viewport.GetComponent<ScrollRect>();
+                Require(viewport.gameObject.activeInHierarchy&&viewport.GetComponent<RectMask2D>().enabled,"actual recovery pane clips its complete content");
+                Require(scroll.content.rect.height>viewport.rect.height,"actual measured summary scrolls at "+width);
+                var texts=scroll.content.GetComponentsInChildren<Text>();
+                Require(texts.Single(t=>t.name=="PhaseHeading").text=="RESUME YOUR RUN","checkpoint title retained");
+                Require(texts.Single(t=>t.name=="PhaseDetail").text.Contains("Saved hull")&&texts.Single(t=>t.name=="PhaseDetail").text.Contains("Resume starts paused"),"checkpoint facts retained");
+                Require(texts.Single(t=>t.name=="SaveStatus").text.Contains("Checkpoint kept"),"save confirmation retained");
+                foreach(var text in texts)Require(text.preferredHeight<=text.rectTransform.rect.height+.1f,"measured recovery field is not truncated: "+text.name);
+                var keyboard=f.Canvas.GetComponentInChildren<LastStandHudKeyboard>(true);
+                Require(!keyboard.TrapFocus,"reading a recovery summary does not trap background Tab focus");
+                keyboard.NavigateKeyboard("scroll-end");UnityEngine.Canvas.ForceUpdateCanvases();
+                Require(Math.Abs(scroll.content.anchoredPosition.y-(scroll.content.rect.height-viewport.rect.height))<.1f,"keyboard End reaches final save status");
+                var viewBounds=ScreenBounds(f,viewport);var statusBounds=ScreenBounds(f,texts.Single(t=>t.name=="SaveStatus").rectTransform);
+                Require(statusBounds.yMin>=viewBounds.yMin-.5f&&statusBounds.yMax<=viewBounds.yMax+.5f,"final save status is visibly reachable");
+                keyboard.NavigateKeyboard("scroll-start");Require(scroll.content.anchoredPosition.y==0,"keyboard Home reaches recovery heading");
+                foreach(string id in new[]{"Deploy","ShopEntry","Menu"})
+                {
+                    var bounds=ScreenBounds(f,(RectTransform)f.Button(id).transform);
+                    Require(bounds.width>=43.9f&&bounds.height>=43.9f&&bounds.xMin>=-.5f&&bounds.xMax<=width+.5f&&bounds.yMin>=-.5f&&bounds.yMax<=142.5f,"recovery action remains reachable: "+id);
+                }
+                camera.targetTexture=expanded;f.Canvas.scaleFactor=Mathf.Sqrt((1280/1280f)*(696/720f));
+                UnityEngine.Canvas.ForceUpdateCanvases();f.Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
+                Require(!viewport.gameObject.activeInHierarchy&&texts.All(t=>t.transform.parent.name=="LastStandCard"),"expanding restores the normal summary hierarchy");
+                Require(f.Game.Value==saved,"layout and reading cannot change gameplay");
+            }
+            finally{camera.targetTexture=null;UnityEngine.Object.DestroyImmediate(texture);UnityEngine.Object.DestroyImmediate(expanded);}
+        }
+    }
+
+    static void PlannerNavigationPreservesProgressionAndPause()
+    {
+        var f=new Fixture();string gameplay=f.Game.Value;
+        f.Click("Menu");f.Click("MenuPlanner");
+        Require(f.Loop.MenuPage=="planner","menu routes to shared planner");
+        Require(!f.Button("MenuResume").IsActive(),"underlying menu is not an input owner");
+        string preferences=f.Preferences.Value;
+        f.Click("PlannerPin");
+        Require(f.Preferences.Value!=preferences&&f.Game.Value==gameplay,"pin writes preferences only");
+        f.Click("PlannerBudget");
+        Require(f.Button("PlannerWorkshopNext").IsActive()&&f.Button("PlannerResearchNext").IsActive(),"both budget alternatives have scalable selectors");
+        f.Click("PlannerResearchNext");f.Click("PlannerWorkshopNext");
+        Require(f.Game.Value==gameplay,"comparing alternatives cannot spend or advance progression");
+        f.Click("PlannerClose");Require(f.Loop.MenuPage=="","planner close uses menu lifecycle");
+        f.Click("Menu");f.Click("MenuHistory");
+        string historyRead=f.Game.Value;f.Click("RunHistoryView");f.Click("RunHistoryView");
+        Require(f.Game.Value==historyRead,"history comparison navigation only refreshes read-only views");
+        f.Click("RunHistoryClose");
+        f.Click("Deploy");f.Click("SpeedRate");
+        f.Click("Menu");f.Click("MenuHistory");
+        string historyText=f.Canvas.GetComponentsInChildren<Text>().Single(t=>t.name=="RunHistoryBody").text;
+        Require(historyText.Contains("Field Repair")&&!historyText.Contains("research-v1:")&&
+            !historyText.Contains(LastStandUpgradeCatalog.EconomyVersion),"history uses player-facing labels instead of serialized build identities");
+        f.Click("RunHistoryClose");
+        f.Click("Menu");f.Click("MenuPlanner");
+        Require(f.Loop.Session.ManualPaused&&f.Loop.Session.MenuPaused,"planner retains independent pause holds");
+        f.Click("PlannerClose");
+        Require(f.Loop.Session.ManualPaused&&!f.Loop.Session.MenuPaused,"closing planner releases only menu hold");
+    }
+
+    static void PlanningPanesFitCompactHeight()
+    {
+        foreach(var size in new[]{new Vector2Int(568,142),new Vector2Int(568,196),new Vector2Int(320,568),new Vector2Int(844,266)})
+        {
+            var f=new Fixture();var camera=f.Art.view;var texture=new RenderTexture(size.x,size.y,16);
+            try
+            {
+                camera.targetTexture=texture;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
+                f.Canvas.planeDistance=1;f.Canvas.GetComponent<CanvasScaler>().enabled=false;
+                f.Canvas.scaleFactor=Mathf.Sqrt((size.x/1280f)*(size.y/720f));UnityEngine.Canvas.ForceUpdateCanvases();
+                foreach(var surface in new[]{"planner","planner-budget","history","settings"})
+                {
+                    string page=surface=="planner-budget"?"planner":surface;
+                    f.Loop.OpenMenu(page);
+                    if(page=="planner")f.Click(surface=="planner-budget"?"PlannerBudget":"PlannerGoals");
+                    // Match the established imported-scene geometry harness:
+                    // edit mode does not follow the repositioned garage camera.
+                    f.Canvas.renderMode=RenderMode.ScreenSpaceOverlay;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=camera;
+                    UnityEngine.Canvas.ForceUpdateCanvases();f.Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
+                    string prefix=page=="planner"?"Planner":page=="history"?"RunHistory":"Settings";
+                    var rects=f.Canvas.GetComponentsInChildren<RectTransform>(true);
+                    var viewportTransform=rects.Single(r=>r.name==prefix+"Viewport");
+                    var viewport=ScreenBounds(f,viewportTransform);
+                    var panel=ScreenBounds(f,rects.Single(r=>r.name==prefix+"Panel"));
+                    Require(viewport.height>=43.9f&&viewport.yMin>=panel.yMin-.5f&&viewport.yMax<=panel.yMax+.5f,
+                        size+" "+page+" full44px scroll viewport remains inside panel; viewport="+viewport+" panel="+panel);
+                    foreach(var button in f.Canvas.GetComponentsInChildren<Button>().Where(b=>b.IsActive()&&b.name.StartsWith(prefix)))
+                    {
+                        var bounds=ScreenBounds(f,button.GetComponent<RectTransform>());
+                        Require(bounds.width>=43.9f&&bounds.height>=43.9f,size+" touch target "+button.name);
+                        if(button.transform.IsChildOf(viewportTransform))
+                            Require(bounds.width<=viewport.width+.1f&&bounds.height<=viewport.height+.1f,
+                                size+" "+surface+" complete scroll target can fit viewport: "+button.name+" target="+bounds+" viewport="+viewport);
+                    }
+                    var keyboard=f.Canvas.GetComponentInChildren<LastStandHudKeyboard>(true);
+                    keyboard.NavigateKeyboard("scroll-end");keyboard.NavigateKeyboard("scroll-start");
+                    f.Loop.CloseMenu();
+                }
+            }
+            finally{camera.targetTexture=null;UnityEngine.Object.DestroyImmediate(texture);}
+        }
+    }
+
+    static void RegisteredModalPagesOwnInput()
+    {
+        var f=new Fixture();string gameplay=f.Game.Value;
+        var keyboard=f.Canvas.GetComponentInChildren<LastStandHudKeyboard>(true);
+        foreach(var page in new[]{new[]{"settings","Settings"},new[]{"research","Research"},
+            new[]{"history","RunHistory"},new[]{"planner","Planner"}})
+        {
+            f.Loop.OpenMenu(page[0]);var close=f.Button(page[1]+"Close");
+            Require(close.IsActive()&&keyboard.TrapFocus&&EventSystem.current.currentSelectedGameObject==close.gameObject,
+                "registered page receives initial focus: "+page[0]);
+            var panel=close.transform.parent;
+            foreach(var button in f.Canvas.GetComponentsInChildren<Button>().Where(b=>b.IsActive()&&b.IsInteractable()))
+                Require(button.transform.IsChildOf(panel),"only registered page owns input: "+page[0]+" / "+button.name);
+            for(int i=0;i<32;i++)
+            {
+                keyboard.NavigateKeyboard("next");var selected=EventSystem.current.currentSelectedGameObject;
+                Require(selected&&selected.transform.IsChildOf(panel),"registered page traps keyboard navigation: "+page[0]);
+            }
+            keyboard.NavigateKeyboard("scroll-end");keyboard.NavigateKeyboard("scroll-start");
+            f.Click(close.name);
+            Require(!keyboard.TrapFocus&&!f.Loop.MenuOpen&&f.Game.Value==gameplay,
+                "registered page closes without gameplay mutation: "+page[0]);
+        }
+    }
+
+    static void SisterScreensExplainNextActions()
+    {
+        var f=new Fixture();string gameplay=f.Game.Value;
+        Func<string,Text> text=name=>f.Canvas.GetComponentsInChildren<Text>(true).Single(t=>t.name==name);
+        f.Loop.OpenHistory();string history=text("RunHistoryBody").text;
+        Require(history.Contains("NO RUNS YET")&&history.Contains("deploy")&&!history.Contains("MEASUREMENT LIMIT"),
+            "empty history leads with the next player action, not measurement policy");
+        Require(!f.Button("RunHistoryConditionNext").IsActive()&&!f.Button("RunHistoryTier").IsActive(),
+            "empty history hides selectors without any choices");
+        f.Click("RunHistoryHelp");
+        Require(text("RunHistoryBody").text.Contains("MEASUREMENT LIMIT")&&text("RunHistoryBody").text.Contains("3 complete runs"),
+            "comparison methodology remains available on request");
+        f.Click("RunHistoryHelp");Require(!text("RunHistoryBody").text.Contains("MEASUREMENT LIMIT"),"history disclosure returns to results");
+        f.Click("RunHistoryClose");f.Loop.OpenMenu("planner");
+        Require(text("PlannerGoalLabel").text.Contains(" / "),"goal arrows identify their target and position");
+        Require(f.Button("PlannerOpen").GetComponent<RectTransform>().anchoredPosition.y>text("PlannerGoalDetail").rectTransform.anchoredPosition.y,
+            "planner primary action precedes detailed explanation");
+        f.Click("PlannerBudget");
+        Require(text("PlannerWorkshopLabel").text.StartsWith("WORKSHOP\n",StringComparison.Ordinal)&&
+            text("PlannerResearchLabel").text.StartsWith("RESEARCH\n",StringComparison.Ordinal),"budget arrow pairs identify their actual alternatives");
+        Require(f.Button("PlannerResearchOpen").GetComponent<RectTransform>().anchoredPosition.y>text("PlannerResearchDetail").rectTransform.anchoredPosition.y,
+            "research navigation is adjacent to its selector, before detailed quote text");
+        Require(f.Game.Value==gameplay,"reading disclosures and alternatives never spends or changes the gameplay save");
     }
 
     static void IdleControlsRestoreAfterFocusAndVisibility()
@@ -349,15 +676,18 @@ public static class LastStandControlsChecks
     static void SelectorEnvironmentPreflightPreservesSave()
     {
         var f=new Fixture(gameplay:EarnedSecondTierSave());string save=f.Game.Value;int writes=f.Game.Writes;
-        var review=f.Art.GetComponent<BattlefieldReview>();var iron=review.ironEnvironment;
-        review.ironEnvironment=null;
-        f.Loop.SelectTier(2);
+        var review=f.Art.GetComponent<BattlefieldReview>();
+        var binding=review.environmentBindings.Single(row=>row.environmentId=="iron-perimeter");var iron=binding.root;
+        // The current authored registry supersedes the two-environment fallback.
+        // Remove the actual selected binding, not an unused compatibility field.
+        binding.root=null;
+        try{f.Loop.SelectTier(2);}finally{binding.root=iron;}
         Require(f.Loop.Progression.SelectedTier==1&&f.Game.Value==save&&f.Game.Writes==writes&&f.Loop.EnvironmentId=="sunlit-ash",
             "controller environment preflight rejects missing content before saving a tier");
         var footer=f.Canvas.GetComponentsInChildren<Text>(true).Single(t=>t.name=="GarageSave");
         Require(footer.isActiveAndEnabled&&footer.text.Contains("Battlefield unavailable"),
             "failed environment preflight remains visible in the actual quiet garage footer");
-        review.ironEnvironment=iron;f.Loop.SelectTier(1);
+        f.Loop.SelectTier(1);
         Require(!footer.text.Contains("unavailable")&&footer.text.Contains("SALVAGE "+f.Loop.Progression.Wallet)&&f.Game.Value==save&&f.Game.Writes==writes,
             "successful current-tier retry clears the error without saving or reserving a run");
     }
@@ -706,8 +1036,11 @@ public static class LastStandControlsChecks
         Require(f.Loop.Guidance.Tutorial==""&&!LastStandPreferences.Load(f.Preferences).Current.TutorialTips,
             "actual toggle dismisses and persists tutorial opt-out");
         f.Click("GameplayHelp");Require(f.Loop.MenuPage=="help"&&f.Canvas.GetComponentsInChildren<Text>(true).Any(t=>
-            t.name=="SettingsBody"&&t.text.StartsWith(LastStandGuidance.Help,StringComparison.Ordinal)&&t.text.Contains("RESEARCH & FARMING")),
+            t.name=="SettingsBody"&&t.text==LastStandGuidance.HelpTopic("controls").Body),
             "explicit Help remains available with tutorial disabled");
+        for(int i=0;i<5;i++)f.Click("HelpNext");
+        Require(f.Canvas.GetComponentsInChildren<Text>(true).Any(t=>t.name=="SettingsBody"&&
+            t.text==LastStandGuidance.HelpTopic("research").Body&&t.text.Contains("Salvage")),"research guidance is reachable with tutorials disabled");
         f.Loop.OpenMenu("settings");f.Click("SettingsTab0");
         var events=new List<string>();Application.LogCallback capture=(message,trace,kind)=>{if(message.StartsWith("ST_LS_AUDIO event=",StringComparison.Ordinal))events.Add(message);};
         Application.logMessageReceived+=capture;

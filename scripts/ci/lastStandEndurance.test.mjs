@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {tmpdir} from 'node:os';
+import {join,resolve} from 'node:path';
 import {runInNewContext} from 'node:vm';
 import {ENDURANCE_POLICY,parseEnduranceArguments,newEnduranceLedger,accountEnduranceObservation,
   enduranceVerdict,appendBounded} from '../last-stand-wave-endurance.mjs';
@@ -25,6 +28,59 @@ const observed=(atMs,changes={})=>({atMs,timeOrigin:12345,stateAgeMs:0,tick:Math
 const complete=()=>({...newEnduranceLedger(),activeMs:ENDURANCE_POLICY.activeTargetMs,
   elapsedMs:ENDURANCE_POLICY.activeTargetMs+1000,observedSimulationMs:ENDURANCE_POLICY.activeTargetMs,samples:36001});
 const proof={completed:true,finalBindingsVerified:true,storageLatencyVerified:true};
+
+test('actual endurance report declares bounded smoke or an unfulfilled ten-hour target truthfully',()=>{
+  for(const mode of ['smoke','endurance'])for(const research of [false,true]){
+    const {report}=endurance.createEnduranceReport({options:{mode,research,smokeSeconds:180},
+      expectedSpeed:research?5:1,fixture:{qualificationPurchasePolicy:{},saveSha256:'inert-save'},
+      manifestPath:'inert',manifestBytes:Buffer.from('inert'),hash:()=> 'inert-hash',sources:{},packaged:{}});
+    assert.equal(report.mode,mode);assert.equal(report.enduranceQualified,false);
+    assert.equal(report.expectedSpeed,research?5:1);assert.equal(report.policy.activeTargetMs,36000000);
+    assert.equal(report.policy.maximumSampleGapMs,5000);
+    if(mode==='smoke'){
+      assert.match(report.scope,/180.second.*smoke/i);assert.match(report.scope,/cannot qualify endurance/i);
+      assert.doesNotMatch(report.scope,/ten real active hours/i);
+    }else assert.match(report.scope,/target of ten real active hours/i);
+  }
+});
+
+test('actual research endurance admission requires current schema and retains exact fixture/source bindings',()=>{
+  const prefix=join(tmpdir(),'st-endurance-admission-'),directory=mkdtempSync(prefix);
+  const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+  try{
+    // Inert files exercise the actual reader; they are not earned profiles or
+    // production source evidence and never enter a browser context.
+    const sourceSha256={};mkdirSync(join(directory,'sources'));
+    for(let index=0;index<20;index++){
+      const path=`sources/input-${index}.cs`,bytes=`inert source ${index}`;
+      writeFileSync(join(directory,path),bytes);sourceSha256[path]=sha(bytes);
+    }
+    const save={version:6,pendingDefeat:null,checkpoint:null,research:{completedRanks:{gameSpeed:8}}};
+    const fixture={id:'mature-5x',savePath:'mature-5x.json',requestedSpeed:5,
+      qualificationPurchasePolicy:{intervalRealSeconds:900,quantity:'Max',intentsPerInterval:1,
+        trackOrder:['cannonAttack','hullCapacity','scrapYield','cannonAttack','cannonCycle','launcherAttack','armor']}};
+    const path=join(directory,'manifest.json'),savePath=join(directory,fixture.savePath);
+    const manifest={schema:'last-stand-research-qualification-fixtures/v1',storageKey:'singedTerra.lastStand.prototype.v1',
+      sourceSha256,cases:[fixture]};
+    const write=record=>{const bytes=JSON.stringify(record);writeFileSync(savePath,bytes);fixture.saveSha256=sha(bytes);
+      writeFileSync(path,JSON.stringify(manifest));};
+    const admit=()=>endurance.admitResearchFixtures(manifest,path,directory);
+    write(save);assert.doesNotThrow(admit);
+    for(const version of [4,5,7,0,-1,6.5,'6',null,undefined]){
+      write({...save,version});assert.throws(admit,/Current endurance requires save version 6/);
+    }
+    write(save);writeFileSync(savePath,JSON.stringify({...save,version:7}));
+    assert.throws(admit,/Fixture bytes changed/);
+    write(save);writeFileSync(join(directory,'sources/input-0.cs'),'changed');
+    assert.throws(admit,/Fixture source changed/);
+    writeFileSync(join(directory,'sources/input-0.cs'),'inert source 0');
+    write({...save,research:{completedRanks:{gameSpeed:7}}});assert.throws(admit,/Five times speed must be earned/);
+    write(save);fixture.savePath='../mature-5x.json';assert.throws(admit,/named sibling/);
+  }finally{
+    assert.ok(resolve(directory).startsWith(resolve(prefix)));
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
 
 test('researched 5x counts real hours and rejects missing entitlement or covert acceleration',()=>{
   assert.equal(parseEnduranceArguments(['fixture','output','--endurance','--research']).research,true);
@@ -226,10 +282,8 @@ function observationClock(){
 }
 
 async function actualEnduranceOrchestration({screenshotMs=0,speed=5,transitions=false,
-  probeFailure=null,actionFailure=null,cancelAt=Infinity,retained={}}={}){
-  const source=readFileSync(new URL('../last-stand-wave-endurance.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
-  const begin=source.indexOf('    let nextSummary=0,'),end=source.indexOf('    await summary(true);');
-  assert.ok(begin>=0&&end>begin,'Extract the production orchestration, including its observation lifetime');
+  probeFailure=null,actionFailure=null,cancelAt=Infinity,retained={},
+  saved={version:6,pendingDefeat:null,checkpoint:null}}={}){
   const clock=observationClock(),ledger=newEnduranceLedger(speed),observations=[],actions=[];
   const report={summaries:0,screenshots:[],runsObserved:0,callback:{},audioCueTelemetry:{}};
   const card={key:'cannonAttack',level:0,cap:100,n:0,category:'Attack',canPurchase:true};
@@ -250,7 +304,7 @@ async function actualEnduranceOrchestration({screenshotMs=0,speed=5,transitions=
       if(name==='ShopCard_cannonAttackBuy'){card.n+=29;shop.spentScrap+=2619;}
       if(name==='ShopClose')shop.open=false;},
     page:{waitForTimeout:clock.sleep,evaluate:async fn=>{
-      if(fn.toString().includes('localStorage'))return JSON.stringify({version:5,pendingDefeat:null,checkpoint:null});
+      if(fn.toString().includes('localStorage'))return JSON.stringify(saved);
       if(fn.toString().includes('__stCheckpointStorageProbe'))return {writes:{successes:1,errors:0},readbacks:{count:1,errors:0,mismatches:0,unconfirmed:0},pending:false};
       if(probeFailure&&clock.now()>=2000)throw probeFailure;
       return probe();},screenshot:()=>clock.sleep(screenshotMs)},
@@ -268,10 +322,33 @@ async function actualEnduranceOrchestration({screenshotMs=0,speed=5,transitions=
       else Object.assign(state,{phase:claimed===undefined?'result':'workshop',tick:100*speed,speed:0});
     }
     return state;}}});
-  const operation=runInNewContext('(async()=>{'+source.slice(begin,end)+'\n})()',globals);
+  const operation=endurance.observeEnduranceRun(globals);
   try{await clock.finish(operation);}finally{Object.assign(retained,{ledger,observations,actions,pending:clock.pending()});}
   return {ledger,observations,actions,report,completed:globals.completed};
 }
+
+test('actual endurance durable readback admits current and retained checkpoint editions in current envelopes',async()=>{
+  const current={runId:2,contentVersion:'last-stand-content-v2',encounter:{rulesVersion:'last-stand-waves-v2',tier:1,fitting:1,
+    completedWave:1,mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40},
+    shop:{economyVersion:'combat-depth-economy-v4'}};
+  const retained={runId:2,contentVersion:'last-stand-content-v1',encounter:{rulesVersion:'last-stand-waves-v1',tier:1,fitting:1,completedWave:1},
+    shop:{economyVersion:'research-farming-economy-v3'}};
+  for(const checkpoint of [null,current,retained]){
+    const result=await actualEnduranceOrchestration({saved:{version:6,pendingDefeat:null,checkpoint}});
+    assert.equal(result.completed,true);
+    assert.equal(result.report.latestSample.checkpoint.wave,checkpoint?.encounter.completedWave??null);
+  }
+  for(const version of [4,5,7,0,-1,6.5,'6',null,undefined])
+    await assert.rejects(actualEnduranceOrchestration({saved:{version,pendingDefeat:null,checkpoint:null}}),/Current endurance requires save version 6/);
+  for(const mutate of [cp=>cp.encounter.rulesVersion='unknown',cp=>cp.contentVersion='last-stand-content-v1',
+    cp=>cp.shop.economyVersion='research-farming-economy-v3',cp=>delete cp.encounter.mortarDamage]){
+    const checkpoint=structuredClone(current);mutate(checkpoint);
+    await assert.rejects(actualEnduranceOrchestration({saved:{version:6,pendingDefeat:null,checkpoint}}),
+      /Unknown wave rules|Mixed content edition|Mixed economy edition|Missing weapon state/);
+  }
+  await assert.rejects(actualEnduranceOrchestration({saved:{version:6,pendingDefeat:{runId:2},checkpoint:null}}),
+    /Current runs never create legacy Claim rewards/);
+});
 
 test('actual endurance observer samples through awaited work and rejects a real sampling blackout',async()=>{
   const result=await actualEnduranceOrchestration();

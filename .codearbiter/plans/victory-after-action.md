@@ -118,3 +118,12 @@ Playwright production Chromium.
   the governance-only final head to re-clear hosted CI and adversarial review,
   squash merge, then prove exact Pages provenance, hosted smoke, HTTP 200, and
   localhost hygiene.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current terminal report owner. Current source/oracles: `client/src/ui/HUD.ts`, `client/src/ui/HUD.victoryReport.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `8461fee5ef3e` (feat: ship victory after-action report (#281)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

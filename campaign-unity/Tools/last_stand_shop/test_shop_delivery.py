@@ -62,6 +62,15 @@ PLAYER_TESTS = (
     'test_shop_storage_faults_conflicts_and_terminal_refresh',
     'test_shop_terminal_retry_observation_waits_for_current_defeat',
 )
+# Historical PLAYER_TESTS membership above stays exact for the pinned receipt.
+# Current execution splits portable source checks from real browser qualification.
+PORTABLE_PLAYER_TESTS = (
+    'test_shop_player_headless_launch_is_explicit',
+    'test_shop_player_option_dispatch',
+    'test_shop_terminal_retry_observation_waits_for_current_defeat',
+)
+NATIVE_PLAYER_TESTS = tuple(name for name in PLAYER_TESTS if name not in PORTABLE_PLAYER_TESTS)
+
 MIME = {'.data': {'application/octet-stream'}, '.wasm': {'application/wasm'},
         '.js': {'text/javascript', 'application/javascript'}, '.html': {'text/html'},
         '.json': {'application/json'}, '.css': {'text/css'}, '.png': {'image/png'},
@@ -114,6 +123,28 @@ def packet_links():
     return text, local
 
 
+def assert_player_test_outcomes(command, output, *, historical=False):
+    """Validate exact execution membership; never infer native acceptance.
+
+    The pinned 2026-10-12 receipt retains its original command and module names.
+    A fresh combined receipt selects both current modules and must include all
+    six browser outcomes plus the three portable outcomes, with no skips.
+    """
+    argv = (['C:/Python314/python.exe', '-m'] if historical else [sys.executable, '-B', '-m'])
+    argv += ['unittest', 'discover', '-s', 'campaign-unity/Tools/last_stand_shop', '-p',
+             'test_shop_player.py' if historical else 'test_shop_player*.py', '-v']
+    require(command.get('argv') == argv, 'Full player invocation differs')
+    if historical:
+        expected = [(name, 'test_shop_player') for name in PLAYER_TESTS]
+    else:
+        expected = [(name, 'test_shop_player') for name in NATIVE_PLAYER_TESTS]
+        expected += [(name, 'test_shop_player_portable') for name in PORTABLE_PLAYER_TESTS]
+    names = re.findall(r'^(test_\w+) \((test_shop_player(?:_portable)?)\.ShopPlayerTests\)', output, re.MULTILINE)
+    require(names == expected and len(re.findall(r'\.\.\. ok$', output, re.MULTILINE)) == 9
+            and re.search(r'^Ran 9 tests in .*\n\nOK\s*$', output, re.MULTILINE),
+            'All nine named player outcomes must pass without skips')
+
+
 def assert_retained_checks():
     for name, expected in PINS.items():
         assert_pin(EVIDENCE / name, expected)
@@ -139,14 +170,8 @@ def assert_retained_checks():
             for stream in ('stdout', 'stderr'):
                 assert_pin(command[stream], command[stream + '_sha256'])
     command = handoff['fresh_root']['player']['result']['commands'][0]
-    expected_argv = ['C:/Python314/python.exe', '-m', 'unittest', 'discover', '-s',
-                     'campaign-unity/Tools/last_stand_shop', '-p', 'test_shop_player.py', '-v']
-    require(command['argv'] == expected_argv, 'Full player invocation differs')
     output = regular(command['stderr']).read_text(encoding='utf-8')
-    names = re.findall(r'^(test_\w+) \(test_shop_player.ShopPlayerTests\)', output, re.MULTILINE)
-    require(names == list(PLAYER_TESTS) and len(re.findall(r'\.\.\. ok$', output, re.MULTILINE)) == 9
-            and re.search(r'^Ran 9 tests in .*\n\nOK\s*$', output, re.MULTILINE),
-            'All nine actual named player outcomes must pass without skips')
+    assert_player_test_outcomes(command, output, historical=True)
     # The prior independent result pins its three actual terminal unit reports.
     for name, expected in {
         'spec-terminal-report.md': '94c1f751c9b56875041da3fa223abf821d2d12b19831d9b366b06549b5c501e0',

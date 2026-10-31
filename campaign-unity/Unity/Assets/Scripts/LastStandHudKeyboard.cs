@@ -14,6 +14,8 @@ namespace SingedTerra.LastStand
         public bool TrapFocus { get; set; }
         public Action Escape { get; set; }
         public Action<string> ScrollContent { get; set; }
+        public Func<bool> CanScrollContent { get; set; }
+        bool ScrollAvailable=>TrapFocus||CanScrollContent?.Invoke()==true;
         Button[] actions;
         GameObject priorSelection;
         bool phaseChanged;
@@ -88,7 +90,7 @@ namespace SingedTerra.LastStand
         {
             var events = EventSystem.current; if (!events || actions == null) return;
             if(direction=="scroll-up" || direction=="scroll-down" || direction=="scroll-start" || direction=="scroll-end")
-            { if(TrapFocus)ScrollContent?.Invoke(direction);return; }
+            { if(ScrollAvailable)ScrollContent?.Invoke(direction);return; }
             Refresh();
             if (direction == "leave") { events.SetSelectedGameObject(null); return; }
             int index = ordered.FindIndex(button => button.gameObject == events.currentSelectedGameObject);
@@ -107,7 +109,7 @@ namespace SingedTerra.LastStand
         void Update()
         {
             if (Input.GetKeyDown(KeyCode.Escape)) Escape?.Invoke();
-            if(TrapFocus)
+            if(ScrollAvailable)
             {
                 if(Input.GetKeyDown(KeyCode.PageUp))NavigateKeyboard("scroll-up");
                 if(Input.GetKeyDown(KeyCode.PageDown))NavigateKeyboard("scroll-down");

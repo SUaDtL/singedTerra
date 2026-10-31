@@ -17,7 +17,7 @@ import uuid
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 
 
 def source_hashes():
@@ -344,6 +344,13 @@ console.log(JSON.stringify({report:reportPath,reportSha256:sha(reportPath),build
         self.assertIn("ST_LS_SHOP_PASS " + self._testMethodName, log, log[-14000:])
         self.assertNotIn("ST_LS_SHOP_FAIL ", log)
         self.assertEqual(code, 0, log[-10000:])
+
+    def test_shop_header_level_capacity(self):
+        code, log = self.run_checks("RunShopHeader")
+        detail = "\n".join(line for line in log.splitlines() if line.startswith("ST_LS_SHOP_"))[-10000:]
+        self.assertTrue("ST_LS_SHOP_PASS " + self._testMethodName in log, detail)
+        self.assertFalse("ST_LS_SHOP_FAIL " in log, detail)
+        self.assertEqual(code, 0, detail)
 
     def test_wave_information_surface(self):
         code, log = self.run_checks("RunResearchSprint")

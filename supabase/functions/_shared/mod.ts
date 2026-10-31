@@ -252,6 +252,7 @@ async function requestBodyIsEmpty(req: Request): Promise<boolean> {
  *   - non-POST          => 405 "Method not allowed"
  *   - no-body mode      => reject and cancel any supplied body before parsing
  *   - JSON body parse   => 400 "Invalid JSON body" (unless optionalBody)
+ *   - required JSON     => 400 for null, array or primitive bodies
  *   - MissingEnvError   => 500 "Server misconfiguration: missing env vars"
  *
  * The handler receives the already-parsed body and the raw Request. Any error
@@ -288,6 +289,9 @@ export function withCors(
           body = await req.json()
         } catch {
           if (!opts.optionalBody) return json({ error: 'Invalid JSON body' }, 400)
+        }
+        if (!opts.optionalBody && (body === null || typeof body !== 'object' || Array.isArray(body))) {
+          return json({ error: 'JSON body must be an object' }, 400)
         }
         if (opts.rateLimit) {
           const allowed = await enforceRateLimit(req, opts.rateLimit, dependencies.rateLimit)

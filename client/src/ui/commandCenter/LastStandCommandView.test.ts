@@ -35,9 +35,9 @@ describe('LastStandCommandView', () => {
     expect(host.textContent).not.toContain('Stored locally on this device');
     view.dispose();
   });
-  it('offers a read-only checkpoint hint and never changes save bytes', () => {
+  it.each([4, 5, 6])('offers a read-only version %i checkpoint hint and never changes save bytes', (version) => {
     const key='singedTerra.lastStand.prototype.v1';
-    const raw=JSON.stringify({version:4,checkpoint:{runId:7,encounter:{tier:2,completedWave:300}}});
+    const raw=JSON.stringify({version,checkpoint:{runId:7,encounter:{tier:2,completedWave:300}}});
     localStorage.setItem(key,raw);
     try {
       const host=document.createElement('div'),view=createLastStandCommandView(host);
@@ -46,6 +46,18 @@ describe('LastStandCommandView', () => {
       localStorage.setItem(key,'invalid');view.update({});
       expect(host.querySelector('a')?.textContent).toBe('Launch Last Stand');
       expect(localStorage.getItem(key)).toBe('invalid');view.dispose();
+    } finally { localStorage.removeItem(key); }
+  });
+  it.each([3, 7, '6', null])('does not interpret unsupported save version %s', (version) => {
+    const key = 'singedTerra.lastStand.prototype.v1';
+    const raw = JSON.stringify({ version, checkpoint: { runId: 7, encounter: { tier: 2, completedWave: 300 } } });
+    localStorage.setItem(key, raw);
+    try {
+      const host = document.createElement('div');
+      const view = createLastStandCommandView(host);
+      expect(host.querySelector('a')?.textContent).toBe('Launch Last Stand');
+      expect(localStorage.getItem(key)).toBe(raw);
+      view.dispose();
     } finally { localStorage.removeItem(key); }
   });
 });

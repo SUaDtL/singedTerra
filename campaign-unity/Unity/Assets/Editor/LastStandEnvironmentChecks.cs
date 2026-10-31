@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using SingedTerra.Art;
@@ -64,6 +67,8 @@ public static class LastStandEnvironmentChecks
             Check("same_identity_reuse_is_idempotent",SameIdentityReuseIsIdempotent);
             Check("comparison_scene_retains_treatment_switching",ComparisonSceneRetainsTreatmentSwitching);
             Check("render_setting_cleanup_preserves_later_owner",RenderSettingCleanupPreservesLaterOwner);
+            Check("campaign_geometry_palette_and_light",CampaignGeometryPaletteAndLight);
+            Check("campaign_authoring_is_idempotent_and_scoped",CampaignAuthoringIsIdempotentAndScoped);
         }
         finally
         {
@@ -104,6 +109,8 @@ public static class LastStandEnvironmentChecks
         var f=new Fixture();f.Loop.Deploy();Require(f.Session.Model!=null,"real reserved run deployed");
         string before=f.Session.Model.Snapshot(),environment=f.Review.EnvironmentId;
         Require(!f.Review.TrySelectEnvironment("iron-perimeter"),"active model rejects environment change");
+        foreach(string id in new[]{"cinder-basin","storm-foundry"})
+            Require(!f.Review.TrySelectEnvironment(id)&&f.Session.Model.Snapshot()==before,"campaign cannot replace active combat");
         f.Review.SelectIron();
         Require(f.Review.EnvironmentId==environment&&f.Session.Model.Snapshot()==before,"legacy entry cannot bypass playable guard");
         Require(f.Review.TrySelectEnvironment(environment)&&f.Session.Model.Snapshot()==before,"same active identity is a no-op");
@@ -115,7 +122,7 @@ public static class LastStandEnvironmentChecks
         for(int i=0;i<18;i++)Require(f.Review.TrySelectEnvironment("iron-perimeter"),"reuse existing environment identity");
         Require(changes==0&&f.Review.ironEnvironment.activeSelf,"reusing a definition creates no new environment or change event");
         var catalog=LastStandEnvironmentCatalog.All;
-        Require(catalog.Count==2&&ReferenceEquals(catalog[1],LastStandEnvironmentCatalog.Get("iron-perimeter")),"one immutable definition per authored environment");
+        Require(catalog.Count==4&&ReferenceEquals(catalog[1],LastStandEnvironmentCatalog.Get("iron-perimeter")),"one immutable definition per authored environment");
         bool refused=false;
         try { ((IList<LastStandEnvironmentDefinition>)catalog)[0]=catalog[1]; }
         catch(NotSupportedException) { refused=true; }
@@ -142,5 +149,79 @@ public static class LastStandEnvironmentChecks
         Invoke(f.Review,"OnDestroy");
         Require(RenderSettings.ambientSkyColor==laterSky,"later sky owner preserved");
         Require(RenderSettings.ambientEquatorColor==priorEquator,"still-owned equator restored exactly");
+    }
+    static GameObject Root(BattlefieldReview review,string id)
+    {
+        var matches=(review.environmentBindings??Array.Empty<BattlefieldReview.EnvironmentBinding>())
+            .Where(b=>b!=null&&b.environmentId==id).ToArray();
+        Require(matches.Length==1&&matches[0].root,"one saved campaign binding: "+id);
+        return matches[0].root;
+    }
+    static void CampaignGeometryPaletteAndLight()
+    {
+        var f=new Fixture();string save=f.Loop.Progression.SaveState;
+        Require(f.Review.environmentBindings!=null&&f.Review.environmentBindings.Length==4,"four saved roots including retained environments");
+        Require(Root(f.Review,"sunlit-ash")==f.Review.ashEnvironment&&Root(f.Review,"iron-perimeter")==f.Review.ironEnvironment,"retained roots keep their serialized identity");
+        var cinder=Root(f.Review,"cinder-basin");var foundry=Root(f.Review,"storm-foundry");
+        Require(cinder!=foundry&&cinder.transform.Find("SceneryPolish01/Broken caldera rim")&&
+            foundry.transform.Find("SceneryPolish01/Northern foundry yard"),"different authored landmark compositions");
+        var cinderMeshes=cinder.GetComponentsInChildren<MeshFilter>(true).Select(m=>AssetDatabase.GetAssetPath(m.sharedMesh)).Distinct().OrderBy(p=>p).ToArray();
+        var foundryMeshes=foundry.GetComponentsInChildren<MeshFilter>(true).Select(m=>AssetDatabase.GetAssetPath(m.sharedMesh)).Distinct().OrderBy(p=>p).ToArray();
+        Require(!cinderMeshes.SequenceEqual(foundryMeshes),"campaign environments use different real geometry, not recolored clones");
+        var cinderGround=cinder.transform.Find("ContinuousGround").GetComponent<Renderer>().sharedMaterial;
+        var foundryGround=foundry.transform.Find("ContinuousGround").GetComponent<Renderer>().sharedMaterial;
+        Require(AssetDatabase.GetAssetPath(cinderGround)==LastStandCampaignEnvironmentBuild.CinderMaterialPath&&
+            AssetDatabase.GetAssetPath(foundryGround)==LastStandCampaignEnvironmentBuild.FoundryMaterialPath&&
+            cinderGround.GetColor("_BaseColor")!=foundryGround.GetColor("_BaseColor"),"independent saved ground palettes");
+        f.Art.SetView(true,true);
+        foreach(string id in new[]{"cinder-basin","storm-foundry"})
+        {
+            Require(f.Review.TrySelectEnvironment(id),"actual authored campaign selection");
+            var definition=LastStandEnvironmentCatalog.Get(id);var root=Root(f.Review,id);
+            Require(f.Review.sun.color==definition.SunColor&&f.Review.sun.intensity==definition.SunIntensity&&
+                RenderSettings.ambientSkyColor==definition.AmbientSky&&RenderSettings.ambientEquatorColor==definition.AmbientEquator,
+                "campaign sun and ambient settings are applied");
+            Require(f.Review.environmentBindings.Count(b=>b.root.activeSelf)==1&&root.activeSelf,"only selected scenery is active");
+            Require(root.GetComponentsInChildren<Collider>(true).Length==0&&root.GetComponentsInChildren<MonoBehaviour>(true).Length==0,"scenery remains presentation-only");
+            foreach(float aspect in new[]{16f/9f,4f/3f,9f/16f})
+            { f.Art.view.aspect=aspect;f.Art.RefreshReviewCamera();VisualReviewPolish.ValidateScenery(f.Review,f.Art.view,root); }
+            int changes=0;f.Review.Changed+=()=>changes++;
+            for(int n=0;n<5;n++)Require(f.Review.TrySelectEnvironment(id),"repeat campaign identity");
+            Require(changes==0,"campaign identity reuse emits no duplicate selection");
+        }
+        Require(f.Loop.Progression.SaveState==save&&f.Session.Model==null,"campaign preview changes neither progression nor combat");
+    }
+    static void CampaignAuthoringIsIdempotentAndScoped()
+    {
+        var f=new Fixture();var scene=f.Review.gameObject.scene;
+        var before=File.ReadAllBytes(scene.path);
+        var cinderBytes=File.ReadAllBytes(LastStandCampaignEnvironmentBuild.CinderMaterialPath);
+        var foundryBytes=File.ReadAllBytes(LastStandCampaignEnvironmentBuild.FoundryMaterialPath);
+        var ash=f.Review.ashEnvironment;var iron=f.Review.ironEnvironment;
+        var sentinel=new GameObject("Unrelated environment authoring sentinel");
+        var child=new GameObject("Unrelated retained child");child.transform.SetParent(Root(f.Review,"cinder-basin").transform,false);
+        Require(!LastStandCampaignEnvironmentBuild.EnsureAuthored(scene),"second authoring call is a read-only no-op");
+        Require(sentinel&&child&&f.Review.ashEnvironment==ash&&f.Review.ironEnvironment==iron,"repeat preserves unrelated roots, children and retained identities");
+        var bindings=f.Review.environmentBindings;
+        f.Review.environmentBindings=bindings.Take(2).ToArray();bool refused=false;
+        try { LastStandCampaignEnvironmentBuild.EnsureAuthored(scene); } catch(InvalidOperationException) { refused=true; }
+        Require(refused&&sentinel&&child,"partial or unknown root ownership refuses without deletion");
+        string cinderName=bindings[2].root.name,foundryName=bindings[3].root.name;
+        bindings[2].root.name="Unrelated cinder root";bindings[3].root.name="Unrelated foundry root";
+        int rootCount=scene.rootCount;refused=false;
+        try { LastStandCampaignEnvironmentBuild.EnsureAuthored(scene); }
+        catch(InvalidOperationException error) { refused=error.Message.Contains("refuse to overwrite existing or unknown asset"); }
+        Require(refused&&scene.rootCount==rootCount&&sentinel&&child,"unowned preexisting material blocks creation before any root mutation");
+        bindings[2].root.name=cinderName;bindings[3].root.name=foundryName;
+        f.Review.environmentBindings=bindings;
+        var ground=Root(f.Review,"cinder-basin").transform.Find("ContinuousGround").GetComponent<Renderer>();
+        ground.sharedMaterial=Root(f.Review,"storm-foundry").transform.Find("ContinuousGround").GetComponent<Renderer>().sharedMaterial;
+        refused=false;try { LastStandCampaignEnvironmentBuild.EnsureAuthored(scene); } catch(InvalidOperationException) { refused=true; }
+        Require(refused,"conflicting material ownership refuses instead of replacing an asset");
+        Require(before.SequenceEqual(File.ReadAllBytes(scene.path))&&cinderBytes.SequenceEqual(File.ReadAllBytes(LastStandCampaignEnvironmentBuild.CinderMaterialPath))&&
+            foundryBytes.SequenceEqual(File.ReadAllBytes(LastStandCampaignEnvironmentBuild.FoundryMaterialPath)),"repeated and rejected authoring writes no saved bytes");
+        var other=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+        refused=false;try { LastStandCampaignEnvironmentBuild.EnsureAuthored(other); } catch(InvalidOperationException) { refused=true; }
+        Require(refused&&other.rootCount==0,"authoring refuses every other scene before creating content");
     }
 }

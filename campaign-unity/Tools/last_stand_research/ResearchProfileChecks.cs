@@ -38,13 +38,23 @@ static class ResearchProfileChecks
         var raw = LastStandSaveJson.Read(store.Raw); raw["credits"] = 100000; raw["selectedFitting"] = "launcher";
         var levels = LastStandSaveJson.Object(raw["permanentLevels"]);
         foreach (var track in LastStandUpgradeCatalog.Tracks)
-            levels[track.Key] = track.Id == LastStandUpgradeTrackId.ScrapYield ? 0 : track.Id == LastStandUpgradeTrackId.CannonAttack ? 1000 : track.PermanentCap;
+            levels[track.Key] = !track.Available || track.Id == LastStandUpgradeTrackId.ScrapYield ? 0 : track.Id == LastStandUpgradeTrackId.CannonAttack ? 1000 : track.PermanentCap;
         store.Raw = LastStandSaveJson.Write(raw);
         var p = Load(store); Check(p.SaveState == "ready" && p.TryDeploy(), "Strong production cohort deploy");
         if(economyVersion!=null) {
-            // A just-deployed empty ledger is valid under either eight-track
-            // economy. Subsequent waves and purchases use that retained owner.
-            store.Raw=store.Raw.Replace(LastStandUpgradeCatalog.EconomyVersion,economyVersion);
+            // Explicit retained fixture identity; a single economy replacement
+            // cannot turn a current complete edition into an old one.
+            var retained=LastStandSaveJson.Read(store.Raw);var checkpoint=LastStandSaveJson.Object(retained["checkpoint"]);
+            checkpoint["contentVersion"]=LastStandRunEdition.LegacyContentVersion;
+            LastStandSaveJson.Object(checkpoint["encounter"])["rulesVersion"]=LastStandRunEdition.LegacyRulesVersion;
+            foreach(string key in new[]{"mortarShots","railgunShots","nextMortarTick","nextRailgunTick","mortarDamage","railgunDamage"})
+                LastStandSaveJson.Object(checkpoint["encounter"]).Remove(key);
+            var retainedShop=LastStandSaveJson.Object(checkpoint["shop"]);retainedShop["economyVersion"]=economyVersion;
+            retainedShop["version"]=LastStandShopCheckpoint.PreviousVersion;
+            foreach(string key in new[]{"tier","rewardWave","defeatedMask"})retainedShop.Remove(key);
+            foreach(string key in new[]{"permanentLevels","runPurchases"}){var slots=LastStandSaveJson.Object(retainedShop[key]);slots.Remove("mortarAttack");slots.Remove("railgunAttack");}
+            LastStandSaveJson.Object(LastStandSaveJson.Object(retained["history"])["current"])["economyVersion"]=economyVersion;
+            store.Raw=LastStandSaveJson.Write(retained);
             p=Load(store);Check(p.SaveState=="ready","Retained economy seed loads");
         }
         var model = p.Checkpoint.RestoreModel(); var shop = p.Checkpoint.RestoreShop();
@@ -81,14 +91,14 @@ static class ResearchProfileChecks
     static void Fresh()
     {
         var store = new Store(); var p = Load(store); string raw = store.Raw;
-        Check(p.SaveState == "ready" && LastStandSaveJson.Integer(LastStandSaveJson.Read(raw)["version"]) == 5, "Fresh v5 envelope");
+        Check(p.SaveState == "ready" && LastStandSaveJson.Integer(LastStandSaveJson.Read(raw)["version"]) == 6, "Fresh v6 envelope");
         Check(p.Wallet == 0 && p.ResearchSnapshot.lastObservedUtcMilliseconds == Epoch && p.ResearchSnapshot.completionSequence == 0,
             "No invented funds or research on creation");
         Check(p.HistorySnapshot.Lifetime.Runs == 0 && !p.HasCheckpoint, "Fresh empty history");
         Check(Load(store).SaveState == "ready" && store.Raw == raw, "Reload does not mutate valid profile");
         Check(!p.TryResearchAction(Intent(p, LastStandResearchAction.Start), Time(p)) && raw == store.Raw, "Locked research is byte-identical noop");
-        Check(p.TryDeploy() && p.HistorySnapshot.Current.RunId == p.ActiveRunId && p.Checkpoint.Shop.PermanentLevels.Count == 8,
-            "New run gets eight-track economy and matching history");
+        Check(p.TryDeploy() && p.HistorySnapshot.Current.RunId == p.ActiveRunId && p.Checkpoint.Shop.PermanentLevels.Count == 10,
+            "New run gets current reserved-track shape and matching history");
         Check(Load(store).HasCheckpoint, "New checkpoint survives full readback");
     }
     static void RetainedEconomy()
@@ -152,7 +162,7 @@ static class ResearchProfileChecks
             Action(p, LastStandResearchAction.Start);
             var reload = Load(store); Check(reload.SaveState == "ready" && reload.Checkpoint.Shop.SpentScrap == spent && reload.Checkpoint.Shop.PermanentLevels.Count == 7,
                 "Midrun research save retains legacy economy on v5 reload");
-            Check(reload.TryFinalizeRun(null, "abandon") && reload.TryDeploy() && reload.Checkpoint.Shop.PermanentLevels.Count == 8 &&
+            Check(reload.TryFinalizeRun(null, "abandon") && reload.TryDeploy() && reload.Checkpoint.Shop.PermanentLevels.Count == 10 &&
                 reload.Checkpoint.Shop.EconomyVersion == LastStandUpgradeCatalog.EconomyVersion, "Only new run adopts new economy");
         }
     }
@@ -227,7 +237,7 @@ static class ResearchProfileChecks
                 "Nonowner cannot create, migrate, or mutate existing profile");
             store.Owner = true;
             Check(p.Retry() && p.SaveState == "ready", "Explicit ownership recovery admits original profile");
-            Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"]) == 5,
+            Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"]) == 6,
                 "Recovered owner uses current envelope without lost data");
         }
         var faultStore = Unlocked(); var owner = Load(faultStore); Action(owner, LastStandResearchAction.Start);

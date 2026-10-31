@@ -73,3 +73,12 @@ and Playwright.
   exception to one adversarial reviewer.
 - [ ] Resolve every Critical, High, and merge-blocking finding, repeat the
   exact-diff review after corrections, then use the commit and PR gates.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current extracted view and frame owners. Current source/oracles: `client/src/ui/LobbyBrowseView.ts`, `client/src/ui/LobbyWaitingView.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `ad9f643b7ebc` (feat(pregame): stage online operations). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

@@ -68,3 +68,10 @@ Nothing here touches auth/crypto/secrets, irreversible ops, or the trust boundar
 diff classifies as `feat` on the referee path, that's a signal to stop and surface, not
 auto-proceed. The determinism harnesses (`npm run check`) are the standing safety net for
 every Track-2 "render-only" claim.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+The PENDING table is historical: submit_action/validate.ts and its direct tests, seqGuard plus resync_guard, flightticks, ai_determinism, renderer strata/smoke/damage/flash and audio owners now exist. The board records PR #21 delivery. Current source establishes implementation; this note does not invent the original RED or manual feel-playtest records.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.

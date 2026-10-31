@@ -1,0 +1,213 @@
+{
+  "schema": "singedterra-last-stand-observation/v2",
+  "tag": "ST_LS_HUD_LAYOUT ",
+  "header": [
+    "phase",
+    "coordinates",
+    "selection",
+    "width",
+    "height",
+    "pixelRatio",
+    "scrollOffset",
+    "maximumScrollOffset",
+    "settingsScrollOffset",
+    "settingsMaximumScrollOffset",
+    "controls",
+    "shopControls",
+    "settingsControls",
+    "researchControls",
+    "historyControls",
+    "plannerControls"
+  ],
+  "tail": [
+    "researchScrollOffset",
+    "researchMaximumScrollOffset",
+    "historyScrollOffset",
+    "historyMaximumScrollOffset",
+    "plannerScrollOffset",
+    "plannerMaximumScrollOffset"
+  ],
+  "numeric": [
+    "width",
+    "height",
+    "pixelRatio",
+    "scrollOffset",
+    "maximumScrollOffset",
+    "settingsScrollOffset",
+    "settingsMaximumScrollOffset",
+    "researchScrollOffset",
+    "researchMaximumScrollOffset",
+    "historyScrollOffset",
+    "historyMaximumScrollOffset",
+    "plannerScrollOffset",
+    "plannerMaximumScrollOffset"
+  ],
+  "controlStrings": [
+    "name",
+    "label",
+    "accessibleLabel",
+    "mode",
+    "trackKey"
+  ],
+  "controlNumbers": [
+    "x",
+    "y",
+    "width",
+    "height"
+  ],
+  "controlBooleans": [
+    "active",
+    "interactable"
+  ],
+  "inventories": [
+    {
+      "field": "controls",
+      "names": [
+        "ToggleFitting",
+        "Deploy",
+        "Claim",
+        "Purchase",
+        "Redeploy",
+        "RetrySave",
+        "Pause",
+        "ToggleMute",
+        "ToggleTier",
+        "Effects",
+        "Menu",
+        "SpeedMinus",
+        "SpeedRate",
+        "SpeedPlus",
+        "TierPrevious",
+        "TierNext",
+        "FittingPrevious",
+        "FittingNext",
+        "ResearchEntry",
+        "WaveInfo"
+      ]
+    },
+    {
+      "field": "shopControls",
+      "names": [
+        "ShopEntry",
+        "ShopClose",
+        "ShopQuantity",
+        "ShopTabAttack",
+        "ShopTabDefense",
+        "ShopTabUtility",
+        "ShopCard_cannonAttackBuy",
+        "ShopCard_launcherAttackBuy",
+        "ShopCard_hullCapacityBuy",
+        "ShopCard_armorBuy",
+        "ShopCard_cannonCycleBuy",
+        "ShopCard_fieldRepairBuy",
+        "ShopCard_scattergunAttackBuy",
+        "ShopCard_scrapYieldBuy",
+        "ShopCard_mortarAttackBuy",
+        "ShopCard_railgunAttackBuy"
+      ]
+    },
+    {
+      "field": "settingsControls",
+      "names": [
+        "SettingsClose",
+        "SettingsTab0",
+        "SettingsTab1",
+        "SettingsTab2",
+        "SettingsTab3",
+        "MenuResume",
+        "MenuSettings",
+        "MenuHelp",
+        "MenuMilestones",
+        "MenuWaveInfo",
+        "MenuResearch",
+        "MenuHistory",
+        "MenuPlanner",
+        "MenuNewRun",
+        "MenuAbandon",
+        "MenuCampaigns",
+        "MenuAbout",
+        "SettingsBack",
+        "SettingsMute",
+        "MasterMinus",
+        "MasterPlus",
+        "EffectsMinus",
+        "EffectsPlus",
+        "EffectsSample",
+        "MusicEnabled",
+        "MusicMinus",
+        "MusicPlus",
+        "DisplayQuality",
+        "DisplayEffects",
+        "DisplayFullscreen",
+        "TutorialTips",
+        "PurchaseSuggestions",
+        "GameplayHelp",
+        "DataRetry",
+        "PreferencesRetry",
+        "DataAccount",
+        "SettingsDefaults",
+        "ConfirmCancel",
+        "ConfirmProceed",
+        "ChoicePrevious",
+        "ChoiceNext"
+      ]
+    },
+    {
+      "field": "researchControls",
+      "names": [
+        "ResearchClose",
+        "ResearchFilter",
+        "ResearchBack",
+        "ResearchProject-gameSpeed",
+        "ResearchProject-salvageRecovery",
+        "ResearchProject-researchSpeed",
+        "ResearchProject-scrapLogistics",
+        "ResearchStart0",
+        "ResearchQueue0",
+        "ResearchSwitch0",
+        "ResearchSuspend0",
+        "ResearchRemoveQueued0",
+        "ResearchStart1",
+        "ResearchQueue1",
+        "ResearchSwitch1",
+        "ResearchSuspend1",
+        "ResearchRemoveQueued1"
+      ]
+    },
+    {
+      "field": "historyControls",
+      "names": [
+        "RunHistoryClose",
+        "RunHistoryTier",
+        "RunHistoryView",
+        "RunHistoryConditionPrevious",
+        "RunHistoryConditionNext",
+        "RunHistoryRunAPrevious",
+        "RunHistoryRunANext",
+        "RunHistoryRunBPrevious",
+        "RunHistoryRunBNext"
+      ]
+    },
+    {
+      "field": "plannerControls",
+      "names": [
+        "PlannerClose",
+        "PlannerGoals",
+        "PlannerBudget",
+        "PlannerCategory",
+        "PlannerPrevious",
+        "PlannerNext",
+        "PlannerPin",
+        "PlannerClear",
+        "PlannerOpen",
+        "PlannerWorkshopPrevious",
+        "PlannerWorkshopNext",
+        "PlannerResearchPrevious",
+        "PlannerResearchNext",
+        "PlannerWorkshopOpen",
+        "PlannerResearchOpen",
+        "PlannerBack"
+      ]
+    }
+  ]
+}

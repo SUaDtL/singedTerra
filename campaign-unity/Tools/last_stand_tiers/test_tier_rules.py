@@ -1,18 +1,15 @@
 """Compile and exercise the production tier catalog and combat profiles."""
 from pathlib import Path
 import sys
-import subprocess
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
 from last_stand_source_closure import complete_sources
 
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "Unity/Assets/Scripts"
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 
 
 class TierRulesTests(unittest.TestCase):
@@ -23,9 +20,7 @@ class TierRulesTests(unittest.TestCase):
                 "EncounterModel.cs", "EncounterProfile.cs", "LastStandTierCatalog.cs"
             )] + [Path(__file__).with_name("TierRulesChecks.cs")]
             sources = complete_sources(SCRIPTS, sources)
-            build = subprocess.run([str(MONO), str(CSC), "-nologo", f"-out:{executable}", *map(str, sources)],
-                                   capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+            build = compile_csharp(executable, sources, warnings_as_errors=False, timeout_seconds=60)
             self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
-            run = subprocess.run([str(MONO), str(executable)], capture_output=True, text=True,
-                                 encoding="utf-8-sig", timeout=30)
+            run = run_csharp(executable, [], timeout_seconds=30)
             self.assertEqual(run.returncode, 0, run.stdout + run.stderr)

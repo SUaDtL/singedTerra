@@ -70,3 +70,12 @@
 - [ ] Run `npm run test:client`, `npm run check`, `npm run check:edge`, `npm run build`, `npm run audit:deps`, secret scan, and isolated full production-browser suite.
 - [ ] Complete an adversarial exact-final-diff review package containing spec, plan, H-05 exception, tests, and final diff. Resolve every Critical, High, and merge-blocking finding.
 - [ ] Mark `ux.pregame.0001` done through `taskwrite.py`, then commit, open a PR, wait for exact-head hosted CI, merge under standing authority, deploy Pages, and verify live provenance.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded shell composition. Current source/oracles: `client/src/ui/commandCenter/CommandCenterShell.ts`, `e2e/pregame-command-center.spec.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `231586e80365` (feat(pregame): unify deployment command surface). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

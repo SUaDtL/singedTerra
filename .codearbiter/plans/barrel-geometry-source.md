@@ -91,3 +91,12 @@ Stage exact paths only. Classification is `refactor(renderer)` unless review fin
 - [ ] **Run `$ca-pr` and `$ca-watch`**
 
 Open a PR referencing #153, never merge it, and watch every available check to green.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `shared/src/engine/Tank.ts`, `scripts/checks/muzzle.mjs`.
+
+The latest change to this historical plan reachable from `origin/main` is `cdef7c116104` (refactor(renderer): share barrel geometry (#160)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

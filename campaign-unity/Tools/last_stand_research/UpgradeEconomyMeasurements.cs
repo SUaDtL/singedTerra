@@ -4,6 +4,8 @@ using SingedTerra.Encounter;
 
 static class UpgradeEconomyMeasurements
 {
+    // The saved calibration report describes v3; keep this benchmark explicit.
+    static LastStandEconomyDefinition Rules=>LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion);
     sealed class Result { public int Waves,Ticks,Kills,Hull,Purchases;public long Repeatable,FirstClear;public int Earned,Spent;
         public int CannonLevel,CannonDamage,CannonPeriod,MaximumHull,Repair,Armor,Yield; }
     static LastStandUpgradeTrackId Auxiliary(LastStandFitting fitting)=>fitting==LastStandFitting.Repair?LastStandUpgradeTrackId.FieldRepair:
@@ -34,7 +36,7 @@ static class UpgradeEconomyMeasurements
     }
     static Result Run(int tier,LastStandFitting fitting,int[] levels,int limit,string policy,int logistics,int recovery)
     {
-        var shop=new LastStandShopState(1,fitting,levels);var model=EncounterModel.CreatePlayable(fitting,tier,shop);
+        var shop=new LastStandShopState(1,fitting,levels,Rules.Version);var model=EncounterModel.CreatePlayable(fitting,tier,shop);
         var order=Order(policy,fitting);int cursor=0,oldKills=0,purchases=0,remainder=0;long repeat=0,first=0;
         while(model.Status==EncounterStatus.Running && model.CompletedWave<limit) {
             model.Step();
@@ -43,7 +45,7 @@ static class UpgradeEconomyMeasurements
                 if(model.Status==EncounterStatus.Running)Buy(shop,model,order,ref cursor,ref purchases);
             }
             if(model.AwaitingWaveCommit) {
-                var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(tier),model.CompletedWave);
+                var reward=LastStandRewardCatalog.At(shop.Edition.Tier(tier),model.CompletedWave,shop.Edition);
                 long payout;int carry;
                 if(!LastStandResearchCatalog.TryMultiplyReward(reward.RepeatableSalvage,recovery,remainder,out payout,out carry))
                     throw new Exception("Measurement reward projection refused.");
@@ -59,9 +61,9 @@ static class UpgradeEconomyMeasurements
             Armor=model.CurrentArmorLevel,Yield=shop.GetTrack(LastStandUpgradeTrackId.ScrapYield).CurrentLevel};
     }
     static int[] Levels(int level)
-    {var result=new int[LastStandUpgradeCatalog.Tracks.Count];foreach(var row in LastStandUpgradeCatalog.Tracks)result[(int)row.Id]=Math.Min(level,row.PermanentCap);return result;}
+    {var result=new int[Rules.Tracks.Count];foreach(var row in Rules.Tracks)result[(int)row.Id]=Math.Min(level,row.PermanentCap);return result;}
     static long Investment(int[] levels,LastStandFitting fitting)
-    {long cost=0;foreach(var row in LastStandUpgradeCatalog.Tracks)if(row.IsEligible(fitting))for(int n=1;n<=levels[(int)row.Id];n++)cost+=row.PermanentPrice(n);return cost;}
+    {long cost=0;foreach(var row in Rules.Tracks)if(row.IsEligible(fitting))for(int n=1;n<=levels[(int)row.Id];n++)cost+=row.PermanentPrice(n);return cost;}
     static void Print(string kind,int tier,LastStandFitting fitting,string policy,int level,int run,int[] levels,Result result,int logistics,int recovery)
     {Console.WriteLine(String.Join(",",new object[]{kind,tier,fitting,policy,level,run,result.Waves,result.Ticks,result.Kills,result.Hull,result.Purchases,result.Earned,result.Spent,result.Repeatable,result.FirstClear,Investment(levels,fitting),logistics,recovery,
         levels[0],levels[2],levels[4],levels[7],result.CannonLevel,result.CannonDamage,result.CannonPeriod,result.MaximumHull,result.Repair,result.Armor,result.Yield}));}
@@ -70,9 +72,9 @@ static class UpgradeEconomyMeasurements
         var order=Order(policy,fitting);
         for(int steps=0;steps<100000;steps++) {
             int skipped=0;
-            while(skipped<order.Length && levels[(int)order[cursor%order.Length]]==LastStandUpgradeCatalog.Get(order[cursor%order.Length]).PermanentCap){cursor++;skipped++;}
+            while(skipped<order.Length && levels[(int)order[cursor%order.Length]]==Rules.Get(order[cursor%order.Length]).PermanentCap){cursor++;skipped++;}
             if(skipped==order.Length)return;
-            var row=LastStandUpgradeCatalog.Get(order[cursor%order.Length]);int n=levels[(int)row.Id];int cost=row.PermanentPrice(n+1);
+            var row=Rules.Get(order[cursor%order.Length]);int n=levels[(int)row.Id];int cost=row.PermanentPrice(n+1);
             if(cost>wallet)return;wallet-=cost;levels[(int)row.Id]++;cursor++;
         }
         throw new Exception("Finite permanent purchase budget exhausted.");

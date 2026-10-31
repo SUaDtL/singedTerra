@@ -33,3 +33,10 @@ campaign-unity/Unity/Assets/Editor/LastStandBackgroundChecks.cs.meta whitespace=
 campaign-unity/Unity/ProjectSettings/ProjectSettings.asset whitespace=-blank-at-eol
 campaign-unity/docs/last-stand-mechanics-shop/preview-review.md whitespace=-blank-at-eof
 campaign-unity/docs/last-stand-mechanics-shop/validation.md whitespace=-blank-at-eof
+
+# Collapse generated, immutable measurement rows in review; retain their exact
+# bytes and keep the authored balance summary and validation inventory visible.
+campaign-unity/docs/last-stand-combat-depth/combat-balance-baseline-report.json linguist-generated=true
+campaign-unity/docs/last-stand-combat-depth/combat-balance-calibrated-report.json linguist-generated=true
+campaign-unity/docs/last-stand-combat-depth/crowded-wave-baseline-report.json linguist-generated=true
+campaign-unity/docs/last-stand-combat-depth/crowded-wave-calibrated-report.json linguist-generated=true

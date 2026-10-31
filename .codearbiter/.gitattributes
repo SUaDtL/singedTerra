@@ -1,0 +1,7 @@
+# codeArbiter native artifacts are hash-bound to their exact bytes.
+# Imported narrative may retain CRLF; recognize it without normalizing bytes.
+# Keep ordinary trailing-space, blank-at-EOF and indentation checks enabled.
+specs/*.html -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+plans/*.html -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+context/*.html -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+decomposition/*.html -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -31,7 +31,7 @@ namespace SingedTerra.LastStand
             {
                 if(!catalog.TryGet(pair.Key,out var definition))throw new FormatException("Unknown upgrade track.");
                 int level=LastStandSaveJson.Integer(pair.Value);
-                if(level>(permanent?definition.PermanentCap:definition.TotalCap))throw new FormatException("Invalid upgrade level.");
+                if(level>(permanent?definition.PermanentCap:definition.TotalCap)||!definition.Available&&level!=0)throw new FormatException("Invalid upgrade level.");
                 result[(int)definition.Id]=level;
             }
             return result;
@@ -61,7 +61,7 @@ namespace SingedTerra.LastStand
                 tiers.Add(tier.Key,Map("bestWave",row.BestWave,"legacyTicks",row.LegacyTicks,
                     "legacyKills",row.LegacyKills,"unlocked",row.Unlocked));
             }
-            return LastStandSaveJson.Write(Map("version",5,"credits",record.Wallet,
+            return LastStandSaveJson.Write(Map("version",6,"credits",record.Wallet,
                 "revision",record.Revision,"recoveryRemainder",record.RecoveryRemainder,
                 "research",ResearchJson(record.Research),"history",HistoryJson(record.History),
                 "permanentLevels",LevelsJson(record.Levels),"nextRunId",record.NextRunId,
@@ -83,31 +83,33 @@ namespace SingedTerra.LastStand
                     if(!TryParseLegacyVersions(raw,out record,out migrate))return false;
                     InitializeTiers(record,true);migrate=true;return true;
                 }
-                if(version!=4 && version!=5)return false;
+                if(version!=4 && version!=5 && version!=6)return false;
                 var fields=new List<string>{"version","credits","permanentLevels","nextRunId","lastFinalizedRunId",
                     "selectedTier","selectedFitting","tierRecords","firstClears","unlockedFittings","pendingDefeat","checkpoint"};
-                if(version==5)fields.AddRange(new[]{"revision","recoveryRemainder","research","history"});
+                if(version>=5)fields.AddRange(new[]{"revision","recoveryRemainder","research","history"});
                 LastStandSaveJson.Fields(map,fields.ToArray());
-                var levels=ReadLevels(map["permanentLevels"],true,version==4?LastStandUpgradeCatalog.LegacyEconomyVersion:LastStandUpgradeCatalog.EconomyVersion);
-                if(version==4)Array.Resize(ref levels,LastStandUpgradeCatalog.Tracks.Count);
+                var levels=ReadLevels(map["permanentLevels"],true,version==4?LastStandUpgradeCatalog.LegacyEconomyVersion:
+                    version==5?LastStandUpgradeCatalog.RetainedEconomyVersion:LastStandUpgradeCatalog.EconomyVersion);
+                var tiers=version<6?LastStandTierCatalog.Legacy:LastStandTierCatalog.All;
+                var fittings=version<6?LastStandFittingCatalog.Legacy:LastStandFittingCatalog.Definitions;
                 var parsed=new Record { Wallet=Number(map,"credits"),Levels=levels,
                     NextRunId=Number(map,"nextRunId"),FinalizedRunId=Number(map,"lastFinalizedRunId"),
                     SelectedTier=Number(map,"selectedTier"),SelectedFitting=Text(map,"selectedFitting"),
                     FirstClears=ReadStrings(map["firstClears"]),Fittings=ReadStrings(map["unlockedFittings"]) };
-                if(parsed.NextRunId<1 || parsed.FinalizedRunId>=parsed.NextRunId || !LastStandTierCatalog.IsValid(parsed.SelectedTier))return false;
+                if(parsed.NextRunId<1 || parsed.FinalizedRunId>=parsed.NextRunId || !LastStandTierCatalog.IsValid(parsed.SelectedTier)||version<6&&parsed.SelectedTier>2)return false;
                 var tierMap=LastStandSaveJson.Object(map["tierRecords"]);
-                if(tierMap.Count!=LastStandTierCatalog.All.Count)return false;
+                if(tierMap.Count!=tiers.Count)return false;
                 var knownMilestones=new HashSet<string>(StringComparer.Ordinal);
-                foreach(var tier in LastStandTierCatalog.All)
+                foreach(var tier in tiers)
                 {
                     var t=LastStandSaveJson.Object(tierMap[tier.Key]);
                     LastStandSaveJson.Fields(t,"bestWave","legacyTicks","legacyKills","unlocked");
                     var row=new TierRecord { BestWave=Number(t,"bestWave"),LegacyTicks=Number(t,"legacyTicks"),
                         LegacyKills=Number(t,"legacyKills"),Unlocked=Bool(t,"unlocked") };
-                    if(row.LegacyTicks>LastStandTierCatalog.LegacyHorizonTicks ||
+                    if(row.LegacyTicks>LastStandTierCatalog.LegacyHorizonTicks || !tier.Playable&&(row.Unlocked||row.BestWave>0) ||
                         !row.Unlocked && (tier.RequiredTier==0 || row.BestWave>0 || row.LegacyTicks>0 || row.LegacyKills>0))return false;
                     parsed.Tiers.Add(tier.Key,row);
-                    foreach(var milestone in LastStandRewardCatalog.Milestones(tier))
+                    foreach(var milestone in LastStandRewardCatalog.Milestones(tier,tiers,fittings))
                     {
                         knownMilestones.Add(milestone.Id);
                         bool earned=parsed.FirstClears.Contains(milestone.Id);
@@ -115,16 +117,19 @@ namespace SingedTerra.LastStand
                     }
                 }
                 foreach(string id in parsed.FirstClears)if(!knownMilestones.Contains(id))return false;
-                foreach(string id in parsed.Fittings)LastStandFittingCatalog.Parse(id);
+                foreach(string id in parsed.Fittings) {
+                    LastStandFittingDefinition known=null;foreach(var fitting in fittings)if(fitting.Id==id){known=fitting;break;}
+                    if(known==null||!known.Playable||!known.InitiallyUnlocked&&parsed.Tiers[LastStandTierCatalog.Get(known.UnlockTier).Key].BestWave<known.UnlockWave)return false;
+                }
                 if(!parsed.Fittings.Contains("repair") || !parsed.Fittings.Contains("launcher") ||
                     !parsed.Fittings.Contains(parsed.SelectedFitting) || !parsed.Tiers[LastStandTierCatalog.Get(parsed.SelectedTier).Key].Unlocked)return false;
                 bool scatterEarned=parsed.FirstClears.Contains(LastStandTierCatalog.Get(1).Key+":wave-100");
                 if(parsed.Fittings.Contains("scattergun")!=scatterEarned)return false;
-                foreach(var tier in LastStandTierCatalog.All)
+                foreach(var tier in tiers)
                     if(tier.RequiredTier!=0 && parsed.Tiers[LastStandTierCatalog.Get(tier.RequiredTier).Key].BestWave>=tier.RequiredWave &&
-                        !parsed.Tiers[tier.Key].Unlocked)return false;
+                        !parsed.Tiers[tier.Key].Unlocked && tier.Id<=2)return false;
                 parsed.Pending=ReadPending(map["pendingDefeat"],parsed);
-                parsed.Checkpoint=ReadCheckpoint(map["checkpoint"]);
+                parsed.Checkpoint=ReadCheckpoint(map["checkpoint"],version);
                 if(parsed.Checkpoint!=null)
                 {
                     var cp=parsed.Checkpoint;
@@ -134,7 +139,7 @@ namespace SingedTerra.LastStand
                     foreach(var track in LastStandUpgradeCatalog.ForEconomy(cp.Shop.EconomyVersion).Tracks)
                         if(cp.Shop.PermanentLevels[(int)track.Id]>parsed.Levels[(int)track.Id])return false;
                 }
-                if(version==5)
+                if(version>=5)
                 {
                     parsed.Revision=LastStandSaveJson.LongInteger(map["revision"]);
                     parsed.RecoveryRemainder=Number(map,"recoveryRemainder");
@@ -147,7 +152,7 @@ namespace SingedTerra.LastStand
                         current.Fitting!=parsed.Checkpoint.FittingId || current.EconomyVersion!=parsed.Checkpoint.Shop.EconomyVersion ||
                         current.HighestClearedWave!=parsed.Checkpoint.CompletedWave))return false;
                 }
-                else migrate=true;
+                migrate=version<6;
                 record=parsed;return true;
             }
             catch(Exception error) when(error is FormatException || error is ArgumentException || error is KeyNotFoundException ||
@@ -183,7 +188,7 @@ namespace SingedTerra.LastStand
         {
             if(checkpoint==null)return null;
             var e=checkpoint.Encounter;var s=checkpoint.Shop;
-            return Map("runId",checkpoint.RunId,"encounter",Map(
+            var result=Map("runId",checkpoint.RunId,"contentVersion",checkpoint.Edition.ContentVersion,"encounter",Map(
                 "version",EncounterCheckpoint.Version,"rulesVersion",e.RulesVersion,"tier",e.Tier,"fitting",e.Fitting,
                 "wave",e.Wave,"completedWave",e.CompletedWave,"tick",e.Tick,"hull",e.Hull,"maximumHull",e.MaximumHull,
                 "spawned",e.Spawned,"kills",e.Kills,"cannonShots",e.CannonShots,"launcherShots",e.LauncherShots,
@@ -192,37 +197,52 @@ namespace SingedTerra.LastStand
                 "nextRepairTick",e.NextRepairTick,"nextScattergunTick",e.NextScattergunTick,"lastCannonShotTick",e.LastCannonShotTick,
                 "cannonDamage",e.CannonDamage,"launcherDamage",e.LauncherDamage,"scattergunDamage",e.ScattergunDamage,
                 "cannonPeriod",e.CannonPeriod,"repairAmount",e.RepairAmount,"armorLevel",e.ArmorLevel,"committedCannonDamage",e.CommittedCannonDamage),
-                "shop",Map("version",LastStandShopCheckpoint.Version,"economyVersion",s.EconomyVersion,
+                "shop",Map("version",s.SchemaVersion==LastStandShopCheckpoint.LegacyVersion?LastStandShopCheckpoint.PreviousVersion:s.SchemaVersion,"economyVersion",s.EconomyVersion,
                     "baseEarnedScrap",s.BaseEarnedScrap,"bonusEarnedScrap",s.BonusEarnedScrap,"incomeRemainder",s.IncomeRemainder,
                     "runId",s.RunId,"fitting",s.Fitting,
                     "purchaseSequence",s.PurchaseSequence,"uniqueKills",s.UniqueKills,"earnedScrap",s.EarnedScrap,
                     "spentScrap",s.SpentScrap,"scrap",s.Scrap,"permanentLevels",LevelsJson(s.PermanentLevels,s.EconomyVersion),"runPurchases",LevelsJson(s.RunPurchases,s.EconomyVersion)));
+            if(s.SchemaVersion==LastStandShopCheckpoint.Version){var shop=LastStandSaveJson.Object(result["shop"]);shop.Add("tier",s.Tier);shop.Add("rewardWave",s.RewardWave);shop.Add("defeatedMask",s.DefeatedMask);}
+            if(!checkpoint.Edition.IsLegacy){var encounter=LastStandSaveJson.Object(result["encounter"]);
+                encounter.Add("mortarShots",e.MortarShots);encounter.Add("railgunShots",e.RailgunShots);
+                encounter.Add("nextMortarTick",e.NextMortarTick);encounter.Add("nextRailgunTick",e.NextRailgunTick);
+                encounter.Add("mortarDamage",e.MortarDamage);encounter.Add("railgunDamage",e.RailgunDamage);}
+            return result;
         }
-        static LastStandRunCheckpoint ReadCheckpoint(object value)
+        static LastStandRunCheckpoint ReadCheckpoint(object value,int profileVersion)
         {
             if(value==null)return null;
-            var p=LastStandSaveJson.Object(value);LastStandSaveJson.Fields(p,"runId","encounter","shop");
+            var p=LastStandSaveJson.Object(value);LastStandSaveJson.Fields(p,profileVersion<6?new[]{"runId","encounter","shop"}:new[]{"runId","contentVersion","encounter","shop"});
             var e=LastStandSaveJson.Object(p["encounter"]);var s=LastStandSaveJson.Object(p["shop"]);
-            LastStandSaveJson.Fields(e,"version","rulesVersion","tier","fitting","wave","completedWave","tick","hull","maximumHull",
+            bool current=Text(e,"rulesVersion")==LastStandRunEdition.CurrentRulesVersion;
+            var encounterFields=new List<string>{"version","rulesVersion","tier","fitting","wave","completedWave","tick","hull","maximumHull",
                 "spawned","kills","cannonShots","launcherShots","scattergunShots","restored","closeHits","rangedHits",
                 "nextSpawnTick","nextCannonTick","nextLauncherTick","nextRepairTick","nextScattergunTick","lastCannonShotTick",
-                "cannonDamage","launcherDamage","scattergunDamage","cannonPeriod","repairAmount","armorLevel","committedCannonDamage");
+                "cannonDamage","launcherDamage","scattergunDamage","cannonPeriod","repairAmount","armorLevel","committedCannonDamage"};
+            if(current)encounterFields.AddRange(new[]{"mortarShots","railgunShots","nextMortarTick","nextRailgunTick","mortarDamage","railgunDamage"});
+            LastStandSaveJson.Fields(e,encounterFields.ToArray());
             int schema=Number(s,"version");
             var shopFields=new List<string>{"version","runId","fitting","purchaseSequence","uniqueKills","earnedScrap","spentScrap","scrap","permanentLevels","runPurchases"};
-            if(schema==LastStandShopCheckpoint.Version)shopFields.AddRange(new[]{"economyVersion","baseEarnedScrap","bonusEarnedScrap","incomeRemainder"});
+            if(schema==LastStandShopCheckpoint.PreviousVersion||schema==LastStandShopCheckpoint.Version)shopFields.AddRange(new[]{"economyVersion","baseEarnedScrap","bonusEarnedScrap","incomeRemainder"});
+            if(schema==LastStandShopCheckpoint.Version)shopFields.AddRange(new[]{"tier","rewardWave","defeatedMask"});
             LastStandSaveJson.Fields(s,shopFields.ToArray());
-            if(Number(e,"version")!=EncounterCheckpoint.Version || schema!=LastStandShopCheckpoint.Version && schema!=LastStandShopCheckpoint.LegacyVersion)
+            if(Number(e,"version")!=EncounterCheckpoint.Version || schema!=LastStandShopCheckpoint.Version && schema!=LastStandShopCheckpoint.PreviousVersion&&schema!=LastStandShopCheckpoint.LegacyVersion)
                 throw new FormatException("Unsupported checkpoint schema.");
             var encounter=new EncounterCheckpoint(Text(e,"rulesVersion"),Number(e,"tier"),Number(e,"fitting"),Number(e,"wave"),Number(e,"completedWave"),Number(e,"tick"),
                 Number(e,"hull"),Number(e,"maximumHull"),Number(e,"spawned"),Number(e,"kills"),Number(e,"cannonShots"),Number(e,"launcherShots"),Number(e,"scattergunShots"),
                 Number(e,"restored"),Number(e,"closeHits"),Number(e,"rangedHits"),Number(e,"nextSpawnTick"),Number(e,"nextCannonTick"),Number(e,"nextLauncherTick"),
                 Number(e,"nextRepairTick"),Number(e,"nextScattergunTick"),Number(e,"lastCannonShotTick"),Number(e,"cannonDamage"),Number(e,"launcherDamage"),
-                Number(e,"scattergunDamage"),Number(e,"cannonPeriod"),Number(e,"repairAmount"),Number(e,"armorLevel"),Number(e,"committedCannonDamage"));
+                Number(e,"scattergunDamage"),Number(e,"cannonPeriod"),Number(e,"repairAmount"),Number(e,"armorLevel"),Number(e,"committedCannonDamage"),
+                current?Number(e,"mortarShots"):0,current?Number(e,"railgunShots"):0,current?Number(e,"nextMortarTick"):1,current?Number(e,"nextRailgunTick"):1,
+                current?Number(e,"mortarDamage"):LastStandUpgradeCatalog.BaseMortarDamage,current?Number(e,"railgunDamage"):LastStandUpgradeCatalog.BaseRailgunDamage);
             string economy=schema==LastStandShopCheckpoint.LegacyVersion?LastStandUpgradeCatalog.LegacyEconomyVersion:Text(s,"economyVersion");
             var shop=new LastStandShopCheckpoint(Number(s,"runId"),Number(s,"fitting"),Number(s,"purchaseSequence"),Number(s,"uniqueKills"),
                 Number(s,"earnedScrap"),Number(s,"spentScrap"),Number(s,"scrap"),ReadLevels(s["permanentLevels"],true,economy),ReadLevels(s["runPurchases"],false,economy),
-                economy,schema==1?Number(s,"earnedScrap"):Number(s,"baseEarnedScrap"),schema==1?0:Number(s,"bonusEarnedScrap"),schema==1?0:Number(s,"incomeRemainder"),schema);
-            return new LastStandRunCheckpoint(Number(p,"runId"),encounter,shop);
+                economy,schema==1?Number(s,"earnedScrap"):Number(s,"baseEarnedScrap"),schema==1?0:Number(s,"bonusEarnedScrap"),schema==1?0:Number(s,"incomeRemainder"),schema,
+                schema==LastStandShopCheckpoint.Version?Number(s,"tier"):encounter.Tier,
+                schema==LastStandShopCheckpoint.Version?Number(s,"rewardWave"):1,schema==LastStandShopCheckpoint.Version?Number(s,"defeatedMask"):0);
+            return new LastStandRunCheckpoint(Number(p,"runId"),encounter,shop,
+                profileVersion<6?LastStandRunEdition.LegacyContentVersion:Text(p,"contentVersion"));
         }
     }
 }

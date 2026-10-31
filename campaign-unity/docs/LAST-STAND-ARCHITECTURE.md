@@ -28,6 +28,20 @@ followed by Android using the same Unity project and assets.
 
 ## Responsibility and dependency map
 
+October 30 extension: `LastStandProgressionPlanner` projects catalog and current
+Shop/Lab values without retaining a transaction owner. Its selected target is an
+optional, bounded field in the existing local preferences record; older settings
+load without writes, and unsupported data remains protected. `LastStandPlannerHud`
+uses the common modal, pane, keyboard and chrome owners and returns purchases to
+the existing Shop/Lab flow. History selection refreshes presentation only; the
+research coordinator retains clock and reconciliation ownership.
+
+`LastStandHistoryComparison` groups exact fitting/economy/opaque start/end contexts
+and GCD-normalized speed proportions. It does not parse labels into invented stat
+vectors or mutate recorded runs. Current diagnostic contract v2 adds planner and
+history selectors; retained v1 and its fixtures remain unchanged, with strict
+version-specific readers.
+
 The target dependency direction is presentation → application → domain. Platform
 adapters implement ports used by application composition. Domain code does not
 depend on Unity, browser imports, concrete storage, wall-clock reads or UI controls.

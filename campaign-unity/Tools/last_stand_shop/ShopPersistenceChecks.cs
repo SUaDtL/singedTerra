@@ -107,12 +107,16 @@ internal static class ShopPersistenceChecks
     {
         var supplied=LastStandSaveJson.Read("{"+levels+"}");
         object yield=0;
+        var extra=new Dictionary<string,object>();
+        foreach(string key in new[]{"mortarAttack","railgunAttack"})
+            if(supplied.TryGetValue(key,out var rank)){extra[key]=rank;supplied.Remove(key);}
         if(supplied.TryGetValue("scrapYield",out var value)){yield=value;supplied.Remove("scrapYield");}
         string legacy=LastStandSaveJson.Write(supplied);
         var migrated=new PersistenceStorage {Value=V4(legacy.Substring(1,legacy.Length-2),wallet,next,finalized,pending)};
         Require(Load(migrated).SaveState=="ready","Current fixture uses production legacy migration.");
         var current=LastStandSaveJson.Read(migrated.Value);
         LastStandSaveJson.Object(current["permanentLevels"])["scrapYield"]=yield;
+        foreach(var pair in extra)LastStandSaveJson.Object(current["permanentLevels"])[pair.Key]=pair.Value;
         return LastStandSaveJson.Write(current);
     }
 
@@ -137,11 +141,11 @@ internal static class ShopPersistenceChecks
 
     static void CheckCurrentSave(string value)
     {
-        Require(value.StartsWith("{\"version\":5,"), "Supported migration must write version 5 under the same key.");
+        Require(value.StartsWith("{\"version\":6,"), "Supported migration must write version 6 under the same key.");
         Require(value.Contains("\"permanentLevels\":{") && !value.Contains("\"permanentLevel\":"),
-            "Version 5 must preserve keyed permanent tracks.");
+            "Version 6 must preserve keyed permanent tracks.");
         Require(value.Contains("\"scrapYield\":") && value.Contains("\"research\":") && value.Contains("\"checkpoint\":"),
-            "Version 5 includes economy, research and an explicit resumable checkpoint.");
+            "Version 6 includes economy, research and an explicit resumable checkpoint.");
     }
 
     static void MigrationExact()
@@ -231,7 +235,7 @@ internal static class ShopPersistenceChecks
         var model = Load(store);
         Require(model.SaveState == "ready" && store.Writes == 1, "Valid v2 migrates once to v3 after verified saving.");
         CheckEntitlements(model, 17, 3, 9, 6, true);
-        int[] expected = { 3, 2, 1, 0, 3, 2, 0, 0 };
+        int[] expected = { 3, 2, 1, 0, 3, 2, 0, 0, 0, 0 };
         foreach (var track in LastStandUpgradeCatalog.Tracks)
             Require(Level(model, track.Id) == expected[(int)track.Id], "V2 must preserve every independent track level.");
         Require(model.TryClaim() && !model.TryClaim(), "V2 pending reward must retain exactly-once Claim.");
@@ -314,16 +318,22 @@ internal static class ShopPersistenceChecks
                 "Purchase must increment only the selected permanent track.");
     }
 
+    // These eight pre-armament tracks retain dormant-fitting purchases. The two new
+    // tracks intentionally require an unlocked, selected fitting; ArmamentTransactionChecks
+    // covers their positive purchases and every storage fault/replay boundary separately.
+    static IEnumerable<LastStandUpgradeDefinition> EstablishedTracks
+    { get { foreach(var track in LastStandUpgradeCatalog.Tracks) if((int)track.Id<8) yield return track; } }
+
     static void PermanentAllTracks()
     {
         var expected = new int[LastStandUpgradeCatalog.Tracks.Count];
         int initialWallet=0;
-        foreach(var definition in LastStandUpgradeCatalog.Tracks)
+        foreach(var definition in EstablishedTracks)
             for(int rank=1;rank<=3;rank++)initialWallet+=definition.PermanentPrice(rank);
         var store = new PersistenceStorage { Value = Current(SavedLevels(expected), wallet: initialWallet) };
         var model = Load(store);
         int wallet = initialWallet;
-        foreach (var track in LastStandUpgradeCatalog.Tracks)
+        foreach (var track in EstablishedTracks)
         {
             for(int rank=1;rank<=3;rank++)
             {
@@ -354,7 +364,7 @@ internal static class ShopPersistenceChecks
         Require(wallet==0 && model.CannonAttackLevel==3 && model.CannonDamage==50 &&
             model.NextCost==LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).PermanentPrice(4),
             "All early investments consume exactly their catalog costs; depth beyond level3 remains available.");
-        foreach(var track in LastStandUpgradeCatalog.Tracks)
+        foreach(var track in EstablishedTracks)
         for(int level=0;level<3;level++)
         {
             var levels=new int[LastStandUpgradeCatalog.Tracks.Count];levels[(int)track.Id]=level;
@@ -381,7 +391,7 @@ internal static class ShopPersistenceChecks
 
     static void PermanentBoundaries()
     {
-        foreach(var track in LastStandUpgradeCatalog.Tracks)
+        foreach(var track in EstablishedTracks)
         {
             int first=track.PermanentPrice(1),second=track.PermanentPrice(2),budget=first+second+10;
             var store=new PersistenceStorage {Value=Current(SavedLevels(new int[7]),wallet:budget)};
@@ -412,13 +422,13 @@ internal static class ShopPersistenceChecks
         }
         foreach(var fitting in new[]{LastStandFitting.Launcher,LastStandFitting.Repair,LastStandFitting.Scattergun})
         {
-            int total=0;foreach(var track in LastStandUpgradeCatalog.Tracks)total+=track.PermanentPrice(1);
+            int total=0;foreach(var track in EstablishedTracks)total+=track.PermanentPrice(1);
             var store=new PersistenceStorage {Value=Current(SavedLevels(new int[7]),wallet:total+10)};
             var model=Load(store);
             var frozen=new LastStandShopState(1,fitting,PermanentLevels(model));
-            foreach(var track in LastStandUpgradeCatalog.Tracks)Require(Purchase(model,track.Id),"Fitting-independent future investment is retained.");
+            foreach(var track in EstablishedTracks)Require(Purchase(model,track.Id),"Fitting-independent future investment is retained.");
             var future=new LastStandShopState(2,fitting,PermanentLevels(Load(store)));
-            foreach(var track in LastStandUpgradeCatalog.Tracks)
+            foreach(var track in EstablishedTracks)
                 Require(frozen.GetTrack(track.Id).PermanentLevel==0 && future.GetTrack(track.Id).PermanentLevel==1 &&
                     future.GetTrack(track.Id).RunPurchases==0 && future.GetTrack(track.Id).IsEligible==track.IsEligible(fitting),
                     "Frozen baselines and explicit fitting eligibility survive every permanent investment.");
@@ -539,7 +549,7 @@ internal static class ShopPersistenceChecks
     {
         foreach (string kind in new[] { "migration-v1", "migration-v2", "migration-v3", "migration-v4", "reservation", "wave", "defeat", "claim" })
             yield return BeginTransaction(kind, fault);
-        foreach (var track in LastStandUpgradeCatalog.Tracks)
+        foreach (var track in EstablishedTracks)
             yield return BeginTransaction("purchase", fault, track.Id);
     }
 

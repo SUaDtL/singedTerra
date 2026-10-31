@@ -191,7 +191,7 @@ async function handleJoinRoomWithDependencies(
     p_player_id: playerId, p_token: token,
   })
   if (admissionError || !admitted) {
-    console.error('join_room: admission transaction failed')
+    console.error('join_room: admission transaction failed', { operation: 'join', roomId: room.id, playerId })
     return json({ error: 'Failed to join room' }, 500)
   }
   if (!admitted.ok) return json({ error: 'Room changed; please try joining again' }, 409)

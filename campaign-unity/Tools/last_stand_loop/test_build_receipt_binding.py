@@ -55,7 +55,7 @@ class BuildReceiptBindingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='st-package-closure-') as temporary:
             repo = Path(temporary)
             root = repo / 'campaign-unity'
-            for name in ('build_web.py', 'unity_shader_log.py', 'make_web_entry.py', 'web-index-template.html'):
+            for name in ('build_web.py', 'unity_shader_log.py', 'unity_build_resources.py', 'make_web_entry.py', 'web-index-template.html'):
                 path = root / 'Tools' / name; path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes((TOOLS / name).read_bytes())
             for name, data in {'Unity/Assets/Scenes/LastStandPrototype.unity': b'saved',
@@ -77,7 +77,7 @@ class BuildReceiptBindingTests(unittest.TestCase):
                        for path in build.rglob('*') if path.is_file()}
             record={'schema':'singedterra-last-stand-build/v2','status':'pass','scene':'Assets/Scenes/LastStandPrototype.unity',
                     'build':str(build),'source_before':before,'source_after':before,'artifacts':artifacts,
-                    'toolchain_before':{'editorVersion':'6000.3.24f1','urpVersion':'17.3.0','files':{'Unity.exe':{'mode':'raw','sha256':'a'*64}}},
+                    'toolchain_before':{'editorVersion':'6000.3.27f2','urpVersion':'17.3.0','files':{'Unity.exe':{'mode':'raw','sha256':'a'*64}}},
                     'approved_artifacts':{},'stages':[{'stage':'unity-web','exit':0}],
                     'scene_before':'saved','scene_after':'saved','protected_scenes_before':{},'protected_scenes_after':{}}
             record['toolchain_after']=record['toolchain_before']

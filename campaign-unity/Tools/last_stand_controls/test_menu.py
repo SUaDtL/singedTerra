@@ -13,8 +13,16 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 CASES = (
+    "test_restore_comparison_includes_current_and_backup_research", "test_previous_save_requires_readable_predecessor",
+    "test_closing_backup_preview_clears_stale_instructions",
+    "test_backup_preview_cancel_restore_and_cap", "test_pending_backup_restore_retry",
+    "test_return_to_garage_keeps_checkpoint", "test_help_topics_and_save_navigation",
+    "test_registered_modal_pages_own_input",
+    "test_sister_screens_explain_next_actions",
+    "test_planner_navigation_preserves_progression_and_pause",
+    "test_planning_panes_fit_compact_height",
     "test_idle_controls_restore_after_focus_and_visibility",
     "test_scalable_selector_entries",
     "test_locked_tier_preview_preserves_admission",

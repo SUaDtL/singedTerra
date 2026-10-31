@@ -64,3 +64,12 @@
 - [x] Package the spec, plan, sprint log, tests, and final diff for adversarial review; reviewer returned 0 Critical, with findings resolved in this revision.
 - [ ] Run commit gate, push, open PR, and verify hosted checks on the exact reviewed head.
 - [ ] Merge under standing authority, deploy associated client/Edge changes if credentials permit, verify production health, and close the task only after delivery evidence.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `shared/src/engine/GameEngine.ts`, `scripts/checks/fall_damage.mjs`.
+
+The latest change to this historical plan reachable from `origin/main` is `38d8431b23c0` (feat(engine): add collapse fall damage and parachutes). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

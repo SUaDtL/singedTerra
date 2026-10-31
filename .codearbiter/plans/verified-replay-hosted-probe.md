@@ -48,3 +48,10 @@ Execution order is T-01 and T-02, then T-03, T-04, and T-05. T-01 and T-02 are i
 - Every acceptance criterion is covered: AC-01 by T-01/T-03; AC-02, AC-03, AC-05, and AC-06 by T-02/T-04; AC-04 by T-02/T-03; AC-07 by T-04; AC-08 by T-05.
 - Every task advances at least one criterion: T-01 -> AC-01; T-02 -> AC-02 through AC-06; T-03 -> AC-01/AC-04; T-04 -> AC-02/AC-03/AC-05/AC-06/AC-07; T-05 -> AC-08.
 - Negative completeness check: if every AC passed, no in-scope behavior would remain unproven; future transcript parsing, durable verification, awards, UI, and account-to-lobby identity continuity are explicitly out of scope.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+The pending initial delivery row is historical. verified_replay_probe and retained-hosted replay boundaries have later implementation, fixes and production receipts in the August 10/11 reports and later verified deployment records. This does not qualify the later full T29 load gate: reassessment-v3.md records its bounded 503 stop and incomplete CPU/memory/cold/warm/crash proof.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.

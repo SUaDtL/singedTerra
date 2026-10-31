@@ -32,6 +32,57 @@ For migration 017, follow the [Verified V2 cutover and forward-recovery procedur
 6. **Data-classification comment** on new columns/tables that hold identity or
    secret material, per the convention `005` established.
 
+## Routine access and overload delivery checks
+
+Every new application RPC signature must revoke `EXECUTE` from `PUBLIC`, `anon`
+and `authenticated`, and grant it explicitly to the supported `service_role`
+caller. Internal helpers may remain owner-only. Changing argument types creates
+an overload: an existing signature's ACL does not protect the new one.
+
+The required `npm run check:database` lane runs `room-lifecycle-postgres.mjs`
+against the complete sorted migration inventory. Its catalog guard rejects
+public-schema routines owned by the role applying those migrations when `PUBLIC`,
+`anon` or `authenticated` can execute them. It checks every overload and excludes
+extension members through `pg_depend`, preserving extension-managed access.
+There are no browser-callable application routine exceptions in this inventory.
+Any future exception needs its own reviewed exact-signature contract and check;
+do not silently exempt unknown names. Service-role RPC calls and owner-only
+helpers keep their existing grants.
+
+Negative controls create a fresh function and overload, demonstrate default
+public execution, and require the guard to detect both. Explicit revocation plus
+a service-role grant must then deny both browser roles while permitting the
+service caller. A separate explicit `authenticated` grant must also be detected.
+These objects exist only in the isolated test database.
+
+This is a migration-delivery guard, not a runtime DDL policy. Its boundary is the
+current migration owner's application routines in `public`; functions created
+by other roles, other schemas, and extension-owned routines are outside it.
+The harness verifies those exclusions. It does not change database defaults.
+A schema-only `ALTER DEFAULT PRIVILEGES ... REVOKE EXECUTE ... FROM PUBLIC`
+cannot remove PostgreSQL's built-in global grant. An owner-global revocation
+would also affect that owner's future routines outside `public`, so this
+maintenance uses the scoped required check instead. See the
+[PostgreSQL 15 default-privilege rules](https://www.postgresql.org/docs/15/sql-alterdefaultprivileges.html).
+
+## Current security and cursor metadata
+
+Migration `004`'s historical `SECURITY INVOKER` rationale must not be read as RLS
+protection against its service caller: `service_role` bypasses RLS. Its execution
+ACL was the application access boundary. Migration `023` subsequently revoked
+that old `submit_room_action` signature from all application roles; supported
+legacy submissions use `submit_room_action_for_seat`. Migration `025` corrects
+the live function comment without editing `004` or restoring old grants.
+
+`rooms.active_player_index` is load-bearing current-actor gating state, not
+display-only metadata. The thin referee persists the client-reported successor;
+the clients' deterministic engines retain turn-order authority. The referee
+does not independently validate physics, aliveness or round phase, as accepted
+in [ADR-0008](../../.codearbiter/decisions/0008-referee-turn-authority.md).
+`rooms.turn` also gates stale legacy submissions under the room lock. Neither is
+a seat credential. Migration `025` corrects these live column comments while
+preserving the historical classification migration `011`.
+
 ## Index creation on hot / high-write tables — use `CONCURRENTLY`
 
 A plain `CREATE INDEX` takes a lock that **blocks writes** to the table for the

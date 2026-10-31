@@ -141,6 +141,13 @@ namespace SingedTerra.Encounter
             if(runClock!=null && !runClock.GrantMaximum(maximum))return false;
             MaximumSpeed=maximum;return true;
         }
+        internal bool RestoreProfileSpeed(double maximum,double preferred)
+        {
+            // A confirmed whole-profile replacement can lower research ranks.
+            // Never lower a ceiling on an active run or alter its clock.
+            if(model!=null || runClock!=null || !LastStandSpeedPolicy.IsValidMaximum(maximum))return false;
+            MaximumSpeed=maximum;configuredSpeed=LastStandSpeedPolicy.RestorePositive(preferred,maximum);return true;
+        }
         public bool TrySetMenuPausedAt(double timestamp, bool paused)
         {
             if (!PrepareClockAction(timestamp)) return false;
@@ -359,8 +366,9 @@ namespace SingedTerra.Encounter
         }
         [Serializable] sealed class State
         {
-            public string action, rules, status, fitting, reason, summary;
-            public int run, tick, hp, maxHp, spawned, kills, cannon, launcher, healed, closeHits, rangedHits;
+            public string action, rules, status, fitting, reason, summary,contentVersion,economyVersion;
+            public int run, tick, hp, maxHp, spawned, kills, cannon, launcher, scattergun,mortar,railgun,healed, closeHits, rangedHits;
+            public int mortarDamage,railgunDamage;
             public int alive, visibleUnits, pool;
             public int wave,completedWave,remainingWaveEnemies;
             public bool awaitingWaveCommit,checkpointBlocked;
@@ -376,6 +384,7 @@ namespace SingedTerra.Encounter
             Debug.Log("ST_ENC_STATE " + JsonUtility.ToJson(new State
             {
                 action = action, rules = model?.Profile.Id ?? (loop ? EncounterProfile.PlayablePrototype.Id : review ? EncounterProfile.VisualReview.Id : EncounterModel.RulesVersion), run = run,
+                contentVersion=model?.Profile.Edition.ContentVersion??"",economyVersion=model?.Profile.Edition.EconomyVersion??"",
                 status = model == null ? "Fitting" : model.Status.ToString(),
                 fitting = model == null ? art.FittingId : LastStandFittingCatalog.Id(model.Fitting),
                 reason = Reason, paused = Paused, focused = focused, applicationPaused = applicationPaused,
@@ -388,6 +397,9 @@ namespace SingedTerra.Encounter
                 tick = model?.Tick ?? 0, hp = model?.Hull ?? 120, maxHp = model?.CurrentMaximumHull ?? 120,
                 spawned = model?.Spawned ?? 0, kills = model?.Kills ?? 0,
                 cannon = model?.CannonShots ?? 0, launcher = model?.LauncherShots ?? 0,
+                scattergun=model?.ScattergunShots??0,mortar=model?.MortarShots??0,railgun=model?.RailgunShots??0,
+                mortarDamage=model?.CurrentMortarDamage??LastStandUpgradeCatalog.BaseMortarDamage,
+                railgunDamage=model?.CurrentRailgunDamage??LastStandUpgradeCatalog.BaseRailgunDamage,
                 healed = model?.Restored ?? 0, closeHits = model?.CloseHits ?? 0, rangedHits = model?.RangedHits ?? 0,
                 alive = model?.ActiveCount ?? 0, visibleUnits = View.VisibleUnits, pool = View.PoolSize,
                 wave=model?.Wave??0,completedWave=model?.CompletedWave??0,remainingWaveEnemies=model?.RemainingWaveEnemies??0,

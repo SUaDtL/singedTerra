@@ -2,7 +2,7 @@
 
 ## PixiJS
 
-singedTerra uses PixiJS 8.20.0 as a client-side visual compositor for the
+singedTerra uses PixiJS 8.20.1 as a client-side visual compositor for the
 battle HUD.
 
 MIT License
@@ -46,7 +46,7 @@ asset pipeline and are not included in the browser bundle.
 
 ## Lucide Icons
 
-singedTerra uses selected icons from Lucide 1.27.0.
+singedTerra uses selected icons from Lucide 1.44.0.
 
 ISC License
 

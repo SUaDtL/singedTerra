@@ -1,3 +1,5 @@
+import {findLastStandSettingsViewport} from '../e2e/helpers/lastStandControlReveal.mjs';
+import {LAST_STAND_HELPER_INPUTS} from '../e2e/helpers/lastStandJourney.mjs';
 // Real player input against a freshly source-bound Web export. No gameplay save fixtures.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -24,7 +26,10 @@ for (const [path,hash] of Object.entries({...manifest.files,'index.html':manifes
   assertServedBytes(await fetchBoundRuntime(base,path),hash);
 mkdirSync(dirname(output),{recursive:true}); mkdirSync(output,{recursive:false});
 const inputHashes=()=>Object.fromEntries(['scripts/last-stand-controls.mjs',
-  'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandTierJourney.mjs',
+  'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandControlReveal.mjs',
+  'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json','e2e/helpers/lastStandTierJourney.mjs',
   'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs']
   .map(path=>[path,createHash('sha256').update(readFileSync(path)).digest('hex')]));
 const report = {status:'running',scope:'source-bound headless Web controls and recorded audio; owner listening and native acceptance separate',
@@ -90,7 +95,7 @@ for(const fitting of fittings) {
       await until(()=>items()?.some(c=>c.name===name&&c.active&&c.interactable));
       for(let attempt=0;attempt<16;attempt++) {
         const item=items().find(c=>c.name===name&&c.active&&c.interactable);
-        const viewport=raw().graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&['Image','LastStandConsoleSurface'].includes(g.kind));
+        const viewport=findLastStandSettingsViewport(raw().graphics);
         if(viewport&&item.mode==='Settings'&&!['SettingsClose','SettingsTab0','SettingsTab1','SettingsTab2','SettingsTab3','ChoicePrevious','ChoiceNext'].includes(name)) {
           if(item.y<viewport.y||item.y+item.height>viewport.y+viewport.height) {
             await page.mouse.move(...Object.values(await point(viewport)));

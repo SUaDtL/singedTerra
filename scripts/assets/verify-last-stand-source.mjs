@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { TextDecoder } from 'node:util';
 
 const ROOTS = ['Unity/Assets', 'Unity/ProjectSettings', 'Unity/Packages'];
-const TOOLS = ['Tools/build_web.py', 'Tools/unity_shader_log.py'];
+const TOOLS = ['Tools/build_web.py', 'Tools/unity_shader_log.py', 'Tools/unity_build_resources.py'];
 const WRAPPER = ['Tools/make_web_entry.py', 'Tools/web-index-template.html'];
 const VENDOR = 'Unity/Packages/com.unity.render-pipelines.universal';
 const SHA = /^[0-9a-f]{64}$/;
@@ -80,7 +80,7 @@ export function verifyLastStandSource(repo, payloadRoot = join(repo, 'client/pub
       || receipt.sourceBeforeSha256 !== closure.sha256 || receipt.sourceAfterSha256 !== closure.sha256
       || JSON.stringify(ordered(receipt.sourceFiles ?? {})) !== JSON.stringify(ordered(closure.files))) fail('source receipt closure differs');
   validateMap(lock.toolchain?.files, 'toolchain');
-  if (lock.toolchain.sha256 !== mapHash(lock.toolchain.files) || lock.toolchain.editorVersion !== '6000.3.24f1' || lock.toolchain.urpVersion !== '17.3.0'
+  if (lock.toolchain.sha256 !== mapHash(lock.toolchain.files) || lock.toolchain.editorVersion !== '6000.3.27f2' || lock.toolchain.urpVersion !== '17.3.0'
       || JSON.stringify(receipt.toolchain) !== JSON.stringify(lock.toolchain)) fail('toolchain pin differs');
   const vendorFiles = Object.fromEntries(Object.entries(closure.files).filter(([name]) => name.startsWith(`${VENDOR}/`)));
   if (lock.vendor?.path !== VENDOR || lock.vendor?.version !== '17.3.0' || Object.keys(vendorFiles).length < 2

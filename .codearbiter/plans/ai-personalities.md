@@ -78,3 +78,12 @@
 - [ ] **Step 3: Deliver through commit, PR, hosted checks, merge, and production verification**
 
   Use the governed commit and PR paths; merge only after hosted checks are green on the exact reviewed head. This slice has no Supabase deployment surface; verify the Pages deployment and live client health after merge.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `shared/src/engine/AI.ts`, `scripts/checks/ai.mjs`.
+
+The latest change to this historical plan reachable from `origin/main` is `dad107f1132a` (feat(ai): add deterministic weapon personalities). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

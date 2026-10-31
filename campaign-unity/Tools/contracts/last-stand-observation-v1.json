@@ -96,7 +96,9 @@
         "ShopCard_cannonCycleBuy",
         "ShopCard_fieldRepairBuy",
         "ShopCard_scattergunAttackBuy",
-        "ShopCard_scrapYieldBuy"
+        "ShopCard_scrapYieldBuy",
+        "ShopCard_mortarAttackBuy",
+        "ShopCard_railgunAttackBuy"
       ]
     },
     {

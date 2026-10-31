@@ -94,7 +94,7 @@ test('local binding uses the existing validated manifest and distinguishes worki
   assert.equal(typeof binding.sourceTreeClean, 'boolean');
   assert.match(binding.manifestSha256, /^[0-9a-f]{64}$/);
   assert.equal(binding.functions, 22);
-  assert.equal(binding.migrations, 24);
+  assert.equal(binding.migrations, 25);
   assert.equal(binding.enablementReady, false);
   assert.equal(binding.runtimeIdentity, 'not-proven');
   assert.equal(binding.scope, 'local-release-inputs');

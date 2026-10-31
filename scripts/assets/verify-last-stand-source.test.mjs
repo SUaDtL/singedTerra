@@ -19,7 +19,7 @@ function fixture(windowsOrder = false) {
   }
   for (const name of ['Unity/Assets/model.cs', 'Unity/ProjectSettings/settings.asset',
     'Unity/Packages/manifest.json', 'Unity/Packages/com.unity.render-pipelines.universal/package.json',
-    'Unity/Packages/com.unity.render-pipelines.universal/Shader.shader', 'Tools/build_web.py','Tools/unity_shader_log.py','Tools/make_web_entry.py','Tools/web-index-template.html']) {
+    'Unity/Packages/com.unity.render-pipelines.universal/Shader.shader', 'Tools/build_web.py','Tools/unity_shader_log.py','Tools/unity_build_resources.py','Tools/make_web_entry.py','Tools/web-index-template.html']) {
     const path = join(repo, 'campaign-unity', name); mkdirSync(join(path, '..'), { recursive: true });
     writeFileSync(path, name.endsWith('package.json') ? '{"version":"17.3.0"}' : 'source\n');
   }
@@ -33,10 +33,10 @@ function fixture(windowsOrder = false) {
   }
   inventory(join(repo,'campaign-unity'));
   const ordered = Object.fromEntries(Object.entries(sourceFiles).sort(([a],[b])=>windowsOrder ? (a.toLowerCase()<b.toLowerCase()?-1:1) : (a<b?-1:1)));
-  const closure = {roots:['Unity/Assets','Unity/ProjectSettings','Unity/Packages'],explicitFiles:['Tools/build_web.py','Tools/unity_shader_log.py'],files:Object.fromEntries(Object.entries(ordered).filter(([name])=>!['Tools/make_web_entry.py','Tools/web-index-template.html'].includes(name))),sha256:sha(JSON.stringify(ordered))};
+  const closure = {roots:['Unity/Assets','Unity/ProjectSettings','Unity/Packages'],explicitFiles:['Tools/build_web.py','Tools/unity_shader_log.py','Tools/unity_build_resources.py'],files:Object.fromEntries(Object.entries(ordered).filter(([name])=>!['Tools/make_web_entry.py','Tools/web-index-template.html'].includes(name))),sha256:sha(JSON.stringify(ordered))};
   closure.sha256=sha(JSON.stringify(closure.files));
   const wrapperFiles=Object.fromEntries(Object.entries(ordered).filter(([name])=>['Tools/make_web_entry.py','Tools/web-index-template.html'].includes(name)));
-  const toolchain={editorVersion:'6000.3.24f1',urpVersion:'17.3.0',files:{'Unity.exe':{mode:'raw',sha256:sha('editor')}}};
+  const toolchain={editorVersion:'6000.3.27f2',urpVersion:'17.3.0',files:{'Unity.exe':{mode:'raw',sha256:sha('editor')}}};
   toolchain.sha256=sha(JSON.stringify(toolchain.files));
   const receipt={schema:'singedterra-last-stand-export/v2',status:'pass',complete:true,build:'Web-fixture',
     scene:'Assets/Scenes/LastStandPrototype.unity',sourceBeforeSha256:closure.sha256,sourceAfterSha256:closure.sha256,
@@ -53,7 +53,7 @@ function fixture(windowsOrder = false) {
     wrapperSha256:sha(html),files}));
   return {repo, root, files};
 }
-for (const [label, name] of [['source', 'Unity/Assets/model.cs'], ['tool', 'Tools/build_web.py'],
+for (const [label, name] of [['source', 'Unity/Assets/model.cs'], ['tool', 'Tools/build_web.py'], ['resource owner', 'Tools/unity_build_resources.py'],
   ['vendor', 'Unity/Packages/com.unity.render-pipelines.universal/Shader.shader'],
   ['unexpected package', 'Unity/Packages/new.json']]) {
   test(`fresh export admission rejects ${label} drift`, () => {
@@ -73,6 +73,7 @@ test('verified complete pin admits absent ignored vendor without claiming inspec
   } finally {rmSync(repo,{recursive:true,force:true});}
 });
 for (const [name, change] of [
+  ['missing resource owner', (repo)=>rmSync(join(repo,'campaign-unity/Tools/unity_build_resources.py'))],
   ['missing pin', (repo)=>rmSync(join(repo,'campaign-unity/docs/last-stand-web/source-lock.json'))],
   ['changed pin', (repo)=>writeFileSync(join(repo,'campaign-unity/docs/last-stand-web/source-lock.json'),'{}')],
   ['partial vendor', (repo)=>rmSync(join(repo,'campaign-unity/Unity/Packages/com.unity.render-pipelines.universal/Shader.shader'))],
@@ -80,7 +81,7 @@ for (const [name, change] of [
 ]) {
   test(`fresh export admission rejects ${name}`, () => {
     const {repo,root}=fixture();
-    try {change(repo);assert.throws(()=>verifyLastStandPayload(root,repo),/source|receipt|closure|inventory|wrapper/i);}
+    try {change(repo);assert.throws(()=>verifyLastStandPayload(root,repo),/source|receipt|closure|inventory|wrapper|ENOENT/i);}
     finally {rmSync(repo,{recursive:true,force:true});}
   });
 }

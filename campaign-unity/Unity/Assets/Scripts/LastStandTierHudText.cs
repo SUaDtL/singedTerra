@@ -11,16 +11,9 @@ namespace SingedTerra.LastStand
         public static string Goal(int tier) => "Tier " + tier + " / Clear every enemy to advance";
         public static string WaveBest(int wave) => wave==0 ? "Best: no completed wave" : "Best: wave "+wave;
         public static string WaveReceipt(int wave,int salvage,bool firstClear,string unlockedFitting,int unlockedTier)
-        {
-            string detail=!String.IsNullOrEmpty(unlockedFitting)?unlockedFitting.ToUpperInvariant()+" UNLOCKED":
-                unlockedTier>0?"TIER "+unlockedTier+" UNLOCKED":firstClear?"FIRST CLEAR SAVED":"WAVE REWARD SAVED";
-            return "W"+wave+" +"+salvage.ToString("N0",CultureInfo.InvariantCulture)+" SALVAGE\n"+detail;
-        }
+            =>LastStandMilestonePresentation.ConfirmedReceipt(wave,salvage,firstClear,unlockedFitting,unlockedTier);
         public static string NextMilestone(int tier,int wave)
-        {
-            var next=LastStandRewardCatalog.NextMilestone(LastStandTierCatalog.Get(tier),wave);
-            return next==null?"Keep farming repeatable wave rewards.":"Next milestone: wave "+next.Wave;
-        }
+            =>LastStandMilestonePresentation.NextGoal(tier,wave);
         public static string WaveProgress(int tier,int wave,int remaining)=>"T"+tier+" / WAVE "+wave+" / "+remaining+" LEFT";
         public static string Best(int ticks, int kills) => ticks == 0 && kills == 0 ? "Best: no saved run" :
             "Legacy best " + Seconds(ticks) + "s / " + kills + " disabled";
@@ -28,7 +21,7 @@ namespace SingedTerra.LastStand
         public static bool GoalMet(int tier, int completedWave)
         {
             foreach(var next in LastStandTierCatalog.All)
-                if(next.RequiredTier==tier)return completedWave>=next.RequiredWave;
+                if(next.Playable && next.RequiredTier==tier)return completedWave>=next.RequiredWave;
             return false;
         }
         public static string BattleHeading(int tier, int wave) => "CLEAR WAVE " + wave;

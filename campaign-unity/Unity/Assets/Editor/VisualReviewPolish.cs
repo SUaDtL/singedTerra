@@ -256,7 +256,7 @@ public static class VisualReviewPolish
     [MenuItem("singedTerra/Repair confirmed saved review check artifacts once")]
     public static void RepairSavedCheckArtifacts()
     {
-        Require(Application.unityVersion == "6000.3.24f1", "unexpected editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "unexpected editor version");
         const string receiptPath = ReviewRoot + "/authoring-repair-receipt.json";
         const string polishPath = ReviewRoot + "/polish-receipt.json";
         const string affectedScene = "510429daf6c91eda2504b51aecc2045c6e2021903b6ca5d2c5a5828191fb30af";
@@ -354,7 +354,7 @@ public static class VisualReviewPolish
     [MenuItem("singedTerra/Polish saved battlefield review once")]
     public static void Apply()
     {
-        Require(Application.unityVersion == "6000.3.24f1", "unexpected editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "unexpected editor version");
         EditorSceneManager.OpenScene(VisualReviewBuild.ScenePath, OpenSceneMode.Single);
         VisualReviewBuild.Validate();
         var review = UnityEngine.Object.FindFirstObjectByType<BattlefieldReview>();

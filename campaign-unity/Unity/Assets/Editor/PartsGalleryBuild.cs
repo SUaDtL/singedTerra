@@ -24,7 +24,7 @@ public static class PartsGalleryBuild
     [MenuItem("singedTerra/Prepare parts gallery scene")]
     public static void Prepare()
     {
-        Require(Application.unityVersion == "6000.3.24f1", "pinned editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "pinned editor version");
         Require(!File.Exists(ScenePath), "refuse to replace saved gallery scene");
         var catalog = JsonUtility.FromJson<Catalog>(File.ReadAllText("Assets/Art/PartsLibrary/catalog.json"));
         Require(catalog.items != null && catalog.items.Length == 20 &&
@@ -76,7 +76,7 @@ public static class PartsGalleryBuild
 
     public static void BuildWeb()
     {
-        Require(Application.unityVersion == "6000.3.24f1", "pinned editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "pinned editor version");
         Require(BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.WebGL, BuildTarget.WebGL), "WebGL support");
         PartsGalleryChecks.Run();
         string output = Environment.GetEnvironmentVariable("ST_ART_WEB_OUTPUT");

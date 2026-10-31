@@ -14,14 +14,14 @@ internal static class TierRulesChecks
             Require(factory != null, "Playable encounter has no immutable tier profile selection.");
             var first = (EncounterProfile)factory.Invoke(null, new object[] { 1 });
             var second = (EncounterProfile)factory.Invoke(null, new object[] { 2 });
-            Require(first != EncounterProfile.PlayablePrototype && first.IsWaveBased && first.Id == LastStandWaveCatalog.RulesVersion+":"+LastStandTierCatalog.Get(1).EncounterProfileId, "Player tier uses versioned waves.");
-            Require(second.Id == LastStandWaveCatalog.RulesVersion+":"+LastStandTierCatalog.Get(2).EncounterProfileId && second.IsWaveBased, "Tier 2 has its own wave identity.");
+            Require(first != EncounterProfile.PlayablePrototype && first.IsWaveBased && first.Id == LastStandRunEdition.CurrentRulesVersion+":"+LastStandTierCatalog.Get(1).EncounterProfileId, "Player tier uses versioned waves.");
+            Require(second.Id == LastStandRunEdition.CurrentRulesVersion+":"+LastStandTierCatalog.Get(2).EncounterProfileId && second.IsWaveBased, "Tier 2 has its own wave identity.");
             Require(first.Horizon == int.MaxValue && second.Horizon == int.MaxValue, "Wave runs do not end at the old fixture horizon.");
             Require(EncounterProfile.PlayablePrototype.Horizon == 3600 && EncounterProfile.PlayablePrototype.Id == "playable-prototype-v1" && !EncounterProfile.PlayablePrototype.IsWaveBased, "Historical playable oracle retains its explicit fixture.");
             for (int hull = 1; hull < 101; hull++)
                 Require(LastStandTierCatalog.EnemyHull(2, hull) == (hull * 5 + 3) / 4, "Exact ceiling scale, including odd hull.");
-            try { factory.Invoke(null, new object[] { 3 }); throw new Exception("Unknown tier admitted."); }
-            catch (TargetInvocationException e) { Require(e.InnerException is ArgumentOutOfRangeException, "Unknown tier refusal."); }
+            try { factory.Invoke(null, new object[] { 5 }); throw new Exception("Unknown tier admitted."); }
+            catch (TargetInvocationException e) { Require(e.InnerException is ArgumentException, "Unknown tier refusal."); }
             // Repair fitting has no tick-one auxiliary shot, exposing initial hull.
             var a = new EncounterModel(false, first); var b = new EncounterModel(false, second);
             a.Step(); b.Step();

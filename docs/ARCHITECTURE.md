@@ -1,9 +1,15 @@
 # Architecture
 
-singedTerra has one deterministic engine, two live execution modes, and a
-separate bounded verification path. The browser owns simulation, rendering,
-and player input. Supabase coordinates online rooms and verifies eligible
-completed transcripts. It does not run a continuous game server.
+singedTerra contains two game paths. The classic artillery game uses one
+deterministic TypeScript engine for hot-seat, online lockstep and bounded
+transcript verification. Last Stand is a Unity survival campaign with its own
+fixed-step C# domain, local progression and platform adapters. The browser
+launcher links to its receipt-bound Web player; it does not implement a second
+copy of campaign rules or connect local campaign saves to account rewards.
+
+Supabase coordinates classic online rooms and verifies eligible completed
+transcripts. It does not run a continuous game server. The classic runtime map
+below and the separate Last Stand map describe their actual owners.
 
 ## Runtime map
 
@@ -45,6 +51,36 @@ shared/                 imports from neither client nor Supabase
 owns orchestration, Canvas rendering, the lobby, battle console, input, audio,
 and online transport. `supabase/` owns additive migrations and stateless Edge
 Function entry points.
+
+## Last Stand campaign
+
+```text
+LastStandLoopHud feature views → LastStandLoopController
+                            → Application coordinators
+                            → LastStandProgression / EncounterModel / catalogs
+Platform adapters           → application ports, clocks and storage
+```
+
+`campaign-unity/Unity/Assets/Scripts/Application/` owns run recovery, purchase
+admission and research reconciliation. `LastStandProgression` owns the atomic
+checkpoint/wallet/research/history transaction. `EncounterModel` and the
+versioned catalogs own simulation and accounting; presentation consumes their
+projections. `Content/LastStandRunEdition` preserves the rules, content and
+economy tuple of existing runs. Retained editions are compatibility owners.
+
+`LastStandLoopHud` composes the garage, combat, shop and modal views. Settings,
+Research and History share UI primitives and modal/scroll/focus mechanics.
+`Platform/` supplies capability-aware clocks, browser/native navigation and
+storage; browser save ownership prevents simultaneous writers. Research uses
+real time. Closing the game resumes combat from the saved wave boundary;
+native suspension holds the live combat clock without advancing hidden time.
+
+`Tools/build_last_stand.py` selects WebGL, Windows or Android. The checked-in
+`client/public/last-stand/asset-manifest.json` and sanitized receipt bind the Web
+delivery. The normal npm build verifies and packages that export without
+compiling Unity. Pure C# tests, Unity imports, browser rendering, native builds
+and physical-device acceptance are separate verification layers. See the
+[detailed owner map](../campaign-unity/docs/LAST-STAND-ARCHITECTURE.md).
 
 ## Hot-seat execution
 
@@ -141,8 +177,10 @@ coordinator; battle entry creates its generation ledger and mounts the semantic
 root, effects, intent bridge, and controller adapter. Before first entry there
 are no mounted console resources. Pixi, its CSP-support module,
 and compositor textures remain optional and deferred; their failure leaves the
-semantic controls operable. The loading variance and required fresh evidence
-are recorded in the [console entry recovery report](reports/recovered-console-entry-2026-09-13.md).
+semantic controls operable. The owner retained this recovery design in
+[ADR-0020](../.codearbiter/decisions/0020-recovery-safe-battle-console-loading.md),
+which supersedes only ADR-0018's semantic lazy-loading clause. Historical loading
+variance and evidence remain in the [console entry recovery report](reports/recovered-console-entry-2026-09-13.md).
 
 Responsive projection selects wide, standard, or compact console geometry.
 Canvas still owns the battlefield in every mode. HTML remains the focus,

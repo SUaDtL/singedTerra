@@ -76,3 +76,12 @@
 - [ ] Append exact RED/GREEN and verification receipts to the sprint log.
 - [ ] Send Euler the spec, plan, sprint log, tests, and final diff; resolve all Critical, High, Medium merge blockers, and other blocking findings.
 - [ ] Use the commit gate, open a PR, require green checks on the exact reviewed head, merge under standing authority, deploy no backend changes, and smoke-test Pages plus unchanged function OPTIONS health.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `client/src/client/quickChat.ts`, `client/src/client/NetworkClient.quickChat.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `b397161e9e9e` (feat(network): add ephemeral quick chat). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

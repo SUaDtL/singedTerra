@@ -7,7 +7,6 @@ The ordinary invocation always compiles the production layout projection.
 """
 from pathlib import Path
 import os
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -22,10 +21,10 @@ if cache_dir.is_dir():
     except OSError:
         pass
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
+
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 DRIVER = Path(__file__).with_name("HudLayoutChecks.cs")
 
@@ -41,12 +40,7 @@ class HudLayoutTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "HudLayoutChecks.exe"
         baseline = os.environ.get("ST_HUD_LAYOUT_BASELINE") == "1"
         source = SCRIPTS / ("LastStandLoopHud.cs" if baseline else "LastStandHudLayout.cs")
-        command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
-        if baseline:
-            command.append("-define:ST_HUD_LAYOUT_BASELINE")
-        command.extend([str(source), str(DRIVER)])
-        build = subprocess.run(command, capture_output=True, text=True,
-                               encoding="utf-8-sig", timeout=60)
+        build = compile_csharp(cls.executable, [source, DRIVER], warnings_as_errors=True, timeout_seconds=60, defines=('ST_HUD_LAYOUT_BASELINE',) if baseline else ())
         if build.returncode:
             cls.output.cleanup()
             raise AssertionError(f"Pinned C# compilation failed (not behavioral RED):\n{build.stdout}{build.stderr}")
@@ -56,8 +50,7 @@ class HudLayoutTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        run = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                             text=True, encoding="utf-8-sig", timeout=30)
+        run = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertEqual(run.stdout.strip(), "PASS " + name)
 
@@ -69,3 +62,9 @@ class HudLayoutTests(unittest.TestCase):
 
     def test_text_targets_and_long_notice_bounds(self):
         self.case("text_targets_and_long_notice_bounds")
+
+    def test_short_garage_reserves_menu_and_all_actions(self):
+        self.case("short_garage_reserves_menu_and_all_actions")
+
+    def test_short_recovery_preserves_summary_and_actions(self):
+        self.case("short_recovery_preserves_summary_and_actions")

@@ -18,7 +18,8 @@ SCRIPTS = TOOLS.parent / "Unity/Assets/Scripts"
 PURE_ROOTS = ["Application/LastStandRunCoordinator.cs",
               "Application/LastStandResearchCoordinator.cs",
               "Application/LastStandPurchaseCoordinator.cs",
-              "Content/LastStandContentManifest.cs", "LastStandShopPresentation.cs"]
+              "Content/LastStandContentManifest.cs", "LastStandShopPresentation.cs",
+              "LastStandProgressionPlanner.cs", "LastStandHistoryComparison.cs"]
 WRITE_PATTERNS = [
     r"\bProgression\s*\.\s*(?:Try\w*|Retry|Load)\s*\(",
     r"\bLastStandProgression\s*\.\s*Load\s*\(",

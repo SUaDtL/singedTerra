@@ -30,6 +30,41 @@ namespace SingedTerra.LastStand
             if(RetainsPreviousIncome)return checked(3+(wave-1)/250);
             return checked(3+Math.Min(wave,200)/10+Math.Max(wave-200,0)/20);
         }
+        public int BaseScrapForEnemy(LastStandTierDefinition tier,int wave,int ordinal,LastStandRunEdition edition)
+        {
+            if(edition==null||edition.EconomyVersion!=Version)throw new ArgumentException("Enemy income edition mismatch.");
+            return checked(BaseScrapPerKill(wave)*LastStandEnemyCatalog.For(tier,wave,ordinal,edition).RewardMultiplier);
+        }
+        public long BaseScrapForMask(LastStandTierDefinition tier,int wave,int mask,LastStandRunEdition edition)
+        {
+            if(edition==null||edition.EconomyVersion!=Version)throw new ArgumentException("Enemy income edition mismatch.");
+            int count=LastStandWaveCatalog.ForWave(tier,wave,edition).EnemyCount;
+            if(mask<0||(mask&~((1<<count)-1))!=0)throw new ArgumentException("Enemy mask is outside its cohort.");
+            long total=0;for(int ordinal=0;ordinal<count;ordinal++)if((mask&(1<<ordinal))!=0)
+                total=checked(total+BaseScrapForEnemy(tier,wave,ordinal,edition));
+            return total;
+        }
+        // Restore proves the entire completed ledger. The first280 waves are
+        // bounded bands; thereafter the20-slot recipe/elite pattern repeats
+        // every100 waves while each enemy's base bounty increases by5.
+        public long BaseScrapThroughCohorts(LastStandTierDefinition tier,int completedWave,LastStandRunEdition edition)
+        {
+            if(completedWave<0||edition==null||edition.EconomyVersion!=Version)throw new ArgumentException("Invalid completed income identity.");
+            if(edition.IsLegacy)
+                return BaseScrapThroughKills(LastStandWaveCatalog.TotalEnemiesThroughWave(completedWave,edition));
+            long total=0;
+            for(int wave=1;wave<=Math.Min(completedWave,280);wave++){
+                int count=LastStandWaveCatalog.ForWave(tier,wave,edition).EnemyCount;
+                total=checked(total+BaseScrapForMask(tier,wave,(1<<count)-1,edition));
+            }
+            for(int offset=0;offset<100&&281+offset<=completedWave;offset++){
+                int first=281+offset;long repetitions=((long)completedWave-first)/100+1;
+                int multiplier=0;for(int ordinal=0;ordinal<20;ordinal++)
+                    multiplier+=LastStandEnemyCatalog.For(tier,first,ordinal,edition).RewardMultiplier;
+                total=checked(total+multiplier*(repetitions*BaseScrapPerKill(first)+5*repetitions*(repetitions-1)/2));
+            }
+            return total;
+        }
         // Every prior cohort is defeated before a later wave can pay kills.
         // Fourteen short roster bands plus one closed-form tail keep recovery
         // bounded even for very large valid cumulative kill counts.
@@ -77,8 +112,9 @@ namespace SingedTerra.LastStand
     {
         static readonly LastStandEconomyDefinition legacy=new LastStandEconomyDefinition(LastStandUpgradeCatalog.LegacyEconomyVersion);
         static readonly LastStandEconomyDefinition previous=new LastStandEconomyDefinition(LastStandUpgradeCatalog.PreviousEconomyVersion);
+        static readonly LastStandEconomyDefinition retained=new LastStandEconomyDefinition(LastStandUpgradeCatalog.RetainedEconomyVersion);
         static readonly LastStandEconomyDefinition current=new LastStandEconomyDefinition(LastStandUpgradeCatalog.EconomyVersion);
-        public static IReadOnlyList<LastStandEconomyDefinition> All { get; } = Array.AsReadOnly(new[]{legacy,previous,current});
+        public static IReadOnlyList<LastStandEconomyDefinition> All { get; } = Array.AsReadOnly(new[]{legacy,previous,retained,current});
         public static LastStandEconomyDefinition Get(string version)
         {
             foreach(var definition in All)if(version==definition.Version)return definition;

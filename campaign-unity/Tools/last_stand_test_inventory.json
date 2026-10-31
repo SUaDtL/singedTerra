@@ -1,0 +1,1496 @@
+{
+  "schema": 1,
+  "tests": [
+    {
+      "path": "last_stand_architecture/test_application.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ApplicationTests.test_research_coordinator_confirms_once_after_uncertain_save",
+        "ApplicationTests.test_run_coordinator_retries_wave_without_duplicate_rewards",
+        "ApplicationTests.test_suspend_resume_preserves_clock_and_checkpoint_semantics"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_boundaries.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "BoundaryTests.test_domain_compiles_without_unity",
+        "BoundaryTests.test_presentation_cannot_write_progression"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_build_manifest.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "BuildManifestTests.test_android_receipt_requires_the_effective_tool_paths_version_and_java_execution",
+        "BuildManifestTests.test_build_environment_is_scoped_and_clears_inherited_android_overrides",
+        "BuildManifestTests.test_effective_tool_bytes_and_paths_are_bound_but_unrelated_sdk_images_are_not",
+        "BuildManifestTests.test_external_tools_reuse_sdk_without_requiring_embedded_java_or_ndk",
+        "BuildManifestTests.test_java_metadata_requires_one_stable_java17_version_and_nonempty_binary",
+        "BuildManifestTests.test_manifest_binds_output_bytes_source_toolchain_scene_and_flags",
+        "BuildManifestTests.test_missing_extra_and_modified_player_bytes_are_rejected",
+        "BuildManifestTests.test_preflight_rejects_java_version_the_pinned_unity_cannot_parse",
+        "BuildManifestTests.test_target_preflight_requires_module_and_android_toolchain"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_content.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ContentTests.test_content_extension_reaches_runtime_without_scattered_counts",
+        "ContentTests.test_content_identity_and_reference_errors_fail_before_build",
+        "ContentTests.test_legacy_content_identity_survives_catalog_extension"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_content_validation.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "ContentValidationTests.test_build_hook_refuses_missing_and_duplicate_scene_bindings"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_encounter_oracle.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "EncounterOracleTests.test_browser_encounter_oracle_compiles_complete_current_source_and_preserves_reference"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_foundation_baseline.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "FoundationBaselineTests.test_frozen_fixture_rejects_reward_drift",
+        "FoundationBaselineTests.test_refactor_preserves_frozen_model_and_save_fixtures"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_milestone_fixtures.py",
+      "lane": "alias",
+      "owner": "last_stand_waves/test_earned_milestone_fixtures.py",
+      "reason": "Compatibility import of the same five tests; the canonical portable module executes once",
+      "alias_of": "last_stand_waves/test_earned_milestone_fixtures.py",
+      "cases": []
+    },
+    {
+      "path": "last_stand_architecture/test_native_storage.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "NativeStorageTests.test_ambiguous_sequence_is_not_silently_selected",
+        "NativeStorageTests.test_checksum_corruption_and_two_invalid_slots_never_create_fresh_profile",
+        "NativeStorageTests.test_crc_covers_identity_sequence_and_payload_without_crypto",
+        "NativeStorageTests.test_future_container_version_is_not_downgraded",
+        "NativeStorageTests.test_link_at_record_file_position_refuses_access_and_preserves_target",
+        "NativeStorageTests.test_linked_root_and_ancestor_refuse_access_without_changing_target",
+        "NativeStorageTests.test_missing_os_range_lock_is_detected_by_an_independent_process",
+        "NativeStorageTests.test_native_lease_honors_an_independent_os_range_lock",
+        "NativeStorageTests.test_native_storage_restart_and_interrupted_write_recovery",
+        "NativeStorageTests.test_native_writer_lease_excludes_another_process_and_releases_on_exit",
+        "NativeStorageTests.test_preferences_retry_reacquires_before_read_and_preserves_newer_records",
+        "NativeStorageTests.test_record_isolation_and_rejected_path_escape",
+        "NativeStorageTests.test_same_process_observers_do_not_release_the_cross_process_lease",
+        "NativeStorageTests.test_surviving_waiter_retries_after_the_owner_process_exits"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_observation_contract.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "ObservationContractTests.test_actual_emitter_shared_contract_and_consumers"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_observation_versions.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Strict current and retained diagnostic schema admission against maintained readers; no player qualification",
+      "cases": [
+        "ObservationVersionTests.test_continuity_requires_each_new_control_and_its_exact_version",
+        "ObservationVersionTests.test_current_schema_cannot_be_downgraded_or_mislabeled",
+        "ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired",
+        "ObservationVersionTests.test_incomplete_extra_repeated_and_malformed_current_refused",
+        "ObservationVersionTests.test_retained_and_current_complete_shapes"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_test_runtime.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "TestRuntimeTests.test_discovery_uses_explicit_tools_or_path_without_silent_skip",
+        "TestRuntimeTests.test_explicit_defines_preserve_preprocessor_contract_without_raw_flags",
+        "TestRuntimeTests.test_explicit_sources_outputs_and_runtime_failure_are_preserved",
+        "TestRuntimeTests.test_explicit_tools_survive_unavailable_default_discovery",
+        "TestRuntimeTests.test_runner_propagates_compile_timeout_and_source_failures",
+        "TestRuntimeTests.test_source_change_during_compilation_rejects_output"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_ui_foundation.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "SharedUiFoundationTests.test_shared_modal_lifecycle_focus_and_scroll"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_wave_oracle.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "WaveOracleTests.test_browser_oracle_compiles_its_complete_bound_source_list",
+        "WaveOracleTests.test_retained_oracle_uses_original_complete_edition"
+      ]
+    },
+    {
+      "path": "last_stand_architecture/test_web_artifact_binding.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "WebArtifactBindingTests.test_current_depth_and_retained_sprint_identities_are_metadata",
+        "WebArtifactBindingTests.test_mixed_unknown_or_malformed_metadata_cannot_reach_build"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_armament_transactions.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ArmamentTransactionTests.test_locked_and_inapplicable_new_permanent_tracks_cannot_charge",
+        "ArmamentTransactionTests.test_new_fitting_quote_and_failed_save_atomicity",
+        "ArmamentTransactionTests.test_new_weapon_boundary_failure_preserves_paid_state_on_retry",
+        "ArmamentTransactionTests.test_new_weapon_cards_match_purchase_admission",
+        "ArmamentTransactionTests.test_new_weapon_paid_projection_cannot_be_forged",
+        "ArmamentTransactionTests.test_new_weapon_run_bulk_stale_cap_and_wrong_fitting",
+        "ArmamentTransactionTests.test_new_weapon_schema_requires_exact_fields_and_retains_old_shape",
+        "ArmamentTransactionTests.test_paid_new_weapon_checkpoint_close_reopen_is_exact"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_armaments.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ArmamentTests.test_checkpoint_rejects_impossible_armament_cadence_timer",
+        "ArmamentTests.test_checkpoint_rejects_impossible_armament_shot_count",
+        "ArmamentTests.test_current_scatter_interception_preserves_every_retained_range",
+        "ArmamentTests.test_inactive_armament_damage_remains_neutral_on_restore",
+        "ArmamentTests.test_inactive_armament_timers_remain_neutral_on_restore",
+        "ArmamentTests.test_integer_geometry_edges_symmetry_and_maximum_distance",
+        "ArmamentTests.test_mortar_dead_center_keeps_aim_and_unique_kill_identities",
+        "ArmamentTests.test_mortar_hits_each_target_once",
+        "ArmamentTests.test_mortar_paid_projection_covers_its_calibrated_area",
+        "ArmamentTests.test_new_auxiliary_cadence_is_exactly_sixty_ticks",
+        "ArmamentTests.test_new_weapon_timing_and_paid_projection_resume",
+        "ArmamentTests.test_railgun_penetration_and_old_weapon_mitigation",
+        "ArmamentTests.test_railgun_priority_uses_armor_then_distance_then_id",
+        "ArmamentTests.test_unfired_armament_cannot_change_initial_timer"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_campaign.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "CampaignTests.test_compact_goal_names_actual_bonus_and_unlock",
+        "CampaignTests.test_each_fitting_receipt_waits_for_the_actual_saved_milestone",
+        "CampaignTests.test_manual_roadmap_is_shared_readonly_and_retains_run_edition",
+        "CampaignTests.test_milestone_unlock_and_receipt_exactly_once",
+        "CampaignTests.test_only_first_locked_tier_visible",
+        "CampaignTests.test_tier_unlock_does_not_promote_active_run"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_combat_balance.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "CombatBalanceTests.test_actual_milestone_award_is_not_repeatable_farm_income",
+        "CombatBalanceTests.test_actual_wave_transactions_and_repeat_deployments_conserve_earned_currency",
+        "CombatBalanceTests.test_changed_speed_time_bins_match_per_observation_history",
+        "CombatBalanceTests.test_confirmed_active_checkpoint_fork_abandons_without_new_rewards",
+        "CombatBalanceTests.test_early_income_cannot_cap_long_term_tracks",
+        "CombatBalanceTests.test_equal_investment_matchup_tradeoffs",
+        "CombatBalanceTests.test_large_measurement_report_preserves_complete_nested_records",
+        "CombatBalanceTests.test_lower_tier_farming_rate_excludes_first_clear",
+        "CombatBalanceTests.test_production_spawn_and_reward_baselines_are_not_accelerated",
+        "CombatBalanceTests.test_reject_free_currency_research_and_first_clear_double_count",
+        "CombatBalanceTests.test_report_rejects_missing_cells_foreign_profiles_and_extra_purchases",
+        "CombatBalanceTests.test_research_cost_and_real_calendar_gate_speed",
+        "CombatBalanceTests.test_role_effects_bind_actual_continuous_model_hits_and_unique_kills",
+        "CombatBalanceTests.test_single_max_purchase_uses_real_time_without_catchup_replay",
+        "CombatBalanceTests.test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_crowded_waves.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "CrowdedWaveTests.test_actual_report_rejects_foreign_funding_missing_wave_and_false_pressure",
+        "CrowdedWaveTests.test_actual_wave_metrics_and_readonly_state_parity",
+        "CrowdedWaveTests.test_calibrated_and_historical_bindings_are_not_interchangeable",
+        "CrowdedWaveTests.test_complete_crowded_parity_rejects_plausible_but_changed_role_measurements",
+        "CrowdedWaveTests.test_current_closure_cannot_add_omit_duplicate_or_redirect_measured_sources",
+        "CrowdedWaveTests.test_current_execution_helper_does_not_relabel_frozen_capture",
+        "CrowdedWaveTests.test_fresh_lf_checkout_without_archive_creates_owned_destinations",
+        "CrowdedWaveTests.test_observer_rejects_changed_or_missing_canonical_seam",
+        "CrowdedWaveTests.test_rejects_impossible_currency_pressure_and_disconnected_hull"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_enemies.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "EnemyRoleTests.test_armor_damage_and_post_death_guards",
+        "EnemyRoleTests.test_deterministic_role_composition_and_elite_replacement",
+        "EnemyRoleTests.test_wave_checkpoint_replays_new_mechanics"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_enemy_income.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "EnemyIncomeTests.test_atomic_boundary_faults_retry_and_reopen_exactly_once",
+        "EnemyIncomeTests.test_bounded_cohort_prefix_matches_independent_authored_values",
+        "EnemyIncomeTests.test_empty_mask_still_requires_matching_edition",
+        "EnemyIncomeTests.test_enemy_values_keep_exactly_once_checkpoint_accounting",
+        "EnemyIncomeTests.test_foreign_replayed_or_overflowing_observation_changes_nothing",
+        "EnemyIncomeTests.test_high_wave_projection_has_no_wallet_sized_overflow",
+        "EnemyIncomeTests.test_legacy_tier_two_controller_path_retains_original_income",
+        "EnemyIncomeTests.test_typed_checkpoint_tampering_preserves_original_bytes"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_enemy_information.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "EnemyInformationTests.test_per_type_rewards_match_actual_kills_and_shared_fractional_carry",
+        "EnemyInformationTests.test_per_type_wave_information_matches_actual_spawned_cohorts",
+        "EnemyInformationTests.test_rejects_mismatched_economy_without_state_mutation",
+        "EnemyInformationTests.test_rejects_mismatched_fitting_without_state_mutation",
+        "EnemyInformationTests.test_rejects_mismatched_rules_and_content_without_state_mutation",
+        "EnemyInformationTests.test_rejects_mismatched_tier_without_state_mutation",
+        "EnemyInformationTests.test_retained_wave_information_preserves_exact_combat_values"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_presentation_fixtures.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "PresentationFixtureTests.test_elite_fixture_is_a_real_wave49_boundary_with_disclosed_strength",
+        "PresentationFixtureTests.test_output_is_fresh_contained_and_preserves_exact_save_bytes",
+        "PresentationFixtureTests.test_roster_unlocks_follow_continuous_actual_transactions",
+        "PresentationFixtureTests.test_sources_tools_and_legacy_bytes_remain_bound"
+      ]
+    },
+    {
+      "path": "last_stand_combat_depth/test_rules.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "RulesCompatibilityTests.test_atomic_profile_migration_and_unlock_backfill",
+        "RulesCompatibilityTests.test_commit_refuses_a_different_valid_model_edition",
+        "RulesCompatibilityTests.test_failed_legacy_migration_keeps_neutral_read_projection",
+        "RulesCompatibilityTests.test_legacy_run_retains_complete_rules",
+        "RulesCompatibilityTests.test_migration_oracle_rejects_research_history_reset",
+        "RulesCompatibilityTests.test_paid_legacy_prices_and_fractional_income_survive",
+        "RulesCompatibilityTests.test_unavailable_content_remains_neutral_and_rejected",
+        "RulesCompatibilityTests.test_unknown_version_preserves_bytes",
+        "RulesCompatibilityTests.test_unlock_backfill_waits_for_actual_available_definitions"
+      ]
+    },
+    {
+      "path": "last_stand_continuity/test_backup.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual-source profile backup/restore, strict decoding, ownership and uncertain-write checks; no native file-picker qualification",
+      "cases": [
+        "BackupTests.test_ambiguous_write_reconciles_once_and_preserves_previous_save",
+        "BackupTests.test_bounded_corrupt_destination_requires_preview_and_explicit_restore",
+        "BackupTests.test_confirmed_profile_round_trip_preserves_retained_checkpoint",
+        "BackupTests.test_corrupt_destination_conflict_and_oversize_refuse_replacement",
+        "BackupTests.test_corrupt_destination_uncertain_restore_retries_same_candidate",
+        "BackupTests.test_damaged_future_and_unreadable_destination_fail_closed",
+        "BackupTests.test_external_change_after_preview_is_rejected",
+        "BackupTests.test_failed_write_exports_confirmed_profile_and_retries_same_restore",
+        "BackupTests.test_invalid_future_oversize_and_malformed_utf8_leave_profile_unchanged",
+        "BackupTests.test_lost_ownership_never_writes",
+        "BackupTests.test_predecessor_write_and_readback_are_required_before_replacement",
+        "BackupTests.test_preview_has_no_mutation_and_is_bound_to_owner",
+        "BackupTests.test_previous_backup_restores_through_same_explicit_transaction",
+        "BackupTests.test_restart_retains_restored_profile_and_predecessor",
+        "BackupTests.test_restored_research_clock_completes_once_without_duplicate_charge",
+        "BackupTests.test_successful_ordinary_save_does_not_erase_restore_predecessor"
+      ]
+    },
+    {
+      "path": "last_stand_continuity/test_backup_transport.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual-source bounded save/transport checks; no player profile or physical-device qualification",
+      "cases": [
+        "BackupTransportTests.test_actual_webgl_file_and_predecessor_adapters",
+        "BackupTransportTests.test_bounded_strict_utf8_and_unseekable_stream",
+        "BackupTransportTests.test_cancelled_duplicate_and_stale_callbacks",
+        "BackupTransportTests.test_canonical_base64_cannot_expand_past_document_limit",
+        "BackupTransportTests.test_durable_predecessor_is_separate_and_requires_live_ownership",
+        "BackupTransportTests.test_invalid_callback_cannot_report_success",
+        "BackupTransportTests.test_native_fallback_is_exposed_to_recovery_owner",
+        "BackupTransportTests.test_selected_file_roundtrip_atomic_replacement_and_refusal",
+        "BackupTransportTests.test_single_request_and_disposed_receiver"
+      ]
+    },
+    {
+      "path": "last_stand_continuity/test_native_profile.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual native storage owners, development-only profile selection, rejected arguments and linked-root refusal on temporary fixtures; no owner profile access",
+      "cases": [
+        "NativeProfileTests.test_ascii_identifiers_accept_the_length_bound_and_unrelated_host_flags",
+        "NativeProfileTests.test_default_root_and_records_are_unchanged_without_option",
+        "NativeProfileTests.test_development_profile_isolates_every_owner_and_reopens",
+        "NativeProfileTests.test_identifier_bounds_and_reserved_device_names_are_refused",
+        "NativeProfileTests.test_linked_profile_or_parent_refuses_all_owners_and_preserves_target",
+        "NativeProfileTests.test_malformed_profile_stays_rejected_without_normal_root_fallback",
+        "NativeProfileTests.test_profile_root_is_cached_across_all_storage_owners",
+        "NativeProfileTests.test_release_flag_is_refused_without_storage_access"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_audio_settings.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "AudioSettingsTests.test_actual_step_batches_audio_without_suppressing_hit_telemetry",
+        "AudioSettingsTests.test_each_combat_cue_uses_its_own_fresh_playback_boundary",
+        "AudioSettingsTests.test_effect_preview_requires_a_live_gesture_context",
+        "AudioSettingsTests.test_existing_effect_admission",
+        "AudioSettingsTests.test_generated_new_clips_and_sources_are_released",
+        "AudioSettingsTests.test_initialize_does_not_duplicate_sources",
+        "AudioSettingsTests.test_invalid_blast_batch_cannot_mutate_voices",
+        "AudioSettingsTests.test_master_and_channel_gains_change_active_sources",
+        "AudioSettingsTests.test_mortar_batch_is_one_firing_and_aggregate_impact",
+        "AudioSettingsTests.test_music_is_deterministic_bounded_and_seamless",
+        "AudioSettingsTests.test_music_requires_gesture_and_ignores_combat_pause",
+        "AudioSettingsTests.test_music_transition_uses_unscaled_time_and_normal_pitch",
+        "AudioSettingsTests.test_new_batch_keeps_freshness_holds_and_no_replay",
+        "AudioSettingsTests.test_new_weapons_have_distinct_finite_cues",
+        "AudioSettingsTests.test_playback_boundary_clocks_preparation_and_diagnostics",
+        "AudioSettingsTests.test_scattergun_feedback_and_holds",
+        "AudioSettingsTests.test_visibility_and_failure_stop_without_effect_replay"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_environments.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "additional_host_entrypoint": "python test_environments.py --imported (Unity Editor); default discovery covers only bounded source/double checks",
+      "cases": [
+        "EnvironmentSourceTests.test_active_model_and_presentation_refuse_changes",
+        "EnvironmentSourceTests.test_authored_catalog_is_readonly_and_exact",
+        "EnvironmentSourceTests.test_campaign_bindings_preserve_idempotence_and_combat",
+        "EnvironmentSourceTests.test_cleanup_ownership_fault_is_detected",
+        "EnvironmentSourceTests.test_combat_guard_fault_is_detected",
+        "EnvironmentSourceTests.test_definition_routes_roots_and_lighting",
+        "EnvironmentSourceTests.test_duplicate_bindings_and_missing_light_refuse",
+        "EnvironmentSourceTests.test_non_awarding_comparison_retains_treatment_switch",
+        "EnvironmentSourceTests.test_render_cleanup_preserves_later_pipeline_owner",
+        "EnvironmentSourceTests.test_render_cleanup_restores_only_owned_fields",
+        "EnvironmentSourceTests.test_reused_identity_does_not_recreate_environment",
+        "EnvironmentSourceTests.test_unknown_or_missing_content_does_not_mutate"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_fitting.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "FittingProjectionTests.test_imported_module_projection_and_lifecycle"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_fullscreen.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "FullscreenBridgeTests.test_actual_jslib_notifications",
+        "FullscreenBridgeTests.test_atomic_refusal_replaces_stale_state",
+        "FullscreenBridgeTests.test_change_event_clears_refusal_and_unsupported_disables",
+        "FullscreenBridgeTests.test_enter_refusal_preserves_actual_off_state",
+        "FullscreenBridgeTests.test_exit_refusal_preserves_actual_on_state",
+        "FullscreenBridgeTests.test_legacy_refusal_preserves_observed_fullscreen",
+        "FullscreenBridgeTests.test_unknown_callback_does_not_invent_state"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_guidance.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "GuidanceTests.test_confirmed_first_cannon_only",
+        "GuidanceTests.test_context_guidance_follows_confirmed_progress",
+        "GuidanceTests.test_context_guidance_is_read_only_and_fail_closed",
+        "GuidanceTests.test_context_guidance_opt_outs_and_dismissal",
+        "GuidanceTests.test_dismiss_and_new_session_do_not_recreate_suggestion",
+        "GuidanceTests.test_explicit_help_survives_opt_out",
+        "GuidanceTests.test_fault_navigation_without_confirmed_save_is_detected",
+        "GuidanceTests.test_guidance_opt_outs_dismiss_independently",
+        "GuidanceTests.test_help_topics_are_ordered_and_available",
+        "GuidanceTests.test_navigation_confirmation_tracks_active_run",
+        "GuidanceTests.test_navigation_requires_ready_noncatchup"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_menu.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "MenuControllerTests.test_imported_scene_controls"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_preferences.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "PreferencesTests.test_cross_tab_conflict_does_not_overwrite",
+        "PreferencesTests.test_defaults_and_immutable_copy",
+        "PreferencesTests.test_denied_write_applies_session_and_retry",
+        "PreferencesTests.test_fault_external_record_overwrite_is_detected",
+        "PreferencesTests.test_fault_gameplay_key_write_is_detected",
+        "PreferencesTests.test_fault_protected_record_overwrite_is_detected",
+        "PreferencesTests.test_pinned_goal_roundtrip_and_protection",
+        "PreferencesTests.test_protected_records_need_confirmed_reset",
+        "PreferencesTests.test_read_failure_cannot_overwrite_unseen_settings",
+        "PreferencesTests.test_readback_mismatch_is_not_saved",
+        "PreferencesTests.test_roundtrip_all_preferences",
+        "PreferencesTests.test_store_isolates_gameplay_key",
+        "PreferencesTests.test_strict_types_bounds_and_versions",
+        "PreferencesTests.test_uncertain_write_and_later_edits"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_selection.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "SelectionTests.test_immutable_capture",
+        "SelectionTests.test_invalid_catalog",
+        "SelectionTests.test_invalid_input",
+        "SelectionTests.test_large_catalog",
+        "SelectionTests.test_locked_preview",
+        "SelectionTests.test_negative_control_hidden_tiers_are_detected",
+        "SelectionTests.test_negative_control_locked_commit_is_detected",
+        "SelectionTests.test_real_fitting_catalog",
+        "SelectionTests.test_single_choice",
+        "SelectionTests.test_stable_identity"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_speed.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "SpeedTests.test_cue_callback_lifetime",
+        "SpeedTests.test_earned_cap_preserves_debt_pause_and_preference",
+        "SpeedTests.test_focus_background_and_legacy_preserved",
+        "SpeedTests.test_future_policy_fixture_and_horizon",
+        "SpeedTests.test_half_speed_weighted_combat_parity",
+        "SpeedTests.test_pause_holds_resume_and_plus_from_zero",
+        "SpeedTests.test_production_cap_and_invalid_rates",
+        "SpeedTests.test_rate_boundary_fraction_and_retained_debt",
+        "SpeedTests.test_save_hold_during_clock_action",
+        "SpeedTests.test_terminal_settling_uses_wall_seconds"
+      ]
+    },
+    {
+      "path": "last_stand_loop/test_build_receipt_binding.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "BuildReceiptBindingTests.test_changed_package_manifest_invalidates_reused_export",
+        "BuildReceiptBindingTests.test_rejects_unexpected_package_file",
+        "BuildReceiptBindingTests.test_wrapper_refresh_preserves_original_export_pins"
+      ]
+    },
+    {
+      "path": "last_stand_loop/test_console_classification.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ConsoleClassificationTests.test_aborted_304_cache_revalidation_requires_same_load_success",
+        "ConsoleClassificationTests.test_clean_telemetry_passes",
+        "ConsoleClassificationTests.test_split_renderer_shader_errors_fail_across_three_page_loads",
+        "ConsoleClassificationTests.test_unity_cache_failed_operation_is_an_error",
+        "ConsoleClassificationTests.test_unity_cache_store_and_revalidation_pass",
+        "ConsoleClassificationTests.test_unknown_shader_and_exception_fail_closed"
+      ]
+    },
+    {
+      "path": "last_stand_loop/test_loop_model.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "LastStandModelTests.test_defeat_reward_idempotence",
+        "LastStandModelTests.test_non_defeat_no_reward",
+        "LastStandModelTests.test_save_shape_and_reload",
+        "LastStandModelTests.test_storage_failure_retry",
+        "LastStandModelTests.test_uncertain_write_reconciliation",
+        "LastStandModelTests.test_upgrade_prices_cap_and_next_run"
+      ]
+    },
+    {
+      "path": "last_stand_loop/test_loop_unity.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "LastStandUnityTests.test_batched_frame_retains_shot_audio",
+        "LastStandUnityTests.test_pause_terminal_ui_and_audio_lifecycle",
+        "LastStandUnityTests.test_real_session_modes_and_damage",
+        "LastStandUnityTests.test_same_tick_launcher_kill_keeps_impact_cue"
+      ]
+    },
+    {
+      "path": "last_stand_loop/test_native_chrome_cache.py",
+      "lane": "native-browser",
+      "owner": "Qualified native browser host: named unittest entrypoint",
+      "reason": "Requires owned browser, preview/export or native host evidence; separate from portable source checks",
+      "cases": [
+        "NativeChromeCacheTests.test_cache_put_and_match_with_long_evidence_path"
+      ]
+    },
+    {
+      "path": "last_stand_loop/test_shader_build_log.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ShaderBuildLogTests.test_build_rejects_real_shader_compiler_errors",
+        "ShaderBuildLogTests.test_clean_build_log_is_accepted",
+        "ShaderBuildLogTests.test_explicit_refresh_requires_exact_completed_import_phase",
+        "ShaderBuildLogTests.test_next_importer_cannot_inherit_editor_warning_admission",
+        "ShaderBuildLogTests.test_review_never_covers_errors_other_shaders_or_changed_source",
+        "ShaderBuildLogTests.test_review_requires_complete_unambiguous_import_and_player_phases",
+        "ShaderBuildLogTests.test_reviewed_editor_import_is_reported_without_rejecting_player"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_history.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "HistoryTests.test_checkpoint_copy_and_resume",
+        "HistoryTests.test_failed_terminal_wave_is_counted",
+        "HistoryTests.test_immutable_snapshots",
+        "HistoryTests.test_invalid_and_overflow_inputs",
+        "HistoryTests.test_negative_control_milestone_rate",
+        "HistoryTests.test_real_time_median_and_limits",
+        "HistoryTests.test_recent_bound_and_finalize_once"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_history_comparison.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual production C# projections and behavior; no rendered or platform acceptance",
+      "cases": [
+        "HistoryComparisonTests.test_exact_conditions_and_normalized_speed",
+        "HistoryComparisonTests.test_legacy_short_and_provisional_exclusions",
+        "HistoryComparisonTests.test_minimum_samples_and_per_tier_medians",
+        "HistoryComparisonTests.test_mixed_edition_median_is_withheld",
+        "HistoryComparisonTests.test_negative_control_mixed_edition_pooling",
+        "HistoryComparisonTests.test_negative_control_provisional_rate",
+        "HistoryComparisonTests.test_negative_control_two_sample_median",
+        "HistoryComparisonTests.test_pair_measurement_limits",
+        "HistoryComparisonTests.test_pair_rates_and_condition_differences",
+        "HistoryComparisonTests.test_projection_never_mutates_history",
+        "HistoryComparisonTests.test_signed_cleared_wave_deltas_and_boundaries"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_periodic_bulk.py",
+      "lane": "calibration",
+      "owner": "Calibration owner: separately bound execution and report destination",
+      "reason": "Long 5000-wave economy matrix; preserve frozen source maps/reports and bind reruns to a separate execution identity",
+      "cases": [
+        "PeriodicBulkTests.test_fifteen_minute_bulk_cadence_reaches_full_run_with_bounded_actions",
+        "PeriodicBulkTests.test_selected_launcher_endurance_fixture_meets_duration_target"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_presentation.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ResearchPresentationTests.test_action_legality_uses_actual_engine",
+        "ResearchPresentationTests.test_bulk_shop_geometry",
+        "ResearchPresentationTests.test_forty_project_filtering",
+        "ResearchPresentationTests.test_garage_targets_and_battle_separation",
+        "ResearchPresentationTests.test_suspended_time_and_cost_disclosed",
+        "ResearchPresentationTests.test_timer_and_effect_readouts"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_progression_planner.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual production C# projections and behavior; no rendered or platform acceptance",
+      "cases": [
+        "ProgressionPlannerTests.test_active_queued_and_suspended_research_funding",
+        "ProgressionPlannerTests.test_caps_fitting_save_failure_and_active_checkpoint",
+        "ProgressionPlannerTests.test_catalog_goal_provenance_and_no_mutation",
+        "ProgressionPlannerTests.test_completed_and_unsupported_research_snapshot",
+        "ProgressionPlannerTests.test_exact_shared_budget_effects_and_shortfall",
+        "ProgressionPlannerTests.test_fixed_pin_completion_clear_and_missing_catalog"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_qualification_fixtures.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "QualificationFixtureTests.test_bound_sources_relative_paths_and_exact_saved_bytes",
+        "QualificationFixtureTests.test_default_generation_honors_explicit_toolchain",
+        "QualificationFixtureTests.test_explicit_editor_is_not_replaced_by_discovery",
+        "QualificationFixtureTests.test_lab_funded_active_and_queue_near_actual_completion",
+        "QualificationFixtureTests.test_mature_ranks_funding_and_deployment_seed"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_research_engine.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ResearchEngineTests.test_catalog_and_reward_remainders",
+        "ResearchEngineTests.test_clock_closed_rollback_bounds_and_fraction",
+        "ResearchEngineTests.test_clock_monotonic_open_and_retry",
+        "ResearchEngineTests.test_four_prepaid_offline_completions",
+        "ResearchEngineTests.test_simultaneous_completion_before_queue_start",
+        "ResearchEngineTests.test_snapshot_validation_and_copy_isolation",
+        "ResearchEngineTests.test_started_partial_and_queued_duration_ownership",
+        "ResearchEngineTests.test_suspended_queued_partial_retains_progress",
+        "ResearchEngineTests.test_switch_queue_validity_and_atomic_affordability",
+        "ResearchEngineTests.test_switch_refund_resume_and_locked_duration",
+        "ResearchEngineTests.test_unlock_funding_and_noops"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_research_profile.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ResearchProfileTests.test_completion_precedes_stale_action_and_no_duplicate_grant",
+        "ResearchProfileTests.test_fresh_envelope_and_reload",
+        "ResearchProfileTests.test_midwave_research_save_preserves_boundary",
+        "ResearchProfileTests.test_real_v4_run_economy_migration",
+        "ResearchProfileTests.test_research_charge_refund_completion_storage_faults",
+        "ResearchProfileTests.test_retained_v2_paid_run_full_profile_reload_and_next_deployment",
+        "ResearchProfileTests.test_run_upgrade_contexts_follow_deployment_and_boundaries",
+        "ResearchProfileTests.test_salvage_carry_history_and_duplicate_finalization",
+        "ResearchProfileTests.test_v1_v2_v3_claim_migrations",
+        "ResearchProfileTests.test_workshop_and_research_shared_wallet_conflicts",
+        "ResearchProfileTests.test_writer_ownership_guards_migration_and_pending_confirmation"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_research_save.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ResearchSaveTests.test_malformed_history_rejected",
+        "ResearchSaveTests.test_malformed_research_rejected",
+        "ResearchSaveTests.test_research_roundtrip_and_next_completion",
+        "ResearchSaveTests.test_twenty_recent_history_and_large_counters_roundtrip"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_save_codec.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "SaveCodecTests.test_utc_and_lifetime_milliseconds_preserve_exact_integers",
+        "SaveCodecTests.test_wide_numbers_remain_bounded_without_coercing_old_fields"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_upgrade_balance.py",
+      "lane": "calibration",
+      "owner": "Calibration owner: separately bound execution and report destination",
+      "reason": "Long 5000-wave economy matrix; preserve frozen source maps/reports and bind reruns to a separate execution identity",
+      "cases": [
+        "UpgradeBalanceTests.test_income_investment_has_a_measured_tradeoff",
+        "UpgradeBalanceTests.test_mature_farming_target_includes_all_ticks_and_real_effects",
+        "UpgradeBalanceTests.test_permanent_investment_keeps_distinct_farming_stages"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_upgrade_economy.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "UpgradeEconomyTests.test_bounded_income_prefix_matches_individual_production_wave_events",
+        "UpgradeEconomyTests.test_bulk_intent_commits_once_rejects_stale_and_restores_paid_levels",
+        "UpgradeEconomyTests.test_bulk_quotes_are_exact_partial_affordable_and_cap_bounded",
+        "UpgradeEconomyTests.test_early_wave_bounty_increases_without_repricing_saved_runs",
+        "UpgradeEconomyTests.test_fractional_income_research_epochs_and_checkpoint_rollback",
+        "UpgradeEconomyTests.test_late_wave_base_income_outgrows_flat_scrap_ceiling",
+        "UpgradeEconomyTests.test_legacy_prices_roster_and_prospective_research_income_restore",
+        "UpgradeEconomyTests.test_no_track_maxes_from_first_pass_wave_300_budget",
+        "UpgradeEconomyTests.test_permanent_starting_benefit_and_matched_build_scrap_savings",
+        "UpgradeEconomyTests.test_pinned_run_cards_and_bulk_effects_match_actual_combat",
+        "UpgradeEconomyTests.test_reward_preview_matches_paid_kills_and_fractional_carry_without_mutation"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_wave_information.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "WaveInformationTests.test_current_wave_stats_rewards_and_read_only_projection"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_writer_lock.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "WriterLockTests.test_only_lock_owner_can_write_and_boot_waits_for_ownership"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ShopModelTests.test_cap_refusal",
+        "ShopModelTests.test_current_level_cap",
+        "ShopModelTests.test_invalid_config",
+        "ShopModelTests.test_new_run_reset_and_resume",
+        "ShopModelTests.test_next_price_independent_of_persistent"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_artifact_guards.py",
+      "lane": "artifact",
+      "owner": "Genuine Shop receipt qualification; ST_SHOP_GUARD_RECORD, ST_SHOP_BACKGROUND_RECORD, ST_SHOP_OBSERVER_OUTPUT_ROOT",
+      "reason": "Eight preserved negative replay cases require genuine retained records or the sealed external observer diagnostic; no synthetic receipt substitutes",
+      "cases": [
+        "ShopArtifactGuardTests.test_shop_guard_background_emulated_visibility_and_dropped_debt",
+        "ShopArtifactGuardTests.test_shop_guard_background_uncertain_save_and_reward_replay",
+        "ShopArtifactGuardTests.test_shop_guard_vertical_action_context_and_order",
+        "ShopArtifactGuardTests.test_shop_guard_vertical_action_witness_order",
+        "ShopArtifactGuardTests.test_shop_guard_vertical_old_export_and_partial",
+        "ShopArtifactGuardTests.test_shop_guard_vertical_required_player_actions",
+        "ShopArtifactGuardTests.test_shop_guard_vertical_seeded_scrap_and_replayed_purchase",
+        "ShopArtifactGuardTests.test_shop_observer_callback_failure_is_retained"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_build.py",
+      "lane": "artifact",
+      "owner": "Export qualification: named unittest entrypoint",
+      "reason": "Reads completed genuine export/build receipts; a clean checkout does not manufacture those receipts",
+      "cases": [
+        "ShopBuildTests.test_shop_current_source_and_native_binding",
+        "ShopBuildTests.test_shop_packaged_runtime_and_normal_checks"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_delivery.py",
+      "lane": "native-browser",
+      "owner": "Qualified native browser host: named unittest entrypoint",
+      "reason": "Requires owned browser, preview/export or native host evidence; separate from portable source checks",
+      "cases": [
+        "ShopDeliveryTests.test_shop_review_packet_and_actual_acceptance",
+        "ShopDeliveryTests.test_shop_served_exact_runtime_and_routes"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_journey_guards.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ShopJourneyGuardTests.test_current_control_fixture_matches_authored_hud_inventory",
+        "ShopJourneyGuardTests.test_current_player_receipt_requires_native_and_portable_outcomes",
+        "ShopJourneyGuardTests.test_recovery_current_control_inventory_is_exact",
+        "ShopJourneyGuardTests.test_shop_controls_only_complete_prefix",
+        "ShopJourneyGuardTests.test_shop_controls_only_python_replay",
+        "ShopJourneyGuardTests.test_shop_guard_vertical_admission_entrypoint",
+        "ShopJourneyGuardTests.test_shop_observer_output_is_external_and_preserves_closed_evidence",
+        "ShopRecoveryUnitTests.test_coherent_mutations_preserve_raw_records_and_all_witness_copies",
+        "ShopRecoveryUnitTests.test_confirmation_integration_accepts_confirmed_partial_publications",
+        "ShopRecoveryUnitTests.test_confirmation_integration_committed_levels_publish_even_without_cards",
+        "ShopRecoveryUnitTests.test_confirmation_integration_early_wallet_while_retry",
+        "ShopRecoveryUnitTests.test_confirmation_integration_partial_level_with_old_wallet",
+        "ShopRecoveryUnitTests.test_confirmation_integration_preserves_ready_publication_bound",
+        "ShopRecoveryUnitTests.test_confirmation_requires_application_read_before_publication",
+        "ShopRecoveryUnitTests.test_denied_confirmation_requires_set_then_read",
+        "ShopRecoveryUnitTests.test_historical_v3_contract_rejects_wave_saves_and_inconsistent_tier_state",
+        "ShopRecoveryUnitTests.test_method_admission_requires_both_layers",
+        "ShopRecoveryUnitTests.test_method_caught_up_purchase_is_distinct_from_pending_debt",
+        "ShopRecoveryUnitTests.test_method_claim_waits_for_result_and_current_control",
+        "ShopRecoveryUnitTests.test_method_compiled_layers_reject_missing_failed_stale_and_wrong_binding",
+        "ShopRecoveryUnitTests.test_method_terminal_accepts_truthful_zero_kill_and_actual_spending",
+        "ShopRecoveryUnitTests.test_pending_debt_accepts_real_boundary_shapes_and_rejects_bad_order_or_effect",
+        "ShopRecoveryUnitTests.test_pending_debt_cannot_be_replaced_by_a_settled_purchase",
+        "ShopRecoveryUnitTests.test_pointer_edges_must_be_inside_named_projected_control",
+        "ShopRecoveryUnitTests.test_pointer_geometry_must_match_document_and_observation_order",
+        "ShopRecoveryUnitTests.test_recovery_checkpoints_do_not_serialize_full_active_evidence",
+        "ShopRecoveryUnitTests.test_recovery_deploy_selects_actual_ready_run_projection",
+        "ShopRecoveryUnitTests.test_recovery_document_origin_retains_delayed_old_observations",
+        "ShopRecoveryUnitTests.test_recovery_empty_projection_requires_actual_committed_levels_and_closed_controls",
+        "ShopRecoveryUnitTests.test_recovery_finally_retains_complete_failure_evidence",
+        "ShopRecoveryUnitTests.test_recovery_native_inputs_keep_all_foreground_witnesses",
+        "ShopRecoveryUnitTests.test_recovery_ready_projection_keeps_all_six_cards_and_committed_values",
+        "ShopRecoveryUnitTests.test_semantic_guards_do_not_accept_detached_witness_errors",
+        "ShopRecoveryUnitTests.test_terminal_away_admission_rejects_stale_dead_or_foreign_pre_hide",
+        "ShopRecoveryUnitTests.test_terminal_away_waits_for_actual_living_combat_before_hiding",
+        "ShopRecoveryUnitTests.test_terminal_boundary_accepts_complete_unit_trace_and_rejects_missing_final_income",
+        "ShopRecoveryUnitTests.test_terminal_contract_updates_independent_maxima_and_exact_goal_unlock",
+        "ShopRecoveryUnitTests.test_terminal_requires_a_kill_in_the_final_admitted_step",
+        "ShopRecoveryUnitTests.test_uncertain_confirmation_cannot_use_a_later_candidate_write",
+        "ShopRecoveryUnitTests.test_unfocused_terminal_requires_actual_document_and_unclaimed_storage"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_layout.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance; retains custom PID/raw-output evidence recorder with shared tool discovery",
+      "cases": [
+        "ShopLayoutTests.test_shop_compact_meaningful_summary",
+        "ShopLayoutTests.test_shop_five_profiles_scroll_and_required_controls",
+        "ShopLayoutTests.test_shop_measured_header",
+        "ShopLayoutTests.test_shop_measured_long_notice",
+        "ShopLayoutTests.test_shop_short_landscape_closed_recovery",
+        "ShopLayoutTests.test_shop_text_contrast_targets_and_refusal_bounds"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_persistence.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ShopPersistenceTests.test_migration_exact_v1_wallet_run_and_pending",
+        "ShopPersistenceTests.test_migration_strict_v2_and_invalid_records",
+        "ShopPersistenceTests.test_permanent_all_tracks_prices_caps_and_reload",
+        "ShopPersistenceTests.test_permanent_run_pending_and_fitting_boundaries",
+        "ShopPersistenceTests.test_storage_denied_and_uncertain_write_retry",
+        "ShopPersistenceTests.test_storage_external_conflict_preserves_original",
+        "ShopPersistenceTests.test_storage_reward_claim_idempotence"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_player.py",
+      "lane": "native-browser",
+      "owner": "Qualified native browser host: named unittest entrypoint",
+      "reason": "Requires owned browser, preview/export or native host evidence; separate from portable source checks",
+      "cases": [
+        "ShopPlayerTests.test_shop_five_layouts_rendered_readability_and_input",
+        "ShopPlayerTests.test_shop_native_focus_hidden_and_explicit_pause",
+        "ShopPlayerTests.test_shop_normal_speed_both_fitting_media",
+        "ShopPlayerTests.test_shop_real_launcher_vertical",
+        "ShopPlayerTests.test_shop_real_repair_vertical",
+        "ShopPlayerTests.test_shop_storage_faults_conflicts_and_terminal_refresh"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_player_portable.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Executes actual source-extracted Shop CLI/observation logic with inert process/browser boundaries; no external evidence or native host required",
+      "cases": [
+        "ShopPlayerTests.test_shop_player_headless_launch_is_explicit",
+        "ShopPlayerTests.test_shop_player_option_dispatch",
+        "ShopPlayerTests.test_shop_terminal_retry_observation_waits_for_current_defeat"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_ui.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "ShopUiTests.test_battle_shop_tabs_live_cards_and_refusal_feedback",
+        "ShopUiTests.test_deploy_frozen_permanent_snapshot_and_fittings",
+        "ShopUiTests.test_first_session_clarity_live_goal_and_purchase_lifetimes",
+        "ShopUiTests.test_income_final_tick_refresh_and_next_run",
+        "ShopUiTests.test_income_hidden_partition_and_terminal_snapshot",
+        "ShopUiTests.test_input_compact_real_scroll_reaches_clipped_cards",
+        "ShopUiTests.test_input_compact_shop_keeps_upgrade_readable",
+        "ShopUiTests.test_input_keyboard_pointer_same_intents_and_focus",
+        "ShopUiTests.test_input_terminal_resize_and_no_world_leak",
+        "ShopUiTests.test_integration_old_save_conflict_and_legacy_parity",
+        "ShopUiTests.test_integration_two_fittings_effects_and_lifecycle",
+        "ShopUiTests.test_permanent_notification_reentry_is_one_purchase",
+        "ShopUiTests.test_research_heartbeat_refreshes_displayed_shop_revision",
+        "ShopUiTests.test_settle_pause_focus_close_and_stale_input",
+        "ShopUiTests.test_settle_purchase_old_stats_and_debt_refusal",
+        "ShopUiTests.test_shop_header_level_capacity",
+        "ShopUiTests.test_shop_only_fitted_modules_visible_and_focusable",
+        "ShopUiTests.test_shop_plain_compact_readable_composition",
+        "ShopUiTests.test_shop_price_line",
+        "ShopUiTests.test_shop_rendered_effect_separator",
+        "ShopUiTests.test_shop_workshop_single_purchase_action",
+        "ShopUiTests.test_wave_information_surface",
+        "ShopUiTests.test_workshop_committed_levels_observation_without_cards",
+        "ShopUiTests.test_workshop_garage_post_claim_prices_and_save_error",
+        "ShopUiTests.test_workshop_webgl_layout_transport_complete_graphics"
+      ]
+    },
+    {
+      "path": "last_stand_shop/test_shop_vertical.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ShopVerticalTests.test_attack_cannon_exact_damage",
+        "ShopVerticalTests.test_attack_launcher_fitting_isolation",
+        "ShopVerticalTests.test_catalog_caps_prices_and_fitting",
+        "ShopVerticalTests.test_catalog_exact_tracks_and_effects",
+        "ShopVerticalTests.test_catalog_intervals_use_seconds_without_rounding_levels",
+        "ShopVerticalTests.test_cycle_future_schedule_and_next_tick",
+        "ShopVerticalTests.test_cycle_partition_and_legacy_parity",
+        "ShopVerticalTests.test_defense_armor_close_and_ranged_hits",
+        "ShopVerticalTests.test_defense_hull_purchase_and_clamp",
+        "ShopVerticalTests.test_ledger_independent_prices_and_caps",
+        "ShopVerticalTests.test_ledger_unique_kill_income",
+        "ShopVerticalTests.test_presentation_levels_effects_prices_and_reasons",
+        "ShopVerticalTests.test_repair_amount_and_maximum",
+        "ShopVerticalTests.test_repair_fitting_and_terminal_refusal",
+        "ShopVerticalTests.test_transaction_atomic_charge_and_level",
+        "ShopVerticalTests.test_transaction_stale_replay_and_refusal"
+      ]
+    },
+    {
+      "path": "last_stand_tiers/test_tier_calibration.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "TierCalibrationTests.test_tier_two_harder_for_matched_builds",
+        "TierCalibrationTests.test_wave_advancement_attainable_at_current_per_track_caps"
+      ]
+    },
+    {
+      "path": "last_stand_tiers/test_tier_controller.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "TierControllerTests.test_tier_goal_result_controller_and_layout"
+      ]
+    },
+    {
+      "path": "last_stand_tiers/test_tier_progression.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "TierProgressionTests.test_terminal_records_unlock_and_recovery",
+        "TierProgressionTests.test_tier_migration_strict_schema_and_failure_recovery"
+      ]
+    },
+    {
+      "path": "last_stand_tiers/test_tier_rules.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "TierRulesTests.test_exact_tier_hull_scaling_and_legacy_parity"
+      ]
+    },
+    {
+      "path": "last_stand_tiers/test_tier_ui.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "TierHudTests.test_live_wave_heading_never_claims_saved_credit",
+        "TierHudTests.test_tier_targets_and_summaries_fit_profiles",
+        "TierHudTests.test_tier_text_reports_saved_and_unsaved_outcomes"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_background_admission.py",
+      "lane": "native-browser",
+      "owner": "CI last-stand-1: npm run test:last-stand:background; qualified Windows foreground host",
+      "reason": "All eleven Node admission cases; Windows additionally executes actual owned-caption/foreground probes. Separate from portable Python/source checks",
+      "cases": [
+        "BackgroundAdmissionTests.test_background_negative_controls"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_background_clock.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "BackgroundClockTests.test_budget_retains_debt",
+        "BackgroundClockTests.test_clock_partition_equivalence",
+        "BackgroundClockTests.test_fractional_carry_and_duplicate_callbacks",
+        "BackgroundClockTests.test_invalid_clock_is_rejected",
+        "BackgroundClockTests.test_pause_excludes_elapsed_time"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_background_feedback.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "BackgroundFeedbackTests.test_actual_current_cue_admission",
+        "BackgroundFeedbackTests.test_authoritative_first_hit_survives_feedback_suppression",
+        "BackgroundFeedbackTests.test_background_defeat_settles_once",
+        "BackgroundFeedbackTests.test_focus_restores_current_cues_without_replay",
+        "BackgroundFeedbackTests.test_mute_and_profile_lifecycle_remain_isolated",
+        "BackgroundFeedbackTests.test_pause_excludes_settling_time"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_background_session.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "BackgroundSessionTests.test_legacy_review_retain_suspension",
+        "BackgroundSessionTests.test_playable_blur_and_delayed_callbacks_continue",
+        "BackgroundSessionTests.test_terminal_and_failure_do_not_repeat"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_build_delivery.py",
+      "lane": "artifact",
+      "owner": "Export qualification: named unittest entrypoint",
+      "reason": "Reads completed genuine export/build receipts; a clean checkout does not manufacture those receipts",
+      "cases": [
+        "BuildDeliveryTests.test_current_source_and_feature_binding",
+        "BuildDeliveryTests.test_normal_production_build_checks",
+        "BuildDeliveryTests.test_packaged_runtime_and_receipt_match",
+        "BuildDeliveryTests.test_rejects_stale_or_mismatched_binding"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_combat_feedback.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "CombatFeedbackTests.test_campaign_weapon_feedback",
+        "CombatFeedbackTests.test_current_geometry_and_retained_position",
+        "CombatFeedbackTests.test_event_time_destruction",
+        "CombatFeedbackTests.test_model_and_pool_preservation",
+        "CombatFeedbackTests.test_reduced_aim_recoil_and_restore",
+        "CombatFeedbackTests.test_reduced_informative_feedback",
+        "CombatFeedbackTests.test_role_silhouettes_and_persistent_warning",
+        "CombatFeedbackTests.test_toggle_clears_paused_flashes"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_hud_battle.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "HudBattleTests.test_battle_chrome_geometry_and_contrast",
+        "HudBattleTests.test_live_hull_time_kills_damage_and_fitting",
+        "HudBattleTests.test_pause_mute_and_catchup_presentation"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_hud_garage.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "HudGarageTests.test_deploy_readiness_and_primary_hierarchy",
+        "HudGarageTests.test_garage_profile_geometry_and_contrast",
+        "HudGarageTests.test_live_values_and_fitting",
+        "HudGarageTests.test_short_landscape_garage_readability"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_hud_input.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "HudInputTests.test_conditional_wrapper_focus_and_geometry",
+        "HudInputTests.test_keyboard_activation_and_focus_style",
+        "HudInputTests.test_pointer_targets_match_visual_bounds",
+        "HudInputTests.test_visible_enabled_navigation_order"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_hud_layout.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "HudLayoutTests.test_battle_center_and_area_limits",
+        "HudLayoutTests.test_profiles_fit_without_overlap",
+        "HudLayoutTests.test_short_garage_reserves_menu_and_all_actions",
+        "HudLayoutTests.test_short_recovery_preserves_summary_and_actions",
+        "HudLayoutTests.test_text_targets_and_long_notice_bounds"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_hud_outcomes.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "HudOutcomeTests.test_settling_pending_and_claim_states",
+        "HudOutcomeTests.test_storage_errors_retry_and_profile_readability",
+        "HudOutcomeTests.test_workshop_purchase_cap_and_redeploy_gates"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_journey_contracts.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "JourneyContractTests.test_actual_python_wrapper_preserves_both_host_time_budgets",
+        "JourneyContractTests.test_maintained_journey_guards"
+      ]
+    },
+    {
+      "path": "last_stand_ui/test_preview_delivery.py",
+      "lane": "native-browser",
+      "owner": "Qualified native browser host: named unittest entrypoint",
+      "reason": "Requires owned browser, preview/export or native host evidence; separate from portable source checks",
+      "cases": [
+        "PreviewDeliveryTests.test_review_packet_preserves_honest_outcomes",
+        "PreviewDeliveryTests.test_served_runtime_bytes_match",
+        "PreviewDeliveryTests.test_served_wrapper_and_manifest_match"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_armament_presentation.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "ArmamentPresentationTests.test_explicit_module_identity",
+        "ArmamentPresentationTests.test_scattergun_callout_uses_actual_module",
+        "ArmamentPresentationTests.test_scattergun_outgoing_feedback_and_reduced_effects"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_balance.py",
+      "lane": "calibration",
+      "owner": "Calibration owner: separately bound execution and report destination",
+      "reason": "Long 5000-wave economy matrix; preserve frozen source maps/reports and bind reruns to a separate execution identity",
+      "cases": [
+        "BalanceTests.test_earned_progression_advances_without_gifted_levels",
+        "BalanceTests.test_full_run_duration_includes_intermission",
+        "BalanceTests.test_same_build_push_versus_farm_report",
+        "BalanceTests.test_two_thousand_wave_income_and_upgrade_depth"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_catalogs.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "CatalogTests.test_eighteen_tiers_use_bounded_selection_and_keyed_records",
+        "CatalogTests.test_finite_rosters_and_stable_reward_ids",
+        "CatalogTests.test_generator_scales_beyond_two_thousand_waves",
+        "CatalogTests.test_invalid_catalogs_are_rejected"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_checkpoint_store.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "CheckpointStoreTests.test_checkpoint_rewards_commit_once_under_write_faults",
+        "CheckpointStoreTests.test_first_clear_rewards_and_unlocks_across_runs",
+        "CheckpointStoreTests.test_five_thousand_wave_save_restore_and_bounded_size",
+        "CheckpointStoreTests.test_future_or_conflicting_save_preserves_original_bytes",
+        "CheckpointStoreTests.test_legacy_migration_preserves_pending_claim_once",
+        "CheckpointStoreTests.test_midwave_purchase_and_cost_roll_back_together",
+        "CheckpointStoreTests.test_mutual_death_banks_and_finalizes_atomically",
+        "CheckpointStoreTests.test_permanent_purchases_preserve_active_deployment_stats",
+        "CheckpointStoreTests.test_starting_checkpoint_survives_reload"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_earned_milestone_fixtures.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "EarnedMilestoneFixtureTests.test_all_four_setups_precede_the_first_actual_unlock",
+        "EarnedMilestoneFixtureTests.test_current_generated_manifest_is_admitted_by_actual_browser_reader",
+        "EarnedMilestoneFixtureTests.test_every_compiled_production_and_generator_source_is_bound",
+        "EarnedMilestoneFixtureTests.test_permanent_investment_is_funded_by_naturally_completed_prior_runs",
+        "EarnedMilestoneFixtureTests.test_saved_bytes_are_exact_and_existing_output_cannot_be_overwritten"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_fitting_catalog.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "FittingCatalogTests.test_explicit_identity_and_milestone_availability"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_long_run_economy.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "LongRunEconomyTests.test_existing_investments_preserved",
+        "LongRunEconomyTests.test_long_run_cost_and_effect_bounds",
+        "LongRunEconomyTests.test_lower_tier_farming_remains_viable_after_unlock"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_save_review.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "SaveReviewTests.test_exhausted_restored_epoch_allows_kill_income",
+        "SaveReviewTests.test_exhausted_restored_epoch_allows_one_purchase",
+        "SaveReviewTests.test_exhausted_restored_epoch_allows_pause_resume",
+        "SaveReviewTests.test_exhausted_restored_epoch_allows_terminal_accounting",
+        "SaveReviewTests.test_invalid_paid_evidence_and_stale_live_quote_still_fail"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_shared_chrome.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "SharedChromeTests.test_all_menu_consumers_use_shared_chrome",
+        "SharedChromeTests.test_backing_and_frame_share_clipped_outline",
+        "SharedChromeTests.test_focus_and_hit_targets_preserved"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_startup.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "StartupTests.test_all_fittings_before_start_are_idempotent",
+        "StartupTests.test_fresh_hud_before_tank_start",
+        "StartupTests.test_saved_fitting_survives_late_start"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_wave_integration.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
+      "cases": [
+        "WaveIntegrationTests.test_clear_retry_resume_boundary",
+        "WaveIntegrationTests.test_confirmed_receipts_survive_retry_and_terminal",
+        "WaveIntegrationTests.test_navigation_cancel_and_durable_abandon",
+        "WaveIntegrationTests.test_observed_clock_timestamp_and_pending",
+        "WaveIntegrationTests.test_simultaneous_clear_death_receipt_and_retry",
+        "WaveIntegrationTests.test_terminal_uncertainty_and_no_payout",
+        "WaveIntegrationTests.test_wave_boundary_preserves_selected_action",
+        "WaveIntegrationTests.test_wave_save_failure_and_terminal_keep_focus_fallback"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_wave_model.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "WaveModelTests.test_authored_eighteen_tiers_resolve_and_restore_without_fallback",
+        "WaveModelTests.test_five_thousand_wave_restore_and_bounded_state",
+        "WaveModelTests.test_long_run_has_bounded_state",
+        "WaveModelTests.test_midwave_and_inconsistent_checkpoints_are_rejected",
+        "WaveModelTests.test_pause_and_speed_preserve_wave_outcomes",
+        "WaveModelTests.test_scattergun_hits_distinct_targets_without_repair",
+        "WaveModelTests.test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull",
+        "WaveModelTests.test_simultaneous_last_kill_and_defeat",
+        "WaveModelTests.test_two_thousand_wave_checkpoint_and_numeric_bounds",
+        "WaveModelTests.test_unspawned_or_live_enemy_prevents_clear"
+      ]
+    },
+    {
+      "path": "last_stand_waves/test_wave_receipts.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "WaveReceiptTests.test_open_shop_keeps_receipt_and_core_instruments_visible",
+        "WaveReceiptTests.test_receipt_leaves_controls_and_battlefield_clear",
+        "WaveReceiptTests.test_receipt_names_actual_reward_and_unlock"
+      ]
+    },
+    {
+      "path": "test_build_web.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "BuildResourceSafety.test_linked_resources_never_reach_outside_files",
+        "BuildResourceSafety.test_nonregular_reserved_resource_is_refused",
+        "BuildResourceSafety.test_original_folder_meta_is_restored_exactly",
+        "BuildResourceSafety.test_unknown_new_assets_are_preserved_and_cleanup_fails",
+        "BuildWebTests.test_complete_source_closure_before_and_after_export",
+        "BuildWebTests.test_toolchain_inventory_rejects_changed_and_added_module_bytes",
+        "SavedBuildContract.test_default_exports_legacy_saved_scene",
+        "SavedBuildContract.test_existing_performance_resource_is_refused_before_player",
+        "SavedBuildContract.test_failed_player_cleans_only_owned_performance_outputs",
+        "SavedBuildContract.test_gallery_exports_separate_saved_scene_with_its_own_checks",
+        "SavedBuildContract.test_gallery_requires_its_own_fresh_checks",
+        "SavedBuildContract.test_legacy_also_binds_source_and_rejects_midbuild_mutation",
+        "SavedBuildContract.test_performance_outputs_are_restored_before_source_readback",
+        "SavedBuildContract.test_review_exports_saved_scene_with_source_binding",
+        "SavedBuildContract.test_review_requires_its_own_fresh_checks",
+        "SavedBuildContract.test_unconfirmed_child_exit_preserves_resources_and_failed_receipt",
+        "SavedBuildContract.test_unknown_scene_is_refused_before_editor_launch"
+      ]
+    },
+    {
+      "path": "test_inspection_checks.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "InspectionChecks.test_binding_and_visibility_fail",
+        "InspectionChecks.test_corrupt_receipts_fail",
+        "InspectionChecks.test_hidden_geometry_does_not_need_a_drawn_endpoint",
+        "InspectionChecks.test_invalid_projection_domain",
+        "InspectionChecks.test_known_perspective",
+        "InspectionChecks.test_missing_or_duplicate_parts_fail",
+        "InspectionChecks.test_orbit_uses_actual_camera",
+        "InspectionChecks.test_valid_geometry"
+      ]
+    },
+    {
+      "path": "test_make_web_entry.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "WebEntryTests.test_generated_wrapper_preserves_native_tab_traversal",
+        "WebEntryTests.test_last_stand_return_discloses_paused_wave_checkpoint_resume",
+        "WebEntryTests.test_last_stand_return_stays_visible_above_loading_and_error",
+        "WebEntryTests.test_other_scene_has_no_last_stand_return"
+      ]
+    },
+    {
+      "path": "test_native_chrome.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "NativeChromeCleanup.test_fallback_only_terminates_owned_child",
+        "NativeChromeCleanup.test_graceful_owned_close",
+        "NativeChromeCleanup.test_idempotent_close",
+        "NativeChromeCleanup.test_partial_launch_cleanup",
+        "NativeChromeLaunch.test_optional_headless_preserves_owned_command_and_focus_settings"
+      ]
+    },
+    {
+      "path": "test_test_inventory.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "TestInventoryTests.test_alias_cannot_replace_its_executed_owner",
+        "TestInventoryTests.test_new_test_cannot_be_silently_omitted",
+        "TestInventoryTests.test_removed_entry_or_removed_file_fails",
+        "TestInventoryTests.test_removed_or_unlisted_case_fails",
+        "TestInventoryTests.test_repository_inventory_is_complete",
+        "TestInventoryTests.test_unknown_empty_and_duplicate_classification_fails",
+        "TestInventoryTests.test_valid_entry_has_exact_isolated_discovery_command"
+      ]
+    },
+    {
+      "path": "test_visual_review_checks.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
+      "cases": [
+        "ReviewEvidenceChecks.test_changed_comparison_variables_are_rejected",
+        "ReviewEvidenceChecks.test_clipped_nonfinite_or_incomplete_ring_rejected",
+        "ReviewEvidenceChecks.test_hud_occlusion_and_stale_resize_geometry_are_rejected",
+        "ReviewEvidenceChecks.test_layout_rejects_inspection_command_leaking_into_combat",
+        "ReviewEvidenceChecks.test_layout_requires_combat_controls_and_rejects_overlap",
+        "ReviewEvidenceChecks.test_matched_paused_pair_retains_fitting_and_snapshot_digest",
+        "ReviewEvidenceChecks.test_motion_preserves_real_time_and_refuses_bad_timeline",
+        "ReviewEvidenceChecks.test_pointer_refuses_inactive_disabled_duplicate_and_clipped_controls",
+        "ReviewEvidenceChecks.test_pointer_uses_actual_control_and_canvas_coordinates"
+      ]
+    }
+  ]
+}

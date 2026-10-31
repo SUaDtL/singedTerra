@@ -78,3 +78,12 @@
 - [ ] Assemble the exact spec, plan, audit, evidence, tests, and final diff in one adversarial review package.
 - [ ] Dispatch one fresh adversarial reviewer; resolve every Critical, High, and other merge-blocking finding and regenerate exact-head review evidence after any correction.
 - [ ] Mark `ux.hud.0002` done through `$ca-task`, route through `$ca-commit` and `$ca-pr`, require hosted CI green on the exact reviewed head, merge under standing authority, verify Pages production, and write the delivery receipt.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded standalone dossier; current Armory role copy. Current source/oracles: `client/src/ui/storeCatalog.ts`, `client/src/ui/HUD.arsenal.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `dbda07632e4c` (feat(hud): add tactical weapon intel (#396)). The old standalone weaponIntel module and dossier layout are retired in the current candidate. The current Armory has catalog role copy and a single projection owner. This is a supersession record, not proof that every original focus-preview presentation is still present or that historical acceptance was captured.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

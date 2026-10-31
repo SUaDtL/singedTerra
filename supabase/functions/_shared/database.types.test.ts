@@ -328,6 +328,7 @@ type _RpcKeysAreExact = AssertExact<
   | "finish_casual_match_v1"
   | "room_lifecycle"
   | "admit_room_seat"
+  | "update_room_player"
   | "submit_room_action_for_seat"
   | "start_verified_deployment"
   | "start_verified_deployment_for_contracts"
@@ -818,6 +819,10 @@ type _AllExactContracts = AssertAll<{
   }>;
   roomLifecycleArgs: AssertExact<Functions['room_lifecycle']['Args'], {
     p_room_id: string; p_player_id: string; p_token: string; p_operation: 'heartbeat' | 'leave' | 'ready';
+  }>;
+  updateRoomPlayerArgs: AssertExact<Functions['update_room_player']['Args'], {
+    p_room_id: string; p_player_id: string; p_token: string;
+    p_changes: { name?: string; color?: string; loadout?: import('./tankLoadout.ts').TankLoadout };
   }>;
   admitRoomSeatArgs: AssertExact<Functions['admit_room_seat']['Args'], {
     p_room_id: string; p_expected_players: ExpectedStoredPlayer[]; p_players: ExpectedStoredPlayer[]; p_player_id: string; p_token: string;

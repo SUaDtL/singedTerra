@@ -64,7 +64,7 @@ export function assessObservation(value, now = Date.now()) {
 
 export function inspectLocalBinding(repositoryRoot = ROOT) {
   const release = loadAndValidateManifest(repositoryRoot);
-  if (release.manifest.functions.length !== 22 || release.manifest.migrations.length !== 24)
+  if (release.manifest.functions.length !== 22 || release.manifest.migrations.length !== 25)
     throw new Error('unexpected_rollout_inventory');
   const git = (args) => execFileSync('git', args, { cwd: repositoryRoot, encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore'] }).trim();
@@ -73,7 +73,7 @@ export function inspectLocalBinding(repositoryRoot = ROOT) {
   return Object.freeze({ schemaVersion: 1, editionId: 'cq1', scope: 'local-release-inputs', sourceSha,
     sourceTreeClean: git(['status', '--porcelain', '--untracked-files=all']) === '',
     manifestSha256: release.manifestSha256, migrationSetSha256: release.migrationSetSha256,
-    functionSetSha256: release.functionSetSha256, functions: 22, migrations: 24,
+    functionSetSha256: release.functionSetSha256, functions: 22, migrations: 25,
     retainedArtifactSha256: digestFile(join(repositoryRoot, 'shared/src/verified/retained/cq1.mjs')),
     enablementReady: false, runtimeIdentity: 'not-proven' });
 }

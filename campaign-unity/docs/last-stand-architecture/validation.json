@@ -787,25 +787,6 @@
       "build": "Web-20261028T205905Z-90afa9",
       "activeMs": 180767.4932,
       "observedSimulationMs": 903800,
-      "samples": 176,
-      "finalState": {
-        "phase": "battle",
-        "saveState": "ready",
-        "runId": 2,
-        "activeTier": 1,
-        "wave": 83,
-        "completedWave": 82,
-        "checkpointWave": 82,
-        "hasCheckpoint": true,
-        "checkpointBlocked": false,
-        "tick": 18806,
-        "hull": 128652,
-        "kills": 627,
-        "wallet": 1879624,
-        "paused": false,
-        "speed": 5,
-        "fittingId": "launcher"
-      },
       "purchases": [
         {
           "atActiveMs": 39492.77129999999,
@@ -863,7 +844,53 @@
         "Renderer JS heap excludes WebAssembly linear memory. Callback elapsed is scheduling time, not CPU step cost.",
         "Wallet boundary review corrections follow this run; its exact driver inputs remain historical.",
         "No ten-hour, hardware-audio, thermal or physical-device qualification."
-      ]
+      ],
+      "finalSummaryState": {
+        "phase": "battle",
+        "saveState": "ready",
+        "runId": 2,
+        "activeTier": 1,
+        "wave": 83,
+        "completedWave": 82,
+        "checkpointWave": 82,
+        "hasCheckpoint": true,
+        "checkpointBlocked": false,
+        "tick": 18806,
+        "hull": 128652,
+        "kills": 627,
+        "wallet": 1879624,
+        "paused": false,
+        "speed": 5,
+        "fittingId": "launcher"
+      },
+      "latestObservedState": {
+        "phase": "battle",
+        "saveState": "ready",
+        "runId": 2,
+        "activeTier": 1,
+        "wave": 84,
+        "completedWave": 83,
+        "checkpointWave": 83,
+        "hasCheckpoint": true,
+        "checkpointBlocked": false,
+        "tick": 18924,
+        "hull": 128652,
+        "kills": 631,
+        "wallet": 1879625,
+        "paused": false,
+        "speed": 5,
+        "fittingId": "launcher"
+      },
+      "finalSummaryElapsedMs": 182017.6518,
+      "realObservationMs": 183187.6148,
+      "callbackWindow": "Cumulative from page telemetry startup through final cleanup; final result count5903 differs from final summary count5867.",
+      "storageWindow": "Cumulative page-start to final summary:96writes/readbacks. First summary already contains5; first-to-final summary delta91. These are passive storage call/readback counts, not a claim of96wave commits during the active ledger.",
+      "storageIntervalDelta": {
+        "writes": 91,
+        "readbacks": 91
+      },
+      "ledgerSamples": 176,
+      "summaryRecords": 5
     },
     "walletReviewFinding": "Closed: genuine failing controls for impossible saved wave and premature tick now reject; exact actual-commit/source-oracle boundary binding passes valid earlier-commit/later-pause cases.",
     "commit": "3ae1a017819c24a9b9ee5fb2aa841418d15d6ee3",
@@ -879,5 +906,250 @@
       },
       "independentReview": "PASS;5targeted checks; prior MEDIUM malformed boundary finding closed"
     }
+  },
+  "hostedQualification20261028": {
+    "schema": "last-stand-foundation-ci-observation/v1",
+    "observedAt": "2026-10-28T22:23:48.738Z",
+    "repository": "SUaDtL/singedTerra",
+    "pr": 546,
+    "headSha": "1893bbd92135555eeb021656b38f532eb9a0cbcb",
+    "baseSha": "07dc13c0ea0b31af973b24402ea9bdedfb8cc815",
+    "state": "open",
+    "draft": true,
+    "runs": [
+      {
+        "id": 40775828731,
+        "name": "CodeQL",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1339,
+        "jobs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828731/jobs",
+        "logs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828731/logs",
+        "workflow_id": 299824705
+      },
+      {
+        "id": 40775828783,
+        "name": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1320,
+        "jobs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828783/jobs",
+        "logs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828783/logs",
+        "workflow_id": 299824706
+      }
+    ],
+    "jobs": [
+      {
+        "id": 123124745259,
+        "name": "classify changes and verify CI policy",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124961715,
+        "name": "engine, database, client and build",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124961760,
+        "name": "Edge runtime tests",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962105,
+        "name": "browser (core-3)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962114,
+        "name": "browser (last-stand-tier)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962144,
+        "name": "browser (last-stand-5)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962163,
+        "name": "browser (last-stand-3)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962165,
+        "name": "browser (core-2)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962173,
+        "name": "browser (last-stand-6)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962189,
+        "name": "browser (last-stand-2)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962199,
+        "name": "browser (last-stand-10)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962216,
+        "name": "browser (last-stand-7)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962259,
+        "name": "browser (last-stand-9)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962270,
+        "name": "browser (core-1)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962292,
+        "name": "browser (core-4)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962294,
+        "name": "browser (last-stand-12)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962318,
+        "name": "browser (last-stand-4)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962333,
+        "name": "browser (last-stand-8)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962348,
+        "name": "browser (last-stand-1)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962352,
+        "name": "browser (last-stand-11)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962366,
+        "name": "browser (product)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123125267525,
+        "name": "edge function tests (deno)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123128049923,
+        "name": "typecheck \u00c2\u00b7 harnesses \u00c2\u00b7 build",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123136622229,
+        "name": "e2e \u00c2\u00b7 rendering guardrails",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "aggregate": {
+      "id": 123136622229,
+      "name": "e2e \u00c2\u00b7 rendering guardrails",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40775828783,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Validate required result",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Download all Campaigns viewport observations",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Verify complete source-bound Campaigns matrix",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        }
+      ]
+    },
+    "limits": [
+      "Caller-recorded connector readback; not a merge, release, deployment, physical-device or endurance receipt."
+    ]
   }
 }

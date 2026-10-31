@@ -41,6 +41,7 @@ namespace SingedTerra.LastStand
         LastStandSettingsHud settings=>modals.Settings;
         LastStandResearchHud research=>modals.Research;
         LastStandRunHistoryHud history=>modals.History;
+        LastStandPlannerHud planner=>modals.Planner;
         bool CanOpenRunShop()=>shop.CanOpenRunShop();
         bool CanOpenPermanentShop()=>shop.CanOpenPermanentShop();
         static float PreferredPixelRatio()=>LastStandHudDisplay.PreferredPixelRatio();
@@ -50,11 +51,13 @@ namespace SingedTerra.LastStand
          observedSession=loop.Session;observedSession.Stepped+=ObserveCombat;}
         [Serializable] sealed class ModelObservation
         {
-            public int hull,maximumHull,cannonDamage,launcherDamage,cannonPeriod,repairAmount;
+            public int hull,maximumHull,cannonDamage,launcherDamage,scattergunDamage,mortarDamage,railgunDamage,cannonPeriod,repairAmount;
         }
         static ModelObservation ObserveModel(EncounterModel model) => model == null ? null : new ModelObservation {
             hull = model.Hull, maximumHull = model.CurrentMaximumHull, cannonDamage = model.CurrentCannonDamage,
-            launcherDamage = model.CurrentLauncherDamage, cannonPeriod = model.CurrentCannonPeriod, repairAmount = model.CurrentRepairAmount };
+            launcherDamage = model.CurrentLauncherDamage,scattergunDamage=model.CurrentScattergunDamage,
+            mortarDamage=model.CurrentMortarDamage,railgunDamage=model.CurrentRailgunDamage,
+            cannonPeriod = model.CurrentCannonPeriod, repairAmount = model.CurrentRepairAmount };
         [Serializable] sealed class CardObservation
         {
             public string key,category,currentEffect,nextEffect,price,refusal,reason;
@@ -133,7 +136,7 @@ namespace SingedTerra.LastStand
                 accepted = result.Accepted, refusal = result.Refusal.ToString(), resultVersion = result.Version,
                 chargedScrap = result.ChargedScrap, tick = loop.Session?.Model?.Tick ?? -1, model = ObserveModel(loop.Session?.Model) }));
         }
-        [Serializable] sealed class EventObservation { public string kind; public int slot,amount,rawHit; public bool killed; }
+        [Serializable] sealed class EventObservation { public string kind; public int slot,aimSlot,amount,rawHit; public bool killed; }
         [Serializable] sealed class CombatObservation
         {
             public int runId,tick; public string fitting;
@@ -150,7 +153,7 @@ namespace SingedTerra.LastStand
             {
                 var actual = model.Events[i];
                 bool hit = actual.Kind == EncounterEventKind.CloseHit || actual.Kind == EncounterEventKind.RangedHit;
-                events[i] = new EventObservation { kind = actual.Kind.ToString(), slot = actual.Slot, amount = actual.Amount,
+                events[i] = new EventObservation { kind = actual.Kind.ToString(), slot = actual.Slot, aimSlot=actual.AimSlot,amount = actual.Amount,
                     killed = actual.Killed, rawHit = hit && actual.Slot >= 0 && actual.Slot < model.Foes.Count ? model.Foes[actual.Slot].Damage : 0 };
             }
             Debug.Log("ST_LS_SHOP_COMBAT " + JsonUtility.ToJson(new CombatObservation { runId = runId, tick = model.Tick,
@@ -171,11 +174,14 @@ namespace SingedTerra.LastStand
         }
         [Serializable] sealed class LayoutState
         {
+            public string schema="singedterra-last-stand-observation/v4";
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;
-            public Control[] controls,shopControls,settingsControls,researchControls,historyControls; public GraphicObservation[] graphics;
+            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls; public GraphicObservation[] graphics;
             public float researchScrollOffset,researchMaximumScrollOffset,historyScrollOffset,historyMaximumScrollOffset;
+            public float researchListScrollOffset,researchListMaximumScrollOffset,researchDetailScrollOffset,researchDetailMaximumScrollOffset;
+            public float plannerScrollOffset,plannerMaximumScrollOffset;
         }
         string NodePath(Transform node)
         {
@@ -200,11 +206,30 @@ namespace SingedTerra.LastStand
                 controls[i] = new Control { name = button.name, label = label, accessibleLabel = button == shopClose ? "Close" : button==menu ? "Menu" :
                     button==tierPrevious?"Previous tier":button==tierNext?"Next tier":button==fittingPrevious?"Previous fitting":button==fittingNext?"Next fitting":
                     button==shopQuantity?"Purchase quantity "+loop.ShopQuantity+". Cycle 1, 10, 100 or Max":
-                    button==waveInfo?"Current wave enemy stats. "+label:label,
+                    button==waveInfo?"Current wave enemy stats. "+label:PlanningControlLabel(button.name,label),
                     mode = mode, trackKey = track, x = bounds.x, y = bounds.y, width = bounds.width, height = bounds.height,
                     active = button.gameObject.activeInHierarchy, interactable = button.IsInteractable() };
             }
             return controls;
+        }
+        static string PlanningControlLabel(string name,string fallback)
+        {
+            switch(name)
+            {
+                case "PlannerPrevious":return "Previous progression goal";
+                case "PlannerNext":return "Next progression goal";
+                case "PlannerWorkshopPrevious":return "Previous Workshop alternative";
+                case "PlannerWorkshopNext":return "Next Workshop alternative";
+                case "PlannerResearchPrevious":return "Previous Research alternative";
+                case "PlannerResearchNext":return "Next Research alternative";
+                case "RunHistoryConditionPrevious":return "Previous farming conditions";
+                case "RunHistoryConditionNext":return "Next farming conditions";
+                case "RunHistoryRunAPrevious":return "Previous run A";
+                case "RunHistoryRunANext":return "Next run A";
+                case "RunHistoryRunBPrevious":return "Previous run B";
+                case "RunHistoryRunBNext":return "Next run B";
+                default:return fallback;
+            }
         }
         // Read-only capture is shared by runtime emission and the Editor contract
         // check; it cannot issue a purchase, advance a clock, or write storage.
@@ -233,12 +258,16 @@ namespace SingedTerra.LastStand
                 pixelRatio = PreferredPixelRatio(), controls = ObserveControls(coreActions,"Core"), shopControls = ObserveControls(shopActions,shopMode.ToString()),
                 settingsControls = ObserveControls(settings.Buttons,"Settings"),
                 researchControls=ObserveControls(research.Buttons,"Research"),historyControls=ObserveControls(history.Buttons,"History"),
+                plannerControls=ObserveControls(planner.Buttons,"Planner"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
             layout.settingsScrollOffset = settings.ScrollOffset;
             layout.settingsMaximumScrollOffset = settings.MaximumScrollOffset;
             layout.researchScrollOffset=research.ScrollOffset;layout.researchMaximumScrollOffset=research.MaximumScrollOffset;
+            layout.researchListScrollOffset=research.ListScrollOffset;layout.researchListMaximumScrollOffset=research.ListMaximumScrollOffset;
+            layout.researchDetailScrollOffset=research.DetailScrollOffset;layout.researchDetailMaximumScrollOffset=research.DetailMaximumScrollOffset;
             layout.historyScrollOffset=history.ScrollOffset;layout.historyMaximumScrollOffset=history.MaximumScrollOffset;
+            layout.plannerScrollOffset=planner.ScrollOffset;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset;
             return layout;
         }
         public void ReportLayout()

@@ -47,7 +47,7 @@ internal static class TierProgressionChecks
 
     static LastStandProgression StrongProfile(TierStorage storage)
     {
-        var model=LastStandProgression.Load(storage);
+        LastStandProgression.Load(storage);
         foreach(var track in LastStandUpgradeCatalog.Tracks)
             storage.Value=storage.Value.Replace("\""+track.Key+"\":0","\""+track.Key+"\":"+track.PermanentCap);
         return LastStandProgression.Load(storage);
@@ -64,7 +64,7 @@ internal static class TierProgressionChecks
         var s=new TierStorage();var m=StrongProfile(s);
         Require(m.SelectedTier==1 && !Unlocked(m),"Fresh profile starts at unlocked Tier 1 only.");
         Require(!Select(m,2) && !Select(m,0) && !Select(m,3),"Locked or invalid selection fails.");
-        Require(m.TryDeploy() && m.ActiveTier==1 && m.ActiveProfileVersion==LastStandWaveCatalog.RulesVersion,
+        Require(m.TryDeploy() && m.ActiveTier==1 && m.ActiveProfileVersion==LastStandRunEdition.CurrentRulesVersion,
             "Deployment durably binds current wave rules.");
         Require(!Select(m,1),"Selection cannot change during a resumable run.");
         var combat=m.Checkpoint.RestoreModel();var shop=m.Checkpoint.RestoreShop();
@@ -135,13 +135,13 @@ internal static class TierProgressionChecks
     {
         const string oldPending="{\"runId\":8,\"elapsedTicks\":3600,\"kills\":2147483647,\"reward\":1}";
         var s=new TierStorage {Value=" \r\n"+V1(oldPending)+"\t"};var m=LastStandProgression.Load(s);
-        Require(m.SaveState=="ready" && s.Value.StartsWith("{\"version\":5,"),"Legacy migration writes strict v5.");
+        Require(m.SaveState=="ready" && s.Value.StartsWith("{\"version\":6,"),"Legacy migration writes strict v6.");
         Require(m.Wallet==17 && m.CannonAttackLevel==2 && m.NextRunId==9 && m.FinalizedRunId==6 && !Unlocked(m) &&
             Best(m,false,1)==0 && Best(m,true,1)==0 && m.GetBestWave(1)==0 && m.PendingDefeat.Tier==0 && m.PendingDefeat.Reward==1,
             "Legacy pending result preserves value without inventing tier or wave history.");
         Require(m.TryClaim() && !m.TryClaim() && m.Wallet==18 && !Unlocked(m),"Legacy reward is claimable exactly once without wave credit.");
         string valid=s.Value;
-        foreach(string value in new[]{valid.Replace("\"version\":5","\"version\":6"),
+        foreach(string value in new[]{valid.Replace("\"version\":6","\"version\":7"),
             valid.Replace("\"selectedTier\":1","\"selectedTier\":2"),
             valid.Replace("\"bestWave\":0","\"bestWave\":10"),
             valid.Replace("\"legacyTicks\":0","\"legacyTicks\":3601"),

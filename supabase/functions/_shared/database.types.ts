@@ -436,6 +436,11 @@ export type Database = {
         Args: { p_room_id: string; p_expected_players: StoredPlayer[]; p_players: StoredPlayer[]; p_player_id: string; p_token: string };
         Returns: Record<string, unknown>;
       };
+      update_room_player: {
+        Args: { p_room_id: string; p_player_id: string; p_token: string;
+          p_changes: { name?: string; color?: string; loadout?: import("./tankLoadout.ts").TankLoadout } };
+        Returns: Record<string, unknown>;
+      };
       room_lifecycle: {
         Args: { p_room_id: string; p_player_id: string; p_token: string; p_operation: 'heartbeat' | 'leave' | 'ready' };
         Returns: Record<string, unknown>;

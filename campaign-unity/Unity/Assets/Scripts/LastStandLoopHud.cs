@@ -60,7 +60,7 @@ namespace SingedTerra.LastStand
             garage=new LastStandGarageView(loop,canvas,root,elements);
             shop=new LastStandShopHud(loop,root,elements,Refresh,Layout,b=>keyboard.Focus(b),combat.SetSummary,
                 (activation,intent,result)=>observations.ObservePurchase(activation,intent,result));
-            modals=new LastStandModalHost(loop,root,font,metalGrain,metalSurface,elements);settings=modals.Settings;
+            modals=new LastStandModalHost(loop,root,font,metalGrain,metalSurface,elements,shop.OpenPermanentFromPlanner,shop.CanOpenPermanentShop);settings=modals.Settings;
             actions=new[]{combat.Fitting,combat.Deploy,combat.Claim,combat.Purchase,combat.Redeploy,combat.Retry,combat.Pause,combat.Mute,combat.Tier,combat.Effects,
                 modals.Menu,combat.SpeedMinus,combat.SpeedRate,combat.SpeedPlus,garage.TierPrevious,garage.TierNext,garage.FittingPrevious,garage.FittingNext,garage.ResearchEntry};
             var core=new List<Button>(actions);core.Add(combat.WaveInfo);coreActions=core.ToArray();
@@ -68,6 +68,8 @@ namespace SingedTerra.LastStand
             var all=new List<Button>(backgroundActions);all.AddRange(modals.Buttons);
             keyboard=root.gameObject.AddComponent<LastStandHudKeyboard>();
             keyboard.Initialize(all.ToArray(),b=>{shop.RevealSelection(b);modals.Reveal(b);});modals.BindKeyboard(keyboard);
+            keyboard.CanScrollContent=()=>combat.CanScrollRecovery;
+            keyboard.ScrollContent=direction=>{if(loop.MenuOpen)modals.Scroll(direction);else combat.ScrollRecovery(direction);};
             observations=new LastStandHudObservations(loop,root,shop,modals,garage,combat,coreActions);
         }
         string DeploymentRefusal()
@@ -109,13 +111,16 @@ namespace SingedTerra.LastStand
             bool receipt=loop.Progression.SaveState=="ready"&&loop.Progression.LastReceipt!=null;
             var projection=LastStandHudLayout.Project(cssWidth,cssHeight,projectedPhase,active.ToArray(),shop.LayoutInput(),receipt);
             if(shop.IsOpen)projection=LastStandHudLayout.Project(cssWidth,cssHeight,projectedPhase,active.ToArray(),shop.MeasuredInput(projection,unitsX,unitsY,combat.Status),receipt);
+            projection=combat.MeasureRecovery(projection,unitsX,unitsY);
             var slots=new Dictionary<string,LastStandHudLayout.Slot>();foreach(var slot in projection.Slots)slots.Add(slot.Id,slot);
+            combat.PrepareRecovery(slots);
             shop.BeginLayout(projection.ScrollOffset,projection.MaximumScrollOffset,unitsY);
             try
             {
                 foreach(var entry in nodes)
                 {
                     bool visible=slots.TryGetValue(entry.Key,out var slot);entry.Value.gameObject.SetActive(visible);if(!visible)continue;
+                    if(entry.Key=="RecoveryViewport"||entry.Key=="RecoveryContent")continue;
                     if(entry.Key=="WaveReceipt")
                     {
                         entry.Value.SetParent(nodes[slot.Parent],false);var lines=loop.ConfirmedWaveReceipt.Split('\n');
@@ -129,6 +134,7 @@ namespace SingedTerra.LastStand
                 }
             }
             finally{shop.EndLayout(false);}
+            combat.LayoutRecovery(slots,unitsX,unitsY);
             combat.LayoutInstruments(slots,unitsX,unitsY);modals.Layout(cssWidth,cssHeight,unitsX,unitsY);
             garage.Layout(slots,cssWidth,cssHeight,ratio,shop.IsOpen);keyboard.Refresh();shop.EndLayout(resized);observations.ReportLayout();
         }

@@ -171,7 +171,10 @@ test('the checked-in backend manifest exactly describes the current release inpu
   assert.equal(result.manifest.schemaVersion, 1);
   assert.equal(result.manifest.supabaseCliVersion, '2.105.0');
   assert.equal(result.manifest.functions.length, 22);
-  assert.equal(result.manifest.migrations.at(-1).path, 'supabase/migrations/024_verified_challenge_rewards.sql');
+  assert.deepEqual(result.manifest.migrations.slice(-2).map(entry => entry.path), [
+    'supabase/migrations/024_verified_challenge_rewards.sql',
+    'supabase/migrations/025_atomic_room_mutation_followups.sql',
+  ]);
   for (const name of ['start_verified_challenge', 'complete_verified_challenge', 'get_verified_challenge', 'abandon_verified_challenge', 'verified_career_summary']) {
     assert.equal(result.manifest.functions.find((entry) => entry.name === name)?.verifyJwt, false);
   }

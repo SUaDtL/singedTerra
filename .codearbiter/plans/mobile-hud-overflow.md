@@ -466,3 +466,12 @@ deploy.
 
 Invoke `$ca-watch` for the new PR. On red, diagnose and route the repair through `$ca-fix`; on green,
 record the receipt and begin the next loop iteration without merging.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Later single console/Armory owner. Current source/oracles: `client/src/ui/battleConsole/lifecycle.ts`, `client/src/ui/HUD.arsenal.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `82bd4da5d302` (Fix compact-touch HUD overflow (#156)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using SingedTerra.Art;
+using SingedTerra.LastStand;
 
 namespace SingedTerra.Encounter
 {
@@ -18,9 +19,11 @@ namespace SingedTerra.Encounter
         readonly Renderer[] bodies = new Renderer[EncounterModel.Capacity];
         readonly LineRenderer[] trails = new LineRenderer[12];
         readonly float[] life = new float[12];
+        readonly bool[] mortarPresented=new bool[EncounterModel.Capacity];
         readonly List<Material> materials = new List<Material>();
-        Material closePaint, rangedPaint, rubber, health, shell, rocket, incoming, repair, scatter;
+        Material closePaint, rangedPaint, rubber, health, shell, rocket, incoming, repair, scatter,mortar,railgun;
         int nextTrail;
+        bool currentGeometry;
         public bool FullEffects { get; private set; } = true;
         public int VisibleUnits { get; private set; }
         public int PoolSize => units.Length;
@@ -40,7 +43,7 @@ namespace SingedTerra.Encounter
         }
         public void Initialize(TankPresentation presentation)
         {
-            owner = presentation; cube = CreateCube();
+            owner = presentation;owner.EnsureInitialized(); cube = CreateCube();
             owner.SetEncounterEffects(FullEffects);
             repairMeshes = owner.repairModule.GetComponentsInChildren<Renderer>(true);
             launcherMeshes = owner.launcherModule.GetComponentsInChildren<Renderer>(true);
@@ -54,6 +57,7 @@ namespace SingedTerra.Encounter
             incoming = Paint(basis, new Color(.86f,.24f,.18f));
             repair = Paint(basis, new Color(.25f,.9f,.65f));
             scatter = Paint(basis, new Color(1f,.70f,.40f));
+            mortar=Paint(basis,new Color(.94f,.66f,.33f));railgun=Paint(basis,new Color(.56f,.87f,1f));
             review=owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             if(review){reviewVisuals=new SingedTerra.VisualReview.ReviewCombatVisuals(review,owner,transform);review.Changed+=reviewVisuals.FaceCamera;}
             for (int i = 0; i < (review ? 0 : units.Length); i++)
@@ -78,12 +82,18 @@ namespace SingedTerra.Encounter
         public Vector3 Position(EncounterFoe foe)
         {
             if(reviewVisuals!=null)return reviewVisuals.Position(foe)+Vector3.up*.85f;
+            if(currentGeometry)
+            {
+                var point=EncounterGeometry.Position(foe.Lane,foe.Id,foe.Distance);
+                return owner.tank.position+new Vector3(point.X*.001f,.85f,point.Z*.001f);
+            }
             float angle = foe.Lane * Mathf.PI / 4;
             return owner.tank.position + new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * (foe.Distance * .001f)
                 + Vector3.up * .85f;
         }
         public void Render(EncounterModel model)
         {
+            BindModel(model);
             if(reviewVisuals!=null){reviewVisuals.Render(model);VisibleUnits=reviewVisuals.Active;return;}
             VisibleUnits = 0;
             for (int i = 0; i < units.Length; i++)
@@ -100,6 +110,7 @@ namespace SingedTerra.Encounter
         }
         public void Present(EncounterModel model)
         {
+            BindModel(model);System.Array.Clear(mortarPresented,0,mortarPresented.Length);
             foreach (var e in model.Events)
             {
                 Vector3 center = owner.tank.position + Vector3.up * 1.5f;
@@ -118,11 +129,28 @@ namespace SingedTerra.Encounter
                     var spread=Vector3.Cross(Vector3.up,target-origin).normalized*.16f;
                     for(int pellet=-1;pellet<=1;pellet++)Trace(origin,target+spread*pellet,scatter);
                 }
+                else if(e.Kind==EncounterEventKind.Mortar&&!mortarPresented[e.AimSlot])
+                {
+                    mortarPresented[e.AimSlot]=true;
+                    var centerTarget=Position(model.Foes[e.AimSlot]);
+                    owner.PlayFittingShot(LastStandFitting.Mortar,centerTarget);
+                    Trace(owner.FittingMuzzle(LastStandFitting.Mortar),centerTarget,mortar,true);
+                }
+                else if(e.Kind==EncounterEventKind.Railgun)
+                {
+                    owner.PlayFittingShot(LastStandFitting.Railgun,target);
+                    Trace(owner.FittingMuzzle(LastStandFitting.Railgun),target,railgun);
+                }
                 else if (e.Kind == EncounterEventKind.Repair)
                     Trace(Center(repairMeshes), center, repair);
                 else if(e.Kind==EncounterEventKind.CloseHit || e.Kind==EncounterEventKind.RangedHit)Trace(target, center, incoming);
             }
             reviewVisuals?.Present(model);
+        }
+        void BindModel(EncounterModel model)
+        {
+            currentGeometry=model.Profile.IsWaveBased&&!model.Profile.Edition.IsLegacy;
+            reviewVisuals?.BindModel(model);
         }
         static Mesh CreateCube()
         {
@@ -145,12 +173,18 @@ namespace SingedTerra.Encounter
             for(int i=1;i<meshes.Length;i++)bounds.Encapsulate(meshes[i].bounds);
             return bounds.center;
         }
-        void Trace(Vector3 from, Vector3 to, Material material)
+        void Trace(Vector3 from, Vector3 to, Material material,bool arc=false)
         {
             if (!FullEffects) return;
             int i = nextTrail; nextTrail = (nextTrail + 1) % trails.Length; life[i] = .22f;
-            trails[i].sharedMaterial = material; trails[i].SetPosition(0, from);
-            trails[i].SetPosition(1, to); trails[i].enabled = true;
+            trails[i].sharedMaterial = material;trails[i].positionCount=arc?9:2;
+            trails[i].SetPosition(0,from);trails[i].SetPosition(trails[i].positionCount-1,to);
+            for(int point=1;point<trails[i].positionCount-1;point++)
+            {
+                float t=point/(float)(trails[i].positionCount-1);
+                trails[i].SetPosition(point,Vector3.Lerp(from,to,t)+Vector3.up*(4*t*(1-t)*3f));
+            }
+            trails[i].enabled = true;
         }
         public void Advance(float elapsed)
         {
@@ -170,7 +204,7 @@ namespace SingedTerra.Encounter
         }
         public void Clear()
         {
-            VisibleUnits = 0; nextTrail = 0;
+            VisibleUnits = 0; nextTrail = 0;currentGeometry=false;
             reviewVisuals?.Clear();
             foreach (var unit in units) if (unit) unit.gameObject.SetActive(false);
             for (int i = 0; i < life.Length; i++) { life[i] = 0; if (trails[i]) trails[i].enabled = false; }

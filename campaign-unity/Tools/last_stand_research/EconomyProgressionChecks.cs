@@ -42,8 +42,8 @@ static class EconomyProgressionChecks
                 int[] paidV2Prices={552,338,442,484,0,326,335,923};
                 for(int i=0;i<paidV2Prices.Length;i++)if(paidV2Prices[i]!=0)
                     Check(old.Tracks[i].RunPrice(100)==paidV2Prices[i],"Retained deep v2 price changed: "+old.Tracks[i].Key);
-                foreach(var row in current.Tracks)for(int rank=1;rank<=Math.Min(8,row.TotalCap);rank++)
-                    Check(row.RunPrice(rank)==old.Get(row.Id).RunPrice(rank),"Initial purchases became more expensive.");
+                foreach(var row in old.Tracks)for(int rank=1;rank<=Math.Min(8,row.TotalCap);rank++)
+                    Check(current.Get(row.Id).RunPrice(rank)==row.RunPrice(rank),"Initial purchases became more expensive.");
                 var shop=new LastStandShopState(4,LastStandFitting.Repair,new int[8],old.Version);
                 int kills=LastStandWaveCatalog.TotalEnemiesThroughWave(30);
                 shop.ObserveAuthoritativeKills(kills);
@@ -76,7 +76,7 @@ static class EconomyProgressionChecks
             else if(args[0]=="legacy") {
                 var old=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion);
                 var current=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.EconomyVersion);
-                Check(old.Tracks.Count==7 && current.Tracks.Count==8,"Versioned roster boundaries.");
+                Check(old.Tracks.Count==7 && LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion).Tracks.Count==8 && current.Tracks.Count==10,"Versioned roster boundaries.");
                 for(int i=0;i<7;i++)Check(old.Tracks[i].Key==current.Tracks[i].Key,"Existing stable track identity moved.");
                 long cap=0;for(int n=1;n<=12;n++)cap+=old.Get(LastStandUpgradeTrackId.CannonCycle).PermanentPrice(n);
                 Check(cap==94,"Legacy price rule was changed.");
@@ -136,6 +136,7 @@ static class EconomyProgressionChecks
             }
             else if(args[0]=="value") {
                 foreach(var row in LastStandUpgradeCatalog.Tracks) {
+                    if(!row.Available)continue;
                     int p=Math.Min(40,row.PermanentCap-1),target=Math.Min(row.TotalCap,p+20);
                     long fromZero=0,fromPermanent=0;
                     for(int n=1;n<=target;n++)fromZero+=row.RunPrice(n);

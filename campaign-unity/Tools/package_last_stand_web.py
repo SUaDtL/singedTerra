@@ -177,7 +177,7 @@ def main():
             'wrapperFiles': binding['wrapperFiles'], 'toolchain': toolchain, 'receiptSha256': digest(sanitized_path),
             'vendor': {'path': vendor, 'version': '17.3.0', 'sha256': inventory_digest(vendor_files)},
             'policy': {'runtimeRoots': 'All present Assets, ProjectSettings and Packages files including ignored URP; additions fail',
-                       'exportTools': 'build_web.py imports unity_shader_log.py; other imports are stdlib',
+                       'exportTools': 'build_web.py imports unity_shader_log.py and unity_build_resources.py; other imports are stdlib',
                        'wrapper': 'build_web.py executes make_web_entry.py, which reads web-index-template.html; separately bound',
                        'excluded': 'Test/verifier/browser drivers and mutable native governance do not affect exported Unity bytes',
                        'absentVendor': 'Admitted only through this locally inspected complete receipt pin; absent bytes not inspected by CI',

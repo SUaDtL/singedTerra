@@ -2,7 +2,13 @@
 // behavior is claimed by these C# state-projection checks.
 using System;
 using SingedTerra.LastStand;
-namespace UnityEngine { public class MonoBehaviour { } }
+namespace UnityEngine
+{
+    public class MonoBehaviour { }
+    public static class Time { public static double realtimeSinceStartupAsDouble => 0; }
+    public static class Application { public static bool isMobilePlatform => false; }
+    public static class Screen { public static bool fullScreen; }
+}
 namespace SingedTerra.LastStand
 {
     public sealed class LastStandLoopController

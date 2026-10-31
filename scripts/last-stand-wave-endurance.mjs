@@ -7,8 +7,8 @@ import {resolve,dirname,relative,isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {performance} from 'node:perf_hooks';
 import {admitMilestoneFixtures} from './last-stand-wave-milestones.mjs';
-import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
-  fetchBoundRuntime,assertServedBytes,readShopControlObservation} from '../e2e/helpers/lastStandJourney.mjs';
+import {LAST_STAND_HELPER_INPUTS,admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,
+  fetchBoundRuntime,assertServedBytes,readShopControlObservation,assertWaveCheckpointEdition} from '../e2e/helpers/lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from '../e2e/helpers/lastStandTierJourney.mjs';
 
 export const ENDURANCE_POLICY=Object.freeze({activeTargetMs:10*60*60*1000,wallLimitMs:12*60*60*1000,
@@ -201,11 +201,23 @@ function passiveBrowserProbe(){
 const root=resolve(import.meta.dirname,'..'),saveKey='singedTerra.lastStand.prototype.v1';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const inputPaths=['scripts/last-stand-wave-endurance.mjs','scripts/last-stand-wave-milestones.mjs',
-  'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
-  'e2e/helpers/lastStandWaveOracle.mjs','scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs'];
+  'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
+  'e2e/helpers/lastStandWaveOracle.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs'];
 const inputHashes=()=>Object.fromEntries(inputPaths.map(path=>[path,sha(readFileSync(resolve(root,path)))]));
 const compactState=state=>Object.fromEntries(['phase','saveState','runId','activeTier','wave','completedWave','checkpointWave','hasCheckpoint',
   'checkpointBlocked','tick','hull','kills','wallet','paused','speed','fittingId'].map(key=>[key,state?.[key]??null]));
+
+// Current generated seeds and post-migration browser readbacks use the same
+// envelope as the production serializer. Retained runs preserve their complete
+// combat/content/economy edition inside that current envelope, not an old schema.
+export function assertCurrentEnduranceSave(saved){
+  assert.equal(saved?.version,6,'Current endurance requires save version 6');
+  if(saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint);
+  return saved;
+}
 
 export function admitResearchFixtures(fixtures,manifestPath,sourceRoot=root){
   assert.equal(fixtures.schema,'last-stand-research-qualification-fixtures/v1');
@@ -222,7 +234,7 @@ export function admitResearchFixtures(fixtures,manifestPath,sourceRoot=root){
     assert.equal(fixture.savePath,fixture.id+'.json','Fixture uses its named sibling file');
     const location=resolve(directory,fixture.savePath);assert.equal(realpathSync(location),location);
     assert.equal(sha(readFileSync(location)),fixture.saveSha256,'Fixture bytes changed');
-    const save=JSON.parse(readFileSync(location));assert.equal(save.version,5);
+    const save=assertCurrentEnduranceSave(JSON.parse(readFileSync(location)));
     if(fixture.id==='mature-5x'){
       assert.equal(fixture.requestedSpeed,5);assert.equal(save.research.completedRanks.gameSpeed,8,'Five times speed must be earned in fixture');
       assert.equal(save.checkpoint,null,'Mature fixture deploys through rendered input');
@@ -256,24 +268,7 @@ async function main(){
   const verifyServed=async()=>{for(const [path,digest]of Object.entries({...runtime.files,'index.html':runtime.wrapperSha256}))
     assertServedBytes(await fetchBoundRuntime(base,path),digest);};
   await verifyServed();mkdirSync(output,{recursive:true});
-  const ledger=newEnduranceLedger(expectedSpeed),report={schema:'last-stand-real-elapsed-endurance/v1',status:'running',enduranceQualified:false,
-    mode:options.mode,policy:ENDURANCE_POLICY,seeded:true,normalSpeed:!options.research,expectedSpeed,
-    purchasePolicy:options.research?{...fixture.qualificationPurchasePolicy,
-      firstPurchaseRealSeconds:options.mode==='smoke'?30:900,
-      note:options.mode==='smoke'?'Early rendered purchase diagnostic; cannot qualify endurance.':'Measured fifteen-minute cadence.'}:null,
-    command:[process.execPath,...process.argv.slice(1)],
-    scope:options.research?'One headless Chromium document, ten real active hours at researched 5x from a declared mature development profile. Rendered purchases and speed controls only; no time acceleration beyond the actual game setting. No native audio or physical-device claim.':
-      'One long-lived headless Chromium document with real elapsed gameplay at shipped 1x. Accelerated production-earned initial save; rendered Continue/redeploy after natural defeat. No purchases, clock changes, offline simulation, 5x farming-duration, native media or physical-device claim.',
-    startedAt:new Date().toISOString(),fixtureManifest:manifestPath,fixtureSha256:sha(manifestBytes),saveSha256:fixture.saveSha256,
-    inputs:sources,packaged,host:process.platform,ledger,actions:[],actionsTotal:0,actionsDropped:0,errors:[],errorsTotal:0,errorsDropped:0,
-    callback:{count:0,maximumSteps:0,maximumElapsedSeconds:0,maximumPendingSeconds:0},audioCueTelemetry:{events:0,byName:{}},
-    metricLimits:{renderer:'CDP JSHeapUsedSize/JSHeapTotalSize are renderer JavaScript heap metrics; they are not measured WebAssembly linear memory.',
-      wasmLinearMemoryBytes:null,wasmAvailability:'Not exposed by the passive observer.',
-      audio:'Engine cue/admission logs and AudioContext state/time only. No rendered signal, recording, speaker output or native audio acceptance.',
-      checkpointLatency:'Measured localStorage setItem duration and span through its first getItem readback for the progression key. Excludes C# serialization and later UI work; includes passive observer overhead. No callback interval is treated as storage latency.',
-      frameHistogramUpperBoundsMs:[16.7,33.4,50,100,250,1000,'unbounded'],
-      retention:'Latest state/layout only; 128 action and 32 error ring entries; at most 725 minute summaries; hourly checkpoints/screenshots.'},
-    summaries:0,screenshots:[],runsObserved:0,finalBindingsVerified:false,storageLatencyVerified:false};
+  const {ledger,report}=createEnduranceReport({options,expectedSpeed,fixture,manifestPath,manifestBytes,sources,packaged});
   const resultPath=resolve(output,'result.json'),samplesPath=resolve(output,'samples.ndjson');
   const persist=()=>writeFileSync(resultPath,JSON.stringify(report,null,2));
   const recordError=error=>{const message=String(error);report.errorsTotal++;report.errorsDropped+=appendBounded(report.errors,
@@ -334,118 +329,13 @@ async function main(){
     }
     cdp=await context.newCDPSession(page);await cdp.send('Performance.enable');
     started=performance.now();report.observationStartedAt=new Date().toISOString();
-    let nextSummary=0,nextScreenshot=0,lastCheckpoint=null;
-    let nextPurchaseActiveMs=options.research&&options.mode==='smoke'?30000:900000,purchaseCursor=0;
-    const periodicPurchase=async()=>{
-      const policy=fixture.qualificationPurchasePolicy;
-      await click('ShopEntry');await until(()=>shop?.open&&shop.mode==='Run');
-      try{
-        let skipped=0;
-        while(skipped<policy.trackOrder.length){
-          const card=shop.cards.find(item=>item.key===policy.trackOrder[purchaseCursor%policy.trackOrder.length]);
-          assert.ok(card,'Declared policy track exists in actual run');
-          if(card.level<card.cap)break;
-          purchaseCursor++;skipped++;
-        }
-        if(skipped===policy.trackOrder.length)return;
-        for(let n=0;n<4;n++){
-          const quantity=layout.shopControls.find(item=>item.name==='ShopQuantity');
-          if(quantity?.label?.includes('[MAX]'))break;
-          await click('ShopQuantity');
-        }
-        assert.ok(layout.shopControls.find(item=>item.name==='ShopQuantity')?.label?.includes('[MAX]'),'Actual Max quantity selected');
-        const key=policy.trackOrder[purchaseCursor%policy.trackOrder.length];
-        let card=shop.cards.find(item=>item.key===key);
-        await click('ShopTab'+card.category);await until(()=>shop.category===card.category);
-        card=shop.cards.find(item=>item.key===key);
-        if(!card.canPurchase){assert.equal(card.refusal,'InsufficientScrap');return;}
-        const before={n:card.n,spent:shop.spentScrap};
-        // A live kill may invalidate the displayed version between pointer
-        // down/up. Retry a freshly rendered quote at most twice; never replay
-        // an accepted debit or invoke a game method from the observer.
-        for(let attempt=0;attempt<3;attempt++){
-          await click('ShopCard_'+key+'Buy');await page.waitForTimeout(100);
-          const after=shop.cards.find(item=>item.key===key);
-          if(after.n>before.n){
-            assert.ok(shop.spentScrap>before.spent);
-            report.periodicPurchases??=[];
-            assert.ok(report.periodicPurchases.length<64,'Bounded fifteen-minute purchase record');
-            report.periodicPurchases.push({atActiveMs:ledger.activeMs,key,quantity:after.n-before.n,
-              cost:shop.spentScrap-before.spent,runId:latest.runId,tick:latest.tick});
-            purchaseCursor++;return;
-          }
-        }
-        throw new Error('Rendered periodic purchase remained stale after bounded retries');
-      }finally{if(shop?.open)await click('ShopClose');}
-    };
-    const summary=async(final=false)=>{
-      checkSourceBindings();assert.ok(report.summaries<ENDURANCE_POLICY.maximumSummaries,'Bounded minute summary count');
-      const probe=await page.evaluate(()=>window.__stEnduranceProbe.snapshot());
-      const storageLatency=await page.evaluate(()=>window.__stCheckpointStorageProbe.snapshot());
-      report.storageLatencyVerified=storageLatency.writes.successes>0&&storageLatency.readbacks.count>0&&
-        storageLatency.writes.errors===0&&storageLatency.readbacks.errors===0&&storageLatency.readbacks.mismatches===0&&
-        storageLatency.readbacks.unconfirmed===0&&!storageLatency.pending;
-      const metrics=await cdp.send('Performance.getMetrics');const values=Object.fromEntries(metrics.metrics.map(item=>[item.name,item.value]));
-      const raw=await page.evaluate(key=>localStorage.getItem(key),saveKey);assert.ok(raw&&raw.length<128*1024,'Bounded saved checkpoint');
-      const saved=JSON.parse(raw);assert.equal(saved.version,5);assert.equal(saved.pendingDefeat,null,'Current runs never create legacy Claim rewards');
-      if(saved.checkpoint){assert.equal(saved.checkpoint.encounter.rulesVersion,'last-stand-waves-v1');
-        if(lastCheckpoint?.runId===saved.checkpoint.runId)assert.ok(saved.checkpoint.encounter.completedWave>=lastCheckpoint.wave,'Committed checkpoint cannot go backwards');
-        lastCheckpoint={runId:saved.checkpoint.runId,wave:saved.checkpoint.encounter.completedWave};}
-      const record={sequence:report.summaries++,at:new Date().toISOString(),elapsedMs:performance.now()-started,final,
-        ledger:{activeMs:ledger.activeMs,pausedMs:ledger.pausedMs,endedMs:ledger.endedMs,unknownMs:ledger.unknownMs,observedSimulationMs:ledger.observedSimulationMs},
-        state:compactState(latest),browser:{timeOrigin:probe.timeOrigin,now:probe.now,hidden:probe.hidden,focused:probe.focused,frames:probe.frames,audioContexts:probe.audioContexts},
-        rendererJavaScript:{heapUsedBytes:values.JSHeapUsedSize??null,heapTotalBytes:values.JSHeapTotalSize??null,
-          documents:values.Documents??null,nodes:values.Nodes??null,eventListeners:values.JSEventListeners??null},
-        wasmLinearMemoryBytes:null,nodeRunnerMemory:process.memoryUsage(),callback:{...report.callback},audioCueTelemetry:structuredClone(report.audioCueTelemetry),
-        checkpointStorageLatency:storageLatency,
-        checkpoint:{sha256:sha(Buffer.from(raw)),bytes:Buffer.byteLength(raw),runId:saved.checkpoint?.runId??null,wave:saved.checkpoint?.encounter.completedWave??null},
-        actionsTotal:report.actionsTotal,errorsTotal:report.errorsTotal};
-      appendFileSync(samplesPath,JSON.stringify(record)+'\n');
-      if(record.elapsedMs>=nextScreenshot||final){assert.ok(report.screenshots.length<15,'Bounded screenshots');
-        const stem='sample-'+String(record.sequence).padStart(4,'0'),path=resolve(output,stem+'.png');await page.screenshot({path});
-        writeFileSync(resolve(output,stem+'-checkpoint.json'),raw);report.screenshots.push({path,at:record.at,elapsedMs:record.elapsedMs});nextScreenshot+=3600000;}
-      report.latestSample=record;persist();
-    };
-    const sampling=startEnduranceSampling({wait:ms=>page.waitForTimeout(ms),sample:async stopped=>{
-      try{
-        if(stopped()||interrupted)return;
-        if(observerError)throw observerError;
-        const probe=await page.evaluate(()=>window.__stEnduranceProbe.snapshot()),now=performance.now();
-        if(stopped()||interrupted)return;
-        if(observerError)throw observerError;
-        assert.equal(latest?.saveState,'ready','A save fault stops endurance qualification');
-        assert.equal(latest?.checkpointBlocked,false,'A blocked checkpoint stops endurance qualification');
-        const observation={atMs:now-started,timeOrigin:probe.timeOrigin,stateAgeMs:now-latestAt,phase:latest.phase,
-          paused:latest.paused,speed:latest.speed,tick:latest.tick,runId:latest.runId};
-        accountEnduranceObservation(ledger,observation);
-        assert.ok(ledger.elapsedMs<=ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
-        if(latest.runId>0&&latest.runId!==previousRun){report.runsObserved++;previousRun=latest.runId;}
-      }catch(error){observerError??=error;throw error;}
-    }});
-    try{
-      await sampling.ready;sampling.check();
-      while(!interrupted){
-        sampling.check();
-        if(observerError)throw observerError;assert.equal(latest?.saveState,'ready','A save fault stops endurance qualification');
-        assert.equal(latest?.checkpointBlocked,false,'A blocked checkpoint stops endurance qualification');
-        const now=performance.now();
-        if(options.mode==='smoke'?ledger.elapsedMs>=options.smokeSeconds*1000:ledger.activeMs>=ENDURANCE_POLICY.activeTargetMs){completed=true;break;}
-        assert.ok(ledger.elapsedMs<ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
-        if(now-started>=nextSummary){await summary();nextSummary+=ENDURANCE_POLICY.summaryEveryMs;}
-        if(options.research&&ledger.activeMs>=nextPurchaseActiveMs&&latest.phase==='battle'&&!latest.paused){
-          await periodicPurchase();nextPurchaseActiveMs+=900000;
-        }
-        if(latest.phase==='result'){await click('Claim');await until(()=>latest?.phase==='workshop');}
-        if(['garage','workshop'].includes(latest.phase)){
-          assert.equal(latest.hasCheckpoint,false,'Unexpected resumable run cannot be silently replaced');
-          await click(latest.phase==='garage'?'Deploy':'Redeploy');await until(()=>latest?.phase==='battle'&&!latest.paused&&latest.speed===expectedSpeed);
-        }
-        await page.waitForTimeout(1000);
-      }
-    }finally{
-      await sampling.stop();
-    }
-    sampling.check();
+    const {summary}=await observeEnduranceRun({options,fixture,click,until,page,report,ledger,checkSourceBindings,
+      cdp,saveKey,started,expectedSpeed,output,samplesPath,persist,
+      get shop(){return shop;},get layout(){return layout;},get latest(){return latest;},get latestAt(){return latestAt;},
+      get interrupted(){return interrupted;},
+      get observerError(){return observerError;},set observerError(value){observerError=value;},
+      get previousRun(){return previousRun;},set previousRun(value){previousRun=value;},
+      get completed(){return completed;},set completed(value){completed=value;}});
     await summary(true);checkSourceBindings();await verifyServed();assertPackagedRuntimeParity(packaged,packagedRuntimeSnapshot());
     report.finalBindingsVerified=true;
   }catch(error){if(interrupted&&error.message==='Interrupted during input')report.cancellationReason=error.message;
@@ -467,6 +357,152 @@ async function main(){
     process.exitCode=report.status==='pass'||report.status==='smoke-pass'?0:interrupted?130:1;
     console.log(JSON.stringify({status:report.status,enduranceQualified:report.enduranceQualified,output,activeHours:ledger.activeMs/3600000,elapsedHours:ledger.elapsedMs/3600000}));
   }
+}
+
+export function createEnduranceReport({options,expectedSpeed,fixture,manifestPath,manifestBytes,sources,packaged,host=process,hash=sha}) {
+  const ledger=newEnduranceLedger(expectedSpeed),report={schema:'last-stand-real-elapsed-endurance/v1',status:'running',enduranceQualified:false,
+    mode:options.mode,policy:ENDURANCE_POLICY,seeded:true,normalSpeed:!options.research,expectedSpeed,
+    purchasePolicy:options.research?{...fixture.qualificationPurchasePolicy,
+      firstPurchaseRealSeconds:options.mode==='smoke'?30:900,
+      note:options.mode==='smoke'?'Early rendered purchase diagnostic; cannot qualify endurance.':'Measured fifteen-minute cadence.'}:null,
+    command:[host.execPath,...host.argv.slice(1)],
+    scope:(options.mode==='smoke'?`${options.smokeSeconds}-second bounded smoke diagnostic; cannot qualify endurance. `:
+      'Endurance observation with a target of ten real active hours; completion remains subject to measured final admission. ')+
+      (options.research?'One headless Chromium document at researched 5x from a declared mature development profile. Rendered purchases and speed controls only; no time acceleration beyond the actual game setting. No native audio or physical-device claim.':
+      'One long-lived headless Chromium document with real elapsed gameplay at shipped 1x. Accelerated production-earned initial save; rendered Continue/redeploy after natural defeat. No purchases, clock changes, offline simulation, 5x farming-duration, native media or physical-device claim.'),
+    startedAt:new Date().toISOString(),fixtureManifest:manifestPath,fixtureSha256:hash(manifestBytes),saveSha256:fixture.saveSha256,
+    inputs:sources,packaged,host:host.platform,ledger,actions:[],actionsTotal:0,actionsDropped:0,errors:[],errorsTotal:0,errorsDropped:0,
+    callback:{count:0,maximumSteps:0,maximumElapsedSeconds:0,maximumPendingSeconds:0},audioCueTelemetry:{events:0,byName:{}},
+    metricLimits:{renderer:'CDP JSHeapUsedSize/JSHeapTotalSize are renderer JavaScript heap metrics; they are not measured WebAssembly linear memory.',
+      wasmLinearMemoryBytes:null,wasmAvailability:'Not exposed by the passive observer.',
+      audio:'Engine cue/admission logs and AudioContext state/time only. No rendered signal, recording, speaker output or native audio acceptance.',
+      checkpointLatency:'Measured localStorage setItem duration and span through its first getItem readback for the progression key. Excludes C# serialization and later UI work; includes passive observer overhead. No callback interval is treated as storage latency.',
+      frameHistogramUpperBoundsMs:[16.7,33.4,50,100,250,1000,'unbounded'],
+      retention:'Latest state/layout only; 128 action and 32 error ring entries; at most 725 minute summaries; hourly checkpoints/screenshots.'},
+    summaries:0,screenshots:[],runsObserved:0,finalBindingsVerified:false,storageLatencyVerified:false};
+  return {ledger,report};
+}
+// The sampler and rendered work share live state. Forwarding adapters preserve
+// cancellation/error updates while tests exercise the same awaited operations.
+const enduranceObservationAdapters={startEnduranceSampling,accountEnduranceObservation,assertCurrentEnduranceSave,compactState,
+  sha,resolve,appendFileSync,writeFileSync,performance,process,Date,Buffer,structuredClone,assert,ENDURANCE_POLICY};
+export async function observeEnduranceRun(runtime) {
+  const context=Object.create(enduranceObservationAdapters);
+  for(const key of Reflect.ownKeys(runtime))Object.defineProperty(context,key,{get:()=>runtime[key],set:value=>{runtime[key]=value;}});
+    let nextSummary=0,nextScreenshot=0,lastCheckpoint=null;
+    let nextPurchaseActiveMs=context.options.research&&context.options.mode==='smoke'?30000:900000,purchaseCursor=0;
+    const periodicPurchase=async()=>{
+      const policy=context.fixture.qualificationPurchasePolicy;
+      await context.click('ShopEntry');await context.until(()=>context.shop?.open&&context.shop.mode==='Run');
+      try{
+        let skipped=0;
+        while(skipped<policy.trackOrder.length){
+          const card=context.shop.cards.find(item=>item.key===policy.trackOrder[purchaseCursor%policy.trackOrder.length]);
+          context.assert.ok(card,'Declared policy track exists in actual run');
+          if(card.level<card.cap)break;
+          purchaseCursor++;skipped++;
+        }
+        if(skipped===policy.trackOrder.length)return;
+        for(let n=0;n<4;n++){
+          const quantity=context.layout.shopControls.find(item=>item.name==='ShopQuantity');
+          if(quantity?.label?.includes('[MAX]'))break;
+          await context.click('ShopQuantity');
+        }
+        context.assert.ok(context.layout.shopControls.find(item=>item.name==='ShopQuantity')?.label?.includes('[MAX]'),'Actual Max quantity selected');
+        const key=policy.trackOrder[purchaseCursor%policy.trackOrder.length];
+        let card=context.shop.cards.find(item=>item.key===key);
+        await context.click('ShopTab'+card.category);await context.until(()=>context.shop.category===card.category);
+        card=context.shop.cards.find(item=>item.key===key);
+        if(!card.canPurchase){context.assert.equal(card.refusal,'InsufficientScrap');return;}
+        const before={n:card.n,spent:context.shop.spentScrap};
+        // A live kill may invalidate the displayed version between pointer
+        // down/up. Retry a freshly rendered quote at most twice; never replay
+        // an accepted debit or invoke a game method from the observer.
+        for(let attempt=0;attempt<3;attempt++){
+          await context.click('ShopCard_'+key+'Buy');await context.page.waitForTimeout(100);
+          const after=context.shop.cards.find(item=>item.key===key);
+          if(after.n>before.n){
+            context.assert.ok(context.shop.spentScrap>before.spent);
+            context.report.periodicPurchases??=[];
+            context.assert.ok(context.report.periodicPurchases.length<64,'Bounded fifteen-minute purchase record');
+            context.report.periodicPurchases.push({atActiveMs:context.ledger.activeMs,key,quantity:after.n-before.n,
+              cost:context.shop.spentScrap-before.spent,runId:context.latest.runId,tick:context.latest.tick});
+            purchaseCursor++;return;
+          }
+        }
+        throw new Error('Rendered periodic purchase remained stale after bounded retries');
+      }finally{if(context.shop?.open)await context.click('ShopClose');}
+    };
+    const summary=async(final=false)=>{
+      context.checkSourceBindings();context.assert.ok(context.report.summaries<context.ENDURANCE_POLICY.maximumSummaries,'Bounded minute summary count');
+      const probe=await context.page.evaluate(()=>window.__stEnduranceProbe.snapshot());
+      const storageLatency=await context.page.evaluate(()=>window.__stCheckpointStorageProbe.snapshot());
+      context.report.storageLatencyVerified=storageLatency.writes.successes>0&&storageLatency.readbacks.count>0&&
+        storageLatency.writes.errors===0&&storageLatency.readbacks.errors===0&&storageLatency.readbacks.mismatches===0&&
+        storageLatency.readbacks.unconfirmed===0&&!storageLatency.pending;
+      const metrics=await context.cdp.send('Performance.getMetrics');const values=Object.fromEntries(metrics.metrics.map(item=>[item.name,item.value]));
+      const raw=await context.page.evaluate(key=>localStorage.getItem(key),context.saveKey);context.assert.ok(raw&&raw.length<128*1024,'Bounded saved checkpoint');
+      const saved=context.assertCurrentEnduranceSave(JSON.parse(raw));context.assert.equal(saved.pendingDefeat,null,'Current runs never create legacy Claim rewards');
+      if(saved.checkpoint){
+        if(lastCheckpoint?.runId===saved.checkpoint.runId)context.assert.ok(saved.checkpoint.encounter.completedWave>=lastCheckpoint.wave,'Committed checkpoint cannot go backwards');
+        lastCheckpoint={runId:saved.checkpoint.runId,wave:saved.checkpoint.encounter.completedWave};}
+      const record={sequence:context.report.summaries++,at:new context.Date().toISOString(),elapsedMs:context.performance.now()-context.started,final,
+        ledger:{activeMs:context.ledger.activeMs,pausedMs:context.ledger.pausedMs,endedMs:context.ledger.endedMs,unknownMs:context.ledger.unknownMs,observedSimulationMs:context.ledger.observedSimulationMs},
+        state:context.compactState(context.latest),browser:{timeOrigin:probe.timeOrigin,now:probe.now,hidden:probe.hidden,focused:probe.focused,frames:probe.frames,audioContexts:probe.audioContexts},
+        rendererJavaScript:{heapUsedBytes:values.JSHeapUsedSize??null,heapTotalBytes:values.JSHeapTotalSize??null,
+          documents:values.Documents??null,nodes:values.Nodes??null,eventListeners:values.JSEventListeners??null},
+        wasmLinearMemoryBytes:null,nodeRunnerMemory:context.process.memoryUsage(),callback:{...context.report.callback},audioCueTelemetry:context.structuredClone(context.report.audioCueTelemetry),
+        checkpointStorageLatency:storageLatency,
+        checkpoint:{sha256:context.sha(context.Buffer.from(raw)),bytes:context.Buffer.byteLength(raw),runId:saved.checkpoint?.runId??null,wave:saved.checkpoint?.encounter.completedWave??null},
+        actionsTotal:context.report.actionsTotal,errorsTotal:context.report.errorsTotal};
+      context.appendFileSync(context.samplesPath,JSON.stringify(record)+'\n');
+      if(record.elapsedMs>=nextScreenshot||final){context.assert.ok(context.report.screenshots.length<15,'Bounded screenshots');
+        const stem='sample-'+String(record.sequence).padStart(4,'0'),path=context.resolve(context.output,stem+'.png');await context.page.screenshot({path});
+        context.writeFileSync(context.resolve(context.output,stem+'-checkpoint.json'),raw);context.report.screenshots.push({path,at:record.at,elapsedMs:record.elapsedMs});nextScreenshot+=3600000;}
+      context.report.latestSample=record;context.persist();
+    };
+    const sampling=context.startEnduranceSampling({wait:ms=>context.page.waitForTimeout(ms),sample:async stopped=>{
+      try{
+        if(stopped()||context.interrupted)return;
+        if(context.observerError)throw context.observerError;
+        const probe=await context.page.evaluate(()=>window.__stEnduranceProbe.snapshot()),now=context.performance.now();
+        if(stopped()||context.interrupted)return;
+        if(context.observerError)throw context.observerError;
+        context.assert.equal(context.latest?.saveState,'ready','A save fault stops endurance qualification');
+        context.assert.equal(context.latest?.checkpointBlocked,false,'A blocked checkpoint stops endurance qualification');
+        const observation={atMs:now-context.started,timeOrigin:probe.timeOrigin,stateAgeMs:now-context.latestAt,phase:context.latest.phase,
+          paused:context.latest.paused,speed:context.latest.speed,tick:context.latest.tick,runId:context.latest.runId};
+        context.accountEnduranceObservation(context.ledger,observation);
+        context.assert.ok(context.ledger.elapsedMs<=context.ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
+        if(context.latest.runId>0&&context.latest.runId!==context.previousRun){context.report.runsObserved++;context.previousRun=context.latest.runId;}
+      }catch(error){context.observerError??=error;throw error;}
+    }});
+    try{
+      await sampling.ready;sampling.check();
+      while(!context.interrupted){
+        sampling.check();
+        if(context.observerError)throw context.observerError;context.assert.equal(context.latest?.saveState,'ready','A save fault stops endurance qualification');
+        context.assert.equal(context.latest?.checkpointBlocked,false,'A blocked checkpoint stops endurance qualification');
+        const now=context.performance.now();
+        if(context.options.mode==='smoke'?context.ledger.elapsedMs>=context.options.smokeSeconds*1000:context.ledger.activeMs>=context.ENDURANCE_POLICY.activeTargetMs){context.completed=true;break;}
+        context.assert.ok(context.ledger.elapsedMs<context.ENDURANCE_POLICY.wallLimitMs,'Twelve-hour wall limit reached without ten active hours');
+        if(now-context.started>=nextSummary){await summary();nextSummary+=context.ENDURANCE_POLICY.summaryEveryMs;}
+        if(context.options.research&&context.ledger.activeMs>=nextPurchaseActiveMs&&context.latest.phase==='battle'&&!context.latest.paused){
+          await periodicPurchase();nextPurchaseActiveMs+=900000;
+        }
+        if(context.latest.phase==='result'){await context.click('Claim');await context.until(()=>context.latest?.phase==='workshop');}
+        if(['garage','workshop'].includes(context.latest.phase)){
+          context.assert.equal(context.latest.hasCheckpoint,false,'Unexpected resumable run cannot be silently replaced');
+          await context.click(context.latest.phase==='garage'?'Deploy':'Redeploy');await context.until(()=>context.latest?.phase==='battle'&&!context.latest.paused&&context.latest.speed===context.expectedSpeed);
+        }
+        await context.page.waitForTimeout(1000);
+      }
+    }finally{
+      await sampling.stop();
+    }
+    sampling.check();
+
+  return {summary};
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))await main();

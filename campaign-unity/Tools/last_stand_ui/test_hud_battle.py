@@ -3,7 +3,6 @@ from pathlib import Path
 import unittest
 import unity_check_runner
 from datetime import datetime, timezone
-import hashlib
 import json
 import os
 import subprocess
@@ -29,12 +28,15 @@ def run_runtime_checks():
     log = evidence / "unity-editor.log"
     argv = [str(unity), "-batchmode", "-nographics", "-projectPath", str(project),
             "-executeMethod", "LastStandHudChecks.RunBattleRuntime", "-logFile", str(log)]
-    inputs = list((project / "Assets" / "Scripts").glob("*.cs")) + [project / "Assets" / "Editor" / "LastStandHudChecks.cs"]
-    source = {str(p.relative_to(root)).replace("\\", "/"): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
+    def input_paths():
+        return sorted(set((project / "Assets" / "Scripts").rglob("*.cs")) |
+                      set((project / "Assets" / "Editor").rglob("*.cs")) |
+                      {Path(__file__), root / "campaign-unity/Tools/contracts/last-stand-observation-v3.json", root / "campaign-unity/Tools/contracts/last-stand-observation-v4.json"})
+    source = unity_check_runner.source_hashes(input_paths())
     process = subprocess.Popen(argv, cwd=root, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, encoding="utf-8", errors="replace")
     (evidence / "invocation.json").write_text(json.dumps({"argv": argv, "cwd": str(root), "pid": process.pid,
-        "source_sha256": source, "unity_sha256": hashlib.sha256(unity.read_bytes()).hexdigest()}, indent=2))
+        "source_sha256": source, "unity_sha256": unity_check_runner.source_hashes([unity])[str(unity)]}, indent=2))
     try:
         stdout, stderr = process.communicate(timeout=150)
     except subprocess.TimeoutExpired:
@@ -43,9 +45,9 @@ def run_runtime_checks():
         (evidence / "timeout.txt").write_text(stdout + "\n" + stderr)
         raise
     content = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-    after = {str(p.relative_to(root)).replace("\\", "/"): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
+    after = unity_check_runner.source_hashes(input_paths())
     (evidence / "result.json").write_text(json.dumps({"exit": process.returncode, "stdout": stdout, "stderr": stderr,
-        "source_unchanged": source == after, "log_sha256": hashlib.sha256(log.read_bytes()).hexdigest() if log.exists() else None}, indent=2))
+        "source_unchanged": source == after, "log_sha256": unity_check_runner.source_hashes([log])[log.relative_to(root).as_posix() if log.is_relative_to(root) else str(log)] if log.exists() else None}, indent=2))
     if source != after:
         raise RuntimeError("Runtime HUD source changed during owned Editor launch")
     print("Unity runtime evidence:", evidence)

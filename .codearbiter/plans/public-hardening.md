@@ -34,3 +34,10 @@ limiter (Slice 2); the threat model (Slice 1) runs first to inform it; ADRs (Sli
 T3 is genuinely test-first: write the `checkRateLimit`/`clientIp` Deno cases (red), then the helpers
 (green). T2 (SQL) and T4 (wiring) are verified by the helper tests + a documented manual curl, since a
 live Postgres isn't available in CI. T1/T5/T6/T7/T8 are analysis/docs.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+The historical deferred T7 ADR-authoring row is superseded by the accepted, dated ADR-0001 through ADR-0007 files and open-questions resolved record. Existing implementation/decision evidence does not retroactively prove every historical execution checkbox or production receipt.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.

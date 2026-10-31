@@ -9,7 +9,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity" / "Unity"
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 EVIDENCE_ROOT = Path(r"C:\Users\brenn\codearbiter-review-integration-20261006\ui-background-session-author")
 
 

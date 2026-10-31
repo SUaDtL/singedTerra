@@ -38,3 +38,12 @@
 - [x] Run build, browser validation, diff hygiene, complete local gate, dependency audit, secret scan, and causal mutation checks.
 - [x] Assemble an adversarial review package with this spec, plan, sprint evidence, tests, and final diff; resolve both Medium blockers and receive exact-diff CLEAR re-review.
 - [ ] Commit/PR/exact-head CI/merge under standing authority; verify Pages deployment and production health.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `client/src/renderer/worldAtmosphere.ts`, `client/src/renderer/worldAtmosphere.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `2e6e36142cde` (feat(renderer): differentiate battlefield atmospheres). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

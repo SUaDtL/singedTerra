@@ -40,7 +40,13 @@ namespace SingedTerra.LastStand
                 new Color(.55f,.59f,.64f), new Color(.39f,.34f,.28f), new Color(.16f,.16f,.14f)),
             new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("iron-perimeter"), 1, 70f,
                 new Color(.78f,.87f,1f), 1.35f, 53f,
-                new Color(.49f,.59f,.68f), new Color(.32f,.38f,.40f), new Color(.16f,.16f,.14f))
+                new Color(.49f,.59f,.68f), new Color(.32f,.38f,.40f), new Color(.16f,.16f,.14f)),
+            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("cinder-basin"), 2, 62f,
+                new Color(1f,.67f,.40f), 1.5f, 38f,
+                new Color(.59f,.40f,.32f), new Color(.40f,.26f,.20f), new Color(.18f,.12f,.11f)),
+            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("storm-foundry"), 3, 66f,
+                new Color(.65f,.81f,1f), 1.3f, 58f,
+                new Color(.35f,.48f,.63f), new Color(.26f,.34f,.43f), new Color(.12f,.16f,.21f))
         };
         public static IReadOnlyList<LastStandEnvironmentDefinition> All { get; } = Array.AsReadOnly(definitions);
 
