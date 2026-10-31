@@ -109,6 +109,7 @@ namespace SingedTerra.LastStand
             Display = gameObject.AddComponent<LastStandDisplaySettings>();
             Browser = new GameObject("LastStandBrowserBridge").AddComponent<LastStandBrowserBridge>();
             Browser.transform.SetParent(transform, false);
+            InitializeContinuity();
             ApplyPreferences();
             hud = new LastStandLoopHud(this, canvas, font);
             Browser.Initialize(this);
@@ -284,7 +285,7 @@ namespace SingedTerra.LastStand
             }
             Phase = "battle"; Notice = resume ? "Checkpoint restored. Press Resume to continue; no closed-tab time was simulated." : "Starting checkpoint saved."; GarageIssue = "";
             Guidance.Dismiss();
-            if (Progression.CannonAttackLevel == 0) Guidance.EnterFirstRun();
+            if (IsFirstDeployment) Guidance.EnterFirstRun();
             Refresh(resume?"resume":"deploy");
         }
 
@@ -469,6 +470,7 @@ namespace SingedTerra.LastStand
         public void Redeploy() { Deploy(); }
         public void RetrySave()
         {
+            if(RetryBackupRestore())return;
             var model=Session.Model;
             var recovery=runs.Retry(model,runShop,liveHistory,EnsureResearchInitialized,ReconcileResearchBenefits);
             if(recovery.Kind==LastStandRecoveryKind.Failed)
@@ -558,6 +560,7 @@ namespace SingedTerra.LastStand
             RestoreGaragePreview();
             if(SelectionOpen && page!=MenuPage) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
             if (!MenuOpen && Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(true)) return;
+            LeaveBackupPage(page);
             MenuPage = page; Confirmation = "";
             Audio.UnlockFromGesture("menu"); Refresh("menu");
         }
@@ -567,11 +570,13 @@ namespace SingedTerra.LastStand
             RecordPausedTime();
             if(SelectionOpen) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
             if (Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(false)) return;
+            LeaveBackupPage("");
             MenuPage = ""; Confirmation = ""; Refresh("menu-close");
         }
         public void RequestConfirmation(string action)
         {
-            if (action != "reset-settings" && action != "abandon" && action != "new-run") return;
+            if (action != "reset-settings" && action != "abandon" && action != "new-run" && action != "return-garage") return;
+            if(action=="return-garage" && !CanReturnToGarage)return;
             if (action != "reset-settings" && (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp) || !Progression.HasCheckpoint)) return;
             OpenMenu("confirm");
             if (MenuPage == "confirm") { Confirmation = action; Refresh("confirmation"); }
@@ -601,6 +606,7 @@ namespace SingedTerra.LastStand
                 MenuPage = "settings"; Confirmation = ""; Refresh("settings-reset"); return;
             }
             if (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp)) return;
+            if(action=="return-garage"){ReturnToGarageKeepingCheckpoint();return;}
             afterAbandon=action;
             RecordPausedTime();FlushHistoryTime();
             if (Progression.HasCheckpoint)
@@ -644,6 +650,7 @@ namespace SingedTerra.LastStand
         }
         void OnDestroy()
         {
+            DisposeContinuity();
             FinalizeShop(LastStandShopPurchaseLifecycle.Exited, Session?.Model);
             runShop = null; FinalAccounting = null;
             if (Session) { Session.Changed -= OnSessionChanged; Session.Stepped -= OnSessionStepped; Session.WaveCleared -= OnWaveCleared; Session.BeforeAdvance=null; }

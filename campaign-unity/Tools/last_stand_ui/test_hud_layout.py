@@ -62,3 +62,9 @@ class HudLayoutTests(unittest.TestCase):
 
     def test_text_targets_and_long_notice_bounds(self):
         self.case("text_targets_and_long_notice_bounds")
+
+    def test_short_garage_reserves_menu_and_all_actions(self):
+        self.case("short_garage_reserves_menu_and_all_actions")
+
+    def test_short_recovery_preserves_summary_and_actions(self):
+        self.case("short_recovery_preserves_summary_and_actions")

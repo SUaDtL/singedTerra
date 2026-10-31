@@ -32,9 +32,10 @@ from visual_review_motion import MotionCapture
 OBSERVATION_CONTRACT = json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v1.json').read_text(encoding='utf8'))
 OBSERVATION_CONTRACTS = (OBSERVATION_CONTRACT,
     json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v2.json').read_text(encoding='utf8')),
-    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v3.json').read_text(encoding='utf8')))
+    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v3.json').read_text(encoding='utf8')),
+    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v4.json').read_text(encoding='utf8')))
 ROOT = Path(__file__).resolve().parents[1]
-EDITOR = Path('C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe')
+EDITOR = Path('C:/Program Files/Unity 6000.3.27f2/Editor/Unity.exe')
 EVIDENCE = ROOT / 'Evidence' / 'last-stand-playable-loop' / 't03'
 SAVE_KEY = 'singedTerra.lastStand.prototype.v1'
 SPEC = {'revision': 4, 'model_sha256': '0fce3f7b2eb7f6743b3b5c5960b8fdece577c884403710bca32ea84427ddf1df',
@@ -419,6 +420,7 @@ def verify_shop_presentation_states(report, directory):
                     'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
                     'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+             'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -625,6 +627,7 @@ def verify_shop_vertical(report):
                     'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
                     'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+             'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -665,8 +668,12 @@ def verify_shop_vertical(report):
             return result
         complete = json.loads(payload, object_pairs_hook=unique_object)
         require(isinstance(complete, dict), 'Expected diagnostic object')
-        contract = OBSERVATION_CONTRACTS[2 if 'schema' in complete else 1 if 'plannerControls' in complete else 0]
-        require('schema' not in complete or complete['schema'] == contract['schema'], 'Unknown controls schema')
+        if 'schema' in complete:
+            matches = [item for item in OBSERVATION_CONTRACTS if 'schema' in item['header'] and item['schema'] == complete['schema']]
+            require(len(matches) == 1, 'Unknown controls schema')
+            contract = matches[0]
+        else:
+            contract = OBSERVATION_CONTRACTS[1 if 'plannerControls' in complete else 0]
         fields = json.loads(payload[:boundary] + '}', object_pairs_hook=unique_object)
         headers = set(contract['header'])
         tails = set(contract['tail'])
@@ -1269,6 +1276,7 @@ def verify_shop_recovery(report, require_native=False):
              'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+             'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -1308,8 +1316,12 @@ def verify_shop_recovery(report, require_native=False):
             if key == 'controlsOnly':
                 need(isinstance(value.pop('graphics'), list), 'Recovery controls lack their complete raw tail')
                 value.update(observationScope='complete-controls-only', graphicsTruncated=False, raw=observation['text'])
-                contract = OBSERVATION_CONTRACTS[2 if 'schema' in value else 1 if 'plannerControls' in value else 0]
-                need('schema' not in value or value['schema'] == contract['schema'], 'Unknown recovery controls schema')
+                if 'schema' in value:
+                    matches = [item for item in OBSERVATION_CONTRACTS if 'schema' in item['header'] and item['schema'] == value['schema']]
+                    need(len(matches) == 1, 'Unknown recovery controls schema')
+                    contract = matches[0]
+                else:
+                    contract = OBSERVATION_CONTRACTS[1 if 'plannerControls' in value else 0]
                 expected_sets = {group['field']: set(group['names']) for group in contract['inventories']}
                 need(all(isinstance(value.get(key), list) and len(value[key]) == len(expected)
                     and {control['name'] for control in value[key]} == expected for key, expected in expected_sets.items()),

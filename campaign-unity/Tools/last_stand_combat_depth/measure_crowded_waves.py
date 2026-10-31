@@ -95,13 +95,18 @@ BINDINGS = {
     "calibrated": {"raw": CALIBRATED_RAW_SHA, "lf": CALIBRATED_LF_SHA, "inputs": CALIBRATED_INPUT_LF_SHA, "report": REPORT},
 }
 # Frozen captures retain their original execution helper identity. A new run
-# uses the current helper, bound separately, while all 34 model/policy/closure
-# inputs must still match the selected historical capture.
+# uses separately bound current helpers and reviewed continuity sources, while
+# all other model/policy inputs must still match the selected historical capture.
 EXECUTION_HELPER = "Tools/last_stand_test_runtime.py"
 SOURCE_CLOSURE_HELPER = "Tools/last_stand_source_closure.py"
-# Current helper adds Planner/HistoryComparison entries outside this measurement.
-# This separate binding never replaces either historical capture's input map.
-CURRENT_SOURCE_CLOSURE_LF_SHA = "fcff111c523846ae63ed272101cf5e6cc4f1441c7a6322415187db237eb0d099"
+# Current progression storage adds Backup to this compile closure. These pins
+# never replace either historical capture's input map or outcome oracle.
+CURRENT_SOURCE_CLOSURE_LF_SHA = "b66009132f1de5bdaf7155e70af37422127701127f60ce56c083e9ce38f9eed7"
+CURRENT_CONTINUITY_INPUT_LF_SHA = {
+    "Unity/Assets/Scripts/LastStandProgression.cs": "1f1dad3c3941386bdcf58e20867f58ade9af02241b8f9ae40dc8d59a532f5fa5",
+    "Unity/Assets/Scripts/LastStandStore.cs": "93b78c0423028bc86e6ddecac37bb9c9aaa5b7113e93059003d29f6573c8b16e",
+    "Unity/Assets/Scripts/LastStandProgressionBackup.cs": "7b422dbb4a4441bd2432be6743e8bbd09bd4eab5cea7df33ac395d208e4b41e7",
+}
 CROWDED_REFERENCES = {
     "baseline": ("crowded-wave-baseline-report.json", "c9618825f2461fdc4e761d00082b3425f1e202a16da9325462a07acc129acb52"),
     "calibrated": ("crowded-wave-calibrated-report.json", "8a92fc61adca7f5af7c89f4f77c6973c338fb93c5247c856bf1c09ea57606889"),
@@ -142,7 +147,8 @@ def admit_canonical(data, project=PROJECT, archive=None, binding_name="calibrate
     canonical = json.loads(data)
     if set(canonical["sourceSha256"]) != set(binding["inputs"]):
         raise ValueError("Canonical input closure changed")
-    for rel, digest in binding["inputs"].items():
+    execution_inputs = {**binding["inputs"], **CURRENT_CONTINUITY_INPUT_LF_SHA}
+    for rel, digest in execution_inputs.items():
         source = project / rel
         admitted = {digest, CURRENT_SOURCE_CLOSURE_LF_SHA} if rel == SOURCE_CLOSURE_HELPER else {digest}
         if not source.is_file() or rel != EXECUTION_HELPER and hashlib.sha256(source.read_bytes().replace(b"\r\n", b"\n")).hexdigest() not in admitted:
@@ -152,7 +158,7 @@ def admit_canonical(data, project=PROJECT, archive=None, binding_name="calibrate
 
 def admit_source_closure(paths, binding_name="calibrated", project=PROJECT):
     """A changed helper may not add, omit, duplicate or redirect measured sources."""
-    expected = {rel for rel in BINDINGS[binding_name]["inputs"] if rel.endswith(".cs")}
+    expected = {rel for rel in BINDINGS[binding_name]["inputs"] if rel.endswith(".cs")} | set(CURRENT_CONTINUITY_INPUT_LF_SHA)
     try:
         actual = [path.resolve().relative_to(project.resolve()).as_posix() for path in paths]
     except ValueError:
@@ -296,9 +302,12 @@ def measure(destination, binding_name="calibrated"):
                     "admittedCurrentLfSha256": CURRENT_SOURCE_CLOSURE_LF_SHA, "observedRawSha256": before[SOURCE_CLOSURE_HELPER],
                     "observedLfSha256": hashlib.sha256((PROJECT / SOURCE_CLOSURE_HELPER).read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
                     "measuredPaths": sorted(path.relative_to(PROJECT).as_posix() for path in canonical_sources)},
+                  executionContinuitySources={rel: {"historicalLfSha256": binding["inputs"].get(rel),
+                    "admittedCurrentLfSha256": digest, "observedRawSha256": before[rel]}
+                    for rel, digest in CURRENT_CONTINUITY_INPUT_LF_SHA.items()},
                   crowdedParityReferenceObservedRawSha256=hashlib.sha256(parity_data).hexdigest(),
                   crowdedParityReferenceLfSha256=CROWDED_REFERENCES[binding_name][1],
-                  sourceAdmission="Historical report and all35 capture identities remain unchanged. All33 model and measurement policy inputs retain their frozen LF pins. The closure helper accepts its historical or separately reviewed current pin and must select exactly the same32 C# paths. Both current helpers are separately bound before/after with actual tool binaries and argv. Fresh complete crowded outcomes must exactly equal the immutable crowded reference.",
+                  sourceAdmission="Historical reports and capture identities remain unchanged. Reviewed progression, storage and backup sources have separate current LF pins; all other model and measurement policy inputs retain their frozen LF pins. The closure helper accepts its historical or separately reviewed current pin and must select exactly the frozen C# paths plus Backup. Current sources and helpers are bound before/after with actual tool binaries and argv. Fresh complete crowded outcomes must exactly equal the immutable crowded reference.",
                   generatedHarnessSha256=hashlib.sha256(generated_bytes).hexdigest(), generatedHarnessPath=str(retained), compileArgv=list(build.argv),
                   executionSeconds=elapsed, command=[sys.executable, *sys.orig_argv[1:]], cwd=str(Path.cwd()),
                   qualification="Bounded actual production-model observation; no coefficient change or live player/performance claim.",

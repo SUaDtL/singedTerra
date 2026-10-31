@@ -31,7 +31,7 @@ def run_runtime_checks():
     def input_paths():
         return sorted(set((project / "Assets" / "Scripts").rglob("*.cs")) |
                       set((project / "Assets" / "Editor").rglob("*.cs")) |
-                      {Path(__file__), root / "campaign-unity/Tools/contracts/last-stand-observation-v3.json"})
+                      {Path(__file__), root / "campaign-unity/Tools/contracts/last-stand-observation-v3.json", root / "campaign-unity/Tools/contracts/last-stand-observation-v4.json"})
     source = unity_check_runner.source_hashes(input_paths())
     process = subprocess.Popen(argv, cwd=root, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, encoding="utf-8", errors="replace")

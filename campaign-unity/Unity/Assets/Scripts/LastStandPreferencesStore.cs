@@ -17,7 +17,7 @@ namespace SingedTerra.LastStand
 #endif
 #if (UNITY_ANDROID || UNITY_STANDALONE) && !UNITY_EDITOR
         LastStandFileStorage native;
-        LastStandFileStorage Native => native ?? (native = new LastStandFileStorage(UnityEngine.Application.persistentDataPath, LastStandPreferences.StorageKey));
+        LastStandFileStorage Native => native ?? (native = new LastStandFileStorage(LastStandNativeStorageRoot.Current, LastStandPreferences.StorageKey));
 #endif
         public void Dispose()
         {

@@ -174,7 +174,7 @@ namespace SingedTerra.LastStand
         }
         [Serializable] sealed class LayoutState
         {
-            public string schema="singedterra-last-stand-observation/v3";
+            public string schema="singedterra-last-stand-observation/v4";
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;

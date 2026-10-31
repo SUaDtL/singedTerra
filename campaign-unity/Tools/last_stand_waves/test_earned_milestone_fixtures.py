@@ -77,6 +77,7 @@ class EarnedMilestoneFixtureTests(unittest.TestCase):
         for path, digest in self.report["sourceSha256"].items():
             self.assertEqual(hashlib.sha256((REPO / path).read_bytes()).hexdigest(), digest)
         self.assertIn("campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs", self.report["sourceSha256"])
+        self.assertIn("campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs", self.report["sourceSha256"])
         self.assertIn("campaign-unity/Tools/last_stand_waves/EarnedMilestoneFixtures.cs", self.report["sourceSha256"])
         self.assertIn("campaign-unity/Tools/last_stand_test_runtime.py", self.report["sourceSha256"])
         self.assertEqual(len(self.report["commands"]), 2)
@@ -97,7 +98,7 @@ console.log(JSON.stringify({inputs:MILESTONE_FIXTURE_SOURCES.length,cases:manife
             result = subprocess.run(["node", "--input-type=module", "-e", script, str(manifest)],
                                     cwd=REPO, text=True, capture_output=True, encoding="utf-8", timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertEqual(json.loads(result.stdout), {"inputs": 33, "cases": 4})
+            self.assertEqual(json.loads(result.stdout), {"inputs": 34, "cases": 4})
 
     def test_saved_bytes_are_exact_and_existing_output_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory(prefix="st-earned-fixture-test-") as folder:

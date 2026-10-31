@@ -17,7 +17,7 @@ export async function tierJourneyInputHashes({firstSession=false,sourceRoot=reso
     'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
     'e2e/helpers/lastStandMatrix.mjs','e2e/helpers/lastStandWaveOracle.mjs','e2e/helpers/lastStandControlReveal.mjs',
     'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs',
-    ...[1,2,3].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json'),
+    ...[1,2,3,4].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json'),
     ...(firstSession?['scripts/last-stand-first-session.mjs']:[])];
   return Object.fromEntries(inputs.map(path=>[path,createHash('sha256').update(readFileSync(resolve(sourceRoot,path))).digest('hex')]));
 }
@@ -38,7 +38,7 @@ export function tierJourneyControlGeometry(layout, canvas) {
     'Modal must disable every underlying control');
   const controls = settingsOpen ? settingsControls : researchOpen?researchControls:historyOpen?historyControls:plannerOpen?plannerControls:backgroundControls.filter(item => item.active);
   let graphics;
-  const current=layout.schema==='singedterra-last-stand-observation/v3';
+  const current=['singedterra-last-stand-observation/v3','singedterra-last-stand-observation/v4'].includes(layout.schema);
   const surface = g => ['Image','LastStandConsoleSurface'].includes(g.kind) && g.active;
   const measuredGraphics=()=>{
     assert.equal(layout.graphicsTruncated,false,'Complete graphics required to qualify clipped controls');
@@ -48,7 +48,7 @@ export function tierJourneyControlGeometry(layout, canvas) {
     assert.ok(item.width * canvas.width / layout.width >= 43.99 && item.height * canvas.height / layout.height >= 43.99,
       '44 CSS pixel target: ' + item.name);
     let clip = screen;
-    const responsiveSettingsControl=['ChoicePrevious','ChoiceNext'].includes(item.name)||/^SettingsTab[0-3]$/.test(item.name);
+    const responsiveSettingsControl=['ChoicePrevious','ChoiceNext','HelpPrevious','HelpNext'].includes(item.name)||/^SettingsTab[0-3]$/.test(item.name);
     let settingsContent = settingsOpen && item.name!=='SettingsClose' && !responsiveSettingsControl;
     if(current&&settingsOpen&&responsiveSettingsControl){
       const matches=measuredGraphics().filter(g=>g.path.endsWith('/'+item.name)&&surface(g));

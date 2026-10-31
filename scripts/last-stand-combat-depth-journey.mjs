@@ -17,7 +17,8 @@ const inputs=['scripts/last-stand-combat-depth-journey.mjs','e2e/helpers/lastSta
   'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v3.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json'];
 const hashes=()=>Object.fromEntries(inputs.map(p=>[p,sha(readFileSync(resolve(root,p)))]));
 const fits=['repair','launcher','scattergun','mortar','railgun'];
 const environments=['sunlit-ash','iron-perimeter','cinder-basin','storm-foundry'];

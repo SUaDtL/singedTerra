@@ -1,0 +1,12 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.singedterra.laststand.backup'
+    compileSdk 36
+    defaultConfig { minSdk 25; consumerProguardFiles 'consumer-rules.pro' }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets { main { manifest.srcFile 'AndroidManifest.xml'; java.srcDirs = ['src'] } }
+}

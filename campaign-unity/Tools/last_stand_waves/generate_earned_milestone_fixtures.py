@@ -14,7 +14,7 @@ sys.path.insert(0, str(DIRECTORY.parent))
 from last_stand_source_closure import complete_sources
 from last_stand_test_runtime import discover_toolchain, compile_csharp, run_csharp
 
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
+EDITOR = Path(r"C:\Program Files\Unity 6000.3.27f2")
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 
 

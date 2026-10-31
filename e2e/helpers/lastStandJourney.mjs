@@ -37,7 +37,7 @@ import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 import { lastStandJourneyTimeBudget } from './lastStandProcessSupervisor.mjs';
 import { assertWaveSavePreserved, assertIdleWaveSave, validateCheckpointResume, validateWaveAbandonSave } from './lastStandWaveGuards.mjs';
 // Versioned diagnostics contract; player actions and state remain in production owners.
-const OBSERVATION_CONTRACTS=[1,2,3].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
+const OBSERVATION_CONTRACTS=[1,2,3,4].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
 
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
@@ -60,6 +60,7 @@ export const SHOP_PLAYER_INPUTS = [...LAST_STAND_HELPER_INPUTS,'e2e/helpers/last
   'campaign-unity/Tools/last_stand_shop/test_shop_artifact_guards.py',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
@@ -113,8 +114,10 @@ export function readShopControlObservation(raw) {
       }
     }
   }
-  const contract=OBSERVATION_CONTRACTS[Object.hasOwn(complete,'schema')?2:Object.hasOwn(complete,'plannerControls')?1:0];
-  if(Object.hasOwn(complete,'schema'))assert.equal(complete.schema,'singedterra-last-stand-observation/v3','Unknown HUD observation schema');
+  const contract=Object.hasOwn(complete,'schema')
+    ?OBSERVATION_CONTRACTS.find(item=>item.header.includes('schema')&&item.schema===complete.schema)
+    :OBSERVATION_CONTRACTS[Object.hasOwn(complete,'plannerControls')?1:0];
+  assert.ok(contract,'Unknown HUD observation schema');
   const prefix=JSON.parse(payload.slice(0,boundary)+'}');
   const {header,tail}=contract;
   assert.deepEqual(Object.keys(prefix).filter(key=>!tail.includes(key)).sort(),[...header].sort(),'Exact complete controls header');
@@ -1376,6 +1379,7 @@ export const LAST_STAND_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUT
   'e2e/helpers/lastStandControlReveal.mjs',
   'e2e/helpers/lastStandTierJourney.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',

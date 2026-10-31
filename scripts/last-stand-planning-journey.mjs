@@ -13,7 +13,8 @@ const root=resolve(import.meta.dirname,'..');
 const inputs=['scripts/last-stand-planning-journey.mjs','e2e/helpers/lastStandBrowserActor.mjs',
   'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v3.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json'];
 const hashes=()=>Object.fromEntries(inputs.map(path=>[path,createHash('sha256').update(readFileSync(resolve(root,path))).digest('hex')]));
 const base=admitJourneyBase(process.env.E2E_LIVE_URL??'http://127.0.0.1:4174/singedTerra/');
 for(const tool of ['verify-last-stand-source.mjs','verify-last-stand.mjs'])

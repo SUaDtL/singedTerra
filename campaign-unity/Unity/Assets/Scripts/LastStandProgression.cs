@@ -162,13 +162,16 @@ namespace SingedTerra.LastStand
                 string raw=storage.Read();
                 if(raw==null)
                 {
-                    if(committed!=null) { Block("The saved record changed unexpectedly. Reload after resolving the conflict.");return false; }
+                    if(committed!=null) { Block("The saved record changed unexpectedly. Reload after resolving the conflict.",LastStandSaveHealth.Conflict);return false; }
                     var fresh=new Record { NextRunId=1 };InitializeTiers(fresh,false);InitializeResearch(fresh);return Commit(fresh,null);
                 }
                 if(committed!=null && raw!=committedRaw)
-                { Block("The saved record changed unexpectedly. Reload after resolving the conflict.");return false; }
+                { Block("The saved record changed unexpectedly. Reload after resolving the conflict.",LastStandSaveHealth.Conflict);return false; }
                 if(!TryParseSave(raw,out var parsed,out bool migrate))
-                { Block("Saved Last Stand data or checkpoint rules are invalid or unsupported. The original save has been preserved.");return false; }
+                { Block("Saved Last Stand data or checkpoint rules are invalid or unsupported. The original save has been preserved.",
+                    IsFutureSave(raw)?LastStandSaveHealth.UnsupportedVersion:LastStandSaveHealth.InvalidData);
+                    rejectedRaw=SaveHealth==LastStandSaveHealth.InvalidData&&CanPreserveRejectedSave(raw)?raw:null;
+                    return false; }
                 committed=parsed;committedRaw=raw;
                 var next=parsed.Copy();
                 if(migrate) {
@@ -178,10 +181,10 @@ namespace SingedTerra.LastStand
                 bool unlocks=ReconcileUnlocks(next);
                 if(migrate||unlocks)return Commit(next,null);
                 if(!OwnsStorage())return false;
-                SaveState="ready";SaveError=null;return true;
+                SaveState="ready";SaveHealth=LastStandSaveHealth.Ready;SaveError=null;return true;
             }
             catch(Exception)
-            { Block("Local storage could not be read. Retry when available.");return false; }
+            { Block("Local storage could not be read. Retry when available.",LastStandSaveHealth.ReadUnavailable);return false; }
         }
         public bool TrySelectTier(int tier)
         {
@@ -300,12 +303,18 @@ namespace SingedTerra.LastStand
             // Active runs keep the immutable deployment levels in their checkpoint.
             var next=committed.Copy();next.Wallet-=quote.Cost;next.Levels[index]+=quote.Quantity;return Commit(next,null);
         }
-        void Block(string error) { SaveState="blocked";SaveError=error; }
+        void Block(string error,LastStandSaveHealth health=LastStandSaveHealth.Blocked)
+        { SaveState="blocked";SaveHealth=health;SaveError=error; }
         bool OwnsStorage()
         {
-            if(storage is ILastStandStorageOwnership owner && !owner.CanWrite)
-            { Block(storage is ILastStandStorageDiagnostics diagnostics ? diagnostics.OwnershipError : "This tab cannot save. Another Last Stand tab may own this profile, or this browser does not support save ownership. Close the other tab and reload here.");return false; }
-            return true;
+            try
+            {
+                if(storage is ILastStandStorageOwnership owner && !owner.CanWrite)
+                { Block(storage is ILastStandStorageDiagnostics diagnostics ? diagnostics.OwnershipError : "This tab cannot save. Another Last Stand tab may own this profile, or this browser does not support save ownership. Close the other tab and reload here.",LastStandSaveHealth.Ownership);return false; }
+                return true;
+            }
+            catch(Exception)
+            { Block("Save ownership could not be checked. Retry when local storage is available.",LastStandSaveHealth.ReadUnavailable);return false; }
         }
         bool Commit(Record next,Action completion)
         {
@@ -322,16 +331,17 @@ namespace SingedTerra.LastStand
                 string desired=Serialize(candidate),existing=storage.Read();
                 if(existing!=desired)
                 {
-                    if(committed!=null && existing!=committedRaw || committed==null && existing!=null)
-                    { Block("The saved record changed unexpectedly. Reload after resolving the conflict.");return false; }
+                    string expected=committed!=null?committedRaw:RestorePending?restoreDestinationRaw:null;
+                    if(existing!=expected)
+                    { Block("The saved record changed unexpectedly. Reload after resolving the conflict.",LastStandSaveHealth.Conflict);return false; }
                     storage.Write(desired);
                     if(storage.Read()!=desired)throw new InvalidOperationException("Save readback mismatch.");
                 }
                 committed=candidate;committedRaw=desired;candidate=null;
-                var complete=afterCommit;afterCommit=null;SaveState="ready";SaveError=null;complete?.Invoke();return true;
+                var complete=afterCommit;afterCommit=null;SaveState="ready";SaveHealth=LastStandSaveHealth.Ready;SaveError=null;complete?.Invoke();return true;
             }
             catch(Exception)
-            { SaveState="retry";SaveError="The save was not confirmed. Retry to reconcile local storage.";return false; }
+            { SaveState="retry";SaveHealth=LastStandSaveHealth.Retry;SaveError="The save was not confirmed. Retry to reconcile local storage.";return false; }
         }
     }
 }

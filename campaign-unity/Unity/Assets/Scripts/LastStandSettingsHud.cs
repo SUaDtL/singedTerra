@@ -9,10 +9,12 @@ namespace SingedTerra.LastStand
     public sealed class LastStandSettingsHud
     {
         readonly LastStandLoopController loop;
+        readonly Action openWorkshop;
+        readonly Func<bool> canOpenWorkshop;
         readonly LastStandModal modal;
         readonly LastStandScrollPane pane;
         readonly RectTransform shade, panel, viewport, content;
-        readonly Text title, body, choiceName;
+        readonly Text title, body, choiceName, footer;
         readonly ScrollRect scroll;
         readonly Button close;
         readonly List<Button> buttons;
@@ -20,11 +22,12 @@ namespace SingedTerra.LastStand
         readonly List<Button> visible = new List<Button>();
         readonly Button[] tabs;
         string tab = "Audio", previousPage = "";
+        int helpTopic;
         float viewportHeight;
         public Button[] Buttons => buttons.ToArray();
         public float ScrollOffset => loop.MenuOpen ? pane.Offset : 0;
         public float MaximumScrollOffset => loop.MenuOpen ? pane.MaximumOffset : 0;
-        public Button InitialFocus => loop.MenuPage == "confirm" ? controls["ConfirmCancel"] : close;
+        public Button InitialFocus => loop.MenuPage == "confirm" ? controls["ConfirmCancel"] : loop.MenuPage=="backup-preview"?controls["BackupCancel"]:close;
         static readonly Color Paper = new Color(.94f,.91f,.80f);
         static readonly Color Brass = new Color(.91f,.69f,.33f);
         static void Place(RectTransform r,float x,float y,float w,float h)=>LastStandUiPrimitives.Place(r,x,y,w,h);
@@ -32,15 +35,18 @@ namespace SingedTerra.LastStand
         Button Button(string name,string label,Transform parent,Action handler)
         {var button=modal.Button(name,label,parent,handler);controls.Add(name,button);return button;}
         public LastStandSettingsHud(LastStandLoopController owner, Transform parent, Font sharedFont,
-            Texture2D sharedMetal = null, Sprite sharedSurface = null)
+            Texture2D sharedMetal = null, Sprite sharedSurface = null,Action workshop = null,Func<bool> workshopAvailable = null)
         {
             loop=owner;
+            openWorkshop=workshop;canOpenWorkshop=workshopAvailable??(()=>false);
             modal=new LastStandModal("Settings",parent,sharedFont,loop.CloseMenu,sharedMetal,sharedSurface);
             shade=modal.Shade;panel=modal.Panel;title=modal.Title;close=modal.Close;
             modal.Status.gameObject.SetActive(false);buttons=modal.Buttons;controls.Add(close.name,close);
             choiceName=Text("SelectionName",panel,18);choiceName.alignment=TextAnchor.MiddleCenter;choiceName.color=Brass;
             Button("ChoicePrevious","<",panel,() => loop.MoveSelection(-1));
             Button("ChoiceNext",">",panel,() => loop.MoveSelection(1));
+            Button("HelpPrevious","<",panel,() => MoveHelp(-1));
+            Button("HelpNext",">",panel,() => MoveHelp(1));
             tabs = new Button[4]; string[] labels = { "Audio", "Display", "Gameplay", loop.Platform.CanOpenAccount ? "Save & Account" : "Save" };
             for (int i=0;i<labels.Length;i++)
             {
@@ -48,9 +54,13 @@ namespace SingedTerra.LastStand
             }
             pane=modal.Pane("Settings");viewport=pane.Viewport;content=pane.Content;scroll=pane.Scroll;
             body = Text("SettingsBody",content,16);
+            footer = Text("SettingsDetail",content,14);
             Button("MenuResume","RESUME / CLOSE",content,loop.CloseMenu);
             Button("MenuSettings","SETTINGS",content,() => loop.OpenMenu("settings"));
             Button("MenuHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
+            Button("MenuGuidance","",content,FollowGuidance);
+            Button("GuidanceDismiss","DISMISS THIS TIP",content,() => {var action=loop.ContextGuidance;if(action!=null)loop.Guidance.DismissContext(action.Id);loop.RefreshControls();});
+            Button("HelpAction","",content,() => FollowDestination(LastStandGuidance.HelpTopics[helpTopic].Destination));
             Button("MenuMilestones","WAVE MILESTONES",content,() => loop.OpenMenu("milestones"));
             Button("MenuWaveInfo","CURRENT WAVE ENEMIES",content,() => loop.OpenMenu("wave"));
             Button("MenuResearch","RESEARCH LAB",content,loop.OpenResearch);
@@ -76,6 +86,12 @@ namespace SingedTerra.LastStand
             Button("PurchaseSuggestions","",content,() => loop.SetPreferences(loop.Preferences.Current.With(purchaseSuggestions:!loop.Preferences.Current.PurchaseSuggestions)));
             Button("GameplayHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
             Button("DataRetry","RETRY GAMEPLAY SAVE",content,loop.RetrySave);
+            Button("DataExport","EXPORT BACKUP",content,loop.ExportBackup);
+            Button("DataImport","CHOOSE BACKUP TO RESTORE",content,loop.ChooseBackup);
+            Button("DataPrevious","REVIEW PREVIOUS SAVE",content,loop.PreviewPreviousBackup);
+            Button("DataGarage","RETURN TO GARAGE",content,() => loop.RequestConfirmation("return-garage"));
+            Button("BackupCancel","KEEP CURRENT SAVE",content,loop.CancelBackupPreview);
+            Button("BackupReplace","REPLACE SAVE",content,loop.ConfirmBackupRestore);
             Button("PreferencesRetry","RETRY SETTINGS SAVE",content,loop.RetryPreferences);
             Button("DataAccount","MANAGE ACCOUNT",content,() => loop.RequestNavigation(true));
             Button("SettingsDefaults","RESTORE SETTINGS DEFAULTS",content,() => loop.RequestConfirmation("reset-settings"));
@@ -96,17 +112,35 @@ namespace SingedTerra.LastStand
         }
         void ResetScroll()=>pane.Reset();
         void ClampScroll()=>pane.Clamp();
+        void MoveHelp(int direction)
+        {helpTopic=Math.Max(0,Math.Min(LastStandGuidance.HelpTopics.Count-1,helpTopic+direction));ResetScroll();loop.RefreshControls();}
+        void FollowGuidance()
+        {
+            var action=loop.ContextGuidance;if(action==null)return;
+            for(int i=0;i<LastStandGuidance.HelpTopics.Count;i++)if(LastStandGuidance.HelpTopics[i].Id==action.TopicId)helpTopic=i;
+            if(action.Destination=="help")loop.OpenMenu("help");else FollowDestination(action.Destination);
+        }
+        void FollowDestination(string destination)
+        {
+            if(destination=="workshop")
+            {if(!canOpenWorkshop())return;loop.CloseMenu();openWorkshop?.Invoke();}
+            else if(destination=="research")loop.OpenResearch();
+            else if(destination=="data")loop.OpenMenu("save");
+            else if(destination!="")loop.OpenMenu(destination);
+        }
         public void Refresh(bool visiblePage)
         {
             shade.gameObject.SetActive(visiblePage); if (!visiblePage) { previousPage=""; return; }
-            if (previousPage != loop.MenuPage) { ResetScroll(); previousPage=loop.MenuPage; }
+            if (previousPage != loop.MenuPage)
+            {if(loop.MenuPage=="save")tab=loop.Platform.CanOpenAccount?"Save & Account":"Save";ResetScroll(); previousPage=loop.MenuPage;}
             foreach (var b in buttons) b.gameObject.SetActive(false);
             close.gameObject.SetActive(true); visible.Clear();
-            choiceName.gameObject.SetActive(loop.SelectionOpen);
+            choiceName.gameObject.SetActive(loop.SelectionOpen || loop.MenuPage=="help");
             shade.GetComponent<Image>().color=loop.SelectionOpen ? Color.clear : new Color(0,0,0,.82f);
             var p = loop.Preferences.Current;
-            title.text = loop.MenuPage == "settings" ? "SETTINGS" : loop.MenuPage == "confirm" ? "PLEASE CONFIRM" : loop.MenuPage.ToUpperInvariant();
+            title.text = loop.MenuPage == "settings" || loop.MenuPage=="save" ? "SETTINGS" : loop.MenuPage == "confirm" ? "PLEASE CONFIRM" : loop.MenuPage=="backup-preview"?"RESTORE BACKUP":loop.MenuPage.ToUpperInvariant();
             body.text = "";
+            footer.text="";
             bool canLeave = LastStandNavigationPolicy.CanLeave(loop.Progression.SaveState,loop.Session.CatchingUp);
             switch (loop.MenuPage)
             {
@@ -123,6 +157,9 @@ namespace SingedTerra.LastStand
                 case "menu":
                     body.text = loop.Session.Model != null ? "Run paused. Closing this menu preserves a manual pause." : "LAST STAND";
                     if(loop.Guidance.Tutorial != "") body.text += "\n\n" + loop.Guidance.Tutorial;
+                    var guidance=loop.ContextGuidance;
+                    if(guidance!=null)
+                    {body.text+="\n\n"+guidance.Body;Show("MenuGuidance",guidance.Label,guidance.Destination!="workshop"||canOpenWorkshop());Show("GuidanceDismiss");}
                     Show("MenuResume"); Show("MenuSettings"); Show("MenuHelp"); Show("MenuMilestones");
                     Show("MenuWaveInfo",enabled:loop.CanInspectWave);
                     Show("MenuResearch",loop.Progression.GetBestWave(1)>=25?"RESEARCH LAB":"RESEARCH LAB - T1 WAVE 25");
@@ -131,6 +168,7 @@ namespace SingedTerra.LastStand
                     if(loop.Progression.HasCheckpoint)Show("MenuNewRun",enabled:canLeave);
                     Show("MenuAbandon",enabled:canLeave && loop.Progression.ActiveRunId != 0);
                     if(loop.Platform.CanNavigate)Show("MenuCampaigns",enabled:canLeave); Show("MenuAbout"); break;
+                case "save":
                 case "settings":
                     foreach (var b in tabs) b.gameObject.SetActive(true);
                     body.text = loop.Preferences.Status;
@@ -157,17 +195,37 @@ namespace SingedTerra.LastStand
                     }
                     else
                     {
-                        body.text += "\nGameplay save: " + loop.Progression.SaveState + ". " + (loop.Progression.SaveError ?? "") +
-                            "\nSaved on this device; account sync is not available. Each cleared wave saves your run. Resume returns to that checkpoint, paused.";
-                        Show("DataRetry",enabled:loop.Progression.SaveState != "ready");
-                        Show("PreferencesRetry",enabled:loop.Preferences.CanRetry);
+                        body.text=loop.SaveHealthHeading+"\n"+loop.ConfirmedCheckpointText;
+                        if(loop.Progression.SaveState!="ready")body.text+="\n"+loop.Progression.SaveError;
+                        if(loop.Progression.RecoveredPreviousRecord)body.text+="\nA damaged newer record was skipped. The preceding confirmed save was recovered.";
+                        if(loop.BackupStatus!="")body.text+="\n\n"+loop.BackupStatus;
+                        if(loop.Progression.SaveState!="ready")Show("DataRetry",enabled:!loop.BackupBusy);
+                        if(loop.Session.Model!=null)
+                        {body.text+="\n\nReturn to the garage before restoring. Your last confirmed checkpoint is kept.";Show("DataGarage",enabled:loop.CanReturnToGarage);}
+                        Show("DataExport",enabled:loop.CanExportBackup);
+                        Show("DataImport",enabled:loop.CanChooseBackup);
+                        if(!loop.BackupAvailable)body.text+="\nFile backups are unavailable on this platform.";
+                        if(loop.PreviousBackupAvailable)
+                            Show("DataPrevious");
+                        if(loop.Preferences.CanRetry)Show("PreferencesRetry");
                         if(loop.Platform.CanOpenAccount)Show("DataAccount",enabled:canLeave); Show("SettingsDefaults");
+                        footer.text="Local save only; account sync is unavailable. Backups contain gameplay progress, not account or device settings.\n"+
+                            loop.Preferences.Status+"\nGame "+Application.version+" / Unity "+Application.unityVersion+" / "+Application.platform;
                     }
                     Show("SettingsBack"); break;
-                case "help": body.text = LastStandGuidance.Help+
-                    "\n\nRESEARCH & FARMING\nTemporary Scrap buys upgrades for this run. Persistent Salvage funds both Mechanics Shop starting upgrades and Lab research. Research uses real time, including while closed; combat speed changes combat only. Switching research keeps elapsed progress and refunds the paid Salvage; resuming pays that cost again.\nRun History compares repeatable Salvage per real active hour, with milestone bonuses shown separately. Comparisons disclose short runs, changing upgrades and checkpoint measurement limits."+
-                    "\n\nSAVING A RUN\nEach cleared wave saves hull, upgrades, Scrap and cooldowns on this device. Leaving or reloading restores that checkpoint; partial-wave spending and upgrades roll back together. Resume starts paused, without closed-tab combat catch-up.";
-                    Show("SettingsBack"); break;
+                case "backup-preview":
+                    body.text=loop.BackupComparison();
+                    Show("BackupCancel");Show("BackupReplace",enabled:loop.BackupPreview!=null && !loop.BackupBusy && !loop.Progression.RestorePending && loop.Session.Model==null);
+                    break;
+                case "help":
+                    var topic=LastStandGuidance.HelpTopics[helpTopic];choiceName.text=topic.Title;
+                    body.text=topic.Body;footer.text="Topic "+(helpTopic+1)+" of "+LastStandGuidance.HelpTopics.Count+". Help is always available, even with tips turned off.";
+                    Show("HelpPrevious",enabled:helpTopic>0);Show("HelpNext",enabled:helpTopic<LastStandGuidance.HelpTopics.Count-1);
+                    // Selector buttons live beside the topic title, not in the action list.
+                    visible.Remove(controls["HelpPrevious"]);visible.Remove(controls["HelpNext"]);
+                    if(topic.Destination!="")Show("HelpAction",topic.ActionLabel,topic.Destination!="workshop"||canOpenWorkshop());
+                    if(topic.Destination=="workshop"&&!canOpenWorkshop())footer.text+="\nPermanent upgrades are available from the garage.";
+                    Show("SettingsBack");break;
                 case "wave":
                     title.text="ENEMY STATS";
                     body.text=loop.Session.Model!=null && loop.Shop!=null
@@ -188,14 +246,15 @@ namespace SingedTerra.LastStand
                     Show("SettingsBack"); break;
                 case "confirm":
                     body.text = loop.Confirmation == "reset-settings" ? "Restore audio, display and guidance preferences to their defaults? Your upgrades, wallet, tiers and pending rewards are kept. The current run's speed and pause state are kept." :
+                        loop.Confirmation=="return-garage"?"Return to the garage at your last confirmed checkpoint? Progress and purchases since that checkpoint roll back together. Completed-wave rewards and permanent upgrades are kept. Resume starts paused.":
                         "Abandon this run and remove its checkpoint? Temporary Scrap and run upgrades will be lost. All completed-wave rewards, milestone unlocks and permanent upgrades are kept.";
-                    Show("ConfirmCancel"); Show("ConfirmProceed",loop.Confirmation == "reset-settings" ? "RESTORE SETTINGS" : loop.Confirmation=="new-run"?"ABANDON & START NEW":"ABANDON RUN",loop.Confirmation == "reset-settings" || canLeave); break;
+                    Show("ConfirmCancel"); Show("ConfirmProceed",loop.Confirmation == "reset-settings" ? "RESTORE SETTINGS" : loop.Confirmation=="return-garage"?"KEEP CHECKPOINT & RETURN":loop.Confirmation=="new-run"?"ABANDON & START NEW":"ABANDON RUN",loop.Confirmation == "reset-settings" || canLeave); break;
             }
             foreach (var b in buttons)
             {
                 bool available = b.interactable;
                 var label = b.GetComponentInChildren<Text>(true);
-                bool selectedTab = loop.MenuPage == "settings" && Array.IndexOf(tabs,b) >= 0 && label.text == tab;
+                bool selectedTab = (loop.MenuPage == "settings" || loop.MenuPage=="save") && Array.IndexOf(tabs,b) >= 0 && label.text == tab;
                 modal.Style(b,available,selectedTab);
             }
         }
@@ -227,7 +286,15 @@ namespace SingedTerra.LastStand
             }
             float w=modal.Layout(width,height,unitsX,unitsY,700),h=modal.PanelHeight;
             float y=modal.HeaderBottom,inner=w-24,bodyTopOffset=8;
-            if (loop.MenuPage == "settings")
+            if(loop.MenuPage=="help")
+            {
+                bool compact=h<260;var parent=compact?content:panel;
+                foreach(var item in new Component[]{choiceName,controls["HelpPrevious"],controls["HelpNext"]})
+                    if(item.transform.parent!=parent)item.transform.SetParent(parent,false);
+                float after=modal.Selector(choiceName,controls["HelpPrevious"],controls["HelpNext"],compact?8:12,compact?8:y,compact?inner-16:inner);
+                if(compact)bodyTopOffset=after+8;else y=after+8;
+            }
+            if (loop.MenuPage == "settings" || loop.MenuPage=="save")
             {
                 bool compact=h<260;var tabParent=compact?content:panel;
                 int columns=w<500?2:4;float tabWidth=compact?inner-16:inner,tw=(tabWidth-(columns-1)*8)/columns;
@@ -251,6 +318,9 @@ namespace SingedTerra.LastStand
                 if(volume) { i++; Place((RectTransform)visible[i].transform,(16+bw)*unitsX,row*unitsY,bw*unitsX,44*unitsY); }
                 row+=52;
             }
+            footer.gameObject.SetActive(footer.text!="");
+            if(footer.text!="")
+            {float fh=modal.Preferred(footer,bodyWidth)+16;modal.Place(footer,8,row,bodyWidth,fh);row+=fh;}
             pane.Finish(row+8);
             // Preserve a valid reading position on same-page refreshes, but
             // repair the actual content when text or viewport bounds contract.

@@ -46,7 +46,8 @@ function copyAdmissionInputs(checkout) {
     'e2e/helpers/lastStandWaveOracle.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandControlReveal.mjs', 'scripts/assets/verify-last-stand-source.mjs',
     'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
-    'campaign-unity/Tools/contracts/last-stand-observation-v3.json']) {
+    'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json']) {
     mkdirSync(dirname(join(checkout, path)), { recursive: true });
     copyFileSync(join(root, path), join(checkout, path));
   }

@@ -884,7 +884,7 @@ public static class LastStandHudChecks
         Require(report.phase == runtimeLoop.Phase && report.coordinates == "top-left", "runtime current phase and top-left coordinate contract " + state);
         Require(report.width == Screen.width && report.height == Screen.height && report.width > 0 && report.height > 0,
             "runtime actual Screen dimensions " + state);
-        Require(report.schema=="singedterra-last-stand-observation/v3","runtime declares the current controls schema");
+        Require(report.schema=="singedterra-last-stand-observation/v4","runtime declares the current controls schema");
         AssertOrdinaryInventory(runtimeRoot,"runtime " + state);
         var seen=new HashSet<string>();int expectedCount=0;
         foreach(var inventory in LastStandObservationContractChecks.CurrentControlInventory())

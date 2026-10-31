@@ -17,7 +17,7 @@ const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const MILESTONE_FIXTURE_SOURCES=Object.freeze([
   ...WAVE_ORACLE_SOURCES.map(name=>'campaign-unity/Unity/Assets/Scripts/'+name),
   ...['LastStandProgression','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
-    'LastStandSaveJson','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
+    'LastStandSaveJson','LastStandProgressionBackup','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
     'LastStandResearchState','LastStandResearchCatalog','LastStandResearchClock','Content/LastStandResearchDefinitions']
     .map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
   'campaign-unity/Tools/last_stand_waves/EarnedMilestoneFixtures.cs',
@@ -265,7 +265,8 @@ export function assertMilestoneCompletedReadback({saved,expected,actual,fixture,
 export const MILESTONE_RUNNER_INPUTS=Object.freeze(['scripts/last-stand-wave-milestones.mjs','e2e/helpers/lastStandWaveJourney.mjs',
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandWaveOracle.mjs',
   ...LAST_STAND_HELPER_INPUTS,'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json']);
+  'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json']);
 export function hashMilestoneRunnerInputs({directory=root,readFile=readFileSync,resolvePath=resolve,hashBytes=hash}={}) {
   return Object.fromEntries(MILESTONE_RUNNER_INPUTS.map(path=>[path,hashBytes(readFile(resolvePath(directory,path)))]));
 }

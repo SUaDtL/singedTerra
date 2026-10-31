@@ -11,7 +11,9 @@ import unittest
 
 TOOLS = Path(__file__).resolve().parents[1]
 CONTRACTS = tuple(json.loads((TOOLS / f"contracts/last-stand-observation-v{version}.json").read_text(encoding="utf8"))
-                  for version in (1, 2, 3))
+                  for version in (1, 2, 3, 4))
+CONTINUITY_CONTROLS = ("DataExport", "DataImport", "DataPrevious", "DataGarage", "BackupCancel", "BackupReplace",
+                       "HelpPrevious", "HelpNext", "MenuGuidance", "GuidanceDismiss", "HelpAction")
 
 
 def packet(contract):
@@ -48,7 +50,7 @@ class ObservationVersionTests(unittest.TestCase):
             value = self.read_controls(source)
             self.assertEqual(value["raw"], source)
             self.assertFalse(value["graphicsTruncated"])
-            self.assertEqual(len(value["historyControls"]), (2, 9, 10)[CONTRACTS.index(contract)])
+            self.assertEqual(len(value["historyControls"]), (2, 9, 10, 10)[CONTRACTS.index(contract)])
             self.assertEqual("plannerControls" in value, contract is not CONTRACTS[0])
 
     def test_incomplete_extra_repeated_and_malformed_current_refused(self):
@@ -94,3 +96,33 @@ class ObservationVersionTests(unittest.TestCase):
                 ('"width":44', '"width":44,"width":44')]:
                 with self.assertRaisesRegex(AssertionError, "Duplicate JSON key"):
                     self.read_controls(source.replace(before, after, 1))
+
+    def test_continuity_requires_each_new_control_and_its_exact_version(self):
+        current = packet(CONTRACTS[-1])
+        names = {row["name"] for row in current["settingsControls"]}
+        self.assertEqual(len(current["settingsControls"]), 52)
+        self.assertTrue(set(CONTINUITY_CONTROLS) <= names)
+        self.assertEqual(sum(len(current[row["field"]]) for row in CONTRACTS[-1]["inventories"]), 132)
+        self.assertEqual(self.read_controls(raw(current))["schema"], CONTRACTS[-1]["schema"])
+        for name in CONTINUITY_CONTROLS:
+            with self.subTest(missing=name):
+                incomplete = deepcopy(current)
+                incomplete["settingsControls"] = [row for row in incomplete["settingsControls"] if row["name"] != name]
+                with self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
+                    self.read_controls(raw(incomplete))
+        for schema in ("singedterra-last-stand-observation/v3", "singedterra-last-stand-observation/v5", None):
+            mislabeled = deepcopy(current)
+            if schema is None:
+                mislabeled.pop("schema")
+            else:
+                mislabeled["schema"] = schema
+            with self.assertRaises((AssertionError, ValueError, KeyError, TypeError)):
+                self.read_controls(raw(mislabeled))
+        repeated = deepcopy(current)
+        repeated["settingsControls"][-1] = deepcopy(repeated["settingsControls"][-2])
+        with self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
+            self.read_controls(raw(repeated))
+        invented = deepcopy(current)
+        invented["settingsControls"][-1]["name"] = "invented-backup-action"
+        with self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
+            self.read_controls(raw(invented))

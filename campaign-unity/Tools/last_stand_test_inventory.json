@@ -123,6 +123,7 @@
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
       "reason": "Strict current and retained diagnostic schema admission against maintained readers; no player qualification",
       "cases": [
+        "ObservationVersionTests.test_continuity_requires_each_new_control_and_its_exact_version",
         "ObservationVersionTests.test_current_schema_cannot_be_downgraded_or_mislabeled",
         "ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired",
         "ObservationVersionTests.test_incomplete_extra_repeated_and_malformed_current_refused",
@@ -336,6 +337,63 @@
       ]
     },
     {
+      "path": "last_stand_continuity/test_backup.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual-source profile backup/restore, strict decoding, ownership and uncertain-write checks; no native file-picker qualification",
+      "cases": [
+        "BackupTests.test_ambiguous_write_reconciles_once_and_preserves_previous_save",
+        "BackupTests.test_bounded_corrupt_destination_requires_preview_and_explicit_restore",
+        "BackupTests.test_confirmed_profile_round_trip_preserves_retained_checkpoint",
+        "BackupTests.test_corrupt_destination_conflict_and_oversize_refuse_replacement",
+        "BackupTests.test_corrupt_destination_uncertain_restore_retries_same_candidate",
+        "BackupTests.test_damaged_future_and_unreadable_destination_fail_closed",
+        "BackupTests.test_external_change_after_preview_is_rejected",
+        "BackupTests.test_failed_write_exports_confirmed_profile_and_retries_same_restore",
+        "BackupTests.test_invalid_future_oversize_and_malformed_utf8_leave_profile_unchanged",
+        "BackupTests.test_lost_ownership_never_writes",
+        "BackupTests.test_predecessor_write_and_readback_are_required_before_replacement",
+        "BackupTests.test_preview_has_no_mutation_and_is_bound_to_owner",
+        "BackupTests.test_previous_backup_restores_through_same_explicit_transaction",
+        "BackupTests.test_restart_retains_restored_profile_and_predecessor",
+        "BackupTests.test_restored_research_clock_completes_once_without_duplicate_charge",
+        "BackupTests.test_successful_ordinary_save_does_not_erase_restore_predecessor"
+      ]
+    },
+    {
+      "path": "last_stand_continuity/test_backup_transport.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual-source bounded save/transport checks; no player profile or physical-device qualification",
+      "cases": [
+        "BackupTransportTests.test_actual_webgl_file_and_predecessor_adapters",
+        "BackupTransportTests.test_bounded_strict_utf8_and_unseekable_stream",
+        "BackupTransportTests.test_cancelled_duplicate_and_stale_callbacks",
+        "BackupTransportTests.test_canonical_base64_cannot_expand_past_document_limit",
+        "BackupTransportTests.test_durable_predecessor_is_separate_and_requires_live_ownership",
+        "BackupTransportTests.test_invalid_callback_cannot_report_success",
+        "BackupTransportTests.test_native_fallback_is_exposed_to_recovery_owner",
+        "BackupTransportTests.test_selected_file_roundtrip_atomic_replacement_and_refusal",
+        "BackupTransportTests.test_single_request_and_disposed_receiver"
+      ]
+    },
+    {
+      "path": "last_stand_continuity/test_native_profile.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Actual native storage owners, development-only profile selection, rejected arguments and linked-root refusal on temporary fixtures; no owner profile access",
+      "cases": [
+        "NativeProfileTests.test_ascii_identifiers_accept_the_length_bound_and_unrelated_host_flags",
+        "NativeProfileTests.test_default_root_and_records_are_unchanged_without_option",
+        "NativeProfileTests.test_development_profile_isolates_every_owner_and_reopens",
+        "NativeProfileTests.test_identifier_bounds_and_reserved_device_names_are_refused",
+        "NativeProfileTests.test_linked_profile_or_parent_refuses_all_owners_and_preserves_target",
+        "NativeProfileTests.test_malformed_profile_stays_rejected_without_normal_root_fallback",
+        "NativeProfileTests.test_profile_root_is_cached_across_all_storage_owners",
+        "NativeProfileTests.test_release_flag_is_refused_without_storage_access"
+      ]
+    },
+    {
       "path": "last_stand_controls/test_audio_settings.py",
       "lane": "portable",
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
@@ -412,10 +470,14 @@
       "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
       "cases": [
         "GuidanceTests.test_confirmed_first_cannon_only",
+        "GuidanceTests.test_context_guidance_follows_confirmed_progress",
+        "GuidanceTests.test_context_guidance_is_read_only_and_fail_closed",
+        "GuidanceTests.test_context_guidance_opt_outs_and_dismissal",
         "GuidanceTests.test_dismiss_and_new_session_do_not_recreate_suggestion",
         "GuidanceTests.test_explicit_help_survives_opt_out",
         "GuidanceTests.test_fault_navigation_without_confirmed_save_is_detected",
         "GuidanceTests.test_guidance_opt_outs_dismiss_independently",
+        "GuidanceTests.test_help_topics_are_ordered_and_available",
         "GuidanceTests.test_navigation_confirmation_tracks_active_run",
         "GuidanceTests.test_navigation_requires_ready_noncatchup"
       ]
@@ -554,7 +616,12 @@
       "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
       "cases": [
         "ShaderBuildLogTests.test_build_rejects_real_shader_compiler_errors",
-        "ShaderBuildLogTests.test_clean_build_log_is_accepted"
+        "ShaderBuildLogTests.test_clean_build_log_is_accepted",
+        "ShaderBuildLogTests.test_explicit_refresh_requires_exact_completed_import_phase",
+        "ShaderBuildLogTests.test_next_importer_cannot_inherit_editor_warning_admission",
+        "ShaderBuildLogTests.test_review_never_covers_errors_other_shaders_or_changed_source",
+        "ShaderBuildLogTests.test_review_requires_complete_unambiguous_import_and_player_phases",
+        "ShaderBuildLogTests.test_reviewed_editor_import_is_reported_without_rejecting_player"
       ]
     },
     {
@@ -1125,6 +1192,8 @@
       "cases": [
         "HudLayoutTests.test_battle_center_and_area_limits",
         "HudLayoutTests.test_profiles_fit_without_overlap",
+        "HudLayoutTests.test_short_garage_reserves_menu_and_all_actions",
+        "HudLayoutTests.test_short_recovery_preserves_summary_and_actions",
         "HudLayoutTests.test_text_targets_and_long_notice_bounds"
       ]
     },
@@ -1331,14 +1400,22 @@
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
       "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
       "cases": [
+        "BuildResourceSafety.test_linked_resources_never_reach_outside_files",
+        "BuildResourceSafety.test_nonregular_reserved_resource_is_refused",
+        "BuildResourceSafety.test_original_folder_meta_is_restored_exactly",
+        "BuildResourceSafety.test_unknown_new_assets_are_preserved_and_cleanup_fails",
         "BuildWebTests.test_complete_source_closure_before_and_after_export",
         "BuildWebTests.test_toolchain_inventory_rejects_changed_and_added_module_bytes",
         "SavedBuildContract.test_default_exports_legacy_saved_scene",
+        "SavedBuildContract.test_existing_performance_resource_is_refused_before_player",
+        "SavedBuildContract.test_failed_player_cleans_only_owned_performance_outputs",
         "SavedBuildContract.test_gallery_exports_separate_saved_scene_with_its_own_checks",
         "SavedBuildContract.test_gallery_requires_its_own_fresh_checks",
         "SavedBuildContract.test_legacy_also_binds_source_and_rejects_midbuild_mutation",
+        "SavedBuildContract.test_performance_outputs_are_restored_before_source_readback",
         "SavedBuildContract.test_review_exports_saved_scene_with_source_binding",
         "SavedBuildContract.test_review_requires_its_own_fresh_checks",
+        "SavedBuildContract.test_unconfirmed_child_exit_preserves_resources_and_failed_receipt",
         "SavedBuildContract.test_unknown_scene_is_refused_before_editor_launch"
       ]
     },

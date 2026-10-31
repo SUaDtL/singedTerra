@@ -9,6 +9,65 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The initial in-repo visual scope was
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
+## Player continuity and patched Unity, October 31, 2026
+
+The owner requested the Unity security update and another implemented sprint in
+PR #547. The [player-continuity specification](../../.codearbiter/specs/last-stand-player-continuity.html)
+and [plan](../../.codearbiter/plans/last-stand-player-continuity.html) pair Unity
+**6000.3.27f2** with player-controlled local backups and clearer recovery. The
+[dependency review](last-stand-continuity/unity-dependency-review.md) records the
+October advisories, exact editor revision and explicit patched Android JDK.
+
+Players can export their confirmed gameplay profile to a bounded `.laststand`
+file, inspect a backup and explicitly replace local progress from the garage.
+The existing save owner checks writer ownership and the preview's original
+record, verifies a separate predecessor backup, then confirms the replacement.
+Uncertain writes retain their pending transaction for retry. A bounded readable
+damaged record can be repaired after that same explicit confirmation; future,
+unreadable and oversized records remain protected. Preferences and account data
+are outside the backup. Restored checkpoints retain their run edition and resume
+paused; research retains its existing real-time accounting.
+
+Settings' Save surface explains confirmed checkpoints, save failures, native
+fallback and the next available recovery action. Help is organized into topics,
+with optional progress-based guidance that opens existing action surfaces.
+Tutorial and purchase-tip switches remain independent; disabling them does not
+hide essential save errors or explicit Help. Returning to the garage preserves
+the confirmed wave checkpoint rather than abandoning the run.
+
+The [local validation index](last-stand-continuity/validation.json) separates
+domain/transport checks, imported Unity controls, actual observation packets and
+the [independent security review](last-stand-continuity/security-review.md).
+The final portable run passes 74 modules and 531 cases with zero skips. Imported
+Controls pass 31 checks, eight actual observation packets pass both readers, and
+the final browser journey passes 89 checks with zero browser errors. Its real
+file transfer covers preview, explicit replacement, retained checkpoint resume,
+previous-save recovery and a second empty isolated profile. The earlier failed
+attempts remain in the index.
+
+Final WebGL release `Web-20261031T021631Z-098558`, frozen packaging, source
+admission and the production site build pass. Windows development
+`build-windows-20261031T022146Z-c8c3e5` and Android development
+`build-android-20261031T022514Z-409a70` also pass. Android's explicit shader
+reimport records the exact reviewed Editor diagnostics and zero blocking
+warnings; its APK v2 signature verifies. This is build evidence, not device
+acceptance.
+
+Development builds support a bounded isolated verification profile shared by
+gameplay and preferences, with invalid requests refused. The root independently
+reviewed that follow-up and reran its eight checks. Real Windows adapter dialogs
+pass export, import and cancel with an explicit fixture. The earlier full native
+player journey remains blocked before confirmed game-control input; its fresh
+isolated garage rendered and all four normal save-slot hashes stayed unchanged.
+No final-player input journey or physical Android session is implied by the builds.
+
+The [release-readiness matrix](LAST-STAND-RELEASE-READINESS.md) retains current
+platform, owner UX, hardware audio, art and endurance obligations. Baseline
+`f474b9c7` passed hosted CI and CodeQL. This report predates feature delivery;
+[PR #547 checks](https://github.com/SUaDtL/singedTerra/pull/547/checks) and its delivery
+record carry the later exact-head result. Neither the features nor the editor
+patch imply merge, publication or deployment.
+
 ## Progression planning and run intelligence — October 30, 2026
 
 The owner requested completion of applicable plans and another implemented sprint

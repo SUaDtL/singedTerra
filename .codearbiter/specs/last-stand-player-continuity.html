@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: player continuity and patched Unity · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-CONTINUITY-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-player-continuity.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: player continuity and patched Unity</h1><p class="deck">Protect and restore local campaign progress, make recovery and Help understandable, and qualify a matching Unity 6000.3.27f2 candidate.</p><div class="meta"><span>ST-LS-CONTINUITY-SPEC</span><span>Revision 5 · schema 0.3.2</span><span>60 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INT-CONTINUITY -->
+<article class="record" id="INT-CONTINUITY" data-ca-symbol="INT-CONTINUITY" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INT-CONTINUITY">INT-CONTINUITY</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Current owner-authorized ca-sprint</div><div class="field"><span class="label">Outcome</span>Players can protect, understand and explicitly restore confirmed local progress, find relevant help, and use a source-bound patched player without changing campaign rules.</div><div class="field"><span class="label">Problem</span>The game can resume ordinary runs but gives players no independent file backup/restore and limited guidance when local saving fails. Its pinned Unity needs the current reviewed security update.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-SAVE">SRC-SAVE</a></li><li><a href="#SRC-RECOVERY">SRC-RECOVERY</a></li></ul></div></article>
+<!-- CA:END:INT-CONTINUITY -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:S-UNITY -->
+<article class="record" id="S-UNITY" data-ca-symbol="S-UNITY" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-UNITY">S-UNITY</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Upgrade the active Unity project and current build/verification owners to reviewed Unity 6000.3.27f2 (22188f149405), rebuild matching players and preserve old receipt/toolchain history.</div></article>
+<!-- CA:END:S-UNITY -->
+
+<!-- CA:BEGIN:S-CONTINUITY -->
+<article class="record" id="S-CONTINUITY" data-ca-symbol="S-CONTINUITY" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-CONTINUITY">S-CONTINUITY</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Add user-controlled gameplay-profile backup and explicit restoration, understandable save/recovery states, organized Help and contextual optional guidance through current shared owners.</div></article>
+<!-- CA:END:S-CONTINUITY -->
+
+<!-- CA:BEGIN:S-VERIFY -->
+<article class="record" id="S-VERIFY" data-ca-symbol="S-VERIFY" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-VERIFY">S-VERIFY</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Verify focused domain, transport and UI behavior plus the matching packaged candidate; keep physical-device, hardware-audio, endurance, owner acceptance and distribution outcomes separate.</div></article>
+<!-- CA:END:S-VERIFY -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:N-CLOUD -->
+<article class="record" id="N-CLOUD" data-ca-symbol="N-CLOUD" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-CLOUD">N-CLOUD</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>Accounts, cloud synchronization, verified rewards, telemetry, diagnostic export, monetization, new currencies, economy rebalance or new combat/content editions.</div></article>
+<!-- CA:END:N-CLOUD -->
+
+<!-- CA:BEGIN:N-DEVICE-PREFS -->
+<article class="record" id="N-DEVICE-PREFS" data-ca-symbol="N-DEVICE-PREFS" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-DEVICE-PREFS">N-DEVICE-PREFS</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>Portable preferences, arbitrary storage dumps, automatic save replacement or recovery, silently accepting future data, or resetting current player progress for testing.</div></article>
+<!-- CA:END:N-DEVICE-PREFS -->
+
+<!-- CA:BEGIN:N-RELEASE -->
+<article class="record" id="N-RELEASE" data-ca-symbol="N-RELEASE" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-RELEASE">N-RELEASE</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>Inferring device/audio/endurance/owner acceptance, resolving the open art choice, automatic merge/deployment or public/store publication.</div></article>
+<!-- CA:END:N-RELEASE -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APP-CONTINUITY -->
+<article class="record" id="APP-CONTINUITY" data-ca-symbol="APP-CONTINUITY" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APP-CONTINUITY">APP-CONTINUITY</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#D-LOCAL">D-LOCAL</a></li></ul></div><div class="field"><span class="label">Choice</span>Extend one save authority with a strict portable gameplay document and explicit transactional restoration; use real platform file adapters and shared Settings/Help surfaces.</div><div class="field"><span class="label">Tradeoff</span>Small target-specific picker adapters require native/device checks, while sharing domain and UI ownership keeps save rules consistent.</div></article>
+<!-- CA:END:APP-CONTINUITY -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:C-AUTHORITY -->
+<article class="record" id="C-AUTHORITY" data-ca-symbol="C-AUTHORITY" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#C-AUTHORITY">C-AUTHORITY</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>S-CONTINUITY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SAVE">SRC-SAVE</a></li><li><a href="#SRC-CONTEXT">SRC-CONTEXT</a></li></ul></div><div class="field"><span class="label">Statement</span>LastStandProgression remains the only profile transaction authority. File adapters move bounded bytes; UI submits intents. Existing storage ownership, revision/raw comparison and confirmed-readback semantics apply. No direct transport write to gameplay storage.</div></article>
+<!-- CA:END:C-AUTHORITY -->
+
+<!-- CA:BEGIN:C-LOCAL -->
+<article class="record" id="C-LOCAL" data-ca-symbol="C-LOCAL" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#C-LOCAL">C-LOCAL</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>S-CONTINUITY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONTEXT">SRC-CONTEXT</a></li><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Backup only the confirmed Last Stand gameplay profile; exclude preferences, arbitrary browser/native storage, accounts, passwords, tokens, credentials and verified progression. No network transfer, account integration, cloud synchronization, monetization or new currency.</div></article>
+<!-- CA:END:C-LOCAL -->
+
+<!-- CA:BEGIN:C-BOUNDS -->
+<article class="record" id="C-BOUNDS" data-ca-symbol="C-BOUNDS" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#C-BOUNDS">C-BOUNDS</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>S-CONTINUITY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SAVE">SRC-SAVE</a></li><li><a href="#SRC-PLATFORM">SRC-PLATFORM</a></li></ul></div><div class="field"><span class="label">Statement</span>Maximum portable file size is 131072 bytes (128 KiB), enforced before complete allocation/read and again after transport; decode strict UTF-8 without BOM ambiguity. Keep existing 65536-character profile, structure, number, schema and retained-edition bounds. Unknown header/profile versions, duplicate or unknown fields, malformed/trailing bytes and schema-invalid payloads are refused without mutation.</div></article>
+<!-- CA:END:C-BOUNDS -->
+
+<!-- CA:BEGIN:C-PRESERVE -->
+<article class="record" id="C-PRESERVE" data-ca-symbol="C-PRESERVE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#C-PRESERVE">C-PRESERVE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>S-UNITY</li><li>S-CONTINUITY</li><li>S-VERIFY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SAVE">SRC-SAVE</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li></ul></div><div class="field"><span class="label">Statement</span>No economy, combat, content edition, reward or research-time rule change. Restore one whole validated snapshot, never merge or add balances. Retain paid run editions, completed reward ledgers and pending research. Restored combat starts paused; closed time advances research only under its existing owner. Preserve frozen reports, original fixtures, unsupported saved bytes and unrelated checkout state.</div></article>
+<!-- CA:END:C-PRESERVE -->
+
+<!-- CA:BEGIN:C-QUALIFICATION -->
+<article class="record" id="C-QUALIFICATION" data-ca-symbol="C-QUALIFICATION" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#C-QUALIFICATION">C-QUALIFICATION</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>S-UNITY</li><li>S-CONTINUITY</li><li>S-VERIFY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-RECOVERY">SRC-RECOVERY</a></li></ul></div><div class="field"><span class="label">Statement</span>Never infer physical-device behavior, hardware audio, endurance, hosted CI, merge or publication from local tests, a successful build or a DONE task. Record exact source/package/tool identity and actual failed/unrun branches. Current user authorization covers work, not fabricated approval receipts.</div></article>
+<!-- CA:END:C-QUALIFICATION -->
+
+<!-- CA:BEGIN:C-SHARED-UI -->
+<article class="record" id="C-SHARED-UI" data-ca-symbol="C-SHARED-UI" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#C-SHARED-UI">C-SHARED-UI</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>S-CONTINUITY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-UI">SRC-UI</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li></ul></div><div class="field"><span class="label">Statement</span>Use current brass/graphite chrome, registered modal pages, shared scrolling/focus/confirmation and 44-pixel minimum targets. Preserve tutorial/purchase opt-outs and independent manual pause. This work does not settle DEC-VISUAL or create another dashboard/support export surface.</div></article>
+<!-- CA:END:C-SHARED-UI -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:D-LOCAL -->
+<article class="record" id="D-LOCAL" data-ca-symbol="D-LOCAL" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#D-LOCAL">D-LOCAL</a><h3>Progression authority and portability</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Keep Last Stand local-only and move one validated gameplay profile through existing authority. Exclude preferences and account state.</div><div class="field"><span class="label">Rationale</span>Preserves the recorded local campaign boundary and avoids a cross-store atomicity or authentication expansion.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-CONTEXT">SRC-CONTEXT</a></div></article>
+<!-- CA:END:D-LOCAL -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:CR-UNITY -->
+<article class="record" id="CR-UNITY" data-ca-symbol="CR-UNITY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-UNITY">CR-UNITY</a><h3>Patched source-bound Unity players</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-PRESERVE">C-PRESERVE</a></li><li><a href="#C-QUALIFICATION">C-QUALIFICATION</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Current project/build owners pin Unity 6000.3.27f2 revision 22188f149405 and produce a source-bound release WebGL candidate plus Windows and Android development candidates using reviewed tools. Release configuration describes player flags, not publication approval.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-UNITY">S-UNITY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-UNITY -->
+<article class="record" id="SC-UNITY" data-ca-symbol="SC-UNITY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-UNITY">SC-UNITY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The former 6000.3.24f1 project, matching reviewed new modules and explicit patched Java selection.</div><div class="field"><span class="label">Then</span>Project version, active build pins and receipts agree with observed editor bytes/version; Android uses explicit Corretto 17.0.21.0.11 and reviewed SDK/NDK. Old evidence retains original versions. Build success does not claim native/device acceptance.</div><div class="field"><span class="label">When</span>Inspect installed tools, run current build preflights and actual player builds.</div></article>
+<!-- CA:END:SC-UNITY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-UNITY-BROTLI">SRC-UNITY-BROTLI</a></li><li><a href="#SRC-UNITY-CERT">SRC-UNITY-CERT</a></li><li><a href="#SRC-UNITY-RELEASE">SRC-UNITY-RELEASE</a></li><li><a href="#SRC-DEPS">SRC-DEPS</a></li></ul></div><div class="field"><span class="label">Statement</span>Current project/build owners pin Unity 6000.3.27f2 revision 22188f149405 and produce a source-bound release WebGL candidate plus Windows and Android development candidates using reviewed tools. Release configuration describes player flags, not publication approval.</div><div class="field"><span class="label">Trigger</span>Inspect installed tools, run current build preflights and actual player builds.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-UNITY -->
+<article class="record" id="V-UNITY" data-ca-symbol="V-UNITY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-UNITY">V-UNITY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A stale editor, wrong revision/module, incompatible JDK or mismatched source/package is refused rather than relabelled.</div><div class="field"><span class="label">Oracle</span>Project version, active build pins and receipts agree with observed editor bytes/version; Android uses explicit Corretto 17.0.21.0.11 and reviewed SDK/NDK. Old evidence retains original versions. Build success does not claim native/device acceptance.</div><div class="field"><span class="label">Planned target</span>Inspect installed tools, run current build preflights and actual player builds.</div></article>
+<!-- CA:END:V-UNITY -->
+</div></article>
+<!-- CA:END:CR-UNITY -->
+
+<!-- CA:BEGIN:CR-BACKUP -->
+<article class="record" id="CR-BACKUP" data-ca-symbol="CR-BACKUP" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-BACKUP">CR-BACKUP</a><h3>Bounded confirmed gameplay backup</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-AUTHORITY">C-AUTHORITY</a></li><li><a href="#C-LOCAL">C-LOCAL</a></li><li><a href="#C-BOUNDS">C-BOUNDS</a></li><li><a href="#C-PRESERVE">C-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Export a .laststand file with a fixed ASCII version header followed by the strictly validated UTF-8 JSON bytes of one confirmed gameplay profile; unconfirmed candidates and device/account data are excluded.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CONTINUITY">S-CONTINUITY</a></li></ul></div><div class="field"><span class="label">Kind</span>security</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-BACKUP -->
+<article class="record" id="SC-BACKUP" data-ca-symbol="SC-BACKUP" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-BACKUP">SC-BACKUP</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A valid confirmed current or retained-edition profile, optionally with a partially played wave.</div><div class="field"><span class="label">Then</span>Export round-trips through the strict existing profile parser and preserves confirmed wallet, permanent upgrades, research, unlocks, history and checkpoint. Export never saves partial-wave state or advances research merely to produce a file; oversized/invalid data yields a useful refusal.</div><div class="field"><span class="label">When</span>Choose Export backup from the existing Data surface.</div></article>
+<!-- CA:END:SC-BACKUP -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SAVE">SRC-SAVE</a></li><li><a href="#SRC-CONTEXT">SRC-CONTEXT</a></li></ul></div><div class="field"><span class="label">Statement</span>Export a .laststand file with a fixed ASCII version header followed by the strictly validated UTF-8 JSON bytes of one confirmed gameplay profile; unconfirmed candidates and device/account data are excluded.</div><div class="field"><span class="label">Trigger</span>Choose Export backup from the existing Data surface.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-BACKUP -->
+<article class="record" id="V-BACKUP" data-ca-symbol="V-BACKUP" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-BACKUP">V-BACKUP</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Malformed, future, duplicate-field, corrupt, oversized and trailing-byte documents are rejected; no storage enumeration or credential-containing payload is possible.</div><div class="field"><span class="label">Oracle</span>Export round-trips through the strict existing profile parser and preserves confirmed wallet, permanent upgrades, research, unlocks, history and checkpoint. Export never saves partial-wave state or advances research merely to produce a file; oversized/invalid data yields a useful refusal.</div><div class="field"><span class="label">Planned target</span>Choose Export backup from the existing Data surface.</div></article>
+<!-- CA:END:V-BACKUP -->
+</div></article>
+<!-- CA:END:CR-BACKUP -->
+
+<!-- CA:BEGIN:CR-TRANSPORT -->
+<article class="record" id="CR-TRANSPORT" data-ca-symbol="CR-TRANSPORT" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-TRANSPORT">CR-TRANSPORT</a><h3>Real user-selected file transport on each target</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-AUTHORITY">C-AUTHORITY</a></li><li><a href="#C-LOCAL">C-LOCAL</a></li><li><a href="#C-BOUNDS">C-BOUNDS</a></li><li><a href="#C-QUALIFICATION">C-QUALIFICATION</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>WebGL, Windows and Android move the same bounded file format through explicit user-selected file operations without broad filesystem or network authority.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CONTINUITY">S-CONTINUITY</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-TRANSPORT -->
+<article class="record" id="SC-TRANSPORT" data-ca-symbol="SC-TRANSPORT" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-TRANSPORT">SC-TRANSPORT</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>One platform capability composed with the shared backup coordinator.</div><div class="field"><span class="label">Then</span>WebGL uses gesture-bound file input and Blob download, Windows system Open/Save dialogs, Android ACTION_CREATE_DOCUMENT/ACTION_OPEN_DOCUMENT with bounded ContentResolver streams. Results are correlated to the pending operation; cancellations, stale callbacks and background/relaunch do not replace or resume a run. Temporary buffers/listeners are released.</div><div class="field"><span class="label">When</span>Open export/import on each supported target and cancel, finish or interrupt the picker.</div></article>
+<!-- CA:END:SC-TRANSPORT -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PLATFORM">SRC-PLATFORM</a></li><li><a href="#SRC-ANDROID-SAF">SRC-ANDROID-SAF</a></li></ul></div><div class="field"><span class="label">Statement</span>WebGL, Windows and Android move the same bounded file format through explicit user-selected file operations without broad filesystem or network authority.</div><div class="field"><span class="label">Trigger</span>Open export/import on each supported target and cancel, finish or interrupt the picker.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-TRANSPORT -->
+<article class="record" id="V-TRANSPORT" data-ca-symbol="V-TRANSPORT" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-TRANSPORT">V-TRANSPORT</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Oversized sources are rejected before full reads; stale/duplicate callbacks cannot affect a later profile or operation. Unsupported capabilities are accurately disabled, never labelled successful.</div><div class="field"><span class="label">Oracle</span>WebGL uses gesture-bound file input and Blob download, Windows system Open/Save dialogs, Android ACTION_CREATE_DOCUMENT/ACTION_OPEN_DOCUMENT with bounded ContentResolver streams. Results are correlated to the pending operation; cancellations, stale callbacks and background/relaunch do not replace or resume a run. Temporary buffers/listeners are released.</div><div class="field"><span class="label">Planned target</span>Open export/import on each supported target and cancel, finish or interrupt the picker.</div></article>
+<!-- CA:END:V-TRANSPORT -->
+</div></article>
+<!-- CA:END:CR-TRANSPORT -->
+
+<!-- CA:BEGIN:CR-RESTORE -->
+<article class="record" id="CR-RESTORE" data-ca-symbol="CR-RESTORE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-RESTORE">CR-RESTORE</a><h3>Previewed transactional replacement with recovery</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-AUTHORITY">C-AUTHORITY</a></li><li><a href="#C-LOCAL">C-LOCAL</a></li><li><a href="#C-BOUNDS">C-BOUNDS</a></li><li><a href="#C-PRESERVE">C-PRESERVE</a></li><li><a href="#C-SHARED-UI">C-SHARED-UI</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Restoration is a whole-profile replacement only after explicit comparison and confirmation, fresh ownership/CAS admission and confirmed durable readback.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CONTINUITY">S-CONTINUITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-RESTORE -->
+<article class="record" id="SC-RESTORE" data-ca-symbol="SC-RESTORE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-RESTORE">SC-RESTORE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A garage with no live combat session with no unresolved gameplay/research/purchase write, and an unchanged captured destination.</div><div class="field"><span class="label">Then</span>The comparison identifies current and imported tier/checkpoint wave, Salvage, permanent investment and research state. Confirmation explains replacement and any partial-wave loss. The owner preserves a bounded pre-restore record, rechecks ownership and revision/raw bytes, commits once and confirms readback before installing the restored session. Conflict, cancellation or failed preparation preserves the destination. Ambiguous writes reconcile against actual durable bytes without blind rollback; neither imported nor predecessor data is silently discarded. Restored combat is paused.</div><div class="field"><span class="label">When</span>Select a valid backup, review current/imported progress, choose Replace save, then restart or retry an interrupted write.</div></article>
+<!-- CA:END:SC-RESTORE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SAVE">SRC-SAVE</a></li><li><a href="#SRC-PLATFORM">SRC-PLATFORM</a></li><li><a href="#SRC-RECOVERY">SRC-RECOVERY</a></li></ul></div><div class="field"><span class="label">Statement</span>Restoration is a whole-profile replacement only after explicit comparison and confirmation, fresh ownership/CAS admission and confirmed durable readback.</div><div class="field"><span class="label">Trigger</span>Select a valid backup, review current/imported progress, choose Replace save, then restart or retry an interrupted write.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-RESTORE -->
+<article class="record" id="V-RESTORE" data-ca-symbol="V-RESTORE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-RESTORE">V-RESTORE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Active combat, pending writes, changed revision/raw bytes, second writers, malformed/future files, repeated confirmation and interrupted/failed readback cannot silently overwrite a newer save or double-award progress.</div><div class="field"><span class="label">Oracle</span>The comparison identifies current and imported tier/checkpoint wave, Salvage, permanent investment and research state. Confirmation explains replacement and any partial-wave loss. The owner preserves a bounded pre-restore record, rechecks ownership and revision/raw bytes, commits once and confirms readback before installing the restored session. Conflict, cancellation or failed preparation preserves the destination. Ambiguous writes reconcile against actual durable bytes without blind rollback; neither imported nor predecessor data is silently discarded. Restored combat is paused.</div><div class="field"><span class="label">Planned target</span>Select a valid backup, review current/imported progress, choose Replace save, then restart or retry an interrupted write.</div></article>
+<!-- CA:END:V-RESTORE -->
+</div></article>
+<!-- CA:END:CR-RESTORE -->
+
+<!-- CA:BEGIN:CR-RECOVERY -->
+<article class="record" id="CR-RECOVERY" data-ca-symbol="CR-RECOVERY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-RECOVERY">CR-RECOVERY</a><h3>Action-first Data and save recovery</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-AUTHORITY">C-AUTHORITY</a></li><li><a href="#C-LOCAL">C-LOCAL</a></li><li><a href="#C-PRESERVE">C-PRESERVE</a></li><li><a href="#C-SHARED-UI">C-SHARED-UI</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>The existing Data surface explains save health and the latest confirmed checkpoint, exposes only applicable recovery actions and discloses a recovered predecessor.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CONTINUITY">S-CONTINUITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-RECOVERY -->
+<article class="record" id="SC-RECOVERY" data-ca-symbol="SC-RECOVERY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-RECOVERY">SC-RECOVERY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current progression/storage state and a user seeking to protect or continue their run.</div><div class="field"><span class="label">Then</span>A clear state heading, confirmed checkpoint summary and one relevant primary action precede optional detail. Retry, Export backup and Choose backup are available only when safe; blocked ownership tells the player how to resolve it. Unsupported/corrupt original bytes remain preserved and are never silently replaced. Essential warnings survive tip opt-outs. Build/status display stays local; no diagnostic-export surface is added.</div><div class="field"><span class="label">When</span>Open Settings Data with saved, retrying, conflicting, corrupt/unsupported or recovered-predecessor state.</div></article>
+<!-- CA:END:SC-RECOVERY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-UI">SRC-UI</a></li><li><a href="#SRC-PLATFORM">SRC-PLATFORM</a></li><li><a href="#SRC-RECOVERY">SRC-RECOVERY</a></li></ul></div><div class="field"><span class="label">Statement</span>The existing Data surface explains save health and the latest confirmed checkpoint, exposes only applicable recovery actions and discloses a recovered predecessor.</div><div class="field"><span class="label">Trigger</span>Open Settings Data with saved, retrying, conflicting, corrupt/unsupported or recovered-predecessor state.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-RECOVERY -->
+<article class="record" id="V-RECOVERY" data-ca-symbol="V-RECOVERY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-RECOVERY">V-RECOVERY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Failed saves cannot look like success; unavailable actions state a reason. Portrait, short landscape, keyboard and touch retain visible focus, reachable actions and 44-pixel targets.</div><div class="field"><span class="label">Oracle</span>A clear state heading, confirmed checkpoint summary and one relevant primary action precede optional detail. Retry, Export backup and Choose backup are available only when safe; blocked ownership tells the player how to resolve it. Unsupported/corrupt original bytes remain preserved and are never silently replaced. Essential warnings survive tip opt-outs. Build/status display stays local; no diagnostic-export surface is added.</div><div class="field"><span class="label">Planned target</span>Open Settings Data with saved, retrying, conflicting, corrupt/unsupported or recovered-predecessor state.</div></article>
+<!-- CA:END:V-RECOVERY -->
+</div></article>
+<!-- CA:END:CR-RECOVERY -->
+
+<!-- CA:BEGIN:CR-GUIDANCE -->
+<article class="record" id="CR-GUIDANCE" data-ca-symbol="CR-GUIDANCE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-GUIDANCE">CR-GUIDANCE</a><h3>Optional context-sensitive next steps</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-AUTHORITY">C-AUTHORITY</a></li><li><a href="#C-PRESERVE">C-PRESERVE</a></li><li><a href="#C-SHARED-UI">C-SHARED-UI</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Concise guidance derives from existing confirmed progression and opens the relevant existing action owner without performing gameplay actions.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CONTINUITY">S-CONTINUITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-GUIDANCE -->
+<article class="record" id="SC-GUIDANCE" data-ca-symbol="SC-GUIDANCE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-GUIDANCE">SC-GUIDANCE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Tutorial and purchase-suggestion switches with existing independent meanings and an established or new profile.</div><div class="field"><span class="label">Then</span>Show only relevant next-step text for deployment, checkpoint return, permanent investment and Research access/start. Acknowledge/dismiss without forced sequencing; experienced profiles are not reset to a new tutorial. Existing switches independently suppress their category immediately and after reload. Navigation never spends, changes tier, selects speed or resumes combat.</div><div class="field"><span class="label">When</span>Enter a fresh run, return to a checkpoint, become eligible for permanent investment or unlock Research.</div></article>
+<!-- CA:END:SC-GUIDANCE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-UI">SRC-UI</a></li><li><a href="#SRC-SAVE">SRC-SAVE</a></li></ul></div><div class="field"><span class="label">Statement</span>Concise guidance derives from existing confirmed progression and opens the relevant existing action owner without performing gameplay actions.</div><div class="field"><span class="label">Trigger</span>Enter a fresh run, return to a checkpoint, become eligible for permanent investment or unlock Research.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-GUIDANCE -->
+<article class="record" id="V-GUIDANCE" data-ca-symbol="V-GUIDANCE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-GUIDANCE">V-GUIDANCE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Disable both categories, reload, trigger milestones and open Help: no optional prompt appears, but explicit Help and essential save/confirmation information remain usable.</div><div class="field"><span class="label">Oracle</span>Show only relevant next-step text for deployment, checkpoint return, permanent investment and Research access/start. Acknowledge/dismiss without forced sequencing; experienced profiles are not reset to a new tutorial. Existing switches independently suppress their category immediately and after reload. Navigation never spends, changes tier, selects speed or resumes combat.</div><div class="field"><span class="label">Planned target</span>Enter a fresh run, return to a checkpoint, become eligible for permanent investment or unlock Research.</div></article>
+<!-- CA:END:V-GUIDANCE -->
+</div></article>
+<!-- CA:END:CR-GUIDANCE -->
+
+<!-- CA:BEGIN:CR-HELP -->
+<article class="record" id="CR-HELP" data-ca-symbol="CR-HELP" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-HELP">CR-HELP</a><h3>Navigable Help through shared controls</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-PRESERVE">C-PRESERVE</a></li><li><a href="#C-SHARED-UI">C-SHARED-UI</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Help presents concise topics for controls, waves/rewards, upgrades/research and local saves, with clear links to existing feature pages.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CONTINUITY">S-CONTINUITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-HELP -->
+<article class="record" id="SC-HELP" data-ca-symbol="SC-HELP" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-HELP">SC-HELP</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Existing shared modal routing, focus and scroll ownership.</div><div class="field"><span class="label">Then</span>Topic selection and Back preserve a clear navigation path; only the selected topic is expanded. Relevant links open existing owners and return sensibly. Text accurately distinguishes Scrap/Salvage, combat/research clocks, checkpoint/partial-wave loss and backup/local-only behavior.</div><div class="field"><span class="label">When</span>Open Help on desktop, portrait and short landscape using keyboard or touch.</div></article>
+<!-- CA:END:SC-HELP -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-UI">SRC-UI</a></li><li><a href="#SRC-CONTEXT">SRC-CONTEXT</a></li></ul></div><div class="field"><span class="label">Statement</span>Help presents concise topics for controls, waves/rewards, upgrades/research and local saves, with clear links to existing feature pages.</div><div class="field"><span class="label">Trigger</span>Open Help on desktop, portrait and short landscape using keyboard or touch.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-HELP -->
+<article class="record" id="V-HELP" data-ca-symbol="V-HELP" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-HELP">V-HELP</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Tips disabled, a locked Lab, a failed save and a small viewport do not create inaccessible topics or links that mutate gameplay.</div><div class="field"><span class="label">Oracle</span>Topic selection and Back preserve a clear navigation path; only the selected topic is expanded. Relevant links open existing owners and return sensibly. Text accurately distinguishes Scrap/Salvage, combat/research clocks, checkpoint/partial-wave loss and backup/local-only behavior.</div><div class="field"><span class="label">Planned target</span>Open Help on desktop, portrait and short landscape using keyboard or touch.</div></article>
+<!-- CA:END:V-HELP -->
+</div></article>
+<!-- CA:END:CR-HELP -->
+
+<!-- CA:BEGIN:CR-PARITY -->
+<article class="record" id="CR-PARITY" data-ca-symbol="CR-PARITY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-PARITY">CR-PARITY</a><h3>Retained progression and clock semantics</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>invariant</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-AUTHORITY">C-AUTHORITY</a></li><li><a href="#C-LOCAL">C-LOCAL</a></li><li><a href="#C-PRESERVE">C-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Current and retained-edition profiles preserve their economy, reward, checkpoint and real-time research semantics across upgrade, backup and restore.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CONTINUITY">S-CONTINUITY</a></li></ul></div><div class="field"><span class="label">Kind</span>compatibility</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-PARITY -->
+<article class="record" id="SC-PARITY" data-ca-symbol="SC-PARITY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-PARITY">SC-PARITY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A profile with paid run upgrades, first-clear rewards, queued/partial research, history and a confirmed checkpoint.</div><div class="field"><span class="label">Then</span>Unchanged retained fixtures continue to pass. Restoring repeats no milestone payment, merges no balances, simulates no closed combat and does not alter settings or selected combat speed. Research progression is reconciled exactly once by its existing clock owner.</div><div class="field"><span class="label">When</span>Run existing retained fixtures plus current backup/restore and restart cases.</div></article>
+<!-- CA:END:SC-PARITY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-SAVE">SRC-SAVE</a></li><li><a href="#SRC-CONTEXT">SRC-CONTEXT</a></li></ul></div><div class="field"><span class="label">Statement</span>Current and retained-edition profiles preserve their economy, reward, checkpoint and real-time research semantics across upgrade, backup and restore.</div><div class="field"><span class="label">Trigger</span>Run existing retained fixtures plus current backup/restore and restart cases.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-PARITY -->
+<article class="record" id="V-PARITY" data-ca-symbol="V-PARITY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-PARITY">V-PARITY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Clock rollback/forward, repeated restore confirmation, uncertain write retry and partial-wave spending cannot produce duplicate awards or mismatched resource/upgrades.</div><div class="field"><span class="label">Oracle</span>Unchanged retained fixtures continue to pass. Restoring repeats no milestone payment, merges no balances, simulates no closed combat and does not alter settings or selected combat speed. Research progression is reconciled exactly once by its existing clock owner.</div><div class="field"><span class="label">Planned target</span>Run existing retained fixtures plus current backup/restore and restart cases.</div></article>
+<!-- CA:END:V-PARITY -->
+</div></article>
+<!-- CA:END:CR-PARITY -->
+
+<!-- CA:BEGIN:CR-QUALIFY -->
+<article class="record" id="CR-QUALIFY" data-ca-symbol="CR-QUALIFY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-QUALIFY">CR-QUALIFY</a><h3>Matching candidate checks and honest remaining obligations</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for this sprint and all supported candidate targets within the recorded verification scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#C-QUALIFICATION">C-QUALIFICATION</a></li><li><a href="#C-PRESERVE">C-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Bind focused checks and player journeys to the patched current candidate and update readiness without erasing pending qualification.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-VERIFY">S-VERIFY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The authorized sprint is implemented against the recorded current source and supported profile formats.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-QUALIFY -->
+<article class="record" id="SC-QUALIFY" data-ca-symbol="SC-QUALIFY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-QUALIFY">SC-QUALIFY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Completed sprint implementation and recorded tool/source/package identities.</div><div class="field"><span class="label">Then</span>Record WebGL and Windows export/import/preview/cancel/replace/reload plus failed-save/conflict journeys, responsive Help/Data checks and Android build evidence. Actual Android device, audio and endurance outcomes remain separate unless observed. Preserve historical failures and immutable evidence; exact-head hosted CI is reported independently.</div><div class="field"><span class="label">When</span>Run focused domain/transport/UI tests, the portable inventory, actual export/build and isolated-profile packaged recovery journeys.</div></article>
+<!-- CA:END:SC-QUALIFY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-RECOVERY">SRC-RECOVERY</a></li><li><a href="#SRC-ARCH">SRC-ARCH</a></li></ul></div><div class="field"><span class="label">Statement</span>Bind focused checks and player journeys to the patched current candidate and update readiness without erasing pending qualification.</div><div class="field"><span class="label">Trigger</span>Run focused domain/transport/UI tests, the portable inventory, actual export/build and isolated-profile packaged recovery journeys.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-QUALIFY -->
+<article class="record" id="V-QUALIFY" data-ca-symbol="V-QUALIFY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-QUALIFY">V-QUALIFY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Tests using only seeded profiles, mocks, headless rendering or compiler stubs are labelled with their limits; they cannot close native-device, listening, endurance or owner acceptance rows.</div><div class="field"><span class="label">Oracle</span>Record WebGL and Windows export/import/preview/cancel/replace/reload plus failed-save/conflict journeys, responsive Help/Data checks and Android build evidence. Actual Android device, audio and endurance outcomes remain separate unless observed. Preserve historical failures and immutable evidence; exact-head hosted CI is reported independently.</div><div class="field"><span class="label">Planned target</span>Run focused domain/transport/UI tests, the portable inventory, actual export/build and isolated-profile packaged recovery journeys.</div></article>
+<!-- CA:END:V-QUALIFY -->
+</div></article>
+<!-- CA:END:CR-QUALIFY -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-AUTHORIZATION -->
+<article class="record" id="SEC-AUTHORIZATION" data-ca-symbol="SEC-AUTHORIZATION" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-AUTHORIZATION">SEC-AUTHORIZATION</a><h3>Authorization and current state</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The owner explicitly asked for a Unity CVE update and authorized planning and implementing the next sprint in the same PR. This specification records that working scope; it does not invent an approval receipt or mark any implementation/check complete. Source baseline f474b9c7 is PR 547 on codex/last-stand-combat-depth. Unity downloads/installation and current candidate rebuild remain work to observe.</p><div class="refs">References: <a href="#SRC-USER">SRC-USER</a> <a href="#SRC-UNITY-RELEASE">SRC-UNITY-RELEASE</a> </div></div></div></article>
+<!-- CA:END:SEC-AUTHORIZATION -->
+
+<!-- CA:BEGIN:SEC-EXISTING -->
+<article class="record" id="SEC-EXISTING" data-ca-symbol="SEC-EXISTING" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-EXISTING">SEC-EXISTING</a><h3>Already implemented</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Wave checkpoint/resume, optional tips, shared wallet/research transactions, Lab/Planner quotes, modal routing, four tiers/five fittings and native dual-slot storage already exist. Extend those owners. Current gaps are player file backup/restore, readable recovery states and structured/contextual help.</p><div class="refs">References: <a href="#SRC-SAVE">SRC-SAVE</a> <a href="#SRC-PLATFORM">SRC-PLATFORM</a> <a href="#SRC-UI">SRC-UI</a> </div></div></div></article>
+<!-- CA:END:SEC-EXISTING -->
+
+<!-- CA:BEGIN:SEC-TRANSACTION -->
+<article class="record" id="SEC-TRANSACTION" data-ca-symbol="SEC-TRANSACTION" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-TRANSACTION">SEC-TRANSACTION</a><h3>Restore sequence and data boundary</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Read at most 128 KiB; validate a fixed ASCII version header and strictly decode the remaining confirmed-profile JSON bytes through the existing parser. This avoids a second JSON string envelope and retains existing JSON structure/string limits. Preview against an immutable capture of destination bytes/revision without reconciling research or mutating storage. Replacement is allowed only in the garage with no live Session.Model and no pending transaction. A safe Return to Garage action preserves the last confirmed checkpoint and explains rollback of partial-wave progress; it does not abandon the saved run. After Replace save confirmation, recheck the captured destination and exclusive ownership, preserve predecessor bytes through a separate allowlisted recovery-storage capability and confirm its readback, commit through the progression owner and confirm primary readback. If preparation fails, leave the original untouched. If the commit result is uncertain, retain recovery state and reconcile actual bytes before further action. Never automatically restore a backup over current or future-version data. Device preferences and arbitrary storage are excluded.</p><div class="refs">References: <a href="#SRC-SAVE">SRC-SAVE</a> <a href="#SRC-PLATFORM">SRC-PLATFORM</a> </div></div></div></article>
+<!-- CA:END:SEC-TRANSACTION -->
+
+<!-- CA:BEGIN:SEC-TRANSPORT -->
+<article class="record" id="SEC-TRANSPORT" data-ca-symbol="SEC-TRANSPORT" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-TRANSPORT">SEC-TRANSPORT</a><h3>Platform transport and lifecycle</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>One domain codec and one restore coordinator feed capability-specific file adapters. WebGL uses a temporary gesture-bound file input and Blob download; Windows uses OS Open/Save dialogs; Android uses user-selected document URIs through a first-party Java bridge with bounded ContentResolver streams. No third-party file-picker dependency or broad storage permission. Correlate callbacks, reject late results, release resources, keep manual pause, and preserve all progress on cancellation or unavailable capabilities.</p><div class="refs">References: <a href="#SRC-ANDROID-SAF">SRC-ANDROID-SAF</a> <a href="#SRC-PLATFORM">SRC-PLATFORM</a> </div></div></div></article>
+<!-- CA:END:SEC-TRANSPORT -->
+
+<!-- CA:BEGIN:SEC-RELEASE -->
+<article class="record" id="SEC-RELEASE" data-ca-symbol="SEC-RELEASE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-RELEASE">SEC-RELEASE</a><h3>Qualification boundary</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>This sprint owns continuity implementation and bounded patched-candidate verification. The existing Q-RECOVERY matrix remains the current external-acceptance owner. Physical Android lifecycle, hardware audio, real-duration farming/thermal evidence, owner comprehension/art acceptance, hosted checks, merge and deployment each retain their own actual status. No diagnostic export, final art choice or release/store submission is added.</p><div class="refs">References: <a href="#SRC-RECOVERY">SRC-RECOVERY</a> <a href="#SRC-ARCH">SRC-ARCH</a> </div></div></div></article>
+<!-- CA:END:SEC-RELEASE -->
+
+<!-- CA:BEGIN:SEC-SMARTS -->
+<article class="record" id="SEC-SMARTS" data-ca-symbol="SEC-SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SMARTS">SEC-SMARTS</a><h3>SMARTS design rationale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Recorded intent constrains this choice: local-only progression, shared authority and a releasable game. Real file transport is selected within the authorized sprint. Compare file transport with a clipboard-only alternative; no cloud/account alternative is in scope.</p><div class="refs">References: <a href="#SRC-USER">SRC-USER</a> <a href="#SRC-CONTEXT">SRC-CONTEXT</a> </div></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Option</th><th scope="col">Scalable</th><th scope="col">Maintainable</th><th scope="col">Available</th><th scope="col">Reliable</th><th scope="col">Testable</th><th scope="col">Securable</th></tr></thead><tbody><tr><td>User-selected files</td><td>Indifferent: one bounded local profile on either path.</td><td>Adequate: three small adapters share one codec and coordinator.</td><td>Strong: files survive clipboard changes and Android uninstall.</td><td>Strong: explicit durable document and transactional restore preserve a predecessor.</td><td>Adequate: deterministic codec plus OS-dialog and lifecycle checks.</td><td>Strong: selected-document access excludes arbitrary storage and network transfer.</td></tr><tr><td>Clipboard only</td><td>Indifferent: one bounded local profile on either path.</td><td>Strong: fewer platform file-dialog adapters.</td><td>Weak: later copying replaces the only exported copy.</td><td>Weak: text truncation and clipboard replacement undermine durable player backup.</td><td>Adequate: codec checks still need platform permission and input journeys.</td><td>Adequate: system clipboard exposes copied progress to other applications.</td></tr></tbody></table></div><div class="refs">References: <a href="#SRC-ANDROID-SAF">SRC-ANDROID-SAF</a> <a href="#SRC-SAVE">SRC-SAVE</a> </div></div><div class="block"><p>Recommendation strength: strong. The owner prioritizes a releasable game; durability and understandable player-controlled recovery outweigh fewer adapters. Non-SMARTS constraints: no paid package or service, one local profile, existing shared UI, bounded sprint. Physical Android picker/lifecycle behavior is a non-decision-critical Unknown until observed; document qualification separately rather than claiming it passed. The existing native/local platform contract supports the method and no accepted ADR is superseded.</p><div class="refs">References: <a href="#SRC-USER">SRC-USER</a> <a href="#SRC-ARCH">SRC-ARCH</a> <a href="#SRC-RECOVERY">SRC-RECOVERY</a> </div></div></div></article>
+<!-- CA:END:SEC-SMARTS -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-USER -->
+<article class="record" id="SRC-USER" data-ca-symbol="SRC-USER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-USER">SRC-USER</a><h3>Current owner sprint authorization</h3></div><div class="field"><span class="label">Locator</span>Current conversation, 2026-10-30</div><div class="field"><span class="label">Note</span>Owner asks this PR to update Unity for the CVE and authorizes planning and implementing the next sprint. Existing authorization does not imply merge, publication, owner visual acceptance or passed verification.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-USER -->
+
+<!-- CA:BEGIN:SRC-SAVE -->
+<article class="record" id="SRC-SAVE" data-ca-symbol="SRC-SAVE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-SAVE">SRC-SAVE</a><h3>Existing gameplay save authority</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs; LastStandProgressionSave.cs; LastStandSaveJson.cs</div><div class="field"><span class="label">Note</span>One durable profile transaction already owns wallet, unlocks, research, history and the confirmed wave checkpoint; the strict save parser and retained editions remain authoritative.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-SAVE -->
+
+<!-- CA:BEGIN:SRC-PLATFORM -->
+<article class="record" id="SRC-PLATFORM" data-ca-symbol="SRC-PLATFORM" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-PLATFORM">SRC-PLATFORM</a><h3>Existing platform and storage adapters</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/Platform/LastStandFileStorage.cs; LastStandStore.cs; Assets/Plugins/WebGL/LastStandStorage.jslib</div><div class="field"><span class="label">Note</span>Native storage already has two checksummed slots and exclusive ownership; WebGL uses the owned local profile key. Player-controlled file backup/restore is absent.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-PLATFORM -->
+
+<!-- CA:BEGIN:SRC-UI -->
+<article class="record" id="SRC-UI" data-ca-symbol="SRC-UI" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UI">SRC-UI</a><h3>Existing shared modal, settings and guidance owners</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs; LastStandModalHost.cs; LastStandModal.cs; LastStandGuidance.cs; LastStandPreferences.cs</div><div class="field"><span class="label">Note</span>Data currently offers retry and local-save text. Help is one long body. Optional tutorial and purchase suggestions already have independent switches.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-UI -->
+
+<!-- CA:BEGIN:SRC-CONTEXT -->
+<article class="record" id="SRC-CONTEXT" data-ca-symbol="SRC-CONTEXT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CONTEXT">SRC-CONTEXT</a><h3>Recorded local-only campaign boundary</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/context/project.html#LOCAL-CAMPAIGN; .codearbiter/context/code-map.html#LS-TRANSACTIONS</div><div class="field"><span class="label">Note</span>Last Stand local progression does not synchronize accounts or grant verified rewards; adapters and views must not create another wallet or save authority.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CONTEXT -->
+
+<!-- CA:BEGIN:SRC-RECOVERY -->
+<article class="record" id="SRC-RECOVERY" data-ca-symbol="SRC-RECOVERY" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-RECOVERY">SRC-RECOVERY</a><h3>Current recovery qualification obligation</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md#q-recovery</div><div class="field"><span class="label">Note</span>Q-RECOVERY still needs complete packaged failure/retry/conflict/restart journeys. Existing native/device/audio/endurance/owner acceptance remains independently open.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-RECOVERY -->
+
+<!-- CA:BEGIN:SRC-ARCH -->
+<article class="record" id="SRC-ARCH" data-ca-symbol="SRC-ARCH" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ARCH">SRC-ARCH</a><h3>Existing platform contract and art decision</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/specs/last-stand-architecture-foundations.html#CR-PLATFORM; .codearbiter/specs/last-stand-first-session-polish.html#DEC-VISUAL</div><div class="field"><span class="label">Note</span>Real platform capabilities and truthful qualification apply. The earlier unresolved global visual treatment decision is not settled by this sprint.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ARCH -->
+
+<!-- CA:BEGIN:SRC-UNITY-BROTLI -->
+<article class="record" id="SRC-UNITY-BROTLI" data-ca-symbol="SRC-UNITY-BROTLI" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UNITY-BROTLI">SRC-UNITY-BROTLI</a><h3>Unity Brotli security advisory</h3></div><div class="field"><span class="label">Locator</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Note</span>CVE-2026-111497 is part of the owner-requested patched Unity update. Record exact affected/fixed scope in the dependency review rather than inferring it from a version string.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://unity.com/security/unity-brotli-decoder-vulnerability</div></article>
+<!-- CA:END:SRC-UNITY-BROTLI -->
+
+<!-- CA:BEGIN:SRC-UNITY-CERT -->
+<article class="record" id="SRC-UNITY-CERT" data-ca-symbol="SRC-UNITY-CERT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UNITY-CERT">SRC-UNITY-CERT</a><h3>Unity eMudhra security advisory</h3></div><div class="field"><span class="label">Locator</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Note</span>CVE-2026-114406 is part of the owner-requested patched Unity update. Rebuilt players and tool identity must be distinguished from prior installed/build evidence.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://unity.com/security/unity-emudhra-compromise</div></article>
+<!-- CA:END:SRC-UNITY-CERT -->
+
+<!-- CA:BEGIN:SRC-UNITY-RELEASE -->
+<article class="record" id="SRC-UNITY-RELEASE" data-ca-symbol="SRC-UNITY-RELEASE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UNITY-RELEASE">SRC-UNITY-RELEASE</a><h3>Official selected Unity release</h3></div><div class="field"><span class="label">Locator</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Note</span>Selected Unity 6000.3.27f2 revision 22188f149405, with matching Editor/WebGL/Android support. Installation and actual builds remain to be observed.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://services.api.unity.com/unity/editor/release/v1/releases?version=6000.3.27f2&amp;limit=1</div></article>
+<!-- CA:END:SRC-UNITY-RELEASE -->
+
+<!-- CA:BEGIN:SRC-ANDROID-SAF -->
+<article class="record" id="SRC-ANDROID-SAF" data-ca-symbol="SRC-ANDROID-SAF" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ANDROID-SAF">SRC-ANDROID-SAF</a><h3>Android user-selected document transport</h3></div><div class="field"><span class="label">Locator</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Note</span>Use ACTION_CREATE_DOCUMENT and ACTION_OPEN_DOCUMENT for bounded chosen-document access without broad filesystem permission. Physical-device qualification remains required.</div><div class="field"><span class="label">Type</span>primary_documentation</div><div class="field"><span class="label">Url</span>https://developer.android.com/training/data-storage/shared/documents-files</div></article>
+<!-- CA:END:SRC-ANDROID-SAF -->
+
+<!-- CA:BEGIN:SRC-DEPS -->
+<article class="record" id="SRC-DEPS" data-ca-symbol="SRC-DEPS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-DEPS">SRC-DEPS</a><h3>Continuity Unity dependency review record</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/last-stand-continuity/unity-dependency-review.md</div><div class="field"><span class="label">Note</span>Parent reports reviewed dependency selection PASS; this planned report will preserve evidence separately from installer readbacks. Use explicit Corretto 17.0.21.0.11 and existing reviewed SDK/NDK, not the older bundled JDK.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-DEPS -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>f474b9c7cc65436e1292d640c42337bbb87287a5</div><div class="field"><span class="label">Observed date</span>2026-10-30</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts</li><li>campaign-unity/Unity/Assets/Plugins</li><li>campaign-unity/Unity/Assets/Editor</li><li>campaign-unity/Unity/ProjectSettings</li><li>campaign-unity/Tools</li><li>campaign-unity/docs</li><li>e2e/helpers</li><li>scripts/ci</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 2aae71061296a846742078e3dcfa344af359898846bacb4fa7e420b4a66f86d7<br>Model SHA-256: 41081a286d65a578e7a3a4c04541dc7228f82aaa0a905c61196787302ce5b8c5</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-CONTINUITY-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "41081a286d65a578e7a3a4c04541dc7228f82aaa0a905c61196787302ce5b8c5",
+    "normative_sha256": "2aae71061296a846742078e3dcfa344af359898846bacb4fa7e420b4a66f86d7",
+    "symbol_count": 60
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "D-LOCAL"
+      ],
+      "choice": "Extend one save authority with a strict portable gameplay document and explicit transactional restoration; use real platform file adapters and shared Settings/Help surfaces.",
+      "id": "APP-CONTINUITY",
+      "tradeoff": "Small target-specific picker adapters require native/device checks, while sharing domain and UI ownership keeps save rules consistent."
+    },
+    "baseline": {
+      "commit": "f474b9c7cc65436e1292d640c42337bbb87287a5",
+      "observed_date": "2026-10-30",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "S-CONTINUITY"
+        ],
+        "id": "C-AUTHORITY",
+        "source_refs": [
+          "SRC-SAVE",
+          "SRC-CONTEXT"
+        ],
+        "statement": "LastStandProgression remains the only profile transaction authority. File adapters move bounded bytes; UI submits intents. Existing storage ownership, revision/raw comparison and confirmed-readback semantics apply. No direct transport write to gameplay storage."
+      },
+      {
+        "applies_to": [
+          "S-CONTINUITY"
+        ],
+        "id": "C-LOCAL",
+        "source_refs": [
+          "SRC-CONTEXT",
+          "SRC-USER"
+        ],
+        "statement": "Backup only the confirmed Last Stand gameplay profile; exclude preferences, arbitrary browser/native storage, accounts, passwords, tokens, credentials and verified progression. No network transfer, account integration, cloud synchronization, monetization or new currency."
+      },
+      {
+        "applies_to": [
+          "S-CONTINUITY"
+        ],
+        "id": "C-BOUNDS",
+        "source_refs": [
+          "SRC-SAVE",
+          "SRC-PLATFORM"
+        ],
+        "statement": "Maximum portable file size is 131072 bytes (128 KiB), enforced before complete allocation/read and again after transport; decode strict UTF-8 without BOM ambiguity. Keep existing 65536-character profile, structure, number, schema and retained-edition bounds. Unknown header/profile versions, duplicate or unknown fields, malformed/trailing bytes and schema-invalid payloads are refused without mutation."
+      },
+      {
+        "applies_to": [
+          "S-UNITY",
+          "S-CONTINUITY",
+          "S-VERIFY"
+        ],
+        "id": "C-PRESERVE",
+        "source_refs": [
+          "SRC-SAVE",
+          "SRC-ARCH"
+        ],
+        "statement": "No economy, combat, content edition, reward or research-time rule change. Restore one whole validated snapshot, never merge or add balances. Retain paid run editions, completed reward ledgers and pending research. Restored combat starts paused; closed time advances research only under its existing owner. Preserve frozen reports, original fixtures, unsupported saved bytes and unrelated checkout state."
+      },
+      {
+        "applies_to": [
+          "S-UNITY",
+          "S-CONTINUITY",
+          "S-VERIFY"
+        ],
+        "id": "C-QUALIFICATION",
+        "source_refs": [
+          "SRC-USER",
+          "SRC-RECOVERY"
+        ],
+        "statement": "Never infer physical-device behavior, hardware audio, endurance, hosted CI, merge or publication from local tests, a successful build or a DONE task. Record exact source/package/tool identity and actual failed/unrun branches. Current user authorization covers work, not fabricated approval receipts."
+      },
+      {
+        "applies_to": [
+          "S-CONTINUITY"
+        ],
+        "id": "C-SHARED-UI",
+        "source_refs": [
+          "SRC-UI",
+          "SRC-ARCH"
+        ],
+        "statement": "Use current brass/graphite chrome, registered modal pages, shared scrolling/focus/confirmation and 44-pixel minimum targets. Preserve tutorial/purchase opt-outs and independent manual pause. This work does not settle DEC-VISUAL or create another dashboard/support export surface."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-PRESERVE",
+          "C-QUALIFICATION"
+        ],
+        "guarantees": [
+          "Current project/build owners pin Unity 6000.3.27f2 revision 22188f149405 and produce a source-bound release WebGL candidate plus Windows and Android development candidates using reviewed tools. Release configuration describes player flags, not publication approval."
+        ],
+        "id": "CR-UNITY",
+        "intent_refs": [
+          "S-UNITY"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "The former 6000.3.24f1 project, matching reviewed new modules and explicit patched Java selection.",
+            "id": "SC-UNITY",
+            "then": "Project version, active build pins and receipts agree with observed editor bytes/version; Android uses explicit Corretto 17.0.21.0.11 and reviewed SDK/NDK. Old evidence retains original versions. Build success does not claim native/device acceptance.",
+            "when": "Inspect installed tools, run current build preflights and actual player builds."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-UNITY-BROTLI",
+          "SRC-UNITY-CERT",
+          "SRC-UNITY-RELEASE",
+          "SRC-DEPS"
+        ],
+        "statement": "Current project/build owners pin Unity 6000.3.27f2 revision 22188f149405 and produce a source-bound release WebGL candidate plus Windows and Android development candidates using reviewed tools. Release configuration describes player flags, not publication approval.",
+        "title": "Patched source-bound Unity players",
+        "trigger": "Inspect installed tools, run current build preflights and actual player builds.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-UNITY",
+          "method": "automated_and_review",
+          "negative_control": "A stale editor, wrong revision/module, incompatible JDK or mismatched source/package is refused rather than relabelled.",
+          "oracle": "Project version, active build pins and receipts agree with observed editor bytes/version; Android uses explicit Corretto 17.0.21.0.11 and reviewed SDK/NDK. Old evidence retains original versions. Build success does not claim native/device acceptance.",
+          "planned_target": "Inspect installed tools, run current build preflights and actual player builds."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-AUTHORITY",
+          "C-LOCAL",
+          "C-BOUNDS",
+          "C-PRESERVE"
+        ],
+        "guarantees": [
+          "Export a .laststand file with a fixed ASCII version header followed by the strictly validated UTF-8 JSON bytes of one confirmed gameplay profile; unconfirmed candidates and device/account data are excluded."
+        ],
+        "id": "CR-BACKUP",
+        "intent_refs": [
+          "S-CONTINUITY"
+        ],
+        "kind": "security",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "A valid confirmed current or retained-edition profile, optionally with a partially played wave.",
+            "id": "SC-BACKUP",
+            "then": "Export round-trips through the strict existing profile parser and preserves confirmed wallet, permanent upgrades, research, unlocks, history and checkpoint. Export never saves partial-wave state or advances research merely to produce a file; oversized/invalid data yields a useful refusal.",
+            "when": "Choose Export backup from the existing Data surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-SAVE",
+          "SRC-CONTEXT"
+        ],
+        "statement": "Export a .laststand file with a fixed ASCII version header followed by the strictly validated UTF-8 JSON bytes of one confirmed gameplay profile; unconfirmed candidates and device/account data are excluded.",
+        "title": "Bounded confirmed gameplay backup",
+        "trigger": "Choose Export backup from the existing Data surface.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-BACKUP",
+          "method": "automated_and_review",
+          "negative_control": "Malformed, future, duplicate-field, corrupt, oversized and trailing-byte documents are rejected; no storage enumeration or credential-containing payload is possible.",
+          "oracle": "Export round-trips through the strict existing profile parser and preserves confirmed wallet, permanent upgrades, research, unlocks, history and checkpoint. Export never saves partial-wave state or advances research merely to produce a file; oversized/invalid data yields a useful refusal.",
+          "planned_target": "Choose Export backup from the existing Data surface."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-AUTHORITY",
+          "C-LOCAL",
+          "C-BOUNDS",
+          "C-QUALIFICATION"
+        ],
+        "guarantees": [
+          "WebGL, Windows and Android move the same bounded file format through explicit user-selected file operations without broad filesystem or network authority."
+        ],
+        "id": "CR-TRANSPORT",
+        "intent_refs": [
+          "S-CONTINUITY"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "One platform capability composed with the shared backup coordinator.",
+            "id": "SC-TRANSPORT",
+            "then": "WebGL uses gesture-bound file input and Blob download, Windows system Open/Save dialogs, Android ACTION_CREATE_DOCUMENT/ACTION_OPEN_DOCUMENT with bounded ContentResolver streams. Results are correlated to the pending operation; cancellations, stale callbacks and background/relaunch do not replace or resume a run. Temporary buffers/listeners are released.",
+            "when": "Open export/import on each supported target and cancel, finish or interrupt the picker."
+          }
+        ],
+        "source_refs": [
+          "SRC-PLATFORM",
+          "SRC-ANDROID-SAF"
+        ],
+        "statement": "WebGL, Windows and Android move the same bounded file format through explicit user-selected file operations without broad filesystem or network authority.",
+        "title": "Real user-selected file transport on each target",
+        "trigger": "Open export/import on each supported target and cancel, finish or interrupt the picker.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-TRANSPORT",
+          "method": "automated_and_review",
+          "negative_control": "Oversized sources are rejected before full reads; stale/duplicate callbacks cannot affect a later profile or operation. Unsupported capabilities are accurately disabled, never labelled successful.",
+          "oracle": "WebGL uses gesture-bound file input and Blob download, Windows system Open/Save dialogs, Android ACTION_CREATE_DOCUMENT/ACTION_OPEN_DOCUMENT with bounded ContentResolver streams. Results are correlated to the pending operation; cancellations, stale callbacks and background/relaunch do not replace or resume a run. Temporary buffers/listeners are released.",
+          "planned_target": "Open export/import on each supported target and cancel, finish or interrupt the picker."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-AUTHORITY",
+          "C-LOCAL",
+          "C-BOUNDS",
+          "C-PRESERVE",
+          "C-SHARED-UI"
+        ],
+        "guarantees": [
+          "Restoration is a whole-profile replacement only after explicit comparison and confirmation, fresh ownership/CAS admission and confirmed durable readback."
+        ],
+        "id": "CR-RESTORE",
+        "intent_refs": [
+          "S-CONTINUITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "A garage with no live combat session with no unresolved gameplay/research/purchase write, and an unchanged captured destination.",
+            "id": "SC-RESTORE",
+            "then": "The comparison identifies current and imported tier/checkpoint wave, Salvage, permanent investment and research state. Confirmation explains replacement and any partial-wave loss. The owner preserves a bounded pre-restore record, rechecks ownership and revision/raw bytes, commits once and confirms readback before installing the restored session. Conflict, cancellation or failed preparation preserves the destination. Ambiguous writes reconcile against actual durable bytes without blind rollback; neither imported nor predecessor data is silently discarded. Restored combat is paused.",
+            "when": "Select a valid backup, review current/imported progress, choose Replace save, then restart or retry an interrupted write."
+          }
+        ],
+        "source_refs": [
+          "SRC-SAVE",
+          "SRC-PLATFORM",
+          "SRC-RECOVERY"
+        ],
+        "statement": "Restoration is a whole-profile replacement only after explicit comparison and confirmation, fresh ownership/CAS admission and confirmed durable readback.",
+        "title": "Previewed transactional replacement with recovery",
+        "trigger": "Select a valid backup, review current/imported progress, choose Replace save, then restart or retry an interrupted write.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-RESTORE",
+          "method": "automated_and_review",
+          "negative_control": "Active combat, pending writes, changed revision/raw bytes, second writers, malformed/future files, repeated confirmation and interrupted/failed readback cannot silently overwrite a newer save or double-award progress.",
+          "oracle": "The comparison identifies current and imported tier/checkpoint wave, Salvage, permanent investment and research state. Confirmation explains replacement and any partial-wave loss. The owner preserves a bounded pre-restore record, rechecks ownership and revision/raw bytes, commits once and confirms readback before installing the restored session. Conflict, cancellation or failed preparation preserves the destination. Ambiguous writes reconcile against actual durable bytes without blind rollback; neither imported nor predecessor data is silently discarded. Restored combat is paused.",
+          "planned_target": "Select a valid backup, review current/imported progress, choose Replace save, then restart or retry an interrupted write."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-AUTHORITY",
+          "C-LOCAL",
+          "C-PRESERVE",
+          "C-SHARED-UI"
+        ],
+        "guarantees": [
+          "The existing Data surface explains save health and the latest confirmed checkpoint, exposes only applicable recovery actions and discloses a recovered predecessor."
+        ],
+        "id": "CR-RECOVERY",
+        "intent_refs": [
+          "S-CONTINUITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "Current progression/storage state and a user seeking to protect or continue their run.",
+            "id": "SC-RECOVERY",
+            "then": "A clear state heading, confirmed checkpoint summary and one relevant primary action precede optional detail. Retry, Export backup and Choose backup are available only when safe; blocked ownership tells the player how to resolve it. Unsupported/corrupt original bytes remain preserved and are never silently replaced. Essential warnings survive tip opt-outs. Build/status display stays local; no diagnostic-export surface is added.",
+            "when": "Open Settings Data with saved, retrying, conflicting, corrupt/unsupported or recovered-predecessor state."
+          }
+        ],
+        "source_refs": [
+          "SRC-UI",
+          "SRC-PLATFORM",
+          "SRC-RECOVERY"
+        ],
+        "statement": "The existing Data surface explains save health and the latest confirmed checkpoint, exposes only applicable recovery actions and discloses a recovered predecessor.",
+        "title": "Action-first Data and save recovery",
+        "trigger": "Open Settings Data with saved, retrying, conflicting, corrupt/unsupported or recovered-predecessor state.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-RECOVERY",
+          "method": "automated_and_review",
+          "negative_control": "Failed saves cannot look like success; unavailable actions state a reason. Portrait, short landscape, keyboard and touch retain visible focus, reachable actions and 44-pixel targets.",
+          "oracle": "A clear state heading, confirmed checkpoint summary and one relevant primary action precede optional detail. Retry, Export backup and Choose backup are available only when safe; blocked ownership tells the player how to resolve it. Unsupported/corrupt original bytes remain preserved and are never silently replaced. Essential warnings survive tip opt-outs. Build/status display stays local; no diagnostic-export surface is added.",
+          "planned_target": "Open Settings Data with saved, retrying, conflicting, corrupt/unsupported or recovered-predecessor state."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-AUTHORITY",
+          "C-PRESERVE",
+          "C-SHARED-UI"
+        ],
+        "guarantees": [
+          "Concise guidance derives from existing confirmed progression and opens the relevant existing action owner without performing gameplay actions."
+        ],
+        "id": "CR-GUIDANCE",
+        "intent_refs": [
+          "S-CONTINUITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "Tutorial and purchase-suggestion switches with existing independent meanings and an established or new profile.",
+            "id": "SC-GUIDANCE",
+            "then": "Show only relevant next-step text for deployment, checkpoint return, permanent investment and Research access/start. Acknowledge/dismiss without forced sequencing; experienced profiles are not reset to a new tutorial. Existing switches independently suppress their category immediately and after reload. Navigation never spends, changes tier, selects speed or resumes combat.",
+            "when": "Enter a fresh run, return to a checkpoint, become eligible for permanent investment or unlock Research."
+          }
+        ],
+        "source_refs": [
+          "SRC-UI",
+          "SRC-SAVE"
+        ],
+        "statement": "Concise guidance derives from existing confirmed progression and opens the relevant existing action owner without performing gameplay actions.",
+        "title": "Optional context-sensitive next steps",
+        "trigger": "Enter a fresh run, return to a checkpoint, become eligible for permanent investment or unlock Research.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-GUIDANCE",
+          "method": "automated_and_review",
+          "negative_control": "Disable both categories, reload, trigger milestones and open Help: no optional prompt appears, but explicit Help and essential save/confirmation information remain usable.",
+          "oracle": "Show only relevant next-step text for deployment, checkpoint return, permanent investment and Research access/start. Acknowledge/dismiss without forced sequencing; experienced profiles are not reset to a new tutorial. Existing switches independently suppress their category immediately and after reload. Navigation never spends, changes tier, selects speed or resumes combat.",
+          "planned_target": "Enter a fresh run, return to a checkpoint, become eligible for permanent investment or unlock Research."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-PRESERVE",
+          "C-SHARED-UI"
+        ],
+        "guarantees": [
+          "Help presents concise topics for controls, waves/rewards, upgrades/research and local saves, with clear links to existing feature pages."
+        ],
+        "id": "CR-HELP",
+        "intent_refs": [
+          "S-CONTINUITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "Existing shared modal routing, focus and scroll ownership.",
+            "id": "SC-HELP",
+            "then": "Topic selection and Back preserve a clear navigation path; only the selected topic is expanded. Relevant links open existing owners and return sensibly. Text accurately distinguishes Scrap/Salvage, combat/research clocks, checkpoint/partial-wave loss and backup/local-only behavior.",
+            "when": "Open Help on desktop, portrait and short landscape using keyboard or touch."
+          }
+        ],
+        "source_refs": [
+          "SRC-UI",
+          "SRC-CONTEXT"
+        ],
+        "statement": "Help presents concise topics for controls, waves/rewards, upgrades/research and local saves, with clear links to existing feature pages.",
+        "title": "Navigable Help through shared controls",
+        "trigger": "Open Help on desktop, portrait and short landscape using keyboard or touch.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-HELP",
+          "method": "automated_and_review",
+          "negative_control": "Tips disabled, a locked Lab, a failed save and a small viewport do not create inaccessible topics or links that mutate gameplay.",
+          "oracle": "Topic selection and Back preserve a clear navigation path; only the selected topic is expanded. Relevant links open existing owners and return sensibly. Text accurately distinguishes Scrap/Salvage, combat/research clocks, checkpoint/partial-wave loss and backup/local-only behavior.",
+          "planned_target": "Open Help on desktop, portrait and short landscape using keyboard or touch."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "invariant",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-AUTHORITY",
+          "C-LOCAL",
+          "C-PRESERVE"
+        ],
+        "guarantees": [
+          "Current and retained-edition profiles preserve their economy, reward, checkpoint and real-time research semantics across upgrade, backup and restore."
+        ],
+        "id": "CR-PARITY",
+        "intent_refs": [
+          "S-CONTINUITY"
+        ],
+        "kind": "compatibility",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "A profile with paid run upgrades, first-clear rewards, queued/partial research, history and a confirmed checkpoint.",
+            "id": "SC-PARITY",
+            "then": "Unchanged retained fixtures continue to pass. Restoring repeats no milestone payment, merges no balances, simulates no closed combat and does not alter settings or selected combat speed. Research progression is reconciled exactly once by its existing clock owner.",
+            "when": "Run existing retained fixtures plus current backup/restore and restart cases."
+          }
+        ],
+        "source_refs": [
+          "SRC-SAVE",
+          "SRC-CONTEXT"
+        ],
+        "statement": "Current and retained-edition profiles preserve their economy, reward, checkpoint and real-time research semantics across upgrade, backup and restore.",
+        "title": "Retained progression and clock semantics",
+        "trigger": "Run existing retained fixtures plus current backup/restore and restart cases.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-PARITY",
+          "method": "automated_and_review",
+          "negative_control": "Clock rollback/forward, repeated restore confirmation, uncertain write retry and partial-wave spending cannot produce duplicate awards or mismatched resource/upgrades.",
+          "oracle": "Unchanged retained fixtures continue to pass. Restoring repeats no milestone payment, merges no balances, simulates no closed combat and does not alter settings or selected combat speed. Research progression is reconciled exactly once by its existing clock owner.",
+          "planned_target": "Run existing retained fixtures plus current backup/restore and restart cases."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for this sprint and all supported candidate targets within the recorded verification scope."
+        },
+        "constraint_refs": [
+          "C-QUALIFICATION",
+          "C-PRESERVE"
+        ],
+        "guarantees": [
+          "Bind focused checks and player journeys to the patched current candidate and update readiness without erasing pending qualification."
+        ],
+        "id": "CR-QUALIFY",
+        "intent_refs": [
+          "S-VERIFY"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "The authorized sprint is implemented against the recorded current source and supported profile formats."
+        ],
+        "scenarios": [
+          {
+            "given": "Completed sprint implementation and recorded tool/source/package identities.",
+            "id": "SC-QUALIFY",
+            "then": "Record WebGL and Windows export/import/preview/cancel/replace/reload plus failed-save/conflict journeys, responsive Help/Data checks and Android build evidence. Actual Android device, audio and endurance outcomes remain separate unless observed. Preserve historical failures and immutable evidence; exact-head hosted CI is reported independently.",
+            "when": "Run focused domain/transport/UI tests, the portable inventory, actual export/build and isolated-profile packaged recovery journeys."
+          }
+        ],
+        "source_refs": [
+          "SRC-RECOVERY",
+          "SRC-ARCH"
+        ],
+        "statement": "Bind focused checks and player journeys to the patched current candidate and update readiness without erasing pending qualification.",
+        "title": "Matching candidate checks and honest remaining obligations",
+        "trigger": "Run focused domain/transport/UI tests, the portable inventory, actual export/build and isolated-profile packaged recovery journeys.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-QUALIFY",
+          "method": "automated_and_review",
+          "negative_control": "Tests using only seeded profiles, mocks, headless rendering or compiler stubs are labelled with their limits; they cannot close native-device, listening, endurance or owner acceptance rows.",
+          "oracle": "Record WebGL and Windows export/import/preview/cancel/replace/reload plus failed-save/conflict journeys, responsive Help/Data checks and Android build evidence. Actual Android device, audio and endurance outcomes remain separate unless observed. Preserve historical failures and immutable evidence; exact-head hosted CI is reported independently.",
+          "planned_target": "Run focused domain/transport/UI tests, the portable inventory, actual export/build and isolated-profile packaged recovery journeys."
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "inherited",
+        "choice": "Keep Last Stand local-only and move one validated gameplay profile through existing authority. Exclude preferences and account state.",
+        "id": "D-LOCAL",
+        "rationale": "Preserves the recorded local campaign boundary and avoids a cross-store atomicity or authentication expansion.",
+        "source_ref": "SRC-CONTEXT",
+        "topic": "Progression authority and portability"
+      }
+    ],
+    "governs": [
+      "campaign-unity/Unity/Assets/Scripts",
+      "campaign-unity/Unity/Assets/Plugins",
+      "campaign-unity/Unity/Assets/Editor",
+      "campaign-unity/Unity/ProjectSettings",
+      "campaign-unity/Tools",
+      "campaign-unity/docs",
+      "e2e/helpers",
+      "scripts/ci"
+    ],
+    "intent": {
+      "caller": "Current owner-authorized ca-sprint",
+      "id": "INT-CONTINUITY",
+      "outcome": "Players can protect, understand and explicitly restore confirmed local progress, find relevant help, and use a source-bound patched player without changing campaign rules.",
+      "problem": "The game can resume ordinary runs but gives players no independent file backup/restore and limited guidance when local saving fails. Its pinned Unity needs the current reviewed security update.",
+      "source_refs": [
+        "SRC-USER",
+        "SRC-SAVE",
+        "SRC-RECOVERY"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "N-CLOUD",
+        "statement": "Accounts, cloud synchronization, verified rewards, telemetry, diagnostic export, monetization, new currencies, economy rebalance or new combat/content editions."
+      },
+      {
+        "id": "N-DEVICE-PREFS",
+        "statement": "Portable preferences, arbitrary storage dumps, automatic save replacement or recovery, silently accepting future data, or resetting current player progress for testing."
+      },
+      {
+        "id": "N-RELEASE",
+        "statement": "Inferring device/audio/endurance/owner acceptance, resolving the open art choice, automatic merge/deployment or public/store publication."
+      }
+    ],
+    "open_decisions": [],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "S-UNITY",
+        "statement": "Upgrade the active Unity project and current build/verification owners to reviewed Unity 6000.3.27f2 (22188f149405), rebuild matching players and preserve old receipt/toolchain history."
+      },
+      {
+        "id": "S-CONTINUITY",
+        "statement": "Add user-controlled gameplay-profile backup and explicit restoration, understandable save/recovery states, organized Help and contextual optional guidance through current shared owners."
+      },
+      {
+        "id": "S-VERIFY",
+        "statement": "Verify focused domain, transport and UI behavior plus the matching packaged candidate; keep physical-device, hardware-audio, endurance, owner acceptance and distribution outcomes separate."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-USER",
+              "SRC-UNITY-RELEASE"
+            ],
+            "text": "The owner explicitly asked for a Unity CVE update and authorized planning and implementing the next sprint in the same PR. This specification records that working scope; it does not invent an approval receipt or mark any implementation/check complete. Source baseline f474b9c7 is PR 547 on codex/last-stand-combat-depth. Unity downloads/installation and current candidate rebuild remain work to observe.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-AUTHORIZATION",
+        "title": "Authorization and current state"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-SAVE",
+              "SRC-PLATFORM",
+              "SRC-UI"
+            ],
+            "text": "Wave checkpoint/resume, optional tips, shared wallet/research transactions, Lab/Planner quotes, modal routing, four tiers/five fittings and native dual-slot storage already exist. Extend those owners. Current gaps are player file backup/restore, readable recovery states and structured/contextual help.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-EXISTING",
+        "title": "Already implemented"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-SAVE",
+              "SRC-PLATFORM"
+            ],
+            "text": "Read at most 128 KiB; validate a fixed ASCII version header and strictly decode the remaining confirmed-profile JSON bytes through the existing parser. This avoids a second JSON string envelope and retains existing JSON structure/string limits. Preview against an immutable capture of destination bytes/revision without reconciling research or mutating storage. Replacement is allowed only in the garage with no live Session.Model and no pending transaction. A safe Return to Garage action preserves the last confirmed checkpoint and explains rollback of partial-wave progress; it does not abandon the saved run. After Replace save confirmation, recheck the captured destination and exclusive ownership, preserve predecessor bytes through a separate allowlisted recovery-storage capability and confirm its readback, commit through the progression owner and confirm primary readback. If preparation fails, leave the original untouched. If the commit result is uncertain, retain recovery state and reconcile actual bytes before further action. Never automatically restore a backup over current or future-version data. Device preferences and arbitrary storage are excluded.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-TRANSACTION",
+        "title": "Restore sequence and data boundary"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-ANDROID-SAF",
+              "SRC-PLATFORM"
+            ],
+            "text": "One domain codec and one restore coordinator feed capability-specific file adapters. WebGL uses a temporary gesture-bound file input and Blob download; Windows uses OS Open/Save dialogs; Android uses user-selected document URIs through a first-party Java bridge with bounded ContentResolver streams. No third-party file-picker dependency or broad storage permission. Correlate callbacks, reject late results, release resources, keep manual pause, and preserve all progress on cancellation or unavailable capabilities.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-TRANSPORT",
+        "title": "Platform transport and lifecycle"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-RECOVERY",
+              "SRC-ARCH"
+            ],
+            "text": "This sprint owns continuity implementation and bounded patched-candidate verification. The existing Q-RECOVERY matrix remains the current external-acceptance owner. Physical Android lifecycle, hardware audio, real-duration farming/thermal evidence, owner comprehension/art acceptance, hosted checks, merge and deployment each retain their own actual status. No diagnostic export, final art choice or release/store submission is added.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-RELEASE",
+        "title": "Qualification boundary"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-USER",
+              "SRC-CONTEXT"
+            ],
+            "text": "Recorded intent constrains this choice: local-only progression, shared authority and a releasable game. Real file transport is selected within the authorized sprint. Compare file transport with a clipboard-only alternative; no cloud/account alternative is in scope.",
+            "type": "paragraph"
+          },
+          {
+            "columns": [
+              "Option",
+              "Scalable",
+              "Maintainable",
+              "Available",
+              "Reliable",
+              "Testable",
+              "Securable"
+            ],
+            "refs": [
+              "SRC-ANDROID-SAF",
+              "SRC-SAVE"
+            ],
+            "rows": [
+              [
+                "User-selected files",
+                "Indifferent: one bounded local profile on either path.",
+                "Adequate: three small adapters share one codec and coordinator.",
+                "Strong: files survive clipboard changes and Android uninstall.",
+                "Strong: explicit durable document and transactional restore preserve a predecessor.",
+                "Adequate: deterministic codec plus OS-dialog and lifecycle checks.",
+                "Strong: selected-document access excludes arbitrary storage and network transfer."
+              ],
+              [
+                "Clipboard only",
+                "Indifferent: one bounded local profile on either path.",
+                "Strong: fewer platform file-dialog adapters.",
+                "Weak: later copying replaces the only exported copy.",
+                "Weak: text truncation and clipboard replacement undermine durable player backup.",
+                "Adequate: codec checks still need platform permission and input journeys.",
+                "Adequate: system clipboard exposes copied progress to other applications."
+              ]
+            ],
+            "type": "table"
+          },
+          {
+            "refs": [
+              "SRC-USER",
+              "SRC-ARCH",
+              "SRC-RECOVERY"
+            ],
+            "text": "Recommendation strength: strong. The owner prioritizes a releasable game; durability and understandable player-controlled recovery outweigh fewer adapters. Non-SMARTS constraints: no paid package or service, one local profile, existing shared UI, bounded sprint. Physical Android picker/lifecycle behavior is a non-decision-critical Unknown until observed; document qualification separately rather than claiming it passed. The existing native/local platform contract supports the method and no accepted ADR is superseded.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-SMARTS",
+        "title": "SMARTS design rationale"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-USER",
+        "locator": "Current conversation, 2026-10-30",
+        "note": "Owner asks this PR to update Unity for the CVE and authorizes planning and implementing the next sprint. Existing authorization does not imply merge, publication, owner visual acceptance or passed verification.",
+        "title": "Current owner sprint authorization",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-SAVE",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs; LastStandProgressionSave.cs; LastStandSaveJson.cs",
+        "note": "One durable profile transaction already owns wallet, unlocks, research, history and the confirmed wave checkpoint; the strict save parser and retained editions remain authoritative.",
+        "title": "Existing gameplay save authority",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-PLATFORM",
+        "locator": "campaign-unity/Unity/Assets/Scripts/Platform/LastStandFileStorage.cs; LastStandStore.cs; Assets/Plugins/WebGL/LastStandStorage.jslib",
+        "note": "Native storage already has two checksummed slots and exclusive ownership; WebGL uses the owned local profile key. Player-controlled file backup/restore is absent.",
+        "title": "Existing platform and storage adapters",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-UI",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs; LastStandModalHost.cs; LastStandModal.cs; LastStandGuidance.cs; LastStandPreferences.cs",
+        "note": "Data currently offers retry and local-save text. Help is one long body. Optional tutorial and purchase suggestions already have independent switches.",
+        "title": "Existing shared modal, settings and guidance owners",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CONTEXT",
+        "locator": ".codearbiter/context/project.html#LOCAL-CAMPAIGN; .codearbiter/context/code-map.html#LS-TRANSACTIONS",
+        "note": "Last Stand local progression does not synchronize accounts or grant verified rewards; adapters and views must not create another wallet or save authority.",
+        "title": "Recorded local-only campaign boundary",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-RECOVERY",
+        "locator": "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md#q-recovery",
+        "note": "Q-RECOVERY still needs complete packaged failure/retry/conflict/restart journeys. Existing native/device/audio/endurance/owner acceptance remains independently open.",
+        "title": "Current recovery qualification obligation",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-ARCH",
+        "locator": ".codearbiter/specs/last-stand-architecture-foundations.html#CR-PLATFORM; .codearbiter/specs/last-stand-first-session-polish.html#DEC-VISUAL",
+        "note": "Real platform capabilities and truthful qualification apply. The earlier unresolved global visual treatment decision is not settled by this sprint.",
+        "title": "Existing platform contract and art decision",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-UNITY-BROTLI",
+        "locator": "",
+        "note": "CVE-2026-111497 is part of the owner-requested patched Unity update. Record exact affected/fixed scope in the dependency review rather than inferring it from a version string.",
+        "title": "Unity Brotli security advisory",
+        "type": "primary_documentation",
+        "url": "https://unity.com/security/unity-brotli-decoder-vulnerability"
+      },
+      {
+        "id": "SRC-UNITY-CERT",
+        "locator": "",
+        "note": "CVE-2026-114406 is part of the owner-requested patched Unity update. Rebuilt players and tool identity must be distinguished from prior installed/build evidence.",
+        "title": "Unity eMudhra security advisory",
+        "type": "primary_documentation",
+        "url": "https://unity.com/security/unity-emudhra-compromise"
+      },
+      {
+        "id": "SRC-UNITY-RELEASE",
+        "locator": "",
+        "note": "Selected Unity 6000.3.27f2 revision 22188f149405, with matching Editor/WebGL/Android support. Installation and actual builds remain to be observed.",
+        "title": "Official selected Unity release",
+        "type": "primary_documentation",
+        "url": "https://services.api.unity.com/unity/editor/release/v1/releases?version=6000.3.27f2\u0026limit=1"
+      },
+      {
+        "id": "SRC-ANDROID-SAF",
+        "locator": "",
+        "note": "Use ACTION_CREATE_DOCUMENT and ACTION_OPEN_DOCUMENT for bounded chosen-document access without broad filesystem permission. Physical-device qualification remains required.",
+        "title": "Android user-selected document transport",
+        "type": "primary_documentation",
+        "url": "https://developer.android.com/training/data-storage/shared/documents-files"
+      },
+      {
+        "id": "SRC-DEPS",
+        "locator": "campaign-unity/docs/last-stand-continuity/unity-dependency-review.md",
+        "note": "Parent reports reviewed dependency selection PASS; this planned report will preserve evidence separately from installer readbacks. Use explicit Corretto 17.0.21.0.11 and existing reviewed SDK/NDK, not the older bundled JDK.",
+        "title": "Continuity Unity dependency review record",
+        "type": "local_document",
+        "url": null
+      }
+    ],
+    "summary": "Protect and restore local campaign progress, make recovery and Help understandable, and qualify a matching Unity 6000.3.27f2 candidate.",
+    "title": "Last Stand: player continuity and patched Unity"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-player-continuity.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 5,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-player-continuity"
+}
+</script>
+</body></html>

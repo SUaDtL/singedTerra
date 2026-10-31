@@ -15,10 +15,11 @@ const clone=value=>structuredClone(value);
 const observationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v1.json',import.meta.url),'utf8'));
 const previousObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v2.json',import.meta.url),'utf8'));
 const currentObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v3.json',import.meta.url),'utf8'));
+const continuityObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v4.json',import.meta.url),'utf8'));
 // Invented telemetry tests only the admission reader; it cannot qualify a UI.
 function observation(contract=observationContract){
   const groups=Object.fromEntries(contract.inventories.map(({field,names})=>[field,names]));
-  return {...(contract.header.includes('schema')?{schema:'singedterra-last-stand-observation/v3'}:{}),phase:'garage',coordinates:'top-left',selection:'',width:1366,height:664,pixelRatio:1,scrollOffset:0,maximumScrollOffset:0,
+  return {...(contract.header.includes('schema')?{schema:contract.schema}:{}),phase:'garage',coordinates:'top-left',selection:'',width:1366,height:664,pixelRatio:1,scrollOffset:0,maximumScrollOffset:0,
     settingsScrollOffset:0,settingsMaximumScrollOffset:0,
     ...Object.fromEntries(Object.entries(groups).map(([key,names])=>[key,names.map(name=>({name,label:name,accessibleLabel:name,mode:key,trackKey:'',x:0,y:0,width:44,height:44,active:false,interactable:false}))])),
     graphics:[],...Object.fromEntries(contract.tail.map(key=>[key,0]))};
@@ -29,7 +30,7 @@ test('tier journey binds its executable helper and observation closure and detec
   assert.equal(typeof tierJourney.tierJourneyInputHashes,'function');
   const current=await tierJourney.tierJourneyInputHashes();
   for(const path of ['e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
-    ...[1,2,3].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json')]){
+    ...[1,2,3,4].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json')]){
     assert.ok(Object.hasOwn(current,path),'Bound current execution source: '+path);
     assert.equal(current[path],sha(readFileSync(path)));
   }
@@ -48,7 +49,7 @@ test('tier journey binds its executable helper and observation closure and detec
   }
 });
 
-for(const version of [1,2,3])test('research journey binds observation v'+version+' and detects changed bytes',t=>{
+for(const version of [1,2,3,4])test('research journey binds observation v'+version+' and detects changed bytes',t=>{
   const contract='campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json';
   const current=researchJourneyInputHashes();assert.ok(Object.hasOwn(current,contract));
   assert.equal(current[contract],sha(readFileSync(contract)));
@@ -76,11 +77,11 @@ test('retained v1 telemetry refuses missing, duplicate, unknown, invalid and tru
   const text=raw(observation());assert.throws(()=>readShopControlObservation(text.slice(0,-20)));
   assert.throws(()=>readShopControlObservation(text.slice(0,8190)));
 });
-for(const [version,contract] of [[2,previousObservationContract],[3,currentObservationContract]])test('retained v1 and exact v'+version+' observations remain distinct complete contracts',()=>{
+for(const [version,contract] of [[2,previousObservationContract],[3,currentObservationContract],[4,continuityObservationContract]])test('retained v1 and exact v'+version+' observations remain distinct complete contracts',()=>{
   const retained=readShopControlObservation(raw(observation()));
   assert.equal(retained.historyControls.length,2);assert.equal(Object.hasOwn(retained,'plannerControls'),false);
   const value=observation(contract),result=readShopControlObservation(raw(value));
-  assert.equal(result.historyControls.length,version===3?10:9);assert.equal(result.plannerControls.length,16);
+  assert.equal(result.historyControls.length,version>=3?10:9);assert.equal(result.plannerControls.length,16);
   assert.ok(result.settingsControls.some(item=>item.name==='MenuPlanner'));
   assert.equal(lastStandObservedControls(result).filter(item=>item.name==='PlannerPin').length,1);
   for(const mutate of [v=>delete v.plannerControls,v=>delete v.plannerMaximumScrollOffset,
@@ -92,7 +93,7 @@ for(const [version,contract] of [[2,previousObservationContract],[3,currentObser
     v=>v.unknown='extra',v=>v.plannerScrollOffset=-1,v=>v.plannerControls[0].unexpected=true]){
     const bad=clone(value);mutate(bad);assert.throws(()=>readShopControlObservation(raw(bad)));
   }
-  if(version===3)for(const mutate of [v=>delete v.schema,v=>v.schema='singedterra-last-stand-observation/v2',v=>v.schema='unknown',
+  if(version>=3)for(const mutate of [v=>delete v.schema,v=>v.schema='singedterra-last-stand-observation/v2',v=>v.schema='unknown',
     v=>v.researchControls=v.researchControls.filter(item=>item.name!=='ResearchHelp'),
     v=>v.historyControls=v.historyControls.filter(item=>item.name!=='RunHistoryHelp'),
     v=>delete v.researchListScrollOffset,v=>v.researchDetailMaximumScrollOffset='200',v=>v.researchListMaximumScrollOffset=-1]){
@@ -103,6 +104,26 @@ for(const [version,contract] of [[2,previousObservationContract],[3,currentObser
     packet.replace('"width":44','"width":44,"width":44'),
     packet.replace('"phase":"garage"','"phase":"garage","ph\\u0061se":"garage"')])
     assert.throws(()=>readShopControlObservation(duplicate),/Duplicate/,'repeated JSON keys are not repaired by parsing');
+});
+
+test('v4 save and Help observation requires all eleven new controls and refuses a v3 downgrade',()=>{
+  const names=['DataExport','DataImport','DataPrevious','DataGarage','BackupCancel','BackupReplace',
+    'HelpPrevious','HelpNext','MenuGuidance','GuidanceDismiss','HelpAction'];
+  const current=observation(continuityObservationContract),result=readShopControlObservation(raw(current));
+  assert.equal(result.settingsControls.length,52);
+  assert.equal(lastStandObservedControls(result).length,132);
+  for(const name of names){
+    assert.equal(result.settingsControls.filter(item=>item.name===name).length,1,name+' belongs to exactly one owner');
+    const missing=clone(current);missing.settingsControls=missing.settingsControls.filter(item=>item.name!==name);
+    assert.throws(()=>readShopControlObservation(raw(missing)),/Complete settingsControls/,name+' cannot disappear');
+  }
+  for(const schema of ['singedterra-last-stand-observation/v3','singedterra-last-stand-observation/v5',null]){
+    const value=clone(current);value.schema=schema;assert.throws(()=>readShopControlObservation(raw(value)));
+  }
+  for(const mutate of [value=>value.settingsControls.at(-1).name='invented-backup-action',
+    value=>value.settingsControls.push(clone(value.settingsControls.at(-1)))]){
+    const value=clone(current);mutate(value);assert.throws(()=>readShopControlObservation(raw(value)));
+  }
 });
 
 function scrollingModalGeometry(owner){
@@ -171,13 +192,13 @@ for(const name of ['ResearchFilter','ResearchProject-gameSpeed','ResearchBack','
     assert.throws(()=>tierJourneyControlGeometry(bad.layout,bad.canvas));
   }
 });
-for(const name of ['SettingsTab0','ChoicePrevious','ChoiceNext'])test(name+' v3 admits fixed or genuine compact scroll ownership',()=>{
+for(const [version,names] of [[3,['SettingsTab0','ChoicePrevious','ChoiceNext']],[4,['HelpPrevious','HelpNext']]])for(const name of names)test(name+' v'+version+' admits fixed or genuine compact scroll ownership',()=>{
   function packet(clipped){
     const item={name,x:28,y:clipped?620:20,width:44,height:44,active:true,interactable:true},clip={x:20,y:100,width:400,height:400};
     const path='SettingsModal/SettingsPanel/SettingsViewport';
     const graphics=[{path,kind:'LastStandConsoleSurface',active:true,hasClip:true,clip},
       {...item,path:clipped?path+'/SettingsContent/'+name:'SettingsModal/SettingsPanel/'+name,kind:'LastStandConsoleSurface',hasClip:clipped,clip}];
-    return {layout:{schema:'singedterra-last-stand-observation/v3',width:800,height:600,controls:[],shopControls:[],settingsControls:[item],
+    return {layout:{schema:'singedterra-last-stand-observation/v'+version,width:800,height:600,controls:[],shopControls:[],settingsControls:[item],
       settingsScrollOffset:0,settingsMaximumScrollOffset:400,graphicsTruncated:false,raw:raw({graphics})},graphics};
   }
   for(const clipped of [false,true])assert.equal(tierJourneyControlGeometry(packet(clipped).layout,{width:800,height:600})[0].full,!clipped);

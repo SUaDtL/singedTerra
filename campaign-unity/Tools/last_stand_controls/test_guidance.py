@@ -15,7 +15,8 @@ from last_stand_source_closure import complete_sources
 PROJECT = Path(__file__).resolve().parents[2]
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 SOURCE_NAMES = ("LastStandGuidance.cs", "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs",
-                "LastStandRunClock.cs", "LastStandSpeedPolicy.cs", "LastStandEconomyCatalog.cs")
+                "LastStandRunClock.cs", "LastStandSpeedPolicy.cs", "LastStandEconomyCatalog.cs",
+                "LastStandResearchCatalog.cs")
 
 
 def compile_checks(executable, overrides=None):
@@ -62,6 +63,18 @@ class GuidanceTests(unittest.TestCase):
 
     def test_navigation_confirmation_tracks_active_run(self):
         self.case("navigation_confirmation_tracks_active_run")
+
+    def test_context_guidance_follows_confirmed_progress(self):
+        self.case("context_guidance_follows_confirmed_progress")
+
+    def test_context_guidance_opt_outs_and_dismissal(self):
+        self.case("context_guidance_opt_outs_and_dismissal")
+
+    def test_context_guidance_is_read_only_and_fail_closed(self):
+        self.case("context_guidance_is_read_only_and_fail_closed")
+
+    def test_help_topics_are_ordered_and_available(self):
+        self.case("help_topics_are_ordered_and_available")
 
     def test_fault_navigation_without_confirmed_save_is_detected(self):
         source = SCRIPTS / "LastStandGuidance.cs"

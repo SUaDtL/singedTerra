@@ -141,6 +141,13 @@ namespace SingedTerra.Encounter
             if(runClock!=null && !runClock.GrantMaximum(maximum))return false;
             MaximumSpeed=maximum;return true;
         }
+        internal bool RestoreProfileSpeed(double maximum,double preferred)
+        {
+            // A confirmed whole-profile replacement can lower research ranks.
+            // Never lower a ceiling on an active run or alter its clock.
+            if(model!=null || runClock!=null || !LastStandSpeedPolicy.IsValidMaximum(maximum))return false;
+            MaximumSpeed=maximum;configuredSpeed=LastStandSpeedPolicy.RestorePositive(preferred,maximum);return true;
+        }
         public bool TrySetMenuPausedAt(double timestamp, bool paused)
         {
             if (!PrepareClockAction(timestamp)) return false;

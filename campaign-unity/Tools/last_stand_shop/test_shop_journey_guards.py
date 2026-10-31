@@ -46,6 +46,15 @@ def _current_control_fixture():
         ('Close', 'Goals', 'Budget', 'Category', 'Previous', 'Next', 'Pin', 'Clear', 'Open',
          'WorkshopPrevious', 'WorkshopNext', 'ResearchPrevious', 'ResearchNext', 'WorkshopOpen', 'ResearchOpen', 'Back')]
     fixture['plannerScrollOffset'] = fixture['plannerMaximumScrollOffset'] = 0
+    # Current v4 extends the invented parser input, never the retained file.
+    fixture['schema'] = 'singedterra-last-stand-observation/v4'
+    fixture['researchControls'].append(control('ResearchHelp', 'Research'))
+    fixture['historyControls'].append(control('RunHistoryHelp', 'History'))
+    fixture['settingsControls'] += [control(name, 'Settings') for name in
+        ('DataExport', 'DataImport', 'DataPrevious', 'DataGarage', 'BackupCancel', 'BackupReplace',
+         'HelpPrevious', 'HelpNext', 'MenuGuidance', 'GuidanceDismiss', 'HelpAction')]
+    for pane in ('List', 'Detail'):
+        fixture['research' + pane + 'ScrollOffset'] = fixture['research' + pane + 'MaximumScrollOffset'] = 0
     return fixture
 
 
@@ -1218,8 +1227,9 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,16);assert.equal(controls.settingsControls.length,41);assert.equal(controls.researchControls.length,17);assert.equal(controls.historyControls.length,9);assert.equal(controls.plannerControls.length,16);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls].map(c=>c.name)).size,119);
+assert.equal(controls.schema,'singedterra-last-stand-observation/v4');
+assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,16);assert.equal(controls.settingsControls.length,52);assert.equal(controls.researchControls.length,18);assert.equal(controls.historyControls.length,10);assert.equal(controls.plannerControls.length,16);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls].map(c=>c.name)).size,132);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
@@ -1251,6 +1261,12 @@ for(const [name,candidate]of Object.entries(cases)){
   assert.throws(()=>actual.readShopControlObservation(candidate),undefined,'Must reject '+name);
   console.log('PASS controls_only_rejects '+name);
 }
+for(const name of ['DataExport','DataImport','DataPrevious','DataGarage','BackupCancel','BackupReplace',
+  'HelpPrevious','HelpNext','MenuGuidance','GuidanceDismiss','HelpAction'])
+  assert.throws(()=>actual.readShopControlObservation(complete({...value,
+    settingsControls:value.settingsControls.filter(control=>control.name!==name)})),undefined,'Missing current control '+name);
+assert.throws(()=>actual.readShopControlObservation(complete({...value,schema:'singedterra-last-stand-observation/v3'})),
+  undefined,'Current inventory cannot claim retained v3');
 assert.throws(()=>actual.retainRuntimeObservation({text:truncated,t:1,timeOrigin:2},1,'inert',
   {states:[],encounters:[],hits:[],layouts:[],cues:[]}),SyntaxError,'Original full-layout parser stays strict');
 console.log('PASS controls_only_preserves_original_strict_parser');

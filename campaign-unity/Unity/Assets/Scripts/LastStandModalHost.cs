@@ -43,7 +43,7 @@ namespace SingedTerra.LastStand
             for(int i=0;i<3;i++)
             {var bar=LastStandUiPrimitives.Node("MenuBar"+i,Menu.transform);elements.Nodes.Add(bar.name,bar);
              var image=bar.gameObject.AddComponent<Image>();image.color=LastStandUiPrimitives.Paper;image.raycastTarget=false;}
-            Settings=new LastStandSettingsHud(loop,root,font,metal,surface);
+            Settings=new LastStandSettingsHud(loop,root,font,metal,surface,openWorkshop,canOpenWorkshop);
             Research=new LastStandResearchHud(root,font,loop.CloseMenu,loop.RefreshResearch,loop.SubmitResearch,metal,surface);
             History=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshControls,metal,surface);
             Planner=new LastStandPlannerHud(loop,root,font,openWorkshop,canOpenWorkshop,metal,surface);

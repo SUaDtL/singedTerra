@@ -12,6 +12,12 @@ from unittest.mock import patch
 import measure_crowded_waves as crowded_measurement
 from measure_crowded_waves import HERE, PROJECT, REPORT, BINDINGS, RESULT_FIELDS, admit_canonical, assert_crowded_parity, compile_observer, instrument, run_csharp, validate
 
+CONTINUITY_PATHS = (
+    "Unity/Assets/Scripts/LastStandProgression.cs",
+    "Unity/Assets/Scripts/LastStandStore.cs",
+    "Unity/Assets/Scripts/LastStandProgressionBackup.cs",
+)
+
 
 class CrowdedWaveTests(unittest.TestCase):
     def test_current_closure_cannot_add_omit_duplicate_or_redirect_measured_sources(self):
@@ -21,6 +27,7 @@ class CrowdedWaveTests(unittest.TestCase):
             outside = Path(temp) / "EncounterModel.cs"
             for name, altered in (("added", selected + [HERE / "CrowdedWaveMeasurements.cs"]),
                                   ("omitted", selected[:-1]),
+                                  ("backup-omitted", [p for p in selected if p.name != "LastStandProgressionBackup.cs"]),
                                   ("duplicate", selected + [selected[0]]),
                                   ("redirected", selected[:-1] + [outside])):
                 output = Path(temp) / (name + ".json")
@@ -35,7 +42,7 @@ class CrowdedWaveTests(unittest.TestCase):
         helper = "Tools/last_stand_test_runtime.py"
         with tempfile.TemporaryDirectory(prefix="st-crowded-execution-input-") as temp:
             project = Path(temp)
-            for rel in historical["sourceSha256"]:
+            for rel in set(historical["sourceSha256"]) | set(CONTINUITY_PATHS):
                 target = project / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((PROJECT / rel).read_bytes())
@@ -47,7 +54,7 @@ class CrowdedWaveTests(unittest.TestCase):
             for rel in ("Tools/last_stand_source_closure.py",
                         "Tools/last_stand_combat_depth/measure_combat_balance.py",
                         "Tools/last_stand_combat_depth/CombatBalanceMeasurements.cs",
-                        "Unity/Assets/Scripts/EncounterModel.cs"):
+                        "Unity/Assets/Scripts/EncounterModel.cs", *CONTINUITY_PATHS):
                 target = project / rel
                 original = target.read_bytes()
                 target.write_bytes(original + b"\n# changed policy or model\n")
@@ -91,7 +98,7 @@ class CrowdedWaveTests(unittest.TestCase):
         canonical = json.loads(REPORT.read_text())
         with tempfile.TemporaryDirectory(prefix="st-crowded-checkout-") as temp:
             project = Path(temp) / "campaign-unity"
-            paths = [PROJECT / rel for rel in canonical["sourceSha256"]] + [HERE / name for name in ("CrowdedWaveMeasurements.cs", "measure_crowded_waves.py", "test_crowded_waves.py")]
+            paths = [PROJECT / rel for rel in set(canonical["sourceSha256"]) | set(CONTINUITY_PATHS)] + [HERE / name for name in ("CrowdedWaveMeasurements.cs", "measure_crowded_waves.py", "test_crowded_waves.py")]
             for source in paths:
                 target = project / source.relative_to(PROJECT)
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -111,6 +118,17 @@ class CrowdedWaveTests(unittest.TestCase):
                     measured = json.loads(output.read_text())
                     self.assertEqual(measured["runs"], json.loads(crowded.read_text())["runs"])
                     self.assertEqual(measured["canonicalSourceHistoricalRawSha256"], canonical["sourceSha256"])
+                    self.assertEqual(measured["canonicalSourceLfSha256"], BINDINGS["calibrated"]["inputs"])
+                    self.assertNotIn(CONTINUITY_PATHS[-1], measured["canonicalSourceHistoricalRawSha256"])
+                    self.assertNotIn(CONTINUITY_PATHS[-1], measured["canonicalSourceLfSha256"])
+                    self.assertEqual(set(measured["executionContinuitySources"]), set(CONTINUITY_PATHS))
+                    for rel in CONTINUITY_PATHS:
+                        identity = measured["executionContinuitySources"][rel]
+                        source_bytes = (project / rel).read_bytes()
+                        self.assertEqual(identity["historicalLfSha256"], BINDINGS["calibrated"]["inputs"].get(rel))
+                        self.assertEqual(identity["observedRawSha256"], hashlib.sha256(source_bytes).hexdigest())
+                        self.assertEqual(identity["admittedCurrentLfSha256"], hashlib.sha256(source_bytes.replace(b"\r\n", b"\n")).hexdigest())
+                        self.assertEqual(measured["sourceSha256"][rel], identity["observedRawSha256"])
                     helper = "Tools/last_stand_test_runtime.py"
                     self.assertEqual(measured["executionHelperSource"]["historicalLfSha256"], BINDINGS["calibrated"]["inputs"][helper])
                     self.assertEqual(measured["executionHelperSource"]["observedRawSha256"], hashlib.sha256((project / helper).read_bytes()).hexdigest())
@@ -119,7 +137,7 @@ class CrowdedWaveTests(unittest.TestCase):
                     self.assertEqual(measured["executionSourceClosure"]["historicalLfSha256"], BINDINGS["calibrated"]["inputs"][closure])
                     self.assertEqual(measured["executionSourceClosure"]["observedRawSha256"], hashlib.sha256((project / closure).read_bytes()).hexdigest())
                     self.assertEqual(measured["executionSourceClosure"]["observedLfSha256"], crowded_measurement.CURRENT_SOURCE_CLOSURE_LF_SHA)
-                    self.assertEqual(measured["executionSourceClosure"]["measuredPaths"], sorted(rel for rel in canonical["sourceSha256"] if rel.endswith(".cs")))
+                    self.assertEqual(measured["executionSourceClosure"]["measuredPaths"], sorted({rel for rel in canonical["sourceSha256"] if rel.endswith(".cs")} | set(CONTINUITY_PATHS)))
                     self.assertNotEqual(measured["executionSourceClosure"]["observedLfSha256"], measured["executionSourceClosure"]["historicalLfSha256"])
             runner = str(project / "Tools/last_stand_combat_depth/measure_crowded_waves.py")
             reference_bytes = {p: p.read_bytes() for p in (copied_report, copied_crowded)}
@@ -138,8 +156,11 @@ class CrowdedWaveTests(unittest.TestCase):
             self.assertIn("--output", result.stderr)
             helper = project / "Tools/last_stand_test_runtime.py"
             helper_bytes = helper.read_bytes()
+            backup = project / CONTINUITY_PATHS[-1]
+            backup_bytes = backup.read_bytes()
             for fault, expected_error in (("helper-drift", "sources/toolchain/canonical report changed"),
                                           ("closure-drift", "sources/toolchain/canonical report changed"),
+                                          ("backup-drift", "sources/toolchain/canonical report changed"),
                                           ("role-metrics", "complete frozen crowded outcomes")):
                 output = Path(temp) / (fault + ".json")
                 injection = """
@@ -149,8 +170,9 @@ import measure_crowded_waves as m
 original = m.run_csharp
 def observed(*args, **kwargs):
     result = original(*args, **kwargs)
-    if sys.argv[3] in ('helper-drift', 'closure-drift'):
-        helper = m.PROJECT / (m.EXECUTION_HELPER if sys.argv[3] == 'helper-drift' else m.SOURCE_CLOSURE_HELPER)
+    if sys.argv[3] in ('helper-drift', 'closure-drift', 'backup-drift'):
+        helper = m.PROJECT / {'helper-drift': m.EXECUTION_HELPER, 'closure-drift': m.SOURCE_CLOSURE_HELPER,
+                              'backup-drift': 'Unity/Assets/Scripts/LastStandProgressionBackup.cs'}[sys.argv[3]]
         helper.write_bytes(helper.read_bytes() + b'\\n# owned drift discriminator\\n')
     else:
         data = json.loads(result.stdout)
@@ -166,6 +188,7 @@ m.measure(pathlib.Path(sys.argv[2]))
                 self.assertIn(expected_error, result.stderr)
                 self.assertFalse(output.exists(), "Rejected execution cannot publish a report")
                 helper.write_bytes(helper_bytes)
+                backup.write_bytes(backup_bytes)
                 (project / crowded_measurement.SOURCE_CLOSURE_HELPER).write_bytes((PROJECT / crowded_measurement.SOURCE_CLOSURE_HELPER).read_bytes().replace(b"\r\n", b"\n"))
             changed = project / "Unity/Assets/Scripts/EncounterModel.cs"
             changed.write_bytes(changed.read_bytes() + b"\n// different source\n")
