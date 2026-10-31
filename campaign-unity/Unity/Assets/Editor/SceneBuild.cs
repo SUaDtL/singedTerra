@@ -76,7 +76,7 @@ public static class SceneBuild
     public static void Prepare()
     {
         if(File.Exists(ScenePath))throw new Exception("Saved scene exists; edit it directly instead of regenerating it");
-        if(Application.unityVersion!="6000.3.24f1")throw new Exception("Unexpected editor version");
+        if(Application.unityVersion!="6000.3.27f2")throw new Exception("Unexpected editor version");
         foreach(var folder in new[]{"Assets/Materials","Assets/Prefabs","Assets/Scenes"})Directory.CreateDirectory(folder);
         AssetDatabase.Refresh();ConfigureImports();ConfigureMaterials();ConfigurePipeline();
         var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
@@ -150,7 +150,7 @@ public static class SceneBuild
     public static void BuildWeb()
     {
         if(!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.WebGL,BuildTarget.WebGL))throw new Exception("Pinned Web Build Support missing");
-        if(Application.unityVersion!="6000.3.24f1")throw new Exception("Unexpected editor version");
+        if(Application.unityVersion!="6000.3.27f2")throw new Exception("Unexpected editor version");
         EditorSceneManager.OpenScene(ScenePath,OpenSceneMode.Single);
         Validate();EncounterChecks.Run();
         string output=Environment.GetEnvironmentVariable("ST_ART_WEB_OUTPUT");

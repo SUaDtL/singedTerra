@@ -86,7 +86,7 @@ export function buildWaveOracle(output,{requireExport=true,maximumTicks=12000,ed
       manifestSha256:fileSha(join(ROOT,'client/public/last-stand/asset-manifest.json'))};
   }
   assert.ok(['win32','linux'].includes(process.platform),'Supported host compiler required');
-  const monoRoot='C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Data/MonoBleedingEdge';
+  const monoRoot='C:/Program Files/Unity 6000.3.27f2/Editor/Data/MonoBleedingEdge';
   const mono=process.platform==='linux'?'/usr/bin/mono':join(monoRoot,'bin/mono.exe');
   const compiler=process.platform==='linux'?'/usr/lib/mono/4.5/mcs.exe':join(monoRoot,'lib/mono/msbuild/Current/bin/Roslyn/csc.exe');
   const driver=join(directory,'Program.cs'),executable=join(directory,'WaveOracle.exe');

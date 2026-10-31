@@ -1,7 +1,8 @@
 """Build a saved art scene; no Android, scene regeneration or deployment."""
 from pathlib import Path
 import argparse,datetime,hashlib,json,os,re,shutil,subprocess,sys,uuid
-from unity_shader_log import accepts_log, shader_diagnostics
+from unity_shader_log import build_diagnostics
+from unity_build_resources import PerformanceResources
 ROOT=Path(__file__).resolve().parents[1];PROJECT=ROOT/'Unity'
 def require(ok,message):
     if not ok:raise RuntimeError(message)
@@ -43,9 +44,11 @@ def source_binding(root=None):
     # actual exporter and its non-stdlib helper affect export admission. Test and
     # browser drivers are evidence owners, not export inputs.
     roots = ['Unity/Assets', 'Unity/ProjectSettings', 'Unity/Packages']
-    explicit = ['Tools/build_web.py', 'Tools/unity_shader_log.py']
+    explicit = ['Tools/build_web.py', 'Tools/unity_shader_log.py', 'Tools/unity_build_resources.py']
     files = [path for folder in roots for path in regular_files(root / folder)]
-    files += [root / name for name in explicit if (root / name).is_file()]
+    for name in explicit:
+        require((root / name).is_file(), 'Missing export tool: ' + name)
+        files.append(root / name)
     files = sorted(set(files))
     raw_inventory = {path.relative_to(root).as_posix(): digest(path) for path in files}
     portable = {path.relative_to(root).as_posix(): portable_entry(path) for path in files}
@@ -70,7 +73,7 @@ def toolchain_binding(editor):
                  for path in sorted(set(files))}
     inventory['Python/' + Path(sys.executable).name] = {'mode': 'raw', 'sha256': digest(Path(sys.executable))}
     inventory = dict(sorted(inventory.items()))
-    return {'editorVersion': '6000.3.24f1', 'urpVersion': '17.3.0',
+    return {'editorVersion': '6000.3.27f2', 'urpVersion': '17.3.0',
             'files': inventory, 'sha256': inventory_digest(inventory)}
 
 
@@ -80,8 +83,10 @@ def main():
     p.add_argument('--stamp', help='Pre-frozen fresh output/evidence suffix')
     p.add_argument('--approval-binding', help='Caller-observed native spec/plan identity JSON; metadata, not runtime inputs')
     p.add_argument('--configuration', choices=('development','release'), default='release')
+    p.add_argument('--refresh-editor-shader-import', action='store_true', help='Reimport the one reviewed upstream Editor baking shader before the player build')
     a=p.parse_args();editor=a.editor.resolve();require(editor.is_file(),'Editor executable missing')
     require(a.scene=='last-stand' or a.configuration=='release', 'Explicit development configuration is supported for Last Stand only')
+    require(a.scene=='last-stand' or not a.refresh_editor_shader_import, 'Reviewed shader import is supported for Last Stand only')
     stamp=a.stamp or datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:6]
     require(re.fullmatch(r'[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}',stamp) is not None, 'Invalid frozen output stamp')
     evidence_root=ROOT/'Evidence'
@@ -107,7 +112,8 @@ def main():
                 {'ST-LS-ARCH-SPEC', 'ST-LS-ARCH-PLAN'},
                 {'ST-LS-DEPTH-SPEC', 'ST-LS-DEPTH-PLAN'},
                 {'ST-LS-INTEL-SPEC', 'ST-LS-INTEL-PLAN'},
-                {'ST-LS-CLARITY-SPEC', 'ST-LS-CLARITY-PLAN'}),
+                {'ST-LS-CLARITY-SPEC', 'ST-LS-CLARITY-PLAN'},
+                {'ST-LS-CONTINUITY-SPEC', 'ST-LS-CONTINUITY-PLAN'}),
                 'Supply the caller-observed Last Stand spec/plan identity pair')
         for identity in record['approved_artifacts'].values():
             require(set(identity) == {'revision', 'model_sha256', 'normative_sha256'}
@@ -117,6 +123,9 @@ def main():
     # These are observed identities only. This exporter cannot confer native approval.
     env=os.environ.copy();env['ST_ART_WEB_OUTPUT']=str(build);env['ST_ART_PROJECT_CHECK']=str(PROJECT)
     env['ST_LS_BUILD_CONFIGURATION']=a.configuration
+    env.pop('ST_LS_REFRESH_EDITOR_SHADER_IMPORT', None)
+    if a.refresh_editor_shader_import:env['ST_LS_REFRESH_EDITOR_SHADER_IMPORT']='1'
+    record['refreshEditorShaderImport']=a.refresh_editor_shader_import
     if os.name=='nt':
         common=Path(env.get('ProgramData',env.get('SystemDrive','C:')+'/ProgramData'))
         require(common.is_dir(),'ProgramData unavailable');env.setdefault('ProgramData',str(common));env.setdefault('ALLUSERSPROFILE',str(common))
@@ -127,14 +136,21 @@ def main():
             run('editor-not-open-before-' + label, ['powershell.exe','-NoProfile','-Command',scan],30)
         with (evidence/(label+'.log')).open('wb') as log:
             child=subprocess.Popen(cmd,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT)
+            unity_child = cmd[0] == str(editor) and '-executeMethod' in cmd
+            if unity_child:record['activeUnityChild']=child.pid
             try:rc=child.wait(timeout)
             except subprocess.TimeoutExpired:
-                child.terminate();record['timed_out_child']=child.pid;save();raise
+                child.terminate()
+                try:child.wait(10)
+                except subprocess.TimeoutExpired:child.kill();child.wait(10)
+                if unity_child:record.pop('activeUnityChild',None)
+                record['timed_out_child']=child.pid;save();raise
+            if unity_child:record.pop('activeUnityChild',None)
         record['stages'].append({'stage':label,'exit':rc});save();require(rc==0,label+' failed; inspect '+str(evidence))
     print('BUILD_EVIDENCE='+str(evidence),flush=True)
     try:
         run('editor-version',[str(editor),'-version'],30)
-        require((evidence/'editor-version.log').read_text(encoding='utf-8').strip()=='6000.3.24f1','Unexpected editor version')
+        require((evidence/'editor-version.log').read_text(encoding='utf-8').strip()=='6000.3.27f2','Unexpected editor version')
         require((editor.parent/'Data/PlaybackEngines/WebGLSupport').is_dir(),'Install matching Web support through Hub')
         require(shutil.disk_usage(ROOT).free>3*1024**3,'Less than 3 GiB free')
         vendor=PROJECT/'Packages/com.unity.render-pipelines.universal'
@@ -142,21 +158,24 @@ def main():
         require(json.loads((vendor/'package.json').read_text(encoding='utf-8'))['version']=='17.3.0','Unexpected embedded URP')
         if a.scene == 'last-stand':
             record['toolchain_before'] = toolchain_binding(editor)
-            for name in ('build_web.py', 'unity_shader_log.py', 'make_web_entry.py', 'web-index-template.html'):
+            for name in ('build_web.py', 'unity_shader_log.py', 'unity_build_resources.py', 'make_web_entry.py', 'web-index-template.html'):
                 require((ROOT / 'Tools' / name).is_file(), 'Missing export tool: ' + name)
         record['source_before']=source_binding();save()
         method={'field':'SceneBuild.BuildWeb','review':'VisualReviewBuild.BuildWeb',
                 'gallery':'PartsGalleryBuild.BuildWeb','last-stand':'LastStandLoopBuild.BuildWeb'}[a.scene]
-        run('unity-web',[str(editor),'-batchmode','-quit','-projectPath',str(PROJECT),'-buildTarget','WebGL','-executeMethod',method,'-logFile','-'])
+        resources = PerformanceResources(PROJECT, child_exited=lambda: 'activeUnityChild' not in record)
+        record['performanceResources'] = resources.receipt
+        with resources:
+            run('unity-web',[str(editor),'-batchmode','-quit','-projectPath',str(PROJECT),'-buildTarget','WebGL','-executeMethod',method,'-logFile','-'])
         log=(evidence/'unity-web.log').read_text(encoding='utf-8',errors='replace')
         if a.scene=='last-stand':
             require('ST_LS_WEB_BUILD_PASS' in log,'Missing Last Stand Web build marker')
             require('ST_LS_WEB_BUILD_PASS configuration='+a.configuration+' options='
                     +('Development' if a.configuration=='development' else 'None') in log,
                     'Last Stand Web build configuration mismatch')
-            diagnostics=shader_diagnostics(log)
-            require(accepts_log(log,'ST_LS_WEB_BUILD_PASS'),
-                    'Unity shader compiler diagnostics: '+' | '.join(diagnostics[:8]))
+            record['shaderDiagnostics']=build_diagnostics(log,'ST_LS_WEB_BUILD_PASS',require_phases=True,
+                                                         require_refresh=a.refresh_editor_shader_import)
+            require(record['shaderDiagnostics']['accepted'], 'Unity shader diagnostics or build phases failed; inspect retained diagnostics')
         if a.scene=='review':
             for marker in ('ST_VIS_VALIDATE_PASS','ST_VIS_CHECKS_PASS','ST_VIS_WEB_BUILD_PASS'):
                 require(marker in log,'Missing visual review checks: '+marker)

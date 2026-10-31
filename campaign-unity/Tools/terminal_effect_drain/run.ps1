@@ -1,9 +1,9 @@
 param([string]$EditorRoot)
 
 $ErrorActionPreference = 'Stop'
-if (-not $EditorRoot) { throw 'Pass -EditorRoot for the pinned Unity 6000.3.24f1 installation' }
-if (-not $EditorRoot.TrimEnd('\', '/').EndsWith('6000.3.24f1')) {
-    throw 'The pure runner requires the pinned Unity 6000.3.24f1 installation'
+if (-not $EditorRoot) { throw 'Pass -EditorRoot for the pinned Unity 6000.3.27f2 installation' }
+if (-not $EditorRoot.TrimEnd('\', '/').EndsWith('6000.3.27f2')) {
+    throw 'The pure runner requires the pinned Unity 6000.3.27f2 installation'
 }
 
 $mono = Join-Path $EditorRoot 'Editor/Data/MonoBleedingEdge/bin/mono.exe'

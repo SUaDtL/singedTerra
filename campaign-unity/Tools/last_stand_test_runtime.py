@@ -12,7 +12,7 @@ import re
 import shutil
 import subprocess
 
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
+EDITOR = Path(r"C:\Program Files\Unity 6000.3.27f2")
 
 
 def discover_toolchain(environ=None, platform=None, finder=None):

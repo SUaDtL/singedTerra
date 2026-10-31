@@ -26,7 +26,7 @@ let qualifyingCurrentEncounter=false;
 function implementation_encounterOracleToolchain(platform=process.platform) {
   assert.ok(['win32','linux'].includes(platform),'Current model compilation requires Windows or Linux');
   if(platform==='linux')return {mono:'/usr/bin/mono',csc:'/usr/lib/mono/4.5/mcs.exe'};
-  const editor='C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Data/MonoBleedingEdge';
+  const editor='C:/Program Files/Unity 6000.3.27f2/Editor/Data/MonoBleedingEdge';
   return {mono:join(editor,'bin/mono.exe'),csc:join(editor,'lib/mono/msbuild/Current/bin/Roslyn/csc.exe')};
 }
 

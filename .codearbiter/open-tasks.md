@@ -161,6 +161,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [ ] Update the separately installed Unity Hub 3.21.3 to an advisory-patched version through a reviewed official package; verify installation identity. Editor 6000.3.27f2 uses direct installers and is already patched; this task makes no player/release qualification claim.  (from ST-LS-CONTINUITY-PLAN#T-UNITY; campaign-unity/docs/last-stand-continuity/unity-dependency-review.md)
 - [x] ci.regression.0001 - Wait for each campaign aim and power readout update before the browser test sends the next adjustment, preserving the exact reload checkpoint assertions.  (from pr529-postmerge)  (done 2026-10-03)
 - [x] ui.copy.0001 - T02's design review noted two unchanged OrientationGate fallback strings using em dashes as prose separators. This is outside the surface-lifecycle slice and does not affect behavior.  (from sprint:command-center-launcher-overhaul#triage-1)  (done 2026-10-03)
   - Boundaries: client, pre-game-ux

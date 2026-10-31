@@ -17,7 +17,7 @@ import uuid
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 
 
 def source_hashes():
