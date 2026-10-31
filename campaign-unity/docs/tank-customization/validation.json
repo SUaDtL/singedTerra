@@ -253,5 +253,27 @@
       "sha256": "2e4e51975fc852047156f683c1eb853e47a2542f76cdec7f1f9e250b1db8d674",
       "bytes": 156948
     }
-  ]
+  ],
+  "delivery": {
+    "implementationCommit": "ce8f0c5f574451cef22ba44fc27549afcb5e37c4",
+    "pushedTo": "codex/last-stand-combat-depth",
+    "pr": 547,
+    "secrets": "Staged scan and complete 32-commit PR range pass",
+    "plan": "All six implementation/local-delivery tasks DONE at native plan revision 16; independent acceptance is not attested",
+    "hosted": "Implementation-head CI 41217547414 queued and CodeQL 41217547390 running when recorded; final metadata head requires its own status."
+  },
+  "formatReview": {
+    "authoredWhitespace": "pass",
+    "generatedWhitespace": "451 warnings in 88 Unity-generated YAML files; each is an empty field after a colon. Reviewed exactly and retained qualified build-source bytes. No authored-code whitespace warnings."
+  },
+  "hostEnforcement": {
+    "initial": "Commit refused because registry pointed at removed plugin",
+    "repair": "Installed 0.25.0 canonical _githooks.py install refreshed its registration; doctor verified live managed pre-push; ordinary commit/push passed without bypass",
+    "remaining": "CRITICAL: host tool-level H-03 interception absent: required harmless git add --all --dry-run executed. It changed no index bytes. No repeat/alternate probe. Git backstop is independently verified; session tool-hook registration still needs repair/reload.",
+    "evidence": [
+      "campaign-unity/Evidence/tank-customization/plugin-doctor-before.txt",
+      "campaign-unity/Evidence/tank-customization/plugin-registration-repair.txt",
+      "campaign-unity/Evidence/tank-customization/plugin-doctor-after.txt"
+    ]
+  }
 }
