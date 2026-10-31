@@ -22,8 +22,9 @@ namespace SingedTerra.LastStand
         public bool ReplacesDamagedSave { get; }
         public IReadOnlyList<int> PermanentLevels { get; }
         public LastStandResearchSnapshot Research => research?.Clone();
+        public LastStandTankAppearance Appearance { get; }
         internal LastStandBackupPreview(LastStandProgression owner,string destination,long revision,string imported,
-            int tier,int wave,int salvage,bool checkpoint,bool previous,bool damaged,int[] levels,LastStandResearchSnapshot snapshot)
+            int tier,int wave,int salvage,bool checkpoint,bool previous,bool damaged,int[] levels,LastStandResearchSnapshot snapshot,LastStandTankAppearance appearance)
         {
             Owner=owner;DestinationRaw=destination;DestinationRevision=revision;ImportedRaw=imported;
             Tier=tier;CompletedWave=wave;Salvage=salvage;HasCheckpoint=checkpoint;IsPreviousBackup=previous;
@@ -32,6 +33,7 @@ namespace SingedTerra.LastStand
             Array.Copy(levels,projectedLevels,Math.Min(levels.Length,projectedLevels.Length));
             PermanentLevels=Array.AsReadOnly(projectedLevels);
             research=snapshot?.Clone();
+            Appearance=appearance;
         }
     }
     public static class LastStandBackupCodec
@@ -117,7 +119,7 @@ namespace SingedTerra.LastStand
             {error="This backup is damaged or uses unsupported save or run rules. Nothing was changed.";return false;}
             preview=new LastStandBackupPreview(this,RestoreDestinationRaw,Revision,raw,imported.SelectedTier,
                 imported.Checkpoint?.CompletedWave??0,imported.Wallet,imported.Checkpoint!=null,previous,
-                CanRepairDamagedSave,imported.Levels,imported.Research?.Snapshot());
+                CanRepairDamagedSave,imported.Levels,imported.Research?.Snapshot(),imported.Appearance);
             return true;
         }
         public bool TryPreviewPreviousBackup(out LastStandBackupPreview preview,out string error)
@@ -187,7 +189,7 @@ namespace SingedTerra.LastStand
             try
             {
                 var map=LastStandSaveJson.Read(raw);
-                return map.ContainsKey("version")&&LastStandSaveJson.LongInteger(map["version"])>6;
+                return map.ContainsKey("version")&&LastStandSaveJson.LongInteger(map["version"])>CurrentSaveVersion;
             }
             catch(Exception){return false;}
         }

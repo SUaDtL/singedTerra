@@ -15,6 +15,9 @@ from measure_crowded_waves import HERE, PROJECT, REPORT, BINDINGS, RESULT_FIELDS
 CONTINUITY_PATHS = (
     "Unity/Assets/Scripts/LastStandProgression.cs",
     "Unity/Assets/Scripts/LastStandStore.cs",
+    "Unity/Assets/Scripts/LastStandProgressionSave.cs",
+    "Unity/Assets/Scripts/LastStandProgressionAppearance.cs",
+    "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs",
     "Unity/Assets/Scripts/LastStandProgressionBackup.cs",
 )
 
@@ -116,7 +119,41 @@ class CrowdedWaveTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     self.assertTrue(output.is_file())
                     measured = json.loads(output.read_text())
-                    self.assertEqual(measured["runs"], json.loads(crowded.read_text())["runs"])
+                    observed = {key: measured[key] for key in RESULT_FIELDS}
+                    projected, proofs = crowded_measurement.project_current_allocations(observed, canonical)
+                    self.assertEqual(projected["runs"], json.loads(crowded.read_text())["runs"])
+                    self.assertEqual(proofs, measured["allocationMigrationProofs"])
+                    self.assertEqual(len(proofs), 5)
+                    for row, proof in zip(measured["runs"], proofs):
+                        self.assertEqual(proof["currentProfileSha256"], hashlib.sha256(row["allocatedProfileJson"].encode("utf-8")).hexdigest())
+                        self.assertEqual(proof["currentProfileSha256"], row["oneTimeAllocation"]["allocatedProfileSha256"])
+                        self.assertNotEqual(proof["currentProfileSha256"], proof["historicalV6ProjectionSha256"])
+                        self.assertEqual(proof["currentRevision"], proof["historicalV6ProjectionRevision"] + 1)
+                    # A proof cannot discard a changed gameplay field or extra revision,
+                    # even when the changed current bytes carry a matching current hash.
+                    before_projection = copy.deepcopy(observed)
+                    for fault, mutate in (
+                        ("wallet", lambda p: p.update(credits=p["credits"] + 1)),
+                        ("zero-migration-revision", lambda p: p.update(revision=p["revision"] - 1)),
+                        ("double-migration-revision", lambda p: p.update(revision=p["revision"] + 1)),
+                        ("cosmetic", lambda p: p["appearance"].update(paint="blue")),
+                        ("unknown-cosmetic", lambda p: p["appearance"].update(extra="foundry")),
+                        ("old-schema", lambda p: p.update(version=6)),
+                        ("extra-field", lambda p: p.update(unreviewed=1)),
+                    ):
+                        broken = copy.deepcopy(observed)
+                        payload = json.loads(broken["runs"][0]["allocatedProfileJson"])
+                        mutate(payload)
+                        raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+                        broken["runs"][0]["allocatedProfileJson"] = raw
+                        broken["runs"][0]["oneTimeAllocation"]["allocatedProfileSha256"] = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+                        with self.subTest(migrationFault=fault), self.assertRaisesRegex(ValueError, "allocation migration"):
+                            crowded_measurement.project_current_allocations(broken, canonical)
+                    broken = copy.deepcopy(observed)
+                    broken["runs"][0]["oneTimeAllocation"]["allocatedProfileSha256"] = "0" * 64
+                    with self.assertRaisesRegex(ValueError, "allocation migration"):
+                        crowded_measurement.project_current_allocations(broken, canonical)
+                    self.assertEqual(observed, before_projection, "Projection must not rewrite current bytes or identities")
                     self.assertEqual(measured["canonicalSourceHistoricalRawSha256"], canonical["sourceSha256"])
                     self.assertEqual(measured["canonicalSourceLfSha256"], BINDINGS["calibrated"]["inputs"])
                     self.assertNotIn(CONTINUITY_PATHS[-1], measured["canonicalSourceHistoricalRawSha256"])

@@ -2,11 +2,22 @@
 
 ## Current qualification matrix
 
-Updated October 31, 2026 UTC for the [player continuity and patched Unity sprint](../../.codearbiter/plans/last-stand-player-continuity.html).
+Updated October 31, 2026 UTC for the [modular player tank sprint](../../.codearbiter/plans/last-stand-tank-customization.html), following the [player continuity and patched Unity sprint](../../.codearbiter/plans/last-stand-player-continuity.html).
 This is the current index of acceptance work. Each row retains its responsible
 area and plan owner. Results cover their recorded source, package, host and
 scenario; completed implementation does not close unrun acceptance. Dated
 records below preserve the earlier consolidation results and failures.
+
+The current tank increment adds original modular geometry/textures, a live
+Appearance editor, profile schema 7 and portable cosmetic saves. Its
+[qualification index](tank-customization/validation.json) binds current local
+checks, package and screenshots. Prior continuity Windows/Android builds and
+browser results below retain their original source identity; they do not qualify
+this new visual candidate. The existing native-background snapshot timeout also
+reproduced during this sprint and remains assigned to Q-BROWSER. New art
+provenance is recorded in the [tank guide](tank-customization/index.html);
+owner visual approval remains Q-ART, and the Appearance screen remains part of
+Q-UX. No separate acceptance owner or shadow backlog is introduced.
 
 Unity is now **6000.3.27f2**, revision `22188f149405`. The
 [dependency review](last-stand-continuity/unity-dependency-review.md) records the

@@ -10,9 +10,9 @@ function fixture(t){
   const root=mkdtempSync(join(tmpdir(),'st-inert-presentation-reader-'));t.after(()=>rmSync(root,{recursive:true}));
   const dir=join(root,'fixtures');mkdirSync(dir);const sourceSha256={};
   for(let i=0;i<20;i++){const name='source'+i;writeFileSync(join(root,name),'inert');sourceSha256[name]=sha('inert');}
-  const stamp=Date.now(),raw=JSON.stringify({version:6,research:{lastObservedUtcMilliseconds:stamp}});
+  const stamp=Date.now(),raw=JSON.stringify({version:7,research:{lastObservedUtcMilliseconds:stamp}});
   const cases=['roster-ready','tier2-before-elite','legacy-v4'].map(id=>{
-    const version=id==='legacy-v4'?4:6,bytes=JSON.stringify({...JSON.parse(raw),version});
+    const version=id==='legacy-v4'?4:7,bytes=JSON.stringify({...JSON.parse(raw),version});
     writeFileSync(join(dir,id+'.json'),bytes);return {id,savePath:id+'.json',saveSha256:sha(bytes),version,createdUtcMilliseconds:stamp};
   });
   const value={schema:'last-stand-combat-depth-presentation-fixtures/v1',storageKey:'singedTerra.lastStand.prototype.v1',

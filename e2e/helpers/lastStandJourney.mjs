@@ -10,7 +10,7 @@ export {observeReturnedWave,captureBackgroundCheckpoint,prepareSettlingInteracti
 import {createJourneyActions,changeLastStandSetting} from './lastStandJourneyActions.mjs';
 export {createJourneyActions} from './lastStandJourneyActions.mjs';
 export const LAST_STAND_HELPER_INPUTS=Object.freeze(['e2e/helpers/lastStandJourneyActions.mjs','e2e/helpers/lastStandEncounterOracle.mjs',
-  'e2e/helpers/lastStandJourneyHost.mjs',
+  'e2e/helpers/lastStandJourneyHost.mjs','scripts/lib/provenance-hash.mjs',
   'e2e/helpers/lastStandJourneyRuntime.mjs',
   'e2e/helpers/lastStandMediaCapture.mjs',
   'e2e/helpers/lastStandNativeDriver.mjs',
@@ -37,7 +37,7 @@ import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 import { lastStandJourneyTimeBudget } from './lastStandProcessSupervisor.mjs';
 import { assertWaveSavePreserved, assertIdleWaveSave, validateCheckpointResume, validateWaveAbandonSave } from './lastStandWaveGuards.mjs';
 // Versioned diagnostics contract; player actions and state remain in production owners.
-const OBSERVATION_CONTRACTS=[1,2,3,4].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
+const OBSERVATION_CONTRACTS=[1,2,3,4,5].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
 
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
@@ -61,6 +61,7 @@ export const SHOP_PLAYER_INPUTS = [...LAST_STAND_HELPER_INPUTS,'e2e/helpers/last
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
@@ -1380,6 +1381,7 @@ export const LAST_STAND_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUT
   'e2e/helpers/lastStandTierJourney.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
@@ -1761,7 +1763,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const savedWave=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const savedState=states.at(-1);
     assertIdleWaveSave(savedWave);
-    check(savedWave.version===6 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
+    check(savedWave.version===7 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
       savedWave.credits===savedState.wallet && savedState.checkpointWave===savedWave.checkpoint.encounter.completedWave,
       'cleared waves atomically bank rewards and complete checkpoints',savedWave);
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),

@@ -20,7 +20,7 @@ class PresentationFixtureTests(unittest.TestCase):
     def test_roster_unlocks_follow_continuous_actual_transactions(self):
         case = self.case("roster-ready")
         saved = json.loads(case["save"])
-        self.assertEqual(saved["version"], 6)
+        self.assertEqual(saved["version"], 7)
         self.assertIsNone(saved["checkpoint"])
         self.assertIsNone(saved["pendingDefeat"])
         self.assertEqual(case["unlockedTiers"], [1, 2, 3, 4])

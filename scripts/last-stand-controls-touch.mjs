@@ -20,6 +20,7 @@ const inputs=()=>Object.fromEntries(['scripts/last-stand-controls-touch.mjs','e2
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
   'e2e/helpers/lastStandTierJourney.mjs'].map(path=>[path,createHash('sha256').update(readFileSync(path)).digest('hex')]));
 const served=async()=>{for(const [path,hash] of Object.entries({...manifest.files,'index.html':manifest.wrapperSha256}))
   assertServedBytes(await fetchBoundRuntime(base,path),hash);};

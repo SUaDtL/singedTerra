@@ -123,6 +123,7 @@
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
       "reason": "Strict current and retained diagnostic schema admission against maintained readers; no player qualification",
       "cases": [
+        "ObservationVersionTests.test_appearance_v5_requires_every_control_and_scroll_field",
         "ObservationVersionTests.test_continuity_requires_each_new_control_and_its_exact_version",
         "ObservationVersionTests.test_current_schema_cannot_be_downgraded_or_mislabeled",
         "ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired",
@@ -391,6 +392,25 @@
         "NativeProfileTests.test_malformed_profile_stays_rejected_without_normal_root_fallback",
         "NativeProfileTests.test_profile_root_is_cached_across_all_storage_owners",
         "NativeProfileTests.test_release_flag_is_refused_without_storage_access"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_appearance_hud.py",
+      "lane": "unity-editor",
+      "owner": "Last Stand tank customization sprint",
+      "reason": "Actual imported Unity UI; isolated stores, not device/visual acceptance",
+      "cases": [
+        "AppearanceHudTests.test_imported_appearance_choices_lifecycle_and_accessibility"
+      ]
+    },
+    {
+      "path": "last_stand_controls/test_appearance_layout.py",
+      "lane": "portable",
+      "owner": "Last Stand tank customization sprint",
+      "reason": "Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch",
+      "cases": [
+        "AppearanceLayoutTests.test_invalid_viewports_refuse",
+        "AppearanceLayoutTests.test_world_preview_and_controls_remain_separate"
       ]
     },
     {
@@ -1023,6 +1043,51 @@
         "ShopVerticalTests.test_repair_fitting_and_terminal_refusal",
         "ShopVerticalTests.test_transaction_atomic_charge_and_level",
         "ShopVerticalTests.test_transaction_stale_replay_and_refusal"
+      ]
+    },
+    {
+      "path": "last_stand_tank/test_appearance.py",
+      "lane": "portable",
+      "owner": "Last Stand tank customization sprint",
+      "reason": "Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch",
+      "cases": [
+        "AppearanceTests.test_all_256_compositions_and_five_exact_legacy_paints",
+        "AppearanceTests.test_ambiguous_write_reconciles_without_duplicate_write",
+        "AppearanceTests.test_backup_preview_restore_and_predecessor_retain_appearance",
+        "AppearanceTests.test_cosmetics_leave_checkpoint_and_every_gameplay_field_unchanged",
+        "AppearanceTests.test_external_raw_change_and_lost_ownership_refuse_apply",
+        "AppearanceTests.test_failed_write_retains_confirmed_appearance_until_retry",
+        "AppearanceTests.test_fresh_profile_defaults_and_restart_preserves_applied_appearance",
+        "AppearanceTests.test_future_schema_remains_protected",
+        "AppearanceTests.test_legacy_profiles_receive_default_without_changing_retained_rules",
+        "AppearanceTests.test_new_schema_rejects_missing_extra_malformed_and_unknown_appearance",
+        "AppearanceTests.test_old_backup_preview_defaults_without_rewriting_original_bytes",
+        "AppearanceTests.test_read_failure_preserves_confirmed_profile",
+        "AppearanceTests.test_stale_revision_is_rejected_without_mutating_other_progress",
+        "AppearanceTests.test_unchanged_apply_checks_authority_without_extra_save",
+        "AppearanceTests.test_v6_migration_preserves_all_other_profile_fields",
+        "AppearanceTests.test_value_is_immutable_and_rejects_unknown_ids"
+      ]
+    },
+    {
+      "path": "last_stand_tank_art/test_appearance_draft.py",
+      "lane": "portable",
+      "owner": "Last Stand tank customization sprint",
+      "reason": "Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch",
+      "cases": [
+        "AppearanceDraftTests.test_preview_apply_cancel_and_replacement_profile"
+      ]
+    },
+    {
+      "path": "last_stand_tank_art/test_tank_art.py",
+      "lane": "portable",
+      "owner": "Last Stand tank customization sprint",
+      "reason": "Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch",
+      "cases": [
+        "TankArtTests.test_all_compositions_require_all_slots_and_budget",
+        "TankArtTests.test_generated_models_and_textures_match_authored_manifest",
+        "TankArtTests.test_refuses_existing_source_or_output_without_modifying_them",
+        "TankArtTests.test_rejects_displaced_muzzle_or_duplicate_family"
       ]
     },
     {

@@ -18,7 +18,8 @@ const inputs=['scripts/last-stand-combat-depth-journey.mjs','e2e/helpers/lastSta
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v4.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json'];
 const hashes=()=>Object.fromEntries(inputs.map(p=>[p,sha(readFileSync(resolve(root,p)))]));
 const fits=['repair','launcher','scattergun','mortar','railgun'];
 const environments=['sunlit-ash','iron-perimeter','cinder-basin','storm-foundry'];
@@ -43,7 +44,7 @@ export function admitFixtures(manifest,path,sourceRoot=root){
     const value=JSON.parse(readFileSync(file));assert.equal(value.version,row.version);
     if(row.id==='legacy-v4')assert.equal(value.version,4);
     if(row.id!=='legacy-v4'){
-      assert.equal(value.version,6);assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
+      assert.equal(value.version,7);assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
       assert.equal(value.research.lastObservedUtcMilliseconds,row.createdUtcMilliseconds);
     }
   }

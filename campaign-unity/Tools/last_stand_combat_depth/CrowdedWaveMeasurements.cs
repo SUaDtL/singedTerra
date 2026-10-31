@@ -90,8 +90,9 @@ public static class CrowdedWaveMeasurements
             var runs=new List<object>();
             foreach(string fit in new[]{"repair","launcher","scattergun","mortar","railgun"}){
                 var c=seed.Fork();B.Require(c.Profile.TrySelectFitting(fit),"Earned fitting unavailable");var allocation=B.BuySplit(c);
+                string allocatedProfile=c.Store.Raw;
                 Current=new Observer(281,300,c.Gross);var result=B.Run(c,3,fit,"none",2,500000,300,Commit);
-                runs.Add(B.D("fitting",fit,"parentProfileSha256",B.Hash(raw),"oneTimeAllocation",allocation,"run",result,"windowStart",Current.WindowStart,"waves",Current.Rows));
+                runs.Add(B.D("fitting",fit,"parentProfileSha256",B.Hash(raw),"oneTimeAllocation",allocation,"allocatedProfileJson",allocatedProfile,"run",result,"windowStart",Current.WindowStart,"waves",Current.Rows));
             }
             B.WriteReport(Console.Out,B.D("policyId","crowded-tier3-281-300-v1","parentProfileSha256",B.Hash(raw),"cumulativeEarnedSalvage",gross,"runs",runs));Console.WriteLine();return 0;
         }catch(Exception e){Console.Error.WriteLine(e);return 1;}

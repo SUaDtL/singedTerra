@@ -32,8 +32,8 @@ namespace SingedTerra.LastStand
             Status=Text(name+"Status",Panel,16);Close=Button(name+"Close","CLOSE",Panel,close);
         }
         public Text Text(string name,Transform parent,int size)=>ui.Text(name,parent,size);
-        public Button Button(string name,string label,Transform parent,Action handler)
-        {var button=ui.Button(name,label,parent,handler);Buttons.Add(button);return button;}
+        public Button Button(string name,string label,Transform parent,Action handler,int size=16)
+        {var button=ui.Button(name,label,parent,handler,size);Buttons.Add(button);return button;}
         public void Style(Button button,bool available,bool selected)=>LastStandUiPrimitives.Style(button,available,selected);
         public LastStandScrollPane Pane(string name,bool scrollStatus=false)
         {
@@ -53,6 +53,7 @@ namespace SingedTerra.LastStand
             float w=Math.Min(maxWidth,width-16),h=Math.Min(maxHeight,height-16);
             return LayoutFrame(width,height,unitsX,unitsY,new Rect(width-w-8,height-h-8,w,h));
         }
+        public float LayoutAt(float width,float height,float unitsX,float unitsY,Rect bounds)=>LayoutFrame(width,height,unitsX,unitsY,bounds);
         float LayoutFrame(float width,float height,float unitsX,float unitsY,Rect bounds)
         {
             sx=unitsX;sy=unitsY;float w=bounds.width;PanelHeight=bounds.height;

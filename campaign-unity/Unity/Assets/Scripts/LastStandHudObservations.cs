@@ -42,6 +42,7 @@ namespace SingedTerra.LastStand
         LastStandResearchHud research=>modals.Research;
         LastStandRunHistoryHud history=>modals.History;
         LastStandPlannerHud planner=>modals.Planner;
+        LastStandAppearanceHud appearance=>modals.Appearance;
         bool CanOpenRunShop()=>shop.CanOpenRunShop();
         bool CanOpenPermanentShop()=>shop.CanOpenPermanentShop();
         static float PreferredPixelRatio()=>LastStandHudDisplay.PreferredPixelRatio();
@@ -174,14 +175,15 @@ namespace SingedTerra.LastStand
         }
         [Serializable] sealed class LayoutState
         {
-            public string schema="singedterra-last-stand-observation/v4";
+            public string schema="singedterra-last-stand-observation/v5";
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;
-            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls; public GraphicObservation[] graphics;
+            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls,appearanceControls; public GraphicObservation[] graphics;
             public float researchScrollOffset,researchMaximumScrollOffset,historyScrollOffset,historyMaximumScrollOffset;
             public float researchListScrollOffset,researchListMaximumScrollOffset,researchDetailScrollOffset,researchDetailMaximumScrollOffset;
             public float plannerScrollOffset,plannerMaximumScrollOffset;
+            public float appearanceScrollOffset,appearanceMaximumScrollOffset;
         }
         string NodePath(Transform node)
         {
@@ -228,6 +230,8 @@ namespace SingedTerra.LastStand
                 case "RunHistoryRunANext":return "Next run A";
                 case "RunHistoryRunBPrevious":return "Previous run B";
                 case "RunHistoryRunBNext":return "Next run B";
+                case "AppearanceRotateLeft":return "Rotate tank left";
+                case "AppearanceRotateRight":return "Rotate tank right";
                 default:return fallback;
             }
         }
@@ -259,6 +263,7 @@ namespace SingedTerra.LastStand
                 settingsControls = ObserveControls(settings.Buttons,"Settings"),
                 researchControls=ObserveControls(research.Buttons,"Research"),historyControls=ObserveControls(history.Buttons,"History"),
                 plannerControls=ObserveControls(planner.Buttons,"Planner"),
+                appearanceControls=ObserveControls(appearance.Buttons,"Appearance"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
             layout.settingsScrollOffset = settings.ScrollOffset;
@@ -268,6 +273,7 @@ namespace SingedTerra.LastStand
             layout.researchDetailScrollOffset=research.DetailScrollOffset;layout.researchDetailMaximumScrollOffset=research.DetailMaximumScrollOffset;
             layout.historyScrollOffset=history.ScrollOffset;layout.historyMaximumScrollOffset=history.MaximumScrollOffset;
             layout.plannerScrollOffset=planner.ScrollOffset;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset;
+            layout.appearanceScrollOffset=appearance.ScrollOffset;layout.appearanceMaximumScrollOffset=appearance.MaximumScrollOffset;
             return layout;
         }
         public void ReportLayout()

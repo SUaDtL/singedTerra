@@ -107,19 +107,23 @@ public static class LastStandFittingChecks
             Need(found && open.Height>0 && open.Width>0,"garage defines actual open hero space");
             var space=new Rect(open.X/size.x,1-(open.Y+open.Height)/size.y,open.Width/size.x,open.Height/size.y);
             f.Art.SetGarageFraming(space);
-            var meshes=f.Art.tank.GetComponentsInChildren<Renderer>();Bounds tank=default(Bounds);bool first=true;
-            foreach(var mesh in meshes)
+            int points=0;
+            foreach(var filter in f.Art.tank.GetComponentsInChildren<MeshFilter>(true))
             {
-                if(!mesh.enabled || !mesh.gameObject.activeInHierarchy)continue;
-                if(first){tank=mesh.bounds;first=false;}else tank.Encapsulate(mesh.bounds);
+                var renderer=filter.GetComponent<Renderer>();
+                if(!renderer || !renderer.enabled || renderer.forceRenderingOff || !renderer.gameObject.activeInHierarchy ||
+                    (f.Art.view.cullingMask&(1<<renderer.gameObject.layer))==0)continue;
+                // Project actual imported geometry: an aggregate world AABB
+                // contains empty corners that are not part of the visible tank.
+                foreach(var vertex in filter.sharedMesh.vertices)
+                {
+                    var actual=f.Art.view.WorldToViewportPoint(filter.transform.TransformPoint(vertex));
+                    Need(actual.z>f.Art.view.nearClipPlane && actual.z<f.Art.view.farClipPlane &&
+                        space.Contains(new Vector2(actual.x,actual.y)),"actual tank vertices fit the unobstructed hero rectangle");
+                    points++;
+                }
             }
-            Need(!first,"actual visible tank has a bounded model");
-            for(int i=0;i<8;i++)
-            {
-                var corner=tank.center+Vector3.Scale(tank.extents,new Vector3((i&1)==0?-1:1,(i&2)==0?-1:1,(i&4)==0?-1:1));
-                var actual=f.Art.view.WorldToViewportPoint(corner);
-                Need(actual.z>f.Art.view.nearClipPlane && space.Contains(new Vector2(actual.x,actual.y)),"actual tank bounds fit the unobstructed hero rectangle");
-            }
+            Need(points>0,"actual visible tank has imported vertices");
             var position=f.Art.view.transform.position;var rotation=f.Art.view.transform.rotation;
             foreach(var invalid in new[]{new Rect(float.NaN,0,.5f,.5f),new Rect(0,0,float.PositiveInfinity,1),new Rect(-.1f,0,1,1),new Rect(0,0,0,1)})
                 f.Art.SetGarageFraming(invalid);

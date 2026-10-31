@@ -102,8 +102,8 @@ export function validateBackgroundWaveTerminal({interval,evidence,events=interva
 // transaction revisions may advance during Return, reload or explicit Resume.
 // A funded project needs the separate research journey's completion evidence.
 export function assertIdleWaveSave(saved) {
-  assert.ok(saved?.version===5||saved?.version===6,'Supported wave/profile envelope required');
-  if(saved.version===6&&saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint);
+  assert.ok(saved?.version===5||saved?.version===6||saved?.version===7,'Supported wave/profile envelope required');
+  if(saved.version>=6&&saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint);
   if(saved.version===5&&saved.checkpoint){
     const {encounter:e,shop:s}=saved.checkpoint;
     assert.equal(e?.rulesVersion,'last-stand-waves-v1','Archive envelope cannot contain current rules');
@@ -154,7 +154,7 @@ export function assertWaveCheckpointEdition(checkpoint){
 }
 
 export function assertWaveStateEdition(state,saved){
-  if(saved.version!==6)return; // Historical reader fixtures retain their envelope.
+  if(saved.version!==6&&saved.version!==7)return; // Historical reader fixtures retain their envelope.
   const edition=assertWaveCheckpointEdition(saved.checkpoint);
   assert.equal(state.profileVersion,edition.rulesVersion);
   assert.equal(state.contentVersion,edition.contentVersion);

@@ -29,7 +29,7 @@ class QualificationFixtureTests(unittest.TestCase):
     def test_mature_ranks_funding_and_deployment_seed(self):
         case = next(item for item in self.report["cases"] if item["id"] == "mature-5x")
         saved = json.loads(case["save"])
-        self.assertEqual(saved["version"], 6)
+        self.assertEqual(saved["version"], 7)
         self.assertEqual(case["permanentLevelSeed"], 500)
         self.assertEqual(saved["permanentLevels"]["mortarAttack"], 500)
         self.assertEqual(saved["permanentLevels"]["railgunAttack"], 500)

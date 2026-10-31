@@ -17,7 +17,7 @@ export async function tierJourneyInputHashes({firstSession=false,sourceRoot=reso
     'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
     'e2e/helpers/lastStandMatrix.mjs','e2e/helpers/lastStandWaveOracle.mjs','e2e/helpers/lastStandControlReveal.mjs',
     'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs',
-    ...[1,2,3,4].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json'),
+    ...[1,2,3,4,5].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json'),
     ...(firstSession?['scripts/last-stand-first-session.mjs']:[])];
   return Object.fromEntries(inputs.map(path=>[path,createHash('sha256').update(readFileSync(resolve(sourceRoot,path))).digest('hex')]));
 }
@@ -31,14 +31,16 @@ export function tierJourneyControlGeometry(layout, canvas) {
   const researchControls = (layout.researchControls ?? []).filter(item => item.active);
   const historyControls = (layout.historyControls ?? []).filter(item => item.active);
   const plannerControls = (layout.plannerControls ?? []).filter(item => item.active);
+  const appearanceControls = (layout.appearanceControls ?? []).filter(item => item.active);
   const settingsOpen = settingsControls.length > 0;
   const researchOpen=researchControls.length>0,historyOpen=historyControls.length>0,plannerOpen=plannerControls.length>0;
-  assert.ok(Number(settingsOpen)+Number(researchOpen)+Number(historyOpen)+Number(plannerOpen)<=1,'Exactly one progression/settings modal owns input');
-  if (settingsOpen||researchOpen||historyOpen||plannerOpen) assert.ok(backgroundControls.every(item => !item.interactable),
+  const appearanceOpen=appearanceControls.length>0;
+  assert.ok(Number(settingsOpen)+Number(researchOpen)+Number(historyOpen)+Number(plannerOpen)+Number(appearanceOpen)<=1,'Exactly one progression/settings modal owns input');
+  if (settingsOpen||researchOpen||historyOpen||plannerOpen||appearanceOpen) assert.ok(backgroundControls.every(item => !item.interactable),
     'Modal must disable every underlying control');
-  const controls = settingsOpen ? settingsControls : researchOpen?researchControls:historyOpen?historyControls:plannerOpen?plannerControls:backgroundControls.filter(item => item.active);
+  const controls = settingsOpen ? settingsControls : researchOpen?researchControls:historyOpen?historyControls:plannerOpen?plannerControls:appearanceOpen?appearanceControls:backgroundControls.filter(item => item.active);
   let graphics;
-  const current=['singedterra-last-stand-observation/v3','singedterra-last-stand-observation/v4'].includes(layout.schema);
+  const current=['singedterra-last-stand-observation/v3','singedterra-last-stand-observation/v4','singedterra-last-stand-observation/v5'].includes(layout.schema);
   const surface = g => ['Image','LastStandConsoleSurface'].includes(g.kind) && g.active;
   const measuredGraphics=()=>{
     assert.equal(layout.graphicsTruncated,false,'Complete graphics required to qualify clipped controls');
@@ -58,11 +60,12 @@ export function tierJourneyControlGeometry(layout, canvas) {
     const researchContent=researchOpen&&(current?item.name!=='ResearchClose':!['ResearchClose','ResearchFilter','ResearchBack'].includes(item.name));
     const historyContent=historyOpen&&Object.hasOwn(layout,'plannerControls')&&item.name!=='RunHistoryClose';
     const plannerContent=plannerOpen&&item.name!=='PlannerClose';
-    if (settingsContent || researchContent || historyContent || plannerContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
+    const appearanceContent=appearanceOpen&&!['AppearanceClose','AppearanceRotateLeft','AppearanceRotateRight'].includes(item.name);
+    if (settingsContent || researchContent || historyContent || plannerContent || appearanceContent || item.name.startsWith('ShopCard_') && layout.maximumScrollOffset > 0) {
       measuredGraphics();
       const viewportName = settingsContent ? 'SettingsViewport' : researchContent?
         item.name.startsWith('ResearchProject-')||current&&item.name==='ResearchFilter'?'ResearchListViewport':'ResearchDetailViewport':
-        historyContent?'RunHistoryViewport':plannerContent?'PlannerViewport':'ShopViewport';
+        historyContent?'RunHistoryViewport':plannerContent?'PlannerViewport':appearanceContent?'AppearanceViewport':'ShopViewport';
       // The shared chamfered chrome is an Image subclass; decorative frames
       // and text are not the control's hit surface or its clipping owner.
       const viewports = graphics.filter(g => g.path.endsWith('/' + viewportName) && surface(g));
@@ -81,9 +84,9 @@ export function tierJourneyControlGeometry(layout, canvas) {
         assert.ok(Math.abs(item[key] - graphic[key]) < .5, 'Control and graphic bounds agree: ' + item.name);
       const researchPane=viewportName==='ResearchListViewport'?'List':'Detail';
       const scrollOffset = settingsContent ? layout.settingsScrollOffset : researchContent?current?layout['research'+researchPane+'ScrollOffset']:layout.researchScrollOffset:
-        historyContent?layout.historyScrollOffset:plannerContent?layout.plannerScrollOffset:layout.scrollOffset;
+        historyContent?layout.historyScrollOffset:plannerContent?layout.plannerScrollOffset:appearanceContent?layout.appearanceScrollOffset:layout.scrollOffset;
       const maximumScrollOffset = settingsContent ? layout.settingsMaximumScrollOffset : researchContent?current?layout['research'+researchPane+'MaximumScrollOffset']:layout.researchMaximumScrollOffset:
-        historyContent?layout.historyMaximumScrollOffset:plannerContent?layout.plannerMaximumScrollOffset:layout.maximumScrollOffset;
+        historyContent?layout.historyMaximumScrollOffset:plannerContent?layout.plannerMaximumScrollOffset:appearanceContent?layout.appearanceMaximumScrollOffset:layout.maximumScrollOffset;
       assert.ok(Number.isFinite(scrollOffset) && Number.isFinite(maximumScrollOffset) && maximumScrollOffset >= 0 &&
         scrollOffset >= 0 && scrollOffset <= maximumScrollOffset + .5, 'Finite bounded actual scroll range');
       assert.ok(item.x >= clip.x - .5 && item.x + item.width <= clip.x + clip.width + .5 && item.height <= clip.height + .5,

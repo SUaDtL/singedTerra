@@ -46,8 +46,8 @@ def _current_control_fixture():
         ('Close', 'Goals', 'Budget', 'Category', 'Previous', 'Next', 'Pin', 'Clear', 'Open',
          'WorkshopPrevious', 'WorkshopNext', 'ResearchPrevious', 'ResearchNext', 'WorkshopOpen', 'ResearchOpen', 'Back')]
     fixture['plannerScrollOffset'] = fixture['plannerMaximumScrollOffset'] = 0
-    # Current v4 extends the invented parser input, never the retained file.
-    fixture['schema'] = 'singedterra-last-stand-observation/v4'
+    # Current v5 extends the invented parser input, never the retained file.
+    fixture['schema'] = 'singedterra-last-stand-observation/v5'
     fixture['researchControls'].append(control('ResearchHelp', 'Research'))
     fixture['historyControls'].append(control('RunHistoryHelp', 'History'))
     fixture['settingsControls'] += [control(name, 'Settings') for name in
@@ -55,6 +55,15 @@ def _current_control_fixture():
          'HelpPrevious', 'HelpNext', 'MenuGuidance', 'GuidanceDismiss', 'HelpAction')]
     for pane in ('List', 'Detail'):
         fixture['research' + pane + 'ScrollOffset'] = fixture['research' + pane + 'MaximumScrollOffset'] = 0
+    fixture['settingsControls'].append(control('MenuAppearance', 'Settings'))
+    families = ('Foundry', 'Ranger', 'Bulwark', 'Jackal')
+    names = ['AppearanceClose', 'AppearanceKitsTab', 'AppearancePartsTab', 'AppearancePaintTab']
+    names += ['AppearancePreset' + family for family in families]
+    names += ['Appearance' + slot + family for slot in ('Treads', 'Hull', 'Turret', 'Barrel') for family in families]
+    names += ['AppearancePaint' + paint for paint in ('Red', 'Blue', 'Green', 'Yellow', 'Purple')]
+    names += ['AppearanceApply', 'AppearanceCancel', 'AppearanceRotateLeft', 'AppearanceRotateRight']
+    fixture['appearanceControls'] = [control(name, 'Appearance') for name in names]
+    fixture['appearanceScrollOffset'] = fixture['appearanceMaximumScrollOffset'] = 0
     return fixture
 
 
@@ -1227,9 +1236,9 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.schema,'singedterra-last-stand-observation/v4');
-assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,16);assert.equal(controls.settingsControls.length,52);assert.equal(controls.researchControls.length,18);assert.equal(controls.historyControls.length,10);assert.equal(controls.plannerControls.length,16);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls].map(c=>c.name)).size,132);
+assert.equal(controls.schema,'singedterra-last-stand-observation/v5');
+assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,16);assert.equal(controls.settingsControls.length,53);assert.equal(controls.researchControls.length,18);assert.equal(controls.historyControls.length,10);assert.equal(controls.plannerControls.length,16);assert.equal(controls.appearanceControls.length,33);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls,...controls.appearanceControls].map(c=>c.name)).size,166);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');

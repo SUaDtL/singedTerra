@@ -33,7 +33,8 @@ OBSERVATION_CONTRACT = json.loads((Path(__file__).resolve().parent / 'contracts/
 OBSERVATION_CONTRACTS = (OBSERVATION_CONTRACT,
     json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v2.json').read_text(encoding='utf8')),
     json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v3.json').read_text(encoding='utf8')),
-    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v4.json').read_text(encoding='utf8')))
+    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v4.json').read_text(encoding='utf8')),
+    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v5.json').read_text(encoding='utf8')))
 ROOT = Path(__file__).resolve().parents[1]
 EDITOR = Path('C:/Program Files/Unity 6000.3.27f2/Editor/Unity.exe')
 EVIDENCE = ROOT / 'Evidence' / 'last-stand-playable-loop' / 't03'
@@ -421,6 +422,7 @@ def verify_shop_presentation_states(report, directory):
                     'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+             'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -628,6 +630,7 @@ def verify_shop_vertical(report):
                     'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+             'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -1277,6 +1280,7 @@ def verify_shop_recovery(report, require_native=False):
              'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+             'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',

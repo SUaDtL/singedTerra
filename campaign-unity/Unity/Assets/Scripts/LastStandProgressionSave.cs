@@ -6,6 +6,7 @@ namespace SingedTerra.LastStand
 {
     public sealed partial class LastStandProgression
     {
+        const int CurrentSaveVersion=7;
         static Dictionary<string,object> Map(params object[] entries)
         {
             var result=new Dictionary<string,object>(StringComparer.Ordinal);
@@ -52,6 +53,17 @@ namespace SingedTerra.LastStand
             "runId",p.RunId,"elapsedTicks",p.ElapsedTicks,"kills",p.Kills,"reward",p.Reward,
             "tier",p.Tier,"profileVersion",p.ProfileVersion,"isLimit",p.IsLimit,
             "newBestTime",p.NewBestTime,"newBestKills",p.NewBestKills,"unlockedTierTwo",p.UnlockedTierTwo);
+        static object AppearanceJson(LastStandTankAppearance appearance)=>Map(
+            "treads",appearance.Treads,"hull",appearance.Hull,"turret",appearance.Turret,
+            "barrel",appearance.Barrel,"paint",appearance.Paint);
+        static LastStandTankAppearance ReadAppearance(object value)
+        {
+            var map=LastStandSaveJson.Object(value);
+            LastStandSaveJson.Fields(map,"treads","hull","turret","barrel","paint");
+            if(!LastStandTankAppearance.TryCreate(Text(map,"treads"),Text(map,"hull"),Text(map,"turret"),
+                Text(map,"barrel"),Text(map,"paint"),out var appearance))throw new FormatException("Unknown cosmetic identity.");
+            return appearance;
+        }
         static string Serialize(Record record)
         {
             var tiers=Map();
@@ -61,8 +73,9 @@ namespace SingedTerra.LastStand
                 tiers.Add(tier.Key,Map("bestWave",row.BestWave,"legacyTicks",row.LegacyTicks,
                     "legacyKills",row.LegacyKills,"unlocked",row.Unlocked));
             }
-            return LastStandSaveJson.Write(Map("version",6,"credits",record.Wallet,
+            return LastStandSaveJson.Write(Map("version",CurrentSaveVersion,"credits",record.Wallet,
                 "revision",record.Revision,"recoveryRemainder",record.RecoveryRemainder,
+                "appearance",AppearanceJson(record.Appearance),
                 "research",ResearchJson(record.Research),"history",HistoryJson(record.History),
                 "permanentLevels",LevelsJson(record.Levels),"nextRunId",record.NextRunId,
                 "lastFinalizedRunId",record.FinalizedRunId,"selectedTier",record.SelectedTier,
@@ -83,10 +96,11 @@ namespace SingedTerra.LastStand
                     if(!TryParseLegacyVersions(raw,out record,out migrate))return false;
                     InitializeTiers(record,true);migrate=true;return true;
                 }
-                if(version!=4 && version!=5 && version!=6)return false;
+                if(version<4 || version>CurrentSaveVersion)return false;
                 var fields=new List<string>{"version","credits","permanentLevels","nextRunId","lastFinalizedRunId",
                     "selectedTier","selectedFitting","tierRecords","firstClears","unlockedFittings","pendingDefeat","checkpoint"};
                 if(version>=5)fields.AddRange(new[]{"revision","recoveryRemainder","research","history"});
+                if(version>=7)fields.Add("appearance");
                 LastStandSaveJson.Fields(map,fields.ToArray());
                 var levels=ReadLevels(map["permanentLevels"],true,version==4?LastStandUpgradeCatalog.LegacyEconomyVersion:
                     version==5?LastStandUpgradeCatalog.RetainedEconomyVersion:LastStandUpgradeCatalog.EconomyVersion);
@@ -96,6 +110,7 @@ namespace SingedTerra.LastStand
                     NextRunId=Number(map,"nextRunId"),FinalizedRunId=Number(map,"lastFinalizedRunId"),
                     SelectedTier=Number(map,"selectedTier"),SelectedFitting=Text(map,"selectedFitting"),
                     FirstClears=ReadStrings(map["firstClears"]),Fittings=ReadStrings(map["unlockedFittings"]) };
+                if(version>=7)parsed.Appearance=ReadAppearance(map["appearance"]);
                 if(parsed.NextRunId<1 || parsed.FinalizedRunId>=parsed.NextRunId || !LastStandTierCatalog.IsValid(parsed.SelectedTier)||version<6&&parsed.SelectedTier>2)return false;
                 var tierMap=LastStandSaveJson.Object(map["tierRecords"]);
                 if(tierMap.Count!=tiers.Count)return false;
@@ -152,7 +167,7 @@ namespace SingedTerra.LastStand
                         current.Fitting!=parsed.Checkpoint.FittingId || current.EconomyVersion!=parsed.Checkpoint.Shop.EconomyVersion ||
                         current.HighestClearedWave!=parsed.Checkpoint.CompletedWave))return false;
                 }
-                migrate=version<6;
+                migrate=version<CurrentSaveVersion;
                 record=parsed;return true;
             }
             catch(Exception error) when(error is FormatException || error is ArgumentException || error is KeyNotFoundException ||

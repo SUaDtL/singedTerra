@@ -16,6 +16,7 @@ const observationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/
 const previousObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v2.json',import.meta.url),'utf8'));
 const currentObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v3.json',import.meta.url),'utf8'));
 const continuityObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v4.json',import.meta.url),'utf8'));
+const appearanceObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v5.json',import.meta.url),'utf8'));
 // Invented telemetry tests only the admission reader; it cannot qualify a UI.
 function observation(contract=observationContract){
   const groups=Object.fromEntries(contract.inventories.map(({field,names})=>[field,names]));
@@ -30,7 +31,7 @@ test('tier journey binds its executable helper and observation closure and detec
   assert.equal(typeof tierJourney.tierJourneyInputHashes,'function');
   const current=await tierJourney.tierJourneyInputHashes();
   for(const path of ['e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
-    ...[1,2,3,4].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json')]){
+    ...[1,2,3,4,5].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json')]){
     assert.ok(Object.hasOwn(current,path),'Bound current execution source: '+path);
     assert.equal(current[path],sha(readFileSync(path)));
   }
@@ -49,7 +50,7 @@ test('tier journey binds its executable helper and observation closure and detec
   }
 });
 
-for(const version of [1,2,3,4])test('research journey binds observation v'+version+' and detects changed bytes',t=>{
+for(const version of [1,2,3,4,5])test('research journey binds observation v'+version+' and detects changed bytes',t=>{
   const contract='campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json';
   const current=researchJourneyInputHashes();assert.ok(Object.hasOwn(current,contract));
   assert.equal(current[contract],sha(readFileSync(contract)));
@@ -77,7 +78,7 @@ test('retained v1 telemetry refuses missing, duplicate, unknown, invalid and tru
   const text=raw(observation());assert.throws(()=>readShopControlObservation(text.slice(0,-20)));
   assert.throws(()=>readShopControlObservation(text.slice(0,8190)));
 });
-for(const [version,contract] of [[2,previousObservationContract],[3,currentObservationContract],[4,continuityObservationContract]])test('retained v1 and exact v'+version+' observations remain distinct complete contracts',()=>{
+for(const [version,contract] of [[2,previousObservationContract],[3,currentObservationContract],[4,continuityObservationContract],[5,appearanceObservationContract]])test('retained v1 and exact v'+version+' observations remain distinct complete contracts',()=>{
   const retained=readShopControlObservation(raw(observation()));
   assert.equal(retained.historyControls.length,2);assert.equal(Object.hasOwn(retained,'plannerControls'),false);
   const value=observation(contract),result=readShopControlObservation(raw(value));
@@ -127,19 +128,19 @@ test('v4 save and Help observation requires all eleven new controls and refuses 
 });
 
 function scrollingModalGeometry(owner){
-  const name=owner==='Planner'?'PlannerPin':'RunHistoryRunANext';
-  const field=owner==='Planner'?'plannerControls':'historyControls';
+  const name=owner==='Planner'?'PlannerPin':owner==='Appearance'?'AppearancePaintPurple':'RunHistoryRunANext';
+  const field=owner==='Planner'?'plannerControls':owner==='Appearance'?'appearanceControls':'historyControls';
   const clip={x:20,y:100,width:400,height:100};
   const item={name,x:28,y:220,width:384,height:44,active:true,interactable:true};
   const path=owner+'Modal/'+owner+'Panel/'+owner+'Viewport';
   const graphics=[{path,kind:'LastStandConsoleSurface',active:true,hasClip:true,clip},
     {...item,path:path+'/'+owner+'Content/'+name,kind:'LastStandConsoleSurface',hasClip:true,clip}];
-  const scroll=owner==='Planner'?'planner':'history';
+  const scroll=owner==='Planner'?'planner':owner==='Appearance'?'appearance':'history';
   return {layout:{width:800,height:600,controls:[],shopControls:[],settingsControls:[],researchControls:[],historyControls:[],plannerControls:[],
     [field]:[item],[scroll+'ScrollOffset']:0,[scroll+'MaximumScrollOffset']:200,graphicsTruncated:false,raw:raw({graphics})},
     graphics,canvas:{width:800,height:600},item,scroll};
 }
-for(const owner of ['Planner','RunHistory'])test(owner+' geometry proves own pane reach and refuses false clipping',()=>{
+for(const owner of ['Planner','RunHistory','Appearance'])test(owner+' geometry proves own pane reach and refuses false clipping',()=>{
   const value=scrollingModalGeometry(owner);assert.equal(tierJourneyControlGeometry(value.layout,value.canvas)[0].full,false);
   value.item.y-=100;value.graphics[1].y-=100;value.layout[value.scroll+'ScrollOffset']=100;value.layout.raw=raw({graphics:value.graphics});
   assert.equal(tierJourneyControlGeometry(value.layout,value.canvas)[0].full,true);
@@ -215,7 +216,7 @@ test('fixture admission binds relative saves and exact current sources; rejects 
       'LastStandEconomyCatalog','LastStandStore','LastStandSaveJson','LastStandResearchClock','LastStandProgressionResearchSave'];
     const sourceSha256={};for(const name of names){const path='campaign-unity/Unity/Assets/Scripts/'+name+'.cs';mkdirSync(join(directory,'campaign-unity/Unity/Assets/Scripts'),{recursive:true});writeFileSync(join(directory,path),name);sourceSha256[path]=sha(name);}
     const stamp=Date.now(),cases=['lab-near-completion','mature-5x'].map(id=>{
-      const bytes=JSON.stringify({version:6,checkpoint:null,research:{lastObservedUtcMilliseconds:stamp,completedRanks:{gameSpeed:0,salvageRecovery:0,researchSpeed:0,scrapLogistics:0}}});
+      const bytes=JSON.stringify({version:7,checkpoint:null,research:{lastObservedUtcMilliseconds:stamp,completedRanks:{gameSpeed:0,salvageRecovery:0,researchSpeed:0,scrapLogistics:0}}});
       writeFileSync(join(directory,id+'.json'),bytes);return{id,savePath:id+'.json',saveSha256:sha(bytes),createdUtcMilliseconds:stamp};
     });
     const manifest={schema:'last-stand-research-qualification-fixtures/v1',storageKey:'singedTerra.lastStand.prototype.v1',scope:'Explicit development seeds',
@@ -227,11 +228,11 @@ test('fixture admission binds relative saves and exact current sources; rejects 
     // because the file no longer matches its manifest.
     for(const row of cases){
       const file=join(directory,row.savePath),original=readFileSync(file);
-      for(const version of [5,7,0,'6',null,undefined]){
+      for(const version of [5,6,8,0,'6',null,undefined]){
         const saved=JSON.parse(original);saved.version=version;
         const bytes=JSON.stringify(saved),broken=clone(manifest);
         writeFileSync(file,bytes);broken.cases.find(item=>item.id===row.id).saveSha256=sha(bytes);
-        assert.throws(()=>admitResearchFixtures(broken,path,directory),/Current research fixture requires save version 6/,
+        assert.throws(()=>admitResearchFixtures(broken,path,directory),/Current research fixture requires save version 7/,
           row.id+': '+String(version));
       }
       writeFileSync(file,original);
@@ -242,4 +243,21 @@ test('fixture admission binds relative saves and exact current sources; rejects 
     }
     writeFileSync(join(directory,Object.keys(sourceSha256)[0]),'changed');assert.throws(()=>admitResearchFixtures(manifest,path,directory));
   }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+test('v5 appearance inventory requires all 33 controls, its menu entry and both scroll bounds',()=>{
+  const current=observation(appearanceObservationContract),result=readShopControlObservation(raw(current));
+  assert.equal(result.appearanceControls.length,33);assert.equal(result.settingsControls.length,53);
+  assert.equal(lastStandObservedControls(result).length,166);
+  for(const name of current.appearanceControls.map(item=>item.name)){
+    const missing=clone(current);missing.appearanceControls=missing.appearanceControls.filter(item=>item.name!==name);
+    assert.throws(()=>readShopControlObservation(raw(missing)),/Complete appearanceControls/);
+  }
+  for(const mutate of [v=>delete v.appearanceControls,v=>delete v.appearanceScrollOffset,
+    v=>v.appearanceMaximumScrollOffset='400',v=>v.appearanceScrollOffset=-1,
+    v=>v.appearanceControls.push(clone(v.appearanceControls[0])),v=>v.appearanceControls[0].name='invented',
+    v=>v.settingsControls=v.settingsControls.filter(item=>item.name!=='MenuAppearance'),
+    v=>v.schema='singedterra-last-stand-observation/v4',v=>v.schema='singedterra-last-stand-observation/v6']){
+    const value=clone(current);mutate(value);assert.throws(()=>readShopControlObservation(raw(value)));
+  }
 });

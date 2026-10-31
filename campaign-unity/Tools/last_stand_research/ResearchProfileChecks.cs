@@ -91,7 +91,7 @@ static class ResearchProfileChecks
     static void Fresh()
     {
         var store = new Store(); var p = Load(store); string raw = store.Raw;
-        Check(p.SaveState == "ready" && LastStandSaveJson.Integer(LastStandSaveJson.Read(raw)["version"]) == 6, "Fresh v6 envelope");
+        Check(p.SaveState == "ready" && LastStandSaveJson.Integer(LastStandSaveJson.Read(raw)["version"]) == 7, "Fresh v7 envelope");
         Check(p.Wallet == 0 && p.ResearchSnapshot.lastObservedUtcMilliseconds == Epoch && p.ResearchSnapshot.completionSequence == 0,
             "No invented funds or research on creation");
         Check(p.HistorySnapshot.Lifetime.Runs == 0 && !p.HasCheckpoint, "Fresh empty history");
@@ -237,7 +237,7 @@ static class ResearchProfileChecks
                 "Nonowner cannot create, migrate, or mutate existing profile");
             store.Owner = true;
             Check(p.Retry() && p.SaveState == "ready", "Explicit ownership recovery admits original profile");
-            Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"]) == 6,
+            Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"]) == 7,
                 "Recovered owner uses current envelope without lost data");
         }
         var faultStore = Unlocked(); var owner = Load(faultStore); Action(owner, LastStandResearchAction.Start);

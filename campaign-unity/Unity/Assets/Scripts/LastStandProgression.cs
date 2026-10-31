@@ -55,6 +55,7 @@ namespace SingedTerra.LastStand
             public int RecoveryRemainder;
             public LastStandResearchState Research;
             public LastStandRunHistory History;
+            public LastStandTankAppearance Appearance=LastStandTankAppearance.Default;
             public int Wallet, NextRunId, FinalizedRunId, SelectedTier=1;
             public int[] Levels=new int[LastStandUpgradeCatalog.Tracks.Count];
             public string SelectedFitting="repair";

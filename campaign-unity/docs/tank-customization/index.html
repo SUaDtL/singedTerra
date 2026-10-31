@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Last Stand — player tank appearance</title>
+<style>body{max-width:1000px;margin:32px auto;padding:0 24px;background:#151c19;color:#eee6cf;font:17px/1.6 system-ui}h1,h2{color:#dbb56a}a{color:#e7c992}img{max-width:100%;height:auto;border:1px solid #6e6550}table{border-collapse:collapse;width:100%}th,td{padding:10px;text-align:left;border-bottom:1px solid #586055}code{font-size:.9em}</style>
+<h1>Player tank appearance</h1>
+<p>The garage now adapts the legacy game's free cosmetic kits to Last Stand's actual 3D tank. Appearance belongs to the player profile and travels with a portable backup. Combat fitting, damage, aim, hitboxes, prices and retained run rules remain separate.</p>
+<h2>Player workflow</h2>
+<p>From the garage, open Menu → Appearance. Kits selects a complete family; Parts mixes mobility, hull, turret and barrel; Paint changes armor color. The live tank previews each choice. Apply confirms the profile save. Cancel, Escape or leaving the page discards unapplied changes. Appearance editing is unavailable during combat; a saved resumable checkpoint can stay intact in the garage.</p>
+<table><tr><th>Family</th><th>Mobility</th><th>Hull / turret / barrel identity</th></tr>
+<tr><td>Foundry</td><td>Tracks</td><td>Armor Hull, Cupola, Cannon</td></tr>
+<tr><td>Ranger</td><td>Spider Legs</td><td>Scout Hull, Sensor Pod, Railgun style</td></tr>
+<tr><td>Bulwark</td><td>Hover</td><td>Siege Hull, Bunker, Siege Gun</td></tr>
+<tr><td>Jackal</td><td>Dune Wheels</td><td>Raider Hull, Sensor Ring, Howitzer</td></tr></table>
+<p>All 256 part combinations and the five legacy paints—red, blue, green, yellow and purple—are free. A cosmetic Railgun barrel does not equip the combat Railgun fitting.</p>
+<h2>Asset ownership</h2>
+<p>The current original model source is <code>ArtSource/LastStandTankKits_02.blend</code>; its exported models, textures, materials and binding prefab are in <code>Unity/Assets/TankKits02</code>. The editable source retains named construction geometry and packed original textures. <code>Tools/build_tank_kits.py</code> authors a new output and refuses existing source/output paths. Export refinement must preserve the preceding draft and its receipt before replacing the current working draft.</p>
+<p>The material set distinguishes armor, steel, edge metal, rubber, brass and optics. Original procedural base-color, normal and metallic/occlusion/smoothness maps accompany the model; no third-party mesh or texture was downloaded. Legacy family identities and labels are reused, while geometry and textures are newly authored. The legacy raster atlas is not shipped as a new texture.</p>
+<p><code>LastStandTankKitImport.Prepare</code> creates fresh Unity materials/prefabs; <code>Validate</code> checks imported geometry and the rig. <code>LastStandTankSceneUpgrade.Prepare</code> explicitly wires the saved production scene. Player builds never generate or rewrite that scene.</p>
+<h2>Shared implementation</h2>
+<p>Unity imported all 256 assemblies below the 25,000 core-triangle target; the maximum is 18,804. Whole-family counts are Foundry 17,772, Ranger 13,596, Bulwark 13,340 and Jackal 14,084. Five combat fittings, the canonical muzzle and 16 cardinal aim/recoil/return checks remain valid. These are geometry and behavior measurements, not device frame-rate measurements.</p>
+<p><code>LastStandTankVisuals</code> swaps visual children under the persistent rig. <code>TankPresentation</code> still owns aim, recoil and camera framing. The same geometry-based callout component projects fitting and selected-part bounds. The shared modal host, chrome, scrolling and keyboard owners host the Appearance page.</p>
+<p>The camera fits visible geometry to the available preview, including perspective depth and the portrait pane's offset. Positions are cached per shared mesh and fitting runs when the view or geometry changes. Only the 16 new core models enable CPU readback: their vertex/index buffers total approximately 6.44 MB, with up to 1.52 MB of cached positions, excluding Unity and array overhead. This bounded memory cost makes parts inspectable without clipping; target-device performance remains unmeasured.</p>
+<p>Profile schema 7 adds a strict, allowlisted appearance record. Earlier profiles migrate to Foundry/red without changing their retained combat editions. The existing profile transaction, ownership, readback and backup mechanisms remain the sole persistence authority. A draft checks both saved appearance and profile replacement generation before Apply.</p>
+<h2>Reference and qualification</h2>
+<p>These screenshots come from the packaged WebGL game, with ordinary browser input. The first shows Foundry; the second mixes Ranger legs and barrel, a Jackal hull, a Bulwark turret and blue paint. The selected barrel's callout follows its projected geometry. <a href="validation.json">The validation index</a> binds the build, checks and remaining qualification.</p>
+<img src="actual-foundry.png" alt="Actual Last Stand Foundry tank in the Appearance page">
+<img src="actual-mixed-callout.png" alt="Actual mixed tank with blue paint and a geometry-attached Railgun callout">
+<p>Portrait places the same live preview above the shared scrolling controls. The saved status below follows a real Apply action.</p>
+<img src="actual-portrait.png" alt="Actual portrait Appearance page after saving the mixed tank">
+<p>The reference below was generated with OpenAI image generation for this sprint from an original description of the four families, interchangeable parts, olive armor, dark steel/rubber, brass accents and restrained wear. It is concept art, not an engine screenshot or a claim of visual acceptance.</p>
+<img src="concept-reference.png" alt="Concept reference showing four distinct modular tank families">
+<p>The baseline below is an unmodified screenshot of the existing garage before this sprint. Current rendered comparison and verification results are recorded in the sprint validation record. Imported mesh and browser checks do not establish physical-device performance, audio, thermal/endurance behavior or owner art acceptance.</p>
+<img src="baseline-garage.png" alt="Actual garage and tank before this sprint">
+</html>

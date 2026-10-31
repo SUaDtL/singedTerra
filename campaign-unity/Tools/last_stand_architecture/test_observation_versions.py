@@ -11,7 +11,7 @@ import unittest
 
 TOOLS = Path(__file__).resolve().parents[1]
 CONTRACTS = tuple(json.loads((TOOLS / f"contracts/last-stand-observation-v{version}.json").read_text(encoding="utf8"))
-                  for version in (1, 2, 3, 4))
+                  for version in (1, 2, 3, 4, 5))
 CONTINUITY_CONTROLS = ("DataExport", "DataImport", "DataPrevious", "DataGarage", "BackupCancel", "BackupReplace",
                        "HelpPrevious", "HelpNext", "MenuGuidance", "GuidanceDismiss", "HelpAction")
 
@@ -50,7 +50,7 @@ class ObservationVersionTests(unittest.TestCase):
             value = self.read_controls(source)
             self.assertEqual(value["raw"], source)
             self.assertFalse(value["graphicsTruncated"])
-            self.assertEqual(len(value["historyControls"]), (2, 9, 10, 10)[CONTRACTS.index(contract)])
+            self.assertEqual(len(value["historyControls"]), (2, 9, 10, 10, 10)[CONTRACTS.index(contract)])
             self.assertEqual("plannerControls" in value, contract is not CONTRACTS[0])
 
     def test_incomplete_extra_repeated_and_malformed_current_refused(self):
@@ -98,12 +98,12 @@ class ObservationVersionTests(unittest.TestCase):
                     self.read_controls(source.replace(before, after, 1))
 
     def test_continuity_requires_each_new_control_and_its_exact_version(self):
-        current = packet(CONTRACTS[-1])
+        current = packet(CONTRACTS[3])
         names = {row["name"] for row in current["settingsControls"]}
         self.assertEqual(len(current["settingsControls"]), 52)
         self.assertTrue(set(CONTINUITY_CONTROLS) <= names)
-        self.assertEqual(sum(len(current[row["field"]]) for row in CONTRACTS[-1]["inventories"]), 132)
-        self.assertEqual(self.read_controls(raw(current))["schema"], CONTRACTS[-1]["schema"])
+        self.assertEqual(sum(len(current[row["field"]]) for row in CONTRACTS[3]["inventories"]), 132)
+        self.assertEqual(self.read_controls(raw(current))["schema"], CONTRACTS[3]["schema"])
         for name in CONTINUITY_CONTROLS:
             with self.subTest(missing=name):
                 incomplete = deepcopy(current)
@@ -126,3 +126,27 @@ class ObservationVersionTests(unittest.TestCase):
         invented["settingsControls"][-1]["name"] = "invented-backup-action"
         with self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
             self.read_controls(raw(invented))
+
+    def test_appearance_v5_requires_every_control_and_scroll_field(self):
+        current = packet(CONTRACTS[-1])
+        self.assertEqual(len(current["appearanceControls"]), 33)
+        self.assertEqual(len(current["settingsControls"]), 53)
+        self.assertEqual(sum(len(current[row["field"]]) for row in CONTRACTS[-1]["inventories"]), 166)
+        self.assertEqual(self.read_controls(raw(current))["schema"], "singedterra-last-stand-observation/v5")
+        for name in [row["name"] for row in current["appearanceControls"]]:
+            with self.subTest(missing=name):
+                incomplete = deepcopy(current)
+                incomplete["appearanceControls"] = [row for row in incomplete["appearanceControls"] if row["name"] != name]
+                with self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
+                    self.read_controls(raw(incomplete))
+        for change in (lambda p: p.pop("appearanceControls"), lambda p: p.pop("appearanceScrollOffset"),
+                       lambda p: p.update(appearanceMaximumScrollOffset="500"),
+                       lambda p: p.update(appearanceScrollOffset=-1),
+                       lambda p: p["appearanceControls"].append(deepcopy(p["appearanceControls"][0])),
+                       lambda p: p["appearanceControls"][0].update(name="invented-appearance"),
+                       lambda p: p["settingsControls"].pop(),
+                       lambda p: p.update(schema="singedterra-last-stand-observation/v4"),
+                       lambda p: p.update(schema="singedterra-last-stand-observation/v6")):
+            changed = deepcopy(current); change(changed)
+            with self.assertRaises((AssertionError, ValueError, KeyError, TypeError)):
+                self.read_controls(raw(changed))

@@ -1817,6 +1817,7 @@ MonoBehaviour:
   repairModule: {fileID: 7955738003776366316}
   launcherModule: {fileID: 7955738003776366315}
   flash: {fileID: 7955738003776366314}
+  tankVisualsPrefab: {fileID: 4565301161350536286, guid: 4e99db82324897547bfb1e8dd9f46fac, type: 3}
   battlefield: 0
   showingLauncher: 0
   animate: 1

@@ -1,0 +1,243 @@
+{
+  "schema": "last-stand-appearance-browser-summary/v1",
+  "scope": "Derived index of retained complete local receipt; not an independent acceptance receipt.",
+  "source": {
+    "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/result.json",
+    "sha256": "ac1403e5747447f9e171eb4aea772cfd446df954568d49aafd507c8096f98f00",
+    "bytes": 25421773
+  },
+  "status": "pass",
+  "packaged": {
+    "client/public/last-stand/asset-manifest.json": "58f81ada9a6452cf928c018f878699b41ae1156016b70cf0d5a7055b8821a8bd",
+    "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "aeb7ee543974b59e6732b1b7828db057870f404e38508b17cc8010f0a3edff4b",
+    "campaign-unity/docs/last-stand-web/source-lock.json": "1bfc0f0f1b32535ad7cc1b9521a6863050fe62ae4d5578e58f84947672afbec7",
+    "client/public/last-stand/Build/Web-20261031T154449Z-0b61c3.data": "7a5cd9670e0188a4f6d76693c76ecad58b486d8fa843fd6339df09396d3cd116",
+    "client/public/last-stand/Build/Web-20261031T154449Z-0b61c3.framework.js": "cdb96b34367a1b3ed16486d158fd4df32f58a9af422da061bff9046824df6f16",
+    "client/public/last-stand/Build/Web-20261031T154449Z-0b61c3.loader.js": "40efb5fec314fd395a601a8718f498a96051d4d084bdaa69ffa3b5ca1fe63814",
+    "client/public/last-stand/Build/Web-20261031T154449Z-0b61c3.wasm": "340f95df8b2515c6b16aa25b0fbcb8d35c3eede284da4c11137953b203e60c91",
+    "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+    "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+    "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+    "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+    "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+    "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+    "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+    "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+    "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+    "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+    "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+    "client/public/last-stand/index.html": "7a5f5bc60e85ea05c9647e7ab05ba5558dedfefa57660fdb3611cacd94681750",
+    "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+  },
+  "inputs": {
+    "scripts/last-stand-appearance.mjs": "ae7d43795e7c4a56a4be63bfdfbcf5f9179b51d34c20a75be8a8c0e49034b756",
+    "e2e/helpers/lastStandBrowserActor.mjs": "f8d35984c9997004bf891110a03a0d1f39b136c36bf45b6679ea7aa3a93a6bfb",
+    "e2e/helpers/lastStandJourney.mjs": "1210fc6f6a9dd37eef6195e1db8a1b340a53e9c4a100fb683c4969f898d3b9ca",
+    "e2e/helpers/lastStandTierJourney.mjs": "1deb890e5400c8b4b39320c64bbdd59c7b8a013045b91cea994376109c082cd3",
+    "e2e/helpers/lastStandWaveJourney.mjs": "8bc0b9fd741a1c0062742914e50cbab97fc2a39496440bc37005c00e770a7876",
+    "e2e/helpers/lastStandEvidenceDirectory.mjs": "6cbf7d4ba3ebf8bdb195fe2945cf046538b3eca66d554df58d5d94c0f6a92fdd",
+    "scripts/ci/lastStandEvidenceDirectory.test.mjs": "8eb9441529ca3fafde4d5b4a6c349ad1b1fcf8e6648b39bfcfa3e218f149d13b",
+    "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+    "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+    "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+    "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+    "campaign-unity/Tools/contracts/last-stand-observation-v5.json": "528e93d56154e2b956eeacddfbf766a643340ff14a553b99b9a9fc709ed0a301",
+    "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+    "e2e/helpers/lastStandEncounterOracle.mjs": "2f632e706da25508beed83835bceb1035ed06c7ab3064a695d154b08e76bfb4c",
+    "e2e/helpers/lastStandJourneyHost.mjs": "b338184ad5758ebec540f1a1133e349b8321ffb4b82f06de889d7620ca178688",
+    "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212",
+    "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
+    "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+    "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+    "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+    "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+    "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+    "e2e/helpers/lastStandRuntimeObservation.mjs": "c645ac7ebf6b27126726c2909801fa29a820ba2dd785c4a59a18fabef4e26088",
+    "e2e/helpers/lastStandWaveGuards.mjs": "e6f0a432c6031b1ee90c1d5842f9ce6bd4731bc95d8bc1bb5514384f08ac1eed"
+  },
+  "checks": [
+    {
+      "name": "current contract includes all appearance controls",
+      "pass": true
+    },
+    {
+      "name": "Foundry is a whole-tank preview only",
+      "pass": true
+    },
+    {
+      "name": "Ranger is a whole-tank preview only",
+      "pass": true
+    },
+    {
+      "name": "Bulwark is a whole-tank preview only",
+      "pass": true
+    },
+    {
+      "name": "Jackal is a whole-tank preview only",
+      "pass": true
+    },
+    {
+      "name": "Tab and Enter activate the next named paint choice",
+      "pass": true
+    },
+    {
+      "name": "mixed selection is visible without committing",
+      "pass": true
+    },
+    {
+      "name": "part callout follows the actual projected part while rotating",
+      "pass": true
+    },
+    {
+      "name": "Cancel restores the saved tank",
+      "pass": true
+    },
+    {
+      "name": "Apply confirms profile appearance without changing economy or fitting",
+      "pass": true
+    },
+    {
+      "name": "Escape discards an unapplied paint change",
+      "pass": true
+    },
+    {
+      "name": "reload preserves mixed appearance",
+      "pass": true
+    },
+    {
+      "name": "battle retains appearance and offers no cosmetic editor",
+      "pass": true
+    },
+    {
+      "name": "portrait named choices and Apply are reachable through ordinary scrolling",
+      "pass": true
+    },
+    {
+      "name": "compact has an actual 142px canvas",
+      "pass": true
+    },
+    {
+      "name": "compact named choices and Apply are reachable through ordinary scrolling",
+      "pass": true
+    },
+    {
+      "name": "narrow has an actual 142px canvas",
+      "pass": true
+    },
+    {
+      "name": "narrow named choices and Apply are reachable through ordinary scrolling",
+      "pass": true
+    },
+    {
+      "name": "desktop has no browser errors and bounded validated layout evidence",
+      "pass": true
+    },
+    {
+      "name": "portrait has no browser errors and bounded validated layout evidence",
+      "pass": true
+    },
+    {
+      "name": "compact has no browser errors and bounded validated layout evidence",
+      "pass": true
+    },
+    {
+      "name": "narrow has no browser errors and bounded validated layout evidence",
+      "pass": true
+    }
+  ],
+  "runs": [
+    {
+      "id": "desktop",
+      "actions": 30,
+      "inputs": 66,
+      "retainedLayouts": 8,
+      "layoutPacketsObserved": 382,
+      "errors": [],
+      "screenshots": [
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-garage.png",
+          "sha256": "91b1bd6dcde2bbd5935132f9c8ae16a744aa17a8edc2be22cb5ec3b7b4c7e184"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-kit-foundry.png",
+          "sha256": "e31af64bf17c59b8bfbc5385631c92a58d9060671c6fb4ee3b258492db85b531"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-kit-ranger.png",
+          "sha256": "a4576feca03b234a56659bbd79158e2e517f8c1d0c2b60b24ce5272cbd560b30"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-kit-bulwark.png",
+          "sha256": "b23d1ef1cda4dd99078546171fad5a07c862c51a9c0597e36c3a7cbecb22bf66"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-kit-jackal.png",
+          "sha256": "8a8c342021c098946b93536c3b3908ef0b0f6a361d679c18386f571820e98f0c"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-mixed-preview.png",
+          "sha256": "f985ce0ae54506c3430f7e3277ca309aec82cd76b639f33562c5e59097c1e489"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-mixed-rotated-callout.png",
+          "sha256": "37b0303a235719c9c4d653143d07cfd7ef73862159a2791ffe44851bab3b48bf"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-mixed-saved.png",
+          "sha256": "3dc83aa7db5399a0d89d3c0f67a19aac69c6b3881dac1c979ea798264202fa75"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-reloaded-garage.png",
+          "sha256": "d301e6d132bdda2a24a10b0c53fafe0d2e994860c218142ba35db3f822a30551"
+        },
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/desktop-combat-mixed.png",
+          "sha256": "67a010a7dcd015c6d6f95e4b6e413dbdd04deac3b53dde3334958e6e1c0a4b96"
+        }
+      ]
+    },
+    {
+      "id": "portrait",
+      "actions": 11,
+      "inputs": 23,
+      "retainedLayouts": 8,
+      "layoutPacketsObserved": 362,
+      "errors": [],
+      "screenshots": [
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/portrait-applied.png",
+          "sha256": "2e4e51975fc852047156f683c1eb853e47a2542f76cdec7f1f9e250b1db8d674"
+        }
+      ]
+    },
+    {
+      "id": "compact",
+      "actions": 16,
+      "inputs": 33,
+      "retainedLayouts": 8,
+      "layoutPacketsObserved": 131,
+      "errors": [],
+      "screenshots": [
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/compact-applied.png",
+          "sha256": "5a867b856c7f5834568adeac9f4d779577be853a4b0f9dfa4637bbbd338ba4a1"
+        }
+      ]
+    },
+    {
+      "id": "narrow",
+      "actions": 16,
+      "inputs": 33,
+      "retainedLayouts": 8,
+      "layoutPacketsObserved": 131,
+      "errors": [],
+      "screenshots": [
+        {
+          "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/narrow-applied.png",
+          "sha256": "25b7134d1ad25ca3485e7f85ca3b6d02dac1af4cd5a7dc389ec0c0c8e85899d8"
+        }
+      ]
+    }
+  ]
+}

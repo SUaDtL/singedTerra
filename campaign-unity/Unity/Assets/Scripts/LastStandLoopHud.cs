@@ -136,7 +136,9 @@ namespace SingedTerra.LastStand
             finally{shop.EndLayout(false);}
             combat.LayoutRecovery(slots,unitsX,unitsY);
             combat.LayoutInstruments(slots,unitsX,unitsY);modals.Layout(cssWidth,cssHeight,unitsX,unitsY);
-            garage.Layout(slots,cssWidth,cssHeight,ratio,shop.IsOpen);keyboard.Refresh();shop.EndLayout(resized);observations.ReportLayout();
+            garage.Layout(slots,cssWidth,cssHeight,ratio,shop.IsOpen);
+            if(modals.HidesBackground)foreach(var node in nodes.Values)node.gameObject.SetActive(false);
+            keyboard.Refresh();shop.EndLayout(resized);observations.ReportLayout();
         }
         public void Dispose()
         {

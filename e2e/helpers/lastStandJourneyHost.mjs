@@ -1,6 +1,5 @@
 import { resolve, relative, isAbsolute, dirname } from 'node:path';
-import { createHash } from 'node:crypto';
-import { readFileSync, realpathSync, existsSync } from 'node:fs';
+import { realpathSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 
@@ -13,9 +12,7 @@ export const SELECTION_KEY = 'singedterra.command-center.selection.v1';
 
 export const TITLE = 'Last Stand wave checkpoints survive Return and reload before a stronger redeploy';
 
-export const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-
-export const fileHash = path => hash(readFileSync(path));
+export {hash,fileHash} from '../../scripts/lib/provenance-hash.mjs';
 
 export const delay = ms => new Promise(done => setTimeout(done, ms));
 

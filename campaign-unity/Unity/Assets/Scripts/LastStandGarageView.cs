@@ -53,7 +53,7 @@ namespace SingedTerra.LastStand
         {
             var art=loop.GetComponent<SingedTerra.Art.TankPresentation>();
             LastStandHudLayout.Slot preview=null;
-            bool garagePreview=loop.GarageCardsVisible&&!shopOpen&&slots.TryGetValue("GaragePreview",out preview);
+            bool garagePreview=loop.GarageCardsVisible&&!loop.MenuOpen&&!shopOpen&&slots.TryGetValue("GaragePreview",out preview);
             if(garagePreview && !art.EncounterActive)
             {
                 var bounds=preview.Bounds;

@@ -205,6 +205,7 @@ const inputPaths=['scripts/last-stand-wave-endurance.mjs','scripts/last-stand-wa
   'e2e/helpers/lastStandWaveOracle.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
   'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs'];
 const inputHashes=()=>Object.fromEntries(inputPaths.map(path=>[path,sha(readFileSync(resolve(root,path)))]));
 const compactState=state=>Object.fromEntries(['phase','saveState','runId','activeTier','wave','completedWave','checkpointWave','hasCheckpoint',
@@ -214,7 +215,7 @@ const compactState=state=>Object.fromEntries(['phase','saveState','runId','activ
 // envelope as the production serializer. Retained runs preserve their complete
 // combat/content/economy edition inside that current envelope, not an old schema.
 export function assertCurrentEnduranceSave(saved){
-  assert.equal(saved?.version,6,'Current endurance requires save version 6');
+  assert.equal(saved?.version,7,'Current endurance requires save version 7');
   if(saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint);
   return saved;
 }

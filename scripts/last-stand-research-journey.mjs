@@ -18,7 +18,8 @@ const inputs=['scripts/last-stand-research-journey.mjs','e2e/helpers/lastStandJo
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v4.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json'];
 export function researchJourneyInputHashes(sourceRoot=root){return Object.fromEntries(inputs.map(path=>[path,sha(readFileSync(resolve(sourceRoot,path)))]));}
 const hashes=researchJourneyInputHashes;
 const tracks=['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'];
@@ -41,7 +42,7 @@ export function admitResearchFixtures(manifest,manifestPath,sourceRoot=root){
     assert.equal(row.savePath,row.id+'.json','Named relative sibling save required');
     const file=resolve(directory,row.savePath);assert.equal(realpathSync(file),file,'Fixture cannot escape through a link');
     assert.equal(sha(readFileSync(file)),row.saveSha256,'Exact production-generated fixture bytes');
-    const saved=JSON.parse(readFileSync(file,'utf8'));assert.equal(saved.version,6,'Current research fixture requires save version 6');assert.equal(saved.checkpoint,null);
+    const saved=JSON.parse(readFileSync(file,'utf8'));assert.equal(saved.version,7,'Current research fixture requires save version 7');assert.equal(saved.checkpoint,null);
     assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
     assert.equal(saved.research.lastObservedUtcMilliseconds,row.createdUtcMilliseconds);
     assert.deepEqual(Object.keys(saved.research.completedRanks).sort(),[...tracks].sort());

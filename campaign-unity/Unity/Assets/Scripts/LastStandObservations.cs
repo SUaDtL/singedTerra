@@ -43,8 +43,13 @@ namespace SingedTerra.LastStand
                 musicEnabled = loop.Preferences.Current.MusicEnabled, tutorialTips = loop.Preferences.Current.TutorialTips,
                 purchaseSuggestions = loop.Preferences.Current.PurchaseSuggestions,
                 masterVolume = loop.Preferences.Current.MasterVolume, effectsVolume = loop.Preferences.Current.EffectsVolume,
-                musicVolume = loop.Preferences.Current.MusicVolume }));
+                musicVolume = loop.Preferences.Current.MusicVolume,
+                appearance=Appearance(loop.AppearanceSaved),appearanceDraft=Appearance(loop.AppearanceDraft),
+                appearanceStatus=loop.AppearanceStatus,appearanceCanApply=loop.AppearanceCanApply }));
         }
+        static AppearanceState Appearance(LastStandTankAppearance value)=>new AppearanceState{
+            treads=value.Treads,hull=value.Hull,turret=value.Turret,barrel=value.Barrel,paint=value.Paint};
+        [Serializable] sealed class AppearanceState {public string treads,hull,turret,barrel,paint;}
         public static void Hit(EncounterModel model)
         {
             Debug.Log("ST_LS_HIT " + JsonUtility.ToJson(new HitState { tick=model.Tick,
@@ -68,6 +73,9 @@ namespace SingedTerra.LastStand
             public float renderScale;
             public bool fullscreen, musicEnabled, tutorialTips, purchaseSuggestions;
             public int masterVolume, effectsVolume, musicVolume;
+            public AppearanceState appearance,appearanceDraft;
+            public string appearanceStatus;
+            public bool appearanceCanApply;
         }
         [Serializable] sealed class HitState { public int tick, cannonDamage, firstFoeHull, kills; }
     }

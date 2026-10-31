@@ -20,9 +20,10 @@ namespace SingedTerra.LastStand
             public readonly Action<float,float,float,float> Layout;
             public readonly Action<Button> Reveal;
             public readonly Action<string> Scroll;
+            public readonly bool HidesBackground;
             public Page(Button[] buttons,Func<Button> initialFocus,Action<bool> refresh,
-                Action<float,float,float,float> layout,Action<Button> reveal,Action<string> scroll)
-            {Buttons=buttons;InitialFocus=initialFocus;Refresh=refresh;Layout=layout;Reveal=reveal;Scroll=scroll;}
+                Action<float,float,float,float> layout,Action<Button> reveal,Action<string> scroll,bool hidesBackground=false)
+            {Buttons=buttons;InitialFocus=initialFocus;Refresh=refresh;Layout=layout;Reveal=reveal;Scroll=scroll;HidesBackground=hidesBackground;}
         }
         readonly LastStandLoopController loop;
         readonly Dictionary<string,Page> pages=new Dictionary<string,Page>(StringComparer.Ordinal);
@@ -33,6 +34,8 @@ namespace SingedTerra.LastStand
         public readonly LastStandResearchHud Research;
         public readonly LastStandRunHistoryHud History;
         public readonly LastStandPlannerHud Planner;
+        public readonly LastStandAppearanceHud Appearance;
+        public bool HidesBackground=>activePage?.HidesBackground==true;
         public readonly Button Menu;
         public readonly Button[] Buttons;
         Button returnFocus;bool wasOpen,changed;string wasPage;
@@ -47,6 +50,7 @@ namespace SingedTerra.LastStand
             Research=new LastStandResearchHud(root,font,loop.CloseMenu,loop.RefreshResearch,loop.SubmitResearch,metal,surface);
             History=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshControls,metal,surface);
             Planner=new LastStandPlannerHud(loop,root,font,openWorkshop,canOpenWorkshop,metal,surface);
+            Appearance=new LastStandAppearanceHud(loop,root,font,metal,surface);
             settingsPage=Register(null,new Page(Settings.Buttons,()=>Settings.InitialFocus,Settings.Refresh,Settings.Layout,Settings.Reveal,Settings.ScrollKeyboard));
             Register("research",new Page(Research.Buttons,()=>Research.InitialFocus,
                 visible=>Research.Refresh(visible,loop.ResearchSnapshot,loop.Progression.GetBestWave(1),loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus),
@@ -54,6 +58,7 @@ namespace SingedTerra.LastStand
             Register("history",new Page(History.Buttons,()=>History.InitialFocus,
                 visible=>History.Refresh(visible,loop.RunHistorySnapshot),History.Layout,History.Reveal,History.ScrollKeyboard));
             Register("planner",new Page(Planner.Buttons,()=>Planner.InitialFocus,Planner.Refresh,Planner.Layout,Planner.Reveal,Planner.ScrollKeyboard));
+            Register("appearance",new Page(Appearance.Buttons,()=>Appearance.InitialFocus,Appearance.Refresh,Appearance.Layout,Appearance.Reveal,Appearance.ScrollKeyboard,true));
             var buttons=new List<Button>();foreach(var page in orderedPages)buttons.AddRange(page.Buttons);Buttons=buttons.ToArray();
         }
         Page Register(string key,Page page)

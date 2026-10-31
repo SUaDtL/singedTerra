@@ -10,6 +10,8 @@ namespace SingedTerra.Art
         public Camera view;
         public Transform tank, turret, barrel, muzzle;
         public GameObject repairModule, launcherModule, flash;
+        public LastStandTankVisuals tankVisualsPrefab;
+        public LastStandTankVisuals TankVisuals { get; private set; }
         public GameObject scattergunModule { get; private set; }
         sealed class ModuleBinding
         {
@@ -67,6 +69,12 @@ namespace SingedTerra.Art
             if(inspectionForward.sqrMagnitude<.5f)throw new InvalidOperationException("No horizontal inspection axis");
             Application.targetFrameRate=60;
             if(!GetComponent<SingedTerra.LastStand.LastStandLoopController>())Application.runInBackground=false;
+            if(tankVisualsPrefab)
+            {
+                TankVisuals=Instantiate(tankVisualsPrefab,transform,false);
+                TankVisuals.Initialize(this);
+                TankVisuals.GeometryChanged+=InvalidateGarageFraming;
+            }
             scattergunModule=new GameObject("Attachment_Scattergun");
             var scattergun=scattergunModule.AddComponent<LastStandScattergunModule>();scattergun.Initialize(this);
             var mortarRoot=new GameObject("Attachment_Mortar");var mortar=mortarRoot.AddComponent<LastStandMortarModule>();mortar.Initialize(this);
@@ -87,6 +95,16 @@ namespace SingedTerra.Art
         float garageAspect;
         LastStandFitting garageFitting;
         Renderer[] garageMeshes;
+        readonly Dictionary<Mesh,Vector3[]> garageVertices=new Dictionary<Mesh,Vector3[]>();
+        public bool ApplyAppearance(LastStandTankAppearance appearance)
+        {EnsureInitialized();return TankVisuals && TankVisuals.Apply(appearance);}
+        public void InvalidateGarageFraming()
+        {
+            garageMeshes=null;
+            if(garageFraming && !EncounterActive && !battlefield && view)
+            {UpdateCameraGoal();view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);}
+            garageFraming=false;
+        }
         // Fit the authored tank into the space left by the garage cards without
         // cropping the world camera or changing the active encounter framing.
         public void SetGarageFraming(Rect normalizedViewport)
@@ -135,7 +153,7 @@ namespace SingedTerra.Art
                 Bounds bounds=default(Bounds);bool found=false;
                 foreach(var mesh in garageMeshes)
                 {
-                    if(!mesh || !mesh.enabled || !mesh.gameObject.activeInHierarchy)continue;
+                    if(!VisibleGarageMesh(mesh))continue;
                     if(!found){bounds=mesh.bounds;found=true;}else bounds.Encapsulate(mesh.bounds);
                 }
                 if(found)
@@ -143,16 +161,56 @@ namespace SingedTerra.Art
                     var direction=(Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius+Vector3.up*InspectionHeight).normalized;
                     var rotation=Quaternion.LookRotation(-direction);
                     float vertical=Mathf.Tan(view.fieldOfView*.5f*Mathf.Deg2Rad),horizontal=vertical*Mathf.Max(.2f,view.aspect);
-                    float limit=Mathf.Max(.025f,Mathf.Min(vertical*garageViewport.height,horizontal*garageViewport.width)*.90f);
-                    float distance=Mathf.Max(1,bounds.extents.magnitude/Mathf.Sin(Mathf.Atan(limit)));
                     Vector2 centre=garageViewport.center-new Vector2(.5f,.5f);
-                    lookGoal=bounds.center-rotation*new Vector3(centre.x*2*distance*horizontal,centre.y*2*distance*vertical,0);
+                    float distance=GarageFitDistance(bounds.center,rotation,horizontal,vertical,centre,out var offset);
+                    lookGoal=bounds.center-rotation*new Vector3(offset.x,offset.y,0);
                     cameraGoal=lookGoal+direction*distance;return;
                 }
             }
             cameraGoal=tank.position+(battlefield?new Vector3(17,23,19):
                 Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius
                 +Vector3.up*InspectionHeight);
+        }
+        bool VisibleGarageMesh(Renderer mesh)=>mesh && mesh.enabled && !mesh.forceRenderingOff &&
+            mesh.gameObject.activeInHierarchy && (view.cullingMask&(1<<mesh.gameObject.layer))!=0;
+        float GarageFitDistance(Vector3 origin,Quaternion rotation,float horizontal,float vertical,Vector2 centre,out Vector2 offset)
+        {
+            // Solve the four perspective inequalities for visible geometry.
+            // A point's depth is distance+p.z; using distance alone
+            // clips off-centre previews, particularly the upper portrait pane.
+            float halfWidth=horizontal*garageViewport.width*.90f,halfHeight=vertical*garageViewport.height*.90f;
+            float centreX=centre.x*2*horizontal,centreY=centre.y*2*vertical;
+            float left=centreX-halfWidth,right=centreX+halfWidth,bottom=centreY-halfHeight,top=centreY+halfHeight;
+            var inverse=Quaternion.Inverse(rotation);float distance=1;
+            float lowerX=float.NegativeInfinity,upperX=float.PositiveInfinity,lowerY=float.NegativeInfinity,upperY=float.PositiveInfinity;
+            foreach(var mesh in garageMeshes)
+            {
+                if(!VisibleGarageMesh(mesh))continue;
+                // New core meshes permit CPU readback. Cache positions once per
+                // shared mesh; fitting only runs when the framing changes.
+                // Retained unreadable fittings keep an oriented-bounds fallback.
+                Vector3[] vertices=null;var filter=mesh.GetComponent<MeshFilter>();
+                if(filter && filter.sharedMesh && filter.sharedMesh.isReadable && !garageVertices.TryGetValue(filter.sharedMesh,out vertices))
+                {vertices=filter.sharedMesh.vertices;garageVertices.Add(filter.sharedMesh,vertices);}
+                var bounds=mesh.localBounds;
+                int count=vertices==null?8:vertices.Length;
+                for(int corner=0;corner<count;corner++)
+                {
+                    var local=vertices!=null?vertices[corner]:bounds.center+Vector3.Scale(bounds.extents,new Vector3((corner&1)==0?-1:1,
+                        (corner&2)==0?-1:1,(corner&4)==0?-1:1));
+                    var point=mesh.transform.TransformPoint(local);
+                    var p=inverse*(point-origin);
+                    lowerX=Mathf.Max(lowerX,left*p.z-p.x);upperX=Mathf.Min(upperX,right*p.z-p.x);
+                    lowerY=Mathf.Max(lowerY,bottom*p.z-p.y);upperY=Mathf.Min(upperY,top*p.z-p.y);
+                    distance=Mathf.Max(distance,view.nearClipPlane+.1f-p.z);
+                }
+            }
+            distance=Mathf.Max(distance,(lowerX-upperX)/(2*halfWidth));
+            distance=Mathf.Max(distance,(lowerY-upperY)/(2*halfHeight));
+            // Select the midpoint of each feasible translation interval. In an
+            // offset viewport, the world AABB centre is not the projected centre.
+            offset=new Vector2(centreX*distance+(lowerX+upperX)*.5f,centreY*distance+(lowerY+upperY)*.5f);
+            return distance;
         }
         public void OrbitLeft(){Orbit(-OrbitStep);}
         public void OrbitRight(){Orbit(OrbitStep);}

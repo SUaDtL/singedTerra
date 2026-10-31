@@ -27,6 +27,7 @@ const runnerInputs = () => Object.fromEntries(['scripts/last-stand-combat-feedba
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
   'scripts/assets/verify-last-stand-source.mjs', 'scripts/assets/verify-last-stand.mjs'].map(path =>
   [path, createHash('sha256').update(readFileSync(path)).digest('hex')]));
 if (baseline) {
@@ -173,7 +174,7 @@ export async function assertCombatCaptureSave({page,baseline,state}) {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('singedTerra.lastStand.prototype.v1')));
     if(baseline)assert.equal(saved.credits,0,'Archived pre-wave capture has no banked wave income');
     else {
-      assert.equal(saved.version,6,'Current capture requires save version 6');
+      assert.equal(saved.version,7,'Current capture requires save version 7');
       assert.ok(saved.checkpoint?.encounter.completedWave>0,'Current capture completed a durable wave');
       assertWaveCheckpointEdition(saved.checkpoint);
       assert.ok(saved.credits>0,'Cleared waves bank income during the run');

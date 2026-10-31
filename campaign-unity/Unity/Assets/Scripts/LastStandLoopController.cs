@@ -97,6 +97,7 @@ namespace SingedTerra.LastStand
             preferencesStorage=new LastStandPreferencesStore();
 #endif
             Progression=LastStandProgression.Load(progressionStorage);
+            art.ApplyAppearance(Progression.Appearance);
             Preferences=LastStandPreferences.Load(preferencesStorage);
             runs=new LastStandRunCoordinator(Progression);
             purchases=new LastStandPurchaseCoordinator(this);
@@ -553,6 +554,7 @@ namespace SingedTerra.LastStand
         public void RefreshControls() { Refresh("controls"); }
         public void OpenMenu(string page = "menu")
         {
+            if(page=="appearance" && !CanCustomizeAppearance)return;
             if(page=="wave" && !CanInspectWave)return;
             if((page=="tier" || page=="fitting") && (!CanSelectLoadout || Selection==null))return;
             if (!CanOpenMenu) return;
@@ -561,6 +563,8 @@ namespace SingedTerra.LastStand
             if(SelectionOpen && page!=MenuPage) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
             if (!MenuOpen && Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(true)) return;
             LeaveBackupPage(page);
+            LeaveAppearancePage(page);
+            if(page=="appearance" && MenuPage!="appearance")BeginAppearance();
             MenuPage = page; Confirmation = "";
             Audio.UnlockFromGesture("menu"); Refresh("menu");
         }
@@ -571,6 +575,7 @@ namespace SingedTerra.LastStand
             if(SelectionOpen) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
             if (Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(false)) return;
             LeaveBackupPage("");
+            LeaveAppearancePage("");
             MenuPage = ""; Confirmation = ""; Refresh("menu-close");
         }
         public void RequestConfirmation(string action)
@@ -590,7 +595,7 @@ namespace SingedTerra.LastStand
             { Notice = "Finish reconciling this run and retry any unconfirmed save before leaving."; Refresh("navigation-unavailable"); return; }
             // Ordinary navigation preserves the last committed wave. Partial
             // wave progress and purchases are restored together on Resume.
-            MenuPage="";Confirmation="";Selection=null;
+            LeaveAppearancePage("");MenuPage="";Confirmation="";Selection=null;
             if(Session.Model!=null){Phase="garage";runShop=null;Session.ReturnToInspection();}
             Refresh("navigation");
             Platform.Navigate(account);
@@ -665,6 +670,7 @@ namespace SingedTerra.LastStand
             if (purchases!=null && purchases.TemporaryInProgress) return;
             if (hud == null) return;
             RefreshGarageSelections();
+            RefreshAppearance();
             SyncAudioAdmission();
             hud.Refresh(); Changed?.Invoke();
             EmitState(action);

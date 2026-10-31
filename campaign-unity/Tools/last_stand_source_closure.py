@@ -24,7 +24,7 @@ DEPENDENCIES = {
     "LastStandSelection.cs": ("LastStandUpgradeCatalog.cs",),
     "LastStandRunCheckpoint.cs": ("EncounterModel.cs", "LastStandSelection.cs", "LastStandShopState.cs"),
     "LastStandProgression.cs": ("LastStandStore.cs", "LastStandRunCheckpoint.cs", "LastStandProgressionSave.cs", "LastStandLegacySave.cs", "LastStandSaveJson.cs", "LastStandRewardCatalog.cs", "LastStandProgressionResearch.cs", "LastStandProgressionResearchSave.cs", "LastStandRunHistory.cs", "LastStandResearchState.cs", "LastStandProgressionBackup.cs"),
-    "LastStandProgressionBackup.cs": ("LastStandProgression.cs",),
+    "LastStandProgressionBackup.cs": ("LastStandProgression.cs", "LastStandProgressionAppearance.cs", "Content/LastStandTankAppearance.cs"),
     "LastStandResearchState.cs": ("LastStandResearchCatalog.cs", "LastStandResearchClock.cs"),
     "LastStandResearchCatalog.cs": ("Content/LastStandResearchDefinitions.cs",),
     "LastStandResearchPresentation.cs": ("LastStandResearchCatalog.cs", "LastStandResearchState.cs"),

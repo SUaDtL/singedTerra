@@ -55,7 +55,7 @@ test('actual research endurance admission requires current schema and retains ex
       const path=`sources/input-${index}.cs`,bytes=`inert source ${index}`;
       writeFileSync(join(directory,path),bytes);sourceSha256[path]=sha(bytes);
     }
-    const save={version:6,pendingDefeat:null,checkpoint:null,research:{completedRanks:{gameSpeed:8}}};
+    const save={version:7,pendingDefeat:null,checkpoint:null,research:{completedRanks:{gameSpeed:8}}};
     const fixture={id:'mature-5x',savePath:'mature-5x.json',requestedSpeed:5,
       qualificationPurchasePolicy:{intervalRealSeconds:900,quantity:'Max',intentsPerInterval:1,
         trackOrder:['cannonAttack','hullCapacity','scrapYield','cannonAttack','cannonCycle','launcherAttack','armor']}};
@@ -66,10 +66,10 @@ test('actual research endurance admission requires current schema and retains ex
       writeFileSync(path,JSON.stringify(manifest));};
     const admit=()=>endurance.admitResearchFixtures(manifest,path,directory);
     write(save);assert.doesNotThrow(admit);
-    for(const version of [4,5,7,0,-1,6.5,'6',null,undefined]){
-      write({...save,version});assert.throws(admit,/Current endurance requires save version 6/);
+    for(const version of [4,5,6,8,0,-1,6.5,'6',null,undefined]){
+      write({...save,version});assert.throws(admit,/Current endurance requires save version 7/);
     }
-    write(save);writeFileSync(savePath,JSON.stringify({...save,version:7}));
+    write(save);writeFileSync(savePath,JSON.stringify({...save,version:8}));
     assert.throws(admit,/Fixture bytes changed/);
     write(save);writeFileSync(join(directory,'sources/input-0.cs'),'changed');
     assert.throws(admit,/Fixture source changed/);
@@ -283,7 +283,7 @@ function observationClock(){
 
 async function actualEnduranceOrchestration({screenshotMs=0,speed=5,transitions=false,
   probeFailure=null,actionFailure=null,cancelAt=Infinity,retained={},
-  saved={version:6,pendingDefeat:null,checkpoint:null}}={}){
+  saved={version:7,pendingDefeat:null,checkpoint:null}}={}){
   const clock=observationClock(),ledger=newEnduranceLedger(speed),observations=[],actions=[];
   const report={summaries:0,screenshots:[],runsObserved:0,callback:{},audioCueTelemetry:{}};
   const card={key:'cannonAttack',level:0,cap:100,n:0,category:'Attack',canPurchase:true};
@@ -334,19 +334,19 @@ test('actual endurance durable readback admits current and retained checkpoint e
   const retained={runId:2,contentVersion:'last-stand-content-v1',encounter:{rulesVersion:'last-stand-waves-v1',tier:1,fitting:1,completedWave:1},
     shop:{economyVersion:'research-farming-economy-v3'}};
   for(const checkpoint of [null,current,retained]){
-    const result=await actualEnduranceOrchestration({saved:{version:6,pendingDefeat:null,checkpoint}});
+    const result=await actualEnduranceOrchestration({saved:{version:7,pendingDefeat:null,checkpoint}});
     assert.equal(result.completed,true);
     assert.equal(result.report.latestSample.checkpoint.wave,checkpoint?.encounter.completedWave??null);
   }
-  for(const version of [4,5,7,0,-1,6.5,'6',null,undefined])
-    await assert.rejects(actualEnduranceOrchestration({saved:{version,pendingDefeat:null,checkpoint:null}}),/Current endurance requires save version 6/);
+  for(const version of [4,5,6,8,0,-1,6.5,'6',null,undefined])
+    await assert.rejects(actualEnduranceOrchestration({saved:{version,pendingDefeat:null,checkpoint:null}}),/Current endurance requires save version 7/);
   for(const mutate of [cp=>cp.encounter.rulesVersion='unknown',cp=>cp.contentVersion='last-stand-content-v1',
     cp=>cp.shop.economyVersion='research-farming-economy-v3',cp=>delete cp.encounter.mortarDamage]){
     const checkpoint=structuredClone(current);mutate(checkpoint);
-    await assert.rejects(actualEnduranceOrchestration({saved:{version:6,pendingDefeat:null,checkpoint}}),
+    await assert.rejects(actualEnduranceOrchestration({saved:{version:7,pendingDefeat:null,checkpoint}}),
       /Unknown wave rules|Mixed content edition|Mixed economy edition|Missing weapon state/);
   }
-  await assert.rejects(actualEnduranceOrchestration({saved:{version:6,pendingDefeat:{runId:2},checkpoint:null}}),
+  await assert.rejects(actualEnduranceOrchestration({saved:{version:7,pendingDefeat:{runId:2},checkpoint:null}}),
     /Current runs never create legacy Claim rewards/);
 });
 

@@ -1,5 +1,6 @@
 """Observe five continuous earned Tier3 runs without changing canonical inputs."""
 import argparse
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -99,13 +100,16 @@ BINDINGS = {
 # all other model/policy inputs must still match the selected historical capture.
 EXECUTION_HELPER = "Tools/last_stand_test_runtime.py"
 SOURCE_CLOSURE_HELPER = "Tools/last_stand_source_closure.py"
-# Current progression storage adds Backup to this compile closure. These pins
+# Current progression adds portable backup and appearance metadata. These pins
 # never replace either historical capture's input map or outcome oracle.
-CURRENT_SOURCE_CLOSURE_LF_SHA = "b66009132f1de5bdaf7155e70af37422127701127f60ce56c083e9ce38f9eed7"
+CURRENT_SOURCE_CLOSURE_LF_SHA = "91e0bcf81e5b2d9cf6ec308cbab8485b0d1d62a17b6a3d52a21de70893c06ed1"
 CURRENT_CONTINUITY_INPUT_LF_SHA = {
-    "Unity/Assets/Scripts/LastStandProgression.cs": "1f1dad3c3941386bdcf58e20867f58ade9af02241b8f9ae40dc8d59a532f5fa5",
+    "Unity/Assets/Scripts/LastStandProgression.cs": "19a9e962aa266a95236ad944f3e3e5a721edca62e2ad070d464ca78da683d89f",
     "Unity/Assets/Scripts/LastStandStore.cs": "93b78c0423028bc86e6ddecac37bb9c9aaa5b7113e93059003d29f6573c8b16e",
-    "Unity/Assets/Scripts/LastStandProgressionBackup.cs": "7b422dbb4a4441bd2432be6743e8bbd09bd4eab5cea7df33ac395d208e4b41e7",
+    "Unity/Assets/Scripts/LastStandProgressionSave.cs": "cb5c3b2b4d931505cd2b1d1bff60ea93e47931c4cc4115a2a672f796a4d7ce73",
+    "Unity/Assets/Scripts/LastStandProgressionAppearance.cs": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2",
+    "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6",
+    "Unity/Assets/Scripts/LastStandProgressionBackup.cs": "0450f9b44730799088205b72a69c353741250de532d0d648312ad3a8ce841b5e",
 }
 CROWDED_REFERENCES = {
     "baseline": ("crowded-wave-baseline-report.json", "c9618825f2461fdc4e761d00082b3425f1e202a16da9325462a07acc129acb52"),
@@ -179,6 +183,73 @@ def crowded_reference(binding_name, project=PROJECT):
 def assert_crowded_parity(report, reference):
     if set(report) != set(RESULT_FIELDS) or report != {key: reference[key] for key in RESULT_FIELDS}:
         raise ValueError("Current execution differs from complete frozen crowded outcomes")
+
+
+def project_current_allocations(report, canonical):
+    """Prove only the v6-to-v7 metadata migration; never relabel current bytes."""
+    def refuse(reason):
+        raise ValueError("Current allocation migration proof refused: " + reason)
+
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                refuse("duplicate profile field")
+            result[key] = value
+        return result
+
+    def profile(raw):
+        if not isinstance(raw, str) or len(raw.encode("utf-8")) > 65536:
+            refuse("missing or oversized profile bytes")
+        try:
+            value = json.loads(raw, object_pairs_hook=unique_object,
+                               parse_constant=lambda _: refuse("non-JSON number"))
+        except (TypeError, json.JSONDecodeError):
+            refuse("invalid profile JSON")
+        if not isinstance(value, dict) or json.dumps(value, ensure_ascii=False, separators=(",", ":")) != raw:
+            refuse("noncanonical profile bytes")
+        return value
+
+    seed = next(c["seed"] for c in canonical["unlockCohorts"] if c["trigger"] == "final-earned")
+    original = {r["fitting"]: r for c in canonical["unlockCohorts"] if c["trigger"] == "final-earned"
+                for r in c["supplementalComparisons"] if r["tier"] == 3}
+    seed_profile = profile(seed["profileJson"])
+    if type(seed_profile.get("version")) is not int or seed_profile["version"] != 6 or "appearance" in seed_profile:
+        refuse("expected the frozen v6 seed")
+    if hashlib.sha256(seed["profileJson"].encode("utf-8")).hexdigest() != seed["profileSha256"]:
+        refuse("seed identity changed")
+    if set(report) != set(RESULT_FIELDS) or len(report["runs"]) != 5 or {r["fitting"] for r in report["runs"]} != set(original):
+        refuse("expected all five current fitting branches")
+    projected = copy.deepcopy(report)
+    proofs = []
+    expected_appearance = {"treads": "foundry", "hull": "foundry", "turret": "foundry", "barrel": "foundry", "paint": "red"}
+    for row in projected["runs"]:
+        raw = row.pop("allocatedProfileJson", None)
+        current = profile(raw)
+        current_hash = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+        if current_hash != row["oneTimeAllocation"]["allocatedProfileSha256"]:
+            refuse("current allocated bytes and identity disagree")
+        if type(current.get("version")) is not int or current["version"] != 7 or current.get("appearance") != expected_appearance:
+            refuse("only v7 default Foundry/red appearance is projectable")
+        revision = current.get("revision")
+        if type(revision) is not int or not 0 < revision <= 9007199254740991:
+            refuse("invalid current revision")
+        # These are the only permitted differences. The frozen full-profile digest
+        # below proves every gameplay field and exactly one migration revision.
+        del current["appearance"]
+        current["version"] = 6
+        current["revision"] = revision - 1
+        old_raw = json.dumps(current, ensure_ascii=False, separators=(",", ":"))
+        old_hash = hashlib.sha256(old_raw.encode("utf-8")).hexdigest()
+        if old_hash != original[row["fitting"]]["oneTimeAllocation"]["allocatedProfileSha256"]:
+            refuse("projected bytes differ from the frozen v6 allocation")
+        row["oneTimeAllocation"]["allocatedProfileSha256"] = old_hash
+        proofs.append({"policy": "v7-default-appearance-single-revision-to-v6-v1", "fitting": row["fitting"],
+                       "currentVersion": 7, "historicalV6ProjectionVersion": 6,
+                       "currentProfileSha256": current_hash, "historicalV6ProjectionSha256": old_hash,
+                       "currentRevision": revision, "historicalV6ProjectionRevision": revision - 1,
+                       "migrationRevisionDelta": 1})
+    return projected, proofs
 
 
 def admit_destination(destination):
@@ -284,8 +355,9 @@ def measure(destination, binding_name="calibrated"):
             raise RuntimeError(result.stderr)
         elapsed = time.monotonic() - start
         report = json.loads(result.stdout)
-        validate(report, canonical)
-        assert_crowded_parity(report, parity_reference)
+        historical_projection, migration_proofs = project_current_allocations(report, canonical)
+        validate(historical_projection, canonical)
+        assert_crowded_parity(historical_projection, parity_reference)
         generated_bytes = generated.read_bytes()
     if hashes(paths) != before or tools != {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in (CSC, MONO)} or report_path.read_bytes() != data or parity_path.read_bytes() != parity_data:
         raise RuntimeError("Observer sources/toolchain/canonical report changed")
@@ -293,6 +365,7 @@ def measure(destination, binding_name="calibrated"):
     retained.parent.mkdir(parents=True, exist_ok=True)
     retained.write_bytes(generated_bytes)
     report.update(canonicalBinding=binding_name, canonicalReportSha256=binding["raw"], sourceSha256=before, toolSha256=tools,
+                  allocationMigrationProofs=migration_proofs,
                   canonicalReportObservedRawSha256=hashlib.sha256(data).hexdigest(), canonicalReportLfSha256=binding["lf"],
                   sourceLfSha256={str(p.relative_to(PROJECT)).replace("\\", "/"): hashlib.sha256(p.read_bytes().replace(b"\r\n", b"\n")).hexdigest() for p in paths},
                   canonicalSourceHistoricalRawSha256=canonical["sourceSha256"], canonicalSourceLfSha256=binding["inputs"],
@@ -307,7 +380,7 @@ def measure(destination, binding_name="calibrated"):
                     for rel, digest in CURRENT_CONTINUITY_INPUT_LF_SHA.items()},
                   crowdedParityReferenceObservedRawSha256=hashlib.sha256(parity_data).hexdigest(),
                   crowdedParityReferenceLfSha256=CROWDED_REFERENCES[binding_name][1],
-                  sourceAdmission="Historical reports and capture identities remain unchanged. Reviewed progression, storage and backup sources have separate current LF pins; all other model and measurement policy inputs retain their frozen LF pins. The closure helper accepts its historical or separately reviewed current pin and must select exactly the frozen C# paths plus Backup. Current sources and helpers are bound before/after with actual tool binaries and argv. Fresh complete crowded outcomes must exactly equal the immutable crowded reference.",
+                  sourceAdmission="Historical reports and capture identities remain unchanged. Reviewed progression, storage, backup and appearance sources have separate current LF pins; all other model and measurement policy inputs retain their frozen LF pins. The closure helper accepts its historical or separately reviewed current pin and must select exactly the frozen C# paths plus declared current additions. Current sources and helpers are bound before/after with actual tool binaries and argv. Exact current allocated profile bytes and their actual hashes remain recorded. Only a separately labeled projection removing default Foundry/red appearance, changing v7 to v6 and subtracting exactly one migration revision may match the frozen allocated profile digest. All remaining complete crowded outcomes must exactly equal the immutable crowded reference.",
                   generatedHarnessSha256=hashlib.sha256(generated_bytes).hexdigest(), generatedHarnessPath=str(retained), compileArgv=list(build.argv),
                   executionSeconds=elapsed, command=[sys.executable, *sys.orig_argv[1:]], cwd=str(Path.cwd()),
                   qualification="Bounded actual production-model observation; no coefficient change or live player/performance claim.",

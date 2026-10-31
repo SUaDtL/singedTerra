@@ -141,7 +141,7 @@ internal static class ShopPersistenceChecks
 
     static void CheckCurrentSave(string value)
     {
-        Require(value.StartsWith("{\"version\":6,"), "Supported migration must write version 6 under the same key.");
+        Require(value.StartsWith("{\"version\":7,"), "Supported migration must write version 7 under the same key.");
         Require(value.Contains("\"permanentLevels\":{") && !value.Contains("\"permanentLevel\":"),
             "Version 6 must preserve keyed permanent tracks.");
         Require(value.Contains("\"scrapYield\":") && value.Contains("\"research\":") && value.Contains("\"checkpoint\":"),

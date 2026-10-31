@@ -76,7 +76,7 @@ static class PresentationFixtureGenerator
             Require(ready.TrySelectTier(tier.Id)&&ready.TrySelectFitting(fitting.Id)&&ready.TryDeploy(),"Unlocked roster must actually deploy every pairing");
             ready.Checkpoint.RestoreModel();ready.Checkpoint.RestoreShop();combinations++;
         }
-        return Map("id","roster-ready","save",store.Raw,"version",6,"createdUtcMilliseconds",utc,"hasCheckpoint",false,
+        return Map("id","roster-ready","save",store.Raw,"version",7,"createdUtcMilliseconds",utc,"hasCheckpoint",false,
             "unlockedTiers",tiers,"unlockedFittings",fittings,"simulatedRuns",runs,"productionReloadValidated",true,
             "validatedDeploymentCombinations",combinations,"giftedPermanentLevels",LastStandSaveJson.Read(store.Raw)["permanentLevels"],"sourceStoreWrites",store.Writes,
             "scope","Existing declared mature development gifts plus simulated continuous cohorts; not earned player progression or elapsed endurance.");
@@ -94,7 +94,7 @@ static class PresentationFixtureGenerator
         bool elite=false;for(int i=0;i<40000&&model.Status==EncounterStatus.Running&&!model.AwaitingWaveCommit&&!elite;i++)
         {model.Step();foreach(var foe in model.Foes)if(foe.Alive&&foe.Kind==FoeKind.SiegeElite)elite=true;}
         Require(elite,"Actual restored next cohort must contain an elite");
-        return Map("id","tier2-before-elite","save",store.Raw,"version",6,"createdUtcMilliseconds",utc,"hasCheckpoint",true,
+        return Map("id","tier2-before-elite","save",store.Raw,"version",7,"createdUtcMilliseconds",utc,"hasCheckpoint",true,
             "tier",2,"completedWave",49,"nextWave",50,"fitting","launcher","giftedPermanentLevels",levels,
             "simulatedRuns",new List<object>{run},"productionReloadValidated",true,"nextCohortContainsElite",true,
             "scope","Idle copy of roster-ready with explicitly reset gifted levels; 49 continuous actual cohorts, not earned player progression.");

@@ -15,7 +15,7 @@ const checkpoint=(wave=99,legacy=false)=>({runId:1,contentVersion:legacy?'last-s
   encounter:{rulesVersion:legacy?'last-stand-waves-v1':'last-stand-waves-v2',tier:1,fitting:1,completedWave:wave,
     ...(legacy?{}:{mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40})},
   shop:{economyVersion:legacy?'research-farming-economy-v3':'combat-depth-economy-v4'}});
-const save=(wave=99,legacy=false)=>({version:6,credits:2,checkpoint:checkpoint(wave,legacy),pendingDefeat:null,permanentLevels:{cannonAttack:0}});
+const save=(wave=99,legacy=false)=>({version:7,credits:2,checkpoint:checkpoint(wave,legacy),pendingDefeat:null,permanentLevels:{cannonAttack:0}});
 
 function milestoneCaller(saved,expected){
   const raw=Buffer.from(JSON.stringify(saved)),next=Buffer.from(JSON.stringify(expected));
@@ -127,9 +127,9 @@ test('actual milestone readbacks preserve idle research metadata while refusing 
 
 test('actual milestone caller requires current input and expected envelopes with complete saved editions',()=>{
   for(const legacy of [false,true])assert.doesNotThrow(()=>milestoneCaller(save(99,legacy),save(100,legacy)));
-  for(const side of ['before','after'])for(const version of [4,5,7,0,6.5,'6',null,undefined]){
+  for(const side of ['before','after'])for(const version of [4,5,6,8,0,6.5,'6',null,undefined]){
     const before=save(),after=save(100);(side==='before'?before:after).version=version;
-    assert.throws(()=>milestoneCaller(before,after),/Current milestone requires save version 6/);
+    assert.throws(()=>milestoneCaller(before,after),/Current milestone requires save version 7/);
   }
   for(const mutate of [cp=>cp.encounter.rulesVersion='future',cp=>cp.contentVersion='last-stand-content-v1',
     cp=>cp.shop.economyVersion='research-farming-economy-v3',cp=>delete cp.encounter.mortarDamage])for(const side of ['before','after']){
@@ -156,8 +156,8 @@ test('actual combat capture requires current durable schema while preserving arc
   for(const legacy of [false,true])await combatSaveCaller(save(1,legacy));
   await combatSaveCaller({...save(),version:3,credits:0,checkpoint:null},{baseline:true});
   await assert.rejects(combatSaveCaller({...save(),version:3,credits:1},{baseline:true}),/Archived pre-wave capture/);
-  for(const version of [4,5,7,0,6.5,'6',null,undefined])
-    await assert.rejects(combatSaveCaller({...save(),version}),/Current capture requires save version 6/);
+  for(const version of [4,5,6,8,0,6.5,'6',null,undefined])
+    await assert.rejects(combatSaveCaller({...save(),version}),/Current capture requires save version 7/);
   for(const mutate of [cp=>cp.encounter.rulesVersion='future',cp=>cp.contentVersion='last-stand-content-v1',
     cp=>cp.shop.economyVersion='research-farming-economy-v3',cp=>delete cp.encounter.mortarDamage]){
     const saved=save();mutate(saved.checkpoint);
@@ -209,10 +209,10 @@ test('milestone setup requires complete source closure and four unique contained
     }
     for(const [field,digest]of [['savePath','saveSha256'],['expectedSavePath','expectedSaveSha256']]){
       const original=readFileSync(valid.cases[0][field]);
-      for(const version of [5,7,'6',null]){
+      for(const version of [5,6,8,'6',null]){
         const bad=structuredClone(valid),changed={...JSON.parse(original),version},bytes=JSON.stringify(changed);
         writeFileSync(bad.cases[0][field],bytes);bad.cases[0][digest]=sha(bytes);
-        assert.throws(()=>admitMilestoneFixtures(bad,manifestPath,root),/Current milestone requires save version 6/);
+        assert.throws(()=>admitMilestoneFixtures(bad,manifestPath,root),/Current milestone requires save version 7/);
       }
       writeFileSync(valid.cases[0][field],original);
     }

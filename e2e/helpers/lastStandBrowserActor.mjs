@@ -6,10 +6,11 @@ import {createHash} from 'node:crypto';
 import {readShopControlObservation} from './lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from './lastStandTierJourney.mjs';
 const key='singedTerra.lastStand.prototype.v1';
-export const lastStandObservedControls=layout=>['controls','shopControls','settingsControls','researchControls','historyControls','plannerControls'].flatMap(key=>layout?.[key]??[]);
+export const lastStandObservedControls=layout=>['controls','shopControls','settingsControls','researchControls','historyControls','plannerControls','appearanceControls'].flatMap(key=>layout?.[key]??[]);
 const controls=lastStandObservedControls;
 
-export async function createLastStandBrowserActor({context,id,report,output,base,persist,saveState='ready'}){
+export async function createLastStandBrowserActor({context,id,report,output,base,persist,saveState='ready',maxRetainedLayouts=Infinity}){
+    assert.ok(maxRetainedLayouts===Infinity||Number.isInteger(maxRetainedLayouts)&&maxRetainedLayouts>=2,'Invalid layout retention bound');
     const page=await context.newPage(),run={id,actions:[],inputs:[],states:[],layouts:[],shops:[],storage:[],screenshots:[],errors:[],encounters:[],combat:[],callouts:[],audio:[]};report.runs.push(run);
     let state,layout,shop,error;
     page.on('pageerror',value=>run.errors.push(String(value)));
@@ -22,7 +23,16 @@ export async function createLastStandBrowserActor({context,id,report,output,base
         if(raw.startsWith('ST_WAVE_INPUT '))run.inputs.push(JSON.parse(raw.slice(14)));
         if(raw.startsWith('ST_LS_STATE ')){state=JSON.parse(raw.slice(12));run.states.push({at:Date.now(),...state});}
         if(raw.startsWith('ST_LS_SHOP_STATE ')){shop=JSON.parse(raw.slice(17));run.shops.push({at:Date.now(),...shop});}
-        if(raw.startsWith('ST_LS_HUD_LAYOUT ')){layout=readShopControlObservation(raw);run.layouts.push({at:Date.now(),...layout});}
+        if(raw.startsWith('ST_LS_HUD_LAYOUT ')){
+          // Validate every packet, even when a caller retains only a bounded
+          // tail. Screenshots keep their own complete matching layout.
+          layout=readShopControlObservation(raw);run.layouts.push({at:Date.now(),...layout});
+          if(Number.isFinite(maxRetainedLayouts)){
+            run.layoutPacketsObserved=(run.layoutPacketsObserved??0)+1;
+            run.layoutRetention={mode:'validated-tail',limit:maxRetainedLayouts};
+            if(run.layouts.length>maxRetainedLayouts)run.layouts.splice(0,run.layouts.length-maxRetainedLayouts);
+          }
+        }
       }catch(value){error??=value;run.rejectedTelemetry??=raw;}
     });
     const until=async(predicate,seconds=20)=>{

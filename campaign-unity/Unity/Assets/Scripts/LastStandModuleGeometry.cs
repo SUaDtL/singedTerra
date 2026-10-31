@@ -11,6 +11,13 @@ namespace SingedTerra.Art
         public static Quaternion Mount(TankPresentation owner,Transform module)
         {
             if(!owner||!module)throw new ArgumentNullException(nameof(owner));
+            if(owner.TankVisuals && owner.TankVisuals.FittingSocket)
+            {
+                var socket=owner.TankVisuals.FittingSocket;
+                module.SetParent(owner.launcherModule.transform.parent,true);
+                module.SetPositionAndRotation(socket.position,socket.rotation);
+                return module.localRotation;
+            }
             Renderer foot=null;
             foreach(var renderer in owner.launcherModule.GetComponentsInChildren<Renderer>(true))
                 if(renderer.name=="Attachment_Launcher_Steel"){foot=renderer;break;}
@@ -24,6 +31,7 @@ namespace SingedTerra.Art
         { if(mesh){if(Application.isPlaying)UnityEngine.Object.Destroy(mesh);else UnityEngine.Object.DestroyImmediate(mesh);} }
         public static Material Material(TankPresentation owner,string identity)
         {
+            if(owner.TankVisuals)return owner.TankVisuals.ModuleMaterial(identity);
             foreach(var renderer in owner.tank.GetComponentsInChildren<Renderer>(true))
                 foreach(var material in renderer.sharedMaterials)
                     if(material && material.name==identity)return material;

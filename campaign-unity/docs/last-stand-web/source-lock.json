@@ -15,7 +15,7 @@
     "files": {
       "Tools/build_web.py": {
         "mode": "lf-text",
-        "sha256": "3a34904e04c2baf5bb9c67187208e92b0b498bed86605f92de1cf1bb8563a27d"
+        "sha256": "cd059b4cb81c19396c51bcd800b258d772bfeb9013f5507ad98d6c2666a1716b"
       },
       "Tools/unity_build_resources.py": {
         "mode": "lf-text",
@@ -317,6 +317,14 @@
         "mode": "lf-text",
         "sha256": "e6d479c7136e998decc1ed597752ec430934024de16db2fb533a7b72ae229aec"
       },
+      "Unity/Assets/Editor/LastStandAppearanceChecks.cs": {
+        "mode": "lf-text",
+        "sha256": "2dd89139f4185e06437586d6af693003468bd1b9c49a8a952c4b875191448c44"
+      },
+      "Unity/Assets/Editor/LastStandAppearanceChecks.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "fb3eb2c6717af86ebba4dc20428b2ca97ff8f9fe0acfc10053eccb181255b845"
+      },
       "Unity/Assets/Editor/LastStandArmamentChecks.cs": {
         "mode": "lf-text",
         "sha256": "8c74b8d3dbdf349d70a70bb2a5608bb393c075dee330089fa44a59a97ff1c1eb"
@@ -383,7 +391,7 @@
       },
       "Unity/Assets/Editor/LastStandFittingChecks.cs": {
         "mode": "lf-text",
-        "sha256": "4e0c14b5d6bbcba1bfd64244181d9cfeb62ba47e20c2f90df57c598443fbd003"
+        "sha256": "c458c48a9291d836886c2ea2981a71a76770c438a639caae593409bcf6b75e72"
       },
       "Unity/Assets/Editor/LastStandFittingChecks.cs.meta": {
         "mode": "lf-text",
@@ -415,7 +423,7 @@
       },
       "Unity/Assets/Editor/LastStandObservationContractChecks.cs": {
         "mode": "lf-text",
-        "sha256": "7a362244a4929f4640a027e217ec20ed08e34b6b5028f1794a2c5c136fdebf2b"
+        "sha256": "949d94d9170caa27638ce4354dae77096253f28a932ba0c058b1916c17a5f8ec"
       },
       "Unity/Assets/Editor/LastStandObservationContractChecks.cs.meta": {
         "mode": "lf-text",
@@ -452,6 +460,22 @@
       "Unity/Assets/Editor/LastStandStartupChecks.cs.meta": {
         "mode": "lf-text",
         "sha256": "cb4fd888b417c2d1bbc2bbfab02338a50c8c1e8306e88f813cfd4bfa712cc7bb"
+      },
+      "Unity/Assets/Editor/LastStandTankKitImport.cs": {
+        "mode": "lf-text",
+        "sha256": "eca91251f061bf2729d0549770bbe015ecd4466e755f687d8891d7a3fc25f81a"
+      },
+      "Unity/Assets/Editor/LastStandTankKitImport.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "d49e68d50b171862ec0b19d4700edcaff7517b0cf3c7340e0f43f15a1473141f"
+      },
+      "Unity/Assets/Editor/LastStandTankSceneUpgrade.cs": {
+        "mode": "lf-text",
+        "sha256": "4669e56b427a848e9637f333c4f3fb5f5ad907a38022b642f63fc454d73126cd"
+      },
+      "Unity/Assets/Editor/LastStandTankSceneUpgrade.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "03e103ef974b4d8b431fe0b02152f2bd28411642380573eaf1d44537a84e3e00"
       },
       "Unity/Assets/Editor/LastStandTestPreferencesScope.cs": {
         "mode": "lf-text",
@@ -1071,7 +1095,7 @@
       },
       "Unity/Assets/Scenes/LastStandPrototype.unity": {
         "mode": "lf-text",
-        "sha256": "253cf0e4a0040beff39c37f95cd4bf3221f951be131e01445df67e97b02e339c"
+        "sha256": "d89f6867e36b9c270e6a9fd20c573c9a8970c4184833166c5534c2c600d6ee37"
       },
       "Unity/Assets/Scenes/LastStandPrototype.unity.meta": {
         "mode": "lf-text",
@@ -1165,6 +1189,14 @@
         "mode": "lf-text",
         "sha256": "f82dddfa78fc11429af19e3fbe261eeb944a3fdfa869067fa4d68e25ab77b7af"
       },
+      "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": {
+        "mode": "lf-text",
+        "sha256": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6"
+      },
+      "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "cb8c5d4e420652ffcbbdd016fde8fa1f1220b762d55f136226684b0f1ca94016"
+      },
       "Unity/Assets/Scripts/Content.meta": {
         "mode": "lf-text",
         "sha256": "9b076064b2fbb5d8879dde5d574080b274415fb6750011ab15139156b9e56f18"
@@ -1233,6 +1265,30 @@
         "mode": "lf-text",
         "sha256": "f355182b8d57f7f1bf081f016b8d68c1f6d4a09ef9262f7f1a28fa55069cc9fb"
       },
+      "Unity/Assets/Scripts/LastStandAppearanceHud.cs": {
+        "mode": "lf-text",
+        "sha256": "c47f76b009c59e20f8607231c84af51c24b2f7869965462f26a54f70a4429249"
+      },
+      "Unity/Assets/Scripts/LastStandAppearanceHud.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "3c077d111010967f4764d98636e00eea5cd878b3a9412900a5ae48792a0cd0f8"
+      },
+      "Unity/Assets/Scripts/LastStandAppearanceLayout.cs": {
+        "mode": "lf-text",
+        "sha256": "96bd81299817369789f388f333a4efe63880b5f7c4097f2651ddccae37600327"
+      },
+      "Unity/Assets/Scripts/LastStandAppearanceLayout.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "a530b05b0e106be09d8bdbc78b3ae4fa40d8e854c1419474a1b7ad5ed7bd6001"
+      },
+      "Unity/Assets/Scripts/LastStandAppearanceSession.cs": {
+        "mode": "lf-text",
+        "sha256": "083a56989e1972ce7dab3b65180bd579cf2a517f6b1899e03e44a4b4fd3b9216"
+      },
+      "Unity/Assets/Scripts/LastStandAppearanceSession.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "8fff512907c5404d3fe00b7730c372dcd2425064b36b1e5d546c2c1fd3bac402"
+      },
       "Unity/Assets/Scripts/LastStandAudio.cs": {
         "mode": "lf-text",
         "sha256": "3738e72e5fbc6cc8bdbfdea9aa5924aaee2b982405570c36636937ce8a6948bd"
@@ -1291,7 +1347,7 @@
       },
       "Unity/Assets/Scripts/LastStandFittingCallout.cs": {
         "mode": "lf-text",
-        "sha256": "261260b0224eb8efa4299458c894722f2ef3edcd4e1bfd7808056bdd8feb3f8e"
+        "sha256": "04cd1e7d8af961abd2f1dfeabeff4e4492e0038fa2f37c89ab2a32ccf67544c0"
       },
       "Unity/Assets/Scripts/LastStandFittingCallout.cs.meta": {
         "mode": "lf-text",
@@ -1299,7 +1355,7 @@
       },
       "Unity/Assets/Scripts/LastStandGarageView.cs": {
         "mode": "lf-text",
-        "sha256": "dbff58fe0ef1fa1e1e005429208b8bcf29e7985bbcbe74d16f03a6ec95dfd3c6"
+        "sha256": "f939224ac7b76ff809897ca4604238c4a71dfecd8a30ff33b16b54f70a12f2dc"
       },
       "Unity/Assets/Scripts/LastStandGarageView.cs.meta": {
         "mode": "lf-text",
@@ -1347,7 +1403,7 @@
       },
       "Unity/Assets/Scripts/LastStandHudObservations.cs": {
         "mode": "lf-text",
-        "sha256": "01fcd06d570100ffff3308de313351ceb6954874321631ac78ea9d0d67070d72"
+        "sha256": "c6a35073f4196f67227ba46002d62741178bdcd8f906fb47b9d58087eb5d9eff"
       },
       "Unity/Assets/Scripts/LastStandHudObservations.cs.meta": {
         "mode": "lf-text",
@@ -1361,6 +1417,14 @@
         "mode": "lf-text",
         "sha256": "44794bec43635e012bed13f21d34fd27c09618c28ada189752025fdcfd57c96f"
       },
+      "Unity/Assets/Scripts/LastStandLoopAppearance.cs": {
+        "mode": "lf-text",
+        "sha256": "aa95411460d3a68db9461119370c741942a7b74ddab4f1cd36b5aba3d4fccc3e"
+      },
+      "Unity/Assets/Scripts/LastStandLoopAppearance.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "ceefddf554d5715315df41865325e9fe93a139e4810878c1de487ef66b14dff3"
+      },
       "Unity/Assets/Scripts/LastStandLoopContinuity.cs": {
         "mode": "lf-text",
         "sha256": "ca2584fd0f137e428dfea1a092f5ca55824925fa6d89a5537a2cc530a940ccd1"
@@ -1371,7 +1435,7 @@
       },
       "Unity/Assets/Scripts/LastStandLoopController.cs": {
         "mode": "lf-text",
-        "sha256": "c44b9c97df7262be4777ca8f65baa9e51026ca517fa695eb7b43cbde1c0d15ef"
+        "sha256": "6cb78c8cf8f63228d63e4f8a417325dfc555c952ad1a291d4571c76910a5f4a9"
       },
       "Unity/Assets/Scripts/LastStandLoopController.cs.meta": {
         "mode": "lf-text",
@@ -1379,7 +1443,7 @@
       },
       "Unity/Assets/Scripts/LastStandLoopHud.cs": {
         "mode": "lf-text",
-        "sha256": "51e54e9fc95411ffe4574994e42db5149246675261a64e105e05d432c4e48183"
+        "sha256": "1dd59654803193aa383f9f59e2bb7182913b5e5d2d206b0522ab65cab0729cc2"
       },
       "Unity/Assets/Scripts/LastStandLoopHud.cs.meta": {
         "mode": "lf-text",
@@ -1403,7 +1467,7 @@
       },
       "Unity/Assets/Scripts/LastStandModal.cs": {
         "mode": "lf-text",
-        "sha256": "330deda11a6bacc4ba22c4e56b187c7aa943aeb8549d26d02ec1c9c121e0716b"
+        "sha256": "6c2c4dc3b792a42c02792bb82757fb4f7c90ddfd4f2511178e85c0ce6c884298"
       },
       "Unity/Assets/Scripts/LastStandModal.cs.meta": {
         "mode": "lf-text",
@@ -1411,7 +1475,7 @@
       },
       "Unity/Assets/Scripts/LastStandModalHost.cs": {
         "mode": "lf-text",
-        "sha256": "c6948af49634d057595ea77e7d6728a8924337196f435f24f14d1d3d343ff06a"
+        "sha256": "0da7ca9201fde003622813396e9cc2d6068103d236144082dd658912aa760c5f"
       },
       "Unity/Assets/Scripts/LastStandModalHost.cs.meta": {
         "mode": "lf-text",
@@ -1419,7 +1483,7 @@
       },
       "Unity/Assets/Scripts/LastStandModuleGeometry.cs": {
         "mode": "lf-text",
-        "sha256": "fb8fea805a58a36a211282bd8a124b7ea9a2668b12dbb9ac3466c839c48d57ac"
+        "sha256": "59bd6214cc8a24ddadcddf2d36ea443a6177695bb7746ec0c1e323d011e8540c"
       },
       "Unity/Assets/Scripts/LastStandModuleGeometry.cs.meta": {
         "mode": "lf-text",
@@ -1443,7 +1507,7 @@
       },
       "Unity/Assets/Scripts/LastStandObservations.cs": {
         "mode": "lf-text",
-        "sha256": "9bb33d24e2b68e324fbbfcd1717df19333e88256dac8b533978bd520bc0b52a7"
+        "sha256": "a7803d2f9136ca14aee7b1989cac12e8828d07b6b4097899158eadff76f638f9"
       },
       "Unity/Assets/Scripts/LastStandObservations.cs.meta": {
         "mode": "lf-text",
@@ -1475,15 +1539,23 @@
       },
       "Unity/Assets/Scripts/LastStandProgression.cs": {
         "mode": "lf-text",
-        "sha256": "1f1dad3c3941386bdcf58e20867f58ade9af02241b8f9ae40dc8d59a532f5fa5"
+        "sha256": "19a9e962aa266a95236ad944f3e3e5a721edca62e2ad070d464ca78da683d89f"
       },
       "Unity/Assets/Scripts/LastStandProgression.cs.meta": {
         "mode": "lf-text",
         "sha256": "89fcd238e832e2f61ef14ae6ef17529049e9d82d0f194b0549d4e420be55eb73"
       },
+      "Unity/Assets/Scripts/LastStandProgressionAppearance.cs": {
+        "mode": "lf-text",
+        "sha256": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2"
+      },
+      "Unity/Assets/Scripts/LastStandProgressionAppearance.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "3144d69945f1053450f4f4889fd6dee5b4ef3f066655908091dc895ccfec4df0"
+      },
       "Unity/Assets/Scripts/LastStandProgressionBackup.cs": {
         "mode": "lf-text",
-        "sha256": "7b422dbb4a4441bd2432be6743e8bbd09bd4eab5cea7df33ac395d208e4b41e7"
+        "sha256": "0450f9b44730799088205b72a69c353741250de532d0d648312ad3a8ce841b5e"
       },
       "Unity/Assets/Scripts/LastStandProgressionBackup.cs.meta": {
         "mode": "lf-text",
@@ -1515,7 +1587,7 @@
       },
       "Unity/Assets/Scripts/LastStandProgressionSave.cs": {
         "mode": "lf-text",
-        "sha256": "f2fd9d34a5abd6b041d8e6976068cb9fdd5fb4df282e4d1802b2f485e4603ca7"
+        "sha256": "cb5c3b2b4d931505cd2b1d1bff60ea93e47931c4cc4115a2a672f796a4d7ce73"
       },
       "Unity/Assets/Scripts/LastStandProgressionSave.cs.meta": {
         "mode": "lf-text",
@@ -1643,7 +1715,7 @@
       },
       "Unity/Assets/Scripts/LastStandSettingsHud.cs": {
         "mode": "lf-text",
-        "sha256": "8b9792b06ce6dd4f57632e81406d931a6ceba21916d682a68b552050cd252ad2"
+        "sha256": "da62b508a896496c9b66cf89df9e6a2b1308cb70d2149fd2f592f31ea8e3a7c3"
       },
       "Unity/Assets/Scripts/LastStandSettingsHud.cs.meta": {
         "mode": "lf-text",
@@ -1688,6 +1760,14 @@
       "Unity/Assets/Scripts/LastStandStore.cs.meta": {
         "mode": "lf-text",
         "sha256": "b4f1e326a772bd4c23f57f9684b243699c4527afbe56eb84caa15e7277ec94d6"
+      },
+      "Unity/Assets/Scripts/LastStandTankVisuals.cs": {
+        "mode": "lf-text",
+        "sha256": "82b8d36d072e009646e2bd2aa334ee8ce620374e1950eef923d6aad790ed8501"
+      },
+      "Unity/Assets/Scripts/LastStandTankVisuals.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "2bf8209d2e4db9ee9991627f0a22f5384f25bc3095e6f8a946bdb9573f04007c"
       },
       "Unity/Assets/Scripts/LastStandTierCatalog.cs": {
         "mode": "lf-text",
@@ -1831,7 +1911,7 @@
       },
       "Unity/Assets/Scripts/TankPresentation.cs": {
         "mode": "lf-text",
-        "sha256": "588f64809004297cbdeda5c8eb360bd286015ef8bc13a89d445c552591852400"
+        "sha256": "1e51895f0b2150d5b09991bcfe8013fbf1dfcecc5043b20e55b9907b033420a5"
       },
       "Unity/Assets/Scripts/TankPresentation.cs.meta": {
         "mode": "lf-text",
@@ -2536,6 +2616,490 @@
       "Unity/Assets/SeedPack02.meta": {
         "mode": "lf-text",
         "sha256": "09ffdb1b8434dd62765c83b291f9eeea05965bade11bb0cf3dba20f1664cf05b"
+      },
+      "Unity/Assets/TankKits02/catalog.json": {
+        "mode": "lf-text",
+        "sha256": "4e3e5c949082a30c0a4d9afdc09be30d84fab61f52dc37c9b8dc395c8b30c9e9"
+      },
+      "Unity/Assets/TankKits02/catalog.json.meta": {
+        "mode": "lf-text",
+        "sha256": "f0de8cd5f709a570d11e37cf69c5ad9e33946852f1c40e01bfde75fffbc8c033"
+      },
+      "Unity/Assets/TankKits02/Materials/Armor.mat": {
+        "mode": "lf-text",
+        "sha256": "7cda910a6d86445e9e83d6d02d9a8ab499f9b6272cbd5e622d7dd0c623bb36e4"
+      },
+      "Unity/Assets/TankKits02/Materials/Armor.mat.meta": {
+        "mode": "lf-text",
+        "sha256": "9953f4dd4959e4ee54b45d2d4675036391badfc29ce862f66bd2634413f7a6e5"
+      },
+      "Unity/Assets/TankKits02/Materials/Brass.mat": {
+        "mode": "lf-text",
+        "sha256": "b6ad2baefbf2964206a01c1cc6f9553c33fb7ce2397507262ac9c2697d88d0f6"
+      },
+      "Unity/Assets/TankKits02/Materials/Brass.mat.meta": {
+        "mode": "lf-text",
+        "sha256": "9dcbfca9aedfebecdf3711c8e131366d9c28e9679e43df13d9080c3b6143dd2d"
+      },
+      "Unity/Assets/TankKits02/Materials/Edge.mat": {
+        "mode": "lf-text",
+        "sha256": "e6038215db891cc1c4accdf2377f5dad164d44b1e820d46d3e18d36949dde4e2"
+      },
+      "Unity/Assets/TankKits02/Materials/Edge.mat.meta": {
+        "mode": "lf-text",
+        "sha256": "28322ab01a2f2eb3469afc9259e4e94c3b8954f1def2aed0dfa9342263d9e11a"
+      },
+      "Unity/Assets/TankKits02/Materials/Optic.mat": {
+        "mode": "lf-text",
+        "sha256": "fb9b702c6e4096ed8b6541159080604e2a180f520b8b730c6c056ebe2fc194f2"
+      },
+      "Unity/Assets/TankKits02/Materials/Optic.mat.meta": {
+        "mode": "lf-text",
+        "sha256": "6607f18903807ac8fe123eca0fc6dda7544459240405064f7a1fe40cf61ba895"
+      },
+      "Unity/Assets/TankKits02/Materials/Rubber.mat": {
+        "mode": "lf-text",
+        "sha256": "34ab91257132b66c6b6bec8d5eac5b77d76199506191d0f4fd1af896965d1960"
+      },
+      "Unity/Assets/TankKits02/Materials/Rubber.mat.meta": {
+        "mode": "lf-text",
+        "sha256": "35edb8e33782f0b4075e23b7d57bed05807c0be17fee320d5a4ab418eaa80225"
+      },
+      "Unity/Assets/TankKits02/Materials/Steel.mat": {
+        "mode": "lf-text",
+        "sha256": "2381890200f07e9efc2b69233651f269520a408d898c51733ecb3555c2e3816d"
+      },
+      "Unity/Assets/TankKits02/Materials/Steel.mat.meta": {
+        "mode": "lf-text",
+        "sha256": "1dcf0a47116b71cb4a05c2a47939f2a41c467015e4ded8764a0055aaa0a6ecf0"
+      },
+      "Unity/Assets/TankKits02/Materials.meta": {
+        "mode": "lf-text",
+        "sha256": "63d37c61747d9a6c14301973418d13563ad9b0b8c79391103bf74fd2bf6d46d0"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-barrel.fbx": {
+        "mode": "raw",
+        "sha256": "2862c45194f666a0de7d2efce58ae830a48f0a26c908bc79762bb51b2162d74d"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-barrel.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "37b3a1390737ab0bb2715800ce4f410d421e43e617f963715846c208d83e03e1"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-hull.fbx": {
+        "mode": "raw",
+        "sha256": "c62c5970e445ccf6684c4e8768bd14f043d29dd6a72310b25928d83999a10fb3"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-hull.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "a5f0b540d0c9dfce9d611ba360c75042a845dc2818ec3bd6647784246e7ce312"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-treads.fbx": {
+        "mode": "raw",
+        "sha256": "f5441d4e254c5e1b4364be9b6fcb4291882b9bc327e9a71a4f6f9a75b00a12d0"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-treads.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "a419f99dc3d5934c9099aab3b1db5ebe68ad3400409d257b04945bac46760f28"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-turret.fbx": {
+        "mode": "raw",
+        "sha256": "db71e935e5a73a74bc3611f5cd49525f11d442d880275cece9c55f991fd184b6"
+      },
+      "Unity/Assets/TankKits02/Models/bulwark-turret.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "d0ff743bbc04aa96ae41d86b1c7f951a5d470def1d4f02dc0eecd0c709edd2ff"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-barrel.fbx": {
+        "mode": "raw",
+        "sha256": "71915d5f9955ac4966d16153f09971c83e036d915822bb506fbba97addf804c2"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-barrel.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "95e54664101fc32aaed16e44eb242a3894c66b5d32e4d23526c28e678dafb025"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-hull.fbx": {
+        "mode": "raw",
+        "sha256": "c699339801baf3a16f388f24b16a33f8b6b534cc24425f56fafccb191646c004"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-hull.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "af79ca083a4f77d640b92cf0aaa7bb056f5fdcbefcaba87de46003affef6e39a"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-treads.fbx": {
+        "mode": "raw",
+        "sha256": "bc993b2136ec3be07426b5b67fe9dee669f41c661ffa31e1bf0d23cb65cc13c2"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-treads.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "c07e0860641130044d60f962ed6505a77408c349f1426b81ea1e37ad08f6f336"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-turret.fbx": {
+        "mode": "raw",
+        "sha256": "38fcaccb14bea02b824e98656a3aeb8047b00cde859c08e4fcef1cccd81baed6"
+      },
+      "Unity/Assets/TankKits02/Models/foundry-turret.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "666f662d190df920b72901a2b6c6af6ad2f3cb192dbc2c2a7c32fe9bc4bf7ec3"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-barrel.fbx": {
+        "mode": "raw",
+        "sha256": "c8e3bcd774016323c0535c429eb58345d34922dd5dd05f1fe7a32480fe3b83b5"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-barrel.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "85db6210a62015b241efde7067df06cb32613be6b901677e85c8acf90df5a994"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-hull.fbx": {
+        "mode": "raw",
+        "sha256": "a37bd8e86485d2c5db97d812eb3ba92ed07b693a32770a32b930a0472c1fe8d4"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-hull.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "7671b3db6504356272a6bbef6175f22db72d1c16bc3b5b7f4c9a147ba937d677"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-treads.fbx": {
+        "mode": "raw",
+        "sha256": "951491f6109364681d355619778ddacc71203e527e9093f2d723a9c3fcae7cba"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-treads.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "0a278211c9ca24e25b0d928e1fabd09bdb1b835e91495f6a8959ef34bee35a24"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-turret.fbx": {
+        "mode": "raw",
+        "sha256": "6686c20082c1f45890e1799c78bcab96b4851e096447c4cd4c1403f8d0c0e76c"
+      },
+      "Unity/Assets/TankKits02/Models/jackal-turret.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "14e69c4580bb29d204d9b0c535e6d94f1b8a7a84a7a8d8fe3a6c2fd323d729b8"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-barrel.fbx": {
+        "mode": "raw",
+        "sha256": "1fef08d74b78469a72f228c7e894c8af12819ca978826ecf30efe43157153e5d"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-barrel.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "66f052c3dcba02f4e9a4d8bd62a9f3aaad7cd1be257df0812987702f580ae148"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-hull.fbx": {
+        "mode": "raw",
+        "sha256": "0d5b949ccf6706740c7d0043a0d9dc4314d29637bcce03baae1249693ec80885"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-hull.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "6174989ad3dbc9ed8d856f9f7567e221f63b4c6ed6b2ca3277e1f20184181aa9"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-treads.fbx": {
+        "mode": "raw",
+        "sha256": "4b4583d663bcb5296596ca814327d5dbf4b7b7fae9ed12da69d1e66d60bb138b"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-treads.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "8ccf32049cadffa91d9e39728279896f51fa9da876486079098dc8c69fd14ace"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-turret.fbx": {
+        "mode": "raw",
+        "sha256": "d7317949785730217b597e8d7babac68ac31bf5141f3823b1414d32a27abb24f"
+      },
+      "Unity/Assets/TankKits02/Models/ranger-turret.fbx.meta": {
+        "mode": "lf-text",
+        "sha256": "4ad3dd08c865175a2b627a99eed09dfe5274d6a5914ce1ce7dc77d6d3e45da21"
+      },
+      "Unity/Assets/TankKits02/Models.meta": {
+        "mode": "lf-text",
+        "sha256": "5fbc46cfb196760029ae929aaa2f979c4887cedc33032eab9993e0190346a55b"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-barrel.prefab": {
+        "mode": "lf-text",
+        "sha256": "91d44dbfa39a1377c18ab7d16ac13a438a82dd7fc71eaf1e2020955d609d7e8b"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-barrel.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "65006f0b6cb1d7cdf05cb73d9eb329096702f5cbc97a6d01ee322e9ca9653125"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-hull.prefab": {
+        "mode": "lf-text",
+        "sha256": "dcdbdeb59a43d68521237a061fd6accd8119d560b40bb4e9a109392b29ea3080"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-hull.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "4a1a76293c238ab0713bc89a37e99e809bf1562d62d3e9b2ce5529e550c34da9"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-treads.prefab": {
+        "mode": "lf-text",
+        "sha256": "79b0935467a9c5699fc42cc2441d911d12e2d69022f5f8f671a2cd88ce3d863d"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-treads.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "ebc8805836cac927b82892f71dbd28c00445573ee1207cc5056df6afb0246116"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-turret.prefab": {
+        "mode": "lf-text",
+        "sha256": "94ea79b1d26c9ba73902769922d0f4bf679a9cdfe54e91f56056874f96584f6c"
+      },
+      "Unity/Assets/TankKits02/Prefabs/bulwark-turret.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "96dee431eebb70a63db4d9e06387b910ca90e213b1016cfc4b5e4d945717280f"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-barrel.prefab": {
+        "mode": "lf-text",
+        "sha256": "6a0b27514b2b6d2d41f24ea46da34dafcd6d7d1eeb05a00b05f981e45172bf7c"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-barrel.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "16de076143b164fda985d1bbfd632d45a79d608e5dd3a4053bf25f5d8ed43873"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-hull.prefab": {
+        "mode": "lf-text",
+        "sha256": "26314ecaddee0f864d313d7aaac0a1afcac52361d351fa3679b842e53de32529"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-hull.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "769eaf26d26c120ddf3db4e66a334a75c83f55c937feec47347b91faf5b0dba7"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-treads.prefab": {
+        "mode": "lf-text",
+        "sha256": "f52aa522c93b871e73ec4afb76b80cb4971c56b6745128c0e07672f074bf6c90"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-treads.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "a286f8f0a7b683046c5d4e088cb5825c9256da1b87faf12b77b62553160c224e"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-turret.prefab": {
+        "mode": "lf-text",
+        "sha256": "1d77b3745b480936b4d48b988426160542b2a39795f579fd62752fe8cbb741fb"
+      },
+      "Unity/Assets/TankKits02/Prefabs/foundry-turret.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "bb7f4dce0587160e357797bb27be9f4f5005ba48d8c963102644e7b6d93d6758"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-barrel.prefab": {
+        "mode": "lf-text",
+        "sha256": "97ead68016497fe3b21b19ab21d488b39e4aef89ac4baedc806863463816cbdf"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-barrel.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "8a574928d0081e266510c0601125ed1e85feb1b3d6bc52e73e7bc8eeb04ab9ca"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-hull.prefab": {
+        "mode": "lf-text",
+        "sha256": "240a779d046bcea7d112ab6faea0d05ae88593fad001d7336edc5b1bfddcb5d4"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-hull.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "2e5a45ce1e8bdadac15768c4320ae0afb2a6942da64bfb6b178bbfc7d5cc8d34"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-treads.prefab": {
+        "mode": "lf-text",
+        "sha256": "be90a6931a05df8ffea5447131a035d3f19ff93931948179b5227b20a3c50cd3"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-treads.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "10a5dd6c8303b4af87dcf50310c753e41e01ccbd87a7fa214b17ed81d6ea9b8b"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-turret.prefab": {
+        "mode": "lf-text",
+        "sha256": "89c5d44189d0be51926ef29fad98d8cec05b8fa153cc37962160af52d7a3da1c"
+      },
+      "Unity/Assets/TankKits02/Prefabs/jackal-turret.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "76ec4c134bc818b36ed6e96bad46beb2140051472d02d1315fcfc73b7ddb4d56"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-barrel.prefab": {
+        "mode": "lf-text",
+        "sha256": "d22abdcefaa88c1bc2b7ddf9062f449f7883c570b926fee7cc314406cdf7c479"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-barrel.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "47ebbf87aa66db66e23f785e4d7d4919244eb7e2604b98f68faa0d1edca8194a"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-hull.prefab": {
+        "mode": "lf-text",
+        "sha256": "47d3e38c0a63b30b2b8bcdfea3d0e1d58c739e36f5e7fe3cf9278714704183bc"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-hull.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "b8581e9aeabe1fe75683645ddaa7c93cf04a725ab9ccc557b5e9d11bed0e3c0e"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-treads.prefab": {
+        "mode": "lf-text",
+        "sha256": "2b9ffbbd91f909b454501791d0e00c8085b606c633e376dc6fe2abec9692d16e"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-treads.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "0e2309639d785fd20de9053570471b30bc37ddddb5436056b12195f3303cbfe4"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-turret.prefab": {
+        "mode": "lf-text",
+        "sha256": "56e83b53873c3a72d2bb9680a606bdc64b822fa9561b174f7d17dfc39f9fd5ca"
+      },
+      "Unity/Assets/TankKits02/Prefabs/ranger-turret.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "a4325220356a78cbba95183bf4a8ee10717c32e7fa9e4a4c95ba755f0ada9ee6"
+      },
+      "Unity/Assets/TankKits02/Prefabs/TankVisualBindings.prefab": {
+        "mode": "lf-text",
+        "sha256": "499b9fa7706396b9eae18d8759755d13df064fa3f3d305d6159586a2d65edcd0"
+      },
+      "Unity/Assets/TankKits02/Prefabs/TankVisualBindings.prefab.meta": {
+        "mode": "lf-text",
+        "sha256": "949b1c6b415842230eebf8c94b4fcb20b7e604440acaff862e57249578a97a4c"
+      },
+      "Unity/Assets/TankKits02/Prefabs.meta": {
+        "mode": "lf-text",
+        "sha256": "a8088c813a35ab69a88ce952ba310c428c34bf93e8c9aeac25f8346450c9c5c5"
+      },
+      "Unity/Assets/TankKits02/Textures/Armor-BaseColor.png": {
+        "mode": "raw",
+        "sha256": "d892cbba94f0f2bce2ce0d505d6197eaa5d213c962f5cff7da8dc0e14c100c81"
+      },
+      "Unity/Assets/TankKits02/Textures/Armor-BaseColor.png.meta": {
+        "mode": "lf-text",
+        "sha256": "be9b13f19d1b919b18284d5d9ba2863e5a0a063a73be450dff008e90eb4ad5d4"
+      },
+      "Unity/Assets/TankKits02/Textures/Armor-Mask.png": {
+        "mode": "raw",
+        "sha256": "f24b5edb4da44ea0d28a718a3347ac03a954a7650c1ed3742436efa387eb3213"
+      },
+      "Unity/Assets/TankKits02/Textures/Armor-Mask.png.meta": {
+        "mode": "lf-text",
+        "sha256": "9bf84311667e5cdff0b1df33c54514cafcd3f2febed0817f924cbd2b4d54929e"
+      },
+      "Unity/Assets/TankKits02/Textures/Armor-Normal.png": {
+        "mode": "raw",
+        "sha256": "fee58c70c998bda0ccaf3f3f8f1a4c8024acf02b822ba2090ebea24efb06b56c"
+      },
+      "Unity/Assets/TankKits02/Textures/Armor-Normal.png.meta": {
+        "mode": "lf-text",
+        "sha256": "3e03bded21260a20d8968b03e700d21e17ef8c4cc3f0e3ee9fb412e84d62542c"
+      },
+      "Unity/Assets/TankKits02/Textures/Brass-BaseColor.png": {
+        "mode": "raw",
+        "sha256": "25105feb709d0d8f8a720228d8c8d258cafe17f69a41e1a83aeee29e2bf473ac"
+      },
+      "Unity/Assets/TankKits02/Textures/Brass-BaseColor.png.meta": {
+        "mode": "lf-text",
+        "sha256": "8a379d29a4fb2ae8287e1b41513e0343cb94b69543c6d4d3117691b4118f32f3"
+      },
+      "Unity/Assets/TankKits02/Textures/Brass-Mask.png": {
+        "mode": "raw",
+        "sha256": "04f51b47a1243a3328652274a228cfc60340648b95c9c9e54c9cc21d17e33a78"
+      },
+      "Unity/Assets/TankKits02/Textures/Brass-Mask.png.meta": {
+        "mode": "lf-text",
+        "sha256": "46487906190cd36a6f9f8cd7aa0ec2fd812d690d324ee39964e76c6db77200e4"
+      },
+      "Unity/Assets/TankKits02/Textures/Brass-Normal.png": {
+        "mode": "raw",
+        "sha256": "c226be6e6670008dd859a04618cf66522d9973bc0fb4e1a454a96f458798003f"
+      },
+      "Unity/Assets/TankKits02/Textures/Brass-Normal.png.meta": {
+        "mode": "lf-text",
+        "sha256": "6e7cc696cc66689b8ec5e828dbfe9b1716bb7e58ffc92cf9c14bb71aaa30d0d9"
+      },
+      "Unity/Assets/TankKits02/Textures/Edge-BaseColor.png": {
+        "mode": "raw",
+        "sha256": "3483fbd8cb7cdb4b82b8adafdf47006ba940f0d9cbae5739e4a3cda2c1b18a57"
+      },
+      "Unity/Assets/TankKits02/Textures/Edge-BaseColor.png.meta": {
+        "mode": "lf-text",
+        "sha256": "03243921c2292e3940a9680435d56ef6ca6ec4d768aad70dae4895aeea239a16"
+      },
+      "Unity/Assets/TankKits02/Textures/Edge-Mask.png": {
+        "mode": "raw",
+        "sha256": "3265dcd47d5080ed00b1de3644531eb323762c2f65eff1992a6008ef31b07dae"
+      },
+      "Unity/Assets/TankKits02/Textures/Edge-Mask.png.meta": {
+        "mode": "lf-text",
+        "sha256": "1c3c094fa876b148887138c22958ab248f12f1d5ef03f4042268c95fdbe4c598"
+      },
+      "Unity/Assets/TankKits02/Textures/Edge-Normal.png": {
+        "mode": "raw",
+        "sha256": "3d358bb10d3ae0fa448fc96e2f397390e95576ffdf693ac8ed7ec7712d210ba7"
+      },
+      "Unity/Assets/TankKits02/Textures/Edge-Normal.png.meta": {
+        "mode": "lf-text",
+        "sha256": "ed84004567d21421e9eb0f2b7d6596d3b7b675accbc4c40e93d3bb3e004fbd37"
+      },
+      "Unity/Assets/TankKits02/Textures/Optic-BaseColor.png": {
+        "mode": "raw",
+        "sha256": "6accb58c050e69fa9ee2e122f323e0844a2ad87c0e628ef7f84e8dfdf6dc6f1f"
+      },
+      "Unity/Assets/TankKits02/Textures/Optic-BaseColor.png.meta": {
+        "mode": "lf-text",
+        "sha256": "18b3398e3a330b190c2a30daa163dedae93caebf86e0df8350acf871ee0b83a6"
+      },
+      "Unity/Assets/TankKits02/Textures/Optic-Mask.png": {
+        "mode": "raw",
+        "sha256": "8b43e312ffaaecfb645c626e65e3920d89b50a3ba409fd1d376b53829dc0af59"
+      },
+      "Unity/Assets/TankKits02/Textures/Optic-Mask.png.meta": {
+        "mode": "lf-text",
+        "sha256": "d1e4a5fc3a05a815604a685282a8d4a964ebd1985d2430bc4de1da7581132c46"
+      },
+      "Unity/Assets/TankKits02/Textures/Optic-Normal.png": {
+        "mode": "raw",
+        "sha256": "69eb1299009d1f228de3a79a48e5e08f1f7e1b7bf203036ab3e3440dc2203baf"
+      },
+      "Unity/Assets/TankKits02/Textures/Optic-Normal.png.meta": {
+        "mode": "lf-text",
+        "sha256": "c274ecab7fb1a35eb1775ff49bbb516495237ed640b06fe86d8584acce7b52b8"
+      },
+      "Unity/Assets/TankKits02/Textures/Rubber-BaseColor.png": {
+        "mode": "raw",
+        "sha256": "348bbdbfd009ec6c16a4d2f14a6f0890ebe185354f12d2fbd957369d6f7b25d6"
+      },
+      "Unity/Assets/TankKits02/Textures/Rubber-BaseColor.png.meta": {
+        "mode": "lf-text",
+        "sha256": "b6dfeae49173d131360c5cf5d8a52dd34aaf2ecd55b78de83530bfd63f8e7b86"
+      },
+      "Unity/Assets/TankKits02/Textures/Rubber-Mask.png": {
+        "mode": "raw",
+        "sha256": "266628801a90b2ff8bc03d20cf7151be1ad29970a315d655e4f647e7110e649a"
+      },
+      "Unity/Assets/TankKits02/Textures/Rubber-Mask.png.meta": {
+        "mode": "lf-text",
+        "sha256": "8ff02593711a6cdbb1ed37ed4a92d1a7aa63450942202c84115302ef484ea1a6"
+      },
+      "Unity/Assets/TankKits02/Textures/Rubber-Normal.png": {
+        "mode": "raw",
+        "sha256": "bd477c58417e3d11f9c4e7512eedb2c2ee7942806f3cc8f5dafa236f653cc667"
+      },
+      "Unity/Assets/TankKits02/Textures/Rubber-Normal.png.meta": {
+        "mode": "lf-text",
+        "sha256": "5067ea9d83916d0e1f3116b6a04b24c7d0e9e39f4320abd4eb564a88d5c012b4"
+      },
+      "Unity/Assets/TankKits02/Textures/Steel-BaseColor.png": {
+        "mode": "raw",
+        "sha256": "f1b8136d7dc315e80d5592ede656bd62594e55db8aa17fac12849ec890f6a1a7"
+      },
+      "Unity/Assets/TankKits02/Textures/Steel-BaseColor.png.meta": {
+        "mode": "lf-text",
+        "sha256": "438b9a415dc410796b146bca685ec1a23f4bd39621e85d10a6996bdc6f2bf7d3"
+      },
+      "Unity/Assets/TankKits02/Textures/Steel-Mask.png": {
+        "mode": "raw",
+        "sha256": "b5f92b8a9eae59177be9f83c630368bb2d5e839b535fe71fa164dff53317abbf"
+      },
+      "Unity/Assets/TankKits02/Textures/Steel-Mask.png.meta": {
+        "mode": "lf-text",
+        "sha256": "22e6598c07d7c9fb5a97719ba1e470b5fd3bb38afa4d744e965a22a22ec366b9"
+      },
+      "Unity/Assets/TankKits02/Textures/Steel-Normal.png": {
+        "mode": "raw",
+        "sha256": "7373324f42b792eeb8da9cfccf87fddf699a2a7ac8649fa316e194ced68d300d"
+      },
+      "Unity/Assets/TankKits02/Textures/Steel-Normal.png.meta": {
+        "mode": "lf-text",
+        "sha256": "c998e87dc76b0125c9f1b3126a468b76d80c1d805b4835874b15bca24d3451cf"
+      },
+      "Unity/Assets/TankKits02/Textures.meta": {
+        "mode": "lf-text",
+        "sha256": "e97e8cbed4c7ac2b1fd1b70a13245c75b10e734b3e026d141c94f6bdd0de18e3"
+      },
+      "Unity/Assets/TankKits02.meta": {
+        "mode": "lf-text",
+        "sha256": "c72878d371ef2b761a29624944b9e3b19abbb497984e15bd94de800fed9adebe"
       },
       "Unity/Assets/UniversalRenderPipelineGlobalSettings.asset": {
         "mode": "lf-text",
@@ -14030,7 +14594,7 @@
         "sha256": "2973a6af930e142f62cde00076beda8a3cc3a66d9bfcde7a58ba7d4be2251c26"
       }
     },
-    "sha256": "1721a9215c767872a77150a7501bc0f546af5b978f3ea049199b76033a044dd5"
+    "sha256": "1f8888e81dfb69ec5224bcd34c956dc1e6973b56608cdc2c7d4c7d2083c10d67"
   },
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
@@ -83473,7 +84037,7 @@
     },
     "sha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52"
   },
-  "receiptSha256": "2862066f4361ab2039d814cd3bbd23568ffe2f35d431f85c41ffe18f8eea9b6e",
+  "receiptSha256": "aeb7ee543974b59e6732b1b7828db057870f404e38508b17cc8010f0a3edff4b",
   "vendor": {
     "path": "Unity/Packages/com.unity.render-pipelines.universal",
     "version": "17.3.0",

@@ -9,6 +9,23 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The initial in-repo visual scope was
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
+## Player tank appearance, October 31, 2026
+
+The [tank sprint](../../.codearbiter/plans/last-stand-tank-customization.html)
+adapts the legacy game's four cosmetic families, four independently mixed parts
+and five paints to the actual Last Stand rig. The garage's Menu → Appearance
+page previews the real tank, identifies the selected part with a geometry-based
+callout, and offers Apply/Cancel. Combat fittings and statistics stay separate.
+
+Original editable models and PBR textures give tracks, spider legs, hover pods
+and wheels distinct silhouettes. All 256 part assemblies remain below 25,000
+core triangles; the maximum imported assembly is 18,804. Profile schema 7 carries
+appearance through the existing save and portable-backup owner without changing
+retained run editions. See the [asset and player guide](tank-customization/index.html)
+and [qualification index](tank-customization/validation.json). Physical-device
+performance and owner art acceptance remain separate obligations in the
+[current readiness matrix](LAST-STAND-RELEASE-READINESS.md#current-qualification-matrix).
+
 ## Player continuity and patched Unity, October 31, 2026
 
 The owner requested the Unity security update and another implemented sprint in

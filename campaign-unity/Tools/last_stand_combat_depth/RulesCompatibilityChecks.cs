@@ -32,11 +32,11 @@ static class RulesCompatibilityChecks
     static bool Ready(LastStandProgression p)=>p.SaveState=="ready";
     static Dictionary<string,object> Obj(object value)=>LastStandSaveJson.Object(value);
     static string Part(string raw,string key)=>LastStandSaveJson.Write(LastStandSaveJson.Read(raw)[key]);
-    static void V6(Store store)=>Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"])==6,"Expected atomic v6 envelope");
+    static void CurrentEnvelope(Store store)=>Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"])==7,"Expected atomic v7 envelope");
     static void Legacy(string v5,string v4,string snapshot)
     {
         foreach(string raw in new[]{File.ReadAllText(v4),File.ReadAllText(v5)}){
-            var store=new Store{Raw=raw};var p=Load(store);Check(Ready(p),"Supported original profile");V6(store);
+            var store=new Store{Raw=raw};var p=Load(store);Check(Ready(p),"Supported original profile");CurrentEnvelope(store);
             if(raw==File.ReadAllText(v5))Check(Part(raw,"research")==Part(store.Raw,"research"),"Research preserved");
             var cp=p.Checkpoint;Check(cp.RulesVersion=="last-stand-waves-v1","Original combat edition");
             var model=cp.RestoreModel();var shop=cp.RestoreShop();
@@ -92,7 +92,7 @@ static class RulesCompatibilityChecks
             var store=new Store{Raw=original,Fault=fault};var p=Load(store);
             if(fault!=null){Check(!Ready(p)&&!p.TryDeploy()&&!p.TryPurchase(),"Migration not optimistic");if(fault=="before")Check(store.Raw==original,"Original bytes survive failed write");
                 store.Fault=null;Check(p.Retry(),"Migration retry");}
-            V6(store);Check(Ready(p)&&p.Wallet==LastStandSaveJson.Integer(LastStandSaveJson.Read(original)["credits"]),"No retroactive currency");
+            CurrentEnvelope(store);Check(Ready(p)&&p.Wallet==LastStandSaveJson.Integer(LastStandSaveJson.Read(original)["credits"]),"No retroactive currency");
             foreach(string key in new[]{"research","history","recoveryRemainder","firstClears","selectedTier","selectedFitting"})
                 Check(Part(original,key)==Part(store.Raw,key),"Preserved "+key);
             Check(p.IsFittingUnlocked("mortar")==arms&&p.IsFittingUnlocked("railgun")==arms&&p.IsTierUnlocked(3)==tiers,"Only available authored content earns backfill");
@@ -106,7 +106,7 @@ static class RulesCompatibilityChecks
         foreach(string fault in new[]{"read","lose-owner"}){
             var unavailable=new Store{Raw=original,Fault=fault};var blocked=Load(unavailable);
             Check(!Ready(blocked)&&unavailable.Raw==original&&unavailable.Writes==0,"Read/owner loss cannot migrate");
-            unavailable.Fault=null;unavailable.Owner=true;Check(blocked.Retry(),"Ownership/read recovery");V6(unavailable);
+            unavailable.Fault=null;unavailable.Owner=true;Check(blocked.Retry(),"Ownership/read recovery");CurrentEnvelope(unavailable);
         }
         var uncertain=new Store{Raw=original,Fault="after"};var oldOwner=Load(uncertain);
         uncertain.Fault=null;uncertain.Raw+=" ";string winner=uncertain.Raw;int committedWrites=uncertain.Writes;
@@ -133,9 +133,9 @@ static class RulesCompatibilityChecks
     }
     static void Future(string path)
     {
-        var store=new Store{Raw=File.ReadAllText(path)};Check(Ready(Load(store)),"Known input");V6(store);
+        var store=new Store{Raw=File.ReadAllText(path)};Check(Ready(Load(store)),"Known input");CurrentEnvelope(store);
         foreach(string field in new[]{"version","rulesVersion","contentVersion","economyVersion"}){
-            var root=LastStandSaveJson.Read(store.Raw);if(field=="version")root[field]=7;
+            var root=LastStandSaveJson.Read(store.Raw);if(field=="version")root[field]=8;
             else {var cp=Obj(root["checkpoint"]);if(field=="contentVersion")cp[field]="future-content";
                 else Obj(cp[field=="rulesVersion"?"encounter":"shop"])[field]="future-rules";}
             var bad=new Store{Raw=LastStandSaveJson.Write(root)};string bytes=bad.Raw;
@@ -221,7 +221,7 @@ static class RulesCompatibilityChecks
             foreach(var card in view.Cards)if((int)card.TrackId>=8)Check(card.PermanentLevel==0,"Failed migration cannot grant new ranks");
             foreach(var card in view.Cards)Check(!card.CanPurchase,"Failed migration has no purchase admission");
             Check(store.Raw==input&&store.Writes==0,"Read projection cannot migrate");
-            store.Fault=null;store.Owner=true;Check(p.Retry(),"Original migration retries");V6(store);
+            store.Fault=null;store.Owner=true;Check(p.Retry(),"Original migration retries");CurrentEnvelope(store);
         }
     }
     static void CommitEdition(string path)
