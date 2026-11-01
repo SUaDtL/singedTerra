@@ -68,7 +68,9 @@ internal static class ShopVerticalChecks
         var tracksProperty = catalog.GetProperty("Tracks", BindingFlags.Public | BindingFlags.Static);
         Require(tracksProperty != null, "The catalog must expose its immutable typed track definitions.");
         var current = (IReadOnlyList<LastStandUpgradeDefinition>)tracksProperty.GetValue(null);
-        Equal(current.Count, 8, "Current economy has eight stable tracks");
+        Equal(current.Count, 10, "Current economy preserves eight tracks and appends two armaments");
+        Equal(current[8].Key, "mortarAttack", "Mortar appended without reindexing");
+        Equal(current[9].Key, "railgunAttack", "Railgun appended without reindexing");
         Equal(current[6].Key, "scattergunAttack", "Scattergun identity remains appended");
         Equal(current[7].Key, "scrapYield", "Scrap Yield is appended without reindexing");
         var tracks = LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion).Tracks;
@@ -254,7 +256,7 @@ internal static class ShopVerticalChecks
             Equal(Text(typed, "Id"), current.Id.ToString(), "Typed Get exact ID");
             Equal(Text(typed, "Key"), current.Key, "Typed Get exact key");
         }
-        foreach (int invalidId in new[] { -1, 8, 99, int.MaxValue })
+        foreach (int invalidId in new[] { -1, 10, 99, int.MaxValue })
             RejectedParameter(() => CallStatic(typedLookup, Enum.ToObject(trackIdType, invalidId)), "id",
                 "Typed Get invalid id=" + invalidId);
         foreach (var unknown in new[] { null, "", "CannonAttack", "cannonAttack ", "unknown" })
@@ -287,11 +289,11 @@ internal static class ShopVerticalChecks
         var ledgerType = assembly.GetType("SingedTerra.LastStand.LastStandShopState");
         Require(ledgerType != null, "The actual compiled baseline supplies no run-owned ledger for independent tracks and unique-kill Scrap accounting.");
         var fittingType = assembly.GetType("SingedTerra.LastStand.LastStandFitting");
-        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string) });
+        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string), typeof(LastStandRunEdition), typeof(int) });
         Require(constructor != null, "The ledger must freeze six permanent levels for an identified run and fitting.");
         // Explicitly append zero for the new track to these preserved six-slot test inputs.
         if(permanentLevels != null && permanentLevels.Length == 6) { var expanded = new int[7]; Array.Copy(permanentLevels, expanded, 6); permanentLevels = expanded; }
-        try { return constructor.Invoke(new object[] { runId, Enum.Parse(fittingType, launcher ? "Launcher" : "Repair"), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion }); }
+        try { return constructor.Invoke(new object[] { runId, Enum.Parse(fittingType, launcher ? "Launcher" : "Repair"), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion, null, 1 }); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
 
@@ -307,9 +309,9 @@ internal static class ShopVerticalChecks
         var ledgerType = assembly.GetType("SingedTerra.LastStand.LastStandShopState");
         Require(ledgerType != null, "Malformed construction must exercise the actual compiled ledger.");
         var fittingType = assembly.GetType("SingedTerra.LastStand.LastStandFitting");
-        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string) });
+        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string), typeof(LastStandRunEdition), typeof(int) });
         Require(constructor != null, "Malformed construction uses the actual run/fitting/permanent snapshot boundary.");
-        try { return constructor.Invoke(new[] { (object)runId, Enum.ToObject(fittingType, fittingValue), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion }); }
+        try { return constructor.Invoke(new[] { (object)runId, Enum.ToObject(fittingType, fittingValue), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion, null, 1 }); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
 
@@ -467,7 +469,7 @@ internal static class ShopVerticalChecks
         foreach (int count in new[] { 0, 5, 6, 8 })
             RejectedConstructor(() => ActualLedger(23, 0, new int[count]), typeof(ArgumentException), "permanentLevels",
                 "Wrong permanent snapshot count=" + count);
-        RejectedConstructor(() => ActualLedger(23, 99, new int[7]), typeof(ArgumentOutOfRangeException), "fitting", "Undefined ledger fitting=99");
+        RejectedConstructor(() => ActualLedger(23, 99, new int[7]), typeof(ArgumentException), null, "Undefined ledger fitting=99 refused by edition before construction");
     }
 
     static void LedgerUniqueKillIncome()
@@ -1697,9 +1699,9 @@ internal static class ShopVerticalChecks
     {
         var cards = (IList)Get(view, "Cards");
         Require(cards.IsReadOnly, "The card collection cannot be replaced or reordered.");
-        Equal(cards.Count, Text(view,"Mode") == "Permanent" ? 8 : 7, "Permanent uses current roster; historical run retains its seven tracks");
+        Equal(cards.Count, Text(view,"Mode") == "Permanent" ? 10 : 7, "Permanent uses current roster; historical run retains its seven tracks");
         Equal(Get(cards[6], "Key"), "scattergunAttack", "Appended card preserves existing ordering");
-        if (cards.Count == 8) Equal(Get(cards[7], "Key"), "scrapYield", "Current permanent view includes Scrap Yield");
+        if (cards.Count == 10) Equal(Get(cards[7], "Key"), "scrapYield", "Current permanent view includes Scrap Yield");
         var result = new object[cards.Count];
         cards.CopyTo(result, 0);
         var immutableItems = new List<object>(result); immutableItems.Add(view);

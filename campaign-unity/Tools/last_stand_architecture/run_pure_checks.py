@@ -18,6 +18,9 @@ EDITOR_MODULES = frozenset({
 
 def main():
     root = Path(__file__).resolve().parent
+    sys.path.insert(0, str(root.parent))
+    from last_stand_test_inventory import inventory
+    inventory()  # Standalone architecture entrypoint also refuses inventory drift.
     sys.path.insert(0, str(root))
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()

@@ -25,7 +25,7 @@ class BuildManifestTests(unittest.TestCase):
         project = root / "project"
         self.write(project, "Unity/" + SCENE)
         self.write(project, "Unity/ProjectSettings/ProjectVersion.txt",
-                   b"m_EditorVersionWithRevision: 6000.3.24f1 (4e7b9b5b6244)\n")
+                   b"m_EditorVersionWithRevision: 6000.3.27f2 (22188f149405)\n")
         self.write(project, "Unity/Packages/com.unity.render-pipelines.universal/package.json", b'{"version":"17.3.0"}')
         self.write(editor.parent, "Data/Resources/PackageManager/BuiltInPackages/com.unity.render-pipelines.universal/package.json",
                    b'{"version":"17.3.0"}')
@@ -51,7 +51,7 @@ class BuildManifestTests(unittest.TestCase):
         (output / "LastStand_Data").mkdir()
         (output / "LastStand_Data/globalgamemanagers").write_bytes(b"scene content")
         source = {"sha256": "1" * 64, "head": "2" * 40}
-        toolchain = {"sha256": "3" * 64, "editorVersion": "6000.3.24f1"}
+        toolchain = {"sha256": "3" * 64, "editorVersion": "6000.3.27f2"}
         record = {"schema": "singedterra-last-stand-player-build/v1", "status": "pass",
                   "target": "windows", "configuration": "development", "scene": SCENE,
                   "buildOptions": expected_options("development"),
@@ -106,7 +106,7 @@ class BuildManifestTests(unittest.TestCase):
             scene.write_bytes(b"not opened")
             (project / "Unity/ProjectSettings").mkdir(parents=True)
             (project / "Unity/ProjectSettings/ProjectVersion.txt").write_text(
-                "m_EditorVersion: 6000.3.24f1\nm_EditorVersionWithRevision: 6000.3.24f1 (4e7b9b5b6244)\n")
+                "m_EditorVersion: 6000.3.27f2\nm_EditorVersionWithRevision: 6000.3.27f2 (22188f149405)\n")
             vendor = project / "Unity/Packages/com.unity.render-pipelines.universal"
             vendor.mkdir(parents=True); (vendor / "package.json").write_text('{"version":"17.3.0"}')
             self.assertFalse(preflight(editor, "windows", "development", root=project)["ready"])

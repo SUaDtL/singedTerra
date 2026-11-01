@@ -39,7 +39,7 @@ static class QualificationFixtureGenerator
         Require(profile.TryFinalizeRun(null,"abandon") && !profile.HasCheckpoint,"Old run must be abandoned through its production transaction.");
         var raw=LastStandSaveJson.Read(store.Raw);raw["credits"]=wallet;
         var levels=LastStandSaveJson.Object(raw["permanentLevels"]);
-        foreach(var row in LastStandUpgradeCatalog.Tracks)levels[row.Key]=Math.Min(permanentLevel,row.PermanentCap);
+        foreach(var row in LastStandUpgradeCatalog.Tracks)levels[row.Key]=row.Available?Math.Min(permanentLevel,row.PermanentCap):0;
         store.Raw=LastStandSaveJson.Write(raw);
         profile=LastStandProgression.Load(store,()=>utc);
         Require(profile.SaveState=="ready" && profile.TrySelectTier(1) && profile.TrySelectFitting("launcher"),"Declared development seed must be a valid current profile.");
@@ -75,7 +75,7 @@ static class QualificationFixtureGenerator
         Require(reload.Checkpoint.CompletedWave==0 && reload.Checkpoint.Shop.EconomyVersion==LastStandUpgradeCatalog.EconomyVersion,
             "New deployment must start the current economy at wave0.");
         foreach(var row in LastStandUpgradeCatalog.Tracks)
-            Require(reload.Checkpoint.Shop.PermanentLevels[(int)row.Id]==Math.Min(500,row.PermanentCap),"New deployment must freeze the exact measured mature build.");
+            Require(reload.Checkpoint.Shop.PermanentLevels[(int)row.Id]==(row.Available?Math.Min(500,row.PermanentCap):0),"New deployment must freeze the exact available mature build.");
         return Map("id","mature-5x","save",store.Raw,"createdUtcMilliseconds",finalUtc,"requestedSpeed",5,
             "hasCheckpoint",false,"startingCompletedWave",0,"fitting","launcher","tier",1,"permanentLevelSeed",500,
             "giftedSalvage",wallet,"researchFundingSpent",funding,"wallet",profile.Wallet,

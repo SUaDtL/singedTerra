@@ -1,161 +1,105 @@
-# singedTerra Unity Last Stand prototype
+# singedTerra Last Stand
 
-The dedicated `LastStandPrototype` scene now supports a complete local loop:
-deploy, survive until defeat, claim salvage, buy permanent Cannon Attack,
-reload, and redeploy stronger. The first upgrade changes cannon damage from
-20 to 30, enough to destroy the same first enemy in one hit. The saved progression,
-compact controls, pause/focus behavior and procedural audio have passed the
-[focused Unity and browser checks](docs/last-stand-playable-loop-validation.md).
+Last Stand is the Unity survival campaign. Clear finite enemy waves, bank Salvage
+and milestone unlocks, invest in permanent upgrades and real-time research, and
+resume from the last confirmed wave checkpoint. The classic TypeScript artillery
+modes remain a separate game path. Unity saves are local to the browser or native
+player; they do not sync with Supabase accounts or award verified account rewards.
 
-The separate **ST-VIS-01** `BattlefieldReview` scene retains two battlefield
-treatments, the player tank, imported close and ranged opponents, and the bronze
-HUD. The original `FieldAssembly` scene and encounter fixture remain available.
-The [Last Stand roadmap](docs/LAST-STAND-ROADMAP.md) records the settled
-product direction and the bounded next slices.
-The pure Mechanics Shop model is implemented and covered by five focused tests.
-The [approved spec](../.codearbiter/specs/last-stand-upgrade-foundation.html)
-and [plan](../.codearbiter/plans/last-stand-upgrade-foundation.html) record its
-scope and authoritative completion status. That temporary in-run track model
-remains separate from the playable loop's permanent Cannon Attack progression.
+## Current candidate — October 29, 2026
 
-This remains a prototype awaiting owner acceptance. The owner still chooses what
-to keep, change, or mix in the battlefield treatments and reviews motion and sound.
-Live-player sessions remain deferred while the owner is remote on a phone;
-phone performance and live-player observation are unverified.
-Open the [A/B gallery](docs/visual-review-01/browser-20260926T093232Z/index.html)
-for six matched still pairs and four normal-speed recordings. The
-[review notes](docs/visual-review-01/browser-20260926T093232Z/REVIEW.md) and
-[technical validation](docs/visual-review-01/TECHNICAL-VALIDATION.md) describe
-the exact builds, checks and remaining limits. The original
-[authoring checkpoint](docs/visual-review-01/AUTHORING-CHECKPOINT.md) retains its
-historical blocked status. Older sections below describe dated earlier slices.
+The combat-depth candidate includes four authored tiers, distinct battlefield
+environments, enemy roles and elites, and five fittings: Field Repair, Launcher,
+Scattergun, Mortar and Railgun. Tier advancement unlocks another battlefield without
+ending a farming run. The Mechanics Shop spends run-local Scrap; the permanent
+Workshop and Research Lab share Salvage. Research continues while closed; combat
+does not. Resume restores the saved wave boundary and starts paused.
 
-Build the saved comparison scene explicitly:
+The maintained [combat specification](../.codearbiter/specs/last-stand-combat-depth.html)
+and [plan](../.codearbiter/plans/last-stand-combat-depth.html) own implementation
+status. [PR #547](https://github.com/SUaDtL/singedTerra/pull/547) is stacked on the
+release foundation, research/farming and waves/resume PRs. Its baseline `af17d905`
+passed all 24 hosted CI jobs and CodeQL; that result does not certify later edits,
+merge, deployment, phone behavior, sound quality or sustained device performance.
+
+The checked-in Web payload is identified by
+[`asset-manifest.json`](../client/public/last-stand/asset-manifest.json), currently
+`Web-20261029T014444Z-a8e42f`, and its
+[sanitized build receipt](docs/last-stand-web/receipt-sanitized.json).
+Source inventories bind the exported runtime, tools and assets. The receipt's
+source-head label is historical; matching source bytes and the current verification
+result determine applicability. Frozen calibration reports and retained run
+editions are compatibility evidence, not generated files to refresh during tests.
+
+Web, Windows and Android development build paths now exist. Physical Android
+lifecycle, input, audio, performance and endurance qualification remain release
+work. An APK or a passing pure C# check does not establish those outcomes.
+
+## Owners and extension points
+
+See the [architecture and release foundation](docs/LAST-STAND-ARCHITECTURE.md) for
+the ownership map and [roadmap](docs/LAST-STAND-ROADMAP.md) for product direction.
+
+| Responsibility | Owner |
+| --- | --- |
+| Fixed-step combat and wave state | `Unity/Assets/Scripts/EncounterModel.cs` and versioned catalogs |
+| Durable checkpoint, wallet, research and history transaction | `LastStandProgression` and its save/research partials |
+| Deploy/resume, purchases and research orchestration | `Unity/Assets/Scripts/Application/` coordinators |
+| Tier, fitting, enemy and research definitions | `Content/`, `LastStandTierCatalog` and `LastStandSelection` |
+| Garage, combat, shop, modal and settings presentation | `LastStandLoopHud` feature views and shared UI primitives |
+| Browser/native capabilities, clocks and storage | `Unity/Assets/Scripts/Platform/` and browser bridges |
+| Pure harness compilation and source closure | `Tools/last_stand_test_runtime.py` and `last_stand_source_closure.py` |
+| Browser launcher | `client/src/ui/commandCenter/LastStandCommandView.ts`; Unity owns validation and resume |
+
+Presentation reads projections and sends intents; it does not calculate another
+wallet or write profile state. Catalog changes must preserve saved edition identities
+and paid upgrades. A new run may select current rules; an ongoing retained run keeps
+its recorded rules. Independent fixtures and historical source closures stay intact.
+
+## Open, build and verify
+
+The saved playable scene is `Unity/Assets/Scenes/LastStandPrototype.unity` in Unity
+6000.3.24f1 (`4e7b9b5b6244`), with embedded URP 17.3.0. Unity modules, Android tools,
+embedded vendor files, Library caches and generated players are outside Git. They
+must already exist before export; the build commands neither install nor restore
+dependencies. Toolchain availability is checked before a player build.
+
+From `campaign-unity/`, inspect the supported options and perform a target-specific
+availability check using an existing matching editor:
 
 ```powershell
-python Tools/build_web.py --editor "C:\path\to\6000.3.24f1\Editor\Unity.exe" --scene review
-python Tools/verify_visual_review.py "C:\absolute\path\to\Evidence\build-...\result.json" --headless
+python Tools/build_last_stand.py --help
+python Tools/build_last_stand.py --target android --configuration development --editor "C:\path\to\6000.3.24f1\Editor\Unity.exe" --preflight-only
 ```
 
-The verifier owns an isolated Chrome process and loopback server, records actual
-pointer input and normal-speed motion, and closes both. `--headless` allows the
-rendered check to run independently of other desktop windows; its receipt records
-the actual renderer and browser-tab focus checks. Omit that flag for a visible
-window and leave it foreground and untouched until the check finishes. Omit
-`--scene review` to build the retained FieldAssembly scene. Neither build route
-regenerates saved art.
+The target-aware builder supports `webgl`, `windows` and `android`, and records
+explicit JDK/SDK/NDK overrides for Android when needed. Web export also requires the
+current spec/plan identity metadata described by its `--approval-binding` option;
+that metadata is provenance, not a new approval ceremony. Builds use saved scenes,
+fresh output directories and before/after source and tool inventories. Close this
+Unity project before building; preserve other editor projects and unsaved artwork.
 
-Draft, production-intent asset checkpoint. The Last Stand Web export now has an
-entry in the main site's Campaigns page. The entry opens a same-origin Unity
-page with a Return to Campaigns link. Unity gameplay and its local save remain
-separate from the TypeScript artillery application, account services and rewards.
-The Unity source project is not an npm workspace or a CI build dependency.
-The site build includes one verified Web export; this branch has not been
-deployed to Pages.
+From the repository root, `npm run build` verifies the receipt-bound Last Stand Web
+payload before Vite packages it. It does not compile Unity. Pure domain checks,
+imported-scene checks, rendered browser journeys, native builds and device acceptance
+are separate layers. Use the current CI commands and the plan's named checks for the
+changed surface; historical test commands below apply only to their named artifacts.
 
-The owner selected Unity for the browser PoC and continued mobile development
-using the same project/assets. Android builds and phone/emulator setup are deferred
-until after the full browser PoC. The initial art slice predates the automatic
-encounter and the local prototype economy described above.
+Reuse the single requested preview. Automated browser tools own and close their
+temporary processes; do not leave additional preview ports running or stop an
+unrelated listener. Preserve the user's saved game during checks.
 
-## Contents and ownership
+## Assets and historical checkpoints
 
-`ArtSource/StarterTank_and_Clearing.blend` is the editable model with packed textures.
-`Unity/Assets/Art` holds runtime FBX exports, textures and the art inventory.
-`Unity/Assets/Prefabs` holds the reusable tank and clearing. The tank retains its
-articulated turret/barrel and two optional fitting examples; these are not a
-selected equipment catalogue or approved starting slot count.
-`Unity/Assets/Scenes/FieldAssembly.unity` is the saved authoring scene.
-`TankPresentation` owns presentation state; `ArtHud` only dispatches inspection
-controls. Recoil previews are not manual campaign aiming/firing or gameplay rules.
+`ArtSource/` holds editable source art; `Unity/Assets/Art`, `Prefabs` and `Scenes`
+hold runtime exports and authored scenes. `Tools/build_art.py` and other original
+generators remain provenance. Do not run a generator over hand-edited assets; a
+regeneration experiment belongs in an isolated scratch directory.
 
-## Open and build
-
-For the dedicated Last Stand local prototype, export the saved playable scene
-with `python Tools/build_web.py --editor "C:\path\to\6000.3.24f1\Editor\Unity.exe" --scene last-stand`.
-The default build remains `field`; `review` and `gallery` remain explicit routes.
-The exporter records the playable scene and protected field/review scene hashes,
-the exact source inventory, and the approved loop artifact identities. The
-Last Stand entry identifies the mode in its title and loading text and keeps
-Return to Campaigns available while loading, after a load failure and during
-play. See
-[the loop validation note](docs/last-stand-playable-loop-validation.md) for
-the focused browser command and its actual result.
-
-The checked-in site payload is `../client/public/last-stand/`, staged from the
-passing `Web-20261005T005554Z-4472c0` export. Its
-`asset-manifest.json` records the relative build receipt and exact runtime
-asset hashes. The four Unity loader/framework/data/wasm files are unchanged;
-the site wrapper is newly authored and has its own hash. `npm run build`
-verifies this payload before Vite copies it to `client/dist/last-stand/`.
-Fresh Unity exports need an inspected, receipt-bound payload update before the
-site build can use them.
-
-Use Unity 6000.3.24f1 with matching Web Build Support and URP 17.3.0 for this
-checkpoint. These are reproducibility pins, not a permanent version policy.
-Python 3.11+ runs the tools. The browser test additionally needs Python Playwright
-and installed Chrome. No tool installs software or manages a Unity licence.
-
-From this directory, with the Unity project closed (other projects may stay open):
-```powershell
-python Tools/build_web.py --editor "C:\path\to\6000.3.24f1\Editor\Unity.exe"
-python Tools/verify_web.py "C:\absolute\path\to\the\reported\Builds\Web-..."
-python -m http.server 8788 --bind 127.0.0.1 --directory "C:\absolute\path\to\that\Web-..."
-```
-
-Open `http://127.0.0.1:8788/` on that workstation. An occupied port is not permission
-to stop another application; select a free port. Stop your own server with Ctrl+C.
-Keep the automated Chrome window foreground and do not interact during the test.
-The verifier uses real pointer presses held for 150 ms; it does not invoke game
-methods through JavaScript. It tests both fittings/views, resize, idle pause/resume,
-and five recoil cycles. Screenshots and structured results are written to Evidence.
-
-The builder exports the SAVED scene, checks that its bytes are unchanged, and writes
-a fresh output directory. It never calls scene regeneration. The old Prepare menu
-now refuses to overwrite an existing scene. Save editor work deliberately before
-building. Never copy a regenerated build scene back over independent authoring work.
-
-## Dependency restoration
-
-The same-version URP embedding workaround is retained without shipping the vendor
-payload. On a fresh checkout the builder copies URP 17.3.0 from the pinned installed
-editor to the ignored Unity/Packages directory, checks all copied hashes, and lets
-Unity create import metadata. It does not patch the installed editor/cache. The
-lockfile and restoration receipt identify the dependencies. The Unity editor,
-fonts, Library caches and restored vendor package remain outside Git. The one
-receipt-bound Last Stand Web export under `client/public/last-stand/` is the
-site delivery asset; other generated Web builds remain ignored.
-Unity's embedding reference: https://docs.unity3d.com/6000.3/Documentation/Manual/upm-embed.html
-Pointer API reference: https://playwright.dev/python/docs/api/class-mouse
-
-## Authoring continuity and limits
-
-This snapshot preserves the saved stterra assets, scene and settings rather than
-replacing them with stweb01's generated scene. The corrected TankPresentation.cs
-comes from the reviewed stweb01 build. Original roots, their failed receipts and
-all unsaved editor work remain untouched. This is not a complete backup of the
-still-unsaved editor scene; reconcile that work before merging or switching roots.
-
-`Tools/build_art.py` is the original Blender generator, retained for provenance.
-Do not run it over hand-edited assets: it generates into its sibling ArtSource and
-Unity/Assets/Art paths. Run a copied recipe in a fresh scratch directory for a
-regeneration study. Do not replace saved artistic work with a generated result.
-
-The first art pass still uses coarse perimeter props, visible terrain edges and
-regular track impressions. The initial inspection framing is rear three-quarter.
-These are visible refinement opportunities, not claims of final visual approval.
-There is no full campaign, mobile benchmark, battery/thermal pass or release here.
-The repository's existing CI protects the classic application and does not itself
-compile this Unity project. See VALIDATION.md for this slice's actual evidence.
-
-## Failure and rollback
-
-Missing editor, unsupported pin, absent Web module or source drift stops the
-workflow; fix the specific prerequisite without disabling protections. Every build
-gets a fresh evidence/output directory. No failed result is relabeled or deleted.
-The saved scene and old exports remain recoverable. There is no live data migration
-or production rollback: retain the branch unmerged and reconcile specific files.
-No command enables auto-merge, Pages, an external listener or a public tunnel.
+The FieldAssembly, BattlefieldReview and PartsGallery scenes are retained authoring
+and inspection tools. Their old receipts are not acceptance for today's campaign.
+The dated sections below preserve earlier scope, failures and acceptance records;
+statements about missing features or deferred tooling describe those dates.
 
 ## Inspection controls - initial September 25 follow-on checkpoint
 

@@ -55,3 +55,15 @@ export async function revealLastStandControl({name,page,geometry,assertUninterru
   }
   assert.fail('Target could not be fully revealed by ordinary scrolling: '+name);
 }
+
+// Both maintained journeys reject focus/document loss during ordinary scrolling.
+export function revealObservedLastStandControl({name,page,geometry,trace,readLoad}) {
+  const start=trace.length,originalLoad=readLoad();
+  return revealLastStandControl({name,page,geometry,assertUninterrupted:()=>assert.ok(readLoad()===originalLoad&&
+    !trace.slice(start).some(event=>event.globalTarget&&(event.kind==='blur'||event.kind==='visibilitychange'&&event.hidden)),
+    'Scroll reveal refuses document, focus or visibility loss')});
+}
+
+export function findLastStandSettingsViewport(graphics) {
+  return graphics.find(g=>g.active&&g.path.endsWith('/SettingsViewport')&&['Image','LastStandConsoleSurface'].includes(g.kind));
+}

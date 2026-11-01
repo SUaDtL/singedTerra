@@ -7,11 +7,26 @@ import {mkdtempSync,mkdirSync,writeFileSync,unlinkSync,rmdirSync} from 'node:fs'
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {readFileSync} from 'node:fs';
-import {runInNewContext} from 'node:vm';
+import {runInNewContext,Script} from 'node:vm';
 import * as partitionOwner from '../../e2e/helpers/lastStandMatrix.mjs';
-import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
+import {assertDependencyFreeWaveGuards} from './lastStandDependencyFreeFixture.mjs';
 
 const readJourneySource=()=>readFileSync('e2e/helpers/lastStandJourney.mjs','utf8').replace(/\r\n?/g,'\n');
+
+test('matrix guards run before npm install without third-party packages',()=>{
+  assertDependencyFreeWaveGuards(`
+    await assert.rejects(import('typescript'),{code:'ERR_MODULE_NOT_FOUND'},'The isolated checkout genuinely lacks TypeScript');
+    const {spawnSync}=await import('node:child_process');
+    const {NODE_TEST_CONTEXT,...environment}=process.env;
+    const result=spawnSync(process.execPath,['--test','--test-reporter=tap',
+      '--test-skip-pattern=matrix guards run before npm install without third-party packages','scripts/ci/browserMatrix.test.mjs'],
+      {cwd:process.cwd(),env:{...environment,NODE_PATH:''},encoding:'utf8',timeout:20000,maxBuffer:128*1024});
+    assert.ifError(result.error);assert.equal(result.status,0,result.stderr||result.stdout);
+    assert.match(result.stdout,/^# pass 16$/m);assert.match(result.stdout,/^# skipped 0$/m);
+  `,{additionalSources:['scripts/ci/browserMatrix.test.mjs','scripts/ci/browserMatrix.mjs',
+    'scripts/ci/lastStandDependencyFreeFixture.mjs','scripts/ci/lastStandMatrixResult.mjs','scripts/ci/lastStandQualification.mjs',
+    'scripts/ci/lastStandWaveMatrixResult.mjs','scripts/ci/lastStandWaveQualification.mjs']});
+});
 
 test('startup routing has an independent owner instead of repeating on every gameplay shard',()=>{
   const {include:lanes}=browserMatrix();
@@ -123,11 +138,7 @@ function matrixFixture() {
 }
 
 test('classic matrix admits the current purchase observation and rejects incorrect wallet, level or damage',async()=>{
-  const source=readJourneySource();
-  const begin=source.indexOf("    const bought=await gameKey('ShopCard_cannonAttackBuy','purchase');");
-  const end=source.indexOf('\n',begin);
-  assert.ok(begin>0 && end>begin,'Execute the maintained purchase observation');
-  const run=new Function('gameKey','check','savedWave','return (async()=>{'+source.slice(begin,end)+'})();');
+  const run=(gameKey,check,savedWave)=>journey.purchaseJourneyCannon({gameKey,check,savedWave});
   for(const fault of [null,{wallet:1},{level:0},{cannonDamage:20}]){
     const sample=matrixFixture(),observations=[];
     await run(async(name,action)=>{
@@ -239,36 +250,59 @@ test('entry qualification requires every original routing case and actual reacha
   }
 });
 
-test('actual journey section guards execute all Windows sections and keep Linux owners disjoint',async()=>{
+test('section ownership and six guarded call sites preserve Windows and disjoint Linux coverage',()=>{
+  // Parse the bounded guarded blocks with Node's built-in parser, without
+  // evaluating them. Direct owner tests establish admission; this is not
+  // browser execution or proof of behavior inside the guarded branches.
   const source=readJourneySource();
   const commonStart=source.indexOf('    if(section.entry || section.lifecycle){');
   const entryStart=source.indexOf('    if(section.entry){',commonStart);
   const preparationStart=source.indexOf('    if(section.entry || section.lifecycle){',entryStart);
   const entryEnd=source.indexOf('    // Loaded after this module is initialized:',preparationStart);
-  assert.ok(entryEnd>preparationStart,'Section guard fixture ends before unconditional shared helper initialization');
   const exitsStart=source.indexOf('    if(section.entry){',entryEnd);
-  const mainStart=source.indexOf('    if(section.lifecycle){',exitsStart),recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
+  const mainStart=source.indexOf('    if(section.lifecycle){',exitsStart);
+  const recoveryStart=source.indexOf('    if(section.recovery){',mainStart);
   const recoveryEnd=source.indexOf("    scope='healthy';\n    report.input_trace=",recoveryStart);
-  const blocks=[['common',source.slice(commonStart,entryStart)],['entry',source.slice(entryStart,preparationStart)],
-    ['common',source.slice(preparationStart,entryEnd)],['entry',source.slice(exitsStart,mainStart)],['lifecycle',source.slice(mainStart,recoveryStart)],
-    ['recovery',source.slice(recoveryStart,recoveryEnd)]];
-  const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
-  for(const name of [undefined,'entry','lifecycle','recovery']){
-    const section=partitionOwner.lastStandJourneySection(name,{host:'linux',profile:'linux-functional',
-      shard:name==='lifecycle'?'1/10':undefined});
-    for(const [owner,block]of blocks){
-      assert.ok(block.startsWith('    if(section.'));
-      const reached=new Error('Explicit inert first-side-effect sentinel');
-      const stop=()=>{throw reached;};
-      const run=new AsyncFunction('section','goto','gameClick','readFileSync','join','ROOT','assert','ash','skirmish',
-        'retiredCampaignRecord','LAST_STAND_ENTRY_ROUTES','setRouteState','page','screenshot','report','configureEffectsOnlyJourneyAudio','check',
-        '"use strict";let scope,rejoin,rejoinBinding;'+block);
-      const execution=run(section,stop,stop,stop,()=>'', '/inert',assert,{},{},{},partitionOwner.LAST_STAND_ENTRY_ROUTES,
-        stop,{setViewportSize:stop},stop,new Proxy({},{get:stop,set:stop}),stop,stop);
-      if(owner==='common'?(section.entry || section.lifecycle):section[owner])
-        await assert.rejects(execution,error=>error===reached);
-      else await execution;
-    }
+  const bounds=[[commonStart,entryStart],[entryStart,preparationStart],[preparationStart,entryEnd],
+    [exitsStart,mainStart],[mainStart,recoveryStart],[recoveryStart,recoveryEnd]];
+  const blocks=bounds.map(([start,end])=>{
+    assert.ok(start>=0&&end>start&&end-start<128*1024,'One bounded complete section block');
+    return source.slice(start,end);
+  });
+  const conditions=blocks.map(block=>{
+    const guard=block.match(/^\s*if\((section\.[^\n]+)\)\{/);assert.ok(guard,'An explicit section guard owns the block');
+    // Appending else requires the captured block to end at its complete if,
+    // not inside its body or after an unrelated trailing statement.
+    assert.doesNotThrow(()=>new Script('(async function(section){\n'+block+'\nelse {}\n})'));
+    return guard[1].replace(/\s/g,'');
+  });
+  const expectedConditions=['section.entry||section.lifecycle','section.entry','section.entry||section.lifecycle',
+    'section.entry','section.lifecycle','section.recovery'];
+  assert.deepEqual(conditions,expectedConditions);
+  assert.equal([...source.matchAll(/^    if\(section\.(?:entry|lifecycle|recovery)[^\n]*\)\{/gm)].length,6,
+    'Every common, entry, lifecycle and recovery block has one declared owner');
+  const first=blocks.map(block=>block.slice(block.indexOf('{')+1).trimStart());
+  assert.match(first[0],/^await\s+goto\(''\)/);
+  assert.match(first[1],/^const\s+routeCases\s*=\s*\[/);
+  assert.match(first[2],/^await\s+page\.setViewportSize\(/);
+  assert.match(first[3],/^await\s+gameClick\('Deploy','deploy'\)/);
+  assert.match(first[4],/^report\.effects_only_audio\s*=\s*await\s+configureEffectsOnlyJourneyAudio\(/);
+  assert.match(first[5],/^if\(!section.lifecycle\)\{\s*await\s+goto\(''\)/);
+  assert.match(first[5],/for\(const extension of \['\.loader\.js','\.wasm'\]\)\{\s*scope=[^\n]+;\s*const manifest=JSON\.parse\(readFileSync\(/);
+  for(const [host,profile,name,expected]of [
+    ['win32','windows-player',undefined,[0,1,2,3,4,5]],
+    ['linux','linux-functional',undefined,[0,1,2,3,4,5]],
+    ['linux','linux-functional','entry',[0,1,2,3]],
+    ['linux','linux-functional','lifecycle',[0,2,4]],
+    ['linux','linux-functional','recovery',[5]],
+  ]){
+    const section=partitionOwner.lastStandJourneySection(name,{host,profile,shard:name==='lifecycle'?'1/10':undefined});
+    const admitted=conditions.flatMap((condition,index)=>{
+      const enabled=condition==='section.entry||section.lifecycle'?section.entry||section.lifecycle:
+        section[condition.slice('section.'.length)];
+      return enabled?[index]:[];
+    });
+    assert.deepEqual(admitted,expected,host+' '+(name??'full')+' owns exactly its declared guarded operations');
   }
 });
 
@@ -299,45 +333,39 @@ test('transport discovery counts journeys and retains failures without counting 
 });
 
 test('native Return inspects the Last Stand-only library without launching retired code', async () => {
-  const source=readJourneySource();
-  const begin=source.indexOf("    report.retired_campaign_preservation.native_return='observed unchanged';");
-  const end=source.indexOf('    start=states.length;',begin);
-  assert.ok(begin>0 && end>begin);
   for(const items of [['last-stand'],['last-stand','ash-road'],[]]) {
     const report={retired_campaign_preservation:{}};
-    const run=runInNewContext('(async()=>{'+source.slice(begin,end)+'})()',{
+    const run=journey.verifyRetiredCampaignReturn({
       report,selected:async item=>assert.equal(item,'last-stand'),check:(value,name)=>assert.ok(value,name),
       page:{locator:()=>({evaluateAll:async fn=>fn(items.map(item=>({dataset:{commandItem:item}})))})},
     });
     if(items.length!==1)await assert.rejects(run,/native Return offers only Last Stand/);
     else {await run;assert.equal(report.retired_campaign_preservation.retirement,'observed Last Stand only');}
   }
-  const restored=source.indexOf("'unfinished Return offers explicit saved-run resume'",end);
-  const nextDeploy=source.indexOf("await gameClick('Deploy','resume')",restored);
-  assert.ok(source.slice(restored,nextDeploy).includes('await resize(captureViewport)'),
-    'The next Unity deployment restores the canonical profile after native Return');
+  const viewport={width:1280,height:720},operations=[];
+  await journey.resumeReturnedJourney({captureViewport:viewport,
+    resize:async actual=>{assert.equal(actual,viewport);operations.push('resize');},
+    gameClick:async(name,action)=>{assert.deepEqual(operations,['resize'],
+      'The next Unity deployment restores the canonical profile after native Return');
+      assert.deepEqual([name,action],['Deploy','resume']);operations.push('resume');}});
+  assert.deepEqual(operations,['resize','resume']);
+
 });
 
 test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapshot', async () => {
-  const source=readJourneySource();
-  const begin=source.indexOf('    const geometry=async('),end=source.indexOf('    const resize=async',begin);
-  const controlBegin=source.indexOf('    const hudControls=');
-  assert.ok(begin>0 && end>begin);
-  assert.ok(controlBegin>0&&controlBegin<begin,'Maintained HUD collection and projection closures required');
   for(const fault of [undefined,'hidden','collapsed','zero-area','backing-size']) {
     let reads=0;
     const box={x:0,y:0,width:fault==='zero-area'?0:1280,height:720},element={width:fault==='backing-size'?1290:1280,height:720,
       getBoundingClientRect:()=>box};
     const layout={coordinates:'top-left',width:1280,height:720,
       controls:[{name:'Menu',x:10,y:10,width:44,height:44,active:true,interactable:true}],shopControls:[],settingsControls:[],graphics:[]};
-    const run=runInNewContext('(async()=>{'+source.slice(controlBegin,begin)+source.slice(begin,end)+'return geometry("Menu");})()',{
-      assert,check:(ok,name)=>assert.ok(ok,name),layouts:[layout],VIEWPORTS:[],tierJourneyControlGeometry,trace:[],load:1,
-      getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'}),
+    const {geometry}=journey.createJourneyActions({check:(ok,name)=>assert.ok(ok,name),layouts:[layout],trace:[],load:1,
       page:{viewportSize:()=>({width:1280,height:720}),locator:()=>({
         boundingBox:async()=>{reads++;return fault==='hidden'?null:box;},
-        evaluate:async fn=>{reads++;return fn(element);},
-      })},
-    });
+        evaluate:async fn=>{reads++;return runInNewContext('('+fn.toString()+')(element)',{element,
+          getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'})});},
+      })}});
+    const run=geometry('Menu');
     if(fault)await assert.rejects(run);
     else {const result=await run;assert.equal(result.item.name,'Menu');assert.equal(result.canvas.width,1280);
       assert.equal(reads,1,'Separate CSS/backing reads add a slow renderer roundtrip to every geometry check');}
@@ -345,35 +373,28 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
 });
 
 test('actual phase inspection captures once while preserving geometry and focus checks',async()=>{
-  const source=readJourneySource();
-  const begin=source.indexOf('    const resize=async'),phase=source.indexOf('    const phaseMatrix=',begin),
-    end=source.indexOf('    if(section.lifecycle)await resize(captureViewport);\n    const armGameClick=',phase);
-  assert.ok(begin>0 && phase>begin && end>phase);
   const viewport={name:'standard',width:1280,height:720},captures=[];let geometry=0,focus=0;
-  await runInNewContext('(async()=>{'+source.slice(begin,end)+'await phaseMatrix("garage");})()',{
+  const {phaseMatrix}=journey.createJourneyActions({
     assert,check:(ok,name)=>assert.ok(ok,name),states:[{phase:'garage',paused:false}],
     layouts:[{width:1280,height:720}],report:{screenshots:[]},
-    section:{lifecycle:true},matrix:{viewports:[],phaseViewports:[viewport],captureViewport:viewport},
+    matrix:{viewports:[],phaseViewports:[viewport],captureViewport:viewport},captureViewport:viewport,
     geometry:async()=>{geometry++;},keyboardFocus:async()=>{focus++;},screenshot:async name=>{captures.push(name);},
     page:{setViewportSize:async()=>{},viewportSize:()=>viewport,waitForTimeout:async()=>{},
       locator:()=>({evaluate:async()=>({width:1280,height:720})}),evaluate:async()=>({width:1280,height:720,
         scrollWidth:1280,scrollHeight:720,nav:{bottom:80},link:{x:0,y:0,right:40,bottom:40},loss:{x:50,y:0,right:100,bottom:40}})},
   });
+  await phaseMatrix('garage');
   assert.equal(geometry,1);assert.equal(focus,1);
   assert.deepEqual(captures,['garage-standard'],'Phase metadata needs one fresh native capture, not a duplicate layout image');
 });
 
 test('actual journey check journals every observation without rewriting the growing report each time',()=>{
-  const source=readJourneySource();
-  const begin=source.indexOf('  const check =',source.indexOf('export async function runLastStandJourney(')),
-    end=source.indexOf('  const write =',begin);
-  assert.ok(begin>0 && end>begin);
   let clock=0,observerError;const snapshots=[],journal=[],report={status:'running',checks:[],inert_payload:'x'.repeat(5000)};
-  const check=runInNewContext(source.slice(begin,end)+'check;',{
-    assert,report,resultPath:'owned-result.json',lastResultWrite:-Infinity,Date:{now:()=>clock},
+  const check=journey.createJourneyCheck({
+    report,resultPath:'owned-result.json',now:()=>clock,
     throwObserverFailure:()=>{if(observerError)throw observerError;},
-    writeShopPresentationJson:(_path,value)=>snapshots.push(JSON.parse(JSON.stringify(value))),
-    appendFileSync:(_path,bytes)=>journal.push(JSON.parse(bytes)),
+    writeSnapshot:(_path,value)=>snapshots.push(JSON.parse(JSON.stringify(value))),
+    append:(_path,bytes)=>journal.push(JSON.parse(bytes)),
   });
   for(let i=0;i<50;i++)check(true,'observed-'+i,{i});
   assert.equal(snapshots.length,1,'Do not repeatedly serialize a growing multi-megabyte report inside one sampling interval');
@@ -387,10 +408,10 @@ test('actual journey check journals every observation without rewriting the grow
   assert.throws(()=>check(true,'cannot admit observation'),error=>error===observerError);
   assert.equal(journal.length,52);
   const appendError=new Error('owned journal disk failure');
-  const failedCheck=runInNewContext(source.slice(begin,end)+'check;',{
-    assert,report:{status:'running',checks:[]},resultPath:'owned-result.json',lastResultWrite:-Infinity,
-    Date:{now:()=>0},throwObserverFailure:()=>{},appendFileSync:()=>{throw appendError;},
-    writeShopPresentationJson:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
+  const failedCheck=journey.createJourneyCheck({
+    report:{status:'running',checks:[]},resultPath:'owned-result.json',now:()=>0,
+    throwObserverFailure:()=>{},append:()=>{throw appendError;},
+    writeSnapshot:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
   });
   assert.throws(()=>failedCheck(true,'must fail persistence'),error=>error===appendError);
 });

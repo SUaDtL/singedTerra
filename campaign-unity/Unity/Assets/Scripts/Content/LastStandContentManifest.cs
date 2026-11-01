@@ -38,6 +38,7 @@ namespace SingedTerra.LastStand
         public void Validate()
         {
             LastStandTierCatalog.Validate(Tiers);
+            LastStandEnemyCatalog.Validate();
             if(Tiers.Count>1024||Environments.Count==0||Environments.Count>1024||Fittings.Count==0||Fittings.Count>512)
                 throw new ArgumentException("Content manifest exceeds supported bounds.");
             var environments=new HashSet<string>(StringComparer.Ordinal);
@@ -46,6 +47,7 @@ namespace SingedTerra.LastStand
             var tiers=new HashSet<int>();foreach(var tier in Tiers)
             {
                 LastStandSelectionOption.ValidateId(tier.Key);
+                LastStandEnemyCatalog.ValidateMix(tier.EnemyMixId);
                 tiers.Add(tier.Id);if(!environments.Contains(tier.EnvironmentId))throw new ArgumentException("Tier references a missing environment.");
             }
             var fittings=new HashSet<string>(StringComparer.Ordinal);var mechanics=new HashSet<LastStandFitting>();var unlocks=new HashSet<string>(StringComparer.Ordinal);
@@ -82,6 +84,7 @@ namespace SingedTerra.LastStand
             if(isUnlocked==null)throw new ArgumentNullException(nameof(isUnlocked));var rows=new List<LastStandSelectionOption>();
             foreach(var tier in Tiers)
             {
+                if(!tier.Playable)continue;
                 var environment=EnvironmentForTier(tier.Id);
                 // Existing player/observation selections use the persisted numeric
                 // tier identity. Content authoring keeps its semantic key as well.
@@ -95,7 +98,7 @@ namespace SingedTerra.LastStand
         {
             if(isUnlocked==null)throw new ArgumentNullException(nameof(isUnlocked));
             var rows=new List<LastStandSelectionOption>();
-            foreach(var fitting in Fittings)rows.Add(fitting.Option(isUnlocked(fitting.Id)));
+            foreach(var fitting in Fittings)if(fitting.Playable)rows.Add(fitting.Option(isUnlocked(fitting.Id)));
             return rows.AsReadOnly();
         }
     }
@@ -104,10 +107,16 @@ namespace SingedTerra.LastStand
     {
         public static IReadOnlyList<LastStandEnvironmentIdentity> Environments { get; } = Array.AsReadOnly(new[] {
             new LastStandEnvironmentIdentity("sunlit-ash","Sunlit Ash","Warm ash flats, broken rock and long sunlit approaches."),
-            new LastStandEnvironmentIdentity("iron-perimeter","Iron Perimeter","A cold industrial perimeter with hard cover and steel-grey ground.")
+            new LastStandEnvironmentIdentity("iron-perimeter","Iron Perimeter","A cold industrial perimeter with hard cover and steel-grey ground."),
+            new LastStandEnvironmentIdentity("cinder-basin","Cinder Basin","A broken caldera rim, basalt teeth and half-buried southern ruins."),
+            new LastStandEnvironmentIdentity("storm-foundry","Storm Foundry","A foundry yard, pressure tanks and cable works under cold storm light.")
         });
-        public static LastStandContentManifest Current { get; } = new LastStandContentManifest("last-stand-content-v1",
+        public static LastStandContentManifest Legacy { get; } = new LastStandContentManifest(LastStandRunEdition.LegacyContentVersion,
+            LastStandTierCatalog.Legacy,new[]{Environments[0],Environments[1]},LastStandFittingCatalog.Legacy,LastStandResearchCatalog.Definitions);
+        public static LastStandContentManifest Current { get; } = new LastStandContentManifest(LastStandRunEdition.CurrentContentVersion,
             LastStandTierCatalog.All,Environments,LastStandFittingCatalog.Definitions,LastStandResearchCatalog.Definitions);
+        public static LastStandContentManifest Get(string version)=>version==Legacy.Version?Legacy:version==Current.Version?Current:
+            throw new ArgumentException("Unsupported content edition.");
         public static LastStandEnvironmentIdentity Environment(string id)
         {
             foreach(var row in Environments)if(String.Equals(row.Id,id,StringComparison.Ordinal))return row;

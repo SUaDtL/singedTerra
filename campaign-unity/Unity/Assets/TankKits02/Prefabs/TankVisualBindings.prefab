@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3002688938951773932
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8201710807156382521}
+  - component: {fileID: 4565301161350536286}
+  m_Layer: 0
+  m_Name: TankVisualBindings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8201710807156382521
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3002688938951773932}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4565301161350536286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3002688938951773932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e62ad2ce7dae09418e52fcba54b132f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SingedTerra.Art.LastStandTankVisuals
+  parts:
+  - {fileID: 3767593670205568351, guid: 7dd1f4c1680e43344a12887b19be0adc, type: 3}
+  - {fileID: 6922358116186315122, guid: a42531140e1b10c40b00e6feb70ea528, type: 3}
+  - {fileID: 4106813153954614007, guid: e036a1534e0c2004d82852529c67c17c, type: 3}
+  - {fileID: 5865948666317424975, guid: 47368393b0762b14e9c9a1e6717121cf, type: 3}
+  - {fileID: 1344274646433468527, guid: 4985d9e6f5209e4488e52b1dc2e313ed, type: 3}
+  - {fileID: 6592072530376799191, guid: 576804ab333821b4493402bd765ecf2e, type: 3}
+  - {fileID: 7423426952746773098, guid: bbd8c9bc07ef0f54eaab23e8921521cf, type: 3}
+  - {fileID: 651904841540935122, guid: 98470266f4e224d40a5d845954ab1a75, type: 3}
+  - {fileID: 2160799849181072856, guid: 11a0f492705c6f94cbbeff9eceed4aa2, type: 3}
+  - {fileID: 4928995403003359480, guid: 0f991d1b24469064ca2d78e8c9d9da16, type: 3}
+  - {fileID: 976356764977252595, guid: 48186ac37d5cc52479f7df6427a41c2b, type: 3}
+  - {fileID: 1030569275071921258, guid: 675c4cebf8cd22d4c98c8c6ef07c6646, type: 3}
+  - {fileID: 6493073709966225045, guid: 916048aec4df9754194573b2b5901dad, type: 3}
+  - {fileID: 307546143165954448, guid: 8bbad5ef08944e342bd79bc1e6b35e59, type: 3}
+  - {fileID: 4124201279099955036, guid: 7e89097ad5f31ed4c92712cbc64485a9, type: 3}
+  - {fileID: 4351016220328032921, guid: 5573a6459e3971d40a50d1f058462653, type: 3}
+  armor: {fileID: 2100000, guid: d9a83ea0fd8261c4a8dd74bc3581aa34, type: 2}
+  steel: {fileID: 2100000, guid: 1afdbad3dddfc27489134f352ce14f55, type: 2}
+  edge: {fileID: 2100000, guid: 6e0fc292b8e502b43bacbfb92de22133, type: 2}
+  rubber: {fileID: 2100000, guid: ded28cc1b6e0f594a914d6c4d0d16a36, type: 2}
+  brass: {fileID: 2100000, guid: 2f0826f4d4b5c5b469d5a872a6a2fbbf, type: 2}
+  optic: {fileID: 2100000, guid: dfefc342e69761c47892dd87a25eb9d7, type: 2}

@@ -113,3 +113,10 @@ Every task advances at least one listed AC. No task is administrative-only or ou
 - Exact local resume cannot be reproduced from the bound checkpoint plus accepted command journal.
 - A required content response is not legally reachable with guaranteed equipment/fuel.
 - Any release, deploy, repository-setting mutation, branch/worktree deletion, override, or other irreversible operation is proposed. Merge alone has standing user authority after complete implementation and green hosted CI.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+Retired by the owner: Last Stand is the campaign. Merged PR #541 (`dbc84604`) removes the Ash Road implementation. Preserve the old T01–T44 record as history; do not run its pending human/device tasks against Last Stand or claim they passed.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.

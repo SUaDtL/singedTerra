@@ -8,10 +8,11 @@ from dataclasses import dataclass
 import hashlib
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
+EDITOR = Path(r"C:\Program Files\Unity 6000.3.27f2")
 
 
 def discover_toolchain(environ=None, platform=None, finder=None):
@@ -45,7 +46,12 @@ def discover_toolchain(environ=None, platform=None, finder=None):
     return mono, compiler, mode
 
 
-MONO, CSC, COMPILER_MODE = discover_toolchain()
+try:
+    MONO, CSC, COMPILER_MODE = discover_toolchain()
+except RuntimeError:
+    # Importing a caller with explicit tools must not require automatic tools.
+    # Default use below repeats discovery and preserves its actionable failure.
+    MONO = CSC = COMPILER_MODE = None
 
 
 @dataclass(frozen=True)
@@ -55,6 +61,7 @@ class CSharpBuild:
     argv: tuple
     stdout: str
     stderr: str
+    returncode: int
 
 
 def _source_hashes(sources):
@@ -68,16 +75,25 @@ def _source_hashes(sources):
 
 
 def compile_csharp(target, sources, *, warnings_as_errors=True,
-                   timeout_seconds=60, mono=MONO, compiler=CSC, compiler_mode=None):
+                   timeout_seconds=60, mono=MONO, compiler=CSC, compiler_mode=None,
+                   defines=()):
     """Compile only these files, rejecting source drift and stale output."""
     if timeout_seconds <= 0:
         raise ValueError("Compilation requires a positive timeout")
+    if not isinstance(defines, (tuple, list)) or any(not isinstance(value, str) or
+            re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value) is None for value in defines):
+        raise ValueError("Compiler defines must be explicit identifier names")
     target, sources = Path(target), tuple(Path(path) for path in sources)
     if not sources:
         raise ValueError("Compilation requires explicit sources")
     before = _source_hashes(sources)
     if len(before) != len(sources):
         raise ValueError("Duplicate source paths in compilation")
+    if mono is None or compiler is None:
+        found_mono, found_compiler, found_mode = discover_toolchain()
+        mono = found_mono if mono is None else mono
+        if compiler is None:
+            compiler, compiler_mode = found_compiler, compiler_mode or found_mode
     for tool in (mono, compiler):
         if not Path(tool).is_file():
             raise RuntimeError(f"C# tool is unavailable: {tool}")
@@ -92,6 +108,8 @@ def compile_csharp(target, sources, *, warnings_as_errors=True,
         argv.append("-langversion:latest")
     if warnings_as_errors:
         argv.append("-warnaserror+")
+    for value in defines:
+        argv.append("-define:" + value)
     argv += [f"-out:{target}", *map(str, sources)]
     result = subprocess.run(argv, capture_output=True, text=True,
                             encoding="utf-8-sig", timeout=timeout_seconds)
@@ -103,7 +121,7 @@ def compile_csharp(target, sources, *, warnings_as_errors=True,
         raise AssertionError("Declared C# sources changed while compiling")
     if not target.is_file():
         raise AssertionError("Compiler returned success without an executable")
-    return CSharpBuild(target, before, tuple(argv), result.stdout, result.stderr)
+    return CSharpBuild(target, before, tuple(argv), result.stdout, result.stderr, result.returncode)
 
 
 def run_csharp(executable, args=(), *, timeout_seconds=120, mono=MONO):
@@ -112,6 +130,8 @@ def run_csharp(executable, args=(), *, timeout_seconds=120, mono=MONO):
         raise ValueError("Execution requires a positive timeout")
     if not Path(executable).is_file():
         raise AssertionError(f"Compiled C# executable is unavailable: {executable}")
+    if mono is None:
+        mono = discover_toolchain()[0]
     return subprocess.run([str(mono), str(executable), *map(str, args)],
                           capture_output=True, text=True, encoding="utf-8-sig",
                           timeout=timeout_seconds)

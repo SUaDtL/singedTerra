@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Rendering;
@@ -56,11 +57,42 @@ public static class LastStandLoopBuild
         throw new InvalidOperationException("Expected development or release build configuration");
     }
 
+    public static void PrepareShaderDiagnostics()
+    {
+        const string asset = "Packages/com.unity.render-pipelines.core/Editor/Lighting/ProbeVolume/VirtualOffset/TraceVirtualOffset.urtshader";
+        var package = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(asset);
+        Require(package != null && package.name == "com.unity.render-pipelines.core" && package.version == "17.3.0",
+            "Reviewed core shader package is unavailable");
+        var binding = new StringBuilder();
+        foreach (string relative in new[] {
+            "Editor/Lighting/ProbeVolume/VirtualOffset/TraceVirtualOffset.urtshader",
+            "Editor/Lighting/ProbeVolume/ProbeVolumeResourceStripper.cs",
+            "Runtime/Lighting/ProbeVolume/ProbeVolumeGlobalSettings.cs",
+            "ShaderLibrary/Sampling/Fibonacci.hlsl", "ShaderLibrary/Sampling/Hammersley.hlsl",
+            "ShaderLibrary/Sampling/Sampling.hlsl", "ShaderLibrary/Common.hlsl" })
+        {
+            string source = File.ReadAllText(Path.Combine(package.resolvedPath, relative)).Replace("\r\n", "\n").Replace("\r", "\n");
+            using (var sha = SHA256.Create())
+                binding.Append(relative).Append('=').Append(BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(source)))
+                    .Replace("-", "").ToLowerInvariant()).Append('\n');
+        }
+        using (var sha = SHA256.Create())
+            Debug.Log("ST_LS_EDITOR_SHADER_REVIEW package=" + package.version + " sha256=" +
+                BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(binding.ToString()))).Replace("-", "").ToLowerInvariant());
+        if (Environment.GetEnvironmentVariable("ST_LS_REFRESH_EDITOR_SHADER_IMPORT") == "1")
+        {
+            Debug.Log("ST_LS_EDITOR_IMPORT_BEGIN asset=" + asset);
+            AssetDatabase.ImportAsset(asset, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            Debug.Log("ST_LS_EDITOR_IMPORT_END asset=" + asset);
+        }
+    }
+
     public static void BuildWeb()
     {
-        Require(Application.unityVersion == "6000.3.24f1", "Unexpected editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "Unexpected editor version");
         Require(BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.WebGL, BuildTarget.WebGL), "Pinned Web Build Support missing");
         Require(File.Exists(ScenePath), "Saved Last Stand scene missing");
+        PrepareShaderDiagnostics();
         string sceneBefore = Digest(ScenePath), fieldBefore = Digest(FieldScene), reviewBefore = Digest(ReviewScene);
         string rendererBefore = Digest(RendererPath);
         string graphicsBefore = Digest(GraphicsPath), qualityBefore = Digest(QualityPath);
@@ -108,8 +140,10 @@ public static class LastStandLoopBuild
 #pragma warning restore 618
             WebDebugSettingsStripped = false;
             StripWebDebugSettings = true;
+            Debug.Log("ST_LS_PLAYER_BUILD_BEGIN target=webgl");
             report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] { ScenePath }, locationPathName = output,
                 target = BuildTarget.WebGL, options = options });
+            Debug.Log("ST_LS_PLAYER_BUILD_END target=webgl result=" + report.summary.result);
 #pragma warning disable 618
             rendererRefStayedCleared = webRenderer.debugShaders.hdrDebugViewPS == null;
 #pragma warning restore 618

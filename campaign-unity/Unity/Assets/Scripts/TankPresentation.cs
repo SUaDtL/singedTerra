@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using SingedTerra.LastStand;
 namespace SingedTerra.Art
@@ -9,34 +10,29 @@ namespace SingedTerra.Art
         public Camera view;
         public Transform tank, turret, barrel, muzzle;
         public GameObject repairModule, launcherModule, flash;
+        public LastStandTankVisuals tankVisualsPrefab;
+        public LastStandTankVisuals TankVisuals { get; private set; }
         public GameObject scattergunModule { get; private set; }
-        LastStandScattergunModule scattergun;
-        Renderer[] repairMeshes, launcherMeshes, scattergunMeshes;
+        sealed class ModuleBinding
+        {
+            public GameObject Root;public Renderer[] Renderers;public Func<Vector3> Muzzle;
+            public Action<Vector3> Fire;public Action<float> Advance;public Action Clear,Restore;
+        }
+        readonly Dictionary<LastStandFitting,ModuleBinding> modules=new Dictionary<LastStandFitting,ModuleBinding>();
         public LastStandFitting Fitting { get; private set; }=LastStandFitting.Repair;
         public GameObject ActiveFittingModule => Module(Fitting);
-        public Renderer[] ActiveFittingRenderers
+        public Renderer[] ActiveFittingRenderers=>modules.TryGetValue(Fitting,out var binding)?binding.Renderers:Array.Empty<Renderer>();
+        public Vector3 ScattergunMuzzle=>FittingMuzzle(LastStandFitting.Scattergun);
+        GameObject Module(LastStandFitting fitting)=>modules.TryGetValue(fitting,out var binding)?binding.Root:null;
+        public Vector3 FittingMuzzle(LastStandFitting fitting)=>modules[fitting].Muzzle();
+        void Bind(LastStandFitting fitting,GameObject root,Func<Vector3> muzzle=null,Action<Vector3> fire=null,
+            Action<float> advance=null,Action clear=null,Action restore=null)
         {
-            get
-            {
-                switch(Fitting)
-                {
-                    case LastStandFitting.Repair:return repairMeshes;
-                    case LastStandFitting.Launcher:return launcherMeshes;
-                    case LastStandFitting.Scattergun:return scattergunMeshes;
-                    default:throw new ArgumentOutOfRangeException(nameof(Fitting));
-                }
-            }
-        }
-        public Vector3 ScattergunMuzzle => scattergun.MuzzlePosition;
-        GameObject Module(LastStandFitting fitting)
-        {
-            switch(fitting)
-            {
-                case LastStandFitting.Repair:return repairModule;
-                case LastStandFitting.Launcher:return launcherModule;
-                case LastStandFitting.Scattergun:return scattergunModule;
-                default:throw new ArgumentOutOfRangeException(nameof(fitting));
-            }
+            var renderers=root.GetComponentsInChildren<Renderer>(true);
+            if(renderers.Length==0)throw new InvalidOperationException("Fitting has no visible geometry: "+fitting);
+            modules.Add(fitting,new ModuleBinding{Root=root,Renderers=renderers,Muzzle=muzzle??(()=>{
+                var bounds=renderers[0].bounds;foreach(var renderer in renderers)bounds.Encapsulate(renderer.bounds);return bounds.center;
+            }),Fire=fire,Advance=advance,Clear=clear,Restore=restore});
         }
         public bool battlefield, showingLauncher, animate=true;
         public int previewCount;
@@ -73,15 +69,22 @@ namespace SingedTerra.Art
             if(inspectionForward.sqrMagnitude<.5f)throw new InvalidOperationException("No horizontal inspection axis");
             Application.targetFrameRate=60;
             if(!GetComponent<SingedTerra.LastStand.LastStandLoopController>())Application.runInBackground=false;
-            if(!scattergunModule)
+            if(tankVisualsPrefab)
             {
-                scattergunModule=new GameObject("Attachment_Scattergun");
-                scattergun=scattergunModule.AddComponent<LastStandScattergunModule>();scattergun.Initialize(this);
+                TankVisuals=Instantiate(tankVisualsPrefab,transform,false);
+                TankVisuals.Initialize(this);
+                TankVisuals.GeometryChanged+=InvalidateGarageFraming;
             }
-            repairMeshes=repairModule.GetComponentsInChildren<Renderer>(true);launcherMeshes=launcherModule.GetComponentsInChildren<Renderer>(true);
-            scattergunMeshes=scattergunModule.GetComponentsInChildren<Renderer>(true);
+            scattergunModule=new GameObject("Attachment_Scattergun");
+            var scattergun=scattergunModule.AddComponent<LastStandScattergunModule>();scattergun.Initialize(this);
+            var mortarRoot=new GameObject("Attachment_Mortar");var mortar=mortarRoot.AddComponent<LastStandMortarModule>();mortar.Initialize(this);
+            var railgunRoot=new GameObject("Attachment_Railgun");var railgun=railgunRoot.AddComponent<LastStandRailgunModule>();railgun.Initialize(this);
+            Bind(LastStandFitting.Repair,repairModule);Bind(LastStandFitting.Launcher,launcherModule);
+            Bind(LastStandFitting.Scattergun,scattergunModule,()=>scattergun.MuzzlePosition,scattergun.Fire,scattergun.Advance,scattergun.Clear,scattergun.RestoreMount);
+            Bind(LastStandFitting.Mortar,mortarRoot,()=>mortar.MuzzlePosition,mortar.Fire,mortar.Advance,mortar.Clear,mortar.RestoreMount);
+            Bind(LastStandFitting.Railgun,railgunRoot,()=>railgun.MuzzlePosition,railgun.Fire,railgun.Advance,railgun.Clear,railgun.RestoreMount);
             Fitting=LastStandFitting.Repair;showingLauncher=false;
-            repairModule.SetActive(true);launcherModule.SetActive(false);scattergunModule.SetActive(false);
+            foreach(var item in modules)item.Value.Root.SetActive(item.Key==Fitting);
             initialized=true;
             flash.SetActive(false);SetView(false,true);Report("ready");
         }
@@ -92,6 +95,16 @@ namespace SingedTerra.Art
         float garageAspect;
         LastStandFitting garageFitting;
         Renderer[] garageMeshes;
+        readonly Dictionary<Mesh,Vector3[]> garageVertices=new Dictionary<Mesh,Vector3[]>();
+        public bool ApplyAppearance(LastStandTankAppearance appearance)
+        {EnsureInitialized();return TankVisuals && TankVisuals.Apply(appearance);}
+        public void InvalidateGarageFraming()
+        {
+            garageMeshes=null;
+            if(garageFraming && !EncounterActive && !battlefield && view)
+            {UpdateCameraGoal();view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);}
+            garageFraming=false;
+        }
         // Fit the authored tank into the space left by the garage cards without
         // cropping the world camera or changing the active encounter framing.
         public void SetGarageFraming(Rect normalizedViewport)
@@ -140,7 +153,7 @@ namespace SingedTerra.Art
                 Bounds bounds=default(Bounds);bool found=false;
                 foreach(var mesh in garageMeshes)
                 {
-                    if(!mesh || !mesh.enabled || !mesh.gameObject.activeInHierarchy)continue;
+                    if(!VisibleGarageMesh(mesh))continue;
                     if(!found){bounds=mesh.bounds;found=true;}else bounds.Encapsulate(mesh.bounds);
                 }
                 if(found)
@@ -148,16 +161,56 @@ namespace SingedTerra.Art
                     var direction=(Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius+Vector3.up*InspectionHeight).normalized;
                     var rotation=Quaternion.LookRotation(-direction);
                     float vertical=Mathf.Tan(view.fieldOfView*.5f*Mathf.Deg2Rad),horizontal=vertical*Mathf.Max(.2f,view.aspect);
-                    float limit=Mathf.Max(.025f,Mathf.Min(vertical*garageViewport.height,horizontal*garageViewport.width)*.90f);
-                    float distance=Mathf.Max(1,bounds.extents.magnitude/Mathf.Sin(Mathf.Atan(limit)));
                     Vector2 centre=garageViewport.center-new Vector2(.5f,.5f);
-                    lookGoal=bounds.center-rotation*new Vector3(centre.x*2*distance*horizontal,centre.y*2*distance*vertical,0);
+                    float distance=GarageFitDistance(bounds.center,rotation,horizontal,vertical,centre,out var offset);
+                    lookGoal=bounds.center-rotation*new Vector3(offset.x,offset.y,0);
                     cameraGoal=lookGoal+direction*distance;return;
                 }
             }
             cameraGoal=tank.position+(battlefield?new Vector3(17,23,19):
                 Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius
                 +Vector3.up*InspectionHeight);
+        }
+        bool VisibleGarageMesh(Renderer mesh)=>mesh && mesh.enabled && !mesh.forceRenderingOff &&
+            mesh.gameObject.activeInHierarchy && (view.cullingMask&(1<<mesh.gameObject.layer))!=0;
+        float GarageFitDistance(Vector3 origin,Quaternion rotation,float horizontal,float vertical,Vector2 centre,out Vector2 offset)
+        {
+            // Solve the four perspective inequalities for visible geometry.
+            // A point's depth is distance+p.z; using distance alone
+            // clips off-centre previews, particularly the upper portrait pane.
+            float halfWidth=horizontal*garageViewport.width*.90f,halfHeight=vertical*garageViewport.height*.90f;
+            float centreX=centre.x*2*horizontal,centreY=centre.y*2*vertical;
+            float left=centreX-halfWidth,right=centreX+halfWidth,bottom=centreY-halfHeight,top=centreY+halfHeight;
+            var inverse=Quaternion.Inverse(rotation);float distance=1;
+            float lowerX=float.NegativeInfinity,upperX=float.PositiveInfinity,lowerY=float.NegativeInfinity,upperY=float.PositiveInfinity;
+            foreach(var mesh in garageMeshes)
+            {
+                if(!VisibleGarageMesh(mesh))continue;
+                // New core meshes permit CPU readback. Cache positions once per
+                // shared mesh; fitting only runs when the framing changes.
+                // Retained unreadable fittings keep an oriented-bounds fallback.
+                Vector3[] vertices=null;var filter=mesh.GetComponent<MeshFilter>();
+                if(filter && filter.sharedMesh && filter.sharedMesh.isReadable && !garageVertices.TryGetValue(filter.sharedMesh,out vertices))
+                {vertices=filter.sharedMesh.vertices;garageVertices.Add(filter.sharedMesh,vertices);}
+                var bounds=mesh.localBounds;
+                int count=vertices==null?8:vertices.Length;
+                for(int corner=0;corner<count;corner++)
+                {
+                    var local=vertices!=null?vertices[corner]:bounds.center+Vector3.Scale(bounds.extents,new Vector3((corner&1)==0?-1:1,
+                        (corner&2)==0?-1:1,(corner&4)==0?-1:1));
+                    var point=mesh.transform.TransformPoint(local);
+                    var p=inverse*(point-origin);
+                    lowerX=Mathf.Max(lowerX,left*p.z-p.x);upperX=Mathf.Min(upperX,right*p.z-p.x);
+                    lowerY=Mathf.Max(lowerY,bottom*p.z-p.y);upperY=Mathf.Min(upperY,top*p.z-p.y);
+                    distance=Mathf.Max(distance,view.nearClipPlane+.1f-p.z);
+                }
+            }
+            distance=Mathf.Max(distance,(lowerX-upperX)/(2*halfWidth));
+            distance=Mathf.Max(distance,(lowerY-upperY)/(2*halfHeight));
+            // Select the midpoint of each feasible translation interval. In an
+            // offset viewport, the world AABB centre is not the projected centre.
+            offset=new Vector2(centreX*distance+(lowerX+upperX)*.5f,centreY*distance+(lowerY+upperY)*.5f);
+            return distance;
         }
         public void OrbitLeft(){Orbit(-OrbitStep);}
         public void OrbitRight(){Orbit(OrbitStep);}
@@ -192,12 +245,13 @@ namespace SingedTerra.Art
             EnsureInitialized();
             if(!Module(selected))return false;
             Fitting=selected;showingLauncher=selected==LastStandFitting.Launcher;
-            repairModule.SetActive(selected==LastStandFitting.Repair);launcherModule.SetActive(selected==LastStandFitting.Launcher);
-            scattergunModule.SetActive(selected==LastStandFitting.Scattergun);Report("attachment");
+            foreach(var item in modules)item.Value.Root.SetActive(item.Key==selected);Report("attachment");
             return true;
         }
         public void PlayScattergunShot(Vector3 target)
-        { if(EncounterActive && Fitting==LastStandFitting.Scattergun)scattergun.Fire(target); }
+        { PlayFittingShot(LastStandFitting.Scattergun,target); }
+        public void PlayFittingShot(LastStandFitting fitting,Vector3 target)
+        { if(EncounterActive&&Fitting==fitting&&modules.TryGetValue(fitting,out var binding))binding.Fire?.Invoke(target); }
         public void PreviewMotion()
         {
             if(EncounterActive||recoilTime>0)return;
@@ -211,7 +265,7 @@ namespace SingedTerra.Art
             encounterWasWide=battlefield;encounterWasAnimating=animate;
             SetView(true,true);EncounterActive=true;EncounterPaused=false;animate=false;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
-            scattergun.Clear();
+            foreach(var binding in modules.Values)binding.Clear?.Invoke();
             return true;
         }
         public void EndEncounter()
@@ -219,7 +273,7 @@ namespace SingedTerra.Art
             if(!EncounterActive)return;
             EncounterActive=false;EncounterPaused=false;animate=encounterWasAnimating;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
-            scattergun.RestoreMount();
+            foreach(var binding in modules.Values)binding.Restore?.Invoke();
             SetView(encounterWasWide,true);
         }
         public void SetEncounterPaused(bool value){EncounterPaused=EncounterActive&&value;}
@@ -232,7 +286,7 @@ namespace SingedTerra.Art
         {
             if(!EncounterActive)return;
             recoilTime=flashTime=0;barrel.localPosition=barrelHome;flash.SetActive(false);
-            scattergun.Clear();
+            foreach(var binding in modules.Values)binding.Clear?.Invoke();
         }
         // The session admits terminal time only after its pause/focus/failure guards.
         // Keep the camera, idle motion and committed encounter locked.
@@ -270,7 +324,7 @@ namespace SingedTerra.Art
         }
         void AdvanceShot(float dt)
         {
-            scattergun?.Advance(dt);
+            foreach(var binding in modules.Values)binding.Advance?.Invoke(dt);
             bool wasRecoiling=recoilTime>0;
             if(recoilTime>0)recoilTime=Mathf.Max(0,recoilTime-dt);
             float kick=recoilTime>0?Mathf.Sin((1-recoilTime/.7f)*Mathf.PI)*.32f:0;

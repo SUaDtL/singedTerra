@@ -21,7 +21,7 @@ from last_stand_source_closure import complete_sources
 PROJECT = Path(__file__).resolve().parents[2]
 REPO = PROJECT.parent
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
-PINNED_EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
+PINNED_EDITOR = Path(r"C:\Program Files\Unity 6000.3.27f2")
 SOURCE_NAMES = (
     "EncounterModel.cs", "EncounterProfile.cs", "LastStandTierCatalog.cs",
     "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs", "LastStandProgression.cs",

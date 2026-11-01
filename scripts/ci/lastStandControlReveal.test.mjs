@@ -1,20 +1,11 @@
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
-import {validateKeyboardSubmit} from '../../e2e/helpers/lastStandJourney.mjs';
+import {createJourneyActions} from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_JOURNEY_PROBE} from '../../e2e/helpers/lastStandWaveJourney.mjs';
 
-const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
-const between=(start,end)=>{
-  const first=source.indexOf(start),last=source.indexOf(end,first);
-  assert.ok(first>0&&last>first,'Exercise the maintained driver, not a copied implementation');
-  return source.slice(first,last);
-};
-// Invoke the real shared helper if the actual driver uses it. Before the fix the
-// driver fails its visibility assertion first, without attempting this import.
-const revealLastStandControl=async(...args)=>(await import('../../e2e/helpers/lastStandControlReveal.mjs')).revealLastStandControl(...args);
+import {revealObservedLastStandControl} from '../../e2e/helpers/lastStandControlReveal.mjs';
 
 function driverFixture({offset=0,targetY=587,fault,keyboardReveal=true,keyboardClipAtSubmit=false}={}){
   const canvas={x:0,y:104,width:1280,height:616},clip={x:302,y:72,width:676,height:524};
@@ -72,14 +63,10 @@ function driverFixture({offset=0,targetY=587,fault,keyboardReveal=true,keyboardC
   const until=async(rows,start,predicate)=>{
     const found=rows.slice(start).find(predicate);assert.ok(found,'Fresh action observation missing');return found;
   };
-  const program='let load=1;'+between('    const hudControls=','    const resize=')+
-    between('    const armGameClick=','    const gameClick=')+
-    between('    const gameKey=','    const mark=')+'return {armGameClick,gameKey,geometry};';
-  const run=new Function('page','trace','states','layouts','report','until','check','focused','assert',
-    'tierJourneyControlGeometry','revealLastStandControl','keyboardFocus','screenshot','validateKeyboardSubmit','encounters',program);
-  const driver=run(page,trace,states,layouts,{actions:[],keyboard_actions:[],screenshots:[]},until,
-    (ok,message)=>assert.ok(ok,message),async()=>assert.ok(focused),assert,tierJourneyControlGeometry,revealLastStandControl,
-    async()=>{},async()=>{},validateKeyboardSubmit,[]);
+  const driver=createJourneyActions({page,trace,states,layouts,load:1,
+    report:{actions:[],keyboard_actions:[],screenshots:[]},until,
+    check:(ok,message)=>assert.ok(ok,message),focused:async()=>assert.ok(focused),
+    keyboardFocus:async()=>{},screenshot:async()=>{},encounters:[]});
   return {driver,inputs,layouts,canvas,page,trace,states};
 }
 
@@ -131,15 +118,12 @@ test('actual reveal preserves unreachable geometry refusal and keyboard final fu
 });
 
 test('maintained wave journey uses the same ordinary reveal owner',async()=>{
-  const wave=readFileSync(new URL('../../e2e/helpers/lastStandWaveJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
-  const begin=wave.indexOf('  const reveal=async name=>{'),end=wave.indexOf('  const click=',begin);
-  assert.ok(begin>0&&end>begin);
-  const run=new Function('page','report','load','assert','geometry','revealLastStandControl',
-    wave.slice(begin,end)+'return reveal("MenuAbandon");');
+  const run=(page,report,load,geometry)=>revealObservedLastStandControl({name:'MenuAbandon',page,geometry,
+    trace:report.inputsObserved,readLoad:()=>load});
   for(const fault of [undefined,'element-blur','blur']){
     const f=driverFixture({fault});
     const geometry=async()=>({layout:f.layouts.at(-1),canvas:f.canvas,projected:tierJourneyControlGeometry(f.layouts.at(-1),f.canvas)});
-    const pending=run(f.page,{inputsObserved:f.trace},1,assert,geometry,revealLastStandControl);
+    const pending=run(f.page,{inputsObserved:f.trace},1,geometry);
     if(fault==='blur')await assert.rejects(pending,/focus or visibility loss/);
     else {const observed=await pending;assert.equal(observed.layout.settingsScrollOffset,155);}
     assert.equal(f.inputs.filter(i=>i.kind==='wheel').length,1);

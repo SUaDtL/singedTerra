@@ -59,13 +59,14 @@ public static class LastStandPlayerBuild
         string targetName = Environment.GetEnvironmentVariable("ST_LS_BUILD_TARGET");
         string configuration = Environment.GetEnvironmentVariable("ST_LS_BUILD_CONFIGURATION");
         Require(targetName == "windows" || targetName == "android", "Expected native Last Stand target");
-        Require(Application.unityVersion == "6000.3.24f1", "Unexpected editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "Unexpected editor version");
         BuildTarget target = targetName == "windows" ? BuildTarget.StandaloneWindows64 : BuildTarget.Android;
         BuildTargetGroup group = BuildPipeline.GetBuildTargetGroup(target);
         NamedBuildTarget named = targetName == "windows" ? NamedBuildTarget.Standalone : NamedBuildTarget.Android;
         Require(EditorUserBuildSettings.activeBuildTarget == target, "Launch with the matching -buildTarget");
         Require(BuildPipeline.IsBuildTargetSupported(group, target), "Pinned target module is unavailable");
         var options = LastStandLoopBuild.PlayerOptions(configuration);
+        LastStandLoopBuild.PrepareShaderDiagnostics();
         string output = Environment.GetEnvironmentVariable("ST_LS_PLAYER_OUTPUT");
         string receiptPath = Environment.GetEnvironmentVariable("ST_LS_PLAYER_RECEIPT");
         Require(!string.IsNullOrEmpty(output) && Path.IsPathRooted(output), "Expected absolute player output");
@@ -131,10 +132,12 @@ public static class LastStandPlayerBuild
 #endif
             }
             Directory.CreateDirectory(output);
+            Debug.Log("ST_LS_PLAYER_BUILD_BEGIN target=" + targetName);
             BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                 scenes = new[] { LastStandLoopBuild.ScenePath }, locationPathName = player,
                 target = target, options = options
             });
+            Debug.Log("ST_LS_PLAYER_BUILD_END target=" + targetName + " result=" + report.summary.result);
             Require(report.summary.result == BuildResult.Succeeded && File.Exists(player), "Last Stand native player build failed");
             receipt = new Receipt { target = targetName, configuration = configuration,
                 scene = LastStandLoopBuild.ScenePath, result = "Succeeded", productName = PlayerSettings.productName,

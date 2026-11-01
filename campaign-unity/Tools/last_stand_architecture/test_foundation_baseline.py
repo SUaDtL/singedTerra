@@ -55,12 +55,18 @@ class FoundationBaselineTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.output.cleanup()
 
+    def expected(self, kind):
+        # T-RULES intentionally assigns the next new run a new edition.
+        # All frozen numeric values and every retained-run row stay exact.
+        return [row.replace("research-farming-economy-v3", "combat-depth-economy-v4")
+                if row.startswith("redeploy|") else row for row in self.fixture[kind]]
+
     def test_refactor_preserves_frozen_model_and_save_fixtures(self):
-        self.assertEqual(observe(self.exe), self.fixture["verification_observations"])
-        # Fresh runs also reproduce the same deterministic wave trace; the
-        # serialized output is disposable and cannot overwrite the frozen save.
+        self.assertEqual(observe(self.exe), self.expected("verification_observations"))
+        # A new instance of the explicitly retained edition reproduces its
+        # original trace. This does not select it for new player deployments.
         generated = Path(self.output.name) / "current-wave30.json"
-        self.assertEqual(observe(self.exe, "capture", generated), self.fixture["capture_observations"])
+        self.assertEqual(observe(self.exe, "capture", generated), self.expected("capture_observations"))
 
     def test_frozen_fixture_rejects_reward_drift(self):
         # Execute a deliberately faulty production calculation, not a mocked
@@ -82,4 +88,4 @@ class FoundationBaselineTests(unittest.TestCase):
         except AssertionError:
             return
         with self.assertRaises(AssertionError):
-            self.assertEqual(actual, self.fixture["verification_observations"])
+            self.assertEqual(actual, self.expected("verification_observations"))

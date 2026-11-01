@@ -41,3 +41,12 @@
 - [ ] Run one adversarial subagent over the exact package and correct every Critical/High/Medium/merge blocker.
 - [ ] Pass codeArbiter commit/PR gates, exact-head hosted CI, standing-authority squash merge, deployment provenance, and live smoke.
 - [ ] Update issue #70 with the reduced measured remainder, then select the next bounded cell.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded temporary compiler project. Current source/oracles: `client/tsconfig.json`, `client/src/renderer/ProjectileRenderer.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `083bbf43fd19` (test(client): enforce projectile fixture bounds (#258)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

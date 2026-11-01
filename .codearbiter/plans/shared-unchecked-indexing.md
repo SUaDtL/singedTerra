@@ -84,3 +84,12 @@
 - [ ] **Step 5: Review, land, deploy, and update issue progress**
 
   Run one adversarial subagent over the exact package, correct every Critical/High/Medium/merge blocker, pass the codeArbiter commit and PR gates, wait for all exact-head hosted checks, merge only under the separately logged standing merge authority, verify exact deployment provenance plus live smoke, and add a concise issue #70 progress note that the deterministic shared boundary is complete while the client migration remains.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Canonical strict shared compiler. Current source/oracles: `shared/tsconfig.json`, `shared/src/engine/AI.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `7cc094d9fbb2` (refactor(shared): prove indexed access safety (#256)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
       - name: Verify event commits, migration history and change scope
@@ -76,7 +76,7 @@ jobs:
       - name: Initialize Last Stand evidence root
         run: node scripts/ci/prepareLastStandEvidence.mjs
       - name: Scope and required-result regressions
-        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs scripts/ci/lastStandControlReveal.test.mjs scripts/ci/lastStandWaveQualification.test.mjs scripts/ci/lastStandWaveJourney.test.mjs scripts/ci/lastStandWaveEvidence.test.mjs scripts/ci/lastStandHistoricalShop.test.mjs scripts/ci/lastStandMilestoneSetup.test.mjs scripts/ci/lastStandEndurance.test.mjs
+        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs scripts/ci/lastStandBrowserSandbox.test.mjs scripts/ci/lastStandQualification.test.mjs scripts/ci/lastStandFocus.test.mjs scripts/ci/lastStandControlReveal.test.mjs scripts/ci/lastStandWaveQualification.test.mjs scripts/ci/lastStandWaveJourney.test.mjs scripts/ci/lastStandWaveEvidence.test.mjs scripts/ci/lastStandHistoricalShop.test.mjs scripts/ci/lastStandMilestoneSetup.test.mjs scripts/ci/lastStandEndurance.test.mjs scripts/ci/lastStandCombatDepthJourney.test.mjs scripts/ci/lastStandResearchJourney.test.mjs scripts/ci/lastStandObservationContract.test.mjs
       - name: Verify and select the complete browser matrix
         id: browser-matrix
         run: |
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -120,7 +120,7 @@ jobs:
           persist-credentials: false
       # Deno type-checks the referee code, and the supabase-js import resolves
       # @types/node from node_modules — so npm ci must run before deno test.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -148,7 +148,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -182,9 +182,12 @@ jobs:
           ffprobe -version
           /usr/bin/mono --version
           /usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version
-      - name: Verify Last Stand pure architecture regressions
-        if: matrix.suite == 'campaigns'
-        run: python3 -B campaign-unity/Tools/last_stand_architecture/run_pure_checks.py
+      - name: Verify Last Stand portable inventory and regressions
+        if: matrix.suite == 'campaigns' && matrix.lane == 'last-stand-1'
+        run: python3 -B campaign-unity/Tools/last_stand_test_inventory.py --run portable
+      - name: Verify Last Stand background admission regressions
+        if: matrix.suite == 'campaigns' && matrix.lane == 'last-stand-1'
+        run: npm run test:last-stand:background
       - name: Initialize Last Stand evidence root
         if: matrix.suite == 'campaigns' || matrix.suite == 'tier'
         run: node scripts/ci/prepareLastStandEvidence.mjs
@@ -218,7 +221,7 @@ jobs:
         run: node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand Campaigns journey"
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-${{ matrix.lane }}-${{ github.run_attempt }}
           path: |
@@ -274,13 +277,13 @@ jobs:
           SCOPE_RESULT: ${{ needs.scope.result }}
           DOCS_ONLY: ${{ needs.scope.outputs.docs_only }}
           WORK_RESULT: ${{ needs.browser.result }}
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: needs.scope.outputs.docs_only == 'false'
         with:
           node-version-file: .nvmrc
       - name: Download all Campaigns viewport observations
         if: needs.scope.outputs.docs_only == 'false'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: playwright-last-stand-[0-9]*-${{ github.run_attempt }}
           path: ${{ runner.temp }}/last-stand-matrix

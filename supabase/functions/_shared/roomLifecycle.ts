@@ -15,7 +15,7 @@ export async function roomLifecycleResponse(
   })
   if (error || !data || typeof data.ok !== 'boolean') {
     // Never log an RPC error that could include its credential-bearing arguments.
-    console.error('room lifecycle transaction failed')
+    console.error('room lifecycle transaction failed', { operation, roomId, playerId })
     return json({ error: 'Failed to update room' }, 500)
   }
   if (data.ok) return json(data, 200)

@@ -6,19 +6,16 @@ journey. Total-cap builds are numerical bounds, not earned builds.
 import json
 from pathlib import Path
 import sys
-import subprocess
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import compile_csharp, run_csharp
 
 
 PROJECT = Path(__file__).resolve().parents[2]
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 
 
 class TierCalibrationTests(unittest.TestCase):
@@ -34,13 +31,10 @@ class TierCalibrationTests(unittest.TestCase):
                     "LastStandUpgradeCatalog.cs", "MechanicsShopModel.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs"
                 )] + [Path(__file__).with_name("TierCalibrationChecks.cs")]
                 sources = complete_sources(SCRIPTS, sources)
-                build = subprocess.run([str(MONO), str(CSC), "-nologo", f"-out:{executable}",
-                                        *map(str, sources)], capture_output=True, text=True,
-                                       encoding="utf-8-sig", timeout=60)
+                build = compile_csharp(executable, sources, warnings_as_errors=False)
                 if build.returncode:
                     raise AssertionError(build.stdout + build.stderr)
-                run = subprocess.run([str(MONO), str(executable), str(tier)], capture_output=True,
-                                     text=True, encoding="utf-8-sig", timeout=30)
+                run = run_csharp(executable, [tier], timeout_seconds=30)
                 if run.returncode:
                     raise AssertionError(run.stdout + run.stderr)
                 for line in run.stdout.splitlines():

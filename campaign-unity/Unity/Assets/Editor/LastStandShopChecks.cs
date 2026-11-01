@@ -982,6 +982,28 @@ public static class LastStandShopChecks
     static void ResearchSprintSurfaces()
     {
         foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
+        using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=Save(new int[8],wallet:29)}))
+        {
+            f.Click("ResearchEntry");
+            var project=f.Button("ResearchProject-gameSpeed");
+            Require(project.GetComponentInChildren<Text>(true).text.Contains("PREVIEW - RESEARCH LOCKED"),
+                "affordable locked project is a preview, not AVAILABLE");
+            Require(f.Text("ResearchStatus").text.Contains("RESEARCH LOCKED")&&f.Text("ResearchStatus").text.Contains("wave 25"),
+                "first visible research status explains the unlock requirement");
+            f.Click(project.name);
+            Require(f.Text("ResearchDescription").text.Contains("Clear Tier 1, wave 25")&&
+                !f.Button("ResearchStart0").gameObject.activeSelf,"locked detail has the next progression action and no false start");
+            Require(!f.Text("ResearchHelpBody").gameObject.activeSelf,"advanced rules do not displace the upgrade or unlock instruction");
+            f.Click("ResearchHelp");Require(f.Text("ResearchHelpBody").gameObject.activeSelf,"detailed research rules remain reachable");
+            // Opening/refreshing the Lab legitimately persists its real-time
+            // clock anchor. Browsing must not fund or grant any research.
+            Require(f.Game.Loop.Progression.Wallet==29,"preview/help cannot spend Salvage");
+            foreach(var track in LastStandResearchCatalog.Tracks)
+                Require(f.Game.Loop.ResearchSnapshot.Rank(track.Id)==0,"preview/help cannot grant a rank");
+            foreach(var slot in f.Game.Loop.ResearchSnapshot.slots)
+                Require(slot.active==null&&slot.queued==null,"preview/help cannot start or queue a project");
+        }
+        foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
         using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=ResearchSprintSave()}))
         {
             ShopInventory(f);int wallet=f.Game.Loop.Progression.Wallet,writes=f.Game.Storage.Writes;
@@ -991,17 +1013,35 @@ public static class LastStandShopChecks
                 "garage route opens two-slot Lab");
             var first=LastStandResearchCatalog.Tracks[0];f.Click("ResearchProject-"+first.Key);
             var start=f.Button("ResearchStart0");
+            Require(f.Text("ResearchDescription").text.Contains("20 Salvage")&&f.Text("ResearchDescription").text.Contains("10m")&&
+                !f.Text("ResearchHelpBody").gameObject.activeSelf,"selected upgrade shows cost and time before optional rules");
+            Require(start.GetComponentInChildren<Text>(true).text=="START RESEARCH"&&f.Text("ResearchSlot0").text.Contains("LAB 1"),
+                "primary action states what starts beside its lab assignment");
             // Reveal via the same scoped keyboard owner used by ordinary Tab.
             start.Select();f.Refresh();
             Require(start.IsInteractable(),"unlocked first Lab offers funded project start");
             writes=f.Game.Storage.Writes;
+            var stale=LastStandResearchPresentation.Intent(f.Game.Loop.ResearchSnapshot,0,first.Id,LastStandResearchAction.Start);
             f.Click(start.name);
             var research=f.Game.Loop.ResearchSnapshot;
             Require(research.slots[0].active!=null && research.slots[0].active.track==first.Id &&
                 f.Game.Loop.Progression.Wallet==wallet-first.Cost(1) && f.Game.Storage.Writes==writes+1,
                 "Lab start charges the shared Salvage wallet exactly once");
+            Require(f.Text("ResearchDescription").text.Contains("PAID - Lab 1"),"active project explains it has already been funded");
+            Require(!f.Button("ResearchSwitch0").gameObject.activeSelf&&!f.Button("ResearchStart1").gameObject.activeSelf,
+                "already-funded selected rank does not offer an impossible switch or second start");
+            if(f.Button("ResearchBack").gameObject.activeInHierarchy)f.Click("ResearchBack");
+            f.Click("ResearchProject-salvageRecovery");
+            var idleStart=f.Button("ResearchStart1");var occupiedSwitch=f.Button("ResearchSwitch0");
+            Require(idleStart.gameObject.activeSelf&&idleStart.IsInteractable()&&occupiedSwitch.gameObject.activeSelf&&
+                f.Bounds((RectTransform)idleStart.transform).yMax<=f.Bounds((RectTransform)occupiedSwitch.transform).yMin,
+                "idle lab start is presented before occupied lab management for a new project");
+            int paidWallet=f.Game.Loop.Progression.Wallet;
+            f.Game.Loop.SubmitResearch(stale);f.Refresh();
+            Require(f.Text("ResearchStatus").text.Contains("Research changed")&&f.Game.Loop.Progression.Wallet==paidWallet,
+                "stale action explains refusal even while saving remains available");
             f.Click("ResearchClose");writes=f.Game.Storage.Writes;f.Game.Loop.OpenHistory();f.Refresh();
-            ProgressionModalTargets(f,"RunHistory","RunHistoryClose","RunHistoryTier");
+            ProgressionModalTargets(f,"RunHistory","RunHistoryClose","RunHistoryView");
             Require(f.Game.Loop.RunHistorySnapshot.Recent.Count==0 && f.Game.Loop.RunHistorySnapshot.Current==null &&
                 f.Game.Storage.Writes==writes,"opening empty history never creates or finalizes a run");
             f.Click("RunHistoryClose");Require(f.Game.Loop.MenuPage=="","history close returns to garage");
@@ -1067,6 +1107,94 @@ public static class LastStandShopChecks
                 }
             }
         }
+    }
+    static void ShopHeaderLevelCapacity()
+    {
+        bool longPrice=false,longTitle=false;
+        foreach(var profile in new[]{new Vector2Int(1366,664),new Vector2Int(390,688),new Vector2Int(568,196)})
+        foreach(string fitting in new[]{"launcher","repair","scattergun"})
+        foreach(bool run in new[]{false,true})
+        using(var f=new ShopUiFixture(false,profile,new MemoryStorage{Value=Save(new int[8],wallet:2000000000,allFittings:true)}))
+        {
+            Require(f.Game.Loop.Progression.TrySelectFitting(fitting),"header fixture selects its actual unlocked fitting");
+            Require(f.Game.Art.TrySelectFitting(fitting),"header fixture arranges matching authored fitting art");
+            f.Game.Loop.RestoreGaragePreview();f.Refresh();
+            Require(f.Game.Loop.FittingId==fitting,"header fixture controller agrees with selected fitting");
+            if(run){f.Game.Loop.Deploy();f.Refresh();}
+            f.Click("ShopEntry");
+            foreach(int level in new[]{0,10,100,2499,2500,4999,5000})
+            {
+                if(!run&&level>LastStandUpgradeCatalog.PermanentCap)continue;
+                // Disposable fixture arrangement; production projection still
+                // supplies every title, level, cap, price and measured glyph.
+                if(run)
+                {
+                    var owner=Shop(f.Game.Session);
+                    var tracks=(MechanicsShopTrack[])typeof(LastStandShopState).GetField("tracks",Private).GetValue(owner);
+                    foreach(var definition in owner.Definitions)
+                    {
+                        int current=Math.Min(level,definition.TotalCap),permanent=Math.Min(current,definition.PermanentCap);
+                        tracks[(int)definition.Id]=definition.CreateTrack(permanent,current-permanent);
+                    }
+                    typeof(LastStandShopState).GetProperty("Scrap").SetValue(owner,2000000000);
+                }
+                else
+                {
+                    var record=typeof(LastStandProgression).GetField("committed",Private).GetValue(f.Game.Loop.Progression);
+                    var levels=(int[])record.GetType().GetField("Levels").GetValue(record);
+                    foreach(var definition in LastStandUpgradeCatalog.Tracks)levels[(int)definition.Id]=Math.Min(level,definition.PermanentCap);
+                }
+                f.Refresh();
+                foreach(var quantity in new[]{LastStandBulkQuantity.One,LastStandBulkQuantity.Ten,LastStandBulkQuantity.Hundred,LastStandBulkQuantity.Max})
+                {
+                    Require(f.Game.Loop.ShopQuantity==quantity,"header checks retain actual bulk selection order");
+                    var view=run?LastStandShopPresentation.ProjectRun(Shop(f.Game.Session),quantity):
+                        LastStandShopPresentation.ProjectPermanent(f.Game.Loop.Progression,LastStandFittingCatalog.Parse(fitting),quantity);
+                    foreach(var category in new[]{LastStandUpgradeCategory.Attack,LastStandUpgradeCategory.Defense,LastStandUpgradeCategory.Utility})
+                    {
+                        f.Click("ShopTab"+category);f.Camera.Render();Canvas.ForceUpdateCanvases();
+                        foreach(var card in view.Cards)
+                        {
+                            if(card.Category!=category||!card.AppliesToFitting)continue;
+                            string id="ShopCard_"+card.Key,context=profile+" "+view.Mode+" "+card.Key+" level="+card.CurrentLevel+" cap="+card.Cap;
+                            var title=f.Text(id+"Title");var levels=f.Text(id+"Levels");
+                            Require(title.gameObject.activeInHierarchy&&levels.gameObject.activeInHierarchy,"actual selected header is active "+context);
+                            Require(title.text==card.Name&&levels.text=="Level "+card.CurrentLevel+" / "+card.Cap,"actual header identity "+context);
+                            Require(levels.preferredWidth<=levels.rectTransform.rect.width+1f,
+                                "complete level/cap fits actual imported font: "+context+" preferred="+levels.preferredWidth+" width="+levels.rectTransform.rect.width);
+                            Require(title.preferredHeight<=title.rectTransform.rect.height+1f&&levels.preferredHeight<=levels.rectTransform.rect.height+1f,
+                                "complete header glyph lines fit without vertical truncation "+context);
+                            var titleBounds=f.Bounds(title.rectTransform);var levelBounds=f.Bounds(levels.rectTransform);
+                            Require(!titleBounds.Overlaps(levelBounds),"title and level/cap remain separate "+context+" title="+titleBounds+" level="+levelBounds);
+                            var panel=f.Bounds((RectTransform)title.transform.parent);
+                            foreach(var text in new[]{title,levels,f.Text(id+"CurrentEffect"),f.Text(id+"Refusal")})
+                            {
+                                var bounds=f.Bounds(text.rectTransform);
+                                Require(bounds.xMin>=panel.xMin-1&&bounds.xMax<=panel.xMax+1&&bounds.yMin>=panel.yMin-1&&bounds.yMax<=panel.yMax+1,
+                                    "measured card contains "+text.name+" "+context);
+                                Require(text.preferredHeight<=text.rectTransform.rect.height+1f,"all actual text lines remain visible "+text.name+" "+context);
+                            }
+                            var buy=f.Bounds((RectTransform)f.Button(id+"Buy").transform);
+                            Require(buy.width>=43.99f&&buy.height>=43.99f,"header retains minimum purchase target "+context);
+                            longPrice|=card.QuotedCost>=100000;longTitle|=card.Name=="Scattergun Attack";
+                        }
+                    }
+                    f.Click("ShopQuantity");
+                }
+            }
+        }
+        Require(longPrice&&longTitle,"actual long aggregate prices and longest current fitting title were exercised");
+    }
+    public static void RunShopHeader()
+    {
+        bool failed=false;using(var preferencesScope=new LastStandTestPreferencesScope())
+        {
+            Debug.Log("ST_LS_SHOP_COMPILED");var factory=LastStandLoopController.StorageFactory;
+            bool background=Application.runInBackground;
+            try{NamedIncome("test_shop_header_level_capacity",ShopHeaderLevelCapacity,ref failed);}
+            finally{LastStandLoopController.StorageFactory=factory;EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);Application.runInBackground=background;}
+        }
+        if(failed)EditorApplication.Exit(1);
     }
     static void WaveInformationSurface()
     {
@@ -1176,7 +1304,7 @@ public static class LastStandShopChecks
         var button=f.Button(id+"Buy");
         Require(f.Text(id+"Refusal").text==reason && button.IsInteractable()==card.CanPurchase,
             "aggregate quote retains current typed admission "+card.Key);
-        Require(button.GetComponentInChildren<Text>(true).text==(card.Refusal==LastStandShopCardRefusal.AtCap?"MAX":"BUY x"+card.PurchaseQuantity),
+        Require(button.GetComponentInChildren<Text>(true).text==(card.Refusal==LastStandShopCardRefusal.AtCap?"MAX":card.PurchaseQuantity==0?"UNAVAILABLE":"BUY x"+card.PurchaseQuantity),
             "purchase action states the actual count or gold cap "+card.Key);
     }
     static Button ShopRaycast(ShopUiFixture f, Vector2 position)

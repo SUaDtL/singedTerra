@@ -10,7 +10,7 @@ namespace SingedTerra.LastStand
         double researchPollAt,historyObservedAt,pausedMillisecondsRemainder;
         readonly double[] activeMillisecondsRemainders=new double[10];
         public LastStandResearchSnapshot ResearchSnapshot => research?.Snapshot;
-        public bool ResearchCanAct => research!=null && research.CanAct && !runs.ResearchPending;
+        public bool ResearchCanAct => research!=null && research.CanAct && !runs.ResearchPending && !HoldResearchForBackup;
         public string ResearchStatus => research?.Status ?? "";
         public LastStandHistorySnapshot RunHistorySnapshot =>
             liveHistory?.Current!=null && Progression.HasCheckpoint?liveHistory.Snapshot():Progression?.HistorySnapshot;

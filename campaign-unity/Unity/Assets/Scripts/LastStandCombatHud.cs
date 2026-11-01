@@ -12,6 +12,8 @@ namespace SingedTerra.LastStand
         readonly LastStandLoopController loop;
         public readonly RectTransform Card,Dock;
         readonly RectTransform hullFill;
+        readonly LastStandScrollPane recovery;
+        string recoverySummary;
         public readonly LastStandConsoleFrame CardFrame,DockFrame;
         public readonly Text Heading,Detail,Status,WaveReceipt,WaveReceiptDetail;
         public readonly Button Fitting,Deploy,Claim,Purchase,Redeploy,Retry,Pause,Mute,Tier,Effects,SpeedMinus,SpeedRate,SpeedPlus,WaveInfo;
@@ -32,6 +34,9 @@ namespace SingedTerra.LastStand
             Heading = Label("PhaseHeading",Card,29); Heading.color = Brass; Heading.fontStyle = FontStyle.Bold;
             Detail = Label("PhaseDetail",Card,18);
             Status = Label("SaveStatus",Card,15); Status.color = Brass;
+            recovery=new LastStandScrollPane("Recovery",Card,metalSurface);
+            nodes.Add(recovery.Viewport.name,recovery.Viewport);nodes.Add(recovery.Content.name,recovery.Content);
+            recovery.Viewport.gameObject.SetActive(false);
             Dock = Node("LastStandDock",root); var dockImage = LastStandConsoleChrome.Surface(Dock,metalSurface,false,false); dockImage.color = Graphite;
             DockFrame=Frame(Dock);
             nodes.Add(Dock.name,Dock);
@@ -172,6 +177,34 @@ namespace SingedTerra.LastStand
             CardFrame.enabled=DockFrame.enabled=!(garageCards&&!shopOpen);
         }
         public void SetSummary(string heading,string detail){Heading.text=heading;Detail.text=detail;}
+        public LastStandHudLayout.Projection MeasureRecovery(LastStandHudLayout.Projection projection,float unitsX,float unitsY)
+        {
+            bool scrolls=false;foreach(var slot in projection.Slots)if(slot.Id=="RecoveryContent"){scrolls=true;break;}
+            if(!scrolls)return projection;
+            var slots=new Dictionary<string,LastStandHudLayout.Slot>();foreach(var slot in projection.Slots)slots.Add(slot.Id,slot);
+            return LastStandHudLayout.WithRecoveryTextHeights(projection,
+                LastStandHudElements.MeasureText(Heading,slots["PhaseHeading"],unitsX,unitsY),
+                LastStandHudElements.MeasureText(Detail,slots["PhaseDetail"],unitsX,unitsY),
+                LastStandHudElements.MeasureText(Status,slots["SaveStatus"],unitsX,unitsY));
+        }
+        public void PrepareRecovery(Dictionary<string,LastStandHudLayout.Slot> slots)
+        {
+            bool visible=slots.ContainsKey("RecoveryContent");
+            Transform parent=visible?recovery.Content:Card;
+            foreach(var text in new[]{Heading,Detail,Status})if(text.transform.parent!=parent)text.transform.SetParent(parent,false);
+            if(!visible){recovery.Reset();recoverySummary=null;return;}
+            string summary=Heading.text+"\n"+Detail.text+"\n"+Status.text;
+            if(summary!=recoverySummary)recovery.Reset();recoverySummary=summary;
+        }
+        public void LayoutRecovery(Dictionary<string,LastStandHudLayout.Slot> slots,float unitsX,float unitsY)
+        {
+            if(!slots.TryGetValue("RecoveryViewport",out var view))return;
+            var b=view.Bounds;var card=slots["LastStandCard"].Bounds;
+            recovery.Layout(b.X-card.X,b.Y-card.Y,b.Width,b.Height,unitsX,unitsY);
+            recovery.Finish(slots["RecoveryContent"].Bounds.Height);
+        }
+        public bool CanScrollRecovery=>recovery.Viewport.gameObject.activeInHierarchy&&recovery.MaximumOffset>0;
+        public void ScrollRecovery(string direction){if(CanScrollRecovery)recovery.ScrollKeyboard(direction);}
         public void LayoutInstruments(Dictionary<string,LastStandHudLayout.Slot> slots,float unitsX,float unitsY)
         {
             var cardSlot = slots["LastStandCard"].Bounds;

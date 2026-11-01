@@ -382,7 +382,7 @@ public static class VisualReviewBuild
     [MenuItem("singedTerra/Prepare new battlefield visual review")]
     public static void Prepare()
     {
-        Require(Application.unityVersion == "6000.3.24f1", "Unexpected editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "Unexpected editor version");
         Require(!File.Exists(ScenePath) && !Directory.Exists(Root), "Saved review art exists; edit it directly instead of regenerating it");
         Require(Digest(OriginalScene) == OriginalHash, "Unexpected FieldAssembly source; preserve and inspect it before authoring");
         var preserved = ProtectedFiles();
@@ -455,7 +455,7 @@ public static class VisualReviewBuild
 
     public static void BuildWeb()
     {
-        Require(Application.unityVersion == "6000.3.24f1", "Unexpected editor version");
+        Require(Application.unityVersion == "6000.3.27f2", "Unexpected editor version");
         Require(BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.WebGL, BuildTarget.WebGL), "Pinned Web Build Support missing");
         Check();
         string output = Environment.GetEnvironmentVariable("ST_ART_WEB_OUTPUT");

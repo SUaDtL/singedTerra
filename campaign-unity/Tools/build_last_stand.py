@@ -12,11 +12,12 @@ import uuid
 
 from build_web import (ROOT, PROJECT, digest, inventory_digest, portable_entry,
                        regular_files, require, source_binding, toolchain_binding)
-from unity_shader_log import accepts_log
+from unity_shader_log import build_diagnostics
+from unity_build_resources import PerformanceResources
 
-EDITOR = Path(r"C:/Users/brenn/singedTerra-engine-lab/tools/unity-6000.3.24f1/Editor/Unity.exe")
-VERSION = "6000.3.24f1"
-REVISION = "4e7b9b5b6244"
+EDITOR = Path(r"C:/Program Files/Unity 6000.3.27f2/Editor/Unity.exe")
+VERSION = "6000.3.27f2"
+REVISION = "22188f149405"
 SCENE = "Assets/Scenes/LastStandPrototype.unity"
 TARGETS = {"webgl": ("WebGLSupport", "WebGL"),
            "windows": ("windowsstandalonesupport", "StandaloneWindows64"),
@@ -267,6 +268,7 @@ def main():
     parser.add_argument("--preflight-only", action="store_true")
     parser.add_argument("--stamp")
     parser.add_argument("--approval-binding", help="Caller-observed native identity JSON, forwarded unchanged to WebGL exporter")
+    parser.add_argument("--refresh-editor-shader-import", action="store_true", help="Reimport the one reviewed upstream Editor baking shader before the player build")
     args = parser.parse_args(); editor = args.editor.resolve()
     jdk_root = args.jdk_root.resolve() if args.jdk_root is not None else None
     sdk_root = args.sdk_root.resolve() if args.sdk_root is not None else None
@@ -289,6 +291,9 @@ def main():
               "buildOptions": expected_options(args.configuration), "build": str(output),
               "editor": str(editor), "preflight": available, "stages": [], "publish": False}
     env = build_environment(args.target, args.configuration, output, evidence / "player-report.json", android_tools=available["androidTools"])
+    env.pop("ST_LS_REFRESH_EDITOR_SHADER_IMPORT", None)
+    if args.refresh_editor_shader_import:env["ST_LS_REFRESH_EDITOR_SHADER_IMPORT"] = "1"
+    record["refreshEditorShaderImport"] = args.refresh_editor_shader_import
     if os.name == "nt":
         common = Path(env.get("ProgramData", env.get("SystemDrive", "C:") + "/ProgramData"))
         require(common.is_dir(), "ProgramData unavailable")
@@ -298,6 +303,8 @@ def main():
     def run(label, command, timeout=1800):
         with (evidence / (label + ".log")).open("wb") as log:
             child = subprocess.Popen(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
+            unity_child = label == 'unity-player'
+            if unity_child:record['activeUnityChild'] = child.pid
             try:
                 rc = child.wait(timeout)
             except subprocess.TimeoutExpired:
@@ -306,8 +313,10 @@ def main():
                     child.wait(10)
                 except subprocess.TimeoutExpired:
                     child.kill(); child.wait(10)
+                if unity_child:record.pop('activeUnityChild', None)
                 record["timedOutChild"] = child.pid
                 raise
+            if unity_child:record.pop('activeUnityChild', None)
         record["stages"].append({"stage": label, "exit": rc}); save()
         require(rc == 0, label + " failed; inspect " + str(evidence))
     print("BUILD_EVIDENCE=" + str(evidence), flush=True)
@@ -333,7 +342,8 @@ def main():
         if args.target == "webgl":
             run("web-export", [sys.executable, str(ROOT / "Tools/build_web.py"), "--editor", str(editor),
                               "--scene", "last-stand", "--configuration", args.configuration,
-                              "--stamp", stamp, "--approval-binding", args.approval_binding])
+                              "--stamp", stamp, "--approval-binding", args.approval_binding]
+                              + (["--refresh-editor-shader-import"] if args.refresh_editor_shader_import else []))
             web_path = ROOT / "Evidence/last-stand-playable-loop/t05" / ("build-" + stamp) / "result.json"
             web = json.loads(web_path.read_text(encoding="utf-8"))
             require(web["status"] == "pass" and web["configuration"] == args.configuration, "Web exporter did not pass")
@@ -343,10 +353,16 @@ def main():
         else:
             run("editor-version", [str(editor), "-version"], 30)
             require((evidence / "editor-version.log").read_text(encoding="utf-8").strip() == VERSION, "Unexpected editor version")
-            run("unity-player", [str(editor), "-batchmode", "-quit", "-projectPath", str(PROJECT),
-                                 "-buildTarget", TARGETS[args.target][1], "-executeMethod", "LastStandPlayerBuild.Build", "-logFile", "-"])
+            resources = PerformanceResources(PROJECT, child_exited=lambda: 'activeUnityChild' not in record)
+            record["performanceResources"] = resources.receipt
+            with resources:
+                run("unity-player", [str(editor), "-batchmode", "-quit", "-projectPath", str(PROJECT),
+                                     "-buildTarget", TARGETS[args.target][1], "-executeMethod", "LastStandPlayerBuild.Build", "-logFile", "-"])
             log = (evidence / "unity-player.log").read_text(encoding="utf-8", errors="replace")
-            require(accepts_log(log, "ST_LS_PLAYER_BUILD_PASS target=" + args.target + " configuration=" + args.configuration),
+            record["shaderDiagnostics"] = build_diagnostics(log,
+                "ST_LS_PLAYER_BUILD_PASS target=" + args.target + " configuration=" + args.configuration,
+                require_phases=True, require_refresh=args.refresh_editor_shader_import)
+            require(record["shaderDiagnostics"]["accepted"],
                     "Native player marker/shader diagnostics failed")
             record["playerReport"] = json.loads((evidence / "player-report.json").read_text(encoding="utf-8"))
         record["sourceAfter"] = player_source_binding()

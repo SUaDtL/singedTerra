@@ -301,6 +301,21 @@ Deno.test('validateActionShape: bad action.type returns 400', () => {
   })
 })
 
+Deno.test('validateActionShape: empty action cannot enter the replay log', () => {
+  const result = validateActionShape({
+    roomId: 'room-1', playerId: 'player-1', action: {} as { type: unknown },
+  })
+  assertEquals(result.ok, false)
+  if (!result.ok) assertEquals(result.status, 400)
+})
+
+Deno.test('validateActionShape: fire without its committed aim cannot enter the replay log', () => {
+  const result = validateActionShape({
+    roomId: 'room-1', playerId: 'player-1', action: { type: 'fire' },
+  })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.angle must be a finite number' })
+})
+
 Deno.test('validateActionShape: buy without weapon or accessory returns 400', () => {
   const result = validateActionShape({
     roomId: 'room-1',

@@ -8,7 +8,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity" / "Unity"
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 EVIDENCE = Path(os.environ.get("ST_LS_UI_EVIDENCE", str(ROOT / "campaign-unity/Evidence/last-stand-ui")))
 
 HASH_SCRIPT = """const fs=require('node:fs'),crypto=require('node:crypto');

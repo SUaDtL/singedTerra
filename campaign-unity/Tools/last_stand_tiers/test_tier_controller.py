@@ -9,7 +9,7 @@ import unittest
 import uuid
 
 ROOT = Path(__file__).resolve().parents[3]
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 
 
 class TierControllerTests(unittest.TestCase):

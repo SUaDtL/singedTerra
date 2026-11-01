@@ -28,7 +28,7 @@ static class ContentChecks
         Require(done.State.Rank(track)==1&&done.State.EffectNumerator(LastStandResearchEffect.Salvage)==102,"Content effect did not reach engine");
         Require(LastStandResearchState.TryRestore(done.State.Snapshot(),definitions,out var restored)&&restored.Rank(track)==1,"Expanded state cannot restore");
         Require(LastStandResearchPresentation.TrackState(restored.Snapshot(),track,definitions)=="RANK 1 COMPLETE","Presentation did not resolve new definition");
-        var tiers=new List<LastStandTierDefinition>(LastStandTierCatalog.All) {
+        var tiers=new List<LastStandTierDefinition>(LastStandTierCatalog.Legacy) {
             new LastStandTierDefinition(3,"tier-3","preview-tier3","preview-basin",3,1,2,300) };
         var environments=new List<LastStandEnvironmentIdentity>(LastStandContentCatalog.Environments) {
             new LastStandEnvironmentIdentity("preview-basin","Preview Basin","A non-awarding authored test battlefield.") };
@@ -40,7 +40,8 @@ static class ContentChecks
         var playerSelector=new LastStandSelection(playerOptions,"2",true);
         Require(playerSelector.Move(1)&&playerSelector.Current.Id=="3"&&playerSelector.Current.Name=="Tier 3 - Preview Basin",
             "Player selector did not receive authored tier through its persisted identity adapter");
-        Require(content.FittingOptions(id=>id=="scattergun").Count==3,"Manifest fitting projection omitted content");
+        Require(content.FittingOptions(id=>id=="scattergun").Count==5,"Manifest fitting projection omitted content");
+        Require(LastStandContentCatalog.Legacy.FittingOptions(_=>true).Count==3,"Retained manifest keeps its three fitting identities");
         var wave=LastStandWaveCatalog.ForWave(content.Tier(3),30);
         Require(wave.EnemyHull==1960&&wave.EnemyDamage==90,"Authored tier did not reach wave rules");
         Require(content.EnvironmentForTier(3).Name=="Preview Basin","Environment reference not resolved");
@@ -57,7 +58,7 @@ static class ContentChecks
         Reject(()=>new LastStandResearchDefinitions("bad-v1",duplicate));
         duplicate=new List<LastStandResearchDefinition>(LastStandResearchCatalog.Tracks) { Extra(4,"gameSpeed") };
         Reject(()=>new LastStandResearchDefinitions("bad-v1",duplicate));
-        var tiers=new List<LastStandTierDefinition>(LastStandTierCatalog.All) { new LastStandTierDefinition(3,"tier-3","test","missing",1,1,2,300) };
+        var tiers=new List<LastStandTierDefinition>(LastStandTierCatalog.Legacy) { new LastStandTierDefinition(3,"tier-3","test","missing",1,1,2,300) };
         Reject(()=>new LastStandContentManifest("bad-v1",tiers,LastStandContentCatalog.Environments,LastStandFittingCatalog.Definitions,LastStandResearchCatalog.Definitions));
         tiers=new List<LastStandTierDefinition> {new LastStandTierDefinition(1,"invalid key","test","sunlit-ash",1,1)};
         Reject(()=>new LastStandContentManifest("bad-v1",tiers,LastStandContentCatalog.Environments,LastStandFittingCatalog.Definitions,LastStandResearchCatalog.Definitions));

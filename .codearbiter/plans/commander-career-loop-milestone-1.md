@@ -94,3 +94,12 @@ fabricated oracle was removed instead of adding an E2E bypass. Account geometry 
 through a deterministic authenticated session and the real Lobby/AccountPanelView
 composition. Replay parser, legality, and exact tick-ceiling branches are locked by focused
 mutation-resistant tests.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Casual-rank proposal superseded by verified progression. Current source/oracles: `client/src/client/verifiedCareer.ts`, `.codearbiter/decisions/0014-completion-time-deterministic-replay.md`.
+
+The latest change to this historical plan reachable from `origin/main` is `775b795e28dd` (feat(career): gate ranks on verified replay (#398)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

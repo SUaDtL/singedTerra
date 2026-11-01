@@ -66,3 +66,12 @@
 - [ ] Mark `ux.menu.0006` done only after implementation and evidence are complete.
 - [ ] Give an adversarial reviewer the spec, plan, H-05 exception, test evidence, and exact final diff. Resolve every Critical, High, and merge-blocking finding.
 - [ ] Commit with the full governed gate, open a PR, require all hosted checks green on the exact reviewed head, merge, deploy Pages, and verify live provenance.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current account presentation. Current source/oracles: `client/src/ui/AccountPanelView.ts`, `client/src/ui/AccountPanelView.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `77ce39c68a00` (feat(lobby): surface player progress before matches). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

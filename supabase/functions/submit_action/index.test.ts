@@ -15,6 +15,12 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { commandRpcResultToResponse, rpcResultToResponse } from './index.ts'
 
+Deno.test('rpcResultToResponse: stale locked legacy turn is a retryable conflict', async () => {
+  const res = rpcResultToResponse({ data: null, error: { code: '40001', message: 'stale legacy turn' } })
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), { ok: false, error: 'seq_conflict', retry: true })
+})
+
 // ---------------------------------------------------------------------------
 // (a) Success path — RPC returns a scalar seq
 // ---------------------------------------------------------------------------

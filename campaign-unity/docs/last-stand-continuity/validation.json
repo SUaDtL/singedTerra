@@ -1,0 +1,1325 @@
+{
+  "schema": "singedterra-last-stand-local-validation-summary/v1",
+  "kind": "In-progress evidence index; not a native acceptance receipt or release approval",
+  "recordedUtc": "2026-10-31T02:36:27.511964+00:00",
+  "status": "implementation handoff complete; local source-bound verification passes; native/device and release qualification incomplete; report snapshot predates feature delivery",
+  "candidate": {
+    "build": "Web-20261031T021631Z-098558",
+    "workingTreeBaseCommit": "f474b9c7cc65436e1292d640c42337bbb87287a5",
+    "editorVersion": "6000.3.27f2",
+    "editorRevision": "22188f149405",
+    "sourceBindings": {
+      "campaign-unity/Tools/build_last_stand.py": "73b91df77b3d2d03259b75ca3013b5a43ef03d28a24f0bec4248b8cd9ca2743f",
+      "campaign-unity/Tools/build_web.py": "3a34904e04c2baf5bb9c67187208e92b0b498bed86605f92de1cf1bb8563a27d",
+      "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+      "campaign-unity/Tools/last_stand_continuity/BackupChecks.cs": "af5ab0b0b48a7d2594e06e12a0ae425cd6fc4d1a800ee6a458a570c559fd1117",
+      "campaign-unity/Tools/last_stand_continuity/BackupTransportChecks.cs": "39ca9b01104b714b324c32f36ef81fd76ca7e519f9178a9dd8158d73bb52782e",
+      "campaign-unity/Tools/last_stand_continuity/NativeProfileChecks.cs": "449bed611d57ff8163f5f8ea92a8df032385c54499e40454c3728f56fd5b35ef",
+      "campaign-unity/Tools/last_stand_continuity/test_backup.py": "9a163aa4881fdb5a687f2a729844ed3e6c2cc5309a093cb7dcd7892acb0e8e3f",
+      "campaign-unity/Tools/last_stand_continuity/test_backup_transport.py": "85343594819bc179fe80d4371da4c2d3fc8d23e144ee77a596bba511e1b59237",
+      "campaign-unity/Tools/last_stand_continuity/test_native_profile.py": "05a42df98cac35ba412fa3d4d2a050fa4c1b747e246dcb4c28fef77906ef2b7f",
+      "campaign-unity/Tools/last_stand_continuity/verify_android_backup_transport.py": "88c7f481ecb8cba636b4a92f8999a7a48ab313fdb04cc7eb51a677e890ad00af",
+      "campaign-unity/Tools/last_stand_controls/GuidanceChecks.cs": "63d729a04f28ccd75393a541d124746e15ea4ff3f3c772044d8e0285421087f2",
+      "campaign-unity/Tools/last_stand_controls/test_guidance.py": "76c6fd9248e30fe66300668155cf4e97ad70fcf5a2d71a695fadda6fe85127c4",
+      "campaign-unity/Tools/package_last_stand_web.py": "35d1fe663f0b6fff50be730de43e224c08c50b5784a9341c827d13d4966da4ef",
+      "campaign-unity/Tools/unity_build_resources.py": "c38343a99b1a07feef8147cf66fc6e9222c87a06e40a4b86f7c651b5cd4e63c5",
+      "campaign-unity/Tools/unity_shader_log.py": "61fc637eaa6b3fb91ae4aa7217f9675a131097b6f8ca5472eb4e947d23fdf62a",
+      "campaign-unity/Unity/Assets/Editor/LastStandControlsChecks.cs": "832fb89780f1c19ed0aeb1c6559f91679df3fcc1d6394a169fe10497181a4622",
+      "campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs": "74bbfc94a998feea4de7fbd6a11ee3e8c0427771f696a05b1c8fa5bddb77b7cf",
+      "campaign-unity/Unity/Assets/Editor/LastStandPlayerBuild.cs": "ac540fa9c8851175a78c0863fb5af73a733c5308aef73d219a634c9203a02ac2",
+      "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/AndroidManifest.xml": "c8fdf8a840f3a75cdbcea987c7d96bb861460abc8c15a936acc5e0e758db3ee1",
+      "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/BackupDocumentIO.java": "1a6ca0039f94446515c857969fbf7ff4f994aad689f8e3d5f10aebe72a7e7a3e",
+      "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/LastStandBackupActivity.java": "55b8c06874a85292f388402de37dd43a90311c2b929a5f3cc5d6b9a219af9289",
+      "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/LastStandBackupBridge.java": "92e8409110cbd006f853cb33cc6dc1ada80ad307f177078a89a7cfdfc1798882",
+      "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandBackup.jslib": "6f49d91ea42766fe24e97ccfad711909a85ff9b9ce9474fe93eb3881a68b1a06",
+      "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib": "552a26676a9e7e715ab8c850af10af4a8884aeabbff842ae0b55cafa021e742c",
+      "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs": "3ee79e1f979c7d3092664dd3e85505bc1472ef3ceb00236b545f6be88f306cc8",
+      "campaign-unity/Unity/Assets/Scripts/LastStandCombatHud.cs": "7f035bb9a8c414350251f008dcf5966eb73abf609e7f163900660fd4a6540e59",
+      "campaign-unity/Unity/Assets/Scripts/LastStandGuidance.cs": "0ccffc0e7e10ee6f6b365860b82422d383e20e950646f6c4210b4893dc91d663",
+      "campaign-unity/Unity/Assets/Scripts/LastStandHudKeyboard.cs": "cf2988cd5d4f61c730ffbe30276243376527417b1ecaa7ded58f7de4302eac21",
+      "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs": "16453c85c6c18318f8908c2869cfcda758b0eb915da1410783172adf741a2a8b",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopContinuity.cs": "ca2584fd0f137e428dfea1a092f5ca55824925fa6d89a5537a2cc530a940ccd1",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs": "c3eacc7df7f1e455ffa05803a82e1d0efd4152a0e327dddc9d40a916bb64ba62",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs": "e1976161a3c730a879dc0fac87a4f9040616b41d3573fd9d009357643f0a9bab",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopResearch.cs": "3a370daa74b5c38da1c4e0bebf7d59c8e8a4c97b5a6bb1e97f2ac09e3b78b18c",
+      "campaign-unity/Unity/Assets/Scripts/LastStandPreferencesStore.cs": "045ce7a95aaeab7a6c8439241087634719e77c8add6d9547710c894e117b78df",
+      "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs": "8ce50effd65f5490bf284ecf3ac63ae60c556628bb10ef032218e5a7020a2974",
+      "campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs": "7b422dbb4a4441bd2432be6743e8bbd09bd4eab5cea7df33ac395d208e4b41e7",
+      "campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs": "7f7ee16f4ca2fe24a0c67004ba2668739fd616623c557e121c00a20b35540eae",
+      "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs": "e5d3f44f4fc686f6e4538c38ec4dd71d2ff2446389212e0fe71410a934b47f1d",
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandBackupTransport.cs": "2cd9e61b44915c130b020af3e6076267ec9cb671b36cb85c70fbc4fa9339fa80",
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandNativeStorageRoot.cs": "c7e57e02b50ff23cd486a3194f514f6cf2b68f08cb9e096c2b618978ab034181",
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandUnityBackupTransport.cs": "1917478f4760b08d8aa31206fdd61d22c0cde146f0deaa4151bb2325383e3141",
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandWindowsBackupPicker.cs": "40721e5adf2e68badbaea4bb60952c5a110909b92cb35a21ced92129a7f5d28f",
+      "scripts/assets/verify-last-stand-source.mjs": "82c50d22d6afec3486a11ed07de0ec30adb25c398876fba6c0951fbd13854a8f"
+    },
+    "bindingMode": "raw SHA-256",
+    "bindingLimit": "Current listed source snapshot; complete target-specific source inventories remain in each actual build receipt. Historical review/test identities retain their original scopes and attribution.",
+    "finalCandidateStatus": "local final WebGL/native builds, package, portable and browser verification pass within recorded scope"
+  },
+  "portable": {
+    "status": "pass",
+    "modulesExecuted": 74,
+    "checksPassed": 531,
+    "skipped": 0,
+    "failedModules": [],
+    "exitCode": 0,
+    "receipt": {
+      "path": "campaign-unity/Evidence/continuity/checks/portable-final-531.log",
+      "sha256": "ab75e90ec6c7ed62fb78810cc449e146f632ceb656c2712d0fb2b5da626d37c6",
+      "availability": "local ignored Evidence; not bundled"
+    },
+    "origin": "Root observed process exit zero; index verified74 actual unittest summaries totaling531 cases and no skipped summary.",
+    "limit": "Complete final portable inventory. Native input, device, hardware audio and endurance qualification remain separate."
+  },
+  "focused": {
+    "backupDomain": {
+      "status": "pass",
+      "checksPassed": 16,
+      "argv": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "campaign-unity/Tools/last_stand_continuity",
+        "-p",
+        "test_backup.py",
+        "-v"
+      ],
+      "cwd": ".",
+      "origin": "Included in the final complete74-module/531-case run.",
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-final-531.log",
+        "sha256": "ab75e90ec6c7ed62fb78810cc449e146f632ceb656c2712d0fb2b5da626d37c6",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "limit": "Real portable implementation checks; not full packaged-player or physical-device qualification."
+    },
+    "backupTransport": {
+      "status": "pass",
+      "checksPassed": 9,
+      "argv": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "campaign-unity/Tools/last_stand_continuity",
+        "-p",
+        "test_backup_transport.py",
+        "-v"
+      ],
+      "cwd": ".",
+      "origin": "Included in the final complete74-module/531-case run.",
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-final-531.log",
+        "sha256": "ab75e90ec6c7ed62fb78810cc449e146f632ceb656c2712d0fb2b5da626d37c6",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "limit": "Real portable implementation checks; not full packaged-player or physical-device qualification."
+    },
+    "guidance": {
+      "status": "pass",
+      "checksPassed": 11,
+      "argv": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "campaign-unity/Tools/last_stand_controls",
+        "-p",
+        "test_guidance.py",
+        "-v"
+      ],
+      "cwd": ".",
+      "origin": "Included in the final complete74-module/531-case run.",
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-final-531.log",
+        "sha256": "ab75e90ec6c7ed62fb78810cc449e146f632ceb656c2712d0fb2b5da626d37c6",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "limit": "Real portable implementation checks; not full packaged-player or physical-device qualification.",
+      "laterRerun": {
+        "status": "pass",
+        "checksPassed": 11,
+        "exitCode": 0,
+        "origin": "Root observed command result after final copy change; no separate persisted process log.",
+        "argv": [
+          "python",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "campaign-unity/Tools/last_stand_controls",
+          "-p",
+          "test_guidance.py",
+          "-v"
+        ],
+        "sourceBindings": {
+          "campaign-unity/Tools/last_stand_controls/test_guidance.py": "76c6fd9248e30fe66300668155cf4e97ad70fcf5a2d71a695fadda6fe85127c4",
+          "campaign-unity/Tools/last_stand_controls/GuidanceChecks.cs": "63d729a04f28ccd75393a541d124746e15ea4ff3f3c772044d8e0285421087f2",
+          "campaign-unity/Unity/Assets/Scripts/LastStandGuidance.cs": "0ccffc0e7e10ee6f6b365860b82422d383e20e950646f6c4210b4893dc91d663"
+        }
+      }
+    },
+    "nativeProfile": {
+      "status": "pass",
+      "checksPassed": 8,
+      "argv": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "campaign-unity/Tools/last_stand_continuity",
+        "-p",
+        "test_native_profile.py",
+        "-v"
+      ],
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-final-531.log",
+        "sha256": "ab75e90ec6c7ed62fb78810cc449e146f632ceb656c2712d0fb2b5da626d37c6",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "independentRerun": "Root independently reran all eight actual-source cases; separate observed tool output, not a retained standalone log.",
+      "limit": "Release/development compilation and real temporary file writes/readbacks. Actual native-player input remains separately blocked.",
+      "origin": "Included in the final complete74-module/531-case run."
+    },
+    "additionalFollowup": {
+      "status": "pass",
+      "origin": "Scoped agent reports actual focused reruns; root records final full portable result independently. No separate process logs for each focused rerun.",
+      "checks": {
+        "backupTransport": 9,
+        "preferences": 14,
+        "inventory": 7,
+        "crowdedWaves": 9
+      },
+      "limit": "Crowded-wave pin changes bind the current Store only; historical maps and editions are unchanged. These counts overlap the complete portable run."
+    },
+    "layout": {
+      "status": "pass",
+      "checksPassed": 5,
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-final-531.log",
+        "sha256": "ab75e90ec6c7ed62fb78810cc449e146f632ceb656c2712d0fb2b5da626d37c6",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "limit": "Included in the complete portable total; not added to it."
+    },
+    "continuityNode": {
+      "status": "pass",
+      "checksPassed": 5,
+      "skipped": 0,
+      "exitCode": 0,
+      "argv": [
+        "node",
+        "--test",
+        "scripts/ci/lastStandContinuity.test.mjs"
+      ],
+      "origin": "Root observed exact command after resume-runner repair; no separate persisted process log. Guard source identity matches fourth and sixth captured inputs. Earlier38-check cohort is retained historically.",
+      "sourceBindings": {
+        "scripts/ci/lastStandContinuity.test.mjs": "127cd45c073044a1ea56aaabf7097745431ef326e635bc02ac89e51f313bc552"
+      }
+    }
+  },
+  "importedUnity": {
+    "controls": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/compact-recovery/editor-20261031T015942Z-ef880e45/invocation.json",
+        "sha256": "71e97b3ceb37ef3aa6e645f82b1deb731f079fec64fa3f7e89e09e32c589f932",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/compact-recovery/editor-20261031T015942Z-ef880e45/result.json",
+        "sha256": "ba67c06283deae406b8714aed685ec5fae0e7b598a131e701d09a4f726def87f",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/compact-recovery/editor-20261031T015942Z-ef880e45/unity-editor.log",
+        "sha256": "3a45d5065fe17b3457f41783d8e980360f29c2498edf3686a6f51063793a4f6e",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 127,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": false,
+      "sourceMismatchesAtSummary": [
+        "campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs",
+        "campaign-unity/Unity/Assets/Editor/LastStandPlayerBuild.cs"
+      ],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Actual imported Unity execution. Two later Editor build-producer changes have separate eight-file review and real target-build proof; game/UI/emitter/reader inputs still match. Not native-device interaction.",
+      "checksPassed": 31
+    },
+    "observationContract": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T020114Z-d36e5c3f/invocation.json",
+        "sha256": "5257f5cf4cd962281ce178b68b3c5fc661cff2159b4377cfd422b76373eb36af",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T020114Z-d36e5c3f/result.json",
+        "sha256": "cf98f69c92bdd04bb1d70c9c629af9ead09e6e00cc8f991b5b0ab9144f78d52a",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T020114Z-d36e5c3f/unity-editor.log",
+        "sha256": "06b4ca4f2adeb7198104d2ea926bdba68faa7f19d9a22be414e84eb546566678",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 134,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": false,
+      "sourceMismatchesAtSummary": [
+        "campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs",
+        "campaign-unity/Unity/Assets/Editor/LastStandPlayerBuild.cs"
+      ],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Actual imported Unity execution. Two later Editor build-producer changes have separate eight-file review and real target-build proof; game/UI/emitter/reader inputs still match. Not native-device interaction.",
+      "emittedPackets": 8,
+      "readerValidationOrigin": "Root observed actual eight-packet JavaScript/Python reader and negative-control checks pass."
+    },
+    "priorFailedControlAttempts": [
+      {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T002903Z-34def15c/result.json",
+        "sha256": "ebe7029d0a38404403a56c2abe0cf568dc6791333bede5be697e7b2632efd37b",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T003039Z-e26a069e/result.json",
+        "sha256": "b6ed48b27f338a1033d91c4ed6ccc87c79bd8361da4901a6624d34bfe7574170",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T004735Z-5834f735/result.json",
+        "sha256": "db34a378f0ec7234e8f58b7ad7d16c2377f33051683b593c19903469b9d3af01",
+        "availability": "local ignored Evidence; not bundled",
+        "disposition": "Three expected failing UI regressions retained before correction."
+      },
+      {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T013231Z-ff6ce815/result.json",
+        "sha256": "066d7d0f278415566fdd7672841ce7f48c31e0b1a4b72d323e9a11cffa639204",
+        "availability": "local ignored Evidence; not bundled",
+        "disposition": "Expected regression: rendered Save body retained stale status after cancellation, normal combat and Return to Garage. Subsequent one-line BackupStatus assignment passed actual Controls30."
+      },
+      {
+        "path": "campaign-unity/Evidence/continuity/compact-recovery/editor-20261031T015809Z-f7fcf120/result.json",
+        "sha256": "212fc0f3f42d3bcbe45a24ece8105aeef85f795c9c5e67434bb1dca8421c8313",
+        "availability": "local ignored Evidence; not bundled",
+        "disposition": "Camera-rebind fixture failure retained before successful Controls31 execution."
+      }
+    ]
+  },
+  "securityReview": {
+    "status": "pass",
+    "origin": "independent Security/Auth-Crypto reviewer report",
+    "report": {
+      "path": "campaign-unity/docs/last-stand-continuity/security-review.md",
+      "sha256": "71634bac8e490c071c1b931be892f39af527916574fdec3ee271e08af7b67fc6",
+      "availability": "source or review document"
+    },
+    "reviewedSourceBindings": {
+      "campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs": "7b422dbb4a4441bd2432be6743e8bbd09bd4eab5cea7df33ac395d208e4b41e7",
+      "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs": "8ce50effd65f5490bf284ecf3ac63ae60c556628bb10ef032218e5a7020a2974",
+      "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs": "33259d121dcf0fff9d142b6c6525d0345d4a62d90683eee9090304b7b2970f7e",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopContinuity.cs": "eee7f720650d5171e5db48d6d7be8034f5bd24d54dd4d653f63c801693896c0e",
+      "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs": "3ee79e1f979c7d3092664dd3e85505bc1472ef3ceb00236b545f6be88f306cc8",
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandBackupTransport.cs": "2cd9e61b44915c130b020af3e6076267ec9cb671b36cb85c70fbc4fa9339fa80",
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandUnityBackupTransport.cs": "1917478f4760b08d8aa31206fdd61d22c0cde146f0deaa4151bb2325383e3141",
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandWindowsBackupPicker.cs": "40721e5adf2e68badbaea4bb60952c5a110909b92cb35a21ced92129a7f5d28f",
+      "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandBackup.jslib": "6f49d91ea42766fe24e97ccfad711909a85ff9b9ce9474fe93eb3881a68b1a06",
+      "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib": "552a26676a9e7e715ab8c850af10af4a8884aeabbff842ae0b55cafa021e742c",
+      "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/LastStandBackupBridge.java": "92e8409110cbd006f853cb33cc6dc1ada80ad307f177078a89a7cfdfc1798882",
+      "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/LastStandBackupActivity.java": "55b8c06874a85292f388402de37dd43a90311c2b929a5f3cc5d6b9a219af9289",
+      "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/BackupDocumentIO.java": "1a6ca0039f94446515c857969fbf7ff4f994aad689f8e3d5f10aebe72a7e7a3e",
+      "campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs": "7f7ee16f4ca2fe24a0c67004ba2668739fd616623c557e121c00a20b35540eae",
+      "campaign-unity/Unity/Assets/Scripts/LastStandGuidance.cs": "0ccffc0e7e10ee6f6b365860b82422d383e20e950646f6c4210b4893dc91d663"
+    },
+    "reviewedSourceBindingsMatchAtSummary": false,
+    "fixedFindings": [
+      "Retained v5 preview projects full current level slots without rewriting imported bytes",
+      "Android provider close runs after settlement away from main thread",
+      "Request-owned Android deadline survives Activity recreation"
+    ],
+    "independentChecks": {
+      "backupDomain": 16,
+      "backupTransport": 9,
+      "androidByteIo": 5,
+      "androidBridge": "Real Java compilation plus lifecycle, stale callback, bounded-worker and negative-control checks; two reported verifier invocations",
+      "importedUnityReceiptInspection": "Final Controls 30 passes and observation emitter/negative control receipts independently inspected; all recorded source identities, Editor identity and log hashes matched. Reviewer did not launch Editor or operate native dialogs."
+    },
+    "limit": "Original independent application review plus separately attributed follow-up reviews. Final browser proof and native adapter fixtures do not qualify native gameplay, physical devices, audio or endurance.",
+    "finalDelta": "Read-only preview availability, validated research comparisons, cancellation cleanup, completion copy and confirmed predecessor recovery of bounded damaged save; no new transaction authority.",
+    "changedSinceScopedReview": [
+      "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopContinuity.cs"
+    ],
+    "scopeAttribution": "Preserved15-source original independent review. Subsequent Store change belongs to rootDeltaReview; LoopContinuity belongs to uiFollowupReview. Do not relabel historical review hashes as current."
+  },
+  "dependencyReview": {
+    "status": "pass for selected configuration",
+    "report": {
+      "path": "campaign-unity/docs/last-stand-continuity/unity-dependency-review.md",
+      "sha256": "3e08fddfc2312852a835f0c789862c5abdabf6cd5e78a4349a11b87a46ba86cf",
+      "availability": "source or review document"
+    },
+    "limit": "Reviewed Unity/JDK configuration, built-in Android JNI module and exact Editor-import diagnostics. Actual build receipts are separate; no device or release approval."
+  },
+  "builds": {
+    "webgl": {
+      "status": "pass",
+      "build": "Web-20261031T021631Z-098558",
+      "configuration": "release",
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T021631Z-098558/result.json",
+        "sha256": "8005c8f1612148c16022eaadc2a01f40ec2005c771888e872bfdd7c6a168143d",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "sanitizedReceipt": {
+        "path": "campaign-unity/docs/last-stand-web/receipt-sanitized.json",
+        "sha256": "2862066f4361ab2039d814cd3bbd23568ffe2f35d431f85c41ffe18f8eea9b6e",
+        "availability": "source or review document"
+      },
+      "sourceBeforeSha256": "1721a9215c767872a77150a7501bc0f546af5b978f3ea049199b76033a044dd5",
+      "sourceAfterSha256": "1721a9215c767872a77150a7501bc0f546af5b978f3ea049199b76033a044dd5",
+      "editorVersion": "6000.3.27f2",
+      "performanceResources": {
+        "status": "restored",
+        "removed": {},
+        "restoredMeta": false,
+        "directoryExisted": false,
+        "metaBefore": null
+      },
+      "superseded": [
+        {
+          "build": "Web-20261031T004032Z-9de5f5",
+          "status": "pass; superseded by later continuity UI source",
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T004032Z-9de5f5/result.json",
+            "sha256": "414293b23a2e20221829d3525ecce922e3f3d1d756059d2a41012e407ebb6cd1",
+            "availability": "local ignored Evidence; not bundled"
+          }
+        },
+        {
+          "build": "Web-20261031T005151Z-e49523",
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T005151Z-e49523/result.json",
+            "sha256": "58b14f2dbaa45289dff65eb432fc1e7ae0956bab7f62888edf220f8ffdc2b537",
+            "availability": "local ignored Evidence; not bundled"
+          },
+          "sourceBeforeSha256": "0ac6a49f2aac2baec42955683bd205882001f016256cbc4c0a69fe3f855f1634",
+          "sourceAfterSha256": "0ac6a49f2aac2baec42955683bd205882001f016256cbc4c0a69fe3f855f1634",
+          "status": "pass; superseded by later layout and development-profile changes"
+        },
+        {
+          "build": "Web-20261031T010949Z-6ee862",
+          "status": "pass; superseded by development-profile changes",
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T010949Z-6ee862/result.json",
+            "sha256": "5d20d56141b7654db8f239a516a9d1ab1d91fdd558d4783945554841ec579400",
+            "availability": "local ignored Evidence; not bundled"
+          }
+        },
+        {
+          "build": "Web-20261031T012106Z-480483",
+          "status": "pass; superseded captured source",
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T012106Z-480483/result.json",
+            "sha256": "8a4d64947b48b438f91807c3d4e3cfd626385b33f5ed86367ff3cf1e3d570020",
+            "availability": "local ignored Evidence; not bundled"
+          }
+        },
+        {
+          "build": "Web-20261031T014008Z-b6a142",
+          "status": "pass; superseded captured source",
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T014008Z-b6a142/result.json",
+            "sha256": "4c928c731305f8b48e9a2fe0ca25bd4b10b0e7020067cdedac984cb054b59acb",
+            "availability": "local ignored Evidence; not bundled"
+          }
+        }
+      ],
+      "limit": "Source-bound local build; deployment and platform qualification remain separate."
+    },
+    "windows": {
+      "status": "pass",
+      "build": "build-windows-20261031T022146Z-c8c3e5",
+      "configuration": "development",
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261031T022146Z-c8c3e5/result.json",
+        "sha256": "6d31eda1aea0ab33a41b340c425ba215aefdbd026d092c6adad29cef7fc63aa7",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "sourceBeforeSha256": "a785a6135dea4ae1b5223ede0fb0f2ad187b7fdadcca51a590674ac33b3a996d",
+      "sourceAfterSha256": "a785a6135dea4ae1b5223ede0fb0f2ad187b7fdadcca51a590674ac33b3a996d",
+      "toolchainBeforeSha256": "39ba3d23d86935230692b27779c32ba08babbde7ce6828238d1b4b9375b0c534",
+      "toolchainAfterSha256": "39ba3d23d86935230692b27779c32ba08babbde7ce6828238d1b4b9375b0c534",
+      "editorVersion": "6000.3.27f2",
+      "performanceResources": {
+        "status": "restored",
+        "removed": {
+          "Resources.meta": "22641dd537a393a2dc05d31c14fa36ebc21319ce86bb8e3b74418d71b9a2461d"
+        },
+        "restoredMeta": false,
+        "directoryExisted": false,
+        "metaBefore": null
+      },
+      "shaderDiagnostics": {
+        "phasesVerified": true,
+        "editorImportRefreshed": false,
+        "reviewedEditorImport": 0,
+        "blocking": 0
+      },
+      "limit": "Development build. No final native-player input or physical-device acceptance implied.",
+      "playerSha256": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0",
+      "superseded": [
+        {
+          "build": "build-windows-20261031T011827Z-e0e07d",
+          "status": "pass; earlier source",
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261031T011827Z-e0e07d/result.json",
+            "sha256": "1c703d1f7507357eb9d1d885e33c8f8d0aec5a31cc295186505152e8719f2c65",
+            "availability": "local ignored Evidence; not bundled"
+          }
+        },
+        {
+          "build": "build-windows-20261031T014409Z-78025d",
+          "status": "pass; earlier source",
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261031T014409Z-78025d/result.json",
+            "sha256": "4f90c718fb6bb20a26385956ec32d3e839fb25ca407aa4778834d7d66267ed63",
+            "availability": "local ignored Evidence; not bundled"
+          }
+        }
+      ]
+    },
+    "android": {
+      "status": "pass",
+      "build": "build-android-20261031T022514Z-409a70",
+      "configuration": "development",
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-architecture/build-android-20261031T022514Z-409a70/result.json",
+        "sha256": "f69c0ed7556cc272e4c4a92e81f1afa0d4040cfc6c84ba710f4db9425264becc",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "sourceBeforeSha256": "a785a6135dea4ae1b5223ede0fb0f2ad187b7fdadcca51a590674ac33b3a996d",
+      "sourceAfterSha256": "a785a6135dea4ae1b5223ede0fb0f2ad187b7fdadcca51a590674ac33b3a996d",
+      "toolchainBeforeSha256": "68b48ac13be1053675b50bce9cf6d3005cc7373ab9beafe31a707b8a3403ef24",
+      "toolchainAfterSha256": "68b48ac13be1053675b50bce9cf6d3005cc7373ab9beafe31a707b8a3403ef24",
+      "editorVersion": "6000.3.27f2",
+      "performanceResources": {
+        "status": "restored",
+        "removed": {},
+        "restoredMeta": false,
+        "directoryExisted": false,
+        "metaBefore": null
+      },
+      "shaderDiagnostics": {
+        "phasesVerified": true,
+        "editorImportRefreshed": true,
+        "reviewedEditorImport": 36,
+        "blocking": 0
+      },
+      "limit": "Development build. No final native-player input or physical-device acceptance implied.",
+      "apkSha256": "a3f9520d7b8736090d158744868498eb0d545155bb56587ed0dd4e55f3682fa8",
+      "signature": {
+        "status": "pass",
+        "exitCode": 0,
+        "schemeV2": true,
+        "signers": 1,
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/checks/android-final-signature.log",
+          "sha256": "b9c6879e48d25a9786d2beb8a15738c06edce7d06f2722dd860894618592bd09",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "origin": "Root observed apksigner verification using explicit reviewed Corretto17 environment."
+      }
+    }
+  },
+  "packaging": {
+    "status": "pass",
+    "build": "Web-20261031T021631Z-098558",
+    "manifest": {
+      "path": "client/public/last-stand/asset-manifest.json",
+      "sha256": "e6c20db5a697a59c6ca31f4bea4b1642eff64b86ae981cda3e901348e189dc79",
+      "availability": "source or review document"
+    },
+    "sourceLock": {
+      "path": "campaign-unity/docs/last-stand-web/source-lock.json",
+      "sha256": "67f2b2a407d9972d6d4dc43765c710ad64643cf9caf176651afc01d7e6447fa3",
+      "availability": "source or review document"
+    },
+    "fileBindings": {
+      "client/public/last-stand/Build/Web-20261031T021631Z-098558.data": "efe2b0d9b3d26043eb03a8241909b8f8193219f4a71d46bbd4d77ebe298ec913",
+      "client/public/last-stand/Build/Web-20261031T021631Z-098558.framework.js": "a3d7388a12dc20ac66568ed8c746dce7a3c67b648308d424ceb56ad4d6b73eae",
+      "client/public/last-stand/Build/Web-20261031T021631Z-098558.loader.js": "cdca7300dc3785c2bb3617ce7feb53b719977042ed2300174ec662ac355215a3",
+      "client/public/last-stand/Build/Web-20261031T021631Z-098558.wasm": "d18d1eb38e0678f9138266526c95a2a41a34cdc8638d3a6754bf017acaa47e2b",
+      "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+      "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+      "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+      "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+      "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+      "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+      "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+      "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+      "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+      "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+      "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+      "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2"
+    },
+    "origin": "Root observed frozen packaging, source admission and production build exit zero; current manifest and all package hashes independently matched.",
+    "productionBuild": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/production-build-098558.log",
+        "sha256": "b273560281ddb69f43f7e0b34800cd68f7f7e4ad24033c223fb96151d6b8a3b6",
+        "availability": "local ignored Evidence; not bundled"
+      }
+    },
+    "limit": "Local package/site build only; no deployment or publication."
+  },
+  "browserJourney": {
+    "status": "pass",
+    "attempt": "sixth",
+    "build": "Web-20261031T021631Z-098558",
+    "checksPassed": 89,
+    "browserErrors": 0,
+    "exitCode": 0,
+    "receipt": {
+      "path": "campaign-unity/Evidence/continuity/browser-20261031-sixth/result.json",
+      "sha256": "d29bf1dbb82816054b8180f5912399484b1597925c2074f08786c6ffccaa8c5c",
+      "availability": "local ignored Evidence; not bundled"
+    },
+    "sourceBindingCount": 34,
+    "packagedBindingCount": 21,
+    "bindingsMatchAtSummary": true,
+    "scope": "Packaged WebGL, isolated profiles, ordinary trusted controls, real browser file choosers/downloads, earned wave-one checkpoint and screenshots. Synthetic invalid files test refusal only. Not Windows/Android pickers, hardware audio, device/thermal/endurance, owner acceptance or hosted CI.",
+    "profiles": 4,
+    "downloads": 5,
+    "imports": 15,
+    "rejectionFixtures": 6,
+    "attempts": [
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/browser-20261031-first/result.json",
+          "sha256": "a151940bff4f583c77a03cb56316725c758df0716720afa72634873915b1a48c",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "checksPassedBeforeFailure": 6,
+        "failure": "Input-event assertion observed keydown without expected keyup."
+      },
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/browser-20261031-second/result.json",
+          "sha256": "0b3889d563b15d26c3f7d3d7adc1c5d14f4dd57102c081d4e56e583e24062d43",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "checksPassedBeforeFailure": 30,
+        "failure": "Actual short-garage Menu/Research overlap; fixed with regression and reverified in final browser journey."
+      },
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/browser-20261031-third/result.json",
+          "sha256": "1a22b4ab19aa00fd74f94372107198dd2e0e56781dff2f6c1201093a7d733e9e",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "checksPassedBeforeFailure": 51,
+        "failure": "Runner expected the Deploy observation while checkpoint continuation exposes Redeploy with RESUME RUN; runner corrected and five focused guards passed. The attempt remains failed."
+      },
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/browser-20261031-fourth/result.json",
+          "sha256": "1e08253b96ab43f41aeb2e44162c91ff1437397340501acab01b6e9a568fffa6",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "checksPassedBeforeFailure": 51,
+        "failure": "Actual short-canvas checkpoint-recovery Card exception and compact caption wrapping; corrected shared scroll/keyboard/caption behavior, then final browser passed."
+      },
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/browser-20261031-fifth/result.json",
+          "sha256": "c017a5f9ddff6dd3e8007228ea1a08d7059da74179621896852099913992b7de",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "checksPassedBeforeFailure": 30,
+        "failure": "Runner assumed outer500x266 yields142px game canvas, but responsive header consumed156px and left110px. Measuring actual wrapper offset corrected the fixture; runtime/package stayed unchanged for final89-pass run."
+      }
+    ],
+    "limit": "Bounded actual packaged browser input and local fixture/fresh-profile behavior. No native OS game input, physical Android, hardware audio or long-run qualification."
+  },
+  "hostedCi": {
+    "status": "feature-head outcome not observed in this pre-delivery snapshot",
+    "head": null,
+    "limit": "Green f474 baseline covers its recorded head. Later feature commit/push/CI outcomes belong to the PR delivery record; this historical local index is not rewritten after each CI transition.",
+    "baseline": {
+      "head": "f474b9c7cc65436e1292d640c42337bbb87287a5",
+      "status": "pass",
+      "origin": "Root freshly verified both GitHub API outcomes.",
+      "ci": "https://github.com/SUaDtL/singedTerra/actions/runs/41130994263",
+      "codeql": "https://github.com/SUaDtL/singedTerra/actions/runs/41130994173",
+      "limit": "This baseline predates uncommitted continuity changes."
+    },
+    "liveChecks": "https://github.com/SUaDtL/singedTerra/pull/547/checks"
+  },
+  "platformQualification": {
+    "nativePickers": "Windows production adapter fixture export/import/cancel passed; actual final-player journey and Android picker/device session remain unqualified.",
+    "physicalAndroidLifecycle": "pending",
+    "hardwareAudio": "pending",
+    "performanceAndThermal": "pending",
+    "realDurationEndurance": "pending",
+    "ownerAcceptance": "pending",
+    "nativePlayer": "Earlier isolated player input blocked by PickerHost routing; final native build does not provide interaction acceptance."
+  },
+  "delivery": {
+    "merge": "not performed",
+    "deployment": "not performed",
+    "publication": "not authorized by this sprint record"
+  },
+  "priorAttempts": {
+    "portableFirst": {
+      "status": "fail; repairs and complete rerun pending",
+      "modulesExecuted": 73,
+      "failedModules": [
+        "last_stand_combat_depth/test_crowded_waves.py",
+        "last_stand_shop/test_shop_journey_guards.py",
+        "last_stand_waves/test_earned_milestone_fixtures.py"
+      ],
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-first.log",
+        "sha256": "6b0c048b40ee495a333c1cfa6a9f4de8ec3815731aec883d1d43736e4d30308f",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "limit": "Do not infer a full-suite pass from successful module sections or later focused repairs."
+    },
+    "importedControlsInitialPass": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T003350Z-f3eac9a0/invocation.json",
+        "sha256": "1f2dea5e0adf2b8713f76f6721cf55e52391a995eb379dcf831d8b852746e516",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T003350Z-f3eac9a0/result.json",
+        "sha256": "305304c3b047690e2775b0f1f07a262f69199a5dfc6aea8abfd871a750c44ec7",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T003350Z-f3eac9a0/unity-editor.log",
+        "sha256": "58eb679995cbb6847e17b09d0d0275f546fcc3edad88b5f8020ddd1210f6fe4a",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 126,
+      "capturedSourcesStillMatchAtSummary": true,
+      "sourceUnchangedDuringRun": true,
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Imported Editor execution; not packaged native/browser/device interaction.",
+      "checksPassed": 27
+    },
+    "importedObservationInitialPass": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T003529Z-1bfc2ffc/invocation.json",
+        "sha256": "f84a7449e374eae0458fab6d1fc24ac508836460fc52a244dd410478a4fb77c3",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T003529Z-1bfc2ffc/result.json",
+        "sha256": "1c32da838b2b61f795d08eac9c0b77e065340d1bddc0ac45d71d2ed9a50a2a51",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T003529Z-1bfc2ffc/unity-editor.log",
+        "sha256": "1ccdc8be74fa845e0d8f09be85534ddb8f11c0ccda8d6351870f10889b4d5e24",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 133,
+      "capturedSourcesStillMatchAtSummary": true,
+      "sourceUnchangedDuringRun": true,
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Imported Editor execution; not packaged native/browser/device interaction.",
+      "emittedPackets": 8,
+      "readerValidationOrigin": "Parent reports completed observation unittest with both maintained readers; this Editor receipt directly binds the actual emitter."
+    },
+    "reviewInitial": {
+      "status": "pass",
+      "reviewedSourceBindings": {
+        "campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs": "7b422dbb4a4441bd2432be6743e8bbd09bd4eab5cea7df33ac395d208e4b41e7",
+        "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs": "8ce50effd65f5490bf284ecf3ac63ae60c556628bb10ef032218e5a7020a2974",
+        "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs": "33259d121dcf0fff9d142b6c6525d0345d4a62d90683eee9090304b7b2970f7e",
+        "campaign-unity/Unity/Assets/Scripts/LastStandLoopContinuity.cs": "6b3ed1c92cb2e51b3b7f6374747067f5fe320e220c6f2b886763790f94d822d6",
+        "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs": "3ee79e1f979c7d3092664dd3e85505bc1472ef3ceb00236b545f6be88f306cc8",
+        "campaign-unity/Unity/Assets/Scripts/Platform/LastStandBackupTransport.cs": "2cd9e61b44915c130b020af3e6076267ec9cb671b36cb85c70fbc4fa9339fa80",
+        "campaign-unity/Unity/Assets/Scripts/Platform/LastStandUnityBackupTransport.cs": "1917478f4760b08d8aa31206fdd61d22c0cde146f0deaa4151bb2325383e3141",
+        "campaign-unity/Unity/Assets/Scripts/Platform/LastStandWindowsBackupPicker.cs": "40721e5adf2e68badbaea4bb60952c5a110909b92cb35a21ced92129a7f5d28f",
+        "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandBackup.jslib": "6f49d91ea42766fe24e97ccfad711909a85ff9b9ce9474fe93eb3881a68b1a06",
+        "campaign-unity/Unity/Assets/Plugins/WebGL/LastStandStorage.jslib": "552a26676a9e7e715ab8c850af10af4a8884aeabbff842ae0b55cafa021e742c",
+        "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/LastStandBackupBridge.java": "92e8409110cbd006f853cb33cc6dc1ada80ad307f177078a89a7cfdfc1798882",
+        "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/LastStandBackupActivity.java": "55b8c06874a85292f388402de37dd43a90311c2b929a5f3cc5d6b9a219af9289",
+        "campaign-unity/Unity/Assets/Plugins/Android/LastStandBackup.androidlib/src/com/singedterra/laststand/backup/BackupDocumentIO.java": "1a6ca0039f94446515c857969fbf7ff4f994aad689f8e3d5f10aebe72a7e7a3e"
+      },
+      "independentChecks": {
+        "backupDomain": 16,
+        "backupTransport": 9,
+        "androidByteIo": 5,
+        "androidBridge": "Real Java compilation plus lifecycle, stale callback, bounded-worker and negative-control checks; two reported verifier invocations",
+        "importedUnityReceiptInspection": "27 passes; all126 recorded source hashes, editor identity and log hash independently matched; reviewer did not launch Editor"
+      },
+      "limit": "Historical initial review; final reviewed identities are in securityReview."
+    },
+    "intermediateControls": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T004831Z-43185faa/invocation.json",
+        "sha256": "1a9f531569d0ae4b5b516d2ae0d3c567ccf7eed90e1a0917f6f9d9a60f4d033d",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T004831Z-43185faa/result.json",
+        "sha256": "cddf791ea40e3df812a28ac60b7c1bc8e43af18ff90dcc6d809dad593b8777ec",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T004831Z-43185faa/unity-editor.log",
+        "sha256": "6f85989d2433b888fad481598c312f7015f12402d48d7f8721b29931b73eec98",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 126,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": false,
+      "sourceMismatchesAtSummary": [
+        "campaign-unity/Unity/Assets/Editor/LastStandControlsChecks.cs",
+        "campaign-unity/Unity/Assets/Scripts/LastStandLoopContinuity.cs",
+        "campaign-unity/Unity/Assets/Scripts/LastStandSettingsHud.cs"
+      ],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Imported Editor execution of captured inputs; not packaged native/browser/device interaction. Later layout corrections require their own checks.",
+      "checksPassed": 30
+    },
+    "initialRecordUtc": "2026-10-31T00:46:21.751274+00:00",
+    "limit": "Historical successful or failed attempts; their captured-source match flags describe their original record, not the current worktree. Intermediate Controls separately records the match assessed by this updated summary.",
+    "beforeIsolationRecordUtc": "2026-10-31T01:04:01.746205+00:00",
+    "portableBeforeIsolation": {
+      "status": "pass",
+      "modulesExecuted": 73,
+      "checksPassed": 508,
+      "failedModules": [],
+      "exitCode": 0,
+      "exitOrigin": "root observed actual command exit zero",
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-final.log",
+        "sha256": "c321ac1346bab663f7064ddc9b07568f49a39733d610dc7246781928e2b5d580",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "limit": "Full portable run passes captured source before the subsequent short-garage layout correction. This does not replace packaged browser/native/device qualification."
+    },
+    "controlsBeforeIsolation": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T005116Z-a022d058/invocation.json",
+        "sha256": "76ee1d9a1a59ee1ec0a22e7f7becee01befe8f8818fbf4b2d0aa2ff300c455c6",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T005116Z-a022d058/result.json",
+        "sha256": "00a8c7472f860945f39b13f1a42db2487dd3dfc498a513838c77bd63755774b3",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T005116Z-a022d058/unity-editor.log",
+        "sha256": "7a51912e56df74f8a55cc65fefaf3416489f3b5f04e4c55a73d4cc12e93fe004",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 126,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": true,
+      "sourceMismatchesAtSummary": [],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Imported Editor execution of captured inputs; not packaged native/browser/device interaction. Later layout corrections require their own checks.",
+      "checksPassed": 30
+    },
+    "observationBeforeIsolation": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T005141Z-14380d66/invocation.json",
+        "sha256": "5eea6e49314b4ac1ed972d88a5641586ec07e9161a0962f389bf360f1cdf9f0c",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T005141Z-14380d66/result.json",
+        "sha256": "c085c037994f22722d4dd8089e4689ff1c9f21c67528a9710ab094318ff1b242",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T005141Z-14380d66/unity-editor.log",
+        "sha256": "aa5e7718ef09f89b50422573ffc95db11ff6329db2ca8dccf6957cf5ca60854c",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 133,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": true,
+      "sourceMismatchesAtSummary": [],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Imported Editor execution of captured inputs; not packaged native/browser/device interaction. Later layout corrections require their own checks.",
+      "emittedPackets": 8,
+      "readerValidationOrigin": "Root observed completed observation unittest with both maintained readers; receipt directly binds actual Unity emitter and its negative control."
+    },
+    "controlsAfterLayout": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T010847Z-7705cd2d/invocation.json",
+        "sha256": "a8ed83734aa210f80d0b47a5858c67d7780c82b99c5627be70e0e3022004eebd",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T010847Z-7705cd2d/result.json",
+        "sha256": "c1dc73257c8d87afbd3eb9c7932ac00447fa0aa19fa8837597e62ef6c08290b4",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T010847Z-7705cd2d/unity-editor.log",
+        "sha256": "fc945de37f52a430a1ce2b46a4ac2e759514f012e903f4369a4eb7e6d5b4d6a2",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 126,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": false,
+      "sourceMismatchesAtSummary": [
+        "campaign-unity/Unity/Assets/Scripts/LastStandPreferencesStore.cs",
+        "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs"
+      ],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Actual imported Unity execution; not packaged native/browser/device interaction.",
+      "checksPassed": 30
+    },
+    "observationAfterLayout": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T010933Z-8a2ff07c/invocation.json",
+        "sha256": "9c399cec586815bb99e57f72d4ed85d23665c43634c9a8a0f40a02e171e632f7",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T010933Z-8a2ff07c/result.json",
+        "sha256": "5a0063c5901c9086b0e5413e40b10a1769125f12de2a91b4c40c988119a1fd8d",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T010933Z-8a2ff07c/unity-editor.log",
+        "sha256": "6aa9c918bc1d6a9203c8a488d64919ac5467d1a92eae4c7fe327c5b539fc3bd1",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 133,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": false,
+      "sourceMismatchesAtSummary": [
+        "campaign-unity/Unity/Assets/Scripts/LastStandPreferencesStore.cs",
+        "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs"
+      ],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Actual imported Unity execution; not packaged native/browser/device interaction.",
+      "emittedPackets": 8,
+      "readerValidationOrigin": "Root observed final recipe exit zero with all eight actual packets through both maintained readers."
+    },
+    "failedBuilds": [
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T013542Z-09aa90/result.json",
+          "sha256": "f60b9e9e750a000ed5b34ed96391a283ce57cda2d3cd5068f0bd5c49d2521d23",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "unityExitCode": 0,
+        "failure": "Guard rejected changed source inventory after Unity removed four leftover generated performance-test resource files during export. No exclusions or source-binding checks were weakened."
+      },
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/last-stand-architecture/build-android-20261031T012711Z-70082d/result.json",
+          "sha256": "2172858c9cf53f67f62cce1d14d54259ee4b64506a693689a01955ad6699b625",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "unityExitCode": 1,
+        "failure": "Actual Android compilation failed CS1069 because the bundled Android JNI module was not enabled. Dependency review of the exact built-in module passed before subsequent activation."
+      },
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/last-stand-architecture/build-android-20261031T014640Z-52f672/result.json",
+          "sha256": "440f63bd1faa0a2ef8f3f7ca29beca8a9604087b901bdd3052283260c6f1663b",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "unityExitCode": 0,
+        "failure": "Unity compilation and ST_LS_PLAYER_BUILD_PASS marker succeeded; wrapper correctly rejected TraceVirtualOffset min16 shader warnings on D3D11. Not a qualified Android build."
+      },
+      {
+        "status": "failed",
+        "receipt": {
+          "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261031T021351Z-319382/result.json",
+          "sha256": "6b4a6b2ea2755add27002024663d9db5f900da69056d0648b736d2cfb3a9a4ab",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "log": {
+          "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261031T021351Z-319382/web-export.log",
+          "sha256": "e349eb39359b9b6a9f223724c052011b7ceca921d98ea8ed84242a2ca4cddc07",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "unityLaunched": false,
+        "failure": "Caller nested identity mapping under an extra approved_artifacts key; exporter refused direct mapping requirement before saving a t05 receipt or launching Unity. Corrected invocation reused unchanged source."
+      }
+    ],
+    "beforeFinalRecordUtc": "2026-10-31T01:30:23.150408+00:00",
+    "portableBeforeFinalBuildOwner": {
+      "status": "pass",
+      "modulesExecuted": 74,
+      "checksPassed": 517,
+      "failedModules": [],
+      "exitCode": 0,
+      "exitOrigin": "Root observed actual process exit zero.",
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/portable-final-with-isolation.log",
+        "sha256": "88aee4a1eec791dcfee7e437a693332eb32ca2e8fb71d046d514481786299c09",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "includes": [
+        "Native-profile isolation, eight cases",
+        "Layout, four cases including new short-garage regression"
+      ],
+      "logEncoding": "Raw bytes retained; console text includes CP1252 output. Digest is over raw bytes.",
+      "limit": "Complete portable run includes final isolation/layout changes. It does not replace packaged player, native input or physical-device qualification."
+    },
+    "controlsBeforeFinalUi": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T012506Z-3d38b850/invocation.json",
+        "sha256": "7e982eece1de2fd60a0f21cdec41f20b133308d2aef4c835a34e6a782b489a0d",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T012506Z-3d38b850/result.json",
+        "sha256": "4f90a38a4e77bda8d0e1a5e503ec5dc2ba8bd847b17153eb2da35df1b013a46f",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T012506Z-3d38b850/unity-editor.log",
+        "sha256": "f42ddce7c98ef2f171d518f1adc7179ed495b032d3efba982c5fed172cc144c4",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 127,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": true,
+      "sourceMismatchesAtSummary": [],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Actual imported Unity execution; not packaged native/browser/device interaction.",
+      "checksPassed": 30
+    },
+    "observationBeforeFinalUi": {
+      "status": "pass",
+      "exitCode": 0,
+      "invocation": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T012600Z-5ea22807/invocation.json",
+        "sha256": "df229e8175d6da148694923d47ffe99323a6870f0a217ba57fcfa83ab336dda5",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T012600Z-5ea22807/result.json",
+        "sha256": "7a79eb37bc5383529ace571c1ed8898960866139d3e762aed20b1da658e38286",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "log": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T012600Z-5ea22807/unity-editor.log",
+        "sha256": "ad31e1e1cd7d5b6ee6fbce593fc7eb5dde6fca4f8254c35f8f9b71811b53d7c8",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "capturedSourceCount": 134,
+      "sourceUnchangedDuringRun": true,
+      "capturedSourcesStillMatchAtSummary": true,
+      "sourceMismatchesAtSummary": [],
+      "editorSha256": "8b939e82465fe5ce0a2ee5365a12dd50f0dea2b21e01a45c3430663617174b49",
+      "limit": "Actual imported Unity execution; not packaged native/browser/device interaction.",
+      "emittedPackets": 8,
+      "readerValidationOrigin": "Root observed final recipe exit zero with all eight actual packets through both maintained readers."
+    },
+    "continuityNodeEarlierCohort": {
+      "status": "pass",
+      "checksPassed": 38,
+      "skipped": 0,
+      "exitCode": 0,
+      "argv": [
+        "node",
+        "--test",
+        "scripts/ci/lastStandContinuity.test.mjs",
+        "scripts/ci/lastStandResearchJourney.test.mjs",
+        "scripts/ci/lastStandEvidenceSetup.test.mjs"
+      ],
+      "origin": "Root observed actual command result; no separate persisted process log.",
+      "sourceBindings": {
+        "scripts/ci/lastStandContinuity.test.mjs": "288dcd2d1302221ae204b9b7238eb8e496c8b6a24c3869780d96a447a1f064a0",
+        "scripts/ci/lastStandResearchJourney.test.mjs": "1188f4030fa5a6f931ba85311e950910621c74c2df7541a53220a4fff7958cfa",
+        "scripts/ci/lastStandEvidenceSetup.test.mjs": "c0f97358fe2c878421a38870fcc681569b49c8878c8ad9e804ad379216308ce8"
+      }
+    },
+    "assetNodeEarlierCohort": {
+      "status": "pass",
+      "checksPassed": 15,
+      "skipped": 0,
+      "exitCode": 0,
+      "argv": [
+        "node",
+        "--test",
+        "scripts/assets/verify-last-stand-source.test.mjs",
+        "scripts/assets/verify-last-stand.test.mjs"
+      ],
+      "origin": "Root observed actual command result; no separate persisted process log.",
+      "sourceBindings": {
+        "scripts/assets/verify-last-stand-source.test.mjs": "5c3cde183cbd6c5c37ab91215ca9ca9a6ad16302d5df639cefa5c650ca7819e2",
+        "scripts/assets/verify-last-stand.test.mjs": "3168022d96b6f3bc072b21e7e905942d55c8654cd4b92f3d321e05b29c9d71a7"
+      }
+    },
+    "controlsAfterStatusCopy": {
+      "status": "pass",
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T013256Z-a87abc21/result.json",
+        "sha256": "ba044a238b0a46e99c4ee2dacfa752440c3f2dde2006ebd6599cfa3bb3edcd3a",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "checksPassed": 30,
+      "limit": "Captured earlier source; final31-control result is separately recorded."
+    },
+    "observationAfterStatusCopy": {
+      "status": "pass",
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/editor/editor-20261031T013404Z-aae392d8/result.json",
+        "sha256": "c95705ea838b9e28a1d32bc1ad0cfced90b16f9483ae5748c0c18dd9f19ad778",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "emittedPackets": 8,
+      "limit": "Earlier captured emitter/reader run."
+    },
+    "productionBuildReportingFailure": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/production-build-final.log",
+        "sha256": "2c7c12a629357ac4cc9e6f6eb26ba5dd51163a6d8eb49f0cb0a21d99215640ec",
+        "availability": "local ignored Evidence; not bundled"
+      },
+      "reportingWrapper": {
+        "exitCode": 1,
+        "failure": "CP1252 Unicode printing failed after child npm completed successfully.",
+        "origin": "Root retained actual tool result with child exit zero; output log ends with successful Vite build."
+      }
+    }
+  },
+  "nativePickerAdapter": {
+    "status": "pass",
+    "checksPassed": 3,
+    "origin": "Root operated actual OS file dialogs through Sky; compiled production Windows adapter and explicit retained version-5 fixture. No owner profile loaded.",
+    "runs": [
+      {
+        "mode": "export",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/native-picker/20261031T005448Z-2861eb97/result.json",
+          "sha256": "0a0fe5734cf39f2e0a3b1f5fe1f3561bf06a5d3070dbbd3c9ecf1e98ad718a0d",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "actualStatus": "Success",
+        "expectedBytes": 2912,
+        "returnedBytes": 0,
+        "fixtureUnchanged": true,
+        "importBytesMatch": false,
+        "exportReadback": {
+          "bytesMatch": true,
+          "bytes": 2912,
+          "sha256": "51606bf23b64cbaad48b88f4a241a6af616bc7731b4ff10e940abfb67cd8c667"
+        }
+      },
+      {
+        "mode": "import",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/native-picker/20261031T005531Z-367b5b4e/result.json",
+          "sha256": "66e8bcd727af8fbb71bf462c442d559ee45f791175c297fc55eff654104d4b81",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "actualStatus": "Success",
+        "expectedBytes": 2912,
+        "returnedBytes": 2912,
+        "fixtureUnchanged": true,
+        "importBytesMatch": true,
+        "exportReadback": null
+      },
+      {
+        "mode": "cancel",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "receipt": {
+          "path": "campaign-unity/Evidence/continuity/native-picker/20261031T005617Z-79ef1254/result.json",
+          "sha256": "5d15a7b10b17fbe0f2bda8c2b0e7b9debd4e113e66f127b897b144e74069518c",
+          "availability": "local ignored Evidence; not bundled"
+        },
+        "actualStatus": "Cancelled",
+        "expectedBytes": 2912,
+        "returnedBytes": 0,
+        "fixtureUnchanged": true,
+        "importBytesMatch": false,
+        "exportReadback": null
+      }
+    ],
+    "limit": "Actual Windows adapter export/import/cancel only. This is not a full native-player journey, Android picker or physical-device qualification."
+  },
+  "rootDeltaReview": {
+    "status": "pass",
+    "origin": "Root independently reviewed the earlier security reviewer's implementation and reran all eight actual-source tests. This is separate reviewer attribution, not author self-approval.",
+    "reviewedSourceBindings": {
+      "campaign-unity/Unity/Assets/Scripts/Platform/LastStandNativeStorageRoot.cs": "c7e57e02b50ff23cd486a3194f514f6cf2b68f08cb9e096c2b618978ab034181",
+      "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs": "e5d3f44f4fc686f6e4538c38ec4dd71d2ff2446389212e0fe71410a934b47f1d",
+      "campaign-unity/Unity/Assets/Scripts/LastStandPreferencesStore.cs": "045ce7a95aaeab7a6c8439241087634719e77c8add6d9547710c894e117b78df"
+    },
+    "reviewedSourceBindingsMatchAtSummary": true,
+    "checksPassed": 8,
+    "boundaries": "One process-stable native root for progression, predecessor and preferences; development-only exact option and ASCII 1-to-32 identifier; release/duplicate/malformed/reserved/linked paths refused; no fallback to normal profile on rejection.",
+    "firstAttempt": {
+      "status": "failed",
+      "origin": "Root observed actual test command output; no separate persisted log supplied.",
+      "failure": "Accepted 64-character identifier reached Windows MAX_PATH failure during complete temporary-file write/read."
+    },
+    "correction": "Identifier capped at 32; accepts 32 and rejects 33 with complete file write/read boundary checks. No parse-only weakening.",
+    "limit": "Source and implementation checks; actual player input remains blocked."
+  },
+  "nativePlayer": {
+    "status": "blocked",
+    "receipt": {
+      "path": "campaign-unity/Evidence/continuity/native-player-20261031/result.json",
+      "sha256": "5872deb37ea092a64e0cff95fe48d0f02b2d489c2d4c12026e52ee96413b52ff",
+      "availability": "local ignored Evidence; not bundled"
+    },
+    "build": "build-windows-20261031T011827Z-e0e07d",
+    "playerSha256": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0",
+    "observed": "Fresh garage rendered on an explicit isolated native profile.",
+    "confirmedGameControlInputs": 0,
+    "ownerSlotsCompared": 4,
+    "ownerSlotsUnchanged": true,
+    "blocker": "Computer Use twice routed the intended coordinate to a reported PickerHost window rather than the player, including after activation and a fresh-screenshot retry.",
+    "cleanup": "Only the recorded task-owned player process was stopped after exact executable verification.",
+    "limit": "Earlier development candidate rendered but native input/recovery/lifecycle was blocked. Final Windows build was not a new native-player journey; separate adapter GUI evidence remains valid."
+  },
+  "implementationHandoff": {
+    "status": "done",
+    "plan": "ST-LS-CONTINUITY-PLAN",
+    "reportedRevision": 47,
+    "tasksDone": 5,
+    "origin": "Root reported ordinary receipt-free workflow after final local outcomes.",
+    "limit": "No native attestation accepted. Task completion does not close platform/device/audio/endurance/owner/hosted/merge/publication obligations."
+  },
+  "uiFollowupReview": {
+    "status": "pass",
+    "origin": "Root independently reviewed the final shared recovery-summary scroll, keyboard route, compact caption and Return to Garage status delta; no blocker.",
+    "reviewedSourceBindings": {
+      "campaign-unity/Unity/Assets/Scripts/LastStandCombatHud.cs": "7f035bb9a8c414350251f008dcf5966eb73abf609e7f163900660fd4a6540e59",
+      "campaign-unity/Unity/Assets/Scripts/LastStandHudKeyboard.cs": "cf2988cd5d4f61c730ffbe30276243376527417b1ecaa7ded58f7de4302eac21",
+      "campaign-unity/Unity/Assets/Scripts/LastStandHudLayout.cs": "16453c85c6c18318f8908c2869cfcda758b0eb915da1410783172adf741a2a8b",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopContinuity.cs": "ca2584fd0f137e428dfea1a092f5ca55824925fa6d89a5537a2cc530a940ccd1",
+      "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs": "e1976161a3c730a879dc0fac87a4f9040616b41d3573fd9d009357643f0a9bab"
+    },
+    "verification": "Actual Controls31 and final browser89 passes; earlier REDs retained.",
+    "limit": "UI review and bounded behavior, not owner comprehension or native-device acceptance."
+  },
+  "buildOwnerReview": {
+    "status": "pass",
+    "origin": "Root independent behavior review after requested-target, next-importer and unconfirmed-child-exit findings were fixed.",
+    "reviewedSourceBindings": {
+      "campaign-unity/Tools/build_web.py": "3a34904e04c2baf5bb9c67187208e92b0b498bed86605f92de1cf1bb8563a27d",
+      "campaign-unity/Tools/build_last_stand.py": "73b91df77b3d2d03259b75ca3013b5a43ef03d28a24f0bec4248b8cd9ca2743f",
+      "campaign-unity/Tools/unity_build_resources.py": "c38343a99b1a07feef8147cf66fc6e9222c87a06e40a4b86f7c651b5cd4e63c5",
+      "campaign-unity/Tools/unity_shader_log.py": "61fc637eaa6b3fb91ae4aa7217f9675a131097b6f8ca5472eb4e947d23fdf62a",
+      "campaign-unity/Tools/package_last_stand_web.py": "35d1fe663f0b6fff50be730de43e224c08c50b5784a9341c827d13d4966da4ef",
+      "campaign-unity/Unity/Assets/Editor/LastStandLoopBuild.cs": "74bbfc94a998feea4de7fbd6a11ee3e8c0427771f696a05b1c8fa5bddb77b7cf",
+      "campaign-unity/Unity/Assets/Editor/LastStandPlayerBuild.cs": "ac540fa9c8851175a78c0863fb5af73a733c5308aef73d219a634c9203a02ac2",
+      "scripts/assets/verify-last-stand-source.mjs": "82c50d22d6afec3486a11ed07de0ec30adb25c398876fba6c0951fbd13854a8f"
+    },
+    "reviewEpoch": "104c3a235a8a587d6b0dec2d69181d9eb551adcee092d3ee668ccf79de95d291",
+    "independentFocusedChecks": {
+      "build": 17,
+      "shader": 7
+    },
+    "authorFocusedChecks": {
+      "python": 43,
+      "node": 17,
+      "receipt": {
+        "path": "campaign-unity/Evidence/continuity/checks/build-owner-green.log",
+        "sha256": "d3130eb7e0e3476848ea717ba86330679e2c2ba657fd0737fcfea694d1b3ab2b",
+        "availability": "local ignored Evidence; not bundled"
+      }
+    },
+    "reviewedUpstreamDigest": "6dd0b39320f30fca7b8d6fcc067820f469beab2480f977861f22e46225e78a3d",
+    "limit": "Exact reviewed Editor baking imports only; no claim precision warnings are harmless. Unknown warnings/errors, wrong target, later importers and unconfirmed child exit remain blocking."
+  },
+  "buildOwnerAuthCryptoReview": {
+    "status": "pass",
+    "origin": "Independent continuity-core reviewer; authored none of the eight-file build-owner delta.",
+    "reviewEpoch": "104c3a235a8a587d6b0dec2d69181d9eb551adcee092d3ee668ccf79de95d291",
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "policy": {
+      "artifact": "CTX-SECURITY-CONTROLS",
+      "revision": 16,
+      "modelSha256": "c4cd7c6e1fbc30288cc5bd3ac26a484d1f3922accb454fd1d9908c29dc097d7b",
+      "read": "Every live policy record, operative scope file, installed Auth/Crypto and Security contracts; T-UNITY revision36 and dependency appendix."
+    },
+    "contextPacketSha256": "45751529ca5bdafa40992244add4f9d42e10afe1fd582166e3acab1e52fad29e",
+    "contextDeliveryAttempts": 1,
+    "contextDeliveryObservation": "unknown host observation; bounded packet delivered through actual reviewer tool output",
+    "scope": "Existing built-in SHA256 for unkeyed build/source/cleanup identity only. No new auth, application crypto, keys, credentials, signatures, TLS bypass or secret handling.",
+    "independentChecks": "Read actual source/diff; recomputed seven-file normalized digest; added-text credential/banned-primitive/TLS/shell patterns returned no matches; verified unchanged eight-source epoch.",
+    "limit": "Specialized policy conclusion, distinct from root behavioral tests and real target qualification."
+  },
+  "deliverySnapshot": {
+    "phase": "before feature commit and push",
+    "choreCommit": "0a42e4bd",
+    "origin": "Root reported chore commit complete without push; reviewed runtime/source bytes unchanged.",
+    "liveDeliveryRecord": "https://github.com/SUaDtL/singedTerra/pull/547",
+    "limit": "Actual checks/build receipts retain their f474 plus working-tree source identities. This is not feature-head CI, merge or deployment proof."
+  }
+}

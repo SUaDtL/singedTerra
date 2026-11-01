@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Project · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">CTX-PROJECT</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-records">Records</a><a href="#group-notes">Notes</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / knowledge</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Project</h1><p class="deck">Identity, purpose, users, scope and exclusions.</p><div class="meta"><span>CTX-PROJECT</span><span>Revision 22 · schema 0.3.2</span><span>23 addressable records</span></div></header><section class="group" id="group-records"><a class="back" href="#main-content">Top</a><h2>Records</h2>
+<!-- CA:BEGIN:PRODUCT-PATHS -->
+<article class="record" id="PRODUCT-PATHS" data-ca-symbol="PRODUCT-PATHS" data-ca-kind="records"><div class="record-head"><a class="id" href="#PRODUCT-PATHS">PRODUCT-PATHS</a><h3>Classic artillery and Last Stand</h3><span class="badge">scope</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CURRENT">SRC-CURRENT</a></li></ul></div><div class="field"><span class="label">Statement</span>The product contains classic TypeScript artillery modes and the separate Unity Last Stand survival campaign. Last Stand is the campaign; Ash Road is retired. The launcher delegates campaign simulation, saved progression and resume to Unity.</div></article>
+<!-- CA:END:PRODUCT-PATHS -->
+
+<!-- CA:BEGIN:LOCAL-CAMPAIGN -->
+<article class="record" id="LOCAL-CAMPAIGN" data-ca-symbol="LOCAL-CAMPAIGN" data-ca-kind="records"><div class="record-head"><a class="id" href="#LOCAL-CAMPAIGN">LOCAL-CAMPAIGN</a><h3>Local campaign progression boundary</h3><span class="badge">interface</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><div class="table-wrap"><table><thead><tr><th scope="col">Action</th><th scope="col">Repository path</th></tr></thead><tbody><tr><td></td><td><code></code></td></tr><tr><td></td><td><code></code></td></tr></tbody></table></div></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CURRENT">SRC-CURRENT</a></li></ul></div><div class="field"><span class="label">Statement</span>Last Stand uses local browser/native persistence. Its wave checkpoints, Scrap, Salvage, upgrades, research and unlocks do not sync with Supabase accounts or award verified account progression.</div></article>
+<!-- CA:END:LOCAL-CAMPAIGN -->
+
+<!-- CA:BEGIN:MIT-LICENSE -->
+<article class="record" id="MIT-LICENSE" data-ca-symbol="MIT-LICENSE" data-ca-kind="records"><div class="record-head"><a class="id" href="#MIT-LICENSE">MIT-LICENSE</a><h3>Repository license</h3><span class="badge">fact</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CURRENT">SRC-CURRENT</a></li></ul></div><div class="field"><span class="label">Statement</span>The repository LICENSE and root/workspace manifests declare MIT. Private workspace publication flags do not mean the license is unenacted. Third-party attribution and a future allowlist policy are separate concerns.</div></article>
+<!-- CA:END:MIT-LICENSE -->
+
+<!-- CA:BEGIN:PROJECT-IDENTITY -->
+<article class="record" id="PROJECT-IDENTITY" data-ca-symbol="PROJECT-IDENTITY" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-IDENTITY">PROJECT-IDENTITY</a><h3>Project: singedTerra</h3><span class="badge">identity</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span># Project: singedTerra
+
+singedTerra contains the classic browser artillery game and Last Stand, its Unity survival campaign. The classic game is a homage to Scorched Earth (1991): up to four players adjust angle and power against wind and gravity on destructible terrain. Last Stand uses automatic fixed-step combat, waves, persistent local upgrades and real-time research.
+
+**Workspace hygiene:** Reuse suitable worktrees. Before closing delivery, remove task-owned temporary files and obsolete worktrees after useful changes are merged or recoverably preserved.
+Protect user work, active runtimes, and required evidence; report discovered clutter or cleanup that could not safely be completed.
+
+</div></article>
+<!-- CA:END:PROJECT-IDENTITY -->
+
+<!-- CA:BEGIN:PROJECT-PURPOSE -->
+<article class="record" id="PROJECT-PURPOSE" data-ca-symbol="PROJECT-PURPOSE" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-PURPOSE">PROJECT-PURPOSE</a><h3>Purpose</h3><span class="badge">goal</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Purpose
+
+Recreate the feel of classic artillery dueling in the browser, with both **hot-seat**
+(all players in one tab) and **networked** (each player in their own browser) play, plus
+single-player vs. deterministic AI bots. singedTerra is now a sustained game project.
+The maintainer has invested in its gameplay, production deployment, progression,
+security, and presentation and expects architectural choices to optimize for player
+experience, maintainability, and reliable delivery. Early proof-of-concept constraints
+remain historical evidence, not permanent bans on dependencies, rendering libraries,
+or deeper product work.
+
+</div></article>
+<!-- CA:END:PROJECT-PURPOSE -->
+
+<!-- CA:BEGIN:PROJECT-ARCHITECTURE -->
+<article class="record" id="PROJECT-ARCHITECTURE" data-ca-symbol="PROJECT-ARCHITECTURE" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-ARCHITECTURE">PROJECT-ARCHITECTURE</a><h3>How it works (one-line architecture)</h3><span class="badge">component</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## How it works (one-line architecture)
+
+**Classic artillery: one physics codebase, two live contexts plus one verification-only context.** Classic artillery game
+logic lives in `shared/` (TypeScript, deterministic, fixed 16ms timestep). Hot-seat runs
+that engine directly; networked play runs an identically-seeded copy of the *same* engine
+in every browser and stays in sync via **deterministic lockstep** — the canonical game is
+`seed + an ordered action log` (`room_actions` in Postgres), broadcast over Supabase
+Realtime. A bounded Supabase Edge verifier may replay completed transcripts through that
+same engine, but it is never in the live turn path and MUST NOT become a duplicate engine
+or a general game server (ADR-0013). No `GameState` is ever shipped over the wire. See
+`coding-standards.md` for the determinism rules and layering; `tech-stack.md` for the
+stack; `security-controls.md` for the backend posture.
+
+**Battle HUD architecture (ADR-0018, retaining ADR-0017&#39;s visual boundary):**
+one Preact semantic tree renders typed `BattleConsolePresentationState` and
+emits `BattleConsoleIntent` values to the controller/domain owner. Preact owns
+text, focus, accessibility, dialogs, input, and portals; DOM nodes do not own
+gameplay callbacks. Canvas 2D remains the gameplay-world renderer. Lazy,
+non-interactive Pixi draws decoration from the same typed layout/socket
+projection. Sharp remains a development-only deterministic asset compiler;
+static Vite/GitHub Pages hosting is unchanged. See
+[`decisions/0018-preact-battle-console-semantic-ownership.md`](decisions/0018-preact-battle-console-semantic-ownership.md)
+for the precise supersession boundary.
+
+**Historical classic recovery:** [evidence-recovery-v2](specs/evidence-recovery-v2.md) and its [execution ledger](plans/evidence-recovery-v2.md) retain the scope and evidence for that recovery. They are not the execution ledger for subsequent Last Stand sprints. The
+[architecture owner map](../docs/ARCHITECTURE.md#existing-owners) retains
+`GameSessionComposition`, `MatchSessionLifecycle`, the room workflow/subscription
+owners, and existing presentation owners. Older plans and delivery records are
+historical context, not instructions to recreate delivered components. Accepted
+ADR conflicts require the owner; historical approval receipts are not inferred
+from implementation or a green test.
+
+**Last Stand ownership:** `campaign-unity/Unity/Assets/Scripts` owns a separate C# campaign domain. `EncounterModel` owns combat; `LastStandProgression` owns the durable profile transaction; application coordinators own run, purchase and research transitions. Shared UI primitives and feature views project that state. Platform adapters provide browser/native capabilities and storage. The web launcher delegates to the packaged Unity player and does not award account rewards. The architecture-foundation and combat-depth native plans retain their own implementation and qualification states.
+
+**Owner-approved recovery loading (ADR-0020):** semantic Preact code and CSS load with the startup graph to survive missing deferred chunks after a static-host deployment. Controls mount only for battle; optional Pixi remains lazy. On2026-10-29 the owner explicitly retained this recovery design. ADR-0020 supersedes only ADR-0018&#39;s semantic lazy-loading clause; other ownership boundaries remain.
+
+ADR-0001, ADR-0004, ADR-0005, and ADR-0006 have forward supersession chains;
+see
+[`plans/prototype-era-adr-review.md`](plans/prototype-era-adr-review.md)
+for the retained principles and superseded prototype-era absolutes.
+
+The **authenticated production diagnostics console** is a maintainer/test interface activated
+only by the exact `diagnostics=1` query parameter and absent from normal player navigation. Its
+fixed compile-time allowlist currently contains only `verified-replay-runtime` mapped to
+`verified_replay_probe`; it accepts no body, headers, arbitrary endpoint, method, or request
+composition. It reuses the browser-managed Supabase session without becoming an authorization
+or gameplay authority. A production authenticated PASS is operational runtime evidence only.
+
+</div></article>
+<!-- CA:END:PROJECT-ARCHITECTURE -->
+
+<!-- CA:BEGIN:PROJECT-USERS -->
+<article class="record" id="PROJECT-USERS" data-ca-symbol="PROJECT-USERS" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-USERS">PROJECT-USERS</a><h3>Primary users</h3><span class="badge">scope</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Primary users
+
+Casual players (the maintainer and friends) playing in a desktop or mobile browser.
+Optional accounts provide durable profiles and future progression, while anonymous players
+can still play hot-seat or join an online room by its 4-character code.
+
+</div></article>
+<!-- CA:END:PROJECT-USERS -->
+
+<!-- CA:BEGIN:PROJECT-SCOPE -->
+<article class="record" id="PROJECT-SCOPE" data-ca-symbol="PROJECT-SCOPE" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-SCOPE">PROJECT-SCOPE</a><h3>Scope</h3><span class="badge">scope</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Scope
+
+Implemented and playable today: hot-seat + networked play, AI opponents, best-of-N match
+structure with a between-rounds shop/economy, multiple weapons, destructible terrain with
+burial mechanics, audio + visual juice, mobile/touch support, and optional Supabase password
+accounts with owner-only durable profiles. Anonymous play remains supported. Last Stand additionally has wave-boundary resume, persistent Workshop upgrades, real-time Research, speed controls, settings and four authored tiers in the combat-depth candidate. Campaign saves are local and separate from account progression. Candidate implementation is distinct from merge, deployment and device acceptance. An ongoing review
+backlog lives in `docs/REVIEW_BACKLOG.md`; build history in `docs/TASKS.md`; spec in `docs/SPEC.md`.
+
+</div></article>
+<!-- CA:END:PROJECT-SCOPE -->
+
+<!-- CA:BEGIN:PROJECT-DEFERRED -->
+<article class="record" id="PROJECT-DEFERRED" data-ca-symbol="PROJECT-DEFERRED" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-DEFERRED">PROJECT-DEFERRED</a><h3>Not building (current intent)</h3><span class="badge">exclusion</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>### Not building (current intent)
+
+No items are hard-excluded, but none of the following is a current priority — treat each as
+possible-future, not in scope now (updated with maintainer 2026-08-04):
+
+- Google SSO and other federated login providers (password auth comes first per ADR-0011).
+- Magic-link, OTP, resend, SMTP, and password-recovery email infrastructure.
+- Ranked matchmaking / global persistent leaderboards (profile and trusted match linkage come first).
+- The earlier browser-only/native-mobile deferral was superseded by the owner-approved Last Stand architecture and release-foundation work. Android development builds from the same Unity project are now in scope; physical-device release qualification remains outstanding.
+- Monetization (no payments, ads, or in-game purchases — it&#39;s a free game).
+
+</div></article>
+<!-- CA:END:PROJECT-DEFERRED -->
+
+<!-- CA:BEGIN:PROJECT-STRATEGY -->
+<article class="record" id="PROJECT-STRATEGY" data-ca-symbol="PROJECT-STRATEGY" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-STRATEGY">PROJECT-STRATEGY</a><h3>Strategic direction (product-stage clarification 2026-08-21)</h3><span class="badge">goal</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Strategic direction (product-stage clarification 2026-08-21)
+
+singedTerra began under a staged-seriousness ladder intended to prevent a
+proof of concept from accumulating unnecessary paid infrastructure or broad
+dependencies. The project has crossed that product-interest threshold. The
+maintainer explicitly directs future architecture to favor making the game
+better and easier to sustain, including reviewed dependencies or rendering
+technology when they materially help. Costly hosted services, backend
+rewrites, and irreversible operational commitments still require explicit
+decisions; they do not imply a blanket ban on client libraries or tooling.
+
+- **Cheat-protection (CONFIRM-01):** Trust-the-client now (referee validates turn
+  ownership, never simulates). Plan for tiered protection — partial validation, then a
+  server-authoritative engine — to gate in with seriousness. A mobile release would make
+  it mandatory. Do not foreclose it.
+- **Scale (CONFIRM-02):** Target **tens of rooms now**; keep the transport swappable
+  (it already is, behind `NetworkClient` + the `seed + log` contract). Re-decide at the
+  Realtime-limit / &#34;going serious&#34; trigger.
+- **Backend (CONFIRM-03 — SMARTS A, 87.3):** **Stay on Supabase now**, do the in-place
+  optimizations (atomic `seq` RPC, swap Postgres Changes → Realtime Broadcast). **Cloudflare
+  Durable Objects / PartyKit is the designated successor** — spike it when Realtime limits
+  bite or seriousness rises; the engine/replay contract won&#39;t change.
+- **Roadmap (CONFIRM-04):** **Gameplay parity first** — Scorched Earth mechanics
+  (movement/fuel, parachutes, batteries, arms-level, shields) lead; online-social
+  (room browser, teams, spectator) follows.
+- **Identity (ADR-0011, supersedes CONFIRM-05):** Optional Supabase email/password accounts
+  now, with email confirmation disabled initially and anonymous room-code play preserved.
+  Account JWT identity remains separate from the per-seat gameplay token. Owner-only profiles
+  are the foundation; authenticated match linkage and progression follow, with Google SSO later.
+
+</div></article>
+<!-- CA:END:PROJECT-STRATEGY -->
+
+<!-- CA:BEGIN:PROJECT-MATURITY -->
+<article class="record" id="PROJECT-MATURITY" data-ca-symbol="PROJECT-MATURITY" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-MATURITY">PROJECT-MATURITY</a><h3>Maturity</h3><span class="badge">constraint</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## Maturity
+
+**Product maturity:** sustained playable game under active product and visual
+development, deployed publicly with hot-seat, networked play, accounts,
+progression, verification, and responsive browser support.
+
+**Governance maturity:** CodeArbiter remains configured at Stage 1 until the
+maintainer explicitly changes that setting. Stage 1 controls gate weight; it
+does not mean “throwaway prototype” and must not be cited to reject otherwise
+justified dependencies, visual systems, testing, or maintainability work.
+
+**Coverage-denominator policy (decided 2026-07-03, maintainer):** the stage-1 ≥60%
+client-coverage gate measures *assertable logic only*. `client/vite.config.ts`
+`coverage.exclude` drops code a unit test cannot honestly cover — canvas rendering
+(`renderer/*Renderer.ts`, `renderer/*Fx.ts`), WebAudio (`audio/AudioEngine.ts`), DOM
+bootstrap (`main.ts`), and type-only files (`GameClient.ts`, `SupabaseTypes.ts`).
+Rendering is verified by eye + Playwright, not draw-call assertions. Pure logic under
+`renderer/` (strata, ringBuffer, audioEdges) and theme colour math stay IN the
+denominator. Threshold itself is unchanged at 60%.
+
+</div></article>
+<!-- CA:END:PROJECT-MATURITY -->
+
+<!-- CA:BEGIN:PROJECT-LICENSE-HISTORY -->
+<article class="record" id="PROJECT-LICENSE-HISTORY" data-ca-symbol="PROJECT-LICENSE-HISTORY" data-ca-kind="records"><div class="record-head"><a class="id" href="#PROJECT-LICENSE-HISTORY">PROJECT-LICENSE-HISTORY</a><h3>License</h3><span class="badge">fact</span><span class="badge">source-observed</span></div><div class="field"><span class="label">Related refs</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Scope</span><div class="fields"><div class="field"><span class="label">Paths</span><span class="missing">None recorded</span></div></div></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a></li></ul></div><div class="field"><span class="label">Statement</span>## License
+
+**MIT (open-source).** The root LICENSE and package manifests enact MIT. Workspace packages remain private publication units. THIRD_PARTY_NOTICES.md retains third-party attribution; the separate license-allowlist policy issue is not resolved by this descriptive correction.
+</div></article>
+<!-- CA:END:PROJECT-LICENSE-HISTORY -->
+</section><section class="group" id="group-notes"><a class="back" href="#main-content">Top</a><h2>Notes</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2><span class="missing">None recorded</span></section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-CURRENT -->
+<article class="record" id="SRC-CURRENT" data-ca-symbol="SRC-CURRENT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CURRENT">SRC-CURRENT</a><h3>Current product and delivery owners</h3></div><div class="field"><span class="label">Locator</span>docs/ARCHITECTURE.md; campaign-unity/docs/LAST-STAND-ARCHITECTURE.md; campaign-unity/docs/LAST-STAND-ROADMAP.md; client/src/ui/commandCenter/LastStandCommandView.ts; LICENSE; client/package.json; shared/package.json</div><div class="field"><span class="label">Note</span>Source inspection during the authorized 2026-10-29 maintenance refresh; implementation is not release acceptance.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CURRENT -->
+
+<!-- CA:BEGIN:SRC-CONVERTED-NARRATIVE -->
+<article class="record" id="SRC-CONVERTED-NARRATIVE" data-ca-symbol="SRC-CONVERTED-NARRATIVE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CONVERTED-NARRATIVE">SRC-CONVERTED-NARRATIVE</a><h3>Preserved project narrative and current descriptive refresh</h3></div><div class="field"><span class="label">Locator</span>Git af17d905138c017822c802c658069223e97b5bf4:.codearbiter/CONTEXT.md; native conversion journal and retired NOTE-IMPORT records</div><div class="field"><span class="label">Note</span>Every original section was read and mapped at cutover. Security policy is verbatim; project/standards descriptive corrections cite current owner-map sources. No new owner decision or authorization is implied.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CONVERTED-NARRATIVE -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>af17d905138c017822c802c658069223e97b5bf4</div><div class="field"><span class="label">Observed date</span>2026-10-29</div><div class="field"><span class="label">Repository</span><span class="missing">Not yet supplied</span></div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2>
+<!-- CA:BEGIN:NOTE-IMPORT-01 -->
+<article class="record retired" id="NOTE-IMPORT-01" data-ca-symbol="NOTE-IMPORT-01" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-01">NOTE-IMPORT-01</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-IDENTITY; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>12</div></article>
+<!-- CA:END:NOTE-IMPORT-01 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-02 -->
+<article class="record retired" id="NOTE-IMPORT-02" data-ca-symbol="NOTE-IMPORT-02" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-02">NOTE-IMPORT-02</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-PURPOSE; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>13</div></article>
+<!-- CA:END:NOTE-IMPORT-02 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-03 -->
+<article class="record retired" id="NOTE-IMPORT-03" data-ca-symbol="NOTE-IMPORT-03" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-03">NOTE-IMPORT-03</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-ARCHITECTURE; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>14</div></article>
+<!-- CA:END:NOTE-IMPORT-03 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-04 -->
+<article class="record retired" id="NOTE-IMPORT-04" data-ca-symbol="NOTE-IMPORT-04" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-04">NOTE-IMPORT-04</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-USERS; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>15</div></article>
+<!-- CA:END:NOTE-IMPORT-04 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-05 -->
+<article class="record retired" id="NOTE-IMPORT-05" data-ca-symbol="NOTE-IMPORT-05" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-05">NOTE-IMPORT-05</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-SCOPE; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>16</div></article>
+<!-- CA:END:NOTE-IMPORT-05 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-06 -->
+<article class="record retired" id="NOTE-IMPORT-06" data-ca-symbol="NOTE-IMPORT-06" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-06">NOTE-IMPORT-06</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-DEFERRED; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>17</div></article>
+<!-- CA:END:NOTE-IMPORT-06 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-07 -->
+<article class="record retired" id="NOTE-IMPORT-07" data-ca-symbol="NOTE-IMPORT-07" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-07">NOTE-IMPORT-07</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-STRATEGY; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>18</div></article>
+<!-- CA:END:NOTE-IMPORT-07 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-08 -->
+<article class="record retired" id="NOTE-IMPORT-08" data-ca-symbol="NOTE-IMPORT-08" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-08">NOTE-IMPORT-08</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-MATURITY; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>19</div></article>
+<!-- CA:END:NOTE-IMPORT-08 -->
+
+<!-- CA:BEGIN:NOTE-IMPORT-09 -->
+<article class="record retired" id="NOTE-IMPORT-09" data-ca-symbol="NOTE-IMPORT-09" data-ca-kind="retired_symbols"><div class="record-head"><a class="id" href="#NOTE-IMPORT-09">NOTE-IMPORT-09</a><h3>Retired symbols</h3><span class="badge">Retired</span></div><div class="field"><span class="label">Reason</span>Preserved meaning promoted to PROJECT-LICENSE-HISTORY; original section and conversion history remain retained.</div><div class="field"><span class="label">Replacement ref</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Retired in revision</span>20</div></article>
+<!-- CA:END:NOTE-IMPORT-09 -->
+</section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 5ba29220f6d3698726f90f05bb369434ef71e961b6e2fdef4d85f61c3d2a19f3<br>Model SHA-256: 6e7a1eb7c18b13d844cb91377e07f68ae00ed9642aae2dddf30ae67e549e8f0c</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "CTX-PROJECT",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "6e7a1eb7c18b13d844cb91377e07f68ae00ed9642aae2dddf30ae67e549e8f0c",
+    "normative_sha256": "5ba29220f6d3698726f90f05bb369434ef71e961b6e2fdef4d85f61c3d2a19f3",
+    "symbol_count": 23
+  },
+  "kind": "knowledge",
+  "normative": {
+    "baseline": {
+      "commit": "af17d905138c017822c802c658069223e97b5bf4",
+      "observed_date": "2026-10-29",
+      "repository": null
+    },
+    "notes": [],
+    "records": [
+      {
+        "basis": "source-observed",
+        "id": "PRODUCT-PATHS",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "client/src/ui/commandCenter",
+            "shared/src",
+            "campaign-unity"
+          ]
+        },
+        "source_refs": [
+          "SRC-CURRENT"
+        ],
+        "statement": "The product contains classic TypeScript artillery modes and the separate Unity Last Stand survival campaign. Last Stand is the campaign; Ash Road is retired. The launcher delegates campaign simulation, saved progression and resume to Unity.",
+        "title": "Classic artillery and Last Stand",
+        "type": "scope"
+      },
+      {
+        "basis": "source-observed",
+        "id": "LOCAL-CAMPAIGN",
+        "related_refs": [],
+        "scope": {
+          "paths": [
+            "campaign-unity/Unity/Assets/Scripts",
+            "client/src/ui/commandCenter/LastStandCommandView.ts"
+          ]
+        },
+        "source_refs": [
+          "SRC-CURRENT"
+        ],
+        "statement": "Last Stand uses local browser/native persistence. Its wave checkpoints, Scrap, Salvage, upgrades, research and unlocks do not sync with Supabase accounts or award verified account progression.",
+        "title": "Local campaign progression boundary",
+        "type": "interface"
+      },
+      {
+        "basis": "source-observed",
+        "id": "MIT-LICENSE",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CURRENT"
+        ],
+        "statement": "The repository LICENSE and root/workspace manifests declare MIT. Private workspace publication flags do not mean the license is unenacted. Third-party attribution and a future allowlist policy are separate concerns.",
+        "title": "Repository license",
+        "type": "fact"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-IDENTITY",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "# Project: singedTerra\n\nsingedTerra contains the classic browser artillery game and Last Stand, its Unity survival campaign. The classic game is a homage to Scorched Earth (1991): up to four players adjust angle and power against wind and gravity on destructible terrain. Last Stand uses automatic fixed-step combat, waves, persistent local upgrades and real-time research.\n\n**Workspace hygiene:** Reuse suitable worktrees. Before closing delivery, remove task-owned temporary files and obsolete worktrees after useful changes are merged or recoverably preserved.\nProtect user work, active runtimes, and required evidence; report discovered clutter or cleanup that could not safely be completed.\n\n",
+        "title": "Project: singedTerra",
+        "type": "identity"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-PURPOSE",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Purpose\r\n\r\nRecreate the feel of classic artillery dueling in the browser, with both **hot-seat**\r\n(all players in one tab) and **networked** (each player in their own browser) play, plus\r\nsingle-player vs. deterministic AI bots. singedTerra is now a sustained game project.\r\nThe maintainer has invested in its gameplay, production deployment, progression,\r\nsecurity, and presentation and expects architectural choices to optimize for player\r\nexperience, maintainability, and reliable delivery. Early proof-of-concept constraints\r\nremain historical evidence, not permanent bans on dependencies, rendering libraries,\r\nor deeper product work.\r\n\r\n",
+        "title": "Purpose",
+        "type": "goal"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-ARCHITECTURE",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## How it works (one-line architecture)\n\n**Classic artillery: one physics codebase, two live contexts plus one verification-only context.** Classic artillery game\nlogic lives in `shared/` (TypeScript, deterministic, fixed 16ms timestep). Hot-seat runs\nthat engine directly; networked play runs an identically-seeded copy of the *same* engine\nin every browser and stays in sync via **deterministic lockstep** — the canonical game is\n`seed + an ordered action log` (`room_actions` in Postgres), broadcast over Supabase\nRealtime. A bounded Supabase Edge verifier may replay completed transcripts through that\nsame engine, but it is never in the live turn path and MUST NOT become a duplicate engine\nor a general game server (ADR-0013). No `GameState` is ever shipped over the wire. See\n`coding-standards.md` for the determinism rules and layering; `tech-stack.md` for the\nstack; `security-controls.md` for the backend posture.\n\n**Battle HUD architecture (ADR-0018, retaining ADR-0017's visual boundary):**\none Preact semantic tree renders typed `BattleConsolePresentationState` and\nemits `BattleConsoleIntent` values to the controller/domain owner. Preact owns\ntext, focus, accessibility, dialogs, input, and portals; DOM nodes do not own\ngameplay callbacks. Canvas 2D remains the gameplay-world renderer. Lazy,\nnon-interactive Pixi draws decoration from the same typed layout/socket\nprojection. Sharp remains a development-only deterministic asset compiler;\nstatic Vite/GitHub Pages hosting is unchanged. See\n[`decisions/0018-preact-battle-console-semantic-ownership.md`](decisions/0018-preact-battle-console-semantic-ownership.md)\nfor the precise supersession boundary.\n\n**Historical classic recovery:** [evidence-recovery-v2](specs/evidence-recovery-v2.md) and its [execution ledger](plans/evidence-recovery-v2.md) retain the scope and evidence for that recovery. They are not the execution ledger for subsequent Last Stand sprints. The\n[architecture owner map](../docs/ARCHITECTURE.md#existing-owners) retains\n`GameSessionComposition`, `MatchSessionLifecycle`, the room workflow/subscription\nowners, and existing presentation owners. Older plans and delivery records are\nhistorical context, not instructions to recreate delivered components. Accepted\nADR conflicts require the owner; historical approval receipts are not inferred\nfrom implementation or a green test.\n\n**Last Stand ownership:** `campaign-unity/Unity/Assets/Scripts` owns a separate C# campaign domain. `EncounterModel` owns combat; `LastStandProgression` owns the durable profile transaction; application coordinators own run, purchase and research transitions. Shared UI primitives and feature views project that state. Platform adapters provide browser/native capabilities and storage. The web launcher delegates to the packaged Unity player and does not award account rewards. The architecture-foundation and combat-depth native plans retain their own implementation and qualification states.\n\n**Owner-approved recovery loading (ADR-0020):** semantic Preact code and CSS load with the startup graph to survive missing deferred chunks after a static-host deployment. Controls mount only for battle; optional Pixi remains lazy. On2026-10-29 the owner explicitly retained this recovery design. ADR-0020 supersedes only ADR-0018's semantic lazy-loading clause; other ownership boundaries remain.\n\nADR-0001, ADR-0004, ADR-0005, and ADR-0006 have forward supersession chains;\nsee\n[`plans/prototype-era-adr-review.md`](plans/prototype-era-adr-review.md)\nfor the retained principles and superseded prototype-era absolutes.\n\nThe **authenticated production diagnostics console** is a maintainer/test interface activated\nonly by the exact `diagnostics=1` query parameter and absent from normal player navigation. Its\nfixed compile-time allowlist currently contains only `verified-replay-runtime` mapped to\n`verified_replay_probe`; it accepts no body, headers, arbitrary endpoint, method, or request\ncomposition. It reuses the browser-managed Supabase session without becoming an authorization\nor gameplay authority. A production authenticated PASS is operational runtime evidence only.\n\n",
+        "title": "How it works (one-line architecture)",
+        "type": "component"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-USERS",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Primary users\r\n\r\nCasual players (the maintainer and friends) playing in a desktop or mobile browser.\r\nOptional accounts provide durable profiles and future progression, while anonymous players\r\ncan still play hot-seat or join an online room by its 4-character code.\r\n\r\n",
+        "title": "Primary users",
+        "type": "scope"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-SCOPE",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Scope\n\nImplemented and playable today: hot-seat + networked play, AI opponents, best-of-N match\nstructure with a between-rounds shop/economy, multiple weapons, destructible terrain with\nburial mechanics, audio + visual juice, mobile/touch support, and optional Supabase password\naccounts with owner-only durable profiles. Anonymous play remains supported. Last Stand additionally has wave-boundary resume, persistent Workshop upgrades, real-time Research, speed controls, settings and four authored tiers in the combat-depth candidate. Campaign saves are local and separate from account progression. Candidate implementation is distinct from merge, deployment and device acceptance. An ongoing review\nbacklog lives in `docs/REVIEW_BACKLOG.md`; build history in `docs/TASKS.md`; spec in `docs/SPEC.md`.\n\n",
+        "title": "Scope",
+        "type": "scope"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-DEFERRED",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "### Not building (current intent)\n\nNo items are hard-excluded, but none of the following is a current priority — treat each as\npossible-future, not in scope now (updated with maintainer 2026-08-04):\n\n- Google SSO and other federated login providers (password auth comes first per ADR-0011).\n- Magic-link, OTP, resend, SMTP, and password-recovery email infrastructure.\n- Ranked matchmaking / global persistent leaderboards (profile and trusted match linkage come first).\n- The earlier browser-only/native-mobile deferral was superseded by the owner-approved Last Stand architecture and release-foundation work. Android development builds from the same Unity project are now in scope; physical-device release qualification remains outstanding.\n- Monetization (no payments, ads, or in-game purchases — it's a free game).\n\n",
+        "title": "Not building (current intent)",
+        "type": "exclusion"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-STRATEGY",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Strategic direction (product-stage clarification 2026-08-21)\r\n\r\nsingedTerra began under a staged-seriousness ladder intended to prevent a\r\nproof of concept from accumulating unnecessary paid infrastructure or broad\r\ndependencies. The project has crossed that product-interest threshold. The\r\nmaintainer explicitly directs future architecture to favor making the game\r\nbetter and easier to sustain, including reviewed dependencies or rendering\r\ntechnology when they materially help. Costly hosted services, backend\r\nrewrites, and irreversible operational commitments still require explicit\r\ndecisions; they do not imply a blanket ban on client libraries or tooling.\r\n\r\n- **Cheat-protection (CONFIRM-01):** Trust-the-client now (referee validates turn\r\n  ownership, never simulates). Plan for tiered protection — partial validation, then a\r\n  server-authoritative engine — to gate in with seriousness. A mobile release would make\r\n  it mandatory. Do not foreclose it.\r\n- **Scale (CONFIRM-02):** Target **tens of rooms now**; keep the transport swappable\r\n  (it already is, behind `NetworkClient` + the `seed + log` contract). Re-decide at the\r\n  Realtime-limit / \"going serious\" trigger.\r\n- **Backend (CONFIRM-03 — SMARTS A, 87.3):** **Stay on Supabase now**, do the in-place\r\n  optimizations (atomic `seq` RPC, swap Postgres Changes → Realtime Broadcast). **Cloudflare\r\n  Durable Objects / PartyKit is the designated successor** — spike it when Realtime limits\r\n  bite or seriousness rises; the engine/replay contract won't change.\r\n- **Roadmap (CONFIRM-04):** **Gameplay parity first** — Scorched Earth mechanics\r\n  (movement/fuel, parachutes, batteries, arms-level, shields) lead; online-social\r\n  (room browser, teams, spectator) follows.\r\n- **Identity (ADR-0011, supersedes CONFIRM-05):** Optional Supabase email/password accounts\r\n  now, with email confirmation disabled initially and anonymous room-code play preserved.\r\n  Account JWT identity remains separate from the per-seat gameplay token. Owner-only profiles\r\n  are the foundation; authenticated match linkage and progression follow, with Google SSO later.\r\n\r\n",
+        "title": "Strategic direction (product-stage clarification 2026-08-21)",
+        "type": "goal"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-MATURITY",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## Maturity\r\n\r\n**Product maturity:** sustained playable game under active product and visual\r\ndevelopment, deployed publicly with hot-seat, networked play, accounts,\r\nprogression, verification, and responsive browser support.\r\n\r\n**Governance maturity:** CodeArbiter remains configured at Stage 1 until the\r\nmaintainer explicitly changes that setting. Stage 1 controls gate weight; it\r\ndoes not mean “throwaway prototype” and must not be cited to reject otherwise\r\njustified dependencies, visual systems, testing, or maintainability work.\r\n\r\n**Coverage-denominator policy (decided 2026-07-03, maintainer):** the stage-1 ≥60%\r\nclient-coverage gate measures *assertable logic only*. `client/vite.config.ts`\r\n`coverage.exclude` drops code a unit test cannot honestly cover — canvas rendering\r\n(`renderer/*Renderer.ts`, `renderer/*Fx.ts`), WebAudio (`audio/AudioEngine.ts`), DOM\r\nbootstrap (`main.ts`), and type-only files (`GameClient.ts`, `SupabaseTypes.ts`).\r\nRendering is verified by eye + Playwright, not draw-call assertions. Pure logic under\r\n`renderer/` (strata, ringBuffer, audioEdges) and theme colour math stay IN the\r\ndenominator. Threshold itself is unchanged at 60%.\r\n\r\n",
+        "title": "Maturity",
+        "type": "constraint"
+      },
+      {
+        "basis": "source-observed",
+        "id": "PROJECT-LICENSE-HISTORY",
+        "related_refs": [],
+        "scope": {
+          "paths": []
+        },
+        "source_refs": [
+          "SRC-CONVERTED-NARRATIVE"
+        ],
+        "statement": "## License\n\n**MIT (open-source).** The root LICENSE and package manifests enact MIT. Workspace packages remain private publication units. THIRD_PARTY_NOTICES.md retains third-party attribution; the separate license-allowlist policy issue is not resolved by this descriptive correction.\n",
+        "title": "License",
+        "type": "fact"
+      }
+    ],
+    "retired_symbols": [
+      {
+        "id": "NOTE-IMPORT-01",
+        "reason": "Preserved meaning promoted to PROJECT-IDENTITY; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 12
+      },
+      {
+        "id": "NOTE-IMPORT-02",
+        "reason": "Preserved meaning promoted to PROJECT-PURPOSE; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 13
+      },
+      {
+        "id": "NOTE-IMPORT-03",
+        "reason": "Preserved meaning promoted to PROJECT-ARCHITECTURE; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 14
+      },
+      {
+        "id": "NOTE-IMPORT-04",
+        "reason": "Preserved meaning promoted to PROJECT-USERS; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 15
+      },
+      {
+        "id": "NOTE-IMPORT-05",
+        "reason": "Preserved meaning promoted to PROJECT-SCOPE; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 16
+      },
+      {
+        "id": "NOTE-IMPORT-06",
+        "reason": "Preserved meaning promoted to PROJECT-DEFERRED; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 17
+      },
+      {
+        "id": "NOTE-IMPORT-07",
+        "reason": "Preserved meaning promoted to PROJECT-STRATEGY; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 18
+      },
+      {
+        "id": "NOTE-IMPORT-08",
+        "reason": "Preserved meaning promoted to PROJECT-MATURITY; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 19
+      },
+      {
+        "id": "NOTE-IMPORT-09",
+        "reason": "Preserved meaning promoted to PROJECT-LICENSE-HISTORY; original section and conversion history remain retained.",
+        "replacement_ref": null,
+        "retired_in_revision": 20
+      }
+    ],
+    "sections": [],
+    "sources": [
+      {
+        "id": "SRC-CURRENT",
+        "locator": "docs/ARCHITECTURE.md; campaign-unity/docs/LAST-STAND-ARCHITECTURE.md; campaign-unity/docs/LAST-STAND-ROADMAP.md; client/src/ui/commandCenter/LastStandCommandView.ts; LICENSE; client/package.json; shared/package.json",
+        "note": "Source inspection during the authorized 2026-10-29 maintenance refresh; implementation is not release acceptance.",
+        "title": "Current product and delivery owners",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CONVERTED-NARRATIVE",
+        "locator": "Git af17d905138c017822c802c658069223e97b5bf4:.codearbiter/CONTEXT.md; native conversion journal and retired NOTE-IMPORT records",
+        "note": "Every original section was read and mapped at cutover. Security policy is verbatim; project/standards descriptive corrections cite current owner-map sources. No new owner decision or authorization is implied.",
+        "title": "Preserved project narrative and current descriptive refresh",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "summary": "Identity, purpose, users, scope and exclusions.",
+    "title": "Project"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 22,
+  "schema_version": "0.3.2",
+  "slug": "project"
+}
+</script>
+</body></html>

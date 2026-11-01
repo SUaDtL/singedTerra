@@ -93,3 +93,10 @@ The strongest case against this design is scope concentration: it simultaneously
 The criterion most likely to be wrong is AC-12: persistent Napalm may add waiting rather than tactical choice. Its implementation is bounded and tested, but the selected profile may keep it disabled without blocking the rest of the chapter if evidence shows no useful response choice.
 
 The assumption most likely to invalidate the approach is that accepted-command replay plus bound content is sufficient for exact local resume. If private engine state cannot be reproduced at a settled checkpoint, the storage design must stop and surface that gap rather than serialize partial `GameState` or silently resume approximately.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+Retired by the owner: Last Stand is the campaign. Merged PR #541 (`dbc84604`) removes the Ash Road implementation; the original chapter specification is retained only as history. Any unfinished Ash Road manual/visual acceptance is superseded, not passed, and is not a blocker for current Last Stand acceptance.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.
