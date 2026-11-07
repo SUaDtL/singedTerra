@@ -161,6 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [x] Bound exact-candidate Pages journeys with the shared CI matrix  (from https://github.com/SUaDtL/singedTerra/actions/runs/42377836547)  (done 2026-11-07)
+  - Work origin: https://github.com/SUaDtL/singedTerra/actions/runs/42377836547
+  - Desc: Pages run 42377836547 exhausted 3600000 ms in its unpartitioned Campaigns journey. Target regression is red for the absent shared matrix. Reuse all maintained partitions and require complete source-bound evidence before publication while retaining immutable candidate checks.
+  - Work type: fix
+  - Work ID: WORK-E4CD71BEBD09101630EB8C9C7CB13A9E
+  - Work operation ID: work-9e68763087758072f349de394710e2b2e4ac15bc
 - [x] Keep saved-run readiness and Pages evidence valid after earned waves  (from github:SUaDtL/singedTerra:actions:42366477784:job:128385725709)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra:actions:42366477784:job:128385725709
   - Desc: Repair the confirmed funded-workshop rejection in the Return qualification and retain Pages journey diagnostics without changing game behavior; deliver through reviewed CI and verified publication.
