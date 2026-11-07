@@ -9,7 +9,7 @@ using SingedTerra.VisualReview;
 namespace SingedTerra.LastStand
 {
     // Present only on the dedicated playable scene. The review scene remains non-awarding.
-    public sealed class LastStandLoopController : MonoBehaviour
+    public sealed partial class LastStandLoopController : MonoBehaviour, ILastStandPurchaseHost
     {
         // Editor checks substitute a disposable record without touching a player's local save.
 #if UNITY_EDITOR
@@ -19,6 +19,17 @@ namespace SingedTerra.LastStand
         public LastStandProgression Progression { get; private set; }
         public string Phase { get; private set; } = "garage";
         public string Notice { get; private set; } = "";
+        public string ConfirmedWaveReceipt
+        {
+            get
+            {
+                var receipt=Progression?.LastReceipt;
+                return receipt==null?"":LastStandTierHudText.WaveReceipt(receipt.Wave,receipt.Salvage,
+                    receipt.MilestoneId!=null,receipt.UnlockedFitting,receipt.UnlockedTier);
+            }
+        }
+        string ReceiptNotice(string context="")=>ConfirmedWaveReceipt==""?context:
+            ConfirmedWaveReceipt+(context==""?"":"\n"+context);
         public string GarageIssue { get; private set; } = "";
         public EncounterSession Session { get; private set; }
         public LastStandShopState Shop => Session?.Shop;
@@ -28,10 +39,12 @@ namespace SingedTerra.LastStand
         public LastStandGuidance Guidance { get; } = new LastStandGuidance();
         public LastStandDisplaySettings Display { get; private set; }
         public LastStandBrowserBridge Browser { get; private set; }
+        public ILastStandPlatform Platform => Browser;
         public string MenuPage { get; private set; } = "";
         public string Confirmation { get; private set; } = "";
         public bool MenuOpen => MenuPage != "";
-        public bool CanOpenMenu => !Session.CatchingUp && Session.CanRun;
+        public bool CanOpenMenu => (!Session.CatchingUp || Session.CheckpointBlocked) && Session.CanRun;
+        public bool CanInspectWave => Session?.Model?.Profile.IsWaveBased==true && Shop!=null && CanOpenMenu;
         public bool Muted => Audio && Audio.Muted;
         public LastStandSelection Selection { get; private set; }
         public bool SelectionOpen => MenuPage=="tier" || MenuPage=="fitting";
@@ -51,11 +64,22 @@ namespace SingedTerra.LastStand
         LastStandLoopHud hud;
         LastStandShopState runShop;
         float settle;
-        bool purchasePending, permanentPurchaseInProgress, suppressCallbackFeedback, failedRun, temporaryPurchaseInProgress;
-        LastStandUpgradeTrackId pendingPermanentTrack;
-        int pendingPermanentPriorLevel;
+        bool suppressCallbackFeedback, failedRun;
+        LastStandPurchaseCoordinator purchases;
+        ILastStandPurchaseSession ILastStandPurchaseHost.PurchaseSession => Session;
+        LastStandShopState ILastStandPurchaseHost.RunShop => runShop;
+        public LastStandBulkQuantity ShopQuantity { get; private set; }=LastStandBulkQuantity.One;
+        public void CycleShopQuantity()
+        {
+            ShopQuantity=ShopQuantity==LastStandBulkQuantity.One?LastStandBulkQuantity.Ten:
+                ShopQuantity==LastStandBulkQuantity.Ten?LastStandBulkQuantity.Hundred:
+                ShopQuantity==LastStandBulkQuantity.Hundred?LastStandBulkQuantity.Max:LastStandBulkQuantity.One;
+            Refresh("shop-quantity");
+        }
         bool previousRunInBackground, ownsBackgroundSetting;
-        bool goalAcknowledged;
+        LastStandRunCoordinator runs;
+        ILastStandStorage progressionStorage, preferencesStorage;
+        string afterAbandon = "";
         const double MaximumForegroundFeedbackInterval = .5;
         public event Action Changed;
 
@@ -66,27 +90,39 @@ namespace SingedTerra.LastStand
             ownsBackgroundSetting = true;
             Application.runInBackground = true;
 #if UNITY_EDITOR
-            Progression = LastStandProgression.Load(StorageFactory());
-            Preferences = LastStandPreferences.Load(PreferencesStorageFactory());
+            progressionStorage=StorageFactory();
+            preferencesStorage=PreferencesStorageFactory();
 #else
-            Progression = LastStandProgression.Load(new LastStandStore());
-            Preferences = LastStandPreferences.Load(new LastStandPreferencesStore());
+            progressionStorage=new LastStandStore();
+            preferencesStorage=new LastStandPreferencesStore();
 #endif
+            Progression=LastStandProgression.Load(progressionStorage);
+            art.ApplyAppearance(Progression.Appearance);
+            Preferences=LastStandPreferences.Load(preferencesStorage);
+            runs=new LastStandRunCoordinator(Progression);
+            purchases=new LastStandPurchaseCoordinator(this);
+            InitializeResearch();
+            Session.GrantMaximumSpeed(Progression.MaximumGameSpeed);
             Session.ConfigureSpeed(Preferences.Current.LastPositiveSpeed);
             Audio = gameObject.AddComponent<LastStandAudio>();
             Audio.Initialize();
+            Audio.CombatAdmission = Session.PrepareCombatCue;
             Display = gameObject.AddComponent<LastStandDisplaySettings>();
             Browser = new GameObject("LastStandBrowserBridge").AddComponent<LastStandBrowserBridge>();
             Browser.transform.SetParent(transform, false);
+            InitializeContinuity();
             ApplyPreferences();
             hud = new LastStandLoopHud(this, canvas, font);
             Browser.Initialize(this);
             session.Changed += OnSessionChanged;
             session.Stepped += OnSessionStepped;
+            session.WaveCleared += OnWaveCleared;
+            session.BeforeAdvance = ReconcileResearchBenefits;
             artHud.SetPlayableVisible();
             Phase = Progression.PendingDefeat != null ? "result" : Progression.Wallet > 0 ? "workshop" : "garage";
             if (Progression.SaveState != "ready") Notice = Progression.SaveError;
             ApplyTierEnvironment(Progression.SelectedTier);
+            art.TrySelectFitting(Progression.Checkpoint?.FittingId ?? Progression.SelectedFitting);
             Refresh("ready");
         }
 
@@ -94,11 +130,17 @@ namespace SingedTerra.LastStand
         {
             if (MenuOpen) return;
             if (Phase != "garage" && Phase != "workshop") return;
+            if (Progression.HasCheckpoint) { ResumeRun(); return; }
             if(HasLockedTierPreview) { Notice="This tier is a locked preview. Choose an unlocked tier before deploying.";Refresh("locked-preview");return; }
             if (!ApplyTierEnvironment(Progression.SelectedTier)) { Refresh("environment-unavailable"); return; }
             if (!Session.CanRun) { Notice = "Return to this tab before deploying."; Refresh("focus-required"); return; }
-            if (!Progression.TryDeploy()) { Notice = Progression.SaveError ?? "Deploy is unavailable."; Refresh("save-error"); return; }
-            StartReservedRun();
+            if (!runs.ReserveRun()) {Notice = Progression.SaveError ?? "Deploy is unavailable."; Refresh("save-error"); return; }
+            StartReservedRun(false);
+        }
+        public void ResumeRun()
+        {
+            if(MenuOpen || Session.Model!=null || !Progression.HasCheckpoint || Progression.SaveState!="ready" || !Session.CanRun)return;
+            StartReservedRun(true);
         }
 
         public void SelectTier(int tier)
@@ -111,7 +153,7 @@ namespace SingedTerra.LastStand
             if(!ApplyTierEnvironment(tier)) { Refresh("environment-unavailable");return; }
             if (!Progression.TrySelectTier(tier))
             {
-                Notice = Progression.SaveError ?? "Finish and save a Tier 1 run of 60 seconds to unlock Tier 2.";
+                Notice = Progression.SaveError ?? LastStandTierCatalog.Get(tier).LockReason;
                 ApplyTierEnvironment(Progression.SelectedTier);
                 Refresh("tier-unavailable"); return;
             }
@@ -123,7 +165,7 @@ namespace SingedTerra.LastStand
         bool ApplyTierEnvironment(int tier)
         {
             var review=art.GetComponent<BattlefieldReview>();
-            if(review && review.TrySelectEnvironment(LastStandTierCatalog.Get(tier).EnvironmentId))
+            if(review && review.TrySelectEnvironment(LastStandContentCatalog.Current.EnvironmentForTier(tier).Id))
             { GarageIssue="";return true; }
             GarageIssue="Battlefield unavailable. Retry.";
             Notice="Battlefield unavailable. Close the selector and retry before deploying.";return false;
@@ -131,22 +173,28 @@ namespace SingedTerra.LastStand
         void RefreshGarageSelections()
         {
             if(!GarageCardsVisible)return;
-            var options=new List<LastStandSelectionOption>();
+            var content=LastStandContentCatalog.Current;
             string stamp=Progression.SelectedTier.ToString();
-            foreach(var tier in LastStandTierCatalog.All)
+            foreach(var tier in content.Tiers)
             {
                 bool unlocked=Progression.IsTierUnlocked(tier.Id);
-                var environment=LastStandEnvironmentCatalog.Get(tier.EnvironmentId);
-                stamp+="/"+tier.Id+":"+unlocked+":"+Progression.GetBestTicks(tier.Id)+":"+Progression.GetBestKills(tier.Id);
-                options.Add(new LastStandSelectionOption(tier.Id.ToString(),"Tier "+tier.Id+" - "+environment.Name,
-                    unlocked ? "Goal: survive "+(tier.GoalTicks/20)+"s. "+
-                        LastStandTierHudText.Best(Progression.GetBestTicks(tier.Id),Progression.GetBestKills(tier.Id)) :
-                        "LOCKED PREVIEW\nSave a "+(tier.RequiredTicks/20)+"s Tier "+tier.RequiredTier+" run.",unlocked));
+                stamp+="/"+tier.Id+":"+unlocked+":"+Progression.GetBestWave(tier.Id);
             }
             if(GarageTierSelection==null || garageTierStamp!=stamp)
-            { GarageTierSelection=new LastStandSelection(options,Progression.SelectedTier.ToString(),true);garageTierStamp=stamp; }
-            if(GarageFittingSelection==null || garageFittingStamp!=art.FittingId)
-            { GarageFittingSelection=new LastStandSelection(LastStandFittingCatalog.Options,art.FittingId,false);garageFittingStamp=art.FittingId; }
+            {
+                var options=content.TierOptions(Progression.IsTierUnlocked,tier=>Progression.IsTierUnlocked(tier.Id) ?
+                    LastStandTierHudText.WaveBest(Progression.GetBestWave(tier.Id))+"\n"+LastStandTierHudText.NextMilestone(tier.Id,Progression.GetBestWave(tier.Id)) :
+                    "LOCKED PREVIEW\n"+tier.LockReason,true);
+                GarageTierSelection=new LastStandSelection(options,Progression.SelectedTier.ToString(),true);garageTierStamp=stamp;
+            }
+            string fittingStamp=art.FittingId;
+            foreach(var fitting in content.Fittings)fittingStamp+="/"+fitting.Id+":"+Progression.IsFittingUnlocked(fitting.Id);
+            if(GarageFittingSelection==null || garageFittingStamp!=fittingStamp)
+            {
+                var available=new List<LastStandSelectionOption>();
+                foreach(var option in content.FittingOptions(Progression.IsFittingUnlocked))if(option.Unlocked)available.Add(option);
+                GarageFittingSelection=new LastStandSelection(available,art.FittingId,false);garageFittingStamp=fittingStamp;
+            }
         }
         public void RestoreGaragePreview()
         {
@@ -175,7 +223,7 @@ namespace SingedTerra.LastStand
             RefreshGarageSelections();
             if(!GarageFittingSelection.Move(direction))return;
             var option=GarageFittingSelection.Current;
-            if(!option.Unlocked || !art.TrySelectFitting(option.Id))GarageFittingSelection.Reset(art.FittingId);
+            if(!option.Unlocked || !Progression.TrySelectFitting(option.Id) || !art.TrySelectFitting(option.Id))GarageFittingSelection.Reset(art.FittingId);
             Refresh("garage-fitting");
         }
         public void OpenSelector(string kind)
@@ -185,15 +233,11 @@ namespace SingedTerra.LastStand
             var options=new List<LastStandSelectionOption>();
             if(kind=="tier")
             {
-                foreach(var tier in LastStandTierCatalog.All)
-                {
-                    var environment=LastStandEnvironmentCatalog.Get(tier.EnvironmentId);
-                    options.Add(new LastStandSelectionOption(tier.Id.ToString(),"Tier "+tier.Id+" - "+environment.Name,
-                        environment.Description+"\nGoal: "+(tier.GoalTicks/20)+"s. "+
-                        (Progression.IsTierUnlocked(tier.Id) ? "Choose a tier to play." : tier.LockReason),Progression.IsTierUnlocked(tier.Id)));
-                }
+                var content=LastStandContentCatalog.Current;
+                options.AddRange(content.TierOptions(Progression.IsTierUnlocked,tier=>content.EnvironmentForTier(tier.Id).Description+"\n"+
+                    (Progression.IsTierUnlocked(tier.Id)?"Choose a tier to play.":tier.LockReason),true));
             }
-            else options.AddRange(LastStandFittingCatalog.Options);
+            else options.AddRange(LastStandContentCatalog.Current.FittingOptions(Progression.IsFittingUnlocked));
             Selection=new LastStandSelection(options,kind=="tier" ? Progression.SelectedTier.ToString() : art.FittingId,kind=="tier");
             if(kind=="tier")ApplyTierEnvironment(Progression.SelectedTier);
             OpenMenu(kind);
@@ -212,52 +256,50 @@ namespace SingedTerra.LastStand
                     if(Progression.SelectedTier!=tier) { Selection.Reset(Progression.SelectedTier.ToString());ApplyTierEnvironment(Progression.SelectedTier); }
                 }
             }
-            else if(option.Unlocked && !art.TrySelectFitting(option.Id))Selection.Reset(art.FittingId);
+            else if(option.Unlocked && (!Progression.TrySelectFitting(option.Id) || !art.TrySelectFitting(option.Id)))Selection.Reset(art.FittingId);
             Refresh("selection-preview");
         }
 
-        void StartReservedRun()
+        void StartReservedRun(bool resume)
         {
-            if (Progression.ActiveRunId == 0) return;
-            // Reservation has committed and read back. Capture all six levels
-            // once; neither later storage observations nor fittings own this run.
-            var permanentLevels = new int[LastStandUpgradeCatalog.Tracks.Count];
-            foreach (var track in LastStandUpgradeCatalog.Tracks)
-                permanentLevels[(int)track.Id] = Progression.GetPermanentLevel(track.Id);
-            var shop = new LastStandShopState(Progression.ActiveRunId,
-                art.showingLauncher ? LastStandFitting.Launcher : LastStandFitting.Repair, permanentLevels);
+            var checkpoint=Progression.Checkpoint;
+            if (checkpoint==null || !ApplyTierEnvironment(checkpoint.Tier) || !art.TrySelectFitting(checkpoint.FittingId)) return;
+            var shop=checkpoint.RestoreShop();
+            var model=checkpoint.RestoreModel();
             runShop = shop; FinalAccounting = null;
-            failedRun = suppressCallbackFeedback = goalAcknowledged = false;
+            StartHistory(resume);
+            failedRun = suppressCallbackFeedback = false;
+            runs.BeginRun();
             Audio.UnlockFromGesture("deploy");
             Session.ConfigureSpeed(Preferences.Current.LastPositiveSpeed);
-            Session.DeployReservedRun(shop, MenuOpen);
+            Phase="battle";
+            Session.RestoreReservedRun(shop,model,resume);
             if (Session.Model == null)
             {
                 FinalizeShop(LastStandShopPurchaseLifecycle.Failed, null);
                 runShop = null;
-                Progression.AbandonRun();
-                Notice = "Unable to enter the battlefield. Try Deploy again.";
-                GarageIssue = "Deployment failed. Retry Deploy.";
+                Phase="garage";
+                Notice = "Unable to enter the battlefield. The checkpoint is kept; try Resume again.";
+                GarageIssue = "Deployment failed. Retry Resume.";
                 Refresh("deploy-failed");
                 return;
             }
-            Phase = "battle"; Notice = ""; GarageIssue = "";
+            Phase = "battle"; Notice = resume ? "Checkpoint restored. Press Resume to continue; no closed-tab time was simulated." : "Starting checkpoint saved."; GarageIssue = "";
             Guidance.Dismiss();
-            if (Progression.CannonAttackLevel == 0) Guidance.EnterFirstRun();
-            Refresh("deploy");
+            if (IsFirstDeployment) Guidance.EnterFirstRun();
+            Refresh(resume?"resume":"deploy");
         }
 
         void OnSessionStepped(EncounterModel model)
         {
             // Income belongs to every authoritative admitted step, including a
             // terminal/background step. Audio admission never owns accounting.
-            if (runShop != null && model == Session.Model) runShop.ObserveAuthoritativeKills(model.Kills);
-            if (Phase != "battle" || Session.Paused || Session.Failure != "") return;
-            if (!goalAcknowledged && model.Tick >= LastStandTierCatalog.Get(model.Profile.Tier).GoalTicks)
+            if (runShop != null && model == Session.Model)
             {
-                goalAcknowledged = true;
-                Notice = "Goal reached. Finish this run to save your progress.";
+                runShop.ObserveAuthoritativeKills(model,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
+                RecordActiveStep();
             }
+            if (Phase != "battle" || Session.Paused || Session.Failure != "") return;
             // Preserve ordinary short foreground batches. A delayed/background
             // callback and every subsequent debt-draining callback discard old
             // cues, including the final step where the clock debt reaches zero.
@@ -268,14 +310,13 @@ namespace SingedTerra.LastStand
                 if (suppressCallbackFeedback) DiscardMissedFeedback();
             }
             SyncAudioAdmission();
-            if (suppressCallbackFeedback || !Session.CanRun) return;
+            bool feedbackAllowed = !suppressCallbackFeedback && Session.CanRun;
+            if (feedbackAllowed) Audio.PlayEvents(model.Events);
             foreach (var evt in model.Events)
             {
-                Audio.PlayEvent(evt.Kind, evt.Amount, !evt.Killed);
+                // Authoritative hit evidence is independent of audiovisual admission.
                 if (evt.Kind == EncounterEventKind.Cannon)
-                    Debug.Log("ST_LS_HIT " + JsonUtility.ToJson(new HitState { tick = model.Tick,
-                        cannonDamage = model.CommittedCannonDamage, firstFoeHull = model.Foes[0].Hull,
-                        kills = model.Kills }));
+                    LastStandObservations.Hit(model);
             }
         }
 
@@ -291,56 +332,58 @@ namespace SingedTerra.LastStand
                 SyncAudioAdmission();
             }
         }
+        void OnWaveCleared(EncounterModel model)
+        {
+            if(model!=Session.Model || runShop==null)return;
+            FlushHistoryTime();
+            if(!runs.CommitWave(model,runShop,liveHistory,ReconcileResearchBenefits))
+            {
+                Session.HoldCheckpoint();Phase="save-error";
+                Notice=Progression.SaveError??"Wave checkpoint is unconfirmed. Retry Save before continuing.";
+                Refresh("wave-save-error");return;
+            }
+            AdoptCommittedHistory();
+            Notice=ReceiptNotice();
+            Session.ContinueCommittedWave();
+            // Commit telemetry describes this exact boundary. The session will
+            // publish Changed after draining the callback; projecting the HUD
+            // here would temporarily disable focused controls for pending steps.
+            EmitState("wave-committed");
+        }
         void ReconcileSessionChange()
         {
-            var model = Session.Model;
-            SyncAudioAdmission();
-            if (runShop != null && model == null)
+            var model=Session.Model;SyncAudioAdmission();
+            if(runShop!=null && model==null)
+            { runShop=null; if(Phase=="battle")Phase="garage"; }
+            if((Phase=="battle" || Phase=="save-error") && model!=null)
             {
-                if (FinalAccounting == null)
+                if(Session.Failure!="")
                 {
-                    FinalizeShop(LastStandShopPurchaseLifecycle.Exited, null);
-                    Progression.AbandonRun(); Phase = "garage"; Notice = "Run exited. No salvage was awarded.";
+                    failedRun=true;FinalizeShop(LastStandShopPurchaseLifecycle.Failed,model);
+                    runShop=null;Phase="garage";Session.ReturnToInspection();
+                    Notice="The run stopped. Your last confirmed wave checkpoint is available to resume.";
+                    Refresh("technical-failure");return;
                 }
-                runShop = null;
-            }
-            if (Phase == "battle" && model != null)
-            {
-                if (Session.Failure != "")
+                if(runs.HoldsRun)
+                { Refresh("save-error");return; }
+                if(model.Status==EncounterStatus.Defeated)
                 {
-                    FinalizeShop(LastStandShopPurchaseLifecycle.Failed, model);
-                    failedRun = true;
-                    Progression.AbandonRun(); Session.ReturnToInspection();
-                    Phase = "garage"; Notice = "This run stopped because of a technical problem. No salvage was awarded.";
-                    GarageIssue = "Run stopped. No salvage awarded.";
-                    Refresh("technical-failure"); return;
-                }
-                if (model.Status == EncounterStatus.Defeated)
-                {
-                    FinalizeShop(LastStandShopPurchaseLifecycle.Defeated, model);
-                    if (!Progression.TryStageDefeat(model.Tick, model.Kills))
+                    FlushHistoryTime();
+                    // A simultaneous final kill/death may already have atomically
+                    // banked this wave and invalidated the checkpoint.
+                    if(!runs.FinalizeRun(liveHistory,runShop))
                     {
-                        Notice = Progression.SaveError ?? "Could not save the defeat. Retry the save.";
-                        Phase = "save-error"; Refresh("save-error"); return;
+                        Session.HoldCheckpoint();Phase="save-error";
+                        Notice=Progression.SaveError??"Defeat is not yet saved. Retry Save.";
+                        Refresh("save-error");return;
                     }
-                    settle = (float)Math.Max(0, .48 - Session.TerminalElapsedSeconds);
-                    Notice = SavedResultNotice();
-                    Phase = "settling"; Audio.PlayDefeat(); Refresh("defeat-staged"); return;
+                    FinalizeShop(LastStandShopPurchaseLifecycle.Defeated,model);
+                    settle=(float)Math.Max(0,.48-Session.TerminalElapsedSeconds);
+                    Notice=ReceiptNotice("Run ended. Completed rewards remain saved.");
+                    Phase="settling";Audio.PlayDefeat();Refresh("defeat-staged");return;
                 }
-                if (model.Status == EncounterStatus.Limit)
-                {
-                    FinalizeShop(LastStandShopPurchaseLifecycle.Limit, model);
-                    if (!Progression.TryStageLimit(model.Tick, model.Kills))
-                    {
-                        Notice = Progression.SaveError ?? "Could not save the limit result. Retry the save.";
-                        Phase = "save-error"; Refresh("save-error"); return;
-                    }
-                    Phase = "result"; Notice = SavedResultNotice();
-                    Session.ReturnToInspection();
-                    Refresh("limit"); return;
-                }
-                runShop?.UpdatePurchaseLifecycle(Session.Paused ? LastStandShopPurchaseLifecycle.Paused :
-                    Session.CatchingUp ? LastStandShopPurchaseLifecycle.CatchingUp : LastStandShopPurchaseLifecycle.Running);
+                runShop?.UpdatePurchaseLifecycle(Session.Paused?LastStandShopPurchaseLifecycle.Paused:
+                    Session.CatchingUp?LastStandShopPurchaseLifecycle.CatchingUp:LastStandShopPurchaseLifecycle.Running);
             }
             Refresh("session");
         }
@@ -348,12 +391,14 @@ namespace SingedTerra.LastStand
         void FinalizeShop(LastStandShopPurchaseLifecycle lifecycle, EncounterModel model)
         {
             if (runShop == null) return;
-            if (model != null) runShop.ObserveAuthoritativeKills(model.Kills);
+            if (model != null) runShop.ObserveAuthoritativeKills(model,Progression.ResearchRank(LastStandResearchTrackId.ScrapLogistics));
             FinalAccounting = runShop.FinalizeAccounting(lifecycle);
         }
 
         void Update()
         {
+            UpdateResearch();
+            RecordPausedTime();
             if (Phase != "settling") return;
             if (Session.Paused) return;
             // TerminalElapsedSeconds is cumulative active time from the sole
@@ -368,7 +413,8 @@ namespace SingedTerra.LastStand
         public void Claim()
         {
             if (MenuOpen) return;
-            if (Phase != "result" || Progression.PendingDefeat == null) return;
+            if (Phase != "result") return;
+            if (Progression.PendingDefeat == null) { Phase="workshop";FinalAccounting=null;Refresh("continue");return; }
             int reward = Progression.PendingDefeat.Reward;
             if (!Progression.TryClaim()) { Notice = Progression.SaveError ?? "Claim is unavailable."; Refresh("save-error"); return; }
             FinalAccounting = null;
@@ -389,39 +435,24 @@ namespace SingedTerra.LastStand
 
         public void Purchase() => Purchase(LastStandUpgradeTrackId.CannonAttack);
 
-        public void Purchase(LastStandUpgradeTrackId track)
+        public void Purchase(LastStandUpgradeTrackId track)=>TryPurchasePermanent(track,ShopQuantity,Progression.Revision);
+        public bool TryPurchasePermanent(LastStandUpgradeTrackId track,LastStandBulkQuantity quantity,long expectedRevision)
         {
-            if (MenuOpen) return;
+            if(purchases.PermanentInProgress)return false;
+            if(MenuOpen || expectedRevision!=Progression.Revision){Refresh("purchase-stale");return false;}
             Guidance.Dismiss();
-            int index = (int)track;
-            if (permanentPurchaseInProgress || index < 0 || index >= LastStandUpgradeCatalog.Tracks.Count ||
-                (Phase != "garage" && Phase != "workshop") || Session.Model != null ||
-                Progression.ActiveRunId != 0 || Progression.PendingDefeat != null) return;
-            if (Progression.SaveState != "ready")
-            {
-                Notice = Progression.SaveError;
-                Refresh("purchase-unavailable"); return;
-            }
-            var definition = LastStandUpgradeCatalog.Tracks[index];
-            int priorLevel = Progression.GetPermanentLevel(track);
-            permanentPurchaseInProgress = true;
-            try
-            {
-                SyncAudioAdmission(); Audio.UnlockFromGesture("purchase");
-                if (!Progression.TryPurchase(track))
-                {
-                    purchasePending = Progression.SaveState != "ready";
-                    if (purchasePending)
-                    { pendingPermanentTrack = track; pendingPermanentPriorLevel = priorLevel; }
-                    Notice = Progression.SaveError ?? (priorLevel == LastStandUpgradeCatalog.PermanentCap ?
-                        definition.Name + " is fully upgraded." : "Not enough salvage yet.");
-                    Refresh("purchase-unavailable"); return;
-                }
-                purchasePending = false;
-                Audio.PlayPurchase(); Notice = definition.Name + " upgraded and saved.";
-                Guidance.PurchaseConfirmed(track, priorLevel); Refresh("purchase");
-            }
-            finally { permanentPurchaseInProgress = false; }
+            bool allowed=(Phase=="garage" || Phase=="workshop") && Session.Model==null && Progression.PendingDefeat==null;
+            var result=purchases.Permanent(track,quantity,expectedRevision,allowed,ReconcileResearchBenefits,
+                ()=>{SyncAudioAdmission();Audio.UnlockFromGesture("purchase");},PublishPermanentPurchase);
+            return result.Accepted;
+        }
+        void PublishPermanentPurchase(LastStandPermanentPurchaseResult result)
+        {
+            if(result.Silent)return;
+            if(!result.Accepted){Notice=result.Error;Refresh("purchase-unavailable");return;}
+            Audio.PlayPurchase();
+            Notice=result.Name+" +"+result.Quantity+" saved for "+result.Cost+" Salvage. Existing checkpoints keep their original deployment levels.";
+            Guidance.PurchaseConfirmed(result.Track,result.PriorLevel);Refresh("purchase");
         }
 
         public LastStandShopPurchaseResult TryPurchaseTemporary(LastStandShopPurchaseIntent intent)
@@ -432,95 +463,67 @@ namespace SingedTerra.LastStand
         // be substituted afterward. A refused purchase is never kept for retry.
         public LastStandShopPurchaseResult TryPurchaseTemporaryAt(LastStandShopPurchaseIntent intent, double timestamp)
         {
-            var session = Session;
-            var model = session?.Model;
-            var shop = session?.Shop;
-            LastStandShopPurchaseResult Refuse(LastStandShopPurchaseRefusal reason) =>
-                new LastStandShopPurchaseResult(reason, 0, shop?.Version ?? 0, null);
-            if (temporaryPurchaseInProgress) return Refuse(LastStandShopPurchaseRefusal.Inactive);
-            if (intent == null) return Refuse(LastStandShopPurchaseRefusal.InvalidIntent);
-            if (shop == null || model == null || shop != runShop)
-                return Refuse(LastStandShopPurchaseRefusal.Inactive);
-            if (Phase != "battle") return shop.FinalAccounting != null ? shop.TryPurchase(intent) :
-                Refuse(LastStandShopPurchaseRefusal.Inactive);
-
-            temporaryPurchaseInProgress = true;
-            try
-            {
-                // The sole bounded step owner settles every admitted tick using
-                // the old stats, retaining excess debt for a later callback.
-                session.AdvanceAt(timestamp);
-                if (Session != session || session.Model != model || session.Shop != shop || runShop != shop)
-                {
-                    if (Session?.Model != null && Session.Model != model)
-                        return Refuse(LastStandShopPurchaseRefusal.WrongRun);
-                    // A terminal callback may already have cleared session
-                    // ownership. Its original closed ledger still gives the
-                    // exact terminal reason, with no debit or effect.
-                    return shop.FinalAccounting != null ? shop.TryPurchase(intent) :
-                        Refuse(LastStandShopPurchaseRefusal.Inactive);
-                }
-                if (session.Failure != "") return Refuse(LastStandShopPurchaseRefusal.Failed);
-                if (model.Status == EncounterStatus.Defeated) return Refuse(LastStandShopPurchaseRefusal.Defeated);
-                if (model.Status == EncounterStatus.Limit) return Refuse(LastStandShopPurchaseRefusal.Limit);
-                if (Progression.ActiveRunId != shop.RunId)
-                    return Refuse(LastStandShopPurchaseRefusal.WrongRun);
-                if (Phase != "battle") return Refuse(LastStandShopPurchaseRefusal.Inactive);
-                shop.UpdatePurchaseLifecycle(session.Paused ? LastStandShopPurchaseLifecycle.Paused :
-                    session.CatchingUp ? LastStandShopPurchaseLifecycle.CatchingUp : LastStandShopPurchaseLifecycle.Running);
-                var result = shop.TryPurchase(intent);
-                if (result.Accepted) session.ApplyShopProjection();
-                return result;
-            }
-            finally
-            {
-                temporaryPurchaseInProgress = false;
-                Refresh("temporary-purchase");
-            }
+            bool attempted=false;
+            try { return purchases.Temporary(intent,timestamp,out attempted); }
+            finally { if(attempted)Refresh("temporary-purchase"); }
         }
 
         public void Redeploy() { Deploy(); }
         public void RetrySave()
         {
-            bool hadPending = Progression.PendingDefeat != null;
-            string priorPhase = Phase;
-            if (!Progression.Retry()) { Notice = Progression.SaveError; Refresh("save-error"); return; }
-            bool purchaseConfirmed = purchasePending &&
-                Progression.GetPermanentLevel(pendingPermanentTrack) == pendingPermanentPriorLevel + 1;
-            if (purchaseConfirmed)
+            if(RetryBackupRestore())return;
+            var model=Session.Model;
+            var recovery=runs.Retry(model,runShop,liveHistory,EnsureResearchInitialized,ReconcileResearchBenefits);
+            if(recovery.Kind==LastStandRecoveryKind.Failed)
+            {Notice=recovery.Error;Refresh("save-error");return;}
+            Session.GrantMaximumSpeed(Progression.MaximumGameSpeed);
+            if(recovery.ReleaseResearchHold){Session.ContinueCommittedWave();Phase="battle";}
+            if(recovery.Kind==LastStandRecoveryKind.Abandoned){FinishAbandon();return;}
+            if(recovery.Kind==LastStandRecoveryKind.Wave)
             {
-                SyncAudioAdmission();
-                Audio.UnlockFromGesture("retry-purchase"); Audio.PlayPurchase();
-                Guidance.PurchaseConfirmed(pendingPermanentTrack, pendingPermanentPriorLevel);
+                AdoptCommittedHistory();Session.ContinueCommittedWave();Phase="battle";
+                Notice=ReceiptNotice("Press Resume when ready.");
+                if(model.Status==EncounterStatus.Defeated)
+                {
+                    FinalizeShop(LastStandShopPurchaseLifecycle.Defeated,model);
+                    Session.ReturnToInspection();Phase="result";
+                    Notice=ReceiptNotice("Run ended. Completed rewards remain saved.");
+                }
+                Refresh("save-recovered");return;
             }
-            purchasePending = false;
-            if (!purchaseConfirmed) Guidance.Dismiss();
-            Notice = purchaseConfirmed ? LastStandUpgradeCatalog.Get(pendingPermanentTrack).Name + " upgraded and saved." : "Save confirmed.";
-            if (Progression.ActiveRunId != 0 && Session.Model == null) { StartReservedRun(); return; }
-            if (Progression.PendingDefeat != null)
+            if(recovery.Kind==LastStandRecoveryKind.Terminal)
             {
-                Notice = SavedResultNotice();
-                if (Session.Model != null) Session.ReturnToInspection();
-                Phase = "result";
+                FinalizeShop(LastStandShopPurchaseLifecycle.Defeated,model);
+                Session.ReturnToInspection();Phase="result";Notice=ReceiptNotice("Run ended. Completed rewards remain saved.");
+                Refresh("save-recovered");return;
             }
-            else if (hadPending && Progression.PendingDefeat == null && priorPhase == "result")
-            { Phase = "workshop"; FinalAccounting = null; }
-            else if (Phase == "save-error") Phase = "garage";
+            var confirmedPurchase=purchases.ConfirmRetry();
+            bool confirmed=confirmedPurchase!=null;
+            if(confirmed){SyncAudioAdmission();Audio.UnlockFromGesture("retry-purchase");Audio.PlayPurchase();Guidance.PurchaseConfirmed(confirmedPurchase.Track,confirmedPurchase.PriorLevel);}
+            if(recovery.Kind==LastStandRecoveryKind.Started)
+            {Phase="garage";Notice="Starting checkpoint saved. Select Resume when ready.";}
+            else if(Progression.PendingDefeat!=null)Phase="result";
+            else if(Session.Model==null && Phase=="save-error")Phase="garage";
             if(Session.Model==null)
             {
-                if(SelectionOpen && MenuPage=="tier")Selection.Reset(Progression.SelectedTier.ToString());
-                ApplyTierEnvironment(Progression.SelectedTier);
+                ApplyTierEnvironment(Progression.Checkpoint?.Tier??Progression.SelectedTier);
+                art.TrySelectFitting(Progression.Checkpoint?.FittingId??Progression.SelectedFitting);
+                garageTierStamp=garageFittingStamp=null;
             }
+            Notice=confirmed?"Upgrade saved. Existing checkpoints keep their original deployment stats.":"Save confirmed.";
             Refresh("save-recovered");
         }
         public void TogglePause()
         {
             if (MenuOpen || (Phase != "battle" && Phase != "settling")) return;
+            RecordPausedTime();
             Session.TogglePause(); PersistSpeed();
         }
         public void ChangeSpeed(int direction)
         {
             if (MenuOpen || Phase != "battle") return;
+            if(!ReconcileResearchBenefits()){Refresh("speed-unavailable");return;}
+            RecordPausedTime();
             double rate = Math.Max(0, Math.Min(Session.MaximumSpeed, Session.SelectedSpeed + direction * .5));
             if (Session.TrySetSpeed(rate)) PersistSpeed();
         }
@@ -551,36 +554,51 @@ namespace SingedTerra.LastStand
         public void RefreshControls() { Refresh("controls"); }
         public void OpenMenu(string page = "menu")
         {
+            if(page=="appearance" && !CanCustomizeAppearance)return;
+            if(page=="wave" && !CanInspectWave)return;
             if((page=="tier" || page=="fitting") && (!CanSelectLoadout || Selection==null))return;
             if (!CanOpenMenu) return;
+            RecordPausedTime();
             RestoreGaragePreview();
             if(SelectionOpen && page!=MenuPage) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
-            if (!MenuOpen && Session.Model != null && !Session.TrySetMenuPaused(true)) return;
+            if (!MenuOpen && Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(true)) return;
+            LeaveBackupPage(page);
+            LeaveAppearancePage(page);
+            if(page=="appearance" && MenuPage!="appearance")BeginAppearance();
             MenuPage = page; Confirmation = "";
             Audio.UnlockFromGesture("menu"); Refresh("menu");
         }
         public void CloseMenu()
         {
             if (!MenuOpen) return;
+            RecordPausedTime();
             if(SelectionOpen) { ApplyTierEnvironment(Progression.SelectedTier);Selection=null; }
-            if (Session.Model != null && !Session.TrySetMenuPaused(false)) return;
+            if (Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(false)) return;
+            LeaveBackupPage("");
+            LeaveAppearancePage("");
             MenuPage = ""; Confirmation = ""; Refresh("menu-close");
         }
         public void RequestConfirmation(string action)
         {
-            if (action != "reset-settings" && action != "abandon") return;
-            if (action == "abandon" && (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp) || Progression.ActiveRunId == 0)) return;
+            if (action != "reset-settings" && action != "abandon" && action != "new-run" && action != "return-garage") return;
+            if(action=="return-garage" && !CanReturnToGarage)return;
+            if (action != "reset-settings" && (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp) || !Progression.HasCheckpoint)) return;
             OpenMenu("confirm");
             if (MenuPage == "confirm") { Confirmation = action; Refresh("confirmation"); }
         }
         public void CancelConfirmation() { Confirmation = ""; MenuPage = "menu"; Refresh("confirmation-cancel"); }
         public void RequestNavigation(bool account)
         {
+            if(!Platform.CanNavigate || account && !Platform.CanOpenAccount)
+            { Notice="This destination is unavailable on this device.";Refresh("navigation-unavailable");return; }
             if (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp))
             { Notice = "Finish reconciling this run and retry any unconfirmed save before leaving."; Refresh("navigation-unavailable"); return; }
-            if (!LastStandNavigationPolicy.RequiresConfirmation(Progression.ActiveRunId)) { Browser.Navigate(account); return; }
-            OpenMenu("confirm");
-            if (MenuPage == "confirm") { Confirmation = account ? "account" : "campaigns"; Refresh("confirmation"); }
+            // Ordinary navigation preserves the last committed wave. Partial
+            // wave progress and purchases are restored together on Resume.
+            LeaveAppearancePage("");MenuPage="";Confirmation="";Selection=null;
+            if(Session.Model!=null){Phase="garage";runShop=null;Session.ReturnToInspection();}
+            Refresh("navigation");
+            Platform.Navigate(account);
         }
         public void ConfirmAction()
         {
@@ -593,15 +611,23 @@ namespace SingedTerra.LastStand
                 MenuPage = "settings"; Confirmation = ""; Refresh("settings-reset"); return;
             }
             if (!LastStandNavigationPolicy.CanLeave(Progression.SaveState, Session.CatchingUp)) return;
-            if (Progression.ActiveRunId != 0)
+            if(action=="return-garage"){ReturnToGarageKeepingCheckpoint();return;}
+            afterAbandon=action;
+            RecordPausedTime();FlushHistoryTime();
+            if (Progression.HasCheckpoint)
             {
-                FinalizeShop(LastStandShopPurchaseLifecycle.Exited, Session.Model);
-                Progression.AbandonRun(); runShop = null;
-                Session.ReturnToInspection(); Phase = "garage";
-                Notice = "Run abandoned. No salvage was awarded."; Guidance.Dismiss();
+                if(!runs.FinalizeRun(liveHistory,runShop,true))
+                {Session.HoldCheckpoint();Phase="save-error";Notice=Progression.SaveError;Refresh("save-error");return;}
             }
-            MenuPage = ""; Confirmation = ""; Refresh("abandon");
-            if (action == "campaigns" || action == "account") Browser.Navigate(action == "account");
+            FinishAbandon();
+        }
+        void FinishAbandon()
+        {
+            FinalizeShop(LastStandShopPurchaseLifecycle.Exited,Session.Model);
+            runs.FinishAbandon();runShop=null;Phase="garage";MenuPage="";Confirmation="";
+            Session.ReturnToInspection();Notice="Run abandoned. Completed-wave rewards are kept.";Guidance.Dismiss();
+            string action=afterAbandon;afterAbandon="";Refresh("abandon");
+            if(action=="new-run")Deploy();
         }
         void DiscardMissedFeedback()
         {
@@ -617,66 +643,42 @@ namespace SingedTerra.LastStand
                 Audio.SetMusicSuspended(failedRun || !Session.CanRun || Session.Failure != "" || Progression.SaveState != "ready");
             }
         }
-        void OnApplicationFocus(bool active) { if (!active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); } }
-        void OnApplicationPause(bool active) { if (active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); } }
+        void OnApplicationFocus(bool active)
+        {
+            if (!active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); }
+            else if(active && research!=null && research.Initialized && Progression.SaveState=="ready")RefreshResearch();
+        }
+        void OnApplicationPause(bool active)
+        {
+            if (active && Audio) { Audio.SetSuspended(true); DiscardMissedFeedback(); }
+            else if (!active && research!=null && research.Initialized && Progression.SaveState=="ready") RefreshResearch();
+        }
         void OnDestroy()
         {
+            DisposeContinuity();
             FinalizeShop(LastStandShopPurchaseLifecycle.Exited, Session?.Model);
             runShop = null; FinalAccounting = null;
-            if (Session) { Session.Changed -= OnSessionChanged; Session.Stepped -= OnSessionStepped; }
+            if (Session) { Session.Changed -= OnSessionChanged; Session.Stepped -= OnSessionStepped; Session.WaveCleared -= OnWaveCleared; Session.BeforeAdvance=null; }
             hud?.Dispose();
             if (ownsBackgroundSetting) Application.runInBackground = previousRunInBackground;
+            (progressionStorage as IDisposable)?.Dispose();
+            (preferencesStorage as IDisposable)?.Dispose();
         }
 
         void Refresh(string action)
         {
-            if (temporaryPurchaseInProgress) return;
+            if (purchases!=null && purchases.TemporaryInProgress) return;
             if (hud == null) return;
             RefreshGarageSelections();
+            RefreshAppearance();
             SyncAudioAdmission();
             hud.Refresh(); Changed?.Invoke();
-            Debug.Log("ST_LS_STATE " + JsonUtility.ToJson(new State { action = action, phase = Phase,
-                saveState = Progression.SaveState, saveError = Progression.SaveError ?? "", notice = Notice,
-                wallet = Progression.Wallet, level = Progression.CannonAttackLevel, nextCost = Progression.NextCost,
-                cannonDamage = Session.Model?.CommittedCannonDamage ?? Progression.CannonDamage,
-                runId = Progression.ActiveRunId, pendingRunId = Progression.PendingDefeat?.RunId ?? 0,
-                tick = Session.Model?.Tick ?? 0, hull = Session.Model?.Hull ?? 120, kills = Session.Model?.Kills ?? 0,
-                selectedTier = Progression.SelectedTier, activeTier = Progression.ActiveTier,
-                profileVersion = LastStandTierCatalog.ProfileVersion, tierTwoUnlocked = Progression.TierTwoUnlocked,
-                bestTicks1 = Progression.GetBestTicks(1), bestTicks2 = Progression.GetBestTicks(2),
-                bestKills1 = Progression.GetBestKills(1), bestKills2 = Progression.GetBestKills(2),
-                pendingTier = Progression.PendingDefeat?.Tier ?? 0, pendingReward = Progression.PendingDefeat?.Reward ?? 0,
-                goalMet = Session.Model != null && Session.Model.Tick >= LastStandTierCatalog.Get(Session.Model.Profile.Tier).GoalTicks,
-                paused = Session.Paused, muted = Muted, speed = Session.EffectiveSpeed,
-                selectedSpeed = Session.SelectedSpeed, menu = MenuPage, preferencesState = Preferences.SaveState,
-                selectionId = SelectionOpen && Selection!=null ? Selection.Current.Id : "",
-                selectionUnlocked = SelectionOpen && Selection!=null && Selection.Current.Unlocked,
-                garageTierId = GarageCardsVisible && GarageTierSelection!=null ? GarageTierSelection.Current.Id : "",
-                garageTierUnlocked = GarageCardsVisible && GarageTierSelection!=null && GarageTierSelection.Current.Unlocked,
-                lockedTierPreview = HasLockedTierPreview,
-                environmentId = EnvironmentId, fittingId=FittingId,
-                renderScale = Display.RenderScale, fullscreen = Browser.Fullscreen,
-                musicEnabled = Preferences.Current.MusicEnabled, tutorialTips = Preferences.Current.TutorialTips,
-                purchaseSuggestions = Preferences.Current.PurchaseSuggestions,
-                masterVolume = Preferences.Current.MasterVolume, effectsVolume = Preferences.Current.EffectsVolume,
-                musicVolume = Preferences.Current.MusicVolume }));
+            EmitState(action);
         }
-        [Serializable] sealed class State
+        void EmitState(string action)
         {
-            public string action, phase, saveState, saveError, notice, profileVersion;
-            public int wallet, level, nextCost, cannonDamage, runId, pendingRunId, tick, hull, kills;
-            public int selectedTier, activeTier, bestTicks1, bestTicks2, bestKills1, bestKills2, pendingTier, pendingReward;
-            public bool paused, muted, tierTwoUnlocked, goalMet;
-            public double speed, selectedSpeed;
-            public string menu, preferencesState;
-            public string selectionId, environmentId, fittingId;
-            public bool selectionUnlocked;
-            public string garageTierId;
-            public bool garageTierUnlocked,lockedTierPreview;
-            public float renderScale;
-            public bool fullscreen, musicEnabled, tutorialTips, purchaseSuggestions;
-            public int masterVolume, effectsVolume, musicVolume;
+            if (purchases!=null && purchases.TemporaryInProgress || hud == null) return;
+            LastStandObservations.Emit(this,action);
         }
-        [Serializable] sealed class HitState { public int tick, cannonDamage, firstFoeHull, kills; }
     }
 }

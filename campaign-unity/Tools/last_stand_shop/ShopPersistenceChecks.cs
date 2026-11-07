@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using SingedTerra.Encounter;
 using SingedTerra.LastStand;
 
 internal sealed class PersistenceStorage : ILastStandStorage
@@ -66,8 +67,7 @@ internal static class ShopPersistenceChecks
     { return "{\"version\":2,\"credits\":" + wallet + ",\"permanentLevels\":{" + levels +
         "},\"nextRunId\":" + next + ",\"lastFinalizedRunId\":" + finalized + ",\"pendingDefeat\":" + pending + "}"; }
 
-    // Exact current bytes for transaction fixtures; legacy V2 remains an
-    // independent migration/invalid-input fixture above.
+    // Historical six-track tier-goal bytes remain a migration fixture.
     static string V3(string levels, int wallet = 17, int next = 9, int finalized = 6,
         string pending = "null", int admittedTicks = 0, int admittedKills = 0)
     {
@@ -86,6 +86,39 @@ internal static class ShopPersistenceChecks
 
     const string Levels = "\"cannonAttack\":3,\"launcherAttack\":2,\"hullCapacity\":1,\"armor\":0,\"cannonCycle\":3,\"fieldRepair\":2";
     const string Pending = "{\"runId\":8,\"elapsedTicks\":3600,\"kills\":2147483647,\"reward\":1}";
+
+    static string V4(string levels, int wallet = 17, int next = 9, int finalized = 6, string pending = "null")
+    {
+        if (!levels.Contains("\"scattergunAttack\"")) levels += ",\"scattergunAttack\":0";
+        if (pending != "null") pending = pending.Substring(0, pending.Length-1) +
+            ",\"tier\":0,\"profileVersion\":\"\",\"isLimit\":false,\"newBestTime\":false,\"newBestKills\":false,\"unlockedTierTwo\":false}";
+        return "{\"version\":4,\"credits\":" + wallet + ",\"permanentLevels\":{" + levels +
+            "},\"nextRunId\":" + next + ",\"lastFinalizedRunId\":" + finalized +
+            ",\"selectedTier\":1,\"selectedFitting\":\"repair\",\"tierRecords\":{\"tier-1\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":true}," +
+            "\"tier-2\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false}},\"firstClears\":[],\"unlockedFittings\":[\"launcher\",\"repair\"]," +
+            "\"pendingDefeat\":" + pending + ",\"checkpoint\":null}";
+    }
+
+    // Every independent execution shares a deterministic UTC observation so
+    // fault/control byte comparisons include the real research save fields.
+    static LastStandProgression Load(ILastStandStorage storage)=>LastStandProgression.Load(storage,()=>1000000L);
+
+    static string Current(string levels,int wallet=17,int next=9,int finalized=6,string pending="null")
+    {
+        var supplied=LastStandSaveJson.Read("{"+levels+"}");
+        object yield=0;
+        var extra=new Dictionary<string,object>();
+        foreach(string key in new[]{"mortarAttack","railgunAttack"})
+            if(supplied.TryGetValue(key,out var rank)){extra[key]=rank;supplied.Remove(key);}
+        if(supplied.TryGetValue("scrapYield",out var value)){yield=value;supplied.Remove("scrapYield");}
+        string legacy=LastStandSaveJson.Write(supplied);
+        var migrated=new PersistenceStorage {Value=V4(legacy.Substring(1,legacy.Length-2),wallet,next,finalized,pending)};
+        Require(Load(migrated).SaveState=="ready","Current fixture uses production legacy migration.");
+        var current=LastStandSaveJson.Read(migrated.Value);
+        LastStandSaveJson.Object(current["permanentLevels"])["scrapYield"]=yield;
+        foreach(var pair in extra)LastStandSaveJson.Object(current["permanentLevels"])[pair.Key]=pair.Value;
+        return LastStandSaveJson.Write(current);
+    }
 
     static int Level(LastStandProgression model, LastStandUpgradeTrackId id)
     {
@@ -108,10 +141,11 @@ internal static class ShopPersistenceChecks
 
     static void CheckCurrentSave(string value)
     {
-        Require(value.StartsWith("{\"version\":3,"), "Supported migration must write version 3 under the same key.");
+        Require(value.StartsWith("{\"version\":7,"), "Supported migration must write version 7 under the same key.");
         Require(value.Contains("\"permanentLevels\":{") && !value.Contains("\"permanentLevel\":"),
-            "Version 3 must preserve the six-track schema.");
-        Require(!value.Contains("Scrap") && !value.Contains("runPurchases"), "Temporary state must never be persisted.");
+            "Version 6 must preserve keyed permanent tracks.");
+        Require(value.Contains("\"scrapYield\":") && value.Contains("\"research\":") && value.Contains("\"checkpoint\":"),
+            "Version 6 includes economy, research and an explicit resumable checkpoint.");
     }
 
     static void MigrationExact()
@@ -120,7 +154,7 @@ internal static class ShopPersistenceChecks
         for (int p = 0; p <= 3; p++)
         {
             var store = new PersistenceStorage { Value = " \r\n" + V1(17, p, 9, 6) + "\t" };
-            var model = LastStandProgression.Load(store);
+            var model = Load(store);
             Require(model.SaveState == "ready", "Ordinary v1 migration must be ready after verified saving.");
             CheckEntitlements(model, 17, p, 9, 6, false);
             CheckCurrentSave(store.Value);
@@ -128,30 +162,30 @@ internal static class ShopPersistenceChecks
             foreach (var track in LastStandUpgradeCatalog.Tracks)
                 Require(Level(model, track.Id) == (track.Id == LastStandUpgradeTrackId.CannonAttack ? p : 0),
                     "Only Cannon Attack inherits v1 permanentLevel.");
-            var restored = LastStandProgression.Load(store);
+            var restored = Load(store);
             CheckEntitlements(restored, 17, p, 9, 6, false);
             Require(store.Writes == 1 && restored.ActiveRunId == 0, "Reload must not rewrite or resume the old run.");
         }
         var pendingStore = new PersistenceStorage { Value = V1(17, 2, 9, 6, Pending) };
-        var pendingModel = LastStandProgression.Load(pendingStore);
+        var pendingModel = Load(pendingStore);
         CheckEntitlements(pendingModel, 17, 2, 9, 6, true);
         CheckCurrentSave(pendingStore.Value);
         Require(!pendingModel.TryDeploy() && !pendingModel.TryPurchase(), "Pending defeat must block destructive actions.");
         Require(pendingModel.TryClaim() && !pendingModel.TryClaim(), "Migrated pending reward must claim exactly once.");
-        CheckEntitlements(LastStandProgression.Load(pendingStore), 18, 2, 9, 8, false);
+        CheckEntitlements(Load(pendingStore), 18, 2, 9, 8, false);
         var claimedStore = new PersistenceStorage { Value = V1(19, 3, 9, 8) };
-        var claimed = LastStandProgression.Load(claimedStore);
+        var claimed = Load(claimedStore);
         CheckCurrentSave(claimedStore.Value);
         CheckEntitlements(claimed, 19, 3, 9, 8, false);
         Require(!claimed.TryClaim(), "Claimed old reward must remain claimed.");
         var maximumStore = new PersistenceStorage { Value = V1(int.MaxValue, 3, int.MaxValue, int.MaxValue - 1) };
-        var maximum = LastStandProgression.Load(maximumStore);
+        var maximum = Load(maximumStore);
         CheckEntitlements(maximum, int.MaxValue, 3, int.MaxValue, int.MaxValue - 1, false);
         Require(!maximum.TryDeploy(), "The existing run-ID integer exhaustion guard must remain.");
 
         string original = "\r\n " + V1(17, 2, 9, 6, Pending) + " \t";
         var denied = new PersistenceStorage { Value = original, FailWrite = true };
-        var retry = LastStandProgression.Load(denied);
+        var retry = Load(denied);
         Require(retry.SaveState == "retry" && denied.Value == original && denied.Writes == 0,
             "Denied migration must retain original whitespace-v1 bytes and retry state.");
         CheckEntitlements(retry, 17, 2, 9, 6, true);
@@ -163,7 +197,7 @@ internal static class ShopPersistenceChecks
         Require(retry.Retry() && denied.Writes == 1, "Successful migration retry must not write twice.");
 
         var changed = new PersistenceStorage { Value = original, FailWrite = true };
-        var blocked = LastStandProgression.Load(changed);
+        var blocked = Load(changed);
         changed.FailWrite = false;
         string foreign = V1(18, 2, 9, 6, Pending);
         changed.Value = foreign;
@@ -174,7 +208,7 @@ internal static class ShopPersistenceChecks
         CheckEntitlements(blocked, 17, 2, 9, 6, true);
 
         var uncertain = new PersistenceStorage { Value = original, WriteThenFailRead = true };
-        var reconciled = LastStandProgression.Load(uncertain);
+        var reconciled = Load(uncertain);
         Require(reconciled.SaveState == "retry" && uncertain.Writes == 1, "Migration read-back failure must remain retryable.");
         CheckEntitlements(reconciled, 17, 2, 9, 6, true);
         Require(reconciled.Retry() && reconciled.Retry() && uncertain.Writes == 1, "Exact staged v2 must reconcile once.");
@@ -184,7 +218,7 @@ internal static class ShopPersistenceChecks
     static void Invalid(string value, string label)
     {
         var store = new PersistenceStorage { Value = value };
-        var model = LastStandProgression.Load(store);
+        var model = Load(store);
         Require(model.SaveState == "blocked" && !String.IsNullOrEmpty(model.SaveError), label + ": must block with a save error.");
         Require(!model.TryDeploy() && !model.TryClaim() && !model.TryPurchase() && !model.Retry(), label + ": no usable defaults.");
         Require(store.Value == value && store.Writes == 0, label + ": preserve original bytes without writing.");
@@ -193,27 +227,27 @@ internal static class ShopPersistenceChecks
     static void StrictV2()
     {
         var freshStore = new PersistenceStorage();
-        var fresh = LastStandProgression.Load(freshStore);
+        var fresh = Load(freshStore);
         Require(fresh.SaveState == "ready", "Fresh record must be ready after confirmation.");
         CheckCurrentSave(freshStore.Value);
         var valid = V2(Levels, pending: Pending);
         var store = new PersistenceStorage { Value = " \t" + valid + "\r\n" };
-        var model = LastStandProgression.Load(store);
+        var model = Load(store);
         Require(model.SaveState == "ready" && store.Writes == 1, "Valid v2 migrates once to v3 after verified saving.");
         CheckEntitlements(model, 17, 3, 9, 6, true);
-        int[] expected = { 3, 2, 1, 0, 3, 2 };
+        int[] expected = { 3, 2, 1, 0, 3, 2, 0, 0, 0, 0 };
         foreach (var track in LastStandUpgradeCatalog.Tracks)
             Require(Level(model, track.Id) == expected[(int)track.Id], "V2 must preserve every independent track level.");
         Require(model.TryClaim() && !model.TryClaim(), "V2 pending reward must retain exactly-once Claim.");
         foreach (var track in LastStandUpgradeCatalog.Tracks)
-            Require(Level(LastStandProgression.Load(store), track.Id) == expected[(int)track.Id], "Claim must preserve all permanent tracks.");
+            Require(Level(Load(store), track.Id) == expected[(int)track.Id], "Claim must preserve all permanent tracks.");
         var reversed = new PersistenceStorage { Value = V2("\"fieldRepair\":2,\"cannonCycle\":3,\"armor\":0,\"hullCapacity\":1,\"launcherAttack\":2,\"cannonAttack\":3") };
-        Require(LastStandProgression.Load(reversed).SaveState == "ready", "Six unique keys may be reordered.");
+        Require(Load(reversed).SaveState == "ready", "Six unique keys may be reordered.");
         string boundary = V2(Levels);
         var boundaryStore = new PersistenceStorage { Value = boundary.PadRight(2048, ' ') };
-        Require(LastStandProgression.Load(boundaryStore).SaveState == "ready", "Exactly 2048 characters remains valid.");
+        Require(Load(boundaryStore).SaveState == "ready", "Exactly 2048 characters remains valid.");
         string oldBoundary = V1(1, 3, 1, 0);
-        Require(LastStandProgression.Load(new PersistenceStorage { Value = oldBoundary.PadRight(2048, ' ') }).SaveState == "ready",
+        Require(Load(new PersistenceStorage { Value = oldBoundary.PadRight(2048, ' ') }).SaveState == "ready",
             "Exactly 2048-character v1 must migrate.");
         var invalid = new Dictionary<string, string>
         {
@@ -266,7 +300,7 @@ internal static class ShopPersistenceChecks
     {
         var fields = new List<string>();
         foreach (var track in LastStandUpgradeCatalog.Tracks)
-            fields.Add("\"" + track.Key + "\":" + values[(int)track.Id]);
+            if ((int)track.Id < values.Length) fields.Add("\"" + track.Key + "\":" + values[(int)track.Id]);
         return String.Join(",", fields);
     }
 
@@ -284,136 +318,126 @@ internal static class ShopPersistenceChecks
                 "Purchase must increment only the selected permanent track.");
     }
 
+    // These eight pre-armament tracks retain dormant-fitting purchases. The two new
+    // tracks intentionally require an unlocked, selected fitting; ArmamentTransactionChecks
+    // covers their positive purchases and every storage fault/replay boundary separately.
+    static IEnumerable<LastStandUpgradeDefinition> EstablishedTracks
+    { get { foreach(var track in LastStandUpgradeCatalog.Tracks) if((int)track.Id<8) yield return track; } }
+
     static void PermanentAllTracks()
     {
-        var expected = new int[6];
-        var store = new PersistenceStorage { Value = V3(SavedLevels(expected), wallet: 36) };
-        var model = LastStandProgression.Load(store);
-        int wallet = 36;
-        int[] prices = { 1, 2, 3 };
-        foreach (var track in LastStandUpgradeCatalog.Tracks)
+        var expected = new int[LastStandUpgradeCatalog.Tracks.Count];
+        int initialWallet=0;
+        foreach(var definition in EstablishedTracks)
+            for(int rank=1;rank<=3;rank++)initialWallet+=definition.PermanentPrice(rank);
+        var store = new PersistenceStorage { Value = Current(SavedLevels(expected), wallet: initialWallet) };
+        var model = Load(store);
+        int wallet = initialWallet;
+        foreach (var track in EstablishedTracks)
         {
-            foreach (int price in prices)
+            for(int rank=1;rank<=3;rank++)
             {
+                int price=track.PermanentPrice(rank);
                 int writes = store.Writes;
-                Require(Purchase(model, track.Id), "Available track must accept its next permanent level.");
-                wallet -= price;
-                expected[(int)track.Id]++;
-                Require(model.Wallet == wallet && store.Writes == writes + 1 && model.SaveState == "ready",
-                    "Each permanent purchase must charge its exact 1/2/3 Salvage price and commit once.");
-                CheckLevels(model, expected);
-                CheckCurrentSave(store.Value);
-                model = LastStandProgression.Load(store);
-                Require(model.Wallet == wallet && store.Writes == writes + 1 && model.ActiveRunId == 0 &&
+                Require(Purchase(model, track.Id), "Available track accepts its authored early level.");
+                wallet -= price; expected[(int)track.Id]++;
+                Require(model.Wallet == wallet && store.Writes == writes+1 && model.SaveState == "ready",
+                    "The current catalog price debits and commits exactly once.");
+                CheckLevels(model, expected); CheckCurrentSave(store.Value);
+                model = Load(store);
+                Require(model.Wallet == wallet && store.Writes == writes+1 && model.ActiveRunId == 0 &&
                     model.PendingDefeat == null && model.NextRunId == 9 && model.FinalizedRunId == 6,
-                    "Reload must retain purchases and run entitlements without another write.");
+                    "Reload retains levels and entitlements without rewriting.");
                 CheckLevels(model, expected);
             }
-            string before = store.Value;
-            int beforeWrites = store.Writes;
-            Require(!Purchase(model, track.Id) && store.Value == before && store.Writes == beforeWrites && model.Wallet == wallet,
-                "Capped track must refuse without charge, level or save mutation.");
-            CheckLevels(model, expected);
+            var capLevels = new int[LastStandUpgradeCatalog.Tracks.Count];
+            capLevels[(int)track.Id] = track.PermanentCap-1;
+            int finalPrice = track.PermanentPrice(track.PermanentCap);
+            var capStore = new PersistenceStorage { Value=Current(SavedLevels(capLevels), wallet:finalPrice+1) };
+            var capped = Load(capStore);
+            Require(Purchase(capped, track.Id) && capped.Wallet == 1 &&
+                Level(capped,track.Id)==track.PermanentCap, "Each track accepts and charges its actual final level.");
+            string before=capStore.Value; int capWrites=capStore.Writes;
+            Require(!Purchase(capped,track.Id) && capStore.Value==before && capStore.Writes==capWrites && capped.Wallet==1,
+                "A capped track refuses without changing wallet, levels or bytes.");
         }
-        Require(wallet == 0 && model.CannonAttackLevel == 3 && model.CannonDamage == 50 && model.NextCost == 0,
-            "All six independent investments total 36 Salvage and preserve Cannon Attack compatibility.");
-        foreach (var track in LastStandUpgradeCatalog.Tracks)
+        Require(wallet==0 && model.CannonAttackLevel==3 && model.CannonDamage==50 &&
+            model.NextCost==LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).PermanentPrice(4),
+            "All early investments consume exactly their catalog costs; depth beyond level3 remains available.");
+        foreach(var track in EstablishedTracks)
+        for(int level=0;level<3;level++)
         {
-            for (int p = 0; p <= 2; p++)
-            {
-                var levels = new int[6];
-                levels[(int)track.Id] = p;
-                var poorStore = new PersistenceStorage { Value = V3(SavedLevels(levels), wallet: p) };
-                var poor = LastStandProgression.Load(poorStore);
-                string before = poorStore.Value;
-                Require(!Purchase(poor, track.Id) && poorStore.Value == before && poorStore.Writes == 0 && poor.Wallet == p,
-                    "Insufficient Salvage must refuse without charge, level or save mutation.");
-                CheckLevels(poor, levels);
-            }
+            var levels=new int[LastStandUpgradeCatalog.Tracks.Count];levels[(int)track.Id]=level;
+            int insufficient=track.PermanentPrice(level+1)-1;
+            var poorStore=new PersistenceStorage {Value=Current(SavedLevels(levels),wallet:insufficient)};
+            var poor=Load(poorStore);string before=poorStore.Value;
+            Require(!Purchase(poor,track.Id) && poorStore.Value==before && poorStore.Writes==0 && poor.Wallet==insufficient,
+                "Insufficient Salvage refuses without charge, level or write.");CheckLevels(poor,levels);
         }
-        foreach (int unknown in new[] { -1, 6, int.MaxValue })
+        foreach(int unknown in new[]{-1,LastStandUpgradeCatalog.Tracks.Count,int.MaxValue})
         {
-            string before = store.Value;
-            int writes = store.Writes;
-            Require(!Purchase(model, (LastStandUpgradeTrackId)unknown) && store.Value == before &&
-                store.Writes == writes && model.Wallet == 0, "Unknown track must refuse without mutation or exception.");
-            CheckLevels(model, expected);
+            string before=store.Value;int writes=store.Writes;
+            Require(!Purchase(model,(LastStandUpgradeTrackId)unknown) && store.Value==before && store.Writes==writes,
+                "Unknown track refuses without mutation or exception.");CheckLevels(model,expected);
         }
-        var maximumStore = new PersistenceStorage { Value = V3(SavedLevels(new int[6]), wallet: int.MaxValue) };
-        var maximum = LastStandProgression.Load(maximumStore);
-        Require(Purchase(maximum, LastStandUpgradeTrackId.Armor) && maximum.Wallet == int.MaxValue - 1,
-            "A bounded permanent debit must preserve maximum-integer wallets.");
-        var compatibilityStore = new PersistenceStorage { Value = V3(SavedLevels(new int[6]), wallet: 6) };
-        var compatibility = LastStandProgression.Load(compatibilityStore);
-        for (int p = 1; p <= 3; p++)
-            Require(compatibility.TryPurchase() && compatibility.CannonAttackLevel == p &&
-                compatibility.CannonDamage == 20 + 10 * p, "The parameterless Cannon Attack entry must remain compatible.");
-        Require(!compatibility.TryPurchase() && compatibility.Wallet == 0, "Compatibility purchase must retain the cap.");
+        var maximum=Load(new PersistenceStorage {Value=Current(SavedLevels(new int[7]),wallet:int.MaxValue)});
+        Require(Purchase(maximum,LastStandUpgradeTrackId.Armor) && maximum.Wallet==int.MaxValue-LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).PermanentPrice(1),
+            "A bounded debit preserves maximum integer wallets.");
+        var compatibility=Load(new PersistenceStorage {Value=Current(SavedLevels(new int[7]),wallet:6)});
+        for(int level=1;level<=3;level++)Require(compatibility.TryPurchase() && compatibility.CannonAttackLevel==level &&
+            compatibility.CannonDamage==20+10*level,"Parameterless Cannon Attack purchase remains compatible.");
+        Require(!compatibility.TryPurchase() && compatibility.Wallet==0,"Insufficient funds still refuse the compatibility entry.");
     }
 
     static void PermanentBoundaries()
     {
-        foreach (var track in LastStandUpgradeCatalog.Tracks)
+        foreach(var track in EstablishedTracks)
         {
-            var store = new PersistenceStorage { Value = V3(SavedLevels(new int[6]), wallet: 36) };
-            var model = LastStandProgression.Load(store);
-            Require(model.TryDeploy() && model.CannonDamage == 20, "Existing deployment must retain frozen Cannon Attack damage.");
-            string before = store.Value;
-            int writes = store.Writes;
-            int active = model.ActiveRunId;
-            Require(!Purchase(model, track.Id) && store.Value == before && store.Writes == writes &&
-                model.Wallet == 36 && model.ActiveRunId == active && model.CannonDamage == 20 && Level(model, track.Id) == 0,
-                "Active run must refuse every permanent purchase without mutation.");
-            model.AbandonRun();
-            store.FailWrite = true;
-            Require(!Purchase(model, track.Id) && model.SaveState == "retry" && store.Value == before &&
-                store.Writes == writes && model.Wallet == 36 && Level(model, track.Id) == 0,
-                "Unconfirmed permanent write must publish neither debit nor level.");
-            Require(!Purchase(model, track.Id), "A staged unconfirmed purchase must disable new purchases.");
-            store.FailWrite = false;
-            Require(model.Retry() && model.Retry() && store.Writes == writes + 1 && model.Wallet == 35 && Level(model, track.Id) == 1,
-                "Existing verified retry must commit the exact selected purchase once.");
-
-            var pendingStore = new PersistenceStorage { Value = V3(SavedLevels(new int[6]), wallet: 36, pending: Pending) };
-            var pending = LastStandProgression.Load(pendingStore);
-            before = pendingStore.Value;
-            Require(!Purchase(pending, track.Id) && pendingStore.Value == before && pendingStore.Writes == 0 &&
-                pending.Wallet == 36 && Level(pending, track.Id) == 0 && pending.PendingDefeat.RunId == 8,
-                "Pending reward must refuse every permanent purchase without mutation.");
-            Require(pending.TryClaim() && !pending.TryClaim() && Purchase(pending, track.Id) && pending.Wallet == 36,
-                "Only after exactly-once Claim may the selected permanent purchase commit.");
-            CheckEntitlements(LastStandProgression.Load(pendingStore), 36,
-                track.Id == LastStandUpgradeTrackId.CannonAttack ? 1 : 0, 9, 8, false);
+            int first=track.PermanentPrice(1),second=track.PermanentPrice(2),budget=first+second+10;
+            var store=new PersistenceStorage {Value=Current(SavedLevels(new int[7]),wallet:budget)};
+            var model=Load(store);
+            Require(model.TryDeploy() && model.CannonDamage==20,"Deployment freezes Cannon Attack.");
+            int active=model.ActiveRunId;
+            Require(Purchase(model,track.Id) && model.Wallet==budget-first && Level(model,track.Id)==1 &&
+                model.ActiveRunId==active && model.Checkpoint.Shop.PermanentLevels[(int)track.Id]==0 && model.CannonDamage==20,
+                "Active permanent purchase invests for the future without changing frozen run stats.");
+            var restored=Load(store);
+            Require(restored.HasCheckpoint && restored.Checkpoint.Shop.PermanentLevels[(int)track.Id]==0 &&
+                Level(restored,track.Id)==1 && restored.CannonDamage==20,"Reload preserves distinct live and future levels.");
+            string before=store.Value;int writes=store.Writes;store.FailWrite=true;
+            Require(!Purchase(model,track.Id) && model.SaveState=="retry" && store.Value==before &&
+                store.Writes==writes && model.Wallet==budget-first && Level(model,track.Id)==1,
+                "Unconfirmed permanent purchase publishes neither its debit nor level.");
+            Require(!Purchase(model,track.Id),"Unconfirmed candidate blocks another purchase.");store.FailWrite=false;
+            Require(model.Retry() && model.Retry() && store.Writes==writes+1 && model.Wallet==10 && Level(model,track.Id)==2 &&
+                model.Checkpoint.Shop.PermanentLevels[(int)track.Id]==0,"Retry confirms one purchase while retaining the frozen run.");
+            Require(model.TryFinalizeRun() && model.TryDeploy() && model.Checkpoint.Shop.PermanentLevels[(int)track.Id]==2,
+                "The next deployment uses the committed future investment.");
+            var pendingStore=new PersistenceStorage {Value=V3(SavedLevels(new int[6]),wallet:36,pending:Pending)};
+            var pending=Load(pendingStore);before=pendingStore.Value;writes=pendingStore.Writes;
+            Require(!Purchase(pending,track.Id) && pendingStore.Value==before && pendingStore.Writes==writes && pending.Wallet==36,
+                "Migrated pending reward blocks permanent purchases.");
+            Require(pending.TryClaim() && !pending.TryClaim() && Purchase(pending,track.Id) && pending.Wallet==37-first,
+                "Exactly-once legacy Claim allows the subsequent purchase.");
         }
-        foreach (var fitting in new[] { LastStandFitting.Launcher, LastStandFitting.Repair })
+        foreach(var fitting in new[]{LastStandFitting.Launcher,LastStandFitting.Repair,LastStandFitting.Scattergun})
         {
-            var store = new PersistenceStorage { Value = V3(SavedLevels(new int[6]), wallet: 36) };
-            var model = LastStandProgression.Load(store);
-            var frozen = new LastStandShopState(1, fitting, PermanentLevels(model));
-            foreach (var track in LastStandUpgradeCatalog.Tracks)
-                Require(Purchase(model, track.Id), "Both fitting roles retain investment even when currently incompatible.");
-            var restored = LastStandProgression.Load(store);
-            var future = new LastStandShopState(2, fitting, PermanentLevels(restored));
-            var changedFitting = new LastStandShopState(3,
-                fitting == LastStandFitting.Launcher ? LastStandFitting.Repair : LastStandFitting.Launcher, PermanentLevels(restored));
-            foreach (var track in LastStandUpgradeCatalog.Tracks)
-            {
-                Require(frozen.GetTrack(track.Id).PermanentLevel == 0 && frozen.GetTrack(track.Id).RunPurchases == 0 &&
-                    future.GetTrack(track.Id).PermanentLevel == 1 && future.GetTrack(track.Id).RunPurchases == 0 &&
-                    changedFitting.GetTrack(track.Id).PermanentLevel == 1,
-                    "Saved investment must affect only a future frozen baseline and survive fitting changes.");
-                Require(future.GetTrack(track.Id).IsEligible == track.IsEligible(fitting),
-                    "Permanent investment must preserve each fitting's existing effect eligibility.");
-            }
-            Require(frozen.Scrap == 0 && future.Scrap == 0 && changedFitting.Scrap == 0 && model.Wallet == 30,
-                "Permanent Salvage purchases must never create temporary Scrap.");
-            Require(model.TryDeploy() && model.CannonDamage == 30, "The next existing deployment must use committed Cannon Attack.");
+            int total=0;foreach(var track in EstablishedTracks)total+=track.PermanentPrice(1);
+            var store=new PersistenceStorage {Value=Current(SavedLevels(new int[7]),wallet:total+10)};
+            var model=Load(store);
+            var frozen=new LastStandShopState(1,fitting,PermanentLevels(model));
+            foreach(var track in EstablishedTracks)Require(Purchase(model,track.Id),"Fitting-independent future investment is retained.");
+            var future=new LastStandShopState(2,fitting,PermanentLevels(Load(store)));
+            foreach(var track in EstablishedTracks)
+                Require(frozen.GetTrack(track.Id).PermanentLevel==0 && future.GetTrack(track.Id).PermanentLevel==1 &&
+                    future.GetTrack(track.Id).RunPurchases==0 && future.GetTrack(track.Id).IsEligible==track.IsEligible(fitting),
+                    "Frozen baselines and explicit fitting eligibility survive every permanent investment.");
+            Require(frozen.Scrap==0 && future.Scrap==0 && model.Wallet==10,"Permanent investment never creates Scrap.");
         }
-        var blockedStore = new PersistenceStorage { Value = "invalid" };
-        var blocked = LastStandProgression.Load(blockedStore);
-        foreach (var track in LastStandUpgradeCatalog.Tracks)
-            Require(!Purchase(blocked, track.Id) && blockedStore.Value == "invalid" && blockedStore.Writes == 0,
-                "Invalid saved data must not permit typed permanent purchases.");
+        var blockedStore=new PersistenceStorage {Value="invalid"};var blocked=Load(blockedStore);
+        foreach(var track in LastStandUpgradeCatalog.Tracks)
+            Require(!Purchase(blocked,track.Id) && blockedStore.Value=="invalid" && blockedStore.Writes==0,
+                "Invalid saved data cannot permit permanent purchases.");
     }
 
     sealed class StorageTransaction
@@ -430,60 +454,49 @@ internal static class ShopPersistenceChecks
         var pending = model.PendingDefeat;
         return model.Wallet + ";" + SavedLevels(PermanentLevels(model)) + ";" + model.NextRunId + ";" +
             model.FinalizedRunId + ";" + (pending == null ? "none" : pending.RunId + "," + pending.ElapsedTicks +
-            "," + pending.Kills + "," + pending.Reward) + ";" + model.ActiveRunId + ";" + model.CannonDamage;
+            "," + pending.Kills + "," + pending.Reward) + ";" + model.ActiveRunId + ";" + model.CannonDamage + ";" + (model.Checkpoint==null?"none":model.Checkpoint.RestoreModel().Snapshot()+","+model.Checkpoint.Shop.Scrap);
     }
 
-    static StorageTransaction BeginTransaction(string kind, string fault, LastStandUpgradeTrackId track = LastStandUpgradeTrackId.Armor)
+    static bool Perform(LastStandProgression model,string kind,LastStandUpgradeTrackId track)
     {
-        int[] levels = { 1, 2, 0, 1, 0, 2 };
-        var transaction = new StorageTransaction { Kind = kind, Track = track, Store = new StorageFaultFixture() };
-        var store = transaction.Store;
-        if (kind == "migration")
+        if(kind=="purchase")return Purchase(model,track);
+        if(kind=="reservation")return model.TryDeploy();
+        if(kind=="defeat")return model.TryStageDefeat(42,3);
+        if(kind=="claim")return model.TryClaim();
+        if(kind=="wave")
         {
-            transaction.Original = " \r\n" + V1(17, 2, 9, 6, Pending) + "\t ";
-            transaction.Desired = V3(SavedLevels(new[] { 2, 0, 0, 0, 0, 0 }), pending: Pending);
-            store.Value = transaction.Original;
-            store.Fault = fault;
-            transaction.Model = LastStandProgression.Load(store);
-            transaction.Before = Observation(transaction.Model);
-            return transaction;
+            var combat=model.Checkpoint.RestoreModel();var shop=model.Checkpoint.RestoreShop();
+            while(combat.Status==EncounterStatus.Running && !combat.AwaitingWaveCommit)combat.Step();
+            Require(combat.AwaitingWaveCommit,"Actual first cohort must be defeated.");
+            shop.ObserveAuthoritativeKills(combat.Kills);
+            return model.TryCommitWave(combat,shop);
         }
-        store.Value = " \r\n" + V3(SavedLevels(levels), pending: kind == "claim" ? Pending : "null") + "\t ";
-        var model = LastStandProgression.Load(store);
-        transaction.Model = model;
-        Require(model.SaveState == "ready" && store.Writes == 0, "Transaction fixture must load confirmed v3 without a write.");
-        if (kind == "defeat") Require(model.TryDeploy(), "Defeat fixture must reserve its actual run first.");
-        transaction.Original = store.Value;
-        transaction.WritesBefore = store.Writes;
-        transaction.Before = Observation(model);
-        store.Fault = fault;
-        bool accepted;
-        if (kind == "purchase")
+        throw new InvalidOperationException("Unknown transaction.");
+    }
+    static StorageTransaction BeginTransaction(string kind,string fault,LastStandUpgradeTrackId track=LastStandUpgradeTrackId.Armor)
+    {
+        int[] levels={1,2,0,1,0,2,0};
+        var transaction=new StorageTransaction {Kind=kind,Track=track,Store=new StorageFaultFixture()};
+        var store=transaction.Store;
+        if(kind.StartsWith("migration",StringComparison.Ordinal))
         {
-            int cost = levels[(int)track] + 1;
-            levels[(int)track]++;
-            transaction.Desired = V3(SavedLevels(levels), wallet: 17 - cost);
-            accepted = Purchase(model, track);
+            transaction.Original=" \r\n"+(kind=="migration-v2"?V2(Levels,pending:Pending):kind=="migration-v3"?V3(Levels,pending:Pending):
+                kind=="migration-v4"?V4(Levels,pending:Pending):V1(17,2,9,6,Pending))+"\t ";
+            var reference=new PersistenceStorage {Value=transaction.Original};
+            Require(Load(reference).SaveState=="ready","Clean migration control succeeds.");
+            transaction.Desired=reference.Value;store.Value=transaction.Original;store.Fault=fault;
+            transaction.Model=Load(store);transaction.Before=Observation(transaction.Model);return transaction;
         }
-        else if (kind == "reservation")
-        {
-            transaction.Desired = V3(SavedLevels(levels), next: 10);
-            accepted = model.TryDeploy();
-        }
-        else if (kind == "defeat")
-        {
-            transaction.Desired = V3(SavedLevels(levels), next: 10,
-                pending: "{\"runId\":9,\"elapsedTicks\":42,\"kills\":3,\"reward\":1}", admittedTicks: 42, admittedKills: 3);
-            accepted = model.TryStageDefeat(42, 3);
-        }
-        else if (kind == "claim")
-        {
-            transaction.Desired = V3(SavedLevels(levels), wallet: 18, finalized: 8);
-            accepted = model.TryClaim();
-        }
-        else throw new InvalidOperationException("Unknown storage transaction fixture.");
-        Require(!accepted, kind + ": injected unconfirmed write must report refusal.");
-        return transaction;
+        store.Value=" \r\n"+Current(SavedLevels(levels),wallet:kind=="purchase"?100:17,pending:kind=="claim"?Pending:"null")+"\t ";
+        var model=Load(store);transaction.Model=model;
+        Require(model.SaveState=="ready" && store.Writes==0,"Current fixture loads without rewriting.");
+        if(kind=="defeat" || kind=="wave")Require(model.TryDeploy(),"Run transaction reserves its actual run.");
+        transaction.Original=store.Value;transaction.WritesBefore=store.Writes;transaction.Before=Observation(model);
+        // A clean independent execution binds exact candidate bytes, including all
+        // checkpoint scalars, before injecting write/read-back failure.
+        var controlStore=new PersistenceStorage {Value=store.Value};var control=Load(controlStore);
+        Require(Perform(control,kind,track),kind+" "+track+": clean transaction control succeeds.");transaction.Desired=controlStore.Value;
+        store.Fault=fault;Require(!Perform(model,kind,track),kind+": unconfirmed write reports refusal.");return transaction;
     }
 
     static void CheckUnconfirmed(StorageTransaction transaction)
@@ -509,9 +522,9 @@ internal static class ShopPersistenceChecks
             transaction.Kind + ": legitimate recovery must confirm the exact staged transaction.");
         Require(store.Value == transaction.Desired && store.Writes == transaction.WritesBefore + successfulWrites,
             transaction.Kind + ": recovery must preserve exact candidate bytes and perform only one successful write.");
-        var restored = LastStandProgression.Load(store);
-        Require(restored.SaveState == "ready" && restored.ActiveRunId == 0,
-            transaction.Kind + ": confirmed reload must not resume a run.");
+        var restored = Load(store);
+        Require(restored.SaveState == "ready" && restored.ActiveRunId == ((transaction.Kind == "reservation" || transaction.Kind == "wave") ? 9 : 0),
+            transaction.Kind + ": reload retains an explicit resumable checkpoint only for active runs.");
         Require(model.Wallet == restored.Wallet && model.NextRunId == restored.NextRunId &&
             model.FinalizedRunId == restored.FinalizedRunId && SavedLevels(PermanentLevels(model)) == SavedLevels(PermanentLevels(restored)),
             transaction.Kind + ": committed entitlements must equal the exact saved record after recovery.");
@@ -521,7 +534,7 @@ internal static class ShopPersistenceChecks
             Require(model.PendingDefeat.RunId == restored.PendingDefeat.RunId &&
                 model.PendingDefeat.ElapsedTicks == restored.PendingDefeat.ElapsedTicks && model.PendingDefeat.Kills == restored.PendingDefeat.Kills,
                 transaction.Kind + ": recovery must preserve every staged pending field.");
-        Require(model.ActiveRunId == (transaction.Kind == "reservation" ? 9 : 0),
+        Require(model.ActiveRunId == ((transaction.Kind == "reservation" || transaction.Kind == "wave") ? 9 : 0),
             transaction.Kind + ": after-commit lifecycle must execute at confirmation exactly once.");
         string confirmed = Observation(model);
         int writes = store.Writes;
@@ -534,9 +547,9 @@ internal static class ShopPersistenceChecks
 
     static IEnumerable<StorageTransaction> FaultTransactions(string fault)
     {
-        foreach (string kind in new[] { "migration", "reservation", "defeat", "claim" })
+        foreach (string kind in new[] { "migration-v1", "migration-v2", "migration-v3", "migration-v4", "reservation", "wave", "defeat", "claim" })
             yield return BeginTransaction(kind, fault);
-        foreach (var track in LastStandUpgradeCatalog.Tracks)
+        foreach (var track in EstablishedTracks)
             yield return BeginTransaction("purchase", fault, track.Id);
     }
 
@@ -572,8 +585,8 @@ internal static class ShopPersistenceChecks
             {
                 CheckUnconfirmed(transaction);
                 var store = transaction.Store;
-                string foreign = fault == "corrupt" ? store.Value : transaction.Kind == "migration"
-                    ? transaction.Original + " " : transaction.Original.Replace("\"credits\":17", "\"credits\":18");
+                string foreign = fault == "corrupt" ? store.Value : transaction.Kind.StartsWith("migration",StringComparison.Ordinal)
+                    ? transaction.Original + " " : ChangedWallet(transaction.Original);
                 store.Value = foreign;
                 store.Fault = null;
                 int writes = store.Writes;
@@ -594,72 +607,55 @@ internal static class ShopPersistenceChecks
         }
     }
 
+    static string ChangedWallet(string original)
+    {
+        var record=LastStandSaveJson.Read(original);
+        record["credits"]=LastStandSaveJson.Integer(record["credits"])+1;
+        return LastStandSaveJson.Write(record);
+    }
+
     static void StorageRewards()
     {
-        foreach (var fitting in new[] { LastStandFitting.Launcher, LastStandFitting.Repair })
+        foreach(string fault in new[]{"denied","uncertain","mismatch"})
         {
-            foreach (string fault in new[] { "denied", "uncertain", "mismatch" })
-            {
-                var store = new StorageFaultFixture { Value = V3(SavedLevels(new int[6]), wallet: 0, next: 1, finalized: 0) };
-                var model = LastStandProgression.Load(store);
-                Require(model.TryDeploy(), "Reward fixture must reserve a confirmed run.");
-                var ledger = new LastStandShopState(model.ActiveRunId, fitting, PermanentLevels(model));
-                ledger.ObserveAuthoritativeKills(2);
-                Require(ledger.Scrap == 6 && model.Wallet == 0, "Actual Scrap income must not grant Salvage.");
-                var intent = new LastStandShopPurchaseIntent(ledger.RunId, ledger.Version, LastStandUpgradeTrackId.CannonAttack);
-                Require(ledger.TryPurchase(intent).Accepted && ledger.Scrap == 1 && model.Wallet == 0,
-                    "Temporary spending must not become Salvage or a permanent debit.");
-                store.Fault = fault;
-                Require(!model.TryStageDefeat(42, 2) && model.SaveState == "retry" && model.PendingDefeat == null &&
-                    model.ActiveRunId == 1 && model.Wallet == 0,
-                    "Unconfirmed defeat must not publish a reward or its after-commit lifecycle.");
-                Require(!model.TryStageDefeat(42, 2) && !model.TryClaim(), "Repeated terminal callbacks cannot replace the staged defeat or auto-Claim.");
-                var defeatReload = LastStandProgression.Load(store);
-                Require(defeatReload.Wallet == 0 && defeatReload.ActiveRunId == 0 &&
-                    (defeatReload.PendingDefeat != null) == (fault != "denied"),
-                    "Reload after unconfirmed defeat must read actual persisted bytes without resuming or auto-Claiming.");
-                store.Fault = null;
-                Require(model.Retry() && model.Retry() && model.ActiveRunId == 0 && model.Wallet == 0 &&
-                    model.PendingDefeat.RunId == 1 && model.PendingDefeat.ElapsedTicks == 42 && model.PendingDefeat.Kills == 2,
-                    "Confirmed ordinary defeat must stage one pending reward without auto-Claim.");
-                Require(!model.TryStageDefeat(42, 2), "Duplicate confirmed defeat must not stage another reward.");
-                model = LastStandProgression.Load(store);
-                Require(model.Wallet == 0 && model.PendingDefeat.Reward == 1 && !model.TryDeploy(),
-                    "Reload must preserve one unclaimed ordinary-defeat reward.");
-                store.Fault = fault;
-                Require(!model.TryClaim() && model.Wallet == 0 && model.PendingDefeat != null &&
-                    model.FinalizedRunId == 0 && model.SaveState == "retry",
-                    "Unconfirmed manual Claim must retain the reward and publish no award.");
-                Require(!model.TryClaim() && !model.TryDeploy(), "Repeated Claim cannot queue a second award or automatic deployment.");
-                var claimReload = LastStandProgression.Load(store);
-                Require(claimReload.Wallet == (fault == "denied" ? 0 : 1) &&
-                    (claimReload.PendingDefeat != null) == (fault == "denied") &&
-                    claimReload.FinalizedRunId == (fault == "denied" ? 0 : 1),
-                    "Reload after unconfirmed Claim must preserve the actual written award or still-pending original.");
-                if (fault != "denied")
-                    Require(!claimReload.TryClaim(), "An uncertain but written Claim must already be consumed on reload.");
-                store.Fault = null;
-                Require(model.Retry() && model.Retry() && model.Wallet == 1 && model.PendingDefeat == null &&
-                    model.FinalizedRunId == 1 && !model.TryClaim(), "Manual Claim recovery must consume one reward exactly once.");
-                int writes = store.Writes;
-                var restored = LastStandProgression.Load(store);
-                Require(restored.Wallet == 1 && restored.PendingDefeat == null && restored.FinalizedRunId == 1 &&
-                    !restored.TryClaim() && restored.Retry() && store.Writes == writes,
-                    "Reload and result refresh must never award the consumed reward again.");
-                Require(store.Writes == 3, "Reservation, defeat and Claim must each have exactly one successful write.");
-            }
-            {
-                var store = new StorageFaultFixture { Value = V3(SavedLevels(new int[6]), wallet: 0, next: 1, finalized: 0) };
-                var model = LastStandProgression.Load(store);
-                Require(model.TryDeploy(), "Non-defeat fixture must reserve a confirmed run.");
-                Require(!model.TryStageNonDefeat() && model.ActiveRunId == 0 && model.PendingDefeat == null &&
-                    model.Wallet == 0 && !model.TryClaim() && store.Writes == 1,
-                    "The existing non-defeat persistence entry must remain non-awarding.");
-                var restored = LastStandProgression.Load(store);
-                Require(restored.Wallet == 0 && restored.PendingDefeat == null && !restored.TryClaim(),
-                    "Non-defeat reload cannot manufacture a pending reward.");
-            }
+            var store=new StorageFaultFixture {Value=Current(SavedLevels(new int[7]),wallet:0,next:1,finalized:0)};
+            var model=Load(store);Require(model.TryDeploy(),"Reserve a wave run.");
+            var ledger=model.Checkpoint.RestoreShop();ledger.ObserveAuthoritativeKills(2);
+            Require(ledger.Scrap==6 && model.Wallet==0,"Temporary income grants no Salvage.");
+            Require(ledger.TryPurchase(new LastStandShopPurchaseIntent(ledger.RunId,ledger.Version,LastStandUpgradeTrackId.CannonAttack)).Accepted &&
+                ledger.Scrap==1 && model.Wallet==0,"Temporary purchase spends no Salvage.");
+            store.Fault=fault;
+            Require(!model.TryStageDefeat(42,2) && model.SaveState=="retry" && model.ActiveRunId==1 && model.Wallet==0 &&
+                model.PendingDefeat==null,"Unconfirmed finalization retains the checkpoint and creates no death reward.");
+            Require(!model.TryStageDefeat(42,2) && !model.TryClaim(),"Repeated terminal callback cannot create another transaction.");
+            var reloaded=Load(store);
+            Require(reloaded.Wallet==0 && reloaded.HasCheckpoint==(fault=="denied") && reloaded.PendingDefeat==null,
+                "Reload sees actual stored active or finalized state without a new pending payout.");
+            store.Fault=null;
+            Require(model.Retry() && model.Retry() && !model.HasCheckpoint && model.FinalizedRunId==1 && model.Wallet==0 &&
+                model.PendingDefeat==null && !model.TryClaim(),"Confirmed finalization consumes the run once without a payout.");
+            Require(store.Writes==2,"Reservation and finalization each perform one successful write.");
+
+            store=new StorageFaultFixture {Value=Current(SavedLevels(new int[7]),wallet:0,pending:Pending)};
+            model=Load(store);store.Fault=fault;
+            Require(!model.TryClaim() && model.Wallet==0 && model.PendingDefeat!=null && model.FinalizedRunId==6,
+                "Unconfirmed legacy Claim retains the original reward and publishes no award.");
+            Require(!model.TryClaim() && !model.TryDeploy(),"Unconfirmed Claim cannot queue another award or deploy.");
+            reloaded=Load(store);
+            Require(reloaded.Wallet==(fault=="denied"?0:1) && (reloaded.PendingDefeat!=null)==(fault=="denied") &&
+                reloaded.FinalizedRunId==(fault=="denied"?6:8),"Reload sees the actual pending or consumed legacy reward.");
+            store.Fault=null;
+            Require(model.Retry() && model.Retry() && model.Wallet==1 && model.PendingDefeat==null && model.FinalizedRunId==8 &&
+                !model.TryClaim(),"Legacy Claim recovery consumes exactly one reward.");
+            int writes=store.Writes;reloaded=Load(store);
+            Require(reloaded.Wallet==1 && !reloaded.TryClaim() && reloaded.Retry() && store.Writes==writes && writes==1,
+                "Reload and repeated Claim cannot repeat a confirmed award.");
         }
+        var nonDefeatStore=new StorageFaultFixture {Value=Current(SavedLevels(new int[7]),wallet:0,next:1,finalized:0)};
+        var nonDefeat=Load(nonDefeatStore);
+        Require(nonDefeat.TryDeploy() && nonDefeat.TryStageNonDefeat() && !nonDefeat.HasCheckpoint &&
+            nonDefeat.Wallet==0 && nonDefeat.PendingDefeat==null && !nonDefeat.TryClaim() && nonDefeatStore.Writes==2,
+            "Non-defeat exit durably clears the checkpoint without manufacturing an award.");
     }
 
     static int Main(string[] args)

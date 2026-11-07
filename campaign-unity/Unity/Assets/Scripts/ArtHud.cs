@@ -42,6 +42,7 @@ namespace SingedTerra.Art
         }
         void Start()
         {
+            presentation.EnsureInitialized();
             bool review=presentation.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             var loop=presentation.GetComponent<SingedTerra.LastStand.LastStandLoopController>();
             font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -95,9 +96,10 @@ namespace SingedTerra.Art
             inspectionControls.gameObject.SetActive(!presentation.battlefield);
             calloutLabel.text=presentation.ShowPartCallouts?"HIDE PART LABELS":"SHOW PART LABELS";
             viewLabel.text=presentation.battlefield?"INSPECTION VIEW":"BATTLEFIELD VIEW";
-            partLabel.text=presentation.showingLauncher?"FIT REPAIR UNIT":"FIT LAUNCHER";
+            partLabel.text=presentation.Fitting==SingedTerra.LastStand.LastStandFitting.Repair?"FIT LAUNCHER":"FIT REPAIR UNIT";
             motionLabel.text=presentation.animate?"PAUSE IDLE MOTION":"RESUME IDLE MOTION";
-            partDetail.text=presentation.showingLauncher?"AUXILIARY LAUNCHER":"FIELD REPAIR UNIT";
+            foreach(var option in SingedTerra.LastStand.LastStandFittingCatalog.Options)
+                if(option.Id==presentation.FittingId)partDetail.text=option.Id=="repair"?"FIELD REPAIR UNIT":option.Name.ToUpperInvariant();
         }
         public void SetEncounterVisible(bool active)
         {

@@ -8,6 +8,7 @@ import { tmpdir, networkInterfaces } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { createContext, runInContext } from 'node:vm';
 import { preferUbuntuArchive, prepareUbuntuMirror } from './prepareUbuntuMirror.mjs';
+import { browserMatrix } from './browserMatrix.mjs';
 
 // Exercise the imported production journey owner. Mutation qualification uses a
 // disposable module copy under ignored task evidence, never edited source.
@@ -100,9 +101,9 @@ function assertLatencyAllocation(source) {
   assert.match(browser, /--shard=\$\{\{ matrix\.shard \}\}\/4/);
   assert.match(browser, /LAST_STAND_JOURNEY_SECTION: \$\{\{ matrix\.journey_section \}\}/);
   assert.match(browser, /LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}/);
-  assert.match(browser, /--grep "Last Stand tier goals"/);
+  assert.match(browser, /--grep "Last Stand earned waves"/);
   assert.match(browser, /--grep "Last Stand Campaigns journey"/);
-  assert.match(browser,/name: Last Stand tier progression journey\n        if: matrix\.suite == 'tier'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand tier goals"/);
+  assert.match(browser,/name: Last Stand wave checkpoint journey\n        if: matrix\.suite == 'tier'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand earned waves"/);
   const aggregate=job(source,'e2e');
   assert.match(aggregate,/pattern: playwright-last-stand-\[0-9\]\*-\$\{\{ github\.run_attempt \}\}/);
   assert.match(aggregate,/node scripts\/ci\/lastStandMatrixResult\.mjs "\$MATRIX_ROOT"/);
@@ -110,6 +111,17 @@ function assertLatencyAllocation(source) {
     assert.ok(aggregate.includes(`name: ${name}\n        if: needs.scope.outputs.docs_only == 'false'`));
 }
 test('15-minute CI partitions core, product, tier and every Campaigns viewport', () => assertLatencyAllocation(ci));
+
+test('required CI runs current wave gate and checkpoint reader regressions',()=>{
+  const check=source=>{
+    const scope=job(source,'scope'),run=scope.split('\n').find(line=>line.includes('run: node --test scripts/ci/changeScope.test.mjs'));
+    assert.ok(run);
+    for(const name of ['lastStandControlReveal','lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])assert.ok(run.includes(`scripts/ci/${name}.test.mjs`));
+  };
+  check(ci);
+  for(const name of ['lastStandControlReveal','lastStandWaveQualification','lastStandWaveJourney','lastStandWaveEvidence','lastStandHistoricalShop','lastStandMilestoneSetup','lastStandEndurance'])
+    assert.throws(()=>check(ci.replace(` scripts/ci/${name}.test.mjs`,'')));
+});
 
 test('required CI runs public parent configuration regressions', () => {
   const check = source => assert.match(job(source, 'scope'),
@@ -154,7 +166,7 @@ function assertWorkflow(source) {
   assert.match(browser,/matrix: \$\{\{ fromJSON\(needs\.scope\.outputs\.browser_matrix\) \}\}/);
   assert.ok(browser.includes(`if: matrix.suite == 'core'\n        run: npm run test:e2e -- --shard=\u0024{{ matrix.shard }}/4 --workers=2 --grep-invert "@live|@last-stand"`));
   assert.match(browser, /if: matrix\.suite == 'product'\n        run: npx playwright test -c playwright\.product-completion\.config\.ts/);
-  assert.match(browser,/name: Last Stand tier progression journey\n        if: matrix\.suite == 'tier'/);
+  assert.match(browser,/name: Last Stand wave checkpoint journey\n        if: matrix\.suite == 'tier'/);
   assert.match(browser, /name: Last Stand shared Campaigns journey\n        if: matrix\.suite == 'campaigns'\n        env:\n          VITE_BASE: \/singedTerra\/\n          E2E_DENY_EXTERNAL_NETWORK: '1'\n          LAST_STAND_QUALIFICATION_PROFILE: linux-functional\n          LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}\n          LAST_STAND_JOURNEY_SECTION: \$\{\{ matrix\.journey_section \}\}\n        run: node node_modules\/@playwright\/test\/cli\.js test e2e\/last-stand-playable-loop\.spec\.ts --config=playwright\.config\.ts --project=desktop-fine --workers=1 --retries=0 --grep "Last Stand Campaigns journey"/);
   assert.match(browser,/name: Upload Playwright artifacts\n        if: always\(\)/,'Successful Linux qualification evidence must survive the ephemeral runner');
   assert.match(browser, /name: playwright-\$\{\{ matrix\.lane \}\}-\$\{\{ github\.run_attempt \}\}/);
@@ -219,6 +231,51 @@ test('product CI supplies the compiler for fresh current-source model qualificat
   for(const removed of [' mono-mcs','/usr/bin/mono --version','/usr/bin/mono /usr/lib/mono/4.5/mcs.exe --version'])
     assert.throws(()=>assertCompiler(setup.replace(removed,'')),removed);
 });
+test('product CI executes the complete inventoried portable domain regressions', () => {
+  const inspect = source => {
+    const browser = job(source, 'browser');
+    const step = browser.match(/      - name: Verify Last Stand portable inventory and regressions\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+    assert.ok(step, 'Current portable tests must be selected in hosted CI');
+    assert.match(step, /if: matrix\.suite == 'campaigns' && matrix\.lane == 'last-stand-1'\n/);
+    assert.equal(browserMatrix().include.filter(row => row.suite === 'campaigns' && row.lane === 'last-stand-1').length, 1);
+    assert.ok(step.includes('python3 -B campaign-unity/Tools/last_stand_test_inventory.py --run portable'));
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*(true|:)/);
+    assert.ok(browser.indexOf('name: Install Last Stand media tools') < browser.indexOf('name: Verify Last Stand portable inventory and regressions'));
+  };
+  inspect(ci);
+  for (const removed of ['Verify Last Stand portable inventory and regressions', 'campaign-unity/Tools/last_stand_test_inventory.py', '--run portable', "&& matrix.lane == 'last-stand-1'"])
+    assert.throws(() => inspect(ci.replace(removed, 'removed')), removed);
+});
+
+test('maintained checks retain parity, verifier negatives and background admission', () => {
+  const scripts = JSON.parse(readFileSync('package.json', 'utf8')).scripts;
+  const inspect = (workflow, selected) => {
+    assert.ok(selected.check.includes('npm run check:campaign-parity'));
+    assert.ok(selected.check.includes('npm run test:project-contracts'));
+    assert.ok(selected['check:campaign-parity'].includes('scripts/checks/campaign_default_parity.mjs --negative-controls'));
+    for (const path of ['seed_challenge_compatibility.test.mjs', 'context_policy.test.mjs'])
+      assert.ok(selected['test:project-contracts'].includes('scripts/checks/' + path));
+    const step = job(workflow, 'browser').match(/      - name: Verify Last Stand background admission regressions\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+    assert.ok(step);
+    assert.match(step, /if: matrix\.suite == 'campaigns' && matrix\.lane == 'last-stand-1'\n/);
+    assert.ok(step.includes('run: npm run test:last-stand:background'));
+    assert.doesNotMatch(step, /continue-on-error|\|\|\s*(true|:)/);
+    assert.equal(selected['test:last-stand:background'], 'node --test scripts/ci/lastStandBackground.test.mjs');
+  };
+  inspect(ci, scripts);
+  for (const key of ['check', 'check:campaign-parity', 'test:project-contracts', 'test:last-stand:background'])
+    assert.throws(() => inspect(ci, {...scripts, [key]: ''}), key);
+  assert.throws(() => inspect(ci.replace('run: npm run test:last-stand:background', 'run: echo omitted'), scripts));
+});
+test('CI runs the combat and research evidence admission contracts',()=>{
+  const required=['lastStandCombatDepthJourney.test.mjs','lastStandResearchJourney.test.mjs','lastStandObservationContract.test.mjs'];
+  const inspect=source=>{
+    const step=job(source,'scope').match(/      - name: Scope and required-result regressions\n([\s\S]*?)(?=      - name:|$)/)?.[1];
+    assert.ok(step);for(const file of required)assert.ok(step.includes('scripts/ci/'+file),file);
+    assert.doesNotMatch(step,/continue-on-error|\|\|\s*(true|:)/);
+  };
+  inspect(ci);for(const file of required)assert.throws(()=>inspect(ci.replace(file,'removed')));
+});
 function assertLastStandSandbox(source) {
   const browser=job(source,'browser');
   const setup=browser.match(/      - name: Prepare Last Stand browser sandbox\n([\s\S]*?)(?=      - name:|$)/)?.[1];
@@ -229,7 +286,7 @@ function assertLastStandSandbox(source) {
   const prepare=browser.indexOf('name: Prepare Last Stand browser sandbox');
   const initialize=browser.indexOf('run: node scripts/ci/prepareLastStandEvidence.mjs');
   assert.ok(initialize>=0 && initialize<prepare,'Evidence initialization must precede owned browser startup');
-  for(const consumer of ['name: Last Stand tier progression journey','name: Last Stand shared Campaigns journey'])
+  for(const consumer of ['name: Last Stand wave checkpoint journey','name: Last Stand shared Campaigns journey'])
     assert.ok(prepare<browser.indexOf(consumer),'Sandbox startup proof must precede '+consumer);
   assert.doesNotMatch(browser,/CHROME_DEVEL_SANDBOX|no-sandbox|apparmor_restrict_unprivileged_userns/);
 }
@@ -656,6 +713,114 @@ test('standalone cleanup failure still persists its failed report and propagates
   assert.equal(report.error,undefined);assert.equal(report.persist_error,undefined);
 });
 
+function actualJourneyFinalEvidenceCallback(report,{reject=[],messages=[{type:'log',text:'complete raw console',load:1,scope:'healthy'}]}={}) {
+  const writes=new Map(),attempts=[],logged=[],errors=[];
+  const raw={messages,failures:[],httpErrors:[],expectedFaults:[],observerFailures:[],
+    states:[{action:'result',tick:123}],encounters:[{tick:123}],callbackRecords:[{pending:0}],
+    hits:[{damage:30}],layouts:[{phase:'result'}],cues:[{cue:'defeat'}],
+    trace:[{kind:'pointerup'}],requests:[{url:'http://127.0.0.1/inert'}]};
+  const context=({...raw,report,output:'explicit-inert-evidence',
+    classifyBrowserEvidence:journey.classifyBrowserEvidence,
+    persistLastStandJourneyEvidence:journey.persistLastStandJourneyEvidence,
+    write:(name,data)=>{attempts.push(name);if(reject.includes(name))throw new Error('injected retention failure: '+name);
+      writes.set(name,JSON.parse(JSON.stringify(data)));},
+    console:{log:value=>logged.push(value),error:value=>errors.push(value)}});
+  const persist=()=>journey.persistJourneyFinalEvidence({report,observations:raw,write:context.write,
+    output:context.output,logger:context.console});
+  return {persist,writes,attempts,logged,errors,raw};
+}
+
+test('actual journey final evidence callback retains later raw files and failed report after console write failure',async()=>{
+  const original=new Error('honest hidden-terminal assertion'),report={status:'failed',error:String(original)};
+  const fixture=actualJourneyFinalEvidenceCallback(report,{reject:['console.json']});let cleaned=0;
+  await assert.rejects(journey.retainJourneyOutcome(report,async()=>{cleaned++;},fixture.persist,original),error=>error===original);
+  assert.equal(cleaned,1);
+  assert.ok(fixture.writes.has('runtime-telemetry.json'),'Console failure must not suppress runtime evidence');
+  assert.deepEqual(fixture.writes.get('runtime-telemetry.json'),Object.fromEntries(
+    ['states','encounters','callbackRecords','hits','layouts','cues'].map(key=>[key,fixture.raw[key]])));
+  assert.deepEqual(fixture.writes.get('input-trace.json'),fixture.raw.trace);
+  assert.deepEqual(fixture.writes.get('requests.json'),{requests:fixture.raw.requests,failures:[],httpErrors:[]});
+  const retained=fixture.writes.get('result.json');
+  assert.equal(retained.status,'failed');assert.equal(retained.error,String(original));
+  assert.match(retained.persist_error,/console.json/);
+  assert.deepEqual(retained.persistence_errors.map(row=>row.stage),['console.json']);
+  assert.equal(fixture.writes.get('persistence-failure.json').error,String(original));
+  assert.deepEqual(fixture.logged,['LAST_STAND_LOOP_EVIDENCE=explicit-inert-evidence']);
+});
+
+test('actual journey final evidence callback preserves raw records when classification rejects',async()=>{
+  const report={status:'pass'},fixture=actualJourneyFinalEvidenceCallback(report,{messages:[{type:'log',text:null}]});
+  await assert.rejects(journey.retainJourneyOutcome(report,async()=>{},fixture.persist),/trim/);
+  assert.deepEqual(fixture.writes.get('console.json'),fixture.raw.messages);
+  assert.ok(fixture.writes.has('runtime-telemetry.json'));assert.ok(fixture.writes.has('input-trace.json'));
+  assert.equal(fixture.writes.get('result.json').status,'failed');
+  assert.equal(fixture.writes.get('result.json').persistence_errors[0].stage,'browser-classification');
+  assert.equal(fixture.writes.get('persistence-failure.json').error,undefined,'No gameplay error may be fabricated');
+});
+
+test('actual journey final evidence callback retains compact failure when full result write fails',async()=>{
+  const original=new Error('honest gameplay failure'),report={status:'failed',error:String(original)};
+  const fixture=actualJourneyFinalEvidenceCallback(report,{reject:['result.json']});
+  await assert.rejects(journey.retainJourneyOutcome(report,async()=>{},fixture.persist,original),error=>error===original);
+  const retained=fixture.writes.get('persistence-failure.json');
+  assert.ok(retained,'Result-write failure must leave an independently attempted compact diagnostic');
+  assert.equal(retained.status,'failed');assert.equal(retained.error,String(original));
+  assert.match(retained.persist_error,/result.json/);assert.equal(retained.persistence_errors[0].stage,'result.json');
+  assert.ok(fixture.writes.has('console.json'));assert.ok(fixture.writes.has('input-trace.json'));
+});
+
+test('actual journey final evidence callback attempts every artifact and stderr even when storage rejects all writes',async()=>{
+  const original=new Error('honest primary failure'),report={status:'failed',error:String(original)};
+  const names=['console.json','runtime-telemetry.json','input-trace.json','requests.json','result.json','persistence-failure.json'];
+  const fixture=actualJourneyFinalEvidenceCallback(report,{reject:names});
+  await assert.rejects(journey.retainJourneyOutcome(report,async()=>{},fixture.persist,original),error=>error===original);
+  assert.deepEqual(fixture.attempts,names);assert.equal(fixture.writes.size,0);
+  assert.equal(report.status,'failed');assert.equal(report.error,String(original));
+  assert.equal(fixture.errors.length,1);assert.match(fixture.errors[0],/LAST_STAND_LOOP_PERSISTENCE_FAILURE=/);
+  const retained=JSON.parse(fixture.errors[0].split('=',2)[1]);
+  assert.equal(retained.error,String(original));assert.equal(retained.persistence_errors.length,names.length);
+  assert.deepEqual(fixture.logged,['LAST_STAND_LOOP_EVIDENCE=explicit-inert-evidence']);
+});
+
+test('actual journey final evidence callback preserves successful raw evidence without failure diagnostics',async()=>{
+  const report={status:'pass'},fixture=actualJourneyFinalEvidenceCallback(report);let cleaned=0;
+  await journey.retainJourneyOutcome(report,async()=>{cleaned++;},fixture.persist);
+  assert.equal(cleaned,1);assert.equal(fixture.writes.get('result.json').status,'pass');
+  assert.deepEqual(fixture.writes.get('console.json'),fixture.raw.messages);
+  assert.equal(fixture.writes.get('result.json').persist_error,undefined);
+  assert.equal(fixture.writes.has('persistence-failure.json'),false);assert.deepEqual(fixture.errors,[]);
+});
+
+test('actual journey compact retention diagnostic bounds error text without truncating the full failed report',async()=>{
+  const original=new Error('explicit inert long error '.repeat(300)),report={status:'failed',error:String(original)};
+  const fixture=actualJourneyFinalEvidenceCallback(report,{reject:['console.json']});
+  await assert.rejects(journey.retainJourneyOutcome(report,async()=>{},fixture.persist,original),error=>error===original);
+  assert.equal(fixture.writes.get('result.json').error,String(original));
+  assert.equal(fixture.writes.get('persistence-failure.json').error,String(original).slice(0,2000));
+  assert.equal(JSON.parse(fixture.errors[0].split('=',2)[1]).error,String(original).slice(0,2000));
+});
+
+test('actual journey evidence writer streams complete nested records without aggregate JSON stringification',async t=>{
+  for(const [name,newline] of [['LF','\n'],['CRLF','\r\n']])await t.test(name,()=>{
+  const chunks=[],opened=[],closed=[];
+  const context=createContext({openSync:(path,mode)=>{opened.push([path,mode]);return 7;},
+    writeSync:(fd,text)=>{assert.equal(fd,7);chunks.push(text);return Buffer.byteLength(text);},
+    closeSync:fd=>closed.push(fd),join:(base,name)=>base+'/'+name,output:'explicit-inert',
+    JSON:{stringify(value){assert.ok(value===null || typeof value!=='object','Aggregate JSON stringification is forbidden');
+      return JSON.stringify(value);}}});
+  context.actualWrite=journey.createJourneyEvidenceWriter(context.output,context);
+  const values={records:Array.from({length:900},(_,seq)=>({seq,raw:'Observed glyph Ω\n'.repeat(180),
+    values:[null,undefined,false,0,seq+.5,NaN,Infinity],nested:{empty:[],object:{},omitted:undefined}}))};
+  context.actualWrite('raw.json',values);
+  assert.deepEqual(JSON.parse(chunks.join('')),JSON.parse(JSON.stringify(values)));
+  assert.deepEqual(opened,[['explicit-inert/raw.json','w']]);assert.deepEqual(closed,[7]);
+  assert.ok(chunks.length>1 && chunks.every(chunk=>chunk.length<=1024*1024),'Complete bounded batches required');
+  const cycle={};cycle.self=cycle;
+  assert.throws(()=>context.actualWrite('cycle.json',cycle),/Circular/);
+  assert.deepEqual(closed,[7,7],'A rejected record still closes its owned file');
+  });
+});
+
 test('audio diagnostics retain latest sixteen snapshots and exact dropped count',async()=>{
   const report={},page=audioFaultPage({supported:true,errors:[],captures:[]});
   for(let load=0;load<20;load++)await journey.retainRenderedAudioDiagnostics(page,report,{load,scope:`honest fixture ${load}`});
@@ -836,6 +1001,8 @@ test('process ownership rejects incomplete executable identities before retentio
 });
 
 test('process ownership private matcher rejects incomplete executable identities',async t=>{
+  let sandbox;
+  if(process.env.LAST_STAND_MATCHER_SOURCE){
   // Capture only the actual trusted private declarations, never process callbacks.
   // The source override admits archived/fault evidence without changing production.
   const sourceURL=process.env.LAST_STAND_MATCHER_SOURCE
@@ -857,10 +1024,14 @@ test('process ownership private matcher rejects incomplete executable identities
   const declarations=block.trim().split(/\r?\n/);
   assert.equal(declarations.length,presenceCount+1,'Capture only the one or two private declarations');
   assert.ok(declarations.every(line=>line.startsWith(matcherMarker) || line.startsWith(presenceMarker)));
-  const sandbox=createContext({}, {codeGeneration:{strings:false,wasm:false}});
+  sandbox=createContext({}, {codeGeneration:{strings:false,wasm:false}});
   runInContext(`${block}\nglobalThis.authorize=(left,right)=>Boolean(sameProcess(left,right));`,sandbox,{timeout:1000});
+  } else {
+    const {sameProcess}=await import('../../e2e/helpers/lastStandProcessOwnership.mjs');
+    sandbox={authorize:(left,right)=>Boolean(sameProcess(left,right))};
+    console.log('PRIVATE_MATCHER_CAPTURE='+JSON.stringify({owner:'lastStandProcessOwnership.mjs',adapter:'direct-import'}));
+  }
   await t.test('actual private matcher capture succeeds in an inert context',()=>assert.equal(typeof sandbox.authorize,'function'));
-  console.log(`PRIVATE_MATCHER_CAPTURE=${JSON.stringify({source:sourceURL.href,begin,end,bytes:block.length,declarations:declarations.length})}`);
   const complete={pid:77,start:'100',exe:'owned-node'};
   const variants=[{name:'absent',absent:true},{name:'undefined',value:undefined},{name:'empty',value:''},
     {name:'null',value:null},{name:'number',value:0},{name:'boolean',value:true},

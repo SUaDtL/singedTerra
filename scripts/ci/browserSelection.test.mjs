@@ -16,7 +16,7 @@ function selected(extra=[]) {
   return titles;
 }
 test('actual CI grep arguments select each maintained journey exactly once', () => {
-  const expected=[['Last Stand tier progression journey','Last Stand tier goals unlock and survive reload'],
+  const expected=[['Last Stand wave checkpoint journey','Last Stand earned waves and complete checkpoints survive reload'],
     ['Last Stand shared Campaigns journey','Last Stand Campaigns journey preserves no-award exit and a stronger redeploy']];
   const union=[];
   for(const [step,title] of expected) {

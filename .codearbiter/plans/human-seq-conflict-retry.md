@@ -235,3 +235,12 @@ requires a separately reviewed `fix(client)` change. Use `Closes #120` in the PR
 - [ ] **Step 5: Run `$ca-pr` and `$ca-watch`**
 
 Open a ready PR that closes #120, never merge it, and watch every available check to green.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Later canonical command retry owner. Current source/oracles: `client/src/client/NetworkClient.ts`, `client/src/client/NetworkClient.commandRetry.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `aabc183e0db9` (test(client): cover human seq-conflict retry liveness (#161)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

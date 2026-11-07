@@ -28,3 +28,5 @@ blob-report
 # codeArbiter local runtime state (read-inject caches, standup + gate markers) —
 # per-working-tree, not shared. The rest of .codearbiter/ (context, reports) is tracked.
 .codearbiter/.markers/
+# The installed task writer owns this per-checkout advisory lock file.
+.codearbiter/open-tasks.md.lock

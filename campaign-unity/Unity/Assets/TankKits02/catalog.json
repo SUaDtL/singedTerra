@@ -1,0 +1,628 @@
+{
+  "schema": "singedterra-tank-kits/1",
+  "source": "ArtSource/LastStandTankKits_02.blend",
+  "source_sha256": "b9341c8801dc299654db45ba8874593005bc1d0f7d5a3f70710570a86a0762d1",
+  "blender": "5.2.0 LTS",
+  "units": "meters",
+  "blender_forward": "+Y",
+  "blender_up": "+Z",
+  "unity_forward": "-Z",
+  "unity_up": "+Y",
+  "provenance": "Original procedural geometry and seeded original textures; no third-party imagery or meshes",
+  "origins": {
+    "chassis": [
+      0,
+      0,
+      0
+    ],
+    "turret": [
+      0,
+      0,
+      1.77
+    ],
+    "barrel": [
+      0,
+      1.17,
+      2.23
+    ]
+  },
+  "materials": [
+    {
+      "id": "Armor",
+      "metallic": 0.42,
+      "roughness": 0.58,
+      "textures": [
+        {
+          "kind": "BaseColor",
+          "path": "Textures/Armor-BaseColor.png",
+          "sha256": "d892cbba94f0f2bce2ce0d505d6197eaa5d213c962f5cff7da8dc0e14c100c81"
+        },
+        {
+          "kind": "Normal",
+          "path": "Textures/Armor-Normal.png",
+          "sha256": "fee58c70c998bda0ccaf3f3f8f1a4c8024acf02b822ba2090ebea24efb06b56c"
+        },
+        {
+          "kind": "Mask",
+          "path": "Textures/Armor-Mask.png",
+          "sha256": "f24b5edb4da44ea0d28a718a3347ac03a954a7650c1ed3742436efa387eb3213"
+        }
+      ]
+    },
+    {
+      "id": "Steel",
+      "metallic": 0.78,
+      "roughness": 0.42,
+      "textures": [
+        {
+          "kind": "BaseColor",
+          "path": "Textures/Steel-BaseColor.png",
+          "sha256": "f1b8136d7dc315e80d5592ede656bd62594e55db8aa17fac12849ec890f6a1a7"
+        },
+        {
+          "kind": "Normal",
+          "path": "Textures/Steel-Normal.png",
+          "sha256": "7373324f42b792eeb8da9cfccf87fddf699a2a7ac8649fa316e194ced68d300d"
+        },
+        {
+          "kind": "Mask",
+          "path": "Textures/Steel-Mask.png",
+          "sha256": "b5f92b8a9eae59177be9f83c630368bb2d5e839b535fe71fa164dff53317abbf"
+        }
+      ]
+    },
+    {
+      "id": "Edge",
+      "metallic": 0.72,
+      "roughness": 0.43,
+      "textures": [
+        {
+          "kind": "BaseColor",
+          "path": "Textures/Edge-BaseColor.png",
+          "sha256": "3483fbd8cb7cdb4b82b8adafdf47006ba940f0d9cbae5739e4a3cda2c1b18a57"
+        },
+        {
+          "kind": "Normal",
+          "path": "Textures/Edge-Normal.png",
+          "sha256": "3d358bb10d3ae0fa448fc96e2f397390e95576ffdf693ac8ed7ec7712d210ba7"
+        },
+        {
+          "kind": "Mask",
+          "path": "Textures/Edge-Mask.png",
+          "sha256": "3265dcd47d5080ed00b1de3644531eb323762c2f65eff1992a6008ef31b07dae"
+        }
+      ]
+    },
+    {
+      "id": "Rubber",
+      "metallic": 0.03,
+      "roughness": 0.87,
+      "textures": [
+        {
+          "kind": "BaseColor",
+          "path": "Textures/Rubber-BaseColor.png",
+          "sha256": "348bbdbfd009ec6c16a4d2f14a6f0890ebe185354f12d2fbd957369d6f7b25d6"
+        },
+        {
+          "kind": "Normal",
+          "path": "Textures/Rubber-Normal.png",
+          "sha256": "bd477c58417e3d11f9c4e7512eedb2c2ee7942806f3cc8f5dafa236f653cc667"
+        },
+        {
+          "kind": "Mask",
+          "path": "Textures/Rubber-Mask.png",
+          "sha256": "266628801a90b2ff8bc03d20cf7151be1ad29970a315d655e4f647e7110e649a"
+        }
+      ]
+    },
+    {
+      "id": "Brass",
+      "metallic": 0.65,
+      "roughness": 0.42,
+      "textures": [
+        {
+          "kind": "BaseColor",
+          "path": "Textures/Brass-BaseColor.png",
+          "sha256": "25105feb709d0d8f8a720228d8c8d258cafe17f69a41e1a83aeee29e2bf473ac"
+        },
+        {
+          "kind": "Normal",
+          "path": "Textures/Brass-Normal.png",
+          "sha256": "c226be6e6670008dd859a04618cf66522d9973bc0fb4e1a454a96f458798003f"
+        },
+        {
+          "kind": "Mask",
+          "path": "Textures/Brass-Mask.png",
+          "sha256": "04f51b47a1243a3328652274a228cfc60340648b95c9c9e54c9cc21d17e33a78"
+        }
+      ]
+    },
+    {
+      "id": "Optic",
+      "metallic": 0.15,
+      "roughness": 0.19,
+      "textures": [
+        {
+          "kind": "BaseColor",
+          "path": "Textures/Optic-BaseColor.png",
+          "sha256": "6accb58c050e69fa9ee2e122f323e0844a2ad87c0e628ef7f84e8dfdf6dc6f1f"
+        },
+        {
+          "kind": "Normal",
+          "path": "Textures/Optic-Normal.png",
+          "sha256": "69eb1299009d1f228de3a79a48e5e08f1f7e1b7bf203036ab3e3440dc2203baf"
+        },
+        {
+          "kind": "Mask",
+          "path": "Textures/Optic-Mask.png",
+          "sha256": "8b43e312ffaaecfb645c626e65e3920d89b50a3ba409fd1d376b53829dc0af59"
+        }
+      ]
+    }
+  ],
+  "parts": [
+    {
+      "id": "foundry-treads",
+      "family": "foundry",
+      "slot": "treads",
+      "muzzle": null,
+      "model": "Models/foundry-treads.fbx",
+      "triangles": 9568,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -2.1549999713897705,
+        -2.3550000190734863,
+        0.06499999761581421
+      ],
+      "bounds_max": [
+        2.1550002098083496,
+        2.3549997806549072,
+        1.4970000982284546
+      ],
+      "minimum_signed_mesh_volume": 0.002883248615765178,
+      "sha256": "bc993b2136ec3be07426b5b67fe9dee669f41c661ffa31e1bf0d23cb65cc13c2"
+    },
+    {
+      "id": "foundry-hull",
+      "family": "foundry",
+      "slot": "hull",
+      "muzzle": null,
+      "model": "Models/foundry-hull.fbx",
+      "triangles": 4348,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "bounds_min": [
+        -1.4299999475479126,
+        -2.3914668560028076,
+        0.75
+      ],
+      "bounds_max": [
+        1.4299999475479126,
+        2.459444999694824,
+        1.784999966621399
+      ],
+      "minimum_signed_mesh_volume": 0.001318028854245059,
+      "sha256": "c699339801baf3a16f388f24b16a33f8b6b534cc24425f56fafccb191646c004"
+    },
+    {
+      "id": "foundry-turret",
+      "family": "foundry",
+      "slot": "turret",
+      "muzzle": null,
+      "model": "Models/foundry-turret.fbx",
+      "triangles": 2364,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "bounds_min": [
+        -1.0470714569091797,
+        -1.184999942779541,
+        -0.014999985694885254
+      ],
+      "bounds_max": [
+        1.184999942779541,
+        1.409999966621399,
+        1.559999942779541
+      ],
+      "minimum_signed_mesh_volume": 0.00046209635780629534,
+      "sha256": "38fcaccb14bea02b824e98656a3aeb8047b00cde859c08e4fcef1cccd81baed6"
+    },
+    {
+      "id": "foundry-barrel",
+      "family": "foundry",
+      "slot": "barrel",
+      "muzzle": [
+        0,
+        3.294,
+        0
+      ],
+      "model": "Models/foundry-barrel.fbx",
+      "triangles": 1492,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -0.2150000035762787,
+        -0.03999996930360794,
+        -0.21500001847743988
+      ],
+      "bounds_max": [
+        0.2150000035762787,
+        3.2940001487731934,
+        0.2150000035762787
+      ],
+      "minimum_signed_mesh_volume": 0.00016382845223565702,
+      "sha256": "71915d5f9955ac4966d16153f09971c83e036d915822bb506fbba97addf804c2"
+    },
+    {
+      "id": "ranger-treads",
+      "family": "ranger",
+      "slot": "treads",
+      "muzzle": null,
+      "model": "Models/ranger-treads.fbx",
+      "triangles": 5376,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -2.6399998664855957,
+        -2.359999895095825,
+        0.020000003278255463
+      ],
+      "bounds_max": [
+        2.6399998664855957,
+        2.359999895095825,
+        1.3964074850082397
+      ],
+      "minimum_signed_mesh_volume": 0.05364297438885744,
+      "sha256": "4b4583d663bcb5296596ca814327d5dbf4b7b7fae9ed12da69d1e66d60bb138b"
+    },
+    {
+      "id": "ranger-hull",
+      "family": "ranger",
+      "slot": "hull",
+      "muzzle": null,
+      "model": "Models/ranger-hull.fbx",
+      "triangles": 4112,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "bounds_min": [
+        -1.5550000667572021,
+        -2.261007308959961,
+        0.75
+      ],
+      "bounds_max": [
+        1.5550000667572021,
+        2.459444999694824,
+        1.784999966621399
+      ],
+      "minimum_signed_mesh_volume": 0.001318028854245059,
+      "sha256": "0d5b949ccf6706740c7d0043a0d9dc4314d29637bcce03baae1249693ec80885"
+    },
+    {
+      "id": "ranger-turret",
+      "family": "ranger",
+      "slot": "turret",
+      "muzzle": null,
+      "model": "Models/ranger-turret.fbx",
+      "triangles": 2096,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "bounds_min": [
+        -0.9303253293037415,
+        -1.0831999778747559,
+        -0.01499999687075615
+      ],
+      "bounds_max": [
+        1.184999942779541,
+        1.4100000858306885,
+        1.559999942779541
+      ],
+      "minimum_signed_mesh_volume": 0.0017356178468043893,
+      "sha256": "d7317949785730217b597e8d7babac68ac31bf5141f3823b1414d32a27abb24f"
+    },
+    {
+      "id": "ranger-barrel",
+      "family": "ranger",
+      "slot": "barrel",
+      "muzzle": [
+        0,
+        3.294,
+        0
+      ],
+      "model": "Models/ranger-barrel.fbx",
+      "triangles": 2012,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -0.2150000035762787,
+        -0.03999996930360794,
+        -0.21500001847743988
+      ],
+      "bounds_max": [
+        0.2150000035762787,
+        3.2940001487731934,
+        0.2150000035762787
+      ],
+      "minimum_signed_mesh_volume": 0.003263273316850341,
+      "sha256": "1fef08d74b78469a72f228c7e894c8af12819ca978826ecf30efe43157153e5d"
+    },
+    {
+      "id": "bulwark-treads",
+      "family": "bulwark",
+      "slot": "treads",
+      "muzzle": null,
+      "model": "Models/bulwark-treads.fbx",
+      "triangles": 4320,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Edge",
+        "Optic",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -2.1894562244415283,
+        -2.4205455780029297,
+        0.17500001192092896
+      ],
+      "bounds_max": [
+        2.1894562244415283,
+        2.4205455780029297,
+        1.1324999332427979
+      ],
+      "minimum_signed_mesh_volume": 0.016102288092183212,
+      "sha256": "f5441d4e254c5e1b4364be9b6fcb4291882b9bc327e9a71a4f6f9a75b00a12d0"
+    },
+    {
+      "id": "bulwark-hull",
+      "family": "bulwark",
+      "slot": "hull",
+      "muzzle": null,
+      "model": "Models/bulwark-hull.fbx",
+      "triangles": 4780,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "bounds_min": [
+        -1.5769237279891968,
+        -2.4118077754974365,
+        0.75
+      ],
+      "bounds_max": [
+        1.5769236087799072,
+        2.459444999694824,
+        1.8610810041427612
+      ],
+      "minimum_signed_mesh_volume": 0.001318028854245059,
+      "sha256": "c62c5970e445ccf6684c4e8768bd14f043d29dd6a72310b25928d83999a10fb3"
+    },
+    {
+      "id": "bulwark-turret",
+      "family": "bulwark",
+      "slot": "turret",
+      "muzzle": null,
+      "model": "Models/bulwark-turret.fbx",
+      "triangles": 2444,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "bounds_min": [
+        -1.1100000143051147,
+        -1.0450000762939453,
+        -0.015000028535723686
+      ],
+      "bounds_max": [
+        1.184999942779541,
+        1.4100000858306885,
+        1.559999942779541
+      ],
+      "minimum_signed_mesh_volume": 0.00046209635780629534,
+      "sha256": "db71e935e5a73a74bc3611f5cd49525f11d442d880275cece9c55f991fd184b6"
+    },
+    {
+      "id": "bulwark-barrel",
+      "family": "bulwark",
+      "slot": "barrel",
+      "muzzle": [
+        0,
+        3.294,
+        0
+      ],
+      "model": "Models/bulwark-barrel.fbx",
+      "triangles": 1796,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -0.23000000417232513,
+        -0.03999996930360794,
+        -0.21500001847743988
+      ],
+      "bounds_max": [
+        0.23000000417232513,
+        3.2940001487731934,
+        0.2150000035762787
+      ],
+      "minimum_signed_mesh_volume": 0.00016382845223565702,
+      "sha256": "2862c45194f666a0de7d2efce58ae830a48f0a26c908bc79762bb51b2162d74d"
+    },
+    {
+      "id": "jackal-treads",
+      "family": "jackal",
+      "slot": "treads",
+      "muzzle": null,
+      "model": "Models/jackal-treads.fbx",
+      "triangles": 6512,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -2.260000228881836,
+        -2.384999990463257,
+        -0.016857417300343513
+      ],
+      "bounds_max": [
+        2.260000467300415,
+        2.3849997520446777,
+        1.584999918937683
+      ],
+      "minimum_signed_mesh_volume": 0.054088753086935594,
+      "sha256": "951491f6109364681d355619778ddacc71203e527e9093f2d723a9c3fcae7cba"
+    },
+    {
+      "id": "jackal-hull",
+      "family": "jackal",
+      "slot": "hull",
+      "muzzle": null,
+      "model": "Models/jackal-hull.fbx",
+      "triangles": 4028,
+      "meshes": 5,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Optic",
+        "Steel"
+      ],
+      "bounds_min": [
+        -1.25810968875885,
+        -2.210982084274292,
+        0.75
+      ],
+      "bounds_max": [
+        1.25810968875885,
+        2.459444999694824,
+        2.055000066757202
+      ],
+      "minimum_signed_mesh_volume": 0.001318028854245059,
+      "sha256": "a37bd8e86485d2c5db97d812eb3ba92ed07b693a32770a32b930a0472c1fe8d4"
+    },
+    {
+      "id": "jackal-turret",
+      "family": "jackal",
+      "slot": "turret",
+      "muzzle": null,
+      "model": "Models/jackal-turret.fbx",
+      "triangles": 2060,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Brass",
+        "Edge",
+        "Steel"
+      ],
+      "bounds_min": [
+        -0.8299999833106995,
+        -1.065000057220459,
+        -0.015000022947788239
+      ],
+      "bounds_max": [
+        1.184999942779541,
+        1.4100000858306885,
+        1.559999942779541
+      ],
+      "minimum_signed_mesh_volume": 0.0019057503612725348,
+      "sha256": "6686c20082c1f45890e1799c78bcab96b4851e096447c4cd4c1403f8d0c0e76c"
+    },
+    {
+      "id": "jackal-barrel",
+      "family": "jackal",
+      "slot": "barrel",
+      "muzzle": [
+        0,
+        3.294,
+        0
+      ],
+      "model": "Models/jackal-barrel.fbx",
+      "triangles": 1484,
+      "meshes": 4,
+      "materials": [
+        "Armor",
+        "Edge",
+        "Rubber",
+        "Steel"
+      ],
+      "bounds_min": [
+        -0.22499999403953552,
+        -0.03999996930360794,
+        -0.2200000137090683
+      ],
+      "bounds_max": [
+        0.22499999403953552,
+        3.2939999103546143,
+        0.2200000137090683
+      ],
+      "minimum_signed_mesh_volume": 0.00016382845223565702,
+      "sha256": "c8e3bcd774016323c0535c429eb58345d34922dd5dd05f1fe7a32480fe3b83b5"
+    }
+  ],
+  "budget": {
+    "compositions": 256,
+    "maximum_core_triangles": 18804
+  }
+}

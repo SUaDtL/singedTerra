@@ -5,7 +5,10 @@ import {readFileSync,readdirSync,writeFileSync} from 'node:fs';
 import {dirname,resolve,relative,isAbsolute,basename} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
-import {currentQualificationInputs} from './lastStandQualification.mjs';
+import {currentQualificationInputs,verifyFiles} from './lastStandQualification.mjs';
+
+import {assertLastStandWaveMatrix} from './lastStandWaveMatrixResult.mjs';
+import {currentWaveExpected} from './lastStandWaveQualification.mjs';
 
 const functionalChecks=[
   'unfinished reload abandoned without award','ordinary defeat successfully saved one pending award',
@@ -141,7 +144,8 @@ if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {
     return report;
   });
   const head=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
-  const summary=assertLastStandMatrix(reports,{head,inputs:currentQualificationInputs()});
+  const summary=assertLastStandWaveMatrix(reports,{head,inputs:currentQualificationInputs(),...currentWaveExpected()});
+  for(const [index,file]of files.entries())verifyFiles(file,reports[index]);
   writeFileSync('last-stand-matrix-result.json',JSON.stringify({...summary,files},null,2));
   console.log(JSON.stringify(summary));
 }

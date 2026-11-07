@@ -25,7 +25,17 @@ static class SpeedChecks
         Field(session, "art", new SingedTerra.Art.TankPresentation { showingLauncher = launcher });
         if (playable) Field(session, "loop", new LastStandLoopController());
         typeof(EncounterSession).GetProperty("View").SetValue(session, new EncounterView());
-        session.DeployAt(0);
+        if(playable)
+        {
+            var shop=new LastStandShopState(1,launcher?LastStandFitting.Launcher:LastStandFitting.Repair,
+                new int[LastStandUpgradeCatalog.Tracks.Count]);
+            // This scheduler fixture assumes an accepted boundary. Faults and
+            // durable writes belong to the actual controller integration suite.
+            session.WaveCleared+=model=>{shop.ObserveAuthoritativeKills(model.Kills);session.ContinueCommittedWave();};
+            UnityEngine.Time.realtimeSinceStartupAsDouble=0;
+            session.DeployReservedRun(shop);
+        }
+        else session.DeployAt(0);
         return session;
     }
     static void Drain(EncounterSession session, double now)
@@ -41,7 +51,8 @@ static class SpeedChecks
     static EncounterModel Reference(int ticks, bool launcher = false)
     {
         var model = new EncounterModel(launcher, EncounterProfile.ForTier(1), EncounterModel.CannonDamage);
-        while (model.Tick < ticks && model.Status == EncounterStatus.Running) model.Step();
+        while (model.Tick < ticks && model.Status == EncounterStatus.Running)
+        {model.Step();if(model.AwaitingWaveCommit && model.Status==EncounterStatus.Running)model.ContinueAfterCheckpoint();}
         return model;
     }
     static void HalfSpeed()
@@ -144,11 +155,55 @@ static class SpeedChecks
             Check(ticks == 400 && clock.AtHorizon && !clock.TryTakeStep(), "horizon admits exactly once");
         }
     }
+    static void EarnedCap()
+    {
+        var weighted=new LastStandRunClock(0,100,1,5);
+        Check(weighted.SetSpeed(.049,.5) && weighted.Observe(.051) && weighted.TryTakeStep(),"mixed fractional tick consumed");
+        Near(weighted.StepWallMilliseconds(1),49,"old one-speed fraction keeps its real wall duration");
+        Near(weighted.StepWallMilliseconds(0),2,"new half-speed fraction keeps its real wall duration");
+        for(int n=2;n<10;n++)Near(weighted.StepWallMilliseconds(n),0,"unused rate has no invented history");
+        var session=Session();session.AdvanceAt(10);
+        int tick=session.Model.Tick;
+        Check(session.CatchingUp && session.GrantMaximumSpeed(5),"earned ceiling can arrive during retained debt");
+        Near(session.LastPositiveSpeed,1,"unlock never accelerates selected rate");
+        Check(session.Model.Tick==tick,"unlock consumes no admitted steps");
+        Drain(session,10);Check(session.Model.Tick==200,"old debt remains at old speed after unlock");
+        Check(session.TrySetMenuPausedAt(10,true),"menu pause");
+        Check(!session.GrantMaximumSpeed(4.5) && !session.GrantMaximumSpeed(5.5),"ceiling is monotonic and bounded");
+        Check(session.Paused && session.MenuPaused,"grant cannot release a pause");
+        Check(session.TrySetMenuPausedAt(10,false),"close menu");
+        double now=10;
+        foreach(double speed in new[]{.5,1,1.5,2,2.5,3,3.5,4,4.5,5})
+        {
+            Check(session.TrySetSpeedAt(now,speed),"earned half step accepted");
+            int before=session.Model.Tick;now+=.1;Drain(session,now);
+            Check(session.Model.Tick-before==(int)(speed*2),"actual session scales each earned rate");
+        }
+        session.ReturnToInspection();session.ConfigureSpeed(5);
+        Near(session.LastPositiveSpeed,5,"earned preferred speed restores before deployment");
+    }
+    static void SaveHoldDuringAction()
+    {
+        foreach(string action in new[]{"resume","speed","menu"})
+        {
+            var session=Session();session.TogglePauseAt(0);
+            session.BeforeAdvance=()=>{session.HoldCheckpoint();return false;};
+            bool accepted=false;
+            if(action=="resume")session.TogglePauseAt(.1);
+            else if(action=="speed")accepted=session.TrySetSpeedAt(.1,.5);
+            else accepted=session.TrySetMenuPausedAt(.1,true);
+            Check(!accepted && session.CheckpointBlocked && session.Paused && session.ManualPaused &&
+                !session.MenuPaused && session.Reason=="checkpoint-save",
+                "Save failure during action retains checkpoint hold and original pause causes: "+action);
+            Near(session.LastPositiveSpeed,1,"Failed action cannot change selected rate");
+            Check(session.Model.Tick==0,"Failed pre-advance gate admits no model time");
+        }
+    }
     static void Terminal()
     {
         foreach (bool launcher in new[] { false, true })
         {
-            var reference = Reference(3600, launcher);
+            var reference = Reference(24000, launcher);
             Check(reference.Status != EncounterStatus.Running, "reference reaches terminal");
             double terminalWall = reference.Tick * .1;
             var session = Session(launcher);
@@ -167,6 +222,28 @@ static class SpeedChecks
             Check(session.Model.Snapshot() == terminal, "terminal model never steps again");
             Near(session.TerminalElapsedSeconds, .48, "settling remains bounded");
         }
+    }
+    static void CueCallbackLifetime()
+    {
+        var session=Session();double now=0;int stepped=0,terminal=0,ordinary=0;
+        session.Stepped+=model=>{
+            stepped++;var cue=session.PrepareCombatCue("impact");
+            Check(cue!=null && cue.Admit(now) && cue.tick==model.Tick && cue.steps==session.StepsThisCallback,
+                "Actual session binds cue to currently admitted step");
+        };
+        session.Changed+=()=>{
+            if(session.Model.Status!=EncounterStatus.Defeated){ordinary++;return;}
+            if(terminal>0)return;
+            terminal++;var fresh=session.PrepareCombatCue("defeat");
+            var delayed=session.PrepareCombatCue("defeat");
+            Check(fresh!=null && fresh.Admit(now) && fresh.run>0 && fresh.tick==session.Model.Tick,
+                "Terminal Changed retains current callback after clock Stop");
+            Check(!delayed.Admit(now+.501) && delayed.reason=="expired","Terminal persistence/presentation time counts before defeat playback");
+        };
+        while(session.Model.Status==EncounterStatus.Running){now+=.05;session.AdvanceAt(now);}
+        Check(terminal==1 && ordinary>0 && stepped>0,"Actual natural defeat reaches terminal callback");
+        Check(session.PrepareCombatCue("defeat")==null,"Completed callback cannot authorize future combat cues");
+        now+=.1;session.AdvanceAt(now);Check(session.PrepareCombatCue("defeat")==null,"Settling has no combat callback");
     }
     static void Legacy()
     {
@@ -191,11 +268,14 @@ static class SpeedChecks
         {
             switch (args[0])
             {
+                case "cue_callback_lifetime": CueCallbackLifetime(); break;
                 case "half_speed_weighted_combat_parity": HalfSpeed(); break;
                 case "rate_boundary_fraction_and_retained_debt": RateBoundary(); break;
                 case "pause_holds_resume_and_plus_from_zero": Holds(); break;
                 case "production_cap_and_invalid_rates": Cap(); break;
                 case "future_policy_fixture_and_horizon": Future(); break;
+                case "earned_cap_preserves_debt_pause_and_preference": EarnedCap(); break;
+                case "save_hold_during_clock_action": SaveHoldDuringAction(); break;
                 case "terminal_settling_uses_wall_seconds": Terminal(); break;
                 case "focus_background_and_legacy_preserved": Legacy(); break;
                 default: throw new Exception("Unknown check");
@@ -237,6 +317,7 @@ namespace SingedTerra.Art
     public class TankPresentation : UnityEngine.MonoBehaviour
     {
         public bool showingLauncher;
+        public string FittingId=>showingLauncher?"launcher":"repair";
         public bool EncounterActive;
         public bool BeginEncounter() { EncounterActive = true; return true; }
         public void EndEncounter() { EncounterActive = false; }

@@ -31,19 +31,23 @@ namespace SingedTerra.LastStand
         public string PriceDescription { get; }
         public string CurrentEffectDescription { get; }
         public string NextEffectDescription { get; }
+        public int PurchaseQuantity { get; }
+        public int QuotedCost { get; }
+        public int ResultLevel { get; }
+        public string ResultEffectDescription { get; }
         public LastStandShopCardRefusal Refusal { get; }
         public string Reason { get; }
         public bool CanPurchase => Refusal == LastStandShopCardRefusal.None;
 
         internal LastStandShopCard(LastStandUpgradeDefinition definition, LastStandUpgradeProjection track,
-            LastStandShopMode mode, LastStandShopCardRefusal refusal)
+            LastStandShopMode mode, LastStandShopCardRefusal refusal,LastStandUpgradeQuote quote)
         {
             TrackId = definition.Id; Key = definition.Key; Name = definition.Name;
             Category = definition.Category; Applicability = definition.Applicability;
             PermanentLevel = track.PermanentLevel;
             RunPurchases = mode == LastStandShopMode.Run ? track.RunPurchases : 0;
             CurrentLevel = track.CurrentLevel;
-            Cap = mode == LastStandShopMode.Run ? LastStandUpgradeCatalog.TotalCap : LastStandUpgradeCatalog.PermanentCap;
+            Cap = mode == LastStandShopMode.Run ? definition.TotalCap : definition.PermanentCap;
             RemainingPurchases = Cap - CurrentLevel;
             AppliesToFitting = track.IsEligible;
             IsDormant = mode == LastStandShopMode.Permanent && !AppliesToFitting;
@@ -53,6 +57,8 @@ namespace SingedTerra.LastStand
             CurrentEffectDescription = track.CurrentEffectDescription;
             NextEffectDescription = !NextPrice.HasValue ? "MAX" :
                 mode == LastStandShopMode.Run ? track.NextEffectDescription : definition.DescribeEffect(CurrentLevel + 1);
+            PurchaseQuantity=quote.Quantity;QuotedCost=quote.Cost;ResultLevel=quote.ResultLevel;
+            ResultEffectDescription=definition.DescribeEffect(quote.ResultLevel);
             Refusal = refusal;
             Reason = DescribeRefusal(refusal, definition.Applicability);
         }
@@ -62,8 +68,15 @@ namespace SingedTerra.LastStand
             switch (refusal)
             {
                 case LastStandShopCardRefusal.None: return "Ready";
-                case LastStandShopCardRefusal.WrongFitting: return applicability == LastStandUpgradeApplicability.Launcher
-                    ? "Requires launcher fitting" : "Requires repair fitting";
+                case LastStandShopCardRefusal.WrongFitting:
+                    switch(applicability) {
+                        case LastStandUpgradeApplicability.Launcher:return "Requires launcher fitting";
+                        case LastStandUpgradeApplicability.Repair:return "Requires repair fitting";
+                        case LastStandUpgradeApplicability.Scattergun:return "Requires scattergun fitting";
+                        case LastStandUpgradeApplicability.Mortar:return "Requires mortar fitting";
+                        case LastStandUpgradeApplicability.Railgun:return "Requires railgun fitting";
+                        default:throw new ArgumentOutOfRangeException(nameof(applicability));
+                    }
                 case LastStandShopCardRefusal.AtCap: return "MAX";
                 case LastStandShopCardRefusal.InsufficientScrap: return "Not enough Scrap";
                 case LastStandShopCardRefusal.CatchingUp: return "Catching up";
@@ -94,16 +107,18 @@ namespace SingedTerra.LastStand
         public string SaveState { get; }
         public string SaveError { get; }
         public IReadOnlyList<LastStandShopCard> Cards { get; }
+        public LastStandBulkQuantity Quantity { get; }
 
         internal LastStandShopView(LastStandShopMode mode, int balance, int runId, int version,
             LastStandShopPurchaseLifecycle? lifecycle, LastStandFitting fitting, string saveState, string saveError,
-            LastStandShopCard[] cards)
+            LastStandShopCard[] cards,LastStandBulkQuantity quantity)
         {
             Mode = mode;
             Currency = mode == LastStandShopMode.Run ? LastStandShopCurrency.Scrap : LastStandShopCurrency.Salvage;
             CurrencyName = Currency.ToString(); Balance = balance; RunId = runId; Version = version;
             Lifecycle = lifecycle; Fitting = fitting; SaveState = saveState; SaveError = saveError;
             Cards = Array.AsReadOnly((LastStandShopCard[])cards.Clone());
+            Quantity=quantity;
         }
     }
 
@@ -111,42 +126,47 @@ namespace SingedTerra.LastStand
     // must still validate a current intent at activation; Ready is no reservation.
     public static class LastStandShopPresentation
     {
-        public static LastStandShopView ProjectRun(LastStandShopState shop)
+        public static LastStandShopView ProjectRun(LastStandShopState shop,LastStandBulkQuantity quantity=LastStandBulkQuantity.One)
         {
             if (shop == null) throw new ArgumentNullException(nameof(shop));
             int balance = shop.Scrap, runId = shop.RunId, version = shop.Version;
             var lifecycle = shop.PurchaseLifecycle;
             var fitting = shop.Fitting;
-            var cards = new LastStandShopCard[LastStandUpgradeCatalog.Tracks.Count];
-            foreach (var definition in LastStandUpgradeCatalog.Tracks)
+            var cards = new List<LastStandShopCard>();
+            foreach (var definition in shop.Definitions)
             {
+                if(!definition.Available)continue;
                 var track = shop.GetTrack(definition.Id);
-                cards[(int)definition.Id] = new LastStandShopCard(definition, track, LastStandShopMode.Run,
-                    RunRefusal(lifecycle, track, balance));
+                var quote=definition.QuoteRun(track.PermanentLevel,track.RunPurchases,balance,quantity);
+                cards.Add(new LastStandShopCard(definition, track, LastStandShopMode.Run,
+                    RunRefusal(lifecycle, track, balance),quote));
             }
             return new LastStandShopView(LastStandShopMode.Run, balance, runId, version,
-                lifecycle, fitting, String.Empty, String.Empty, cards);
+                lifecycle, fitting, String.Empty, String.Empty, cards.ToArray(),quantity);
         }
 
-        public static LastStandShopView ProjectPermanent(LastStandProgression progression, LastStandFitting fitting)
+        public static LastStandShopView ProjectPermanent(LastStandProgression progression, LastStandFitting fitting,
+            LastStandBulkQuantity quantity=LastStandBulkQuantity.One)
         {
             if (progression == null) throw new ArgumentNullException(nameof(progression));
             int balance = progression.Wallet;
             string saveState = progression.SaveState, saveError = progression.SaveError ?? String.Empty;
             var admission = saveState != "ready" ? LastStandShopCardRefusal.SaveUnavailable :
-                progression.ActiveRunId != 0 ? LastStandShopCardRefusal.ActiveRun :
                 progression.PendingDefeat != null ? LastStandShopCardRefusal.PendingReward : LastStandShopCardRefusal.None;
-            var cards = new LastStandShopCard[LastStandUpgradeCatalog.Tracks.Count];
+            var cards = new List<LastStandShopCard>();
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
             {
+                if(!definition.Available)continue;
                 var track = definition.Project(progression.GetPermanentLevel(definition.Id), 0, fitting);
+                var quote=definition.QuotePermanent(track.PermanentLevel,balance,quantity);
                 var refusal = admission != LastStandShopCardRefusal.None ? admission :
+                    !progression.IsPermanentTrackApplicable(definition.Id) ? LastStandShopCardRefusal.WrongFitting :
                     !track.NextPermanentPrice.HasValue ? LastStandShopCardRefusal.AtCap :
                     balance < track.NextPermanentPrice.Value ? LastStandShopCardRefusal.InsufficientSalvage : LastStandShopCardRefusal.None;
-                cards[(int)definition.Id] = new LastStandShopCard(definition, track, LastStandShopMode.Permanent, refusal);
+                cards.Add(new LastStandShopCard(definition, track, LastStandShopMode.Permanent, refusal,quote));
             }
             return new LastStandShopView(LastStandShopMode.Permanent, balance, 0, 0,
-                null, fitting, saveState, saveError, cards);
+                null, fitting, saveState,saveError,cards.ToArray(),quantity);
         }
 
         static LastStandShopCardRefusal RunRefusal(LastStandShopPurchaseLifecycle lifecycle,

@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: consolidation and screen clarity · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-CLARITY-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-consolidation-and-clarity.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: consolidation and screen clarity</h1><p class="deck">Consolidate verification, research projections, modal infrastructure and current acceptance ownership; make Research and sister screens explain the next action.</p><div class="meta"><span>ST-LS-CLARITY-SPEC</span><span>Revision 5 · schema 0.3.2</span><span>29 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INTENT-01 -->
+<article class="record" id="INTENT-01" data-ca-symbol="INTENT-01" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-01">INTENT-01</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Owner</div><div class="field"><span class="label">Outcome</span>Clear next actions built on fewer shared owners, with behavior and evidence preserved.</div><div class="field"><span class="label">Problem</span>Feature growth left duplicated projection logic, tangled verification and confusing screens.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div></article>
+<!-- CA:END:INTENT-01 -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:SCOPE-CLARITY -->
+<article class="record" id="SCOPE-CLARITY" data-ca-symbol="SCOPE-CLARITY" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-CLARITY">SCOPE-CLARITY</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Research, Planner, History, Settings and Shop presentation; modal plumbing; research quote projection; Last Stand verification modules; current readiness index.</div></article>
+<!-- CA:END:SCOPE-CLARITY -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:NON-RULES -->
+<article class="record" id="NON-RULES" data-ca-symbol="NON-RULES" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-RULES">NON-RULES</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No balance changes, new save schema, automatic spending, rewritten retained rules or historical evidence, merge or release publication.</div></article>
+<!-- CA:END:NON-RULES -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APPROACH-01 -->
+<article class="record" id="APPROACH-01" data-ca-symbol="APPROACH-01" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-01">APPROACH-01</a><h3>Approach</h3></div><div class="field"><span class="label">Choice</span>Extend existing transaction, modal and test owners; extract explicit responsibility modules and shared read-only projections.</div><div class="field"><span class="label">Tradeoff</span>Preserve distinct page contents and independent expected values; avoid a generic metadata UI or production-derived test oracles.</div></article>
+<!-- CA:END:APPROACH-01 -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:CON-PRESERVE -->
+<article class="record" id="CON-PRESERVE" data-ca-symbol="CON-PRESERVE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-PRESERVE">CON-PRESERVE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve wallet/save/intent validation and retained evidence; current checks remain separate from external qualification.</div></article>
+<!-- CA:END:CON-PRESERVE -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:CR-VERIFY -->
+<article class="record" id="CR-VERIFY" data-ca-symbol="CR-VERIFY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-VERIFY">CR-VERIFY</a><h3>Test coherent verification modules</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Within explicitly requested consolidation and screen-clarity scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CLARITY">SCOPE-CLARITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Current source and preserved saved editions are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-VERIFY -->
+<article class="record" id="SC-VERIFY" data-ca-symbol="SC-VERIFY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-VERIFY">SC-VERIFY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current production owners and applicable normal, locked, empty or failure fixtures.</div><div class="field"><span class="label">Then</span>Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics.</div><div class="field"><span class="label">When</span>Use or verify the affected surface.</div></article>
+<!-- CA:END:SC-VERIFY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics.</div><div class="field"><span class="label">Trigger</span>Use or verify the affected production surface under normal, locked and failure conditions.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-VERIFY -->
+<article class="record" id="VER-VERIFY" data-ca-symbol="VER-VERIFY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-VERIFY">VER-VERIFY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.</div><div class="field"><span class="label">Oracle</span>Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics.</div><div class="field"><span class="label">Planned target</span>Test coherent verification modules</div></article>
+<!-- CA:END:VER-VERIFY -->
+</div></article>
+<!-- CA:END:CR-VERIFY -->
+
+<!-- CA:BEGIN:CR-QUOTE -->
+<article class="record" id="CR-QUOTE" data-ca-symbol="CR-QUOTE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-QUOTE">CR-QUOTE</a><h3>One research quote</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Within explicitly requested consolidation and screen-clarity scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CLARITY">SCOPE-CLARITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Current source and preserved saved editions are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-QUOTE -->
+<article class="record" id="SC-QUOTE" data-ca-symbol="SC-QUOTE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-QUOTE">SC-QUOTE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current production owners and applicable normal, locked, empty or failure fixtures.</div><div class="field"><span class="label">Then</span>Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation.</div><div class="field"><span class="label">When</span>Use or verify the affected surface.</div></article>
+<!-- CA:END:SC-QUOTE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation.</div><div class="field"><span class="label">Trigger</span>Use or verify the affected production surface under normal, locked and failure conditions.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-QUOTE -->
+<article class="record" id="VER-QUOTE" data-ca-symbol="VER-QUOTE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-QUOTE">VER-QUOTE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.</div><div class="field"><span class="label">Oracle</span>Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation.</div><div class="field"><span class="label">Planned target</span>One research quote</div></article>
+<!-- CA:END:VER-QUOTE -->
+</div></article>
+<!-- CA:END:CR-QUOTE -->
+
+<!-- CA:BEGIN:CR-RESEARCH -->
+<article class="record" id="CR-RESEARCH" data-ca-symbol="CR-RESEARCH" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-RESEARCH">CR-RESEARCH</a><h3>Understand and start research</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Within explicitly requested consolidation and screen-clarity scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CLARITY">SCOPE-CLARITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Current source and preserved saved editions are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-RESEARCH -->
+<article class="record" id="SC-RESEARCH" data-ca-symbol="SC-RESEARCH" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-RESEARCH">SC-RESEARCH</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current production owners and applicable normal, locked, empty or failure fixtures.</div><div class="field"><span class="label">Then</span>Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task.</div><div class="field"><span class="label">When</span>Use or verify the affected surface.</div></article>
+<!-- CA:END:SC-RESEARCH -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task.</div><div class="field"><span class="label">Trigger</span>Use or verify the affected production surface under normal, locked and failure conditions.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-RESEARCH -->
+<article class="record" id="VER-RESEARCH" data-ca-symbol="VER-RESEARCH" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-RESEARCH">VER-RESEARCH</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.</div><div class="field"><span class="label">Oracle</span>Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task.</div><div class="field"><span class="label">Planned target</span>Understand and start research</div></article>
+<!-- CA:END:VER-RESEARCH -->
+</div></article>
+<!-- CA:END:CR-RESEARCH -->
+
+<!-- CA:BEGIN:CR-MODALS -->
+<article class="record" id="CR-MODALS" data-ca-symbol="CR-MODALS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-MODALS">CR-MODALS</a><h3>One modal navigation owner</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Within explicitly requested consolidation and screen-clarity scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CLARITY">SCOPE-CLARITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Current source and preserved saved editions are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-MODALS -->
+<article class="record" id="SC-MODALS" data-ca-symbol="SC-MODALS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-MODALS">SC-MODALS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current production owners and applicable normal, locked, empty or failure fixtures.</div><div class="field"><span class="label">Then</span>Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes.</div><div class="field"><span class="label">When</span>Use or verify the affected surface.</div></article>
+<!-- CA:END:SC-MODALS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes.</div><div class="field"><span class="label">Trigger</span>Use or verify the affected production surface under normal, locked and failure conditions.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-MODALS -->
+<article class="record" id="VER-MODALS" data-ca-symbol="VER-MODALS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-MODALS">VER-MODALS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.</div><div class="field"><span class="label">Oracle</span>Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes.</div><div class="field"><span class="label">Planned target</span>One modal navigation owner</div></article>
+<!-- CA:END:VER-MODALS -->
+</div></article>
+<!-- CA:END:CR-MODALS -->
+
+<!-- CA:BEGIN:CR-SCREENS -->
+<article class="record" id="CR-SCREENS" data-ca-symbol="CR-SCREENS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-SCREENS">CR-SCREENS</a><h3>Clear sister screens</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Within explicitly requested consolidation and screen-clarity scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CLARITY">SCOPE-CLARITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Current source and preserved saved editions are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-SCREENS -->
+<article class="record" id="SC-SCREENS" data-ca-symbol="SC-SCREENS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-SCREENS">SC-SCREENS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current production owners and applicable normal, locked, empty or failure fixtures.</div><div class="field"><span class="label">Then</span>Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts.</div><div class="field"><span class="label">When</span>Use or verify the affected surface.</div></article>
+<!-- CA:END:SC-SCREENS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts.</div><div class="field"><span class="label">Trigger</span>Use or verify the affected production surface under normal, locked and failure conditions.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-SCREENS -->
+<article class="record" id="VER-SCREENS" data-ca-symbol="VER-SCREENS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-SCREENS">VER-SCREENS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.</div><div class="field"><span class="label">Oracle</span>Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts.</div><div class="field"><span class="label">Planned target</span>Clear sister screens</div></article>
+<!-- CA:END:VER-SCREENS -->
+</div></article>
+<!-- CA:END:CR-SCREENS -->
+
+<!-- CA:BEGIN:CR-READINESS -->
+<article class="record" id="CR-READINESS" data-ca-symbol="CR-READINESS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-READINESS">CR-READINESS</a><h3>One current qualification index</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Within explicitly requested consolidation and screen-clarity scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CLARITY">SCOPE-CLARITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Current source and preserved saved editions are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-READINESS -->
+<article class="record" id="SC-READINESS" data-ca-symbol="SC-READINESS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-READINESS">SC-READINESS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current production owners and applicable normal, locked, empty or failure fixtures.</div><div class="field"><span class="label">Then</span>Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review.</div><div class="field"><span class="label">When</span>Use or verify the affected surface.</div></article>
+<!-- CA:END:SC-READINESS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review.</div><div class="field"><span class="label">Trigger</span>Use or verify the affected production surface under normal, locked and failure conditions.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-READINESS -->
+<article class="record" id="VER-READINESS" data-ca-symbol="VER-READINESS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-READINESS">VER-READINESS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>inspection</div><div class="field"><span class="label">Negative control</span>Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.</div><div class="field"><span class="label">Oracle</span>Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review.</div><div class="field"><span class="label">Planned target</span>One current qualification index</div></article>
+<!-- CA:END:VER-READINESS -->
+</div></article>
+<!-- CA:END:CR-READINESS -->
+
+<!-- CA:BEGIN:CR-PRESERVE -->
+<article class="record" id="CR-PRESERVE" data-ca-symbol="CR-PRESERVE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-PRESERVE">CR-PRESERVE</a><h3>Preserve paid rules and truthful delivery</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Within explicitly requested consolidation and screen-clarity scope.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CLARITY">SCOPE-CLARITY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Current source and preserved saved editions are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-PRESERVE -->
+<article class="record" id="SC-PRESERVE" data-ca-symbol="SC-PRESERVE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-PRESERVE">SC-PRESERVE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Current production owners and applicable normal, locked, empty or failure fixtures.</div><div class="field"><span class="label">Then</span>Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication.</div><div class="field"><span class="label">When</span>Use or verify the affected surface.</div></article>
+<!-- CA:END:SC-PRESERVE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication.</div><div class="field"><span class="label">Trigger</span>Use or verify the affected production surface under normal, locked and failure conditions.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-PRESERVE -->
+<article class="record" id="VER-PRESERVE" data-ca-symbol="VER-PRESERVE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-PRESERVE">VER-PRESERVE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.</div><div class="field"><span class="label">Oracle</span>Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication.</div><div class="field"><span class="label">Planned target</span>Preserve paid rules and truthful delivery</div></article>
+<!-- CA:END:VER-PRESERVE -->
+</div></article>
+<!-- CA:END:CR-PRESERVE -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-SMARTS -->
+<article class="record" id="SEC-SMARTS" data-ca-symbol="SEC-SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SMARTS">SEC-SMARTS</a><h3>Design rationale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The owner selected consolidation of existing owners. Explicit modules and a small page interface preserve scalable catalog-driven screens, improve maintainability and direct testability, retain availability through current offline/save behavior, preserve reliable transactions and native ownership checks, and introduce no new security boundary. No competing architecture is needed for this scoped change.</p></div></div></article>
+<!-- CA:END:SEC-SMARTS -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-USER -->
+<article class="record" id="SRC-USER" data-ca-symbol="SRC-USER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-USER">SRC-USER</a><h3>Owner requests consolidation and usable screens</h3></div><div class="field"><span class="label">Locator</span>Conversation 2026-10-30 research screenshot and annotation 1</div><div class="field"><span class="label">Note</span>Address all four reviewed consolidation packages and Research plus screens with the same issues; keep changes in PR547.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-USER -->
+
+<!-- CA:BEGIN:SRC-BASE -->
+<article class="record" id="SRC-BASE" data-ca-symbol="SRC-BASE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-BASE">SRC-BASE</a><h3>Inspected production owners</h3></div><div class="field"><span class="label">Locator</span>e0a71becc44143d1393206299521005c0a87ebde</div><div class="field"><span class="label">Note</span>Current PR547 worktree and maintained production owners.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-BASE -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span><span class="missing">Not yet supplied</span></div><div class="field"><span class="label">Observed date</span>2026-10-30</div><div class="field"><span class="label">Repository</span><span class="missing">Not yet supplied</span></div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><span class="missing">None recorded</span></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f<br>Model SHA-256: 5652f3e166afc9db78295d2ee96d7895da1be3dbfa1ebe31e4a98bc6a701e9ad</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-CLARITY-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "5652f3e166afc9db78295d2ee96d7895da1be3dbfa1ebe31e4a98bc6a701e9ad",
+    "normative_sha256": "b8294b474e514aaad2ce5665bc751cd594f4e5126d99900e7a1e169f7194386f",
+    "symbol_count": 29
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "choice": "Extend existing transaction, modal and test owners; extract explicit responsibility modules and shared read-only projections.",
+      "id": "APPROACH-01",
+      "tradeoff": "Preserve distinct page contents and independent expected values; avoid a generic metadata UI or production-derived test oracles."
+    },
+    "baseline": {
+      "commit": null,
+      "observed_date": "2026-10-30",
+      "repository": null
+    },
+    "constraints": [
+      {
+        "applies_to": [],
+        "id": "CON-PRESERVE",
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Preserve wallet/save/intent validation and retained evidence; current checks remain separate from external qualification."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Within explicitly requested consolidation and screen-clarity scope."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE"
+        ],
+        "guarantees": [
+          "Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics."
+        ],
+        "id": "CR-VERIFY",
+        "intent_refs": [
+          "SCOPE-CLARITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Current source and preserved saved editions are available."
+        ],
+        "scenarios": [
+          {
+            "given": "Current production owners and applicable normal, locked, empty or failure fixtures.",
+            "id": "SC-VERIFY",
+            "then": "Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics.",
+            "when": "Use or verify the affected surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics.",
+        "title": "Test coherent verification modules",
+        "trigger": "Use or verify the affected production surface under normal, locked and failure conditions.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-VERIFY",
+          "method": "automated_and_review",
+          "negative_control": "Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.",
+          "oracle": "Extract explicit browser/native/source/model helper owners and replace source-text execution fixtures with actual imported functions and explicit adapters. Preserve characterization assertions, process/window admission guards, independent expected values, legacy oracles and failure semantics.",
+          "planned_target": "Test coherent verification modules"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Within explicitly requested consolidation and screen-clarity scope."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE"
+        ],
+        "guarantees": [
+          "Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation."
+        ],
+        "id": "CR-QUOTE",
+        "intent_refs": [
+          "SCOPE-CLARITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Current source and preserved saved editions are available."
+        ],
+        "scenarios": [
+          {
+            "given": "Current production owners and applicable normal, locked, empty or failure fixtures.",
+            "id": "SC-QUOTE",
+            "then": "Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation.",
+            "when": "Use or verify the affected surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation.",
+        "title": "One research quote",
+        "trigger": "Use or verify the affected production surface under normal, locked and failure conditions.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-QUOTE",
+          "method": "automated_and_review",
+          "negative_control": "Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.",
+          "oracle": "Lab and Planner consume one structured research quote including rank, cost, duration, saved elapsed time and remaining time; display code cannot spend Salvage, advance clocks or bypass existing intent validation.",
+          "planned_target": "One research quote"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Within explicitly requested consolidation and screen-clarity scope."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE"
+        ],
+        "guarantees": [
+          "Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task."
+        ],
+        "id": "CR-RESEARCH",
+        "intent_refs": [
+          "SCOPE-CLARITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Current source and preserved saved editions are available."
+        ],
+        "scenarios": [
+          {
+            "given": "Current production owners and applicable normal, locked, empty or failure fixtures.",
+            "id": "SC-RESEARCH",
+            "then": "Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task.",
+            "when": "Use or verify the affected surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task.",
+        "title": "Understand and start research",
+        "trigger": "Use or verify the affected production surface under normal, locked and failure conditions.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-RESEARCH",
+          "method": "automated_and_review",
+          "negative_control": "Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.",
+          "oracle": "Before the first lab unlock, show Tier 1 wave 25 as the main requirement and project previews without misleading AVAILABLE labels. Once unlocked, selected benefit, exact cost/time, lab assignment and start action are adjacent. Active, queued, insufficient-funds, save-failure, completed and partial-resume states explain the next action. Detailed rules remain available without displacing the primary task.",
+          "planned_target": "Understand and start research"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Within explicitly requested consolidation and screen-clarity scope."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE"
+        ],
+        "guarantees": [
+          "Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes."
+        ],
+        "id": "CR-MODALS",
+        "intent_refs": [
+          "SCOPE-CLARITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Current source and preserved saved editions are available."
+        ],
+        "scenarios": [
+          {
+            "given": "Current production owners and applicable normal, locked, empty or failure fixtures.",
+            "id": "SC-MODALS",
+            "then": "Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes.",
+            "when": "Use or verify the affected surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes.",
+        "title": "One modal navigation owner",
+        "trigger": "Use or verify the affected production surface under normal, locked and failure conditions.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-MODALS",
+          "method": "automated_and_review",
+          "negative_control": "Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.",
+          "oracle": "Use an explicit page interface/registration for current focus, reveal, scrolling, layout and refresh, plus genuinely shared header/selector primitives. Preserve shared chrome, focus traps/return, scroll reachability and at least 44px controls at desktop, narrow and short landscape sizes.",
+          "planned_target": "One modal navigation owner"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Within explicitly requested consolidation and screen-clarity scope."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE"
+        ],
+        "guarantees": [
+          "Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts."
+        ],
+        "id": "CR-SCREENS",
+        "intent_refs": [
+          "SCOPE-CLARITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Current source and preserved saved editions are available."
+        ],
+        "scenarios": [
+          {
+            "given": "Current production owners and applicable normal, locked, empty or failure fixtures.",
+            "id": "SC-SCREENS",
+            "then": "Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts.",
+            "when": "Use or verify the affected surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts.",
+        "title": "Clear sister screens",
+        "trigger": "Use or verify the affected production surface under normal, locked and failure conditions.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-SCREENS",
+          "method": "automated_and_review",
+          "negative_control": "Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.",
+          "oracle": "Audit Shop, Planner, History and Settings for the same ambiguity. Correct confirmed misleading/unlabeled actions and empty/locked states. Essential current state and next action precede optional explanations; no new economy, automatic purchases, or tutorial prompts.",
+          "planned_target": "Clear sister screens"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Within explicitly requested consolidation and screen-clarity scope."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE"
+        ],
+        "guarantees": [
+          "Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review."
+        ],
+        "id": "CR-READINESS",
+        "intent_refs": [
+          "SCOPE-CLARITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Current source and preserved saved editions are available."
+        ],
+        "scenarios": [
+          {
+            "given": "Current production owners and applicable normal, locked, empty or failure fixtures.",
+            "id": "SC-READINESS",
+            "then": "Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review.",
+            "when": "Use or verify the affected surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review.",
+        "title": "One current qualification index",
+        "trigger": "Use or verify the affected production surface under normal, locked and failure conditions.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-READINESS",
+          "method": "inspection",
+          "negative_control": "Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.",
+          "oracle": "Existing release-readiness document has one current matrix with owners and evidence links for outstanding obligations. Applicable older plans point there; old observations, frozen reports and statuses are not rewritten as fresh proof. Generated evidence is distinguishable in review.",
+          "planned_target": "One current qualification index"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Within explicitly requested consolidation and screen-clarity scope."
+        },
+        "constraint_refs": [
+          "CON-PRESERVE"
+        ],
+        "guarantees": [
+          "Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication."
+        ],
+        "id": "CR-PRESERVE",
+        "intent_refs": [
+          "SCOPE-CLARITY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Current source and preserved saved editions are available."
+        ],
+        "scenarios": [
+          {
+            "given": "Current production owners and applicable normal, locked, empty or failure fixtures.",
+            "id": "SC-PRESERVE",
+            "then": "Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication.",
+            "when": "Use or verify the affected surface."
+          }
+        ],
+        "source_refs": [
+          "SRC-USER",
+          "SRC-BASE"
+        ],
+        "statement": "Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication.",
+        "title": "Preserve paid rules and truthful delivery",
+        "trigger": "Use or verify the affected production surface under normal, locked and failure conditions.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-PRESERVE",
+          "method": "automated_and_review",
+          "negative_control": "Preserve existing rejection assertions and inspect locked, empty, insufficient-funds and failed-save states where applicable.",
+          "oracle": "Shared wallet/save/transaction and retained edition behavior remain intact. Run affected model, actual Unity and packaged browser checks; rebuild the packaged player for the existing latest preview. Distinguish local checks, hosted CI, owner/device/audio/endurance proof, merge and publication.",
+          "planned_target": "Preserve paid rules and truthful delivery"
+        }
+      }
+    ],
+    "decisions": [],
+    "governs": [],
+    "intent": {
+      "caller": "Owner",
+      "id": "INTENT-01",
+      "outcome": "Clear next actions built on fewer shared owners, with behavior and evidence preserved.",
+      "problem": "Feature growth left duplicated projection logic, tangled verification and confusing screens.",
+      "source_refs": [
+        "SRC-USER",
+        "SRC-BASE"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "NON-RULES",
+        "statement": "No balance changes, new save schema, automatic spending, rewritten retained rules or historical evidence, merge or release publication."
+      }
+    ],
+    "open_decisions": [],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "SCOPE-CLARITY",
+        "statement": "Research, Planner, History, Settings and Shop presentation; modal plumbing; research quote projection; Last Stand verification modules; current readiness index."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "The owner selected consolidation of existing owners. Explicit modules and a small page interface preserve scalable catalog-driven screens, improve maintainability and direct testability, retain availability through current offline/save behavior, preserve reliable transactions and native ownership checks, and introduce no new security boundary. No competing architecture is needed for this scoped change.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-SMARTS",
+        "title": "Design rationale"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-USER",
+        "locator": "Conversation 2026-10-30 research screenshot and annotation 1",
+        "note": "Address all four reviewed consolidation packages and Research plus screens with the same issues; keep changes in PR547.",
+        "title": "Owner requests consolidation and usable screens",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-BASE",
+        "locator": "e0a71becc44143d1393206299521005c0a87ebde",
+        "note": "Current PR547 worktree and maintained production owners.",
+        "title": "Inspected production owners",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "summary": "Consolidate verification, research projections, modal infrastructure and current acceptance ownership; make Research and sister screens explain the next action.",
+    "title": "Last Stand: consolidation and screen clarity"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-consolidation-and-clarity.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 5,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-consolidation-and-clarity"
+}
+</script>
+</body></html>

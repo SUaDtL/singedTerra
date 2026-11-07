@@ -6,8 +6,193 @@ The primary owner decisions are in `sources/01-PRODUCT-DIRECTION.md` revision 15
 and `sources/04-DECISIONS-AND-OPEN-QUESTIONS.md` in the September 25, 2026 source
 pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 `ea7bfac6d5b089e18580741bc701afbf6d73323ccdff4e7247c639c1628e40f1`).
-The current in-repo visual scope is
+The initial in-repo visual scope was
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
+
+## Player tank appearance, October 31, 2026
+
+The [tank sprint](../../.codearbiter/plans/last-stand-tank-customization.html)
+adapts the legacy game's four cosmetic families, four independently mixed parts
+and five paints to the actual Last Stand rig. The garage's Menu → Appearance
+page previews the real tank, identifies the selected part with a geometry-based
+callout, and offers Apply/Cancel. Combat fittings and statistics stay separate.
+
+Original editable models and PBR textures give tracks, spider legs, hover pods
+and wheels distinct silhouettes. All 256 part assemblies remain below 25,000
+core triangles; the maximum imported assembly is 18,804. Profile schema 7 carries
+appearance through the existing save and portable-backup owner without changing
+retained run editions. See the [asset and player guide](tank-customization/index.html)
+and [qualification index](tank-customization/validation.json). Physical-device
+performance and owner art acceptance remain separate obligations in the
+[current readiness matrix](LAST-STAND-RELEASE-READINESS.md#current-qualification-matrix).
+
+## Player continuity and patched Unity, October 31, 2026
+
+The owner requested the Unity security update and another implemented sprint in
+PR #547. The [player-continuity specification](../../.codearbiter/specs/last-stand-player-continuity.html)
+and [plan](../../.codearbiter/plans/last-stand-player-continuity.html) pair Unity
+**6000.3.27f2** with player-controlled local backups and clearer recovery. The
+[dependency review](last-stand-continuity/unity-dependency-review.md) records the
+October advisories, exact editor revision and explicit patched Android JDK.
+
+Players can export their confirmed gameplay profile to a bounded `.laststand`
+file, inspect a backup and explicitly replace local progress from the garage.
+The existing save owner checks writer ownership and the preview's original
+record, verifies a separate predecessor backup, then confirms the replacement.
+Uncertain writes retain their pending transaction for retry. A bounded readable
+damaged record can be repaired after that same explicit confirmation; future,
+unreadable and oversized records remain protected. Preferences and account data
+are outside the backup. Restored checkpoints retain their run edition and resume
+paused; research retains its existing real-time accounting.
+
+Settings' Save surface explains confirmed checkpoints, save failures, native
+fallback and the next available recovery action. Help is organized into topics,
+with optional progress-based guidance that opens existing action surfaces.
+Tutorial and purchase-tip switches remain independent; disabling them does not
+hide essential save errors or explicit Help. Returning to the garage preserves
+the confirmed wave checkpoint rather than abandoning the run.
+
+The [local validation index](last-stand-continuity/validation.json) separates
+domain/transport checks, imported Unity controls, actual observation packets and
+the [independent security review](last-stand-continuity/security-review.md).
+The final portable run passes 74 modules and 531 cases with zero skips. Imported
+Controls pass 31 checks, eight actual observation packets pass both readers, and
+the final browser journey passes 89 checks with zero browser errors. Its real
+file transfer covers preview, explicit replacement, retained checkpoint resume,
+previous-save recovery and a second empty isolated profile. The earlier failed
+attempts remain in the index.
+
+Final WebGL release `Web-20261031T021631Z-098558`, frozen packaging, source
+admission and the production site build pass. Windows development
+`build-windows-20261031T022146Z-c8c3e5` and Android development
+`build-android-20261031T022514Z-409a70` also pass. Android's explicit shader
+reimport records the exact reviewed Editor diagnostics and zero blocking
+warnings; its APK v2 signature verifies. This is build evidence, not device
+acceptance.
+
+Development builds support a bounded isolated verification profile shared by
+gameplay and preferences, with invalid requests refused. The root independently
+reviewed that follow-up and reran its eight checks. Real Windows adapter dialogs
+pass export, import and cancel with an explicit fixture. The earlier full native
+player journey remains blocked before confirmed game-control input; its fresh
+isolated garage rendered and all four normal save-slot hashes stayed unchanged.
+No final-player input journey or physical Android session is implied by the builds.
+
+The [release-readiness matrix](LAST-STAND-RELEASE-READINESS.md) retains current
+platform, owner UX, hardware audio, art and endurance obligations. Baseline
+`f474b9c7` passed hosted CI and CodeQL. This report predates feature delivery;
+[PR #547 checks](https://github.com/SUaDtL/singedTerra/pull/547/checks) and its delivery
+record carry the later exact-head result. Neither the features nor the editor
+patch imply merge, publication or deployment.
+
+## Progression planning and run intelligence — October 30, 2026
+
+The owner requested completion of applicable plans and another implemented sprint
+on the existing PR. The [new specification](../../.codearbiter/specs/last-stand-progression-intelligence.html)
+and [plan](../../.codearbiter/plans/last-stand-progression-intelligence.html) add a
+player-invoked Progression Planner to the floating Menu. Players can pin one fixed
+tier, fitting, Workshop-level or Research-rank goal, compare alternatives spending
+the same Salvage, and open the existing action surface. Pins are local settings;
+they neither spend currency nor reserve prices, change checkpoints or grant rewards.
+
+Run History now groups exact saved conditions and compares tiers within that group.
+A median requires three complete runs of at least five active minutes; incomplete,
+short and mixed-condition samples are disclosed instead of becoming an optimal-tier
+recommendation. Two-run comparisons show wave, time and repeatable-income deltas,
+with milestone income separate. Retained rules and the version-6 progression save
+remain unchanged. The [plan closure report](../../.codearbiter/reports/last-stand-plan-closure-2026-10-30.md)
+distinguishes completed implementation from outstanding player/device evidence.
+
+## Combat-depth candidate and release work — October 29, 2026
+
+The current implementation is the [combat-depth candidate](../../.codearbiter/plans/last-stand-combat-depth.html),
+building on the [architecture foundation](LAST-STAND-ARCHITECTURE.md), research/farming
+and waves/resume work. Last Stand is the campaign; Ash Road's implementation is
+retired. The classic hot-seat and online artillery modes remain separate.
+
+The current catalog has four playable tiers and five fittings. Cinder Basin and
+Storm Foundry extend the earlier battlefields; Mortar and Railgun add distinct
+combat roles beside Field Repair, Launcher and Scattergun. Enemy roles, elites,
+milestones and progression descriptions share the authored content and run edition.
+Save version 6 retains legacy profile and active-run editions rather than repricing
+an existing paid run. Clearing the required wave unlocks a tier; it does not force
+the player to leave the tier they are farming.
+
+Application coordinators now own run, purchase and research transitions around one
+durable profile transaction. Shared UI primitives, modal/focus/scroll owners and
+platform adapters support consistent feature views. The target-aware build tool
+supports WebGL, Windows and Android development candidates from the same project.
+
+The next release work is evidence, not a new claim of feature completion: qualify
+the actual Android device lifecycle, controls, audio, sustained performance and
+long farming sessions; review the rendered player experience; complete the stacked
+PR delivery and verify deployment separately. Existing model calibration and
+hosted CI are useful evidence but do not substitute for those observations.
+
+The dated entries below preserve decisions and candidate status at their recorded
+dates. Earlier time-based goals, manual claims, two-tier limits, missing run resume
+and deferred Android setup are historical, superseded by the implementations above.
+The maintained native plans retain any unresolved acceptance obligations.
+
+## Research and farming sprint candidate — October 24, 2026
+
+The owner approved the [research and farming specification](../../.codearbiter/specs/last-stand-research-and-farming.html)
+and [plan](../../.codearbiter/plans/last-stand-research-and-farming.html). The candidate
+adds a Research Lab, bulk upgrades, farming history and a revised economy. Both
+permanent upgrades and research spend Salvage; Scrap remains local to the run.
+Research advances in real time, including while closed. Combat remains checkpointed
+and never simulates closed-tab time. Two Lab slots unlock at Tier 1 waves 25 and 100.
+
+Game Speed research earns half-step ceilings from 1x through 5x; completion never
+changes the selected speed or resumes a pause automatically. Supporting research
+improves repeatable Salvage, subsequent kill Scrap and other projects' research
+duration. Suspended projects retain time, refund once and require repayment to
+resume. Each slot accepts one prepaid queued project.
+
+Version 5 saves commit research, shared currency and bounded run history with the
+existing wave checkpoint owner. A migrated active run retains its original prices,
+effects and seven-track roster until it ends; new runs use the eight-track economy,
+including Scrap Yield. Permanent purchases always use current prices and affect
+the next deployment. A browser Web Lock admits one save writer per origin; another
+tab remains read-only and can take ownership after the owner closes and it reloads.
+
+The [economy notes](LAST-STAND-RESEARCH-ECONOMY.md) state the actual coefficients,
+measurement assumptions and remaining calibration limits. Model projections,
+imported Unity checks, browser inspection, ten real active hours at 5x, hosted CI,
+merge and deployment remain separate evidence. This candidate is not a release
+or a claim that its elapsed-time qualification has passed.
+
+## Wave sprint candidate — October 23, 2026
+
+The owner approved the [waves and resume specification](../../.codearbiter/specs/last-stand-waves-and-resume.html)
+and its [implementation plan](../../.codearbiter/plans/last-stand-waves-and-resume.html).
+The candidate replaces timed tier goals with finite enemy groups. Clearing Tier 1
+wave 300 unlocks Tier 2 without ending the run or moving the player. Milestones
+provide one-time bonuses; each cleared wave also pays repeatable Salvage.
+Tier 1 wave 100 unlocks the auxiliary Scattergun. The original launcher and field
+repair remain available. Only the two authored tiers are playable.
+
+Version 4 saves bank each wave's rewards and complete run checkpoint together.
+Resume restores hull, wave, fitting, upgrades, resources and combat state, initially
+paused. Closing the page rolls back only unfinished-wave progress; an open hidden
+tab retains the existing background-continuation behavior. Explicit abandon
+finalizes the run, while ordinary Return preserves it. Existing permanent progress
+and pending legacy rewards migrate without inventing wave history. Current wave
+runs need no manual reward claim.
+
+The Menu and its child pages now use the shared console chrome, including matched
+chamfered backing corners. Confirmed wave receipts name the earned Salvage and any
+unlock, including when tutorial and purchase suggestions are disabled. The HUD
+retains separate Menu, speed and upgrade controls.
+
+The pacing reference is a mature 5,000-wave farming run taking 10–12 real hours
+at a future researched 5x speed. The shipped controls remain pause, 0.5x and 1x;
+research and higher speeds are later work. Production-model calibration includes
+earned purchase trajectories and 5,000-plus-wave comparisons. Accelerated
+simulations and imported milestone fixtures do not establish elapsed-time endurance.
+Current browser qualification, the dedicated 10–12-hour observation, exact-head
+hosted CI, owner media acceptance, merge and deployment are tracked separately in
+the plan. The older delivery observations below retain their historical scope.
 
 ## Owner direction update — October 22, 2026
 

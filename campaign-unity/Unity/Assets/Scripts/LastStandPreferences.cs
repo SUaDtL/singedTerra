@@ -20,12 +20,13 @@ namespace SingedTerra.LastStand
         public bool TutorialTips { get; }
         public bool PurchaseSuggestions { get; }
         public double LastPositiveSpeed { get; }
+        public string PinnedGoal { get; }
         public static LastStandPreferenceValues Defaults { get; } = new LastStandPreferenceValues(
             100, 100, 20, false, true, false, LastStandQuality.Current, true, true, 1);
 
         private LastStandPreferenceValues(int masterVolume, int effectsVolume, int musicVolume,
             bool muted, bool musicEnabled, bool reducedEffects, LastStandQuality quality,
-            bool tutorialTips, bool purchaseSuggestions, double lastPositiveSpeed)
+            bool tutorialTips, bool purchaseSuggestions, double lastPositiveSpeed, string pinnedGoal = "")
         {
             ValidateVolume(masterVolume, nameof(masterVolume));
             ValidateVolume(effectsVolume, nameof(effectsVolume));
@@ -35,10 +36,13 @@ namespace SingedTerra.LastStand
             if (double.IsNaN(lastPositiveSpeed) || double.IsInfinity(lastPositiveSpeed) ||
                 lastPositiveSpeed < .5 || lastPositiveSpeed > 5 || lastPositiveSpeed * 2 % 1 != 0)
                 throw new ArgumentOutOfRangeException(nameof(lastPositiveSpeed));
+            if (pinnedGoal == null || !Regex.IsMatch(pinnedGoal, @"\A[A-Za-z0-9:_-]{0,100}\z", RegexOptions.CultureInvariant))
+                throw new ArgumentOutOfRangeException(nameof(pinnedGoal));
             MasterVolume = masterVolume; EffectsVolume = effectsVolume; MusicVolume = musicVolume;
             Muted = muted; MusicEnabled = musicEnabled; ReducedEffects = reducedEffects; Quality = quality;
             TutorialTips = tutorialTips; PurchaseSuggestions = purchaseSuggestions;
             LastPositiveSpeed = lastPositiveSpeed;
+            PinnedGoal = pinnedGoal;
         }
 
         private static void ValidateVolume(int value, string name)
@@ -49,11 +53,11 @@ namespace SingedTerra.LastStand
         public LastStandPreferenceValues With(int? masterVolume = null, int? effectsVolume = null,
             int? musicVolume = null, bool? muted = null, bool? musicEnabled = null,
             bool? reducedEffects = null, LastStandQuality? quality = null, bool? tutorialTips = null,
-            bool? purchaseSuggestions = null, double? lastPositiveSpeed = null) =>
+            bool? purchaseSuggestions = null, double? lastPositiveSpeed = null, string pinnedGoal = null) =>
             new LastStandPreferenceValues(masterVolume ?? MasterVolume, effectsVolume ?? EffectsVolume,
                 musicVolume ?? MusicVolume, muted ?? Muted, musicEnabled ?? MusicEnabled,
                 reducedEffects ?? ReducedEffects, quality ?? Quality, tutorialTips ?? TutorialTips,
-                purchaseSuggestions ?? PurchaseSuggestions, lastPositiveSpeed ?? LastPositiveSpeed);
+                purchaseSuggestions ?? PurchaseSuggestions, lastPositiveSpeed ?? LastPositiveSpeed, pinnedGoal ?? PinnedGoal);
     }
 
     public sealed class LastStandPreferences
@@ -72,7 +76,8 @@ namespace SingedTerra.LastStand
             Field("muted", "true|false") + "," + Field("musicEnabled", "true|false") + "," +
             Field("reducedEffects", "true|false") + "," + Field("quality", "\"(?:current|performance)\"") + "," +
             Field("tutorialTips", "true|false") + "," + Field("purchaseSuggestions", "true|false") + "," +
-            Field("lastPositiveSpeed", Integer + @"(?:\.[0-9]+)?") + @"\}" + Space + @"\z",
+            Field("lastPositiveSpeed", Integer + @"(?:\.[0-9]+)?") +
+            "(?:," + Field("pinnedGoal", "\"[A-Za-z0-9:_-]{0,100}\"") + ")?" + @"\}" + Space + @"\z",
             RegexOptions.CultureInvariant);
 
         private readonly ILastStandStorage storage;
@@ -220,7 +225,8 @@ namespace SingedTerra.LastStand
             (values.Quality == LastStandQuality.Current ? "current" : "performance") +
             "\",\"tutorialTips\":" + Boolean(values.TutorialTips) +
             ",\"purchaseSuggestions\":" + Boolean(values.PurchaseSuggestions) +
-            ",\"lastPositiveSpeed\":" + values.LastPositiveSpeed.ToString("0.0#", CultureInfo.InvariantCulture).TrimEnd('0').TrimEnd('.') + "}";
+            ",\"lastPositiveSpeed\":" + values.LastPositiveSpeed.ToString("0.0#", CultureInfo.InvariantCulture).TrimEnd('0').TrimEnd('.') +
+            (values.PinnedGoal.Length == 0 ? "" : ",\"pinnedGoal\":\"" + values.PinnedGoal + "\"") + "}";
 
         private static bool TryParse(string raw, out LastStandPreferenceValues values)
         {
@@ -243,7 +249,8 @@ namespace SingedTerra.LastStand
                     reducedEffects: match.Groups["reducedEffects"].Value == "true",
                     quality: match.Groups["quality"].Value == "\"performance\"" ? LastStandQuality.Performance : LastStandQuality.Current,
                     tutorialTips: match.Groups["tutorialTips"].Value == "true",
-                    purchaseSuggestions: match.Groups["purchaseSuggestions"].Value == "true", lastPositiveSpeed: speed);
+                    purchaseSuggestions: match.Groups["purchaseSuggestions"].Value == "true", lastPositiveSpeed: speed,
+                    pinnedGoal: match.Groups["pinnedGoal"].Success ? match.Groups["pinnedGoal"].Value.Trim('"') : "");
                 return true;
             }
             catch (ArgumentOutOfRangeException) { return false; }

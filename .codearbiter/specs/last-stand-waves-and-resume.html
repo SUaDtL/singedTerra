@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: waves, rewards and resumable runs · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-WAVES-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-waves-and-resume.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: waves, rewards and resumable runs</h1><p class="deck">A complete progression loop with finite waves, durable checkpoints, milestone rewards and consistent menu chrome. Proposed sprint for owner review.</p><div class="meta"><span>ST-LS-WAVES-SPEC</span><span>Revision 8 · schema 0.3.2</span><span>74 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INTENT-WAVES -->
+<article class="record" id="INTENT-WAVES" data-ca-symbol="INTENT-WAVES" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INTENT-WAVES">INTENT-WAVES</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Owner: Plan the next sprint</div><div class="field"><span class="label">Outcome</span>Players clear waves, understand and earn progression, safely resume after closing, and use a coherent game interface.</div><div class="field"><span class="label">Problem</span>Time-based goals and volatile active runs cannot support durable wave-driven campaign progression. Menu chrome and panel corners remain inconsistent.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-PLAN">SRC-PLAN</a></li></ul></div></article>
+<!-- CA:END:INTENT-WAVES -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:SCOPE-LOOP -->
+<article class="record" id="SCOPE-LOOP" data-ca-symbol="SCOPE-LOOP" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-LOOP">SCOPE-LOOP</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Both existing tiers: finite waves, continuing runs, target progression, best waves, repeatable and first-clear rewards, safe migration and resumable lifecycle. Include the cost/effect/cap depth needed for hundreds-to-thousands-of-wave progression and lower-tier farming viability.</div></article>
+<!-- CA:END:SCOPE-LOOP -->
+
+<!-- CA:BEGIN:SCOPE-UX -->
+<article class="record" id="SCOPE-UX" data-ca-symbol="SCOPE-UX" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-UX">SCOPE-UX</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Wave/reward/Resume presentation and shared Menu/Settings/Help/About/confirmation chrome with correct corners.</div></article>
+<!-- CA:END:SCOPE-UX -->
+
+<!-- CA:BEGIN:SCOPE-CONTENT -->
+<article class="record" id="SCOPE-CONTENT" data-ca-symbol="SCOPE-CONTENT" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-CONTENT">SCOPE-CONTENT</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Conditional proposed new armament and its complete gameplay/visual/save/upgrade integration.</div></article>
+<!-- CA:END:SCOPE-CONTENT -->
+
+<!-- CA:BEGIN:SCOPE-DELIVERY -->
+<article class="record" id="SCOPE-DELIVERY" data-ca-symbol="SCOPE-DELIVERY" data-ca-kind="scope"><div class="record-head"><a class="id" href="#SCOPE-DELIVERY">SCOPE-DELIVERY</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Diagnose recurring foreground audio assertion and qualify the complete source-bound sprint candidate.</div></article>
+<!-- CA:END:SCOPE-DELIVERY -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:NON-SYSTEMS -->
+<article class="record" id="NON-SYSTEMS" data-ca-symbol="NON-SYSTEMS" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-SYSTEMS">NON-SYSTEMS</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No Tier 3 content, full research tree, speed unlocks above current 1x, Skills, inventory, boss roster or new currencies.</div></article>
+<!-- CA:END:NON-SYSTEMS -->
+
+<!-- CA:BEGIN:NON-SERVICES -->
+<article class="record" id="NON-SERVICES" data-ca-symbol="NON-SERVICES" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-SERVICES">NON-SERVICES</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No cloud saves, offline earnings, cross-device sync, account rewards, full multi-tab locking, backend deployment, Android build, monetization or dependency refresh.</div></article>
+<!-- CA:END:NON-SERVICES -->
+
+<!-- CA:BEGIN:NON-EXPANSION -->
+<article class="record" id="NON-EXPANSION" data-ca-symbol="NON-EXPANSION" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#NON-EXPANSION">NON-EXPANSION</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No Ash Road restoration, ordinary Skirmish/Multiplayer/ST1/cq1 redesign, wholesale HUD/art replacement or unrequested PR merging.</div></article>
+<!-- CA:END:NON-EXPANSION -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APPROACH-WAVES -->
+<article class="record" id="APPROACH-WAVES" data-ca-symbol="APPROACH-WAVES" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APPROACH-WAVES">APPROACH-WAVES</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DEC-CLEAR">DEC-CLEAR</a></li><li><a href="#DEC-RESUME">DEC-RESUME</a></li><li><a href="#DEC-SAVE">DEC-SAVE</a></li></ul></div><div class="field"><span class="label">Choice</span>Finite deterministic cohorts plus catalog-driven milestones and one atomic checkpoint/progression envelope.</div><div class="field"><span class="label">Tradeoff</span>Only checkpoint boundaries survive tab closure; retaining one complete record keeps rewards and restored combat consistent.</div></article>
+<!-- CA:END:APPROACH-WAVES -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:CON-REVIEW -->
+<article class="record" id="CON-REVIEW" data-ca-symbol="CON-REVIEW" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-REVIEW">CON-REVIEW</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-WAVES</li><li>CR-TIERS</li><li>CR-REWARDS</li><li>CR-CHECKPOINT</li><li>CR-STORAGE</li><li>CR-LIFECYCLE</li><li>CR-HUD</li><li>CR-ARMAMENT</li><li>CR-CHROME</li><li>CR-BASELINE</li><li>CR-QUALIFY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PLAN">SRC-PLAN</a></li></ul></div><div class="field"><span class="label">Statement</span>Planning only; obtain owner approval of the concrete sprint before product implementation. No approval code ceremony.</div></article>
+<!-- CA:END:CON-REVIEW -->
+
+<!-- CA:BEGIN:CON-PRESERVE -->
+<article class="record" id="CON-PRESERVE" data-ca-symbol="CON-PRESERVE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-PRESERVE">CON-PRESERVE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-WAVES</li><li>CR-TIERS</li><li>CR-REWARDS</li><li>CR-CHECKPOINT</li><li>CR-STORAGE</li><li>CR-LIFECYCLE</li><li>CR-HUD</li><li>CR-ARMAMENT</li><li>CR-CHROME</li><li>CR-BASELINE</li><li>CR-QUALIFY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-CODE">SRC-CODE</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve dirty unrelated artifacts, current localhost, existing local save bytes until confirmed migration, all ordinary game paths and existing unlocked content.</div></article>
+<!-- CA:END:CON-PRESERVE -->
+
+<!-- CA:BEGIN:CON-EVIDENCE -->
+<article class="record" id="CON-EVIDENCE" data-ca-symbol="CON-EVIDENCE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#CON-EVIDENCE">CON-EVIDENCE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>CR-WAVES</li><li>CR-TIERS</li><li>CR-REWARDS</li><li>CR-CHECKPOINT</li><li>CR-STORAGE</li><li>CR-LIFECYCLE</li><li>CR-HUD</li><li>CR-ARMAMENT</li><li>CR-CHROME</li><li>CR-BASELINE</li><li>CR-QUALIFY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CI">SRC-CI</a></li></ul></div><div class="field"><span class="label">Statement</span>No weakened gates, invented historical wave clears, fabricated tests or native qualification, or automatic claims of deployment.</div></article>
+<!-- CA:END:CON-EVIDENCE -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:DEC-CLEAR -->
+<article class="record" id="DEC-CLEAR" data-ca-symbol="DEC-CLEAR" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-CLEAR">DEC-CLEAR</a><h3>Wave completion</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Defeat the complete finite enemy cohort.</div><div class="field"><span class="label">Rationale</span>Explicit owner selection.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-OWNER">SRC-OWNER</a></div></article>
+<!-- CA:END:DEC-CLEAR -->
+
+<!-- CA:BEGIN:DEC-RESUME -->
+<article class="record" id="DEC-RESUME" data-ca-symbol="DEC-RESUME" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-RESUME">DEC-RESUME</a><h3>Run continuity</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Restore from the last completed-wave state, with an initial wave-1 checkpoint.</div><div class="field"><span class="label">Rationale</span>Explicit owner correction: closing a tab must lose at most unfinished-wave progress.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-OWNER">SRC-OWNER</a></div></article>
+<!-- CA:END:DEC-RESUME -->
+
+<!-- CA:BEGIN:DEC-CHROME -->
+<article class="record" id="DEC-CHROME" data-ca-symbol="DEC-CHROME" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-CHROME">DEC-CHROME</a><h3>Presentation</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Fix menu chrome and shared corner composition in this sprint.</div><div class="field"><span class="label">Rationale</span>Explicit owner follow-up.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-OWNER">SRC-OWNER</a></div></article>
+<!-- CA:END:DEC-CHROME -->
+
+<!-- CA:BEGIN:DEC-SAVE -->
+<article class="record" id="DEC-SAVE" data-ca-symbol="DEC-SAVE" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-SAVE">DEC-SAVE</a><h3>Checkpoint ownership</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Use one versioned progression/checkpoint envelope with verified writes.</div><div class="field"><span class="label">Rationale</span>SMARTS favors fewer transaction failure states at the current local-only scale.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-PLAN">SRC-PLAN</a></div></article>
+<!-- CA:END:DEC-SAVE -->
+
+<!-- CA:BEGIN:DEC-TUNING -->
+<article class="record" id="DEC-TUNING" data-ca-symbol="DEC-TUNING" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-TUNING">DEC-TUNING</a><h3>Provisional tuning</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Provisional Tier 1 wave 300 unlocks Tier 2. Support 2000-plus-wave farming and authored milestones beyond that; no forced tier promotion or 2000-wave ending. Replace the former fixed three-second intermission and five-wave Salvage rule with measured pacing/economy curves.</div><div class="field"><span class="label">Rationale</span>These are proposed Last Stand defaults matching the owner scale correction. Exact numbers, wave duration and reward rates require calibrated balance.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a></div></article>
+<!-- CA:END:DEC-TUNING -->
+
+<!-- CA:BEGIN:DEC-BANK -->
+<article class="record" id="DEC-BANK" data-ca-symbol="DEC-BANK" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-BANK">DEC-BANK</a><h3>Award flow</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Automatically bank clear rewards; retain legacy Claim once; remove new-run death awards.</div><div class="field"><span class="label">Rationale</span>Earned milestones survive defeat/close without additional confirmation or duplicate income.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-PLAN">SRC-PLAN</a></div></article>
+<!-- CA:END:DEC-BANK -->
+
+<!-- CA:BEGIN:DEC-LONG-RUNS -->
+<article class="record" id="DEC-LONG-RUNS" data-ca-symbol="DEC-LONG-RUNS" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-LONG-RUNS">DEC-LONG-RUNS</a><h3>Progression scale and farming tiers</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Design around hundreds of waves before a tier unlock and farming runs into thousands; unlock and optimal farming tier are separate.</div><div class="field"><span class="label">Rationale</span>The owner explicitly rejects the prior 10/20-wave scale and describes remaining on the lower tier long after unlocking the next.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a></div></article>
+<!-- CA:END:DEC-LONG-RUNS -->
+
+<!-- CA:BEGIN:DEC-MIDGAME-DURATION -->
+<article class="record" id="DEC-MIDGAME-DURATION" data-ca-symbol="DEC-MIDGAME-DURATION" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-MIDGAME-DURATION">DEC-MIDGAME-DURATION</a><h3>Long-run pacing reference</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Owner benchmark: approximately Tier 10, wave 5000, 10-12 real hours at maxed 5x speed. Early Tier 1 wave-2000 duration remains unknown. Use this long-run reference without forcing every wave to the same duration. Under ideal linear scaling, the same workload represents 50-60 simulation hours at 1x; browser/persistence overhead requires measurement.</div><div class="field"><span class="label">Rationale</span>The owner explicitly clarified that the recalled midgame run used maxed 5x speed. Preserve the distinction between midgame reference and unknown early Tier 1 pacing.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-MAX-SPEED">SRC-MAX-SPEED</a></div></article>
+<!-- CA:END:DEC-MIDGAME-DURATION -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:CR-WAVES -->
+<article class="record" id="CR-WAVES" data-ca-symbol="CR-WAVES" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-WAVES">CR-WAVES</a><h3>Finite waves and continuing runs</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it.</li><li>A new wave cannot overlap the previous cohort. A short automatic intermission begins only after checkpoint confirmation and obeys pause/speed. Set its duration from the full-run pacing budget, including cumulative downtime across thousands of waves.</li><li>Keep deterministic fixed-step simulation. Replace the player-facing time horizon with continuing waves; diagnostic ceilings must not grant rewards or erase a resumable run.</li><li>Bound simultaneous enemies, runtime allocations, numeric growth and retained state. Prove continuation and checkpoint recovery at 300, 1000, 2000, 5000 and beyond 5000 waves without an ever-growing wave roster or reward history; support the owner multi-hour operational horizon.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-WAVES -->
+<article class="record" id="SC-WAVES" data-ca-symbol="SC-WAVES" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-WAVES">SC-WAVES</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it. A new wave cannot overlap the previous cohort. A short automatic intermission begins only after checkpoint confirmation and obeys pause/speed. Set its duration from the full-run pacing budget, including cumulative downtime across thousands of waves. Keep deterministic fixed-step simulation. Replace the player-facing time horizon with continuing waves; diagnostic ceilings must not grant rewards or erase a resumable run. Bound simultaneous enemies, runtime allocations, numeric growth and retained state. Prove continuation and checkpoint recovery at 300, 1000, 2000, 5000 and beyond 5000 waves without an ever-growing wave roster or reward history; support the owner multi-hour operational horizon.</div><div class="field"><span class="label">When</span>Deploy, defeat the last enemy, pause or continue beyond the tier target.</div></article>
+<!-- CA:END:SC-WAVES -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li><li><a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a></li><li><a href="#SRC-MIDGAME-DURATION">SRC-MIDGAME-DURATION</a></li></ul></div><div class="field"><span class="label">Statement</span>A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it.</div><div class="field"><span class="label">Trigger</span>Deploy, defeat the last enemy, pause or continue beyond the tier target.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-WAVES -->
+<article class="record" id="VER-WAVES" data-ca-symbol="VER-WAVES" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-WAVES">VER-WAVES</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Leave one live or unspawned enemy; advance the clock; the wave and reward must not advance. Test zero-length/invalid definitions and late-wave bounds.</div><div class="field"><span class="label">Oracle</span>A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it. A new wave cannot overlap the previous cohort. A short automatic intermission begins only after checkpoint confirmation and obeys pause/speed. Set its duration from the full-run pacing budget, including cumulative downtime across thousands of waves. Keep deterministic fixed-step simulation. Replace the player-facing time horizon with continuing waves; diagnostic ceilings must not grant rewards or erase a resumable run. Bound simultaneous enemies, runtime allocations, numeric growth and retained state. Prove continuation and checkpoint recovery at 300, 1000, 2000, 5000 and beyond 5000 waves without an ever-growing wave roster or reward history; support the owner multi-hour operational horizon.</div><div class="field"><span class="label">Planned target</span>Finite waves and continuing runs production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-WAVES -->
+</div></article>
+<!-- CA:END:CR-WAVES -->
+
+<!-- CA:BEGIN:CR-TIERS -->
+<article class="record" id="CR-TIERS" data-ca-symbol="CR-TIERS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-TIERS">CR-TIERS</a><h3>Scalable tier and milestone catalogs</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier.</li><li>Proposed tuning: Tier 1 wave 300 unlocks Tier 2 as an optional choice. Support viable Tier 1 farming into 2000-plus waves; neither unlock nor wave 2000 ends the run or automatically selects another tier. No unimplemented Tier 3 unlock or preview.</li><li>Retain the current two environment identities and compact selector; show unlocked tiers plus at most the next actually authored locked tier.</li><li>Show best cleared wave and next actual milestone for each tier. Preserve prior time/kill records as legacy records, without inventing wave clears.</li><li>Tier difficulty and repeatable rewards support a meaningful push-versus-farm choice; compare both tiers at the same build rather than assuming the highest unlocked tier is best.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-TIERS -->
+<article class="record" id="SC-TIERS" data-ca-symbol="SC-TIERS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-TIERS">SC-TIERS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier. Proposed tuning: Tier 1 wave 300 unlocks Tier 2 as an optional choice. Support viable Tier 1 farming into 2000-plus waves; neither unlock nor wave 2000 ends the run or automatically selects another tier. No unimplemented Tier 3 unlock or preview. Retain the current two environment identities and compact selector; show unlocked tiers plus at most the next actually authored locked tier. Show best cleared wave and next actual milestone for each tier. Preserve prior time/kill records as legacy records, without inventing wave clears. Tier difficulty and repeatable rewards support a meaningful push-versus-farm choice; compare both tiers at the same build rather than assuming the highest unlocked tier is best.</div><div class="field"><span class="label">When</span>Reach a target wave, browse a locked tier, or load an expanded test catalog.</div></article>
+<!-- CA:END:SC-TIERS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li><li><a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a></li></ul></div><div class="field"><span class="label">Statement</span>Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier.</div><div class="field"><span class="label">Trigger</span>Reach a target wave, browse a locked tier, or load an expanded test catalog.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-TIERS -->
+<article class="record" id="VER-TIERS" data-ca-symbol="VER-TIERS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-TIERS">VER-TIERS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>An 18-tier fixture must preserve bounded selectors and keyed saves; missing/duplicate/invalid IDs and a nonexistent next tier must be rejected.</div><div class="field"><span class="label">Oracle</span>Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier. Proposed tuning: Tier 1 wave 300 unlocks Tier 2 as an optional choice. Support viable Tier 1 farming into 2000-plus waves; neither unlock nor wave 2000 ends the run or automatically selects another tier. No unimplemented Tier 3 unlock or preview. Retain the current two environment identities and compact selector; show unlocked tiers plus at most the next actually authored locked tier. Show best cleared wave and next actual milestone for each tier. Preserve prior time/kill records as legacy records, without inventing wave clears. Tier difficulty and repeatable rewards support a meaningful push-versus-farm choice; compare both tiers at the same build rather than assuming the highest unlocked tier is best.</div><div class="field"><span class="label">Planned target</span>Scalable tier and milestone catalogs production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-TIERS -->
+</div></article>
+<!-- CA:END:CR-TIERS -->
+
+<!-- CA:BEGIN:CR-REWARDS -->
+<article class="record" id="CR-REWARDS" data-ca-symbol="CR-REWARDS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-REWARDS">CR-REWARDS</a><h3>Clear rewards that cannot duplicate or disappear</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing.</li><li>Keep Scrap for in-run upgrades and Salvage for permanent upgrades. Author repeatable earnings and first-clear bonuses for hundreds/thousands of waves, balanced together with upgrade costs/effects/caps; the prior fixed one-Salvage-per-five-waves schedule is withdrawn.</li><li>First-clear bonuses/unlocks are once per tier/milestone across runs; repeatable payouts are once per run/wave. No replay, retry or reload double-awards.</li><li>For new wave runs, bank awards automatically at clear and show a compact receipt; defeat/abandon adds no separate payout. Preserve an existing legacy pending Claim exactly once during migration.</li><li>If the last enemy and the tank die in the same simulation step, bank the completed-wave reward and finalize the run atomically; never create a living resume checkpoint with zero hull.</li><li>Extend the existing upgrade economy beyond prototype depth without erasing current levels or investment. Attack/health growth and bounded utility tracks must stay meaningful and numerically valid through mature 2000-plus-wave runs; no zero/negative firing intervals, overflow, mandatory purchase prompts or immediate full-economy saturation.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-REWARDS -->
+<article class="record" id="SC-REWARDS" data-ca-symbol="SC-REWARDS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-REWARDS">SC-REWARDS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing. Keep Scrap for in-run upgrades and Salvage for permanent upgrades. Author repeatable earnings and first-clear bonuses for hundreds/thousands of waves, balanced together with upgrade costs/effects/caps; the prior fixed one-Salvage-per-five-waves schedule is withdrawn. First-clear bonuses/unlocks are once per tier/milestone across runs; repeatable payouts are once per run/wave. No replay, retry or reload double-awards. For new wave runs, bank awards automatically at clear and show a compact receipt; defeat/abandon adds no separate payout. Preserve an existing legacy pending Claim exactly once during migration. If the last enemy and the tank die in the same simulation step, bank the completed-wave reward and finalize the run atomically; never create a living resume checkpoint with zero hull. Extend the existing upgrade economy beyond prototype depth without erasing current levels or investment. Attack/health growth and bounded utility tracks must stay meaningful and numerically valid through mature 2000-plus-wave runs; no zero/negative firing intervals, overflow, mandatory purchase prompts or immediate full-economy saturation.</div><div class="field"><span class="label">When</span>Clear an ordinary or milestone wave; retry, reload, replay a tier, lose, or abandon.</div></article>
+<!-- CA:END:SC-REWARDS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li><li><a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a></li></ul></div><div class="field"><span class="label">Statement</span>Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing.</div><div class="field"><span class="label">Trigger</span>Clear an ordinary or milestone wave; retry, reload, replay a tier, lose, or abandon.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-REWARDS -->
+<article class="record" id="VER-REWARDS" data-ca-symbol="VER-REWARDS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-REWARDS">VER-REWARDS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Interrupt the write before/after success, retry twice, reload, revisit the same milestone and defeat immediately; balances and unlocks must have one consistent result.</div><div class="field"><span class="label">Oracle</span>Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing. Keep Scrap for in-run upgrades and Salvage for permanent upgrades. Author repeatable earnings and first-clear bonuses for hundreds/thousands of waves, balanced together with upgrade costs/effects/caps; the prior fixed one-Salvage-per-five-waves schedule is withdrawn. First-clear bonuses/unlocks are once per tier/milestone across runs; repeatable payouts are once per run/wave. No replay, retry or reload double-awards. For new wave runs, bank awards automatically at clear and show a compact receipt; defeat/abandon adds no separate payout. Preserve an existing legacy pending Claim exactly once during migration. If the last enemy and the tank die in the same simulation step, bank the completed-wave reward and finalize the run atomically; never create a living resume checkpoint with zero hull. Extend the existing upgrade economy beyond prototype depth without erasing current levels or investment. Attack/health growth and bounded utility tracks must stay meaningful and numerically valid through mature 2000-plus-wave runs; no zero/negative firing intervals, overflow, mandatory purchase prompts or immediate full-economy saturation.</div><div class="field"><span class="label">Planned target</span>Clear rewards that cannot duplicate or disappear production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-REWARDS -->
+</div></article>
+<!-- CA:END:CR-REWARDS -->
+
+<!-- CA:BEGIN:CR-CHECKPOINT -->
+<article class="record" id="CR-CHECKPOINT" data-ca-symbol="CR-CHECKPOINT" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-CHECKPOINT">CR-CHECKPOINT</a><h3>Full run checkpoint and deterministic restore</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation.</li><li>A reload resumes at the start of the unfinished wave with the exact latest committed checkpoint. Mid-wave purchases and spending roll back together; completed rewards stay banked.</li><li>Resume waits for explicit player input and starts paused; do not simulate time while the tab was closed or replay historical effects/audio.</li><li>The same input sequence after restore yields the same combat state as an uninterrupted checkpoint continuation.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-CHECKPOINT -->
+<article class="record" id="SC-CHECKPOINT" data-ca-symbol="SC-CHECKPOINT" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-CHECKPOINT">SC-CHECKPOINT</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation. A reload resumes at the start of the unfinished wave with the exact latest committed checkpoint. Mid-wave purchases and spending roll back together; completed rewards stay banked. Resume waits for explicit player input and starts paused; do not simulate time while the tab was closed or replay historical effects/audio. The same input sequence after restore yields the same combat state as an uninterrupted checkpoint continuation.</div><div class="field"><span class="label">When</span>Start a run, clear a wave, purchase an upgrade mid-wave, then close/reload.</div></article>
+<!-- CA:END:SC-CHECKPOINT -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation.</div><div class="field"><span class="label">Trigger</span>Start a run, clear a wave, purchase an upgrade mid-wave, then close/reload.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-CHECKPOINT -->
+<article class="record" id="VER-CHECKPOINT" data-ca-symbol="VER-CHECKPOINT" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-CHECKPOINT">VER-CHECKPOINT</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Close during wave 1 and later waves, just before/after a purchase and clear, and after tier unlock; detect missing hull/cooldown/fitting/resource fields and double catch-up.</div><div class="field"><span class="label">Oracle</span>Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation. A reload resumes at the start of the unfinished wave with the exact latest committed checkpoint. Mid-wave purchases and spending roll back together; completed rewards stay banked. Resume waits for explicit player input and starts paused; do not simulate time while the tab was closed or replay historical effects/audio. The same input sequence after restore yields the same combat state as an uninterrupted checkpoint continuation.</div><div class="field"><span class="label">Planned target</span>Full run checkpoint and deterministic restore production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-CHECKPOINT -->
+</div></article>
+<!-- CA:END:CR-CHECKPOINT -->
+
+<!-- CA:BEGIN:CR-STORAGE -->
+<article class="record" id="CR-STORAGE" data-ca-symbol="CR-STORAGE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-STORAGE">CR-STORAGE</a><h3>Migration, write failure and save integrity</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available.</li><li>Use one versioned progression/checkpoint envelope and verified write/retry reconciliation. On failure stop at the boundary, show unsaved status and Retry, and never run the next wave against an unconfirmed checkpoint.</li><li>Preserve original bytes until migration success; reject invalid/future data without silent resets. Unsupported checkpoint rules get a clear recovery state, not fabricated compatibility.</li><li>Keep current local-only, single-active-tab scope. Detect a changed preimage and stop conflicting writes; cloud sync, cross-device continuity and full multi-tab locking are excluded.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>compatibility</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-STORAGE -->
+<article class="record" id="SC-STORAGE" data-ca-symbol="SC-STORAGE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-STORAGE">SC-STORAGE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available. Use one versioned progression/checkpoint envelope and verified write/retry reconciliation. On failure stop at the boundary, show unsaved status and Retry, and never run the next wave against an unconfirmed checkpoint. Preserve original bytes until migration success; reject invalid/future data without silent resets. Unsupported checkpoint rules get a clear recovery state, not fabricated compatibility. Keep current local-only, single-active-tab scope. Detect a changed preimage and stop conflicting writes; cloud sync, cross-device continuity and full multi-tab locking are excluded.</div><div class="field"><span class="label">When</span>Load legacy, malformed, future, conflicting or quota-failing data.</div></article>
+<!-- CA:END:SC-STORAGE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available.</div><div class="field"><span class="label">Trigger</span>Load legacy, malformed, future, conflicting or quota-failing data.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-STORAGE -->
+<article class="record" id="VER-STORAGE" data-ca-symbol="VER-STORAGE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-STORAGE">VER-STORAGE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Malformed versions, overflow, unknown IDs, write-success/read-failure, external preimage change, storage denial and interrupted legacy Claim must not overwrite or duplicate progress.</div><div class="field"><span class="label">Oracle</span>Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available. Use one versioned progression/checkpoint envelope and verified write/retry reconciliation. On failure stop at the boundary, show unsaved status and Retry, and never run the next wave against an unconfirmed checkpoint. Preserve original bytes until migration success; reject invalid/future data without silent resets. Unsupported checkpoint rules get a clear recovery state, not fabricated compatibility. Keep current local-only, single-active-tab scope. Detect a changed preimage and stop conflicting writes; cloud sync, cross-device continuity and full multi-tab locking are excluded.</div><div class="field"><span class="label">Planned target</span>Migration, write failure and save integrity production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-STORAGE -->
+</div></article>
+<!-- CA:END:CR-STORAGE -->
+
+<!-- CA:BEGIN:CR-LIFECYCLE -->
+<article class="record" id="CR-LIFECYCLE" data-ca-symbol="CR-LIFECYCLE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-LIFECYCLE">CR-LIFECYCLE</a><h3>Resume, return, defeat and deliberate abandon</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy.</li><li>A new run or changed deployment requires explicit abandon confirmation when a resumable run exists. Cancel preserves it. Permanent purchases and loadout edits must not alter the active run snapshot.</li><li>Defeat and confirmed abandon durably finalize the run and invalidate its checkpoint together; completed-wave awards remain. A reload cannot resurrect a finalized run.</li><li>Update Help, Save &amp; Account and confirmations to accurately explain checkpoint rollback and local-only storage; remove obsolete unfinished-run-loss and manual-Claim instructions for new runs.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-LOOP">SCOPE-LOOP</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-LIFECYCLE -->
+<article class="record" id="SC-LIFECYCLE" data-ca-symbol="SC-LIFECYCLE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-LIFECYCLE">SC-LIFECYCLE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy. A new run or changed deployment requires explicit abandon confirmation when a resumable run exists. Cancel preserves it. Permanent purchases and loadout edits must not alter the active run snapshot. Defeat and confirmed abandon durably finalize the run and invalidate its checkpoint together; completed-wave awards remain. A reload cannot resurrect a finalized run. Update Help, Save &amp; Account and confirmations to accurately explain checkpoint rollback and local-only storage; remove obsolete unfinished-run-loss and manual-Claim instructions for new runs.</div><div class="field"><span class="label">When</span>Use Menu/Return/account navigation, Resume, New Run, defeat or Abandon.</div></article>
+<!-- CA:END:SC-LIFECYCLE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy.</div><div class="field"><span class="label">Trigger</span>Use Menu/Return/account navigation, Resume, New Run, defeat or Abandon.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-LIFECYCLE -->
+<article class="record" id="VER-LIFECYCLE" data-ca-symbol="VER-LIFECYCLE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-LIFECYCLE">VER-LIFECYCLE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Cancel each exit/new-run path, fail terminal persistence and reload after defeat/abandon; no accidental loss, zombie resume or duplicate legacy claim.</div><div class="field"><span class="label">Oracle</span>Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy. A new run or changed deployment requires explicit abandon confirmation when a resumable run exists. Cancel preserves it. Permanent purchases and loadout edits must not alter the active run snapshot. Defeat and confirmed abandon durably finalize the run and invalidate its checkpoint together; completed-wave awards remain. A reload cannot resurrect a finalized run. Update Help, Save &amp; Account and confirmations to accurately explain checkpoint rollback and local-only storage; remove obsolete unfinished-run-loss and manual-Claim instructions for new runs.</div><div class="field"><span class="label">Planned target</span>Resume, return, defeat and deliberate abandon production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-LIFECYCLE -->
+</div></article>
+<!-- CA:END:CR-LIFECYCLE -->
+
+<!-- CA:BEGIN:CR-HUD -->
+<article class="record" id="CR-HUD" data-ca-symbol="CR-HUD" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-HUD">CR-HUD</a><h3>Readable wave progress and reward preview</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar.</li><li>Provide a scrollable milestone detail pane with earned/upcoming states and clear one-time versus repeatable labels; make the next reward understandable in the garage and run.</li><li>Keep floating Menu separate, compact speed controls, a prominent Resume/Deploy action and attached fitting callouts. Preserve keyboard, touch, focus, scrolling and 44 CSS-pixel targets.</li><li>Any new tutorial or purchase suggestion obeys existing opt-outs. Necessary checkpoint status, errors and reward receipts remain readable without modal spam.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-UX">SCOPE-UX</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-HUD -->
+<article class="record" id="SC-HUD" data-ca-symbol="SC-HUD" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-HUD">SC-HUD</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar. Provide a scrollable milestone detail pane with earned/upcoming states and clear one-time versus repeatable labels; make the next reward understandable in the garage and run. Keep floating Menu separate, compact speed controls, a prominent Resume/Deploy action and attached fitting callouts. Preserve keyboard, touch, focus, scrolling and 44 CSS-pixel targets. Any new tutorial or purchase suggestion obeys existing opt-outs. Necessary checkpoint status, errors and reward receipts remain readable without modal spam.</div><div class="field"><span class="label">When</span>Play, clear, unlock, pause, resume and view progression on narrow screens.</div></article>
+<!-- CA:END:SC-HUD -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar.</div><div class="field"><span class="label">Trigger</span>Play, clear, unlock, pause, resume and view progression on narrow screens.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-HUD -->
+<article class="record" id="VER-HUD" data-ca-symbol="VER-HUD" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-HUD">VER-HUD</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Portrait and short landscape must not overlap controls, clip text, hide Resume, trap focus or re-enable disabled guidance.</div><div class="field"><span class="label">Oracle</span>Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar. Provide a scrollable milestone detail pane with earned/upcoming states and clear one-time versus repeatable labels; make the next reward understandable in the garage and run. Keep floating Menu separate, compact speed controls, a prominent Resume/Deploy action and attached fitting callouts. Preserve keyboard, touch, focus, scrolling and 44 CSS-pixel targets. Any new tutorial or purchase suggestion obeys existing opt-outs. Necessary checkpoint status, errors and reward receipts remain readable without modal spam.</div><div class="field"><span class="label">Planned target</span>Readable wave progress and reward preview production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-HUD -->
+</div></article>
+<!-- CA:END:CR-HUD -->
+
+<!-- CA:BEGIN:CR-ARMAMENT -->
+<article class="record" id="CR-ARMAMENT" data-ca-symbol="CR-ARMAMENT" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-ARMAMENT">CR-ARMAMENT</a><h3>One real milestone armament</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>conditional</div><div class="field"><span class="label">Rationale</span>Requires owner selection of the new-armament option.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings.</li><li>Deliver actual deterministic combat behavior, a readable tank module, firing/impact feedback, correct fitting callout, persisted unlock/equip state, and meaningful shop applicability. No placeholder unlock card.</li><li>Use explicit fitting capability/identity rather than extending Launcher-versus-Repair booleans. Keep existing upgrade IDs and invested levels valid; give new fitting damage its own authored upgrade track within the revised long-run cap/cost/effect conventions.</li><li>Unlock changes available garage choices; it does not silently swap the active run fitting. Pending owner scope choice is recorded separately.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-CONTENT">SCOPE-CONTENT</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-ARMAMENT -->
+<article class="record" id="SC-ARMAMENT" data-ca-symbol="SC-ARMAMENT" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-ARMAMENT">SC-ARMAMENT</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings. Deliver actual deterministic combat behavior, a readable tank module, firing/impact feedback, correct fitting callout, persisted unlock/equip state, and meaningful shop applicability. No placeholder unlock card. Use explicit fitting capability/identity rather than extending Launcher-versus-Repair booleans. Keep existing upgrade IDs and invested levels valid; give new fitting damage its own authored upgrade track within the revised long-run cap/cost/effect conventions. Unlock changes available garage choices; it does not silently swap the active run fitting. Pending owner scope choice is recorded separately.</div><div class="field"><span class="label">When</span>If selected by the owner, earn, equip and use the new fitting.</div></article>
+<!-- CA:END:SC-ARMAMENT -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li><li><a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a></li></ul></div><div class="field"><span class="label">Statement</span>Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings.</div><div class="field"><span class="label">Trigger</span>If selected by the owner, earn, equip and use the new fitting.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-ARMAMENT -->
+<article class="record" id="VER-ARMAMENT" data-ca-symbol="VER-ARMAMENT" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-ARMAMENT">VER-ARMAMENT</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Attempt equip before unlock, reload at award, resume an older fitting, use inapplicable upgrades and exercise three-plus catalog entries.</div><div class="field"><span class="label">Oracle</span>Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings. Deliver actual deterministic combat behavior, a readable tank module, firing/impact feedback, correct fitting callout, persisted unlock/equip state, and meaningful shop applicability. No placeholder unlock card. Use explicit fitting capability/identity rather than extending Launcher-versus-Repair booleans. Keep existing upgrade IDs and invested levels valid; give new fitting damage its own authored upgrade track within the revised long-run cap/cost/effect conventions. Unlock changes available garage choices; it does not silently swap the active run fitting. Pending owner scope choice is recorded separately.</div><div class="field"><span class="label">Planned target</span>One real milestone armament production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-ARMAMENT -->
+</div></article>
+<!-- CA:END:CR-ARMAMENT -->
+
+<!-- CA:BEGIN:CR-CHROME -->
+<article class="record" id="CR-CHROME" data-ca-symbol="CR-CHROME" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-CHROME">CR-CHROME</a><h3>Shared menu chrome and clean corners</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons.</li><li>Frame, backing, border, shadow and screw geometry share the clipped outline. No opaque rectangular corner patches, tier-colored cover-up triangles or per-screen masking patches.</li><li>Use a shared component/treatment while retaining actual semantic buttons, focus and input ownership. Inspect both tier environments at desktop, portrait and short landscape sizes.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-UX">SCOPE-UX</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-CHROME -->
+<article class="record" id="SC-CHROME" data-ca-symbol="SC-CHROME" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-CHROME">SC-CHROME</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons. Frame, backing, border, shadow and screw geometry share the clipped outline. No opaque rectangular corner patches, tier-colored cover-up triangles or per-screen masking patches. Use a shared component/treatment while retaining actual semantic buttons, focus and input ownership. Inspect both tier environments at desktop, portrait and short landscape sizes.</div><div class="field"><span class="label">When</span>Open all menus and render active, disabled, highlighted and pressed controls.</div></article>
+<!-- CA:END:SC-CHROME -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons.</div><div class="field"><span class="label">Trigger</span>Open all menus and render active, disabled, highlighted and pressed controls.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-CHROME -->
+<article class="record" id="VER-CHROME" data-ca-symbol="VER-CHROME" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-CHROME">VER-CHROME</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Place panels over contrasting terrain and inspect corners in every button state; reject visible backing outside the frame and altered hit areas.</div><div class="field"><span class="label">Oracle</span>Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons. Frame, backing, border, shadow and screw geometry share the clipped outline. No opaque rectangular corner patches, tier-colored cover-up triangles or per-screen masking patches. Use a shared component/treatment while retaining actual semantic buttons, focus and input ownership. Inspect both tier environments at desktop, portrait and short landscape sizes.</div><div class="field"><span class="label">Planned target</span>Shared menu chrome and clean corners production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-CHROME -->
+</div></article>
+<!-- CA:END:CR-CHROME -->
+
+<!-- CA:BEGIN:CR-BASELINE -->
+<article class="record" id="CR-BASELINE" data-ca-symbol="CR-BASELINE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-BASELINE">CR-BASELINE</a><h3>Diagnosed foreground audio regression</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause.</li><li>Use observable callback/tick timing where needed to correlate cue admission and model stepping. Preserve the 500ms eligibility and bounded-step obligations and reject stale/backlogged cues.</li><li>Do not solve recurrence with repeated reruns, a widened tolerance, fewer viewports or deleted negative controls. Ship the bounded fix before final sprint qualification; it can proceed independently of wave content.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-DELIVERY">SCOPE-DELIVERY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-BASELINE -->
+<article class="record" id="SC-BASELINE" data-ca-symbol="SC-BASELINE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-BASELINE">SC-BASELINE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause. Use observable callback/tick timing where needed to correlate cue admission and model stepping. Preserve the 500ms eligibility and bounded-step obligations and reject stale/backlogged cues. Do not solve recurrence with repeated reruns, a widened tolerance, fewer viewports or deleted negative controls. Ship the bounded fix before final sprint qualification; it can proceed independently of wave content.</div><div class="field"><span class="label">When</span>Reproduce the post-merge Return audio failure under controlled scheduling delays.</div></article>
+<!-- CA:END:SC-BASELINE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause.</div><div class="field"><span class="label">Trigger</span>Reproduce the post-merge Return audio failure under controlled scheduling delays.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-BASELINE -->
+<article class="record" id="VER-BASELINE" data-ca-symbol="VER-BASELINE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-BASELINE">VER-BASELINE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Inject genuine stale cues, delayed state reporting and oversized step batches; only correctly admitted fresh cues may pass.</div><div class="field"><span class="label">Oracle</span>Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause. Use observable callback/tick timing where needed to correlate cue admission and model stepping. Preserve the 500ms eligibility and bounded-step obligations and reject stale/backlogged cues. Do not solve recurrence with repeated reruns, a widened tolerance, fewer viewports or deleted negative controls. Ship the bounded fix before final sprint qualification; it can proceed independently of wave content.</div><div class="field"><span class="label">Planned target</span>Diagnosed foreground audio regression production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-BASELINE -->
+</div></article>
+<!-- CA:END:CR-BASELINE -->
+
+<!-- CA:BEGIN:CR-QUALIFY -->
+<article class="record" id="CR-QUALIFY" data-ca-symbol="CR-QUALIFY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#CR-QUALIFY">CR-QUALIFY</a><h3>Integrated sprint acceptance and delivery evidence</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Part of the proposed complete wave progression sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#CON-REVIEW">CON-REVIEW</a></li><li><a href="#CON-PRESERVE">CON-PRESERVE</a></li><li><a href="#CON-EVIDENCE">CON-EVIDENCE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls.</li><li>Run deterministic/save-fault regressions, imported Unity scene checks, actual browser keyboard/touch journeys, background/speed/pause parity and focused visual checks. Rebuild and source-bind the Web export.</li><li>Calibrate fresh, early-unlock, established and mature builds. Report current 1x/0.5x duration, transitions, income and affordability through 300/1000/2000/5000-plus waves. Use the owner 5000-wave / 10-12-real-hour midgame reference at maxed 5x speed; early Tier 1 duration remains a measured tuning output.</li><li>Keep local tests, exact-head hosted CI, native media/owner acceptance and deployed proof distinct. Resolve current main-CI failure, verify all required contexts, and report release state honestly; implementation approval does not grant merge/publication.</li><li>Both fresh original fittings must be able to reach the first resource milestone without previously purchased upgrades; reject an economy that requires unaffordable upgrades to earn its first upgrade currency.</li><li>Combine fast deterministic long-run simulations with representative real-time browser segments and one dedicated 10-12-hour endurance observation outside the per-viewport PR matrix. Observe memory, frame/callback behavior, audio and checkpoint latency. Accelerated model tests do not establish elapsed-time endurance; report pending endurance honestly until observed.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#SCOPE-DELIVERY">SCOPE-DELIVERY</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Owner approves the concrete sprint scope before implementation.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-QUALIFY -->
+<article class="record" id="SC-QUALIFY" data-ca-symbol="SC-QUALIFY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-QUALIFY">SC-QUALIFY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The current source-bound Last Stand candidate and relevant persisted state.</div><div class="field"><span class="label">Then</span>Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls. Run deterministic/save-fault regressions, imported Unity scene checks, actual browser keyboard/touch journeys, background/speed/pause parity and focused visual checks. Rebuild and source-bind the Web export. Calibrate fresh, early-unlock, established and mature builds. Report current 1x/0.5x duration, transitions, income and affordability through 300/1000/2000/5000-plus waves. Use the owner 5000-wave / 10-12-real-hour midgame reference at maxed 5x speed; early Tier 1 duration remains a measured tuning output. Keep local tests, exact-head hosted CI, native media/owner acceptance and deployed proof distinct. Resolve current main-CI failure, verify all required contexts, and report release state honestly; implementation approval does not grant merge/publication. Both fresh original fittings must be able to reach the first resource milestone without previously purchased upgrades; reject an economy that requires unaffordable upgrades to earn its first upgrade currency. Combine fast deterministic long-run simulations with representative real-time browser segments and one dedicated 10-12-hour endurance observation outside the per-viewport PR matrix. Observe memory, frame/callback behavior, audio and checkpoint latency. Accelerated model tests do not establish elapsed-time endurance; report pending endurance honestly until observed.</div><div class="field"><span class="label">When</span>Evaluate the complete candidate and migrated player journey.</div></article>
+<!-- CA:END:SC-QUALIFY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-OWNER">SRC-OWNER</a></li><li><a href="#SRC-ROADMAP">SRC-ROADMAP</a></li><li><a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a></li><li><a href="#SRC-MIDGAME-DURATION">SRC-MIDGAME-DURATION</a></li><li><a href="#SRC-MAX-SPEED">SRC-MAX-SPEED</a></li></ul></div><div class="field"><span class="label">Statement</span>Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls.</div><div class="field"><span class="label">Trigger</span>Evaluate the complete candidate and migrated player journey.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:VER-QUALIFY -->
+<article class="record" id="VER-QUALIFY" data-ca-symbol="VER-QUALIFY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#VER-QUALIFY">VER-QUALIFY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A green unit suite with stale export bytes, missing recovery, empty settings destinations, absent reward visuals or failed hosted aggregate does not satisfy delivery.</div><div class="field"><span class="label">Oracle</span>Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls. Run deterministic/save-fault regressions, imported Unity scene checks, actual browser keyboard/touch journeys, background/speed/pause parity and focused visual checks. Rebuild and source-bind the Web export. Calibrate fresh, early-unlock, established and mature builds. Report current 1x/0.5x duration, transitions, income and affordability through 300/1000/2000/5000-plus waves. Use the owner 5000-wave / 10-12-real-hour midgame reference at maxed 5x speed; early Tier 1 duration remains a measured tuning output. Keep local tests, exact-head hosted CI, native media/owner acceptance and deployed proof distinct. Resolve current main-CI failure, verify all required contexts, and report release state honestly; implementation approval does not grant merge/publication. Both fresh original fittings must be able to reach the first resource milestone without previously purchased upgrades; reject an economy that requires unaffordable upgrades to earn its first upgrade currency. Combine fast deterministic long-run simulations with representative real-time browser segments and one dedicated 10-12-hour endurance observation outside the per-viewport PR matrix. Observe memory, frame/callback behavior, audio and checkpoint latency. Accelerated model tests do not establish elapsed-time endurance; report pending endurance honestly until observed.</div><div class="field"><span class="label">Planned target</span>Integrated sprint acceptance and delivery evidence production paths, deterministic fixtures and real browser acceptance.</div></article>
+<!-- CA:END:VER-QUALIFY -->
+</div></article>
+<!-- CA:END:CR-QUALIFY -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2>
+<!-- CA:BEGIN:OPEN-ARMAMENT -->
+<article class="record" id="OPEN-ARMAMENT" data-ca-symbol="OPEN-ARMAMENT" data-ca-kind="open_decisions"><div class="record-head"><a class="id" href="#OPEN-ARMAMENT">OPEN-ARMAMENT</a><h3>Open decisions</h3></div><div class="field"><span class="label">Affects</span><ul class="items"><li>CR-ARMAMENT</li></ul></div><div class="field"><span class="label">Blocking</span>false</div><div class="field"><span class="label">Owner</span>user</div><div class="field"><span class="label">Question</span>Include the proposed auxiliary Scattergun milestone and full supporting behavior, or resource rewards first?</div><div class="field"><span class="label">Resolution</span>Owner approved the revised sprint including the proposed auxiliary Scattergun.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-SPRINT-APPROVAL">SRC-SPRINT-APPROVAL</a></div><div class="field"><span class="label">Status</span>resolved</div></article>
+<!-- CA:END:OPEN-ARMAMENT -->
+
+<!-- CA:BEGIN:OPEN-RUN-DURATION -->
+<article class="record" id="OPEN-RUN-DURATION" data-ca-symbol="OPEN-RUN-DURATION" data-ca-kind="open_decisions"><div class="record-head"><a class="id" href="#OPEN-RUN-DURATION">OPEN-RUN-DURATION</a><h3>Open decisions</h3></div><div class="field"><span class="label">Affects</span><ul class="items"><li>CR-WAVES</li><li>CR-QUALIFY</li></ul></div><div class="field"><span class="label">Blocking</span>false</div><div class="field"><span class="label">Owner</span>user</div><div class="field"><span class="label">Question</span>Should a mature 2000-wave farm run last several hours at future higher unlocked speeds, around an hour, or remain open for balance testing?</div><div class="field"><span class="label">Resolution</span>Owner benchmark: approximately Tier 10, wave 5000, 10-12 real hours at maxed 5x speed. Early Tier 1 wave-2000 duration remains unknown. Use this long-run reference without forcing every wave to the same duration. Under ideal linear scaling, the same workload represents 50-60 simulation hours at 1x; browser/persistence overhead requires measurement.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-MAX-SPEED">SRC-MAX-SPEED</a></div><div class="field"><span class="label">Status</span>resolved</div></article>
+<!-- CA:END:OPEN-RUN-DURATION -->
+</section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-REVIEW -->
+<article class="record" id="SEC-REVIEW" data-ca-symbol="SEC-REVIEW" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-REVIEW">SEC-REVIEW</a><h3>Draft for owner review</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>This is a proposed next sprint, not implementation approval. Scope, initial tuning and the optional new armament are reviewable below. No product code, existing saves or old artifact approvals are changed by this plan.</p></div><div class="block"><p>The armament question is an open review choice, not a blocker to authoring this proposed draft. Execution remains blocked by PRE-OWNER for all tasks and PRE-ARMAMENT for the armament and dependent work. No answer or approval is inferred from elapsed time or draft validation.</p></div></div></article>
+<!-- CA:END:SEC-REVIEW -->
+
+<!-- CA:BEGIN:SEC-BASE -->
+<article class="record" id="SEC-BASE" data-ca-symbol="SEC-BASE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-BASE">SEC-BASE</a><h3>Verified starting point</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>PR 541 merged as dbc8460. This checkout remains on its preserved former feature branch, and its committed product tree matches origin/main. Other dirty artifacts and localhost are preserved. Open PRs are dependency maintenance, not overlapping wave gameplay work.</p></div><div class="block"><p>PR-head CI and CodeQL passed before merge. Main CI 39860057618 later failed Return foreground-audio validation in shard 3; 22 other jobs passed, CodeQL passed and Pages deployment was skipped. The next sprint includes diagnosis and repair, not an assumption that main is released.</p></div></div></article>
+<!-- CA:END:SEC-BASE -->
+
+<!-- CA:BEGIN:SEC-LOOP -->
+<article class="record" id="SEC-LOOP" data-ca-symbol="SEC-LOOP" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-LOOP">SEC-LOOP</a><h3>Player loop</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Deploy or Resume -&gt; defeat a finite wave -&gt; atomically save checkpoint and earned rewards -&gt; brief automatic intermission -&gt; next wave. Tier advancement unlocks a garage choice without ending or moving the current run. Defeat/Abandon ends that run; completed rewards stay earned.</p></div><div class="block"><p>Use a short automatic intermission whose duration is calibrated against the full long-run time budget; it is frozen by pause and scaled by the existing 0/0.5/1x controls. The old fixed three-second proposal is withdrawn. Resume requires explicit input. Closing the tab earns no offline time. An open hidden tab keeps existing background behavior, but every crossed wave boundary still requires its own confirmed commit.</p></div></div></article>
+<!-- CA:END:SEC-LOOP -->
+
+<!-- CA:BEGIN:SEC-TUNING -->
+<article class="record" id="SEC-TUNING" data-ca-symbol="SEC-TUNING" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-TUNING">SEC-TUNING</a><h3>Long-run progression and proposed scale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The old Tier 1 wave 10 / Tier 2 wave 20 proposal is superseded. Provisional unlock: clear Tier 1 wave 300 to make Tier 2 available. Unlocking is an optional push opportunity, not automatic promotion; the player can keep farming Tier 1. Design viable, rewarded progression through 2000-plus waves, with no ending or forced transition at 2000.</p><div class="refs">References: <a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a> </div></div><div class="block"><p>Proposed milestone spacing: early onboarding rewards around waves 10 and 25; subsequent authored milestones at 50, 100, 200, 300, 500, 750, 1000, 1500 and 2000, with room beyond. Not every milestone unlocks a feature. Candidate first new armament moves from wave 5 to wave 100 if selected by the owner. Keep only the two real tiers; do not expose an empty Tier 3.</p><div class="refs">References: <a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a> </div></div><div class="block"><p>Replace the earlier fixed 1 Salvage per five waves and its numeric bonus table. Balance repeatable earnings, first-clear bonuses, upgrade prices, effect curves and per-track caps together. Existing prototype permanent cap 3 / total cap 8 cannot be accepted unchanged merely because the wave counter is longer. Preserve existing investments and early effects while adding meaningful long-run growth; keep utility limits such as minimum firing interval valid.</p><div class="refs">References: <a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a> </div></div><div class="block"><p>Measure the same builds on both tiers: an early Tier 2 unlock must not automatically make Tier 1 obsolete. Compare attainable waves, expected Salvage per active minute, first-clear opportunities and upgrade affordability. A deeper lower-tier farming run can outperform a short higher-tier push; around 2000 waves is a scale reference, not a second tier-unlock gate.</p><div class="refs">References: <a href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a> </div></div><div class="block"><p>Owner midgame reference: roughly Tier 10 to wave 5000 over 10-12 real hours at maxed 5x speed. This averages 7.2-8.64 real seconds per wave overall. Under ideal linear simulation scaling, the same workload averages 36-43.2 simulation seconds per wave and takes 50-60 hours at 1x. These are derived budgets, not fixed wave timers; transitions and persistence overhead require measurement. Waves still clear only after defeating their full cohort. Early Tier 1 wave-2000 duration remains unsettled. Checkpoint every completed wave; closed-tab time earns no progress. The future 5x cap is now explicit, while research and its unlock grants remain outside this sprint.</p><div class="refs">References: <a href="#SRC-MIDGAME-DURATION">SRC-MIDGAME-DURATION</a> <a href="#SRC-MAX-SPEED">SRC-MAX-SPEED</a> </div></div><div class="block"><p>Extend engine, economy and save capacity checks to wave 5000 and beyond, with a 10-12-hour operational horizon. This sprint still ships only the two authored tiers; synthetic higher-tier fixtures establish scale and do not represent delivered Tier 10 content or balance. Keep existing approximate wave-300 unlock and wave-2000 lower-tier farming references provisional.</p><div class="refs">References: <a href="#SRC-MIDGAME-DURATION">SRC-MIDGAME-DURATION</a> </div></div></div></article>
+<!-- CA:END:SEC-TUNING -->
+
+<!-- CA:BEGIN:SEC-SAVE -->
+<article class="record" id="SEC-SAVE" data-ca-symbol="SEC-SAVE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SAVE">SEC-SAVE</a><h3>Save and failure contract</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>A single versioned envelope owns progression, milestone claims and one active-run checkpoint. Store only current checkpoint, bests and bounded first-clear ledger; use run ID and completed-wave high-water marks for repeatable rewards. No unbounded reward-event history.</p></div><div class="block"><p>Checkpoint the deployment before wave 1 and state after each successful clear, with deterministic start-of-next-wave timers/generator state. Mid-wave Scrap, hull and temporary upgrades roll back together. Permanent stats/fitting for the active run are frozen from deployment. Save retries reconcile exact before/after bytes; uncertain writes never become a second award.</p></div><div class="block"><p>A terminal save atomically clears the resume checkpoint. While that write is unconfirmed, hold the result and allow Retry. Older pending manual Claims remain claimable exactly once; old survival goals do not become fabricated wave bests. No cloud sync, automatic reset or offline reward system is introduced.</p></div></div></article>
+<!-- CA:END:SEC-SAVE -->
+
+<!-- CA:BEGIN:SEC-ARMAMENT -->
+<article class="record" id="SEC-ARMAMENT" data-ca-symbol="SEC-ARMAMENT" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-ARMAMENT">SEC-ARMAMENT</a><h3>Approved content payoff: auxiliary Scattergun</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Include one auxiliary Scattergun, earned at Tier 1 wave 100 (provisional tuning). It attacks a short-range group alongside the automatic cannon, offering a crowd-control trade-off against Launcher reach and Field Repair sustain. Include a readable modeled module, attached callout, effects/audio and one fitting-specific damage track. Exact damage/range/cycle values are tuned through the deterministic measurement matrix.</p><div class="refs">References: <a href="#SRC-SPRINT-APPROVAL">SRC-SPRINT-APPROVAL</a> </div></div></div></article>
+<!-- CA:END:SEC-ARMAMENT -->
+
+<!-- CA:BEGIN:SEC-UX -->
+<article class="record" id="SEC-UX" data-ca-symbol="SEC-UX" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-UX">SEC-UX</a><h3>Hierarchy and presentation</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Keep the garage tier window and fitting chooser scalable. Promote Resume when a checkpoint exists. Show current wave/cohort and next reward in distinct compact HUD regions; details live in a scrollable milestone pane. Do not rebuild the toolbar the owner rejected.</p></div><div class="block"><p>Use the shared brass/graphite treatment for Menu, Settings, Help, About and confirmations. Correct the underlying backing outline and compositing once, then exercise all consumers and button states over both environments. Existing guidance opt-outs, speed controls and input ownership continue to work.</p></div></div></article>
+<!-- CA:END:SEC-UX -->
+
+<!-- CA:BEGIN:SEC-SMARTS -->
+<article class="record" id="SEC-SMARTS" data-ca-symbol="SEC-SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SMARTS">SEC-SMARTS</a><h3>SMARTS design rationale</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The owner already selected defeated enemy cohorts and completed-wave recovery. Those are inherited requirements; no comparison attempts to reopen them. The meaningful engineering choice is how to commit checkpoint/reward state.</p></div><div class="block"><p>Selected recommendation: strong, one versioned save envelope. Its bounded record and existing verified-write seam support stable per-wave commits. Separate checkpoint and reward stores with a recovery journal are viable but add transaction states and mismatch recovery without a current scale benefit. Local single-tab storage remains the same trust boundary. No new package/service is needed.</p></div><div class="block"><p>Catalogs use stable IDs for tiers, milestone reward types and fitting capabilities. This directly addresses the owner request to scale past two options. Data validation permits only known grant types and bounded values; local data never becomes server-authoritative rewards.</p></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Lens</th><th scope="col">Single save envelope</th><th scope="col">Separate stores with recovery journal</th></tr></thead><tbody><tr><td>Scalable</td><td>Strong: bounded checkpoint and milestone ledger grow with authored content, not run duration.</td><td>Adequate: content growth fits, but each store adds recovery coordination.</td></tr><tr><td>Maintainable</td><td>Strong: one versioned parser, migration and confirmed-write owner.</td><td>Weak: journal, checkpoint and reward parsers must evolve together.</td></tr><tr><td>Available</td><td>Strong: failure preserves the last complete record and existing retry path.</td><td>Adequate: recovery works after reconstructing incomplete multi-store writes.</td></tr><tr><td>Reliable</td><td>Strong: checkpoint and awards share one commit boundary.</td><td>Adequate: journal replay can reconcile writes with additional failure states.</td></tr><tr><td>Testable</td><td>Strong: before/after record pairs bound fault-injection cases.</td><td>Adequate: deterministic journal tests require every intermediate store combination.</td></tr><tr><td>Securable</td><td>Indifferent: same untrusted local save; bounded validation and no account award authority.</td><td>Indifferent: same untrusted local save; bounded validation and no account award authority.</td></tr></tbody></table></div><div class="refs">References: <a href="#SRC-CODE">SRC-CODE</a> <a href="#SRC-OWNER">SRC-OWNER</a> </div></div></div></article>
+<!-- CA:END:SEC-SMARTS -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-PLAN -->
+<article class="record" id="SRC-PLAN" data-ca-symbol="SRC-PLAN" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-PLAN">SRC-PLAN</a><h3>Owner requests next sprint plan</h3></div><div class="field"><span class="label">Locator</span>Current conversation: Plan the next sprint</div><div class="field"><span class="label">Note</span>Planning only. Earlier requests require careful approval before execution; no new merge or publication authority is inferred.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-PLAN -->
+
+<!-- CA:BEGIN:SRC-OWNER -->
+<article class="record" id="SRC-OWNER" data-ca-symbol="SRC-OWNER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-OWNER">SRC-OWNER</a><h3>Settled wave, save and visual direction</h3></div><div class="field"><span class="label">Locator</span>Current conversation: waves, defeat the wave enemies, completed-wave resume, menu chrome and panel corners</div><div class="field"><span class="label">Note</span>Clear finite enemy groups. Resume hp/upgrades/resources/wave from the latest completed wave, losing at most unfinished-wave progress. Correct shared chrome and corners.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-OWNER -->
+
+<!-- CA:BEGIN:SRC-ROADMAP -->
+<article class="record" id="SRC-ROADMAP" data-ca-symbol="SRC-ROADMAP" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ROADMAP">SRC-ROADMAP</a><h3>Maintained Last Stand direction</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-ROADMAP.md, Owner direction update October 22</div><div class="field"><span class="label">Note</span>Last Stand is the sole campaign; runs continue beyond tier advancement targets; milestone and repeatable rewards are distinct.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ROADMAP -->
+
+<!-- CA:BEGIN:SRC-PREVIOUS -->
+<article class="record" id="SRC-PREVIOUS" data-ca-symbol="SRC-PREVIOUS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-PREVIOUS">SRC-PREVIOUS</a><h3>Native recorded decisions</h3></div><div class="field"><span class="label">Locator</span>ST-LS-UPGRADE-PAYOFF-SPEC: DEC-WAVE-CLEAR, DEC-WAVE-CHECKPOINT, SEC-WAVE-FOLLOWON</div><div class="field"><span class="label">Note</span>Read through the installed 0.20.7 engine at revision 13; exact tuning and additional armament content remain proposals.</div><div class="field"><span class="label">Type</span>decision_record</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-PREVIOUS -->
+
+<!-- CA:BEGIN:SRC-CODE -->
+<article class="record" id="SRC-CODE" data-ca-symbol="SRC-CODE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CODE">SRC-CODE</a><h3>Current simulation and progression owners</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/EncounterModel.cs; LastStandProgression.cs; LastStandTierCatalog.cs; LastStandUpgradeCatalog.cs; LastStandSelection.cs</div><div class="field"><span class="label">Note</span>Endless timed spawning, a 3600-tick playable horizon, version 3 permanent progression, two tier-specific best arrays, two fitting variants and six upgrade tracks. No durable active-run checkpoint.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CODE -->
+
+<!-- CA:BEGIN:SRC-UI -->
+<article class="record" id="SRC-UI" data-ca-symbol="SRC-UI" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-UI">SRC-UI</a><h3>Current controls and panel composition</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs; LastStandSettingsHud.cs; LastStandLoopController.cs; LastStandFittingCallout.cs</div><div class="field"><span class="label">Note</span>Preserve compact controls, separate floating Menu, tier environment preview and attached fitting callouts. Reuse semantic input/focus ownership; fix shared backing geometry.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-UI -->
+
+<!-- CA:BEGIN:SRC-CI -->
+<article class="record" id="SRC-CI" data-ca-symbol="SRC-CI" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CI">SRC-CI</a><h3>Observed post-merge delivery failure</h3></div><div class="field"><span class="label">Locator</span>CI run 39860057618, browser last-stand-3 job 120108361587</div><div class="field"><span class="label">Note</span>22 jobs passed. Foreground Return audio assertion failed at lastStandJourney.mjs:1580; aggregate consequently failed. CodeQL passed; Pages run 39862581846 skipped. Recurrence needs diagnosis; it is not proven harmless.</div><div class="field"><span class="label">Type</span>test_reference</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/actions/runs/39860057618</div></article>
+<!-- CA:END:SRC-CI -->
+
+<!-- CA:BEGIN:SRC-LONG-RUNS -->
+<article class="record" id="SRC-LONG-RUNS" data-ca-symbol="SRC-LONG-RUNS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-LONG-RUNS">SRC-LONG-RUNS</a><h3>Owner corrects progression to hundreds and thousands of waves</h3></div><div class="field"><span class="label">Locator</span>Current conversation: much more waves; approximately 300 for an unlock and approximately 2000 before moving farming tiers</div><div class="field"><span class="label">Note</span>Owner uses The Tower as a scale comparison. This records desired Last Stand pacing, not verified factual unlock rules for another game. Hundreds of waves unlock an option; long lower-tier runs remain useful into thousands. Exact thresholds and duration remain proposed tuning.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-LONG-RUNS -->
+
+<!-- CA:BEGIN:SRC-MIDGAME-DURATION -->
+<article class="record" id="SRC-MIDGAME-DURATION" data-ca-symbol="SRC-MIDGAME-DURATION" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-MIDGAME-DURATION">SRC-MIDGAME-DURATION</a><h3>Owner supplies midgame farming duration reference</h3></div><div class="field"><span class="label">Locator</span>Current conversation: tier 10 to wave 5000 takes 10-12 hours in midgame; early Tier 1 duration not recalled</div><div class="field"><span class="label">Note</span>Owner-reported reference for long-run scale and pacing, not externally verified rules of another game. The exact upgraded speed is unspecified. Do not apply this duration to early Tier 1 wave 2000 or claim this sprint ships Tier 10.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-MIDGAME-DURATION -->
+
+<!-- CA:BEGIN:SRC-MAX-SPEED -->
+<article class="record" id="SRC-MAX-SPEED" data-ca-symbol="SRC-MAX-SPEED" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-MAX-SPEED">SRC-MAX-SPEED</a><h3>Owner clarifies the farming benchmark uses maxed 5x speed</h3></div><div class="field"><span class="label">Locator</span>Current conversation: with maxed speed at 5x</div><div class="field"><span class="label">Note</span>Clarifies the preceding midgame reference: roughly Tier 10 to wave 5000 in 10-12 real hours at maxed 5x speed. Early Tier 1 duration remains unprovided. This is a pacing clarification, not sprint implementation approval or authorization to add research.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-MAX-SPEED -->
+
+<!-- CA:BEGIN:SRC-SPRINT-APPROVAL -->
+<article class="record" id="SRC-SPRINT-APPROVAL" data-ca-symbol="SRC-SPRINT-APPROVAL" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-SPRINT-APPROVAL">SRC-SPRINT-APPROVAL</a><h3>Owner approves the revised sprint including Scattergun</h3></div><div class="field"><span class="label">Locator</span>Current conversation: yes, followed by yes after explicit approval-versus-pacing clarification</div><div class="field"><span class="label">Note</span>Approval to implement the revised sprint including Scattergun. Merge and publication remain separate. Ordinary recorded user statement, not an authenticated receipt.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-SPRINT-APPROVAL -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>dbc846047bb01b61215ecb30d93225a81b1eac8a</div><div class="field"><span class="label">Observed date</span>2026-10-22</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts</li><li>campaign-unity/Tools/last_stand_waves</li><li>e2e/helpers/lastStandJourney.mjs</li><li>scripts/ci/lastStandMatrixResult.mjs</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8<br>Model SHA-256: 365916195c0a3a50340f44f253e8cc32d5f423d2041732cd52950e7d84803474</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-WAVES-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "365916195c0a3a50340f44f253e8cc32d5f423d2041732cd52950e7d84803474",
+    "normative_sha256": "62dfcf4c775236c605e257a316c98e4facf02072ef7b0ff469ff36b707f2d1c8",
+    "symbol_count": 74
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "DEC-CLEAR",
+        "DEC-RESUME",
+        "DEC-SAVE"
+      ],
+      "choice": "Finite deterministic cohorts plus catalog-driven milestones and one atomic checkpoint/progression envelope.",
+      "id": "APPROACH-WAVES",
+      "tradeoff": "Only checkpoint boundaries survive tab closure; retaining one complete record keeps rewards and restored combat consistent."
+    },
+    "baseline": {
+      "commit": "dbc846047bb01b61215ecb30d93225a81b1eac8a",
+      "observed_date": "2026-10-22",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "CR-WAVES",
+          "CR-TIERS",
+          "CR-REWARDS",
+          "CR-CHECKPOINT",
+          "CR-STORAGE",
+          "CR-LIFECYCLE",
+          "CR-HUD",
+          "CR-ARMAMENT",
+          "CR-CHROME",
+          "CR-BASELINE",
+          "CR-QUALIFY"
+        ],
+        "id": "CON-REVIEW",
+        "source_refs": [
+          "SRC-PLAN"
+        ],
+        "statement": "Planning only; obtain owner approval of the concrete sprint before product implementation. No approval code ceremony."
+      },
+      {
+        "applies_to": [
+          "CR-WAVES",
+          "CR-TIERS",
+          "CR-REWARDS",
+          "CR-CHECKPOINT",
+          "CR-STORAGE",
+          "CR-LIFECYCLE",
+          "CR-HUD",
+          "CR-ARMAMENT",
+          "CR-CHROME",
+          "CR-BASELINE",
+          "CR-QUALIFY"
+        ],
+        "id": "CON-PRESERVE",
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-CODE"
+        ],
+        "statement": "Preserve dirty unrelated artifacts, current localhost, existing local save bytes until confirmed migration, all ordinary game paths and existing unlocked content."
+      },
+      {
+        "applies_to": [
+          "CR-WAVES",
+          "CR-TIERS",
+          "CR-REWARDS",
+          "CR-CHECKPOINT",
+          "CR-STORAGE",
+          "CR-LIFECYCLE",
+          "CR-HUD",
+          "CR-ARMAMENT",
+          "CR-CHROME",
+          "CR-BASELINE",
+          "CR-QUALIFY"
+        ],
+        "id": "CON-EVIDENCE",
+        "source_refs": [
+          "SRC-CI"
+        ],
+        "statement": "No weakened gates, invented historical wave clears, fabricated tests or native qualification, or automatic claims of deployment."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it.",
+          "A new wave cannot overlap the previous cohort. A short automatic intermission begins only after checkpoint confirmation and obeys pause/speed. Set its duration from the full-run pacing budget, including cumulative downtime across thousands of waves.",
+          "Keep deterministic fixed-step simulation. Replace the player-facing time horizon with continuing waves; diagnostic ceilings must not grant rewards or erase a resumable run.",
+          "Bound simultaneous enemies, runtime allocations, numeric growth and retained state. Prove continuation and checkpoint recovery at 300, 1000, 2000, 5000 and beyond 5000 waves without an ever-growing wave roster or reward history; support the owner multi-hour operational horizon."
+        ],
+        "id": "CR-WAVES",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-WAVES",
+            "then": "A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it. A new wave cannot overlap the previous cohort. A short automatic intermission begins only after checkpoint confirmation and obeys pause/speed. Set its duration from the full-run pacing budget, including cumulative downtime across thousands of waves. Keep deterministic fixed-step simulation. Replace the player-facing time horizon with continuing waves; diagnostic ceilings must not grant rewards or erase a resumable run. Bound simultaneous enemies, runtime allocations, numeric growth and retained state. Prove continuation and checkpoint recovery at 300, 1000, 2000, 5000 and beyond 5000 waves without an ever-growing wave roster or reward history; support the owner multi-hour operational horizon.",
+            "when": "Deploy, defeat the last enemy, pause or continue beyond the tier target."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP",
+          "SRC-LONG-RUNS",
+          "SRC-MIDGAME-DURATION"
+        ],
+        "statement": "A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it.",
+        "title": "Finite waves and continuing runs",
+        "trigger": "Deploy, defeat the last enemy, pause or continue beyond the tier target.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-WAVES",
+          "method": "automated_and_review",
+          "negative_control": "Leave one live or unspawned enemy; advance the clock; the wave and reward must not advance. Test zero-length/invalid definitions and late-wave bounds.",
+          "oracle": "A wave has a finite authored roster. It clears only after every planned enemy has spawned and been defeated; an empty gap between spawns cannot clear it. A new wave cannot overlap the previous cohort. A short automatic intermission begins only after checkpoint confirmation and obeys pause/speed. Set its duration from the full-run pacing budget, including cumulative downtime across thousands of waves. Keep deterministic fixed-step simulation. Replace the player-facing time horizon with continuing waves; diagnostic ceilings must not grant rewards or erase a resumable run. Bound simultaneous enemies, runtime allocations, numeric growth and retained state. Prove continuation and checkpoint recovery at 300, 1000, 2000, 5000 and beyond 5000 waves without an ever-growing wave roster or reward history; support the owner multi-hour operational horizon.",
+          "planned_target": "Finite waves and continuing runs production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier.",
+          "Proposed tuning: Tier 1 wave 300 unlocks Tier 2 as an optional choice. Support viable Tier 1 farming into 2000-plus waves; neither unlock nor wave 2000 ends the run or automatically selects another tier. No unimplemented Tier 3 unlock or preview.",
+          "Retain the current two environment identities and compact selector; show unlocked tiers plus at most the next actually authored locked tier.",
+          "Show best cleared wave and next actual milestone for each tier. Preserve prior time/kill records as legacy records, without inventing wave clears.",
+          "Tier difficulty and repeatable rewards support a meaningful push-versus-farm choice; compare both tiers at the same build rather than assuming the highest unlocked tier is best."
+        ],
+        "id": "CR-TIERS",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-TIERS",
+            "then": "Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier. Proposed tuning: Tier 1 wave 300 unlocks Tier 2 as an optional choice. Support viable Tier 1 farming into 2000-plus waves; neither unlock nor wave 2000 ends the run or automatically selects another tier. No unimplemented Tier 3 unlock or preview. Retain the current two environment identities and compact selector; show unlocked tiers plus at most the next actually authored locked tier. Show best cleared wave and next actual milestone for each tier. Preserve prior time/kill records as legacy records, without inventing wave clears. Tier difficulty and repeatable rewards support a meaningful push-versus-farm choice; compare both tiers at the same build rather than assuming the highest unlocked tier is best.",
+            "when": "Reach a target wave, browse a locked tier, or load an expanded test catalog."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP",
+          "SRC-LONG-RUNS"
+        ],
+        "statement": "Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier.",
+        "title": "Scalable tier and milestone catalogs",
+        "trigger": "Reach a target wave, browse a locked tier, or load an expanded test catalog.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-TIERS",
+          "method": "automated_and_review",
+          "negative_control": "An 18-tier fixture must preserve bounded selectors and keyed saves; missing/duplicate/invalid IDs and a nonexistent next tier must be rejected.",
+          "oracle": "Use stable tier, wave-profile, milestone, reward and fitting IDs; content does not require another save field or UI button per tier. Proposed tuning: Tier 1 wave 300 unlocks Tier 2 as an optional choice. Support viable Tier 1 farming into 2000-plus waves; neither unlock nor wave 2000 ends the run or automatically selects another tier. No unimplemented Tier 3 unlock or preview. Retain the current two environment identities and compact selector; show unlocked tiers plus at most the next actually authored locked tier. Show best cleared wave and next actual milestone for each tier. Preserve prior time/kill records as legacy records, without inventing wave clears. Tier difficulty and repeatable rewards support a meaningful push-versus-farm choice; compare both tiers at the same build rather than assuming the highest unlocked tier is best.",
+          "planned_target": "Scalable tier and milestone catalogs production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing.",
+          "Keep Scrap for in-run upgrades and Salvage for permanent upgrades. Author repeatable earnings and first-clear bonuses for hundreds/thousands of waves, balanced together with upgrade costs/effects/caps; the prior fixed one-Salvage-per-five-waves schedule is withdrawn.",
+          "First-clear bonuses/unlocks are once per tier/milestone across runs; repeatable payouts are once per run/wave. No replay, retry or reload double-awards.",
+          "For new wave runs, bank awards automatically at clear and show a compact receipt; defeat/abandon adds no separate payout. Preserve an existing legacy pending Claim exactly once during migration.",
+          "If the last enemy and the tank die in the same simulation step, bank the completed-wave reward and finalize the run atomically; never create a living resume checkpoint with zero hull.",
+          "Extend the existing upgrade economy beyond prototype depth without erasing current levels or investment. Attack/health growth and bounded utility tracks must stay meaningful and numerically valid through mature 2000-plus-wave runs; no zero/negative firing intervals, overflow, mandatory purchase prompts or immediate full-economy saturation."
+        ],
+        "id": "CR-REWARDS",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-REWARDS",
+            "then": "Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing. Keep Scrap for in-run upgrades and Salvage for permanent upgrades. Author repeatable earnings and first-clear bonuses for hundreds/thousands of waves, balanced together with upgrade costs/effects/caps; the prior fixed one-Salvage-per-five-waves schedule is withdrawn. First-clear bonuses/unlocks are once per tier/milestone across runs; repeatable payouts are once per run/wave. No replay, retry or reload double-awards. For new wave runs, bank awards automatically at clear and show a compact receipt; defeat/abandon adds no separate payout. Preserve an existing legacy pending Claim exactly once during migration. If the last enemy and the tank die in the same simulation step, bank the completed-wave reward and finalize the run atomically; never create a living resume checkpoint with zero hull. Extend the existing upgrade economy beyond prototype depth without erasing current levels or investment. Attack/health growth and bounded utility tracks must stay meaningful and numerically valid through mature 2000-plus-wave runs; no zero/negative firing intervals, overflow, mandatory purchase prompts or immediate full-economy saturation.",
+            "when": "Clear an ordinary or milestone wave; retry, reload, replay a tier, lose, or abandon."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP",
+          "SRC-LONG-RUNS"
+        ],
+        "statement": "Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing.",
+        "title": "Clear rewards that cannot duplicate or disappear",
+        "trigger": "Clear an ordinary or milestone wave; retry, reload, replay a tier, lose, or abandon.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-REWARDS",
+          "method": "automated_and_review",
+          "negative_control": "Interrupt the write before/after success, retry twice, reload, revisit the same milestone and defeat immediately; balances and unlocks must have one consistent result.",
+          "oracle": "Commit cleared-wave rewards, tier unlocks, first-clear milestone ledger and next-wave checkpoint as one durable record before advancing. Keep Scrap for in-run upgrades and Salvage for permanent upgrades. Author repeatable earnings and first-clear bonuses for hundreds/thousands of waves, balanced together with upgrade costs/effects/caps; the prior fixed one-Salvage-per-five-waves schedule is withdrawn. First-clear bonuses/unlocks are once per tier/milestone across runs; repeatable payouts are once per run/wave. No replay, retry or reload double-awards. For new wave runs, bank awards automatically at clear and show a compact receipt; defeat/abandon adds no separate payout. Preserve an existing legacy pending Claim exactly once during migration. If the last enemy and the tank die in the same simulation step, bank the completed-wave reward and finalize the run atomically; never create a living resume checkpoint with zero hull. Extend the existing upgrade economy beyond prototype depth without erasing current levels or investment. Attack/health growth and bounded utility tracks must stay meaningful and numerically valid through mature 2000-plus-wave runs; no zero/negative firing intervals, overflow, mandatory purchase prompts or immediate full-economy saturation.",
+          "planned_target": "Clear rewards that cannot duplicate or disappear production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation.",
+          "A reload resumes at the start of the unfinished wave with the exact latest committed checkpoint. Mid-wave purchases and spending roll back together; completed rewards stay banked.",
+          "Resume waits for explicit player input and starts paused; do not simulate time while the tab was closed or replay historical effects/audio.",
+          "The same input sequence after restore yields the same combat state as an uninterrupted checkpoint continuation."
+        ],
+        "id": "CR-CHECKPOINT",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-CHECKPOINT",
+            "then": "Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation. A reload resumes at the start of the unfinished wave with the exact latest committed checkpoint. Mid-wave purchases and spending roll back together; completed rewards stay banked. Resume waits for explicit player input and starts paused; do not simulate time while the tab was closed or replay historical effects/audio. The same input sequence after restore yields the same combat state as an uninterrupted checkpoint continuation.",
+            "when": "Start a run, clear a wave, purchase an upgrade mid-wave, then close/reload."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP"
+        ],
+        "statement": "Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation.",
+        "title": "Full run checkpoint and deterministic restore",
+        "trigger": "Start a run, clear a wave, purchase an upgrade mid-wave, then close/reload.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-CHECKPOINT",
+          "method": "automated_and_review",
+          "negative_control": "Close during wave 1 and later waves, just before/after a purchase and clear, and after tier unlock; detect missing hull/cooldown/fitting/resource fields and double catch-up.",
+          "oracle": "Confirm a starting checkpoint before wave 1. At each clear, snapshot hull/max hull, temporary upgrades and their cost effects, Scrap, run/tier IDs, fitting, deployment stat baseline, wave/rules version, simulation clock/cooldowns and generator/seed state needed for deterministic continuation. A reload resumes at the start of the unfinished wave with the exact latest committed checkpoint. Mid-wave purchases and spending roll back together; completed rewards stay banked. Resume waits for explicit player input and starts paused; do not simulate time while the tab was closed or replay historical effects/audio. The same input sequence after restore yields the same combat state as an uninterrupted checkpoint continuation.",
+          "planned_target": "Full run checkpoint and deterministic restore production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available.",
+          "Use one versioned progression/checkpoint envelope and verified write/retry reconciliation. On failure stop at the boundary, show unsaved status and Retry, and never run the next wave against an unconfirmed checkpoint.",
+          "Preserve original bytes until migration success; reject invalid/future data without silent resets. Unsupported checkpoint rules get a clear recovery state, not fabricated compatibility.",
+          "Keep current local-only, single-active-tab scope. Detect a changed preimage and stop conflicting writes; cloud sync, cross-device continuity and full multi-tab locking are excluded."
+        ],
+        "id": "CR-STORAGE",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "compatibility",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-STORAGE",
+            "then": "Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available. Use one versioned progression/checkpoint envelope and verified write/retry reconciliation. On failure stop at the boundary, show unsaved status and Retry, and never run the next wave against an unconfirmed checkpoint. Preserve original bytes until migration success; reject invalid/future data without silent resets. Unsupported checkpoint rules get a clear recovery state, not fabricated compatibility. Keep current local-only, single-active-tab scope. Detect a changed preimage and stop conflicting writes; cloud sync, cross-device continuity and full multi-tab locking are excluded.",
+            "when": "Load legacy, malformed, future, conflicting or quota-failing data."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP"
+        ],
+        "statement": "Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available.",
+        "title": "Migration, write failure and save integrity",
+        "trigger": "Load legacy, malformed, future, conflicting or quota-failing data.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-STORAGE",
+          "method": "automated_and_review",
+          "negative_control": "Malformed versions, overflow, unknown IDs, write-success/read-failure, external preimage change, storage denial and interrupted legacy Claim must not overwrite or duplicate progress.",
+          "oracle": "Migrate valid version 1/2/3 saves without losing wallets, any of the six upgrade tracks, selected/unlocked tiers, settings or pending legacy claims. Existing Launcher and Repair access remains available. Use one versioned progression/checkpoint envelope and verified write/retry reconciliation. On failure stop at the boundary, show unsaved status and Retry, and never run the next wave against an unconfirmed checkpoint. Preserve original bytes until migration success; reject invalid/future data without silent resets. Unsupported checkpoint rules get a clear recovery state, not fabricated compatibility. Keep current local-only, single-active-tab scope. Detect a changed preimage and stop conflicting writes; cloud sync, cross-device continuity and full multi-tab locking are excluded.",
+          "planned_target": "Migration, write failure and save integrity production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy.",
+          "A new run or changed deployment requires explicit abandon confirmation when a resumable run exists. Cancel preserves it. Permanent purchases and loadout edits must not alter the active run snapshot.",
+          "Defeat and confirmed abandon durably finalize the run and invalidate its checkpoint together; completed-wave awards remain. A reload cannot resurrect a finalized run.",
+          "Update Help, Save \u0026 Account and confirmations to accurately explain checkpoint rollback and local-only storage; remove obsolete unfinished-run-loss and manual-Claim instructions for new runs."
+        ],
+        "id": "CR-LIFECYCLE",
+        "intent_refs": [
+          "SCOPE-LOOP"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-LIFECYCLE",
+            "then": "Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy. A new run or changed deployment requires explicit abandon confirmation when a resumable run exists. Cancel preserves it. Permanent purchases and loadout edits must not alter the active run snapshot. Defeat and confirmed abandon durably finalize the run and invalidate its checkpoint together; completed-wave awards remain. A reload cannot resurrect a finalized run. Update Help, Save \u0026 Account and confirmations to accurately explain checkpoint rollback and local-only storage; remove obsolete unfinished-run-loss and manual-Claim instructions for new runs.",
+            "when": "Use Menu/Return/account navigation, Resume, New Run, defeat or Abandon."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP"
+        ],
+        "statement": "Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy.",
+        "title": "Resume, return, defeat and deliberate abandon",
+        "trigger": "Use Menu/Return/account navigation, Resume, New Run, defeat or Abandon.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-LIFECYCLE",
+          "method": "automated_and_review",
+          "negative_control": "Cancel each exit/new-run path, fail terminal persistence and reload after defeat/abandon; no accidental loss, zombie resume or duplicate legacy claim.",
+          "oracle": "Ordinary navigation preserves the saved run. Garage/entry prominently offers Resume with tier and checkpoint wave; no silent replacement by Deploy. A new run or changed deployment requires explicit abandon confirmation when a resumable run exists. Cancel preserves it. Permanent purchases and loadout edits must not alter the active run snapshot. Defeat and confirmed abandon durably finalize the run and invalidate its checkpoint together; completed-wave awards remain. A reload cannot resurrect a finalized run. Update Help, Save \u0026 Account and confirmations to accurately explain checkpoint rollback and local-only storage; remove obsolete unfinished-run-loss and manual-Claim instructions for new runs.",
+          "planned_target": "Resume, return, defeat and deliberate abandon production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar.",
+          "Provide a scrollable milestone detail pane with earned/upcoming states and clear one-time versus repeatable labels; make the next reward understandable in the garage and run.",
+          "Keep floating Menu separate, compact speed controls, a prominent Resume/Deploy action and attached fitting callouts. Preserve keyboard, touch, focus, scrolling and 44 CSS-pixel targets.",
+          "Any new tutorial or purchase suggestion obeys existing opt-outs. Necessary checkpoint status, errors and reward receipts remain readable without modal spam."
+        ],
+        "id": "CR-HUD",
+        "intent_refs": [
+          "SCOPE-UX"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-HUD",
+            "then": "Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar. Provide a scrollable milestone detail pane with earned/upcoming states and clear one-time versus repeatable labels; make the next reward understandable in the garage and run. Keep floating Menu separate, compact speed controls, a prominent Resume/Deploy action and attached fitting callouts. Preserve keyboard, touch, focus, scrolling and 44 CSS-pixel targets. Any new tutorial or purchase suggestion obeys existing opt-outs. Necessary checkpoint status, errors and reward receipts remain readable without modal spam.",
+            "when": "Play, clear, unlock, pause, resume and view progression on narrow screens."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP"
+        ],
+        "statement": "Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar.",
+        "title": "Readable wave progress and reward preview",
+        "trigger": "Play, clear, unlock, pause, resume and view progression on narrow screens.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-HUD",
+          "method": "automated_and_review",
+          "negative_control": "Portrait and short landscape must not overlap controls, clip text, hide Resume, trap focus or re-enable disabled guidance.",
+          "oracle": "Show Tier, Wave, remaining cohort count and the next milestone without rebuilding the rejected packed toolbar. Provide a scrollable milestone detail pane with earned/upcoming states and clear one-time versus repeatable labels; make the next reward understandable in the garage and run. Keep floating Menu separate, compact speed controls, a prominent Resume/Deploy action and attached fitting callouts. Preserve keyboard, touch, focus, scrolling and 44 CSS-pixel targets. Any new tutorial or purchase suggestion obeys existing opt-outs. Necessary checkpoint status, errors and reward receipts remain readable without modal spam.",
+          "planned_target": "Readable wave progress and reward preview production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "conditional",
+          "rationale": "Requires owner selection of the new-armament option."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings.",
+          "Deliver actual deterministic combat behavior, a readable tank module, firing/impact feedback, correct fitting callout, persisted unlock/equip state, and meaningful shop applicability. No placeholder unlock card.",
+          "Use explicit fitting capability/identity rather than extending Launcher-versus-Repair booleans. Keep existing upgrade IDs and invested levels valid; give new fitting damage its own authored upgrade track within the revised long-run cap/cost/effect conventions.",
+          "Unlock changes available garage choices; it does not silently swap the active run fitting. Pending owner scope choice is recorded separately."
+        ],
+        "id": "CR-ARMAMENT",
+        "intent_refs": [
+          "SCOPE-CONTENT"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-ARMAMENT",
+            "then": "Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings. Deliver actual deterministic combat behavior, a readable tank module, firing/impact feedback, correct fitting callout, persisted unlock/equip state, and meaningful shop applicability. No placeholder unlock card. Use explicit fitting capability/identity rather than extending Launcher-versus-Repair booleans. Keep existing upgrade IDs and invested levels valid; give new fitting damage its own authored upgrade track within the revised long-run cap/cost/effect conventions. Unlock changes available garage choices; it does not silently swap the active run fitting. Pending owner scope choice is recorded separately.",
+            "when": "If selected by the owner, earn, equip and use the new fitting."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP",
+          "SRC-LONG-RUNS"
+        ],
+        "statement": "Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings.",
+        "title": "One real milestone armament",
+        "trigger": "If selected by the owner, earn, equip and use the new fitting.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-ARMAMENT",
+          "method": "automated_and_review",
+          "negative_control": "Attempt equip before unlock, reload at award, resume an older fitting, use inapplicable upgrades and exercise three-plus catalog entries.",
+          "oracle": "Recommended option: Tier 1 wave 100 first-clear unlocks an auxiliary Scattergun alongside the automatic cannon; it trades launcher reach for short-range multi-target damage. It does not replace or relock existing fittings. Deliver actual deterministic combat behavior, a readable tank module, firing/impact feedback, correct fitting callout, persisted unlock/equip state, and meaningful shop applicability. No placeholder unlock card. Use explicit fitting capability/identity rather than extending Launcher-versus-Repair booleans. Keep existing upgrade IDs and invested levels valid; give new fitting damage its own authored upgrade track within the revised long-run cap/cost/effect conventions. Unlock changes available garage choices; it does not silently swap the active run fitting. Pending owner scope choice is recorded separately.",
+          "planned_target": "One real milestone armament production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons.",
+          "Frame, backing, border, shadow and screw geometry share the clipped outline. No opaque rectangular corner patches, tier-colored cover-up triangles or per-screen masking patches.",
+          "Use a shared component/treatment while retaining actual semantic buttons, focus and input ownership. Inspect both tier environments at desktop, portrait and short landscape sizes."
+        ],
+        "id": "CR-CHROME",
+        "intent_refs": [
+          "SCOPE-UX"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-CHROME",
+            "then": "Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons. Frame, backing, border, shadow and screw geometry share the clipped outline. No opaque rectangular corner patches, tier-colored cover-up triangles or per-screen masking patches. Use a shared component/treatment while retaining actual semantic buttons, focus and input ownership. Inspect both tier environments at desktop, portrait and short landscape sizes.",
+            "when": "Open all menus and render active, disabled, highlighted and pressed controls."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP"
+        ],
+        "statement": "Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons.",
+        "title": "Shared menu chrome and clean corners",
+        "trigger": "Open all menus and render active, disabled, highlighted and pressed controls.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-CHROME",
+          "method": "automated_and_review",
+          "negative_control": "Place panels over contrasting terrain and inspect corners in every button state; reject visible backing outside the frame and altered hit areas.",
+          "oracle": "Menu, Settings tabs, Help, About and confirmations use the established brass/graphite panels and buttons. Frame, backing, border, shadow and screw geometry share the clipped outline. No opaque rectangular corner patches, tier-colored cover-up triangles or per-screen masking patches. Use a shared component/treatment while retaining actual semantic buttons, focus and input ownership. Inspect both tier environments at desktop, portrait and short landscape sizes.",
+          "planned_target": "Shared menu chrome and clean corners production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause.",
+          "Use observable callback/tick timing where needed to correlate cue admission and model stepping. Preserve the 500ms eligibility and bounded-step obligations and reject stale/backlogged cues.",
+          "Do not solve recurrence with repeated reruns, a widened tolerance, fewer viewports or deleted negative controls. Ship the bounded fix before final sprint qualification; it can proceed independently of wave content."
+        ],
+        "id": "CR-BASELINE",
+        "intent_refs": [
+          "SCOPE-DELIVERY"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-BASELINE",
+            "then": "Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause. Use observable callback/tick timing where needed to correlate cue admission and model stepping. Preserve the 500ms eligibility and bounded-step obligations and reject stale/backlogged cues. Do not solve recurrence with repeated reruns, a widened tolerance, fewer viewports or deleted negative controls. Ship the bounded fix before final sprint qualification; it can proceed independently of wave content.",
+            "when": "Reproduce the post-merge Return audio failure under controlled scheduling delays."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP"
+        ],
+        "statement": "Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause.",
+        "title": "Diagnosed foreground audio regression",
+        "trigger": "Reproduce the post-merge Return audio failure under controlled scheduling delays.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-BASELINE",
+          "method": "automated_and_review",
+          "negative_control": "Inject genuine stale cues, delayed state reporting and oversized step batches; only correctly admitted fresh cues may pass.",
+          "oracle": "Preserve the failed hosted evidence and distinguish actual stale audio emission from delayed callback/state reporting. Add a failing regression tied to the proven cause. Use observable callback/tick timing where needed to correlate cue admission and model stepping. Preserve the 500ms eligibility and bounded-step obligations and reject stale/backlogged cues. Do not solve recurrence with repeated reruns, a widened tolerance, fewer viewports or deleted negative controls. Ship the bounded fix before final sprint qualification; it can proceed independently of wave content.",
+          "planned_target": "Diagnosed foreground audio regression production paths, deterministic fixtures and real browser acceptance."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Part of the proposed complete wave progression sprint."
+        },
+        "constraint_refs": [
+          "CON-REVIEW",
+          "CON-PRESERVE",
+          "CON-EVIDENCE"
+        ],
+        "guarantees": [
+          "Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls.",
+          "Run deterministic/save-fault regressions, imported Unity scene checks, actual browser keyboard/touch journeys, background/speed/pause parity and focused visual checks. Rebuild and source-bind the Web export.",
+          "Calibrate fresh, early-unlock, established and mature builds. Report current 1x/0.5x duration, transitions, income and affordability through 300/1000/2000/5000-plus waves. Use the owner 5000-wave / 10-12-real-hour midgame reference at maxed 5x speed; early Tier 1 duration remains a measured tuning output.",
+          "Keep local tests, exact-head hosted CI, native media/owner acceptance and deployed proof distinct. Resolve current main-CI failure, verify all required contexts, and report release state honestly; implementation approval does not grant merge/publication.",
+          "Both fresh original fittings must be able to reach the first resource milestone without previously purchased upgrades; reject an economy that requires unaffordable upgrades to earn its first upgrade currency.",
+          "Combine fast deterministic long-run simulations with representative real-time browser segments and one dedicated 10-12-hour endurance observation outside the per-viewport PR matrix. Observe memory, frame/callback behavior, audio and checkpoint latency. Accelerated model tests do not establish elapsed-time endurance; report pending endurance honestly until observed."
+        ],
+        "id": "CR-QUALIFY",
+        "intent_refs": [
+          "SCOPE-DELIVERY"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Owner approves the concrete sprint scope before implementation."
+        ],
+        "scenarios": [
+          {
+            "given": "The current source-bound Last Stand candidate and relevant persisted state.",
+            "id": "SC-QUALIFY",
+            "then": "Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls. Run deterministic/save-fault regressions, imported Unity scene checks, actual browser keyboard/touch journeys, background/speed/pause parity and focused visual checks. Rebuild and source-bind the Web export. Calibrate fresh, early-unlock, established and mature builds. Report current 1x/0.5x duration, transitions, income and affordability through 300/1000/2000/5000-plus waves. Use the owner 5000-wave / 10-12-real-hour midgame reference at maxed 5x speed; early Tier 1 duration remains a measured tuning output. Keep local tests, exact-head hosted CI, native media/owner acceptance and deployed proof distinct. Resolve current main-CI failure, verify all required contexts, and report release state honestly; implementation approval does not grant merge/publication. Both fresh original fittings must be able to reach the first resource milestone without previously purchased upgrades; reject an economy that requires unaffordable upgrades to earn its first upgrade currency. Combine fast deterministic long-run simulations with representative real-time browser segments and one dedicated 10-12-hour endurance observation outside the per-viewport PR matrix. Observe memory, frame/callback behavior, audio and checkpoint latency. Accelerated model tests do not establish elapsed-time endurance; report pending endurance honestly until observed.",
+            "when": "Evaluate the complete candidate and migrated player journey."
+          }
+        ],
+        "source_refs": [
+          "SRC-OWNER",
+          "SRC-ROADMAP",
+          "SRC-LONG-RUNS",
+          "SRC-MIDGAME-DURATION",
+          "SRC-MAX-SPEED"
+        ],
+        "statement": "Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls.",
+        "title": "Integrated sprint acceptance and delivery evidence",
+        "trigger": "Evaluate the complete candidate and migrated player journey.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "VER-QUALIFY",
+          "method": "automated_and_review",
+          "negative_control": "A green unit suite with stale export bytes, missing recovery, empty settings destinations, absent reward visuals or failed hosted aggregate does not satisfy delivery.",
+          "oracle": "Exercise fresh deployment, first milestone, optional armament, permanent/in-run upgrades, wave target, tier unlock, resumed run, loss and another deployment through real rendered controls. Run deterministic/save-fault regressions, imported Unity scene checks, actual browser keyboard/touch journeys, background/speed/pause parity and focused visual checks. Rebuild and source-bind the Web export. Calibrate fresh, early-unlock, established and mature builds. Report current 1x/0.5x duration, transitions, income and affordability through 300/1000/2000/5000-plus waves. Use the owner 5000-wave / 10-12-real-hour midgame reference at maxed 5x speed; early Tier 1 duration remains a measured tuning output. Keep local tests, exact-head hosted CI, native media/owner acceptance and deployed proof distinct. Resolve current main-CI failure, verify all required contexts, and report release state honestly; implementation approval does not grant merge/publication. Both fresh original fittings must be able to reach the first resource milestone without previously purchased upgrades; reject an economy that requires unaffordable upgrades to earn its first upgrade currency. Combine fast deterministic long-run simulations with representative real-time browser segments and one dedicated 10-12-hour endurance observation outside the per-viewport PR matrix. Observe memory, frame/callback behavior, audio and checkpoint latency. Accelerated model tests do not establish elapsed-time endurance; report pending endurance honestly until observed.",
+          "planned_target": "Integrated sprint acceptance and delivery evidence production paths, deterministic fixtures and real browser acceptance."
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "inherited",
+        "choice": "Defeat the complete finite enemy cohort.",
+        "id": "DEC-CLEAR",
+        "rationale": "Explicit owner selection.",
+        "source_ref": "SRC-OWNER",
+        "topic": "Wave completion"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Restore from the last completed-wave state, with an initial wave-1 checkpoint.",
+        "id": "DEC-RESUME",
+        "rationale": "Explicit owner correction: closing a tab must lose at most unfinished-wave progress.",
+        "source_ref": "SRC-OWNER",
+        "topic": "Run continuity"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Fix menu chrome and shared corner composition in this sprint.",
+        "id": "DEC-CHROME",
+        "rationale": "Explicit owner follow-up.",
+        "source_ref": "SRC-OWNER",
+        "topic": "Presentation"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Use one versioned progression/checkpoint envelope with verified writes.",
+        "id": "DEC-SAVE",
+        "rationale": "SMARTS favors fewer transaction failure states at the current local-only scale.",
+        "source_ref": "SRC-PLAN",
+        "topic": "Checkpoint ownership"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Provisional Tier 1 wave 300 unlocks Tier 2. Support 2000-plus-wave farming and authored milestones beyond that; no forced tier promotion or 2000-wave ending. Replace the former fixed three-second intermission and five-wave Salvage rule with measured pacing/economy curves.",
+        "id": "DEC-TUNING",
+        "rationale": "These are proposed Last Stand defaults matching the owner scale correction. Exact numbers, wave duration and reward rates require calibrated balance.",
+        "source_ref": "SRC-LONG-RUNS",
+        "topic": "Provisional tuning"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Automatically bank clear rewards; retain legacy Claim once; remove new-run death awards.",
+        "id": "DEC-BANK",
+        "rationale": "Earned milestones survive defeat/close without additional confirmation or duplicate income.",
+        "source_ref": "SRC-PLAN",
+        "topic": "Award flow"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Design around hundreds of waves before a tier unlock and farming runs into thousands; unlock and optimal farming tier are separate.",
+        "id": "DEC-LONG-RUNS",
+        "rationale": "The owner explicitly rejects the prior 10/20-wave scale and describes remaining on the lower tier long after unlocking the next.",
+        "source_ref": "SRC-LONG-RUNS",
+        "topic": "Progression scale and farming tiers"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Owner benchmark: approximately Tier 10, wave 5000, 10-12 real hours at maxed 5x speed. Early Tier 1 wave-2000 duration remains unknown. Use this long-run reference without forcing every wave to the same duration. Under ideal linear scaling, the same workload represents 50-60 simulation hours at 1x; browser/persistence overhead requires measurement.",
+        "id": "DEC-MIDGAME-DURATION",
+        "rationale": "The owner explicitly clarified that the recalled midgame run used maxed 5x speed. Preserve the distinction between midgame reference and unknown early Tier 1 pacing.",
+        "source_ref": "SRC-MAX-SPEED",
+        "topic": "Long-run pacing reference"
+      }
+    ],
+    "governs": [
+      "campaign-unity/Unity/Assets/Scripts",
+      "campaign-unity/Tools/last_stand_waves",
+      "e2e/helpers/lastStandJourney.mjs",
+      "scripts/ci/lastStandMatrixResult.mjs"
+    ],
+    "intent": {
+      "caller": "Owner: Plan the next sprint",
+      "id": "INTENT-WAVES",
+      "outcome": "Players clear waves, understand and earn progression, safely resume after closing, and use a coherent game interface.",
+      "problem": "Time-based goals and volatile active runs cannot support durable wave-driven campaign progression. Menu chrome and panel corners remain inconsistent.",
+      "source_refs": [
+        "SRC-OWNER",
+        "SRC-PLAN"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "NON-SYSTEMS",
+        "statement": "No Tier 3 content, full research tree, speed unlocks above current 1x, Skills, inventory, boss roster or new currencies."
+      },
+      {
+        "id": "NON-SERVICES",
+        "statement": "No cloud saves, offline earnings, cross-device sync, account rewards, full multi-tab locking, backend deployment, Android build, monetization or dependency refresh."
+      },
+      {
+        "id": "NON-EXPANSION",
+        "statement": "No Ash Road restoration, ordinary Skirmish/Multiplayer/ST1/cq1 redesign, wholesale HUD/art replacement or unrequested PR merging."
+      }
+    ],
+    "open_decisions": [
+      {
+        "affects": [
+          "CR-ARMAMENT"
+        ],
+        "blocking": false,
+        "id": "OPEN-ARMAMENT",
+        "owner": "user",
+        "question": "Include the proposed auxiliary Scattergun milestone and full supporting behavior, or resource rewards first?",
+        "resolution": "Owner approved the revised sprint including the proposed auxiliary Scattergun.",
+        "source_ref": "SRC-SPRINT-APPROVAL",
+        "status": "resolved"
+      },
+      {
+        "affects": [
+          "CR-WAVES",
+          "CR-QUALIFY"
+        ],
+        "blocking": false,
+        "id": "OPEN-RUN-DURATION",
+        "owner": "user",
+        "question": "Should a mature 2000-wave farm run last several hours at future higher unlocked speeds, around an hour, or remain open for balance testing?",
+        "resolution": "Owner benchmark: approximately Tier 10, wave 5000, 10-12 real hours at maxed 5x speed. Early Tier 1 wave-2000 duration remains unknown. Use this long-run reference without forcing every wave to the same duration. Under ideal linear scaling, the same workload represents 50-60 simulation hours at 1x; browser/persistence overhead requires measurement.",
+        "source_ref": "SRC-MAX-SPEED",
+        "status": "resolved"
+      }
+    ],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "SCOPE-LOOP",
+        "statement": "Both existing tiers: finite waves, continuing runs, target progression, best waves, repeatable and first-clear rewards, safe migration and resumable lifecycle. Include the cost/effect/cap depth needed for hundreds-to-thousands-of-wave progression and lower-tier farming viability."
+      },
+      {
+        "id": "SCOPE-UX",
+        "statement": "Wave/reward/Resume presentation and shared Menu/Settings/Help/About/confirmation chrome with correct corners."
+      },
+      {
+        "id": "SCOPE-CONTENT",
+        "statement": "Conditional proposed new armament and its complete gameplay/visual/save/upgrade integration."
+      },
+      {
+        "id": "SCOPE-DELIVERY",
+        "statement": "Diagnose recurring foreground audio assertion and qualify the complete source-bound sprint candidate."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "This is a proposed next sprint, not implementation approval. Scope, initial tuning and the optional new armament are reviewable below. No product code, existing saves or old artifact approvals are changed by this plan.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "The armament question is an open review choice, not a blocker to authoring this proposed draft. Execution remains blocked by PRE-OWNER for all tasks and PRE-ARMAMENT for the armament and dependent work. No answer or approval is inferred from elapsed time or draft validation.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-REVIEW",
+        "title": "Draft for owner review"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "PR 541 merged as dbc8460. This checkout remains on its preserved former feature branch, and its committed product tree matches origin/main. Other dirty artifacts and localhost are preserved. Open PRs are dependency maintenance, not overlapping wave gameplay work.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "PR-head CI and CodeQL passed before merge. Main CI 39860057618 later failed Return foreground-audio validation in shard 3; 22 other jobs passed, CodeQL passed and Pages deployment was skipped. The next sprint includes diagnosis and repair, not an assumption that main is released.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-BASE",
+        "title": "Verified starting point"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Deploy or Resume -\u003e defeat a finite wave -\u003e atomically save checkpoint and earned rewards -\u003e brief automatic intermission -\u003e next wave. Tier advancement unlocks a garage choice without ending or moving the current run. Defeat/Abandon ends that run; completed rewards stay earned.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Use a short automatic intermission whose duration is calibrated against the full long-run time budget; it is frozen by pause and scaled by the existing 0/0.5/1x controls. The old fixed three-second proposal is withdrawn. Resume requires explicit input. Closing the tab earns no offline time. An open hidden tab keeps existing background behavior, but every crossed wave boundary still requires its own confirmed commit.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-LOOP",
+        "title": "Player loop"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-LONG-RUNS"
+            ],
+            "text": "The old Tier 1 wave 10 / Tier 2 wave 20 proposal is superseded. Provisional unlock: clear Tier 1 wave 300 to make Tier 2 available. Unlocking is an optional push opportunity, not automatic promotion; the player can keep farming Tier 1. Design viable, rewarded progression through 2000-plus waves, with no ending or forced transition at 2000.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-LONG-RUNS"
+            ],
+            "text": "Proposed milestone spacing: early onboarding rewards around waves 10 and 25; subsequent authored milestones at 50, 100, 200, 300, 500, 750, 1000, 1500 and 2000, with room beyond. Not every milestone unlocks a feature. Candidate first new armament moves from wave 5 to wave 100 if selected by the owner. Keep only the two real tiers; do not expose an empty Tier 3.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-LONG-RUNS"
+            ],
+            "text": "Replace the earlier fixed 1 Salvage per five waves and its numeric bonus table. Balance repeatable earnings, first-clear bonuses, upgrade prices, effect curves and per-track caps together. Existing prototype permanent cap 3 / total cap 8 cannot be accepted unchanged merely because the wave counter is longer. Preserve existing investments and early effects while adding meaningful long-run growth; keep utility limits such as minimum firing interval valid.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-LONG-RUNS"
+            ],
+            "text": "Measure the same builds on both tiers: an early Tier 2 unlock must not automatically make Tier 1 obsolete. Compare attainable waves, expected Salvage per active minute, first-clear opportunities and upgrade affordability. A deeper lower-tier farming run can outperform a short higher-tier push; around 2000 waves is a scale reference, not a second tier-unlock gate.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-MIDGAME-DURATION",
+              "SRC-MAX-SPEED"
+            ],
+            "text": "Owner midgame reference: roughly Tier 10 to wave 5000 over 10-12 real hours at maxed 5x speed. This averages 7.2-8.64 real seconds per wave overall. Under ideal linear simulation scaling, the same workload averages 36-43.2 simulation seconds per wave and takes 50-60 hours at 1x. These are derived budgets, not fixed wave timers; transitions and persistence overhead require measurement. Waves still clear only after defeating their full cohort. Early Tier 1 wave-2000 duration remains unsettled. Checkpoint every completed wave; closed-tab time earns no progress. The future 5x cap is now explicit, while research and its unlock grants remain outside this sprint.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [
+              "SRC-MIDGAME-DURATION"
+            ],
+            "text": "Extend engine, economy and save capacity checks to wave 5000 and beyond, with a 10-12-hour operational horizon. This sprint still ships only the two authored tiers; synthetic higher-tier fixtures establish scale and do not represent delivered Tier 10 content or balance. Keep existing approximate wave-300 unlock and wave-2000 lower-tier farming references provisional.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-TUNING",
+        "title": "Long-run progression and proposed scale"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "A single versioned envelope owns progression, milestone claims and one active-run checkpoint. Store only current checkpoint, bests and bounded first-clear ledger; use run ID and completed-wave high-water marks for repeatable rewards. No unbounded reward-event history.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Checkpoint the deployment before wave 1 and state after each successful clear, with deterministic start-of-next-wave timers/generator state. Mid-wave Scrap, hull and temporary upgrades roll back together. Permanent stats/fitting for the active run are frozen from deployment. Save retries reconcile exact before/after bytes; uncertain writes never become a second award.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "A terminal save atomically clears the resume checkpoint. While that write is unconfirmed, hold the result and allow Retry. Older pending manual Claims remain claimable exactly once; old survival goals do not become fabricated wave bests. No cloud sync, automatic reset or offline reward system is introduced.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-SAVE",
+        "title": "Save and failure contract"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [
+              "SRC-SPRINT-APPROVAL"
+            ],
+            "text": "Include one auxiliary Scattergun, earned at Tier 1 wave 100 (provisional tuning). It attacks a short-range group alongside the automatic cannon, offering a crowd-control trade-off against Launcher reach and Field Repair sustain. Include a readable modeled module, attached callout, effects/audio and one fitting-specific damage track. Exact damage/range/cycle values are tuned through the deterministic measurement matrix.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-ARMAMENT",
+        "title": "Approved content payoff: auxiliary Scattergun"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Keep the garage tier window and fitting chooser scalable. Promote Resume when a checkpoint exists. Show current wave/cohort and next reward in distinct compact HUD regions; details live in a scrollable milestone pane. Do not rebuild the toolbar the owner rejected.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Use the shared brass/graphite treatment for Menu, Settings, Help, About and confirmations. Correct the underlying backing outline and compositing once, then exercise all consumers and button states over both environments. Existing guidance opt-outs, speed controls and input ownership continue to work.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-UX",
+        "title": "Hierarchy and presentation"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "The owner already selected defeated enemy cohorts and completed-wave recovery. Those are inherited requirements; no comparison attempts to reopen them. The meaningful engineering choice is how to commit checkpoint/reward state.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Selected recommendation: strong, one versioned save envelope. Its bounded record and existing verified-write seam support stable per-wave commits. Separate checkpoint and reward stores with a recovery journal are viable but add transaction states and mismatch recovery without a current scale benefit. Local single-tab storage remains the same trust boundary. No new package/service is needed.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Catalogs use stable IDs for tiers, milestone reward types and fitting capabilities. This directly addresses the owner request to scale past two options. Data validation permits only known grant types and bounded values; local data never becomes server-authoritative rewards.",
+            "type": "paragraph"
+          },
+          {
+            "columns": [
+              "Lens",
+              "Single save envelope",
+              "Separate stores with recovery journal"
+            ],
+            "refs": [
+              "SRC-CODE",
+              "SRC-OWNER"
+            ],
+            "rows": [
+              [
+                "Scalable",
+                "Strong: bounded checkpoint and milestone ledger grow with authored content, not run duration.",
+                "Adequate: content growth fits, but each store adds recovery coordination."
+              ],
+              [
+                "Maintainable",
+                "Strong: one versioned parser, migration and confirmed-write owner.",
+                "Weak: journal, checkpoint and reward parsers must evolve together."
+              ],
+              [
+                "Available",
+                "Strong: failure preserves the last complete record and existing retry path.",
+                "Adequate: recovery works after reconstructing incomplete multi-store writes."
+              ],
+              [
+                "Reliable",
+                "Strong: checkpoint and awards share one commit boundary.",
+                "Adequate: journal replay can reconcile writes with additional failure states."
+              ],
+              [
+                "Testable",
+                "Strong: before/after record pairs bound fault-injection cases.",
+                "Adequate: deterministic journal tests require every intermediate store combination."
+              ],
+              [
+                "Securable",
+                "Indifferent: same untrusted local save; bounded validation and no account award authority.",
+                "Indifferent: same untrusted local save; bounded validation and no account award authority."
+              ]
+            ],
+            "type": "table"
+          }
+        ],
+        "id": "SEC-SMARTS",
+        "title": "SMARTS design rationale"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-PLAN",
+        "locator": "Current conversation: Plan the next sprint",
+        "note": "Planning only. Earlier requests require careful approval before execution; no new merge or publication authority is inferred.",
+        "title": "Owner requests next sprint plan",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-OWNER",
+        "locator": "Current conversation: waves, defeat the wave enemies, completed-wave resume, menu chrome and panel corners",
+        "note": "Clear finite enemy groups. Resume hp/upgrades/resources/wave from the latest completed wave, losing at most unfinished-wave progress. Correct shared chrome and corners.",
+        "title": "Settled wave, save and visual direction",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-ROADMAP",
+        "locator": "campaign-unity/docs/LAST-STAND-ROADMAP.md, Owner direction update October 22",
+        "note": "Last Stand is the sole campaign; runs continue beyond tier advancement targets; milestone and repeatable rewards are distinct.",
+        "title": "Maintained Last Stand direction",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-PREVIOUS",
+        "locator": "ST-LS-UPGRADE-PAYOFF-SPEC: DEC-WAVE-CLEAR, DEC-WAVE-CHECKPOINT, SEC-WAVE-FOLLOWON",
+        "note": "Read through the installed 0.20.7 engine at revision 13; exact tuning and additional armament content remain proposals.",
+        "title": "Native recorded decisions",
+        "type": "decision_record",
+        "url": null
+      },
+      {
+        "id": "SRC-CODE",
+        "locator": "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs; LastStandProgression.cs; LastStandTierCatalog.cs; LastStandUpgradeCatalog.cs; LastStandSelection.cs",
+        "note": "Endless timed spawning, a 3600-tick playable horizon, version 3 permanent progression, two tier-specific best arrays, two fitting variants and six upgrade tracks. No durable active-run checkpoint.",
+        "title": "Current simulation and progression owners",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-UI",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandLoopHud.cs; LastStandSettingsHud.cs; LastStandLoopController.cs; LastStandFittingCallout.cs",
+        "note": "Preserve compact controls, separate floating Menu, tier environment preview and attached fitting callouts. Reuse semantic input/focus ownership; fix shared backing geometry.",
+        "title": "Current controls and panel composition",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-CI",
+        "locator": "CI run 39860057618, browser last-stand-3 job 120108361587",
+        "note": "22 jobs passed. Foreground Return audio assertion failed at lastStandJourney.mjs:1580; aggregate consequently failed. CodeQL passed; Pages run 39862581846 skipped. Recurrence needs diagnosis; it is not proven harmless.",
+        "title": "Observed post-merge delivery failure",
+        "type": "test_reference",
+        "url": "https://github.com/SUaDtL/singedTerra/actions/runs/39860057618"
+      },
+      {
+        "id": "SRC-LONG-RUNS",
+        "locator": "Current conversation: much more waves; approximately 300 for an unlock and approximately 2000 before moving farming tiers",
+        "note": "Owner uses The Tower as a scale comparison. This records desired Last Stand pacing, not verified factual unlock rules for another game. Hundreds of waves unlock an option; long lower-tier runs remain useful into thousands. Exact thresholds and duration remain proposed tuning.",
+        "title": "Owner corrects progression to hundreds and thousands of waves",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-MIDGAME-DURATION",
+        "locator": "Current conversation: tier 10 to wave 5000 takes 10-12 hours in midgame; early Tier 1 duration not recalled",
+        "note": "Owner-reported reference for long-run scale and pacing, not externally verified rules of another game. The exact upgraded speed is unspecified. Do not apply this duration to early Tier 1 wave 2000 or claim this sprint ships Tier 10.",
+        "title": "Owner supplies midgame farming duration reference",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-MAX-SPEED",
+        "locator": "Current conversation: with maxed speed at 5x",
+        "note": "Clarifies the preceding midgame reference: roughly Tier 10 to wave 5000 in 10-12 real hours at maxed 5x speed. Early Tier 1 duration remains unprovided. This is a pacing clarification, not sprint implementation approval or authorization to add research.",
+        "title": "Owner clarifies the farming benchmark uses maxed 5x speed",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-SPRINT-APPROVAL",
+        "locator": "Current conversation: yes, followed by yes after explicit approval-versus-pacing clarification",
+        "note": "Approval to implement the revised sprint including Scattergun. Merge and publication remain separate. Ordinary recorded user statement, not an authenticated receipt.",
+        "title": "Owner approves the revised sprint including Scattergun",
+        "type": "user_request",
+        "url": null
+      }
+    ],
+    "summary": "A complete progression loop with finite waves, durable checkpoints, milestone rewards and consistent menu chrome. Proposed sprint for owner review.",
+    "title": "Last Stand: waves, rewards and resumable runs"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-waves-and-resume.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 8,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-waves-and-resume"
+}
+</script>
+</body></html>

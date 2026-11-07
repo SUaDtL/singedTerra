@@ -86,15 +86,21 @@ namespace SingedTerra.VisualReview
         public bool TrySelectEnvironment(string id)
         {
             EnvironmentSelectionError="";
-            if(!LastStandEnvironmentCatalog.TryGet(id,out _))
-            { EnvironmentSelectionError="Unknown battlefield environment."; return false; }
-            if(!BindingsAreValid(id,out var error))
+            if(!CanPresentEnvironment(id,out var error))
             { EnvironmentSelectionError=error; return false; }
-            if(!sun) { EnvironmentSelectionError="Battlefield environment has no scene light."; return false; }
             if(id==EnvironmentId) return true;
             if(Session?.Model!=null || presentation && presentation.EncounterActive)
             { EnvironmentSelectionError="The battlefield cannot change during a run."; return false; }
             SelectEnvironment(id); return true;
+        }
+        // Shared non-mutating admission for runtime selection and build checks.
+        public bool CanPresentEnvironment(string id,out string error)
+        {
+            if(!LastStandEnvironmentCatalog.TryGet(id,out _))
+            { error="Unknown battlefield environment.";return false; }
+            if(!BindingsAreValid(id,out error))return false;
+            if(!sun){error="Battlefield environment has no scene light.";return false;}
+            error="";return true;
         }
         void SelectEnvironment(string id)
         {

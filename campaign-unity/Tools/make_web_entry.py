@@ -32,6 +32,19 @@ function showError(message){console.error('Last Stand load failed',message);docu
 // Register before Unity: native Return/Retry keep normal browser activation.
 const wrapperKeyboardControls=[document.querySelector('#last-stand-return'),document.querySelector('#retry')];
 let lastStandInstance;
+// A browser-owned exclusive lock serializes the entire profile writer. The
+// lock lasts for this document, including hidden combat; closing it releases
+// ownership. A second tab can inspect the saved profile but cannot spend it.
+window.__lastStandSaveWriter=false;
+function acquireLastStandSave(){
+  if(!navigator.locks || typeof navigator.locks.request!=='function')return Promise.resolve(false);
+  return new Promise(resolve=>{
+    navigator.locks.request('singedTerra.lastStand.prototype.v1',{mode:'exclusive',ifAvailable:true},lock=>{
+      window.__lastStandSaveWriter=!!lock;resolve(!!lock);
+      if(lock)return new Promise(()=>{});
+    }).catch(()=>resolve(false));
+  });
+}
 document.querySelector('#last-stand-return').addEventListener('click',event=>{
   if(lastStandInstance){event.preventDefault();canvas.focus();lastStandInstance.SendMessage('LastStandBrowserBridge','RequestReturn','');}
 });
@@ -50,7 +63,7 @@ function keepWrapperKeyboard(event){
 }
 ['keydown','keyup','keypress'].forEach(type=>window.addEventListener(type,keepWrapperKeyboard,true));
 if(typeof createUnityInstance !== 'function')showError('Unity loader unavailable');
-else Promise.resolve().then(()=>createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p)).then(instance=>{lastStandInstance=instance;document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);"""
+else acquireLastStandSave().then(()=>createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p)).then(instance=>{lastStandInstance=instance;document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);"""
 
 def render_web_entry(build: Path, scene: str, root: Path) -> str:
     text = (root / 'Tools/web-index-template.html').read_text(encoding='utf-8')
@@ -63,8 +76,8 @@ def render_web_entry(build: Path, scene: str, root: Path) -> str:
                         '<a id="last-stand-return" href="../#campaigns/last-stand" aria-label="Return to Campaigns" aria-describedby="last-stand-loss">'
                         '<span class="full" aria-hidden="true">← Return to Campaigns</span>'
                         '<span class="short" aria-hidden="true">← Campaigns</span></a>'
-                        '<p id="last-stand-loss">Leaving or reloading an unfinished run loses its progress without a reward. '
-                        'Saved upgrades and pending defeat rewards stay in this browser only after a successful save.</p></nav>'
+                        '<p id="last-stand-loss">Return or reload safely: Resume Run restores your last saved wave, paused. '
+                        'Only progress since that checkpoint is replayed. Saves and earned rewards stay in this browser.</p></nav>'
                         if last_stand else '')
     text = text.replace('__RETRY_LINK__', '<a id="retry" href="">Retry</a>' if last_stand else '')
     text = text.replace('__BOOTSTRAP__', LAST_STAND_BOOTSTRAP if last_stand else LEGACY_BOOTSTRAP)

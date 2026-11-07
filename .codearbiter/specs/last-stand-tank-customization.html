@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand: modular tank appearance and art refresh · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-TANK-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-tank-customization.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand: modular tank appearance and art refresh</h1><p class="deck">Improve the actual player tank and adapt the four-family legacy garage through shared presentation, profile and menu owners.</p><div class="meta"><span>ST-LS-TANK-SPEC</span><span>Revision 4 · schema 0.3.2</span><span>32 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:I-TANK -->
+<article class="record" id="I-TANK" data-ca-symbol="I-TANK" data-ca-kind="intent"><div class="record-head"><a class="id" href="#I-TANK">I-TANK</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Last Stand player</div><div class="field"><span class="label">Outcome</span>Better-looking personal tank with free interchangeable parts and reliable saved appearance.</div><div class="field"><span class="label">Problem</span>Low tank fidelity and absent legacy customization.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div></article>
+<!-- CA:END:I-TANK -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:S-TANK -->
+<article class="record" id="S-TANK" data-ca-symbol="S-TANK" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-TANK">S-TANK</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Tank art, free cosmetics, profile persistence, garage UI and regression/visual verification.</div></article>
+<!-- CA:END:S-TANK -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:N-SIM -->
+<article class="record" id="N-SIM" data-ca-symbol="N-SIM" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-SIM">N-SIM</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No new chassis stats, weapons, monetization, backend/accounts, balance changes or deletion of legacy code.</div></article>
+<!-- CA:END:N-SIM -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:A-TANK -->
+<article class="record" id="A-TANK" data-ca-symbol="A-TANK" data-ca-kind="approach"><div class="record-head"><a class="id" href="#A-TANK">A-TANK</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#D-LEGACY">D-LEGACY</a></li></ul></div><div class="field"><span class="label">Choice</span>Versioned art pack on a shared rig, profile and modal shell.</div><div class="field"><span class="label">Tradeoff</span>Additive profile migration and rig verification cost more than prefab replacement but preserve saves and combat.</div></article>
+<!-- CA:END:A-TANK -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:K-PRESERVE -->
+<article class="record" id="K-PRESERVE" data-ca-symbol="K-PRESERVE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#K-PRESERVE">K-PRESERVE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>C-DELIVERY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve unrelated dirty worktrees, frozen evidence, original art and retained rules. No merge or publication.</div></article>
+<!-- CA:END:K-PRESERVE -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:D-LEGACY -->
+<article class="record" id="D-LEGACY" data-ca-symbol="D-LEGACY" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#D-LEGACY">D-LEGACY</a><h3>Legacy parity</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Current four-family/five-paint contract, free and cosmetic.</div><div class="field"><span class="label">Rationale</span>Current code supersedes earlier three-family prose.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-LEGACY">SRC-LEGACY</a></div></article>
+<!-- CA:END:D-LEGACY -->
+
+<!-- CA:BEGIN:D-DRAFT -->
+<article class="record" id="D-DRAFT" data-ca-symbol="D-DRAFT" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#D-DRAFT">D-DRAFT</a><h3>Reversible preview</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Real Apply/Cancel draft.</div><div class="field"><span class="label">Rationale</span>Compare models without silently changing saved appearance.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-USER">SRC-USER</a></div></article>
+<!-- CA:END:D-DRAFT -->
+
+<!-- CA:BEGIN:D-OWNER -->
+<article class="record" id="D-OWNER" data-ca-symbol="D-OWNER" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#D-OWNER">D-OWNER</a><h3>Portable cosmetics</h3></div><div class="field"><span class="label">Authority</span>proposed</div><div class="field"><span class="label">Choice</span>Existing player profile metadata.</div><div class="field"><span class="label">Rationale</span>Backups retain customization without duplicate persistence.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-SAVE">SRC-SAVE</a></div></article>
+<!-- CA:END:D-OWNER -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:C-PARITY -->
+<article class="record" id="C-PARITY" data-ca-symbol="C-PARITY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-PARITY">C-PARITY</a><h3>Legacy parity</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Applies to this authorized Last Stand appearance sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-PRESERVE">K-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>All named family combinations remain free cosmetics.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-TANK">S-TANK</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Existing Last Stand profile and rig are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-PARITY -->
+<article class="record" id="SC-PARITY" data-ca-symbol="SC-PARITY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-PARITY">SC-PARITY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>a Foundry tank</div><div class="field"><span class="label">Then</span>the selected legs and barrel render together without cost or changed combat fitting</div><div class="field"><span class="label">When</span>the player selects Ranger mobility and Jackal barrel</div></article>
+<!-- CA:END:SC-PARITY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Four named free families Foundry/Ranger/Bulwark/Jackal, four independently mixed slots treads (Mobility)/hull/turret/barrel, five named legacy paints. All 256 combinations. No stats/costs/unlocks.</div><div class="field"><span class="label">Trigger</span>Player customizes, saves or uses the tank.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-PARITY -->
+<article class="record" id="V-PARITY" data-ca-symbol="V-PARITY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-PARITY">V-PARITY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Unknown family/paint IDs and an omitted family must be rejected/detected.</div><div class="field"><span class="label">Oracle</span>Catalog tests and real imported assembly checks.</div><div class="field"><span class="label">Planned target</span>Current sprint source and built artifact</div></article>
+<!-- CA:END:V-PARITY -->
+</div></article>
+<!-- CA:END:C-PARITY -->
+
+<!-- CA:BEGIN:C-ART -->
+<article class="record" id="C-ART" data-ca-symbol="C-ART" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-ART">C-ART</a><h3>Better actual art</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Applies to this authorized Last Stand appearance sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-PRESERVE">K-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>New original source and measured imported assets support improved actual rendering.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-TANK">S-TANK</a></li></ul></div><div class="field"><span class="label">Kind</span>performance</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Existing Last Stand profile and rig are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-ART -->
+<article class="record" id="SC-ART" data-ca-symbol="SC-ART" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-ART">SC-ART</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>the saved original and new source assets</div><div class="field"><span class="label">Then</span>distinct silhouettes/material detail are visible and actual triangle budgets are reported</div><div class="field"><span class="label">When</span>all kit parts are imported and representative renders captured</div></article>
+<!-- CA:END:SC-ART -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Distinct tracks, spider legs, hover pods and wheels. Readable armor panels, bevel highlights and convincing material separation. Editable original Blender source, guarded export tooling and texture provenance. Target under 25000 core triangles per mixed assembly; report actual counts.</div><div class="field"><span class="label">Trigger</span>Player customizes, saves or uses the tank.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-ART -->
+<article class="record" id="V-ART" data-ca-symbol="V-ART" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-ART">V-ART</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A missing mesh/texture or over-budget mixed assembly fails qualification.</div><div class="field"><span class="label">Oracle</span>Imported mesh counts and fresh Unity/browser renders against baseline; no inference of device performance.</div><div class="field"><span class="label">Planned target</span>Current sprint source and built artifact</div></article>
+<!-- CA:END:V-ART -->
+</div></article>
+<!-- CA:END:C-ART -->
+
+<!-- CA:BEGIN:C-COMBAT -->
+<article class="record" id="C-COMBAT" data-ca-symbol="C-COMBAT" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-COMBAT">C-COMBAT</a><h3>Combat invariants</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>invariant</div><div class="field"><span class="label">Rationale</span>Applies to this authorized Last Stand appearance sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-PRESERVE">K-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Cosmetics cannot change combat state or firing anchors.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-TANK">S-TANK</a></li></ul></div><div class="field"><span class="label">Kind</span>invariant</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Existing Last Stand profile and rig are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-COMBAT -->
+<article class="record" id="SC-COMBAT" data-ca-symbol="SC-COMBAT" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-COMBAT">SC-COMBAT</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>any mixed appearance with each fitting</div><div class="field"><span class="label">Then</span>canonical muzzle and module poses remain consistent and recoil returns</div><div class="field"><span class="label">When</span>the tank aims in cardinal directions and fires/recoils</div></article>
+<!-- CA:END:SC-COMBAT -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Persistent root, turret/recoil transforms, canonical muzzle and existing fitting poses remain fixed. Five fittings and their geometry callouts work. Cosmetics do not affect hitboxes, aim, prices, damage, checkpoints or retained rules.</div><div class="field"><span class="label">Trigger</span>Player customizes, saves or uses the tank.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-COMBAT -->
+<article class="record" id="V-COMBAT" data-ca-symbol="V-COMBAT" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-COMBAT">V-COMBAT</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Move a cosmetic muzzle/mount in a disposable fixture and verify geometry checks reject it.</div><div class="field"><span class="label">Oracle</span>All 256 assemblies, five fittings, cardinal aim and recoil-return checks plus existing combat tests.</div><div class="field"><span class="label">Planned target</span>Current sprint source and built artifact</div></article>
+<!-- CA:END:V-COMBAT -->
+</div></article>
+<!-- CA:END:C-COMBAT -->
+
+<!-- CA:BEGIN:C-PROFILE -->
+<article class="record" id="C-PROFILE" data-ca-symbol="C-PROFILE" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-PROFILE">C-PROFILE</a><h3>Durable portable appearance</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>invariant</div><div class="field"><span class="label">Rationale</span>Applies to this authorized Last Stand appearance sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-PRESERVE">K-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Only confirmed profile transactions change saved appearance.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-TANK">S-TANK</a></li></ul></div><div class="field"><span class="label">Kind</span>compatibility</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Existing Last Stand profile and rig are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-PROFILE -->
+<article class="record" id="SC-PROFILE" data-ca-symbol="SC-PROFILE" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-PROFILE">SC-PROFILE</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>a current profile, older profile or unconfirmed save</div><div class="field"><span class="label">Then</span>old defaults migrate, valid cosmetics roundtrip and failed/conflicting writes do not report success</div><div class="field"><span class="label">When</span>appearance is applied or a backup restored</div></article>
+<!-- CA:END:SC-PROFILE -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Use allowlisted profile metadata outside combat snapshots. Old profiles receive default appearance. Malformed or unknown new records are protected. Apply uses existing CAS/transaction owner and portable backups include appearance.</div><div class="field"><span class="label">Trigger</span>Player customizes, saves or uses the tank.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-PROFILE -->
+<article class="record" id="V-PROFILE" data-ca-symbol="V-PROFILE" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-PROFILE">V-PROFILE</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Malformed fields, unknown IDs, changed ownership or denied writes refuse without overwriting protected bytes.</div><div class="field"><span class="label">Oracle</span>Old/current/invalid profiles, backup roundtrip, failed write and concurrency checks.</div><div class="field"><span class="label">Planned target</span>Current sprint source and built artifact</div></article>
+<!-- CA:END:V-PROFILE -->
+</div></article>
+<!-- CA:END:C-PROFILE -->
+
+<!-- CA:BEGIN:C-UI -->
+<article class="record" id="C-UI" data-ca-symbol="C-UI" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-UI">C-UI</a><h3>Live customization</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Applies to this authorized Last Stand appearance sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-PRESERVE">K-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Every exit discards an unapplied draft and controls remain reachable.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-TANK">S-TANK</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Existing Last Stand profile and rig are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-UI -->
+<article class="record" id="SC-UI" data-ca-symbol="SC-UI" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-UI">SC-UI</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>a garage with saved appearance</div><div class="field"><span class="label">Then</span>saved appearance returns and all controls remain accessible in compact layouts</div><div class="field"><span class="label">When</span>the player previews parts and exits with Cancel or Escape</div></article>
+<!-- CA:END:SC-UI -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Shared chrome/modal/focus/scroll page with named presets and grouped parts/paint. Actual tank previews draft. Apply persists; Cancel/Escape/page exit restore saved appearance. Garage-only editing. Accessible desktop, portrait and 500/568 by 142 compact layouts.</div><div class="field"><span class="label">Trigger</span>Player customizes, saves or uses the tank.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-UI -->
+<article class="record" id="V-UI" data-ca-symbol="V-UI" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-UI">V-UI</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>A leaked draft after cancel or clipped/unreachable Apply control fails the journey.</div><div class="field"><span class="label">Oracle</span>Actual Unity controls and packaged browser keyboard/scroll/save journeys.</div><div class="field"><span class="label">Planned target</span>Current sprint source and built artifact</div></article>
+<!-- CA:END:V-UI -->
+</div></article>
+<!-- CA:END:C-UI -->
+
+<!-- CA:BEGIN:C-DELIVERY -->
+<article class="record" id="C-DELIVERY" data-ca-symbol="C-DELIVERY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-DELIVERY">C-DELIVERY</a><h3>Reviewable delivery</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Applies to this authorized Last Stand appearance sprint.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-PRESERVE">K-PRESERVE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Evidence and publication status remain distinct from implementation labels.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-TANK">S-TANK</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>Existing Last Stand profile and rig are available.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-DELIVERY -->
+<article class="record" id="SC-DELIVERY" data-ca-symbol="SC-DELIVERY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-DELIVERY">SC-DELIVERY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>the completed changed worktree</div><div class="field"><span class="label">Then</span>source-bound checks and remaining platform/CI status are explicit</div><div class="field"><span class="label">When</span>evidence and PR are reviewed</div></article>
+<!-- CA:END:SC-DELIVERY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-USER">SRC-USER</a></li></ul></div><div class="field"><span class="label">Statement</span>Preserve original art and frozen reports/contracts. Version changed current observation contracts. Deliver source-bound evidence and actual qualification status on PR 547; no merge or device-acceptance claims.</div><div class="field"><span class="label">Trigger</span>Player customizes, saves or uses the tank.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-DELIVERY -->
+<article class="record" id="V-DELIVERY" data-ca-symbol="V-DELIVERY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-DELIVERY">V-DELIVERY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Stale build/source binding or retained evidence mutation prevents a completion claim.</div><div class="field"><span class="label">Oracle</span>Diff review, portable/Unity/browser/build checks and exact-head CI.</div><div class="field"><span class="label">Planned target</span>Current sprint source and built artifact</div></article>
+<!-- CA:END:V-DELIVERY -->
+</div></article>
+<!-- CA:END:C-DELIVERY -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:DESIGN -->
+<article class="record" id="DESIGN" data-ca-symbol="DESIGN" data-ca-kind="sections"><div class="record-head"><a class="id" href="#DESIGN">DESIGN</a><h3>Player workflow</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Open Appearance from the garage menu. Preview a named kit or choose Mobility, Hull, Turret, Barrel and Paint independently. Actual tank stays visible with rotation and selected-part highlight. Apply saves; Cancel/Escape/exit restores the saved tank. No appearance edits during active combat. Distinguish cosmetic Railgun style from gameplay Railgun fitting.</p></div></div></article>
+<!-- CA:END:DESIGN -->
+
+<!-- CA:BEGIN:SMARTS -->
+<article class="record" id="SMARTS" data-ca-symbol="SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SMARTS">SMARTS</a><h3>Choices and limits</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Persistent rig plus replaceable visual children beats 256 prefabs on maintainability, scalability and testability. Existing profile metadata beats another storage key on portability and concurrency. Grouped named choices beat cycle-only discovery. A genuine Apply/Cancel draft deliberately adapts the legacy immediate-edit workflow for comparing 3D assemblies. New versioned art preserves original sources. Mesh targets are authoring limits, not device performance proof. Imagegen concept is art reference, not engine output or acceptance evidence.</p></div></div></article>
+<!-- CA:END:SMARTS -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-USER -->
+<article class="record" id="SRC-USER" data-ca-symbol="SRC-USER" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-USER">SRC-USER</a><h3>Authorized tank sprint</h3></div><div class="field"><span class="label">Locator</span>Codex conversation 2026-10-31</div><div class="field"><span class="label">Note</span>Improved model/textures and legacy customization in Last Stand; same PR 547, no merge.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-USER -->
+
+<!-- CA:BEGIN:SRC-LEGACY -->
+<article class="record" id="SRC-LEGACY" data-ca-symbol="SRC-LEGACY" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-LEGACY">SRC-LEGACY</a><h3>Legacy cosmetic contract</h3></div><div class="field"><span class="label">Locator</span>shared/src/types/TankLoadout.ts; client/src/ui/tankPartLabels.ts; client/src/ui/LobbyGarageView.ts</div><div class="field"><span class="label">Note</span>Four free families, four independent slots, five paints; no simulation effect.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-LEGACY -->
+
+<!-- CA:BEGIN:SRC-RIG -->
+<article class="record" id="SRC-RIG" data-ca-symbol="SRC-RIG" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-RIG">SRC-RIG</a><h3>Live rig</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/TankPresentation.cs</div><div class="field"><span class="label">Note</span>Preserve aim, recoil, muzzle, five fittings and callouts.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-RIG -->
+
+<!-- CA:BEGIN:SRC-SAVE -->
+<article class="record" id="SRC-SAVE" data-ca-symbol="SRC-SAVE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-SAVE">SRC-SAVE</a><h3>Profile and backup owner</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs</div><div class="field"><span class="label">Note</span>Extend bounded profile transactions, codec and backups; no second wallet/save authority.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-SAVE -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>eca8891ce820991204745678ea5f7f8076261590</div><div class="field"><span class="label">Observed date</span>2026-10-31</div><div class="field"><span class="label">Repository</span>SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts</li><li>campaign-unity/ArtSource/LastStandTankKits_02.blend</li><li>campaign-unity/Unity/Assets/TankKits02</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: f126d29fba3b8b703947831cbc25bf89d3250feabaa3fc20baf55cc00c3986a3<br>Model SHA-256: b6d75e53060c10fd6d8ce8786380ec9b15a7c289a3569e33813182a3a7973464</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-TANK-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "b6d75e53060c10fd6d8ce8786380ec9b15a7c289a3569e33813182a3a7973464",
+    "normative_sha256": "f126d29fba3b8b703947831cbc25bf89d3250feabaa3fc20baf55cc00c3986a3",
+    "symbol_count": 32
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "D-LEGACY"
+      ],
+      "choice": "Versioned art pack on a shared rig, profile and modal shell.",
+      "id": "A-TANK",
+      "tradeoff": "Additive profile migration and rig verification cost more than prefab replacement but preserve saves and combat."
+    },
+    "baseline": {
+      "commit": "eca8891ce820991204745678ea5f7f8076261590",
+      "observed_date": "2026-10-31",
+      "repository": "SUaDtL/singedTerra"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "C-DELIVERY"
+        ],
+        "id": "K-PRESERVE",
+        "source_refs": [
+          "SRC-USER"
+        ],
+        "statement": "Preserve unrelated dirty worktrees, frozen evidence, original art and retained rules. No merge or publication."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Applies to this authorized Last Stand appearance sprint."
+        },
+        "constraint_refs": [
+          "K-PRESERVE"
+        ],
+        "guarantees": [
+          "All named family combinations remain free cosmetics."
+        ],
+        "id": "C-PARITY",
+        "intent_refs": [
+          "S-TANK"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "Existing Last Stand profile and rig are available."
+        ],
+        "scenarios": [
+          {
+            "given": "a Foundry tank",
+            "id": "SC-PARITY",
+            "then": "the selected legs and barrel render together without cost or changed combat fitting",
+            "when": "the player selects Ranger mobility and Jackal barrel"
+          }
+        ],
+        "source_refs": [
+          "SRC-USER"
+        ],
+        "statement": "Four named free families Foundry/Ranger/Bulwark/Jackal, four independently mixed slots treads (Mobility)/hull/turret/barrel, five named legacy paints. All 256 combinations. No stats/costs/unlocks.",
+        "title": "Legacy parity",
+        "trigger": "Player customizes, saves or uses the tank.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-PARITY",
+          "method": "automated_and_review",
+          "negative_control": "Unknown family/paint IDs and an omitted family must be rejected/detected.",
+          "oracle": "Catalog tests and real imported assembly checks.",
+          "planned_target": "Current sprint source and built artifact"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Applies to this authorized Last Stand appearance sprint."
+        },
+        "constraint_refs": [
+          "K-PRESERVE"
+        ],
+        "guarantees": [
+          "New original source and measured imported assets support improved actual rendering."
+        ],
+        "id": "C-ART",
+        "intent_refs": [
+          "S-TANK"
+        ],
+        "kind": "performance",
+        "obligation": "must",
+        "preconditions": [
+          "Existing Last Stand profile and rig are available."
+        ],
+        "scenarios": [
+          {
+            "given": "the saved original and new source assets",
+            "id": "SC-ART",
+            "then": "distinct silhouettes/material detail are visible and actual triangle budgets are reported",
+            "when": "all kit parts are imported and representative renders captured"
+          }
+        ],
+        "source_refs": [
+          "SRC-USER"
+        ],
+        "statement": "Distinct tracks, spider legs, hover pods and wheels. Readable armor panels, bevel highlights and convincing material separation. Editable original Blender source, guarded export tooling and texture provenance. Target under 25000 core triangles per mixed assembly; report actual counts.",
+        "title": "Better actual art",
+        "trigger": "Player customizes, saves or uses the tank.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-ART",
+          "method": "automated_and_review",
+          "negative_control": "A missing mesh/texture or over-budget mixed assembly fails qualification.",
+          "oracle": "Imported mesh counts and fresh Unity/browser renders against baseline; no inference of device performance.",
+          "planned_target": "Current sprint source and built artifact"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "invariant",
+          "rationale": "Applies to this authorized Last Stand appearance sprint."
+        },
+        "constraint_refs": [
+          "K-PRESERVE"
+        ],
+        "guarantees": [
+          "Cosmetics cannot change combat state or firing anchors."
+        ],
+        "id": "C-COMBAT",
+        "intent_refs": [
+          "S-TANK"
+        ],
+        "kind": "invariant",
+        "obligation": "must",
+        "preconditions": [
+          "Existing Last Stand profile and rig are available."
+        ],
+        "scenarios": [
+          {
+            "given": "any mixed appearance with each fitting",
+            "id": "SC-COMBAT",
+            "then": "canonical muzzle and module poses remain consistent and recoil returns",
+            "when": "the tank aims in cardinal directions and fires/recoils"
+          }
+        ],
+        "source_refs": [
+          "SRC-USER"
+        ],
+        "statement": "Persistent root, turret/recoil transforms, canonical muzzle and existing fitting poses remain fixed. Five fittings and their geometry callouts work. Cosmetics do not affect hitboxes, aim, prices, damage, checkpoints or retained rules.",
+        "title": "Combat invariants",
+        "trigger": "Player customizes, saves or uses the tank.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-COMBAT",
+          "method": "automated_and_review",
+          "negative_control": "Move a cosmetic muzzle/mount in a disposable fixture and verify geometry checks reject it.",
+          "oracle": "All 256 assemblies, five fittings, cardinal aim and recoil-return checks plus existing combat tests.",
+          "planned_target": "Current sprint source and built artifact"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "invariant",
+          "rationale": "Applies to this authorized Last Stand appearance sprint."
+        },
+        "constraint_refs": [
+          "K-PRESERVE"
+        ],
+        "guarantees": [
+          "Only confirmed profile transactions change saved appearance."
+        ],
+        "id": "C-PROFILE",
+        "intent_refs": [
+          "S-TANK"
+        ],
+        "kind": "compatibility",
+        "obligation": "must",
+        "preconditions": [
+          "Existing Last Stand profile and rig are available."
+        ],
+        "scenarios": [
+          {
+            "given": "a current profile, older profile or unconfirmed save",
+            "id": "SC-PROFILE",
+            "then": "old defaults migrate, valid cosmetics roundtrip and failed/conflicting writes do not report success",
+            "when": "appearance is applied or a backup restored"
+          }
+        ],
+        "source_refs": [
+          "SRC-USER"
+        ],
+        "statement": "Use allowlisted profile metadata outside combat snapshots. Old profiles receive default appearance. Malformed or unknown new records are protected. Apply uses existing CAS/transaction owner and portable backups include appearance.",
+        "title": "Durable portable appearance",
+        "trigger": "Player customizes, saves or uses the tank.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-PROFILE",
+          "method": "automated_and_review",
+          "negative_control": "Malformed fields, unknown IDs, changed ownership or denied writes refuse without overwriting protected bytes.",
+          "oracle": "Old/current/invalid profiles, backup roundtrip, failed write and concurrency checks.",
+          "planned_target": "Current sprint source and built artifact"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Applies to this authorized Last Stand appearance sprint."
+        },
+        "constraint_refs": [
+          "K-PRESERVE"
+        ],
+        "guarantees": [
+          "Every exit discards an unapplied draft and controls remain reachable."
+        ],
+        "id": "C-UI",
+        "intent_refs": [
+          "S-TANK"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "Existing Last Stand profile and rig are available."
+        ],
+        "scenarios": [
+          {
+            "given": "a garage with saved appearance",
+            "id": "SC-UI",
+            "then": "saved appearance returns and all controls remain accessible in compact layouts",
+            "when": "the player previews parts and exits with Cancel or Escape"
+          }
+        ],
+        "source_refs": [
+          "SRC-USER"
+        ],
+        "statement": "Shared chrome/modal/focus/scroll page with named presets and grouped parts/paint. Actual tank previews draft. Apply persists; Cancel/Escape/page exit restore saved appearance. Garage-only editing. Accessible desktop, portrait and 500/568 by 142 compact layouts.",
+        "title": "Live customization",
+        "trigger": "Player customizes, saves or uses the tank.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-UI",
+          "method": "automated_and_review",
+          "negative_control": "A leaked draft after cancel or clipped/unreachable Apply control fails the journey.",
+          "oracle": "Actual Unity controls and packaged browser keyboard/scroll/save journeys.",
+          "planned_target": "Current sprint source and built artifact"
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Applies to this authorized Last Stand appearance sprint."
+        },
+        "constraint_refs": [
+          "K-PRESERVE"
+        ],
+        "guarantees": [
+          "Evidence and publication status remain distinct from implementation labels."
+        ],
+        "id": "C-DELIVERY",
+        "intent_refs": [
+          "S-TANK"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "Existing Last Stand profile and rig are available."
+        ],
+        "scenarios": [
+          {
+            "given": "the completed changed worktree",
+            "id": "SC-DELIVERY",
+            "then": "source-bound checks and remaining platform/CI status are explicit",
+            "when": "evidence and PR are reviewed"
+          }
+        ],
+        "source_refs": [
+          "SRC-USER"
+        ],
+        "statement": "Preserve original art and frozen reports/contracts. Version changed current observation contracts. Deliver source-bound evidence and actual qualification status on PR 547; no merge or device-acceptance claims.",
+        "title": "Reviewable delivery",
+        "trigger": "Player customizes, saves or uses the tank.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-DELIVERY",
+          "method": "automated_and_review",
+          "negative_control": "Stale build/source binding or retained evidence mutation prevents a completion claim.",
+          "oracle": "Diff review, portable/Unity/browser/build checks and exact-head CI.",
+          "planned_target": "Current sprint source and built artifact"
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "inherited",
+        "choice": "Current four-family/five-paint contract, free and cosmetic.",
+        "id": "D-LEGACY",
+        "rationale": "Current code supersedes earlier three-family prose.",
+        "source_ref": "SRC-LEGACY",
+        "topic": "Legacy parity"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Real Apply/Cancel draft.",
+        "id": "D-DRAFT",
+        "rationale": "Compare models without silently changing saved appearance.",
+        "source_ref": "SRC-USER",
+        "topic": "Reversible preview"
+      },
+      {
+        "authority": "proposed",
+        "choice": "Existing player profile metadata.",
+        "id": "D-OWNER",
+        "rationale": "Backups retain customization without duplicate persistence.",
+        "source_ref": "SRC-SAVE",
+        "topic": "Portable cosmetics"
+      }
+    ],
+    "governs": [
+      "campaign-unity/Unity/Assets/Scripts",
+      "campaign-unity/ArtSource/LastStandTankKits_02.blend",
+      "campaign-unity/Unity/Assets/TankKits02"
+    ],
+    "intent": {
+      "caller": "Last Stand player",
+      "id": "I-TANK",
+      "outcome": "Better-looking personal tank with free interchangeable parts and reliable saved appearance.",
+      "problem": "Low tank fidelity and absent legacy customization.",
+      "source_refs": [
+        "SRC-USER"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "N-SIM",
+        "statement": "No new chassis stats, weapons, monetization, backend/accounts, balance changes or deletion of legacy code."
+      }
+    ],
+    "open_decisions": [],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "S-TANK",
+        "statement": "Tank art, free cosmetics, profile persistence, garage UI and regression/visual verification."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Open Appearance from the garage menu. Preview a named kit or choose Mobility, Hull, Turret, Barrel and Paint independently. Actual tank stays visible with rotation and selected-part highlight. Apply saves; Cancel/Escape/exit restores the saved tank. No appearance edits during active combat. Distinguish cosmetic Railgun style from gameplay Railgun fitting.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "DESIGN",
+        "title": "Player workflow"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Persistent rig plus replaceable visual children beats 256 prefabs on maintainability, scalability and testability. Existing profile metadata beats another storage key on portability and concurrency. Grouped named choices beat cycle-only discovery. A genuine Apply/Cancel draft deliberately adapts the legacy immediate-edit workflow for comparing 3D assemblies. New versioned art preserves original sources. Mesh targets are authoring limits, not device performance proof. Imagegen concept is art reference, not engine output or acceptance evidence.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SMARTS",
+        "title": "Choices and limits"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-USER",
+        "locator": "Codex conversation 2026-10-31",
+        "note": "Improved model/textures and legacy customization in Last Stand; same PR 547, no merge.",
+        "title": "Authorized tank sprint",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-LEGACY",
+        "locator": "shared/src/types/TankLoadout.ts; client/src/ui/tankPartLabels.ts; client/src/ui/LobbyGarageView.ts",
+        "note": "Four free families, four independent slots, five paints; no simulation effect.",
+        "title": "Legacy cosmetic contract",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-RIG",
+        "locator": "campaign-unity/Unity/Assets/Scripts/TankPresentation.cs",
+        "note": "Preserve aim, recoil, muzzle, five fittings and callouts.",
+        "title": "Live rig",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-SAVE",
+        "locator": "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs",
+        "note": "Extend bounded profile transactions, codec and backups; no second wallet/save authority.",
+        "title": "Profile and backup owner",
+        "type": "repository",
+        "url": null
+      }
+    ],
+    "summary": "Improve the actual player tank and adapt the four-family legacy garage through shared presentation, profile and menu owners.",
+    "title": "Last Stand: modular tank appearance and art refresh"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-tank-customization.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 4,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-tank-customization"
+}
+</script>
+</body></html>

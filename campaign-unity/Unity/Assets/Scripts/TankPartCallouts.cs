@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using SingedTerra.LastStand;
 
 namespace SingedTerra.Art
 {
@@ -20,7 +21,6 @@ namespace SingedTerra.Art
         TankPresentation owner;
         RectTransform root, controls;
         Row[] rows;
-        Renderer[] repairMeshes, launcherMeshes;
         readonly Vector3[] corners = new Vector3[4];
         readonly Color ink = new Color(.055f,.068f,.064f,.94f);
         readonly Color gold = new Color(.76f,.61f,.34f,1f);
@@ -71,8 +71,6 @@ namespace SingedTerra.Art
             foreach(var part in owner.tank.GetComponentsInChildren<Transform>(true))
                 if(part.name=="Hull") { hull=part; break; }
             if(!hull) throw new InvalidOperationException("Authored hull missing");
-            repairMeshes=owner.repairModule.GetComponentsInChildren<Renderer>(true);
-            launcherMeshes=owner.launcherModule.GetComponentsInChildren<Renderer>(true);
             bool review=owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             rows=new[] {
                 MakeRow("cannon",owner.barrel,"MAIN CANNON","Articulated barrel assembly",font),
@@ -95,9 +93,15 @@ namespace SingedTerra.Art
             { lastWidth=Screen.width; lastHeight=Screen.height; QueueReport(); }
             bool shown=!owner.battlefield && owner.ShowPartCallouts;
             root.gameObject.SetActive(shown);
-            rows[2].target=owner.showingLauncher?owner.launcherModule.transform:owner.repairModule.transform;
-            rows[2].meshes=owner.showingLauncher?launcherMeshes:repairMeshes;
-            rows[2].title.text=owner.showingLauncher?"AUXILIARY LAUNCHER":"FIELD REPAIR UNIT";
+            rows[2].target=owner.ActiveFittingModule.transform;
+            rows[2].meshes=owner.ActiveFittingRenderers;
+            switch(owner.Fitting)
+            {
+                case LastStandFitting.Repair:rows[2].title.text="FIELD REPAIR UNIT";break;
+                case LastStandFitting.Launcher:rows[2].title.text="AUXILIARY LAUNCHER";break;
+                case LastStandFitting.Scattergun:rows[2].title.text="AUXILIARY SCATTERGUN";break;
+                default:throw new ArgumentOutOfRangeException();
+            }
             for(int i=0;i<rows.Length;i++)
             {
                 var row=rows[i]; var bounds=row.meshes[0].bounds;

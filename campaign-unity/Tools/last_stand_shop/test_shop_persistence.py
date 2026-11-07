@@ -7,11 +7,15 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
 import uuid
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import MONO, compile_csharp, run_csharp
+from last_stand_source_closure import complete_sources
+
 
 sys.dont_write_bytecode = True
 cache_dir = Path(__file__).with_name("__pycache__")
@@ -24,9 +28,6 @@ if cache_dir.is_dir():
         pass
 
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 DRIVER = Path(__file__).with_name("ShopPersistenceChecks.cs")
 
@@ -51,11 +52,10 @@ class ShopPersistenceTests(unittest.TestCase):
             "MechanicsShopModel.cs", "LastStandTierCatalog.cs", "LastStandUpgradeCatalog.cs",
             "LastStandProgression.cs", "LastStandStore.cs", "LastStandShopState.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
         )] + [DRIVER]
+        sources = complete_sources(SCRIPTS, sources)
         cls.source_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
-        argv = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"]
-        argv.extend(str(source) for source in sources)
-        build = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
-        cls.record("compile", argv, build)
+        build = compile_csharp(cls.executable, sources, warnings_as_errors=True, timeout_seconds=60)
+        cls.record("compile", build.argv, build)
         print(f"Actual-source C# compilation exit={build.returncode}", file=sys.stderr)
         if build.returncode:
             cls.output.cleanup()
@@ -77,7 +77,7 @@ class ShopPersistenceTests(unittest.TestCase):
 
     def case(self, name):
         argv = [str(MONO), str(self.executable), name]
-        result = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.record(name, argv, result)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)

@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using SingedTerra.Encounter;
 
-// Run: powershell -File campaign-unity/Tools/terminal_effect_drain/run.ps1 -EditorRoot <Unity 6000.3.24f1 root>
+// Run: powershell -File campaign-unity/Tools/terminal_effect_drain/run.ps1 -EditorRoot <Unity 6000.3.27f2 root>
 // Exercises the real session and model without opening Unity or changing scene assets.
 internal static class Program
 {

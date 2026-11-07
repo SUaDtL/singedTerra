@@ -2,8 +2,7 @@ using System;
 
 namespace SingedTerra.LastStand
 {
-    // Research does not exist yet. Production callers always use InitialMaximum;
-    // the bounded policy seam supports future-cap fixtures without an unlock flag.
+    // Preferences select within the earned ceiling; they never grant it.
     public static class LastStandSpeedPolicy
     {
         public const double Step = .5;
@@ -19,8 +18,8 @@ namespace SingedTerra.LastStand
             speed / Step == Math.Floor(speed / Step);
 
         // Preferences select a rate, never grant an entitlement or active pause.
-        public static double RestorePositive(double speed) =>
-            speed > 0 && Allows(speed) ? speed : InitialMaximum;
+        public static double RestorePositive(double speed,double maximum=InitialMaximum) =>
+            speed > 0 && Allows(speed,maximum) ? speed : InitialMaximum;
 
         static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
     }

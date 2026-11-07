@@ -121,3 +121,12 @@
   standing authority. Require the governance-only final head to re-clear hosted
   CI and exact-package adversarial review, squash merge, then verify exact
   merge-SHA Pages provenance, HTTP 200, hosted live smoke, and localhost hygiene.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current orientation owner. Current source/oracles: `client/src/ui/OrientationGate.ts`, `client/src/ui/OrientationGate.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `6406deff0ca0` (feat: add mobile landscape launch (#280)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

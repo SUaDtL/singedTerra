@@ -26,3 +26,12 @@
 
 - [ ] Run focused reporter, HUD, and main coverage; then the relevant browser, client, type, deterministic, build, audit, diff, and secret gates.
 - [ ] Give one adversarial reviewer the spec, plan, current sprint log, tests, and exact diff. Resolve all Critical, High, and merge-blocking findings before exact-head PR CI and guarded delivery.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current trusted receipt boundary. Current source/oracles: `client/src/client/hotSeatProgression.ts`, `client/src/ui/HUD.victoryReport.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `0803dc2ae83f` (feat(progression): acknowledge recorded hot-seat matches (#355)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

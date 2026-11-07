@@ -554,3 +554,12 @@ evidence, and any low-confidence SMARTS decisions. Never merge or deploy autonom
 Expected: none. The sprint touches deterministic engine code but no auth, crypto, secrets,
 migration, irreversible operation, or trust boundary. A red determinism, regret, probe,
 resolution-parity, dependency, or full-suite gate is a BLOCK; do not SMARTS-relax it.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `shared/src/engine/AiShotSearch.ts`, `scripts/checks/ai_search.mjs`.
+
+The latest change to this historical plan reachable from `origin/main` is `df20dc34e2de` (feat: accelerate deterministic AI shot search (#155)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

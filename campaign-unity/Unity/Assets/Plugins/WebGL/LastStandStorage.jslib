@@ -1,4 +1,7 @@
 mergeInto(LibraryManager.library, {
+  LastStandStorage_CanWrite: function () {
+    return window.__lastStandSaveWriter === true ? 1 : 0;
+  },
   LastStandStorage_Get: function (keyPointer) {
     var reply;
     try {
@@ -16,6 +19,8 @@ mergeInto(LibraryManager.library, {
 
   LastStandStorage_Set: function (keyPointer, valuePointer) {
     try {
+      var key = UTF8ToString(keyPointer);
+      if ((key === 'singedTerra.lastStand.prototype.v1' || key === 'singedTerra.lastStand.restore.v1') && window.__lastStandSaveWriter !== true) return 0;
       window.localStorage.setItem(UTF8ToString(keyPointer), UTF8ToString(valuePointer));
       return 1;
     } catch (error) {

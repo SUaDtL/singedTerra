@@ -100,3 +100,12 @@
     - [x] Adversary correction: mapped ownership is proven at every supported roster position (`p1`-`p4`); 25/25 focused tests and strict typecheck pass. The same reviewer returned CLEAN / READY with zero findings.
     - [x] Corrected package: 108 client files / 768 tests at 89.49% statements, 200 Edge tests, deterministic checks, build, 121 applicable browser guardrails, dependency audit, diff hygiene, and state-free secret scan are green.
 - [ ] Record the evidence, close Phase B2, and immediately select the next highest-value scoped improvement.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded compatibility current ruleset. Current source/oracles: `client/src/client/networkRuleset.ts`, `client/src/client/LobbyTransport.ruleset.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `c9d401a666ca` (fix(network): restore active owner controls (#240)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

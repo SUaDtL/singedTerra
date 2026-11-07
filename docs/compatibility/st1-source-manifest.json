@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "Ash Road is retired: remove its client, content, save/replay, presentation and conditional engine branches. Reject stale campaign launch descriptors before ordinary client construction. Campaigns offers only Last Stand; exact retired fragment and remembered Ash Road selections recover to Last Stand without opening or modifying historical gameplay storage. Fresh Skirmish startup, explicit invite/rejoin and validated imported ST1 challenge priority remain. Independent review of the nine changed bound sources found ordinary simulation arithmetic and ordering, medium ST1 CPU policy, launch configuration, token parsing and network admission unchanged. Frozen ordinary transcripts, settled snapshots, clone futures, verified tuples and retained cq1 compatibility passed; corrupted-fixture negative controls still reject. Existing reviewed weapon-study, account-return, security dependency and Unity payload admission changes remain in force. All 32 source memberships and strict drift checks are retained.",
+  "disposition": "Ash Road is retired: remove its client, content, save/replay, presentation and conditional engine branches. Reject stale campaign launch descriptors before ordinary client construction. Campaigns offers only Last Stand; exact retired fragment and remembered Ash Road selections recover to Last Stand without opening or modifying historical gameplay storage. Fresh Skirmish startup, explicit invite/rejoin and validated imported ST1 challenge priority remain. Independent review of the nine changed bound sources found ordinary simulation arithmetic and ordering, medium ST1 CPU policy, launch configuration, token parsing and network admission unchanged. Frozen ordinary transcripts, settled snapshots, clone futures, verified tuples and retained cq1 compatibility passed; corrupted-fixture negative controls still reject. Existing reviewed weapon-study, account-return, security dependency and Unity payload admission changes remain in force. All 32 source memberships and strict drift checks are retained. Project maintenance 2026-10-29 changes package.json scripts only: retain ordinary parity and four corruption controls, add verifier/context negative tests, inventory portable suites, and remove the retired gauge-math check. Dependency declarations, ST1 runtime inputs and all membership remain unchanged. The positive ordinary/provenance oracle and all four corruptions passed before this package-only digest refresh; strict verifier tests still reject membership and hash drift.",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -84,7 +84,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "36299d5d5269acd68033376af0775758044cdb4306cdbbc3735088d584e26ce1"
+      "sha256": "73904ce004c21aee874590eb18733c85da41a7c9c4c94981de88d3d66b26bd70"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",

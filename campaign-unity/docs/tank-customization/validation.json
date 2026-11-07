@@ -1,0 +1,279 @@
+{
+  "schema": "last-stand-tank-validation/v1",
+  "recordedAt": "2026-10-31T15:56:08.238Z",
+  "baselineCommit": "eca8891ce820991204745678ea5f7f8076261590",
+  "pr": "https://github.com/SUaDtL/singedTerra/pull/547",
+  "status": "implementation-and-focused-local-verification-complete; hosted and platform qualification separate",
+  "authority": "User explicitly requested the tank sprint and delivery in existing PR547. No merge/publication/device acceptance inferred.",
+  "feature": {
+    "families": [
+      "Foundry",
+      "Ranger",
+      "Bulwark",
+      "Jackal"
+    ],
+    "slots": [
+      "Mobility",
+      "Hull",
+      "Turret",
+      "Barrel"
+    ],
+    "paints": [
+      "Red",
+      "Blue",
+      "Green",
+      "Yellow",
+      "Purple"
+    ],
+    "combinations": 256,
+    "paintedLooks": 1280,
+    "freeCosmetics": true,
+    "profileSchema": 7,
+    "observationSchema": 5,
+    "backupEnvelope": 1,
+    "retainedCombatRulesUnchanged": true
+  },
+  "build": {
+    "status": "pass",
+    "configuration": "WebGL release",
+    "name": "Web-20261031T154449Z-0b61c3",
+    "receipt": {
+      "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261031T154449Z-0b61c3/result.json",
+      "sha256": "ed01b4d05c73e0a4ee92482de21d54f705bc655744d2c0c4246704900c94f0b1",
+      "bytes": 11899987
+    },
+    "sourceSha256": "1f8888e81dfb69ec5224bcd34c956dc1e6973b56608cdc2c7d4c7d2083c10d67",
+    "toolchainSha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52",
+    "sourceAndToolchainUnchanged": true,
+    "editor": "6000.3.27f2",
+    "servedAssetCount": 16,
+    "availableSourceInputs": 3645,
+    "productionSiteBuild": "pass; strict shared/client TypeScript and source/payload admission passed",
+    "productionBuildObservation": "exec chunk 967d7e, exit 0; inherited Vite >500KB chunk warning"
+  },
+  "portable": {
+    "initial": {
+      "modules": 78,
+      "passedModules": 77,
+      "cases": 555,
+      "skips": 0,
+      "status": "failed only current-schema crowded migration comparator",
+      "receipt": {
+        "path": "campaign-unity/Evidence/tank-customization/portable-current-20261031T145852Z-0cc476da.log",
+        "sha256": "1de3aebfc168507da8bd34d3ad15d244418c2beed209338fb673073653580ac0",
+        "bytes": 187193
+      }
+    },
+    "affectedRepair": {
+      "cases": 9,
+      "status": "pass",
+      "receipt": {
+        "path": "campaign-unity/Evidence/tank-customization/crowded-migration-20261031T151054Z-2e2bb75e.log",
+        "sha256": "6ec3ee396aa9b84e4cce5cfdf54f4c1075814a3ce27a71c47521dac8148c58ac",
+        "bytes": 1927
+      },
+      "scope": "Current v7 default metadata projects independently to retained v6 allocated bytes; frozen reports and full gameplay outcomes unchanged. Rejects unrelated state changes."
+    },
+    "note": "The original aggregate remains failed; the affected module passed after repair. It is not relabeled as an all-green aggregate."
+  },
+  "unity": {
+    "appearance": {
+      "status": "pass",
+      "namedCases": 5,
+      "uiViewports": 8,
+      "kitYawViewportProjections": 192,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-tank/appearance-ui/editor-20261031T154430Z-53f6cd62/result.json",
+        "sha256": "bc5f442f9275a2766b7aa4ef2c2c541845a52701567ffa8fed4915ae433f1bdc",
+        "bytes": 228
+      }
+    },
+    "fittings": {
+      "status": "pass",
+      "cases": 7,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-fitting/editor-20261031T154234Z-bfe516d1/result.json",
+        "sha256": "c6fc91f9c46ce13645f4b81a9339f978789ef4fb64218a2966c5b8b00d58171e",
+        "bytes": 228
+      }
+    },
+    "art": {
+      "status": "pass",
+      "importReceipt": {
+        "path": "campaign-unity/docs/tank-customization/import-receipt.json",
+        "sha256": "fd81ab1ce4b36fef4b19684ad35339dc99958c75f0dde886a255a6cc6eb087aa",
+        "bytes": 7533
+      },
+      "assemblies": 256,
+      "maximumCoreTriangles": 18804,
+      "fittings": 5,
+      "cardinalShotChecks": 16,
+      "readableVertexIndexBytes": 6442416,
+      "cachedPositionBytes": 1522416,
+      "memoryExcludes": "Unity and array overhead; not device-performance measurement"
+    },
+    "observation": {
+      "status": "pass",
+      "actualPackets": 9,
+      "readers": [
+        "Python",
+        "JavaScript"
+      ],
+      "negative": "Each omitted appearance control rejected",
+      "receiptDirectory": "campaign-unity/Evidence/last-stand-ui/editor-20261031T151152Z-64f6d2ca"
+    }
+  },
+  "browser": {
+    "status": "pass",
+    "checks": 22,
+    "actions": 73,
+    "trustedInputEvents": 155,
+    "screenshots": 13,
+    "contexts": 4,
+    "errors": 0,
+    "summary": {
+      "path": "campaign-unity/docs/tank-customization/browser-summary.json",
+      "sha256": "36e24a27ca31277a059bb3fffd2f08339025ed0f607d199336fc9c95ea74888a",
+      "bytes": 11994
+    },
+    "completeLocalReceipt": {
+      "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-52-05-956Z/result.json",
+      "sha256": "ac1403e5747447f9e171eb4aea772cfd446df954568d49aafd507c8096f98f00",
+      "bytes": 25421773
+    },
+    "scope": "Actual packaged WebGL, fresh isolated profiles, ordinary trusted input, persistence and rendered layout. No player saves modified. Not physical-device performance or owner art acceptance.",
+    "coverage": [
+      "Four whole-kit previews",
+      "Mixed slots/paint",
+      "Trusted Tab and Enter including releases",
+      "Attached part callout and rotation",
+      "Cancel/Escape rollback",
+      "Apply and reload persistence",
+      "Combat retention and garage-only editor",
+      "Portrait390x844",
+      "Measured568x142 and500x142 canvases",
+      "Bounded validated telemetry",
+      "Source/package parity"
+    ]
+  },
+  "nodeHelpers": {
+    "status": "pass",
+    "cases": 46,
+    "receipt": {
+      "path": "campaign-unity/Evidence/tank-customization/browser-helpers-final-20261031T153118Z.log",
+      "sha256": "4390e9e6a48c1fbd4946ad8497d8298c0aef6cbf9f5baca4bf39d83f02d8b1db",
+      "bytes": 4315
+    }
+  },
+  "coverage": {
+    "numeric": "C#/Python numeric coverage unmeasured; no declared tooling for these trees",
+    "source": "CTX-TECH-STACK#STACK-TESTING",
+    "declaredPolicy": "The repository does not currently declare numeric coverage commands for those separate trees.",
+    "clientSourceUnchanged": true,
+    "mutation": {
+      "status": "pass",
+      "guards": 3,
+      "receipt": {
+        "path": "campaign-unity/Evidence/tank-customization/coverage-mutations-20261031T152444Z/result.json",
+        "sha256": "d70ffd3230367bd29dbfe8c632551e2b6918a4978dfc981ee9307cb9e0d67038",
+        "bytes": 2237
+      },
+      "scope": "Strict appearance fields, expected profile revision and restore generation. Each actual source mutant failed its intended assertion; original sources unchanged."
+    }
+  },
+  "reviews": {
+    "authCryptoSecurity": "Independent scoped PASS; neutral Node SHA-256 owner, strict input boundary, profile CAS and protected saves reviewed.",
+    "affectedCode": "Independent camera/readability/browser-retention and final packaged coverage review PASS; zero open findings. Verified all58 bound hashes, trusted Tab/Enter edges and measured142px canvases.",
+    "visual": "Independent observed desktop Foundry, rotated mixed, portrait and compact screenshot review PASS; not owner art acceptance."
+  },
+  "preservedAttempts": [
+    {
+      "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-23-37-424Z",
+      "status": "interrupted",
+      "reason": "Actual portrait tank too small; redundant full-layout evidence grew to431MB. Corrected geometry camera and bounded new-run evidence; original receipt/screenshots retained."
+    },
+    {
+      "path": "campaign-unity/Evidence/tank-customization/2026-10-31T15-51-05-517Z",
+      "status": "failed",
+      "reason": "Test asserted keyboard telemetry before Enter keyup arrived. Added bounded wait for actual release; exact trusted four-edge assertion retained."
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-tank/appearance-ui/editor-20261031T151644Z-1d56f6e7",
+      "status": "failed",
+      "reason": "Actual narrow layout exposed target clipping; shared layout repaired and rerun."
+    }
+  ],
+  "remaining": [
+    {
+      "owner": "Q-BROWSER",
+      "status": "pre-existing open",
+      "detail": "Native Windows background guard timed out in unchanged PowerShell snapshot. Original broader Node run293/294 passed; isolated retry also failed. Live baseline PR already records this gap; no timeout/input-policy relaxation.",
+      "receipt": {
+        "path": "campaign-unity/Evidence/tank-customization/node-current-20261031T150224Z.log",
+        "sha256": "59f84bb108bf7434bfb2b8fc429978a16f2b90df3d04fba8014c2c1287c7e26c",
+        "bytes": 252440
+      },
+      "retry": {
+        "path": "campaign-unity/Evidence/tank-customization/node-background-isolated-20261031T151429Z.log",
+        "sha256": "375f9ba3c38abfb75065f449efd5290013c9d5d84dc611c0d91ee672454f252e",
+        "bytes": 17141
+      }
+    },
+    {
+      "owner": "current qualification matrix",
+      "status": "open",
+      "detail": "Tank candidate Windows/Android player builds and physical-device lifecycle, audio, performance/thermal,10-12-hour farming and owner UX/art acceptance. Previous native builds retain their earlier source binding."
+    },
+    {
+      "owner": "PR547",
+      "status": "pending new head",
+      "detail": "Previous eca8891 CI was green; this tank commit needs its own hosted checks. No merge/deployment/publication."
+    }
+  ],
+  "preservation": {
+    "originalLegacyAssets": "unchanged",
+    "retainedObservationContracts": "v1-v4 unchanged",
+    "frozenReports": "unchanged",
+    "mainCheckout": "unmodified",
+    "preexistingUntracked": "campaign-unity/Unity/.utmp/ preserved and excluded"
+  },
+  "screenshots": [
+    {
+      "path": "campaign-unity/docs/tank-customization/actual-foundry.png",
+      "sha256": "e31af64bf17c59b8bfbc5385631c92a58d9060671c6fb4ee3b258492db85b531",
+      "bytes": 625381
+    },
+    {
+      "path": "campaign-unity/docs/tank-customization/actual-mixed-callout.png",
+      "sha256": "37b0303a235719c9c4d653143d07cfd7ef73862159a2791ffe44851bab3b48bf",
+      "bytes": 522367
+    },
+    {
+      "path": "campaign-unity/docs/tank-customization/actual-portrait.png",
+      "sha256": "2e4e51975fc852047156f683c1eb853e47a2542f76cdec7f1f9e250b1db8d674",
+      "bytes": 156948
+    }
+  ],
+  "delivery": {
+    "implementationCommit": "ce8f0c5f574451cef22ba44fc27549afcb5e37c4",
+    "pushedTo": "codex/last-stand-combat-depth",
+    "pr": 547,
+    "secrets": "Staged scan and complete 32-commit PR range pass",
+    "plan": "All six implementation/local-delivery tasks DONE at native plan revision 16; independent acceptance is not attested",
+    "hosted": "Implementation-head CI 41217547414 queued and CodeQL 41217547390 running when recorded; final metadata head requires its own status."
+  },
+  "formatReview": {
+    "authoredWhitespace": "pass",
+    "generatedWhitespace": "451 warnings in 88 Unity-generated YAML files; each is an empty field after a colon. Reviewed exactly and retained qualified build-source bytes. No authored-code whitespace warnings."
+  },
+  "hostEnforcement": {
+    "initial": "Commit refused because registry pointed at removed plugin",
+    "repair": "Installed 0.25.0 canonical _githooks.py install refreshed its registration; doctor verified live managed pre-push; ordinary commit/push passed without bypass",
+    "remaining": "CRITICAL: host tool-level H-03 interception absent: required harmless git add --all --dry-run executed. It changed no index bytes. No repeat/alternate probe. Git backstop is independently verified; session tool-hook registration still needs repair/reload.",
+    "evidence": [
+      "campaign-unity/Evidence/tank-customization/plugin-doctor-before.txt",
+      "campaign-unity/Evidence/tank-customization/plugin-registration-repair.txt",
+      "campaign-unity/Evidence/tank-customization/plugin-doctor-after.txt"
+    ]
+  }
+}

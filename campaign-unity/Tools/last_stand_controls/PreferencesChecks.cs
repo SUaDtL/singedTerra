@@ -223,6 +223,36 @@ internal static class PreferencesChecks
             UnityEngine.PlayerPrefs.Data[LastStandProgression.StorageKey] == "gameplay-wallet-and-pending-claim",
             "preferences touched gameplay data");
     }
+    private static void PinnedGoalRoundtripAndProtection()
+    {
+        // Reflection keeps this contract check runnable against the old owner.
+        var property = typeof(LastStandPreferenceValues).GetProperty("PinnedGoal");
+        Check(property != null, "advisory goal preference is missing");
+        string original = Encoded(Customized());
+        string old = original.Replace(",\"pinnedGoal\":\"\"", "");
+        var storage = new Storage { Value = old };
+        var manager = LastStandPreferences.Load(storage);
+        Check(manager.SaveState == "ready" && storage.Writes == 0 && (string)property.GetValue(manager.Current) == "",
+            "old preferences must load without a migration write");
+        string pinned = old.Substring(0, old.Length - 1) + ",\"pinnedGoal\":\"research:gameSpeed:2\"}";
+        storage.Value = pinned; manager = LastStandPreferences.Load(storage);
+        Check(manager.SaveState == "ready" && (string)property.GetValue(manager.Current) == "research:gameSpeed:2",
+            "typed pin must restore");
+        Check(manager.Apply(manager.Current.With(masterVolume: 25)), "ordinary setting change must persist pin");
+        Check((string)property.GetValue(LastStandPreferences.Load(storage).Current) == "research:gameSpeed:2",
+            "pin lost while editing unrelated preference");
+        foreach (string invalid in new[] {
+            pinned.Replace("research:gameSpeed:2", "research:<unsafe>:2"),
+            pinned.Replace("research:gameSpeed:2", new string('x', 101)),
+            pinned.Replace("\"pinnedGoal\":\"research:gameSpeed:2\"", "\"pinnedGoal\":null"),
+            pinned.Replace("\"pinnedGoal\":", "\"pinnedGoal\":\"tier:tier-2\",\"pinnedGoal\":"),
+            pinned.Replace("\"version\":1", "\"version\":2") })
+        {
+            var bad = new Storage { Value = invalid }; var protectedPreferences = LastStandPreferences.Load(bad);
+            Check(protectedPreferences.RequiresReset && !protectedPreferences.Apply(Customized()) &&
+                bad.Writes == 0 && bad.Value == invalid, "bad or future goal preference overwritten");
+        }
+    }
     public static int Main(string[] args)
     {
         try
@@ -239,6 +269,7 @@ internal static class PreferencesChecks
                 case "read_failure_cannot_overwrite_unseen_settings": ReadFailureCannotOverwriteUnseenSettings(); break;
                 case "readback_mismatch_is_not_saved": ReadbackMismatchIsNotSaved(); break;
                 case "store_isolates_gameplay_key": StoreIsolatesGameplayKey(); break;
+                case "pinned_goal_roundtrip_and_protection": PinnedGoalRoundtripAndProtection(); break;
                 default: throw new Exception("Unknown case " + args[0]);
             }
             Console.WriteLine("PASS " + args[0]); return 0;
