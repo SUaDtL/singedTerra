@@ -18,6 +18,7 @@ export const WAVE_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUTS,'e2e
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-first-session.mjs']);
 export const hashWaveJourneyInputs=()=>Object.fromEntries(WAVE_JOURNEY_INPUTS.map(path=>[path,createHash('sha256').update(readFileSync(resolve(path))).digest('hex')]));
@@ -54,6 +55,10 @@ export function validateWaveCommit({before,after,state,repeatable,firstClear}) {
   assert.equal(e.wave,e.completedWave);assert.equal(e.rulesVersion,prior.encounter.rulesVersion);
   assertWaveRestoredState(state,after);
   assert.equal(e.tier,prior.encounter.tier);assert.equal(e.fitting,prior.encounter.fitting);
+  if(e.rulesVersion==='last-stand-waves-v3'){
+    assert.deepEqual(current.loadout,prior.loadout,'Cleared wave keeps both captured fitting identities');
+    assert.deepEqual(current.combatResearch,prior.combatResearch,'Cleared wave keeps captured research ranks');
+  }
   assert.ok(e.hull>0);assert.ok(e.kills>prior.encounter.kills);
   assert.equal(current.shop.uniqueKills,e.kills,'All cleared enemies enter the saved ledger');
   assert.equal(after.credits,before.credits+repeatable+firstClear,'Reward is durable exactly once');
@@ -69,11 +74,18 @@ export function validateWaveAbandon({before,after,reloaded}) {
 // Passive input/console stamps. No gameplay callback, storage replacement,
 // simulation speed override or Unity SendMessage is exposed by this observer.
 export const WAVE_JOURNEY_PROBE=`(() => {
- const original=console.log;
+ const original=console.log;let lastBoundary;
  console.log=function(...args){const text=args.map(String).join(' ');const t=performance.now(),timeOrigin=performance.timeOrigin;
   original.apply(this,args);
-  if(['ST_LS_STATE ','ST_LS_HUD_LAYOUT ','ST_LS_SHOP_STATE ','ST_LS_SHOP_PURCHASE ','ST_ENC_STATE ','ST_ENC_CALLBACK ','ST_LS_AUDIO event='].some(tag=>text.startsWith(tag)))
-   original.call(console,'ST_WAVE_OBSERVATION '+JSON.stringify({text,t,timeOrigin}));};
+  if(['ST_LS_STATE ','ST_LS_HUD_LAYOUT ','ST_LS_SHOP_STATE ','ST_LS_SHOP_PURCHASE ','ST_ENC_STATE ','ST_ENC_CALLBACK ','ST_LS_AUDIO event='].some(tag=>text.startsWith(tag))){
+   const observation={text,t,timeOrigin};
+   if(text.startsWith('ST_LS_STATE ')){
+    const state=JSON.parse(text.slice(12).split('\\n')[0]),boundary=state.runId+':'+state.checkpointWave;
+    if(state.hasCheckpoint&&state.saveState==='ready'&&boundary!==lastBoundary){
+     observation.checkpoint=localStorage.getItem('singedTerra.lastStand.prototype.v1');lastBoundary=boundary;
+    }
+   }
+   original.call(console,'ST_WAVE_OBSERVATION '+JSON.stringify(observation));}};
  for(const kind of ['pointerdown','pointerup','keydown','keyup','blur','focus','visibilitychange'])
   window.addEventListener(kind,event=>original.call(console,'ST_WAVE_INPUT '+JSON.stringify({kind:event.type,t:performance.now(),timeOrigin:performance.timeOrigin,
    trusted:event.isTrusted,code:event.code,x:event.clientX,y:event.clientY,target:event.target?.id??'',globalTarget:event.target===window||event.target===document,
@@ -97,7 +109,7 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
   const report={version:1,status:'running',normalSpeed:true,seeded:false,host:process.platform,fitting,
     scope:'Source-bound ordinary-input wave/checkpoint browser behavior; native media and owner acceptance are separate.',
     inputs,packaged,oracle:oracle.binding,actions:[],inputsObserved:[],states:[],layouts:[],shops:[],purchases:[],
-    encounters:[],callbacks:[],audio:[],storage:[],checks:[],screenshots:[],errors:[],errorObservations:[]};
+    encounters:[],callbacks:[],audio:[],storage:[],commits:[],checks:[],screenshots:[],errors:[],errorObservations:[]};
   let load=0,observerError;const current=rows=>rows.filter(row=>row.load===load).at(-1);
   const ready=()=>report.states.some(row=>row.load===load&&row.action==='ready')&&current(report.states)?.saveState==='ready';
   const check=(claim,run)=>{run();report.checks.push({name:claim,pass:true});};
@@ -110,6 +122,8 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
       if(raw.startsWith('ST_WAVE_INPUT '))report.inputsObserved.push({...JSON.parse(raw.slice(14)),load});
       if(!raw.startsWith('ST_WAVE_OBSERVATION '))return;
       const observation=JSON.parse(raw.slice(20)),{text,t,timeOrigin}=observation;
+      if(observation.checkpoint!==undefined)report.commits.push({data:JSON.parse(observation.checkpoint),
+        state:JSON.parse(text.slice(12).split('\n')[0]),t,timeOrigin,load});
       for(const [tag,rows]of [['ST_LS_STATE ',report.states],['ST_LS_SHOP_STATE ',report.shops],
         ['ST_LS_SHOP_PURCHASE ',report.purchases],['ST_ENC_STATE ',report.encounters],['ST_ENC_CALLBACK ',report.callbacks]])
         if(text.startsWith(tag))rows.push({...JSON.parse(text.slice(tag.length).split('\n')[0]),t,timeOrigin,load});
@@ -175,15 +189,20 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     await click('TierPrevious');await until(()=>!current(report.states)?.lockedTierPreview);
     await selectLastStandFitting({fitting,click,currentLayout:()=>current(report.layouts),currentState:()=>current(report.states),waitFor:p=>until(p,8)});
     await matrix('wave-garage');await click('Deploy');await until(()=>current(report.states)?.phase==='battle');
-    const starting=await stored('starting-checkpoint');assert.equal(starting.checkpoint.encounter.completedWave,0);assert.equal(starting.checkpoint.encounter.tick,0);
-    await until(()=>current(report.states)?.completedWave===1,90);
+    await until(()=>report.commits.some(row=>row.load===load&&row.data.checkpoint.encounter.completedWave===0));
+    const initialCommit=report.commits.find(row=>row.load===load&&row.data.checkpoint.encounter.completedWave===0),starting=initialCommit.data;
+    assert.equal(starting.checkpoint.encounter.tick,0);
+    await until(()=>current(report.states)?.completedWave>=1,90);
     await click('SpeedRate');await until(()=>current(report.states)?.paused);
-    const cleared=await stored('wave-one-cleared');
+    const cleared=await stored('paused-after-first-wave');
     check('Defeated finite cohort banks one wave and its reward before the next wave',()=>{
-      validateWaveCommit({before:starting,after:cleared,state:current(report.states),repeatable:1,firstClear:0});
-      const row=oracle.profiles['1:'+fitting+':20'][cleared.checkpoint.encounter.tick];assert.ok(row);
-      for(const [savedKey,oracleKey]of [['hull','hp'],['kills','kills'],['completedWave','completedWave'],['cannonShots','cannon'],['launcherShots','launcher'],['restored','healed']])
-        assert.equal(cleared.checkpoint.encounter[savedKey],row[oracleKey],'Actual-model boundary '+savedKey);
+      const commits=report.commits.filter(row=>row.load===load&&row.data.checkpoint.encounter.completedWave>0);
+      validateEarlyWaveCommits({initial:initialCommit,commits,pausedSave:cleared,pausedState:current(report.states)});
+      for(const {data}of commits){
+        const row=oracle.profiles['1:'+fitting+':20'][data.checkpoint.encounter.tick];assert.ok(row);
+        for(const [savedKey,oracleKey]of [['hull','hp'],['kills','kills'],['completedWave','completedWave'],['cannonShots','cannon'],['launcherShots','launcher'],['restored','healed']])
+          assert.equal(data.checkpoint.encounter[savedKey],row[oracleKey],'Actual-model boundary '+savedKey);
+      }
     });
     await matrix('wave-combat-paused');await click('Menu');await until(()=>current(report.states)?.menu==='menu');
     await click('MenuMilestones');await until(()=>current(report.states)?.menu==='milestones');await matrix('wave-milestones');
@@ -227,6 +246,40 @@ export async function runLastStandWaveJourney({page,baseURL,testInfo,fitting='re
     await testInfo.attach('Wave and checkpoint observations',{path,contentType:'application/json'});
     for(const shot of report.screenshots)await testInfo.attach(shot.label,{path:shot.path,contentType:'image/png'});
   }
+}
+
+export function validateEarlyWaveCommits({initial,commits,pausedSave,pausedState}) {
+  const starting=initial.data,runId=starting.checkpoint.runId;
+  assert.ok(Number.isInteger(initial.load)&&initial.load>0);
+  assert.ok(Number.isFinite(initial.timeOrigin)&&initial.timeOrigin>0);
+  let lastTime=initial.t;
+  const identity=row=>{
+    assert.equal(row.load,initial.load,'Checkpoint observations share one load');
+    assert.equal(row.timeOrigin,initial.timeOrigin,'Checkpoint observations share one document');
+    assert.ok(Number.isFinite(row.t)&&row.t>=0&&row.t>=lastTime,'Checkpoint observations are ordered');lastTime=row.t;
+    assert.equal(row.state.runId,runId,'Live and saved run identities agree');
+  };
+  identity(initial);assertIdleWaveSave(starting);
+  assert.equal(starting.checkpoint.encounter.completedWave,0);
+  assert.ok(commits.length>0,'The first earned wave must be observed');
+  let before=starting;
+  for(const record of commits){
+    identity(record);const {data:after,state}=record;
+    // This fresh-account journey has no research or milestones before wave 10.
+    // Unexpected progress beyond its declared early-wave scope is not ignored.
+    assert.ok(after.checkpoint.encounter.completedWave<10,'Early-wave scope ends before the first milestone');
+    validateWaveCommit({before,after,state,repeatable:1,firstClear:0});before=after;
+  }
+  assertWaveSavePreserved(before,pausedSave);
+  identity({...pausedState,state:pausedState});
+  const e=pausedSave.checkpoint.encounter;
+  assert.equal(pausedState.phase,'battle');assert.equal(pausedState.paused,true);assert.equal(pausedState.speed,0);
+  assert.equal(pausedState.saveState,'ready');assert.equal(pausedState.checkpointBlocked,false);assert.equal(pausedState.hasCheckpoint,true);
+  assertWaveRestoredState(pausedState,pausedSave);
+  assert.equal(pausedState.profileVersion,e.rulesVersion);assert.equal(pausedState.activeTier,e.tier);
+  assert.equal(pausedState.fittingId,FITTINGS[e.fitting]);
+  assert.equal(pausedState.completedWave,e.completedWave);assert.equal(pausedState.checkpointWave,e.completedWave);
+  assert.equal(pausedState.wave,e.completedWave+1);assert.equal(pausedState.wallet,pausedSave.credits);
 }
 
 export function validateWaveMilestoneText(milestoneText) {

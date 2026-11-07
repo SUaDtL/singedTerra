@@ -390,9 +390,7 @@ namespace SingedTerra.LastStand
             float fittingX=portrait?(width-fittingWidth)/2:Edge;
             float fittingY=portrait?saveY-Gap-fittingHeight:shortWide?tierY+tierHeight+Gap:Math.Max(tierY+tierHeight+Gap,(height-fittingHeight)*.44f);
             Add(slots,"GarageFittingCard",null,"panel",fittingX,fittingY,fittingWidth,fittingHeight);
-            Control(slots,"FittingPrevious","GarageFittingCard",fittingX+4,fittingY+4,44,44);
-            Control(slots,"FittingNext","GarageFittingCard",fittingX+fittingWidth-48,fittingY+4,44,44);
-            Text(slots,"GarageFittingName","GarageFittingCard",fittingX+52,fittingY+4,fittingWidth-104,44,16);
+            Control(slots,"ArmoryEntry","GarageFittingCard",fittingX+4,fittingY+4,fittingWidth-8,44);
             Text(slots,"GarageFittingDescription","GarageFittingCard",fittingX+8,fittingY+52,fittingWidth-16,fittingHeight-56,14);
             float heroX=portrait?Edge:fittingX+fittingWidth+Gap;
             float heroY=tierY+tierHeight+Gap;
@@ -414,12 +412,10 @@ namespace SingedTerra.LastStand
             Text(slots,"GarageTierName","GarageTierCard",edge+52,4,cardWidth-104,44,14);
             Text(slots,"GarageTierDetail","GarageTierCard",edge+8,52,cardWidth-16,32,14);
             Add(slots,"GarageFittingCard",null,"panel",edge,fittingY,cardWidth,fittingHeight);
-            Control(slots,"FittingPrevious","GarageFittingCard",edge+4,fittingY+4,44,44);
-            Control(slots,"FittingNext","GarageFittingCard",edge+cardWidth-48,fittingY+4,44,44);
-            Text(slots,"GarageFittingName","GarageFittingCard",edge+52,fittingY+4,cardWidth-104,44,14);
-            // The shortest canvas fits the fitting selector, but not another
+            Control(slots,"ArmoryEntry","GarageFittingCard",edge+4,fittingY+4,cardWidth-8,44);
+            // The shortest canvas fits the Armory entry, but not another
             // readable line. Omit that optional description instead of emitting
-            // a negative or clipped text rectangle; the name and arrows remain.
+            // a negative or clipped text rectangle; the Armory entry remains.
             if(fittingHeight-52>=LineHeight)
                 Text(slots,"GarageFittingDescription","GarageFittingCard",edge+8,fittingY+48,cardWidth-16,fittingHeight-52,14);
             float actionY=height-edge-44, deployWidth=(rightWidth-gap)*.56f, upgradeWidth=rightWidth-deployWidth-gap;

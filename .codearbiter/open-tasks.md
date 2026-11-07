@@ -161,6 +161,68 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
+  - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.
+  - Work type: fix
+  - Work ID: WORK-061011F03EA0CC17494D2A19ECE06374
+  - Work operation ID: laststand-deployment-boundaries-20261107
+- [x] Repair buildcraft CI save and combat mutation checks  (from github:SUaDtL/singedTerra/actions/runs/42354077784/buildcraft-ci-guards)  (done 2026-11-07)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/42354077784/buildcraft-ci-guards
+  - Desc: PR 549 rejects valid version 8 checkpoints and Linux Mono stops two range-removal mutants on unused-local warnings. Require the current envelope without weakening wallet/checkpoint assertions, and compile the range mutants so their intended combat assertions detect them.
+  - Work type: fix
+  - Work ID: WORK-FD36B5B229E8260597F577CF7CA081C2
+  - Work operation ID: buildcraft-ci-guards-20261107
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [~] Last Stand buildcraft: Candidate qualification and integration handoff  (from ST-LS-BUILDCRAFT-PLAN#CP-QUALIFY)  (started 2026-11-07)
+  - Work origin: ST-LS-BUILDCRAFT-PLAN#CP-QUALIFY
+  - Desc: Plan T-CANDIDATE, T-QUALIFY and T-DELIVERY: matched builds/CI, actual-target recovery/input/audio, real-time endurance and truthful543/544/546 stack delivery. Implementation pending owner review.
+  - Work type: feature
+  - Work ID: WORK-2B2F88879D6D0D048DDA09C2A6BA7E17
+  - Work operation ID: work-a64bbe11e23324e2ae0d8017e42a2964969b0afe
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [x] Last Stand buildcraft: Earned build and farming calibration  (from ST-LS-BUILDCRAFT-PLAN#T-BALANCE)  (done 2026-11-07)
+  - Work origin: ST-LS-BUILDCRAFT-PLAN#T-BALANCE
+  - Desc: Plan T-BALANCE: compare seven singles and21pairs at equal earned budgets, tune opportunity costs and deep farming pace, and preserve old economies. Implementation pending owner review.
+  - Work type: feature
+  - Work ID: WORK-7C311256C341D18C7CF50112AF374594
+  - Work operation ID: work-94cca6c195ff6f6bbfa4e9885bf6cbd09c311d36
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [x] Last Stand buildcraft: Coherent preparation and progression screens  (from ST-LS-BUILDCRAFT-PLAN#T-UX)  (done 2026-11-07)
+  - Work origin: ST-LS-BUILDCRAFT-PLAN#T-UX
+  - Desc: Plan T-UX: unify Armory, Lab, Workshop, tier rewards and Planner with clear actions, shared quotes, navigation and compact layouts. Implementation pending owner review.
+  - Work type: feature
+  - Work ID: WORK-B66843140E6483A4B515454702627446
+  - Work operation ID: work-ed79aeb55101eb1c0e4587b06c7b669d9eccdd30
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [x] Last Stand buildcraft: Six-tier campaign and fitted tank presentation  (from ST-LS-BUILDCRAFT-PLAN#CP-CAMPAIGN)  (done 2026-11-07)
+  - Work origin: ST-LS-BUILDCRAFT-PLAN#CP-CAMPAIGN
+  - Desc: Plan T-ENEMIES, T-TIERS and T-PRESENTATION: bounded support/boss encounters, two authored environments, deep milestones and readable two-bay tank effects. Implementation pending owner review.
+  - Work type: feature
+  - Work ID: WORK-4DEEE649E671DD4F6192702E8F93BBF2
+  - Work operation ID: work-c5f81804e4b5f013da406563b5b5001149c42174
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [x] Last Stand buildcraft: Earned Armory, fittings and research  (from ST-LS-BUILDCRAFT-PLAN#CP-BUILDS)  (done 2026-11-07)
+  - Work origin: ST-LS-BUILDCRAFT-PLAN#CP-BUILDS
+  - Desc: Plan T-ARMORY, T-FITTINGS and T-RESEARCH: two functional bays, three presets, Arc/Shield with shared upgrade tracks, combat research and a third earned lab. Implementation pending owner review.
+  - Work type: feature
+  - Work ID: WORK-C1FC8FFBC45667DF1C9FED40416401D3
+  - Work operation ID: work-1a65371c7e1ec89bd81ecdff6534d7215fb3c7ca
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [x] Last Stand buildcraft: retained editions and reward ownership  (from ST-LS-BUILDCRAFT-PLAN#CP-FOUNDATION)  (done 2026-11-07)
+  - Work origin: ST-LS-BUILDCRAFT-PLAN#CP-FOUNDATION
+  - Desc: Plan T-COMPAT and T-REWARDS: protect all four existing run tuples and introduce shared loadout snapshots, reward bundles and exactly-once entitlement reconciliation. Implementation pending owner review.
+  - Work type: feature
+  - Work ID: WORK-FDE3F3494A385BB7DD564AD3B7AD5D84
+  - Work operation ID: work-944b68a41fd811a444f2e8f8e7db130965c32eb1
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
 - [ ] Update the separately installed Unity Hub 3.21.3 to an advisory-patched version through a reviewed official package; verify installation identity. Editor 6000.3.27f2 uses direct installers and is already patched; this task makes no player/release qualification claim.  (from ST-LS-CONTINUITY-PLAN#T-UNITY; campaign-unity/docs/last-stand-continuity/unity-dependency-review.md)
 - [x] ci.regression.0001 - Wait for each campaign aim and power readout update before the browser test sends the next adjustment, preserving the exact reload checkpoint assertions.  (from pr529-postmerge)  (done 2026-10-03)
 - [x] ui.copy.0001 - T02's design review noted two unchanged OrientationGate fallback strings using em dashes as prose separators. This is outside the surface-lifecycle slice and does not affect behavior.  (from sprint:command-center-launcher-overhaul#triage-1)  (done 2026-10-03)

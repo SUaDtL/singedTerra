@@ -1,0 +1,2862 @@
+{
+  "schema": "singedterra-last-stand-local-validation-summary/v1",
+  "kind": "Current evidence index; not a native acceptance receipt or release approval",
+  "recordedUtc": "2026-11-07T07:50:06.627744+00:00",
+  "status": "Final corrected local builds/package/browser pass; complete portable85/594 plus post-repair focused19/19 pass; native/device and release qualification incomplete",
+  "candidate": {
+    "build": "Web-20261107T072248Z-7c0959",
+    "workingTreeBaseCommitAtBuild": "95979868060909b31bc6f6aaec4f1bfb9cacb713",
+    "editorVersion": "6000.3.27f2",
+    "editorRevision": "22188f149405",
+    "fullPlayerBuildSourceSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+    "currentSourceEligible": true,
+    "qualificationStatus": "Final corrected builds, package admission, served-byte identity and browser journeys pass within recorded scope",
+    "bindingMode": "SHA-256 of recorded source/tool/package closures",
+    "bindingLimit": "Dirty sprint source is identified by full inventories, not Git HEAD alone. Earlier captures remain scoped to their original sources.",
+    "buildSummary": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/final-build-summary.json",
+      "sha256": "549db3ab0ac98ee8773b16359f406478a479908ecdade794d7c237ec315b4360",
+      "bytes": 1926,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-build-summary-20261107.json",
+      "copiedWithoutModification": true
+    },
+    "protectedTemporaryFiles": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/utmp-preservation.json",
+      "sha256": "801148d1468f65bb7305892dfcbe420e7b3ae9c5b9dab0bb6a3076ffa9b9b473",
+      "bytes": 655,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-utmp-restoration-20261107.json",
+      "copiedWithoutModification": true
+    }
+  },
+  "builds": [
+    {
+      "id": "build-webgl-20261107T072248Z-7c0959",
+      "status": "pass",
+      "target": "webgl",
+      "configuration": "release",
+      "publish": false,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261107T072248Z-7c0959/result.json",
+        "sha256": "ac41c43f1567c33e6dd799e5a11d508f179f7574dedd6f4edad704b3b7ea1c22",
+        "bytes": 11919202,
+        "availability": "local ignored Evidence; full receipt not bundled"
+      },
+      "sourceHeadAtBuild": "95979868060909b31bc6f6aaec4f1bfb9cacb713",
+      "sourceBeforeSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+      "sourceAfterSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+      "toolchainBeforeSha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52",
+      "toolchainAfterSha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52",
+      "artifactCount": 17,
+      "primaryArtifacts": {
+        "Build/Web-20261107T072248Z-7c0959.data": "9610e811e85c8a68d9d74752812b7568bed9960a163751efbf996062d96a9e4c",
+        "Build/Web-20261107T072248Z-7c0959.wasm": "5a9c0f7aba1f4f9ddb3af68e229457f4e37ac31032e8229adb65216d12d96177"
+      },
+      "playerReport": {
+        "result": "Succeeded",
+        "configuration": "release",
+        "options": []
+      },
+      "shaderDiagnostics": null,
+      "limit": "Local build of corrected source; no native input, device or public release acceptance inferred."
+    },
+    {
+      "id": "build-windows-20261107T072525Z-eeff11",
+      "status": "pass",
+      "target": "windows",
+      "configuration": "development",
+      "publish": false,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261107T072525Z-eeff11/result.json",
+        "sha256": "bc133bf4e5d04d70063529c256f3bc5daea9e35334621317eb2997bdd4f777a2",
+        "bytes": 5397865,
+        "availability": "local ignored Evidence; full receipt not bundled"
+      },
+      "sourceHeadAtBuild": "95979868060909b31bc6f6aaec4f1bfb9cacb713",
+      "sourceBeforeSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+      "sourceAfterSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+      "toolchainBeforeSha256": "39ba3d23d86935230692b27779c32ba08babbde7ce6828238d1b4b9375b0c534",
+      "toolchainAfterSha256": "39ba3d23d86935230692b27779c32ba08babbde7ce6828238d1b4b9375b0c534",
+      "artifactCount": 267,
+      "primaryArtifacts": {
+        "LastStand.exe": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0",
+        "UnityCrashHandler64.exe": "0490ff65de7f132273eda7fc7c7772b79fc9c4ef708b85609dbdf6994f4cba5d"
+      },
+      "playerReport": {
+        "configuration": "development",
+        "result": "Succeeded",
+        "version": "1.0",
+        "backend": "Mono2x",
+        "options": [
+          "Development"
+        ],
+        "bytes": 186547812,
+        "storeSigned": false
+      },
+      "shaderDiagnostics": {
+        "schema": "singedterra-shader-diagnostics/v1",
+        "phasesVerified": true,
+        "editorImportRefreshed": false,
+        "diagnostics": [],
+        "accepted": true
+      },
+      "limit": "Local build of corrected source; no native input, device or public release acceptance inferred."
+    },
+    {
+      "id": "build-android-20261107T072612Z-b092d0",
+      "status": "pass",
+      "target": "android",
+      "configuration": "development",
+      "publish": false,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-architecture/build-android-20261107T072612Z-b092d0/result.json",
+        "sha256": "683db77c555a93b979d6e09d552cf8c1d8c70ecbfad0f03adcfd055bf3faca69",
+        "bytes": 15286783,
+        "availability": "local ignored Evidence; full receipt not bundled"
+      },
+      "sourceHeadAtBuild": "95979868060909b31bc6f6aaec4f1bfb9cacb713",
+      "sourceBeforeSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+      "sourceAfterSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+      "toolchainBeforeSha256": "68b48ac13be1053675b50bce9cf6d3005cc7373ab9beafe31a707b8a3403ef24",
+      "toolchainAfterSha256": "68b48ac13be1053675b50bce9cf6d3005cc7373ab9beafe31a707b8a3403ef24",
+      "artifactCount": 2,
+      "primaryArtifacts": {
+        "LastStand.apk": "719da01553f71f256b95e5e175341656451806dc771ffc20635c9b608ce14947"
+      },
+      "playerReport": {
+        "configuration": "development",
+        "result": "Succeeded",
+        "version": "1.0",
+        "backend": "IL2CPP",
+        "options": [
+          "Development"
+        ],
+        "bytes": 584179473,
+        "storeSigned": false
+      },
+      "shaderDiagnostics": {
+        "schema": "singedterra-shader-diagnostics/v1",
+        "phasesVerified": true,
+        "editorImportRefreshed": false,
+        "diagnostics": [
+          {
+            "line": 540,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(16) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 541,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(27) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 542,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(270) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 543,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(277) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 544,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Hammersley.hlsl(25) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 545,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float3' to smaller type 'min16float3', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(144) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 546,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(316) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 547,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(317) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 548,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(318) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 551,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(16) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 552,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(27) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 553,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(270) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 554,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(277) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 555,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Hammersley.hlsl(25) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 556,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float3' to smaller type 'min16float3', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(144) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 557,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(316) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 558,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(317) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          },
+          {
+            "line": 559,
+            "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(318) (on d3d11)",
+            "disposition": "reviewed-editor-import"
+          }
+        ],
+        "accepted": true
+      },
+      "limit": "Local build of corrected source; no native input, device or public release acceptance inferred."
+    }
+  ],
+  "webPackage": {
+    "status": "pass",
+    "build": "Web-20261107T072248Z-7c0959",
+    "sourceLock": {
+      "path": "campaign-unity/docs/last-stand-web/source-lock.json",
+      "sha256": "18098f43a8611df002d258cf4a9a47c98d3c055676ce12e6ec9137f108970c68",
+      "bytes": 5219714,
+      "availability": "retained repository evidence"
+    },
+    "sanitizedReceipt": {
+      "path": "campaign-unity/docs/last-stand-web/receipt-sanitized.json",
+      "sha256": "7c780cd8c4e689c17eccd5937e7b968c45cd7dd62a062b82dd95a019379d0a97",
+      "bytes": 5192986,
+      "availability": "retained repository evidence"
+    },
+    "assetManifest": {
+      "path": "client/public/last-stand/asset-manifest.json",
+      "sha256": "02387b017a4dc5de97f36fbfd916be5b96a84bfca15336caf2a09dd7d1b5b47e",
+      "bytes": 2837,
+      "availability": "retained repository evidence"
+    },
+    "sourceBeforeSha256": "cc20e1a7c92f54d2e7a65e54f3c19f13d0f0459581e39fc41b27bdc4bc690990",
+    "sourceAfterSha256": "cc20e1a7c92f54d2e7a65e54f3c19f13d0f0459581e39fc41b27bdc4bc690990",
+    "bindingLimit": "Web export and full player-build closures differ. Each before/after pair agrees within its producer. No deployment inferred.",
+    "sourceAndPayloadValidation": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/source-payload-final.txt",
+      "sha256": "a26d22ac60b021c297d70a8fe2fd835becde356a096b3ba6342c7f934ee9bb13",
+      "bytes": 361,
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-source-payload-20261107.txt",
+      "availability": "retained repository evidence",
+      "copiedWithoutModification": true
+    },
+    "servedBytes": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/local-bytes-final.json",
+      "sha256": "1657f189cdb297881e91e4072bdec8e05b4413c06dc7b4dd1c7614d16927421c",
+      "bytes": 3353,
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-local-bytes-20261107.json",
+      "availability": "retained repository evidence",
+      "copiedWithoutModification": true
+    }
+  },
+  "inventory": {
+    "receipt": {
+      "path": "campaign-unity/Tools/last_stand_test_inventory.json",
+      "sha256": "b56e34a5239769f13b1ceadfe4dc976cc16fe7c8b1ad6d3a60e143d90d71f260",
+      "bytes": 95513,
+      "availability": "retained repository evidence"
+    },
+    "allModules": 118,
+    "allDeclaredCases": 716,
+    "portableModules": 85,
+    "portableDeclaredCases": 594,
+    "limit": "Declarations are not execution evidence; nested Node checks and imported Unity labels are not added to portable case totals."
+  },
+  "portable": {
+    "status": "pass",
+    "modulesExecuted": 85,
+    "casesExecuted": 594,
+    "failedModules": [],
+    "skippedSummaries": [],
+    "receipt": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/portable-final.txt",
+      "sha256": "790cf769c418ecb596e4b8e1e4ece3347c89b9f09de20e9c20d2378a325357d2",
+      "bytes": 191429,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-portable-20261107.log",
+      "copiedWithoutModification": true
+    },
+    "origin": "Actual final full-run transcript; unittest module summaries independently counted. Nested Node subtests overlap and are not added.",
+    "earlierAggregate": {
+      "status": "failed",
+      "modulesExecuted": 85,
+      "failedModules": [
+        "last_stand_architecture/test_encounter_oracle.py"
+      ],
+      "cause": "Stale expected generated encounter-oracle count16 instead of actual18.",
+      "origin": "Parent observed completed aggregate and this author saw its summary before rerun. Original aggregate log was overwritten; no retained raw failure receipt claimed."
+    },
+    "affectedRepair": {
+      "status": "pass",
+      "actualCompilerCases": 1,
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/encounter-oracle-final.txt",
+        "sha256": "30ca644007016bcae10f425bc026264f965914f34ebb78a6d8c3b595a92ec602",
+        "bytes": 585,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-encounter-oracle-final.log",
+        "copiedWithoutModification": true
+      },
+      "compilerEvidenceDirectory": "campaign-unity/Evidence/last-stand-playable-loop/t06/encounter-oracle-regression-b669e5f469644425bbd3f8ec557bce30"
+    },
+    "sourceLimit": "85/594 complete run predates the final wording correction. The final19-case focused Research/Planner/application rerun covers that correction; the earlier full run is not relabeled as a fresh aggregate."
+  },
+  "clockMetadataGuard": {
+    "status": "red then green",
+    "regression": "Earned-research previews preserve every field except allowed monotonic clock metadata; unrelated progression changes and backwards metadata refuse.",
+    "red": {
+      "checks": 12,
+      "passed": 11,
+      "failed": 1,
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/clock-metadata-red.txt",
+        "sha256": "cf0d3e245b339af3b096e9aec0407f44ce201c1079a30a2b091304da6459f987",
+        "bytes": 2276,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-clock-metadata-red.log",
+        "copiedWithoutModification": true
+      }
+    },
+    "green": {
+      "checks": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/clock-metadata-green.txt",
+        "sha256": "92f3c4edc6e0b68bdf5d2c68051ab8add008379bb7c5b0cc68e40cb9a221384d",
+        "bytes": 1456,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-clock-metadata-green.log",
+        "copiedWithoutModification": true
+      }
+    }
+  },
+  "importedUnity": {
+    "status": "Affected final source-bound methods pass; initial aggregate remains failed",
+    "earlierAggregate": {
+      "status": "failed",
+      "failed": [
+        "test_hud_input.py",
+        "LastStandShopChecks.RunWorkshop",
+        "LastStandShopChecks.RunDeploy",
+        "LastStandShopChecks.RunPolish"
+      ],
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/unity-initial-batch.txt",
+        "sha256": "8177fe792a14b642cd1b44d2a1aeb0b3d19de461ce59de08b9ab9450455f78fb",
+        "bytes": 8947,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-unity-batch.log",
+        "copiedWithoutModification": true
+      }
+    },
+    "finalMethods": [
+      {
+        "method": "LastStandHudChecks.RunInput",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-input-d548482f\\result.json",
+          "sha256": "f0eb28f86d0957cc69982b7d543ccc22ae70e85abcf6d3ae507e1c8cd75bbb3e",
+          "bytes": 270,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "e0962788a2324a7bff7f77aab6aa725ec4e18e4263fbf3bc7ff1f7a0764ad1b4",
+        "markers": [
+          "ST_LS_HUD_PASS test_visible_enabled_navigation_order",
+          "ST_LS_HUD_PASS test_keyboard_activation_and_focus_style",
+          "ST_LS_HUD_PASS test_pointer_targets_match_visual_bounds",
+          "ST_LS_HUD_PASS test_effects_control_preserves_run_and_setting_state"
+        ]
+      },
+      {
+        "method": "LastStandShopChecks.RunWorkshop",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-20261107T063737Z-34adb5fa\\result.json",
+          "sha256": "37202a60cae55e2a4404f5eb32818d386f7de9b6754d4ce6970a8be797127aed",
+          "bytes": 228,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "b33504a9b85410910271ce412887407dee3ef20cbcf34bd0a5064a12d40f0f13",
+        "markers": [
+          "ST_LS_SHOP_PASS test_workshop_garage_post_claim_prices_and_save_error"
+        ]
+      },
+      {
+        "method": "LastStandShopChecks.RunPolish",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-20261107T063756Z-92958e45\\result.json",
+          "sha256": "7cc9b0f450851bb9931e2a085fa885b2f8b6cecb5ff33d8fcf13539ab602f888",
+          "bytes": 228,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "5b38acb470607472f48536c4610273183f68088775d6d8219d32456f0a833a15",
+        "markers": [
+          "ST_LS_SHOP_PASS test_shop_only_fitted_modules_visible_and_focusable",
+          "ST_LS_SHOP_PASS test_shop_plain_compact_readable_composition"
+        ]
+      },
+      {
+        "method": "LastStandShopChecks.RunDeploy",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-20261107T063816Z-adf8fd8a\\result.json",
+          "sha256": "603cc8d2762e0a3f57e0ef02e218f3b33e81562e8ba4d96e8a333d33eaca2ef2",
+          "bytes": 228,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "4a1efd1590dde238cb46137511e1c57e52f81fbaab7d732da424a7771817db33",
+        "markers": [
+          "ST_LS_SHOP_OBLIGATION_PASS launcher-frozen-effects",
+          "ST_LS_SHOP_OBLIGATION_PASS repair-frozen-effects",
+          "ST_LS_SHOP_OBLIGATION_PASS fresh-zero-baseline",
+          "ST_LS_SHOP_OBLIGATION_PASS save-focus-admission",
+          "ST_LS_SHOP_OBLIGATION_PASS shared-scene-parity",
+          "ST_LS_SHOP_PASS test_deploy_frozen_permanent_snapshot_and_fittings"
+        ]
+      },
+      {
+        "method": "LastStandObservationContractChecks.Run",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-20261107T062305Z-14adfb5c\\result.json",
+          "sha256": "bd22a3bb4695e4573c334992e35b963bb1df686421e55e126c9f6048365ab10e",
+          "bytes": 228,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "fc6678d78dcc047df8bb3c9b2bac516ad0edda3cbc39fa123db20a217746bab4",
+        "markers": [
+          "ST_LS_OBSERVATION_CONTRACT_PASS actual_emitter_and_duplicate_negative_control"
+        ]
+      },
+      {
+        "method": "LastStandHudChecks.RunGarage",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-20261107T062330Z-b5bfc4d9\\result.json",
+          "sha256": "9f911122958e395241be3a2826d37f10c6e3178b08c470bb69bdb2419ff67d89",
+          "bytes": 228,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "a14479ed8ebe327a1b3edecd288e056a2ded295ec71387a56fb5d5cb98e81790",
+        "markers": [
+          "ST_LS_HUD_PASS test_live_values_and_fitting",
+          "ST_LS_HUD_PASS test_deploy_readiness_and_primary_hierarchy",
+          "ST_LS_HUD_PASS test_garage_profile_geometry_and_contrast",
+          "ST_LS_HUD_PASS test_short_landscape_garage_readability"
+        ]
+      },
+      {
+        "method": "LastStandHudChecks.RunOutcomes",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-20261107T062449Z-636f2de7\\result.json",
+          "sha256": "6322532797582902a7c9e790dbbca23acb052ecab35087478c0982a7e924dfcf",
+          "bytes": 228,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "023cee4413df4b43c898c4f40d50f1ed589d98784a98c66158c549d8b0db95e7",
+        "markers": [
+          "ST_LS_HUD_PASS test_settling_pending_and_claim_states",
+          "ST_LS_HUD_PASS test_workshop_purchase_cap_and_redeploy_gates",
+          "ST_LS_HUD_PASS test_storage_errors_retry_and_profile_readability"
+        ]
+      },
+      {
+        "method": "LastStandFittingChecks.Run",
+        "status": "pass",
+        "exitCode": 0,
+        "sourceUnchanged": true,
+        "result": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-unity-20261107\\editor-20261107T062647Z-3f18a996\\result.json",
+          "sha256": "ae3e73a11572a02b4e59adeca397ab2400377e433e76320d1b0ac25b8db54055",
+          "bytes": 228,
+          "availability": "local temporary Unity receipt; not bundled"
+        },
+        "logSha256": "2da77a8a4bcef47d18d8fce6a7b8b032b59dfa5942fd0dcf4e8cc6bcc94755bc",
+        "markers": [
+          "ST_LS_FITTING_PASS both_authored_modules_across_profiles",
+          "ST_LS_FITTING_PASS hero_bounds_fit_and_invalid_or_active_framing_refuses",
+          "ST_LS_FITTING_PASS independent_ui_camera_canvas_scale_and_dpr",
+          "ST_LS_FITTING_PASS resize_same_owner_retains_actual_attachment",
+          "ST_LS_FITTING_PASS inactive_behind_camera_offscreen_and_disabled",
+          "ST_LS_FITTING_PASS actual_menu_and_encounter_lifecycle",
+          "ST_LS_FITTING_PASS five_modules_use_shared_projection"
+        ]
+      }
+    ],
+    "limit": "Actual imported Editor execution does not prove native-player input or device behavior. Rerun counts overlap.",
+    "armory": {
+      "status": "pass",
+      "exitCode": 0,
+      "sourceUnchanged": true,
+      "result": {
+        "path": "campaign-unity/Evidence/last-stand-buildcraft/armory-ui/editor-20261107T064228Z-bc686080/result.json",
+        "sha256": "c83c41986c6710fe80393ce3835b35ba6be7d2f6cb2ab17263dab319cc54ae94",
+        "bytes": 228,
+        "availability": "local ignored Evidence; full receipt not bundled"
+      },
+      "logSha256": "afb47fa6f9ae541cca90caf88ae1f3de28c83e6dce708f023735fe854a0da018",
+      "markers": [
+        "ST_LS_ARMORY_PASS locked_bay_preview_cancel_and_saved_bytes",
+        "ST_LS_ARMORY_PASS two_bays_named_presets_atomic_apply_and_resume",
+        "ST_LS_ARMORY_PASS paid_effect_preview_matches_combat_without_changing_retained_run",
+        "ST_LS_ARMORY_PASS unconfirmed_save_and_stale_draft_refuse",
+        "ST_LS_ARMORY_PASS responsive_controls_name_focus_and_scroll"
+      ]
+    },
+    "sourceLimit": "Recorded imported methods predate the final shared Research wording correction. New package/browser captures and focused parity checks qualify that subsequent change separately."
+  },
+  "browser": {
+    "status": "pass for corrected final Web package",
+    "limit": "Isolated browser contexts use recorded development fixtures. Browser results do not supply native-window background, physical-device, real-duration endurance, hardware-audio or owner acceptance.",
+    "admissionFailures": [
+      {
+        "status": "failed before game",
+        "reason": "Source admission refused the changed source before corrected export completed; no game session.",
+        "receipt": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/buildcraft-admission-failure.txt",
+          "sha256": "c82d6f4a547d23f32137a3832427cf931e119617da83896cb88d4a527ef45321",
+          "bytes": 3028,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-browser-4.log",
+          "copiedWithoutModification": true
+        }
+      },
+      {
+        "status": "failed before game",
+        "reason": "Source admission refused changed source before corrected export completed; no game session.",
+        "receipt": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-admission-failure.txt",
+          "sha256": "cfeed00072bb72447fb5279b8def059efe8589767865bc55570981a7bc520d00",
+          "bytes": 3169,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-browser-3.log",
+          "copiedWithoutModification": true
+        }
+      },
+      {
+        "status": "failed before game",
+        "reason": "Wrong default4173 failed connection before game; later attempts explicitly use4174.",
+        "receipt": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-wrong-port-failure.txt",
+          "sha256": "cd6867a2f19218e4f3fb89e112f3f2d6a1eb973091bc1ec47d085fb3b6f7c3d0",
+          "bytes": 377,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-browser-1.log",
+          "copiedWithoutModification": true
+        }
+      }
+    ],
+    "buildcraft": {
+      "status": "pass",
+      "receipt": {
+        "path": "campaign-unity/Evidence/buildcraft-browser/2026-11-07T07-42-28-016Z/result.json",
+        "sha256": "3f1ad5f45d0562aa68babd0b78c253968eb31a3c9426eb7a131ebf4045fa3838",
+        "bytes": 36694362,
+        "availability": "local ignored Evidence; full receipt not bundled"
+      },
+      "checks": 21,
+      "checksPassed": 21,
+      "checksObserved": [
+        {
+          "name": "Fresh Armory clearly locks the second bay and disables its controls",
+          "pass": true
+        },
+        {
+          "name": "Locked fitting previews cannot be applied",
+          "pass": true
+        },
+        {
+          "name": "Cancel restores the saved primary fitting",
+          "pass": true
+        },
+        {
+          "name": "Both module callouts attach to the projected tank geometry",
+          "pass": true
+        },
+        {
+          "name": "Named preset and both bays commit together without spending resources",
+          "pass": true
+        },
+        {
+          "name": "Reload retains the two-bay build",
+          "pass": true
+        },
+        {
+          "name": "Earned third lab funds one combat project from the shared wallet",
+          "pass": true
+        },
+        {
+          "name": "Reload preserves the funded third lab without paying twice",
+          "pass": true
+        },
+        {
+          "name": "Tier 5 has its own environment",
+          "pass": true
+        },
+        {
+          "name": "Tier 6 has its own environment",
+          "pass": true
+        },
+        {
+          "name": "Deployed Arc and Shield are actual combat state",
+          "pass": true
+        },
+        {
+          "name": "Reload retains the last confirmed checkpoint",
+          "pass": true
+        },
+        {
+          "name": "Resume starts paused with its captured build, independent of the next build",
+          "pass": true
+        },
+        {
+          "name": "Saved wave 99 resumes into its actual Commander cohort through normal controls",
+          "pass": true
+        },
+        {
+          "name": "portrait supports named two-bay builds with full-sized controls",
+          "pass": true
+        },
+        {
+          "name": "compact supports named two-bay builds with full-sized controls",
+          "pass": true
+        },
+        {
+          "name": "fresh has zero browser errors",
+          "pass": true
+        },
+        {
+          "name": "prepared has zero browser errors",
+          "pass": true
+        },
+        {
+          "name": "commander has zero browser errors",
+          "pass": true
+        },
+        {
+          "name": "portrait has zero browser errors",
+          "pass": true
+        },
+        {
+          "name": "compact has zero browser errors",
+          "pass": true
+        }
+      ],
+      "contexts": [
+        "fresh",
+        "prepared",
+        "commander",
+        "portrait",
+        "compact"
+      ],
+      "browserErrors": 0,
+      "packaged": {
+        "client/public/last-stand/asset-manifest.json": "02387b017a4dc5de97f36fbfd916be5b96a84bfca15336caf2a09dd7d1b5b47e",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "7c780cd8c4e689c17eccd5937e7b968c45cd7dd62a062b82dd95a019379d0a97",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "18098f43a8611df002d258cf4a9a47c98d3c055676ce12e6ec9137f108970c68",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.data": "9610e811e85c8a68d9d74752812b7568bed9960a163751efbf996062d96a9e4c",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.framework.js": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.loader.js": "322461f7a71bfa47844cac475896a5fc0e3c3c8484be0d034668e1010f996b49",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.wasm": "5a9c0f7aba1f4f9ddb3af68e229457f4e37ac31032e8229adb65216d12d96177",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "e6b58034bf2f6b8b725cece7f8bc78deb66a28769b09340056737d406512b1d8",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "inputs": {
+        "scripts/last-stand-buildcraft-journey.mjs": "931a851521eac78503d739e94e807e1c59f7dc051fb1f5494c804235b5163e01",
+        "scripts/last-stand-combat-depth-journey.mjs": "71c1a7e372424f76665248742319c9cfea998f0a937cc30030b12a73988ad540",
+        "e2e/helpers/lastStandBrowserActor.mjs": "b49890a91d76b0e0c87023ec53a48cc56a21190e3f10478fd1f081fb588edc88",
+        "e2e/helpers/lastStandTierJourney.mjs": "b0c4773efdc4b823f76666c47e4231879673a59a86043b89bc89eac89ebc1378",
+        "e2e/helpers/lastStandWaveJourney.mjs": "fea96edc5a0a38f9b7afc30774004e5423fd6a24476add255f182bf5326afd65",
+        "e2e/helpers/lastStandEvidenceDirectory.mjs": "6cbf7d4ba3ebf8bdb195fe2945cf046538b3eca66d554df58d5d94c0f6a92fdd",
+        "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+        "e2e/helpers/lastStandEncounterOracle.mjs": "2f632e706da25508beed83835bceb1035ed06c7ab3064a695d154b08e76bfb4c",
+        "e2e/helpers/lastStandJourneyHost.mjs": "b338184ad5758ebec540f1a1133e349b8321ffb4b82f06de889d7620ca178688",
+        "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212",
+        "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
+        "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+        "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+        "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+        "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+        "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+        "e2e/helpers/lastStandRuntimeObservation.mjs": "62ba1daf7f4cc0bbd9f261aa0253250590051c567f06433a7a3a079f89ee2490",
+        "e2e/helpers/lastStandWaveGuards.mjs": "36671a95a3de0ee8175c03fecde2c883a5903505c885778e272ed7214e87982d",
+        "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+        "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+        "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+        "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+        "campaign-unity/Tools/contracts/last-stand-observation-v5.json": "528e93d56154e2b956eeacddfbf766a643340ff14a553b99b9a9fc709ed0a301",
+        "campaign-unity/Tools/contracts/last-stand-observation-v6.json": "7f65a4f71947f71f887453fdd0e8f31fd93fb747f21785c794f0cb67fcfb691d"
+      },
+      "fixtureManifest": {
+        "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-presentation-20261107-v6\\manifest.json",
+        "sha256": "ea17f675f76111a58225372964865e0450fedf145afd6aadd35d7b27aebabbac"
+      },
+      "scope": "Actual packaged WebGL, trusted mouse/touch/keyboard, isolated development profiles. Gifted seed strength and synthetic prior research time are not earned balance, real-duration endurance, physical-device or owner acceptance.",
+      "transcript": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/buildcraft-browser-strengthened-final.txt",
+        "sha256": "bcdf64f6795c656b2ee5ab702748ed10f5dfd0420eddc0c4816dc05de3f29da6",
+        "bytes": 205,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-browser-6.log",
+        "copiedWithoutModification": true
+      },
+      "screenshots": [
+        {
+          "context": "fresh",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\fresh-locked-arc-preview.png",
+              "sha256": "46f6ad1931c8e93b5e263f239c7f0aceae2ca9ab96e01112cf190561791124e2",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            }
+          ]
+        },
+        {
+          "context": "prepared",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\prepared-two-module-preview.png",
+              "sha256": "c47746693817296c91d0c78387e0314f0733e3a0b0c2982bc40c5de82592c0d2",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\prepared-combat-research-ready.png",
+              "sha256": "a303c9874a6b3fc8fe35e1f7e6bf70aaae0a03efd1cbd0aed5a04acc7d001098",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\prepared-third-lab-funded.png",
+              "sha256": "9a8a685dae7dffdc13810347185145da9f54a48fcffa14c03e628078a6bc848b",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\prepared-tier-5.png",
+              "sha256": "01e5b88f49676a7ecfb358df4b78a5c945eb14ecada3fb11d4b499b8e924049f",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\prepared-tier-6.png",
+              "sha256": "a519b1b46012235aa513f4e587ec86db902f104b90d37f2929c95889a324071c",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\prepared-paired-combat.png",
+              "sha256": "652f3d5a9df31f67da1d748e8a6d81b3f6813818b1bbf0846f424b2e68974339",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\prepared-resumed-captured-build.png",
+              "sha256": "bdcb7135eedc28f5bd87523e09f02679053ce1aca099e9afe0bc30e02a9c370b",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            }
+          ]
+        },
+        {
+          "context": "commander",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\commander-upcoming-commander-stats.png",
+              "sha256": "d48462aa02cd99fd1c4ee8e16a450eced1bd38a3e45cee7cfda9c34194854fac",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\commander-commander-encounter.png",
+              "sha256": "4073dcbb88dd98016724924d0ae9dc1b89811b79574b3490762f7874d5cf2ee2",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\commander-current-commander-stats.png",
+              "sha256": "dee65e1fed707cd8a7e6a2d6b87aebb610a627331dae09533d2adc46ccc56165",
+              "viewport": {
+                "width": 1280,
+                "height": 900
+              }
+            }
+          ]
+        },
+        {
+          "context": "portrait",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\portrait-applied.png",
+              "sha256": "1c39e186fc023e385444b44f2b5743ead2850ceadd278fc5c440438c1d9f309d",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
+            }
+          ]
+        },
+        {
+          "context": "compact",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-42-28-016Z\\compact-applied.png",
+              "sha256": "cbbc2f8feb125e19b409013776f3c4569e444c24415965fd607f03eddbdd07c4",
+              "viewport": {
+                "width": 568,
+                "height": 266
+              }
+            }
+          ]
+        }
+      ],
+      "currentListedInputAndPackageHashesMatch": true,
+      "visualLimit": "Actual browser proves resumed wave100 Commander cohort. The screenshot named upcoming-commander-stats shows current100 before spawning and upcoming150. Pure-model regression proves99-to100 forecasting.",
+      "thirdLabReload": "Checks bounded elapsed progression separately, normalizes only that active-project elapsed value, then compares every other saved field except permitted monotonic clock metadata. Wallet, both fittings, research rank/project/queue/identity/cost/duration/completion fields must remain unchanged."
+    },
+    "research": {
+      "status": "passed",
+      "receipt": {
+        "path": "campaign-unity/Evidence/research-browser/2026-11-07T07-28-39-401Z/result.json",
+        "sha256": "78b22b9731e4471d84aaa7f2d33be31d89a97a2ea6ecbaddcc084ea833e98750",
+        "bytes": 262480746,
+        "availability": "local ignored Evidence; full receipt not bundled"
+      },
+      "checks": 13,
+      "checksPassed": 13,
+      "checksObserved": [
+        {
+          "name": "closed tab retains funding and advances only research",
+          "pass": true
+        },
+        {
+          "name": "visible Start uses shared wallet once",
+          "pass": true
+        },
+        {
+          "name": "one funded queued project",
+          "pass": true
+        },
+        {
+          "name": "Suspend refunds active and promotes paid queue",
+          "pass": true
+        },
+        {
+          "name": "Switch keeps partial time and reconciles refund/replacement cost",
+          "pass": true
+        },
+        {
+          "name": "second tab remains read-only while the original owns the profile",
+          "pass": true
+        },
+        {
+          "name": "original owner retains its wallet and funded project",
+          "pass": true
+        },
+        {
+          "name": "reloaded second tab acquires ownership and funds one queue",
+          "pass": true
+        },
+        {
+          "name": "bulk selection is free and one click buys displayed aggregate",
+          "pass": true
+        },
+        {
+          "name": "ordinary fresh profile exposes locked Labs without purchasable action",
+          "pass": true
+        },
+        {
+          "name": "earned maximum stops at five",
+          "pass": true
+        },
+        {
+          "name": "half-step slowdown reaches pause",
+          "pass": true
+        },
+        {
+          "name": "explicit abandon finalizes one observed run",
+          "pass": true
+        }
+      ],
+      "contexts": [
+        "lab-desktop",
+        "lab-reopened",
+        "second-tab",
+        "ordinary-fresh",
+        "mature-speed"
+      ],
+      "browserErrors": 0,
+      "packaged": {
+        "client/public/last-stand/asset-manifest.json": "02387b017a4dc5de97f36fbfd916be5b96a84bfca15336caf2a09dd7d1b5b47e",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "7c780cd8c4e689c17eccd5937e7b968c45cd7dd62a062b82dd95a019379d0a97",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "18098f43a8611df002d258cf4a9a47c98d3c055676ce12e6ec9137f108970c68",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.data": "9610e811e85c8a68d9d74752812b7568bed9960a163751efbf996062d96a9e4c",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.framework.js": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.loader.js": "322461f7a71bfa47844cac475896a5fc0e3c3c8484be0d034668e1010f996b49",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.wasm": "5a9c0f7aba1f4f9ddb3af68e229457f4e37ac31032e8229adb65216d12d96177",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "e6b58034bf2f6b8b725cece7f8bc78deb66a28769b09340056737d406512b1d8",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "inputs": {
+        "scripts/last-stand-research-journey.mjs": "836d5205d49b7572afe2825c871c2af364bb03cc0858ed21d767821c356258bb",
+        "e2e/helpers/lastStandJourney.mjs": "2c26f912db31fccf278b084475d48667175566708ccbe01be37b4d965b387109",
+        "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+        "e2e/helpers/lastStandEncounterOracle.mjs": "2f632e706da25508beed83835bceb1035ed06c7ab3064a695d154b08e76bfb4c",
+        "e2e/helpers/lastStandJourneyHost.mjs": "b338184ad5758ebec540f1a1133e349b8321ffb4b82f06de889d7620ca178688",
+        "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212",
+        "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
+        "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+        "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+        "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+        "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+        "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+        "e2e/helpers/lastStandRuntimeObservation.mjs": "62ba1daf7f4cc0bbd9f261aa0253250590051c567f06433a7a3a079f89ee2490",
+        "e2e/helpers/lastStandWaveGuards.mjs": "36671a95a3de0ee8175c03fecde2c883a5903505c885778e272ed7214e87982d",
+        "e2e/helpers/lastStandTierJourney.mjs": "b0c4773efdc4b823f76666c47e4231879673a59a86043b89bc89eac89ebc1378",
+        "e2e/helpers/lastStandWaveJourney.mjs": "fea96edc5a0a38f9b7afc30774004e5423fd6a24476add255f182bf5326afd65",
+        "e2e/helpers/lastStandBrowserActor.mjs": "b49890a91d76b0e0c87023ec53a48cc56a21190e3f10478fd1f081fb588edc88",
+        "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+        "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+        "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+        "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+        "campaign-unity/Tools/contracts/last-stand-observation-v5.json": "528e93d56154e2b956eeacddfbf766a643340ff14a553b99b9a9fc709ed0a301",
+        "campaign-unity/Tools/contracts/last-stand-observation-v6.json": "7f65a4f71947f71f887453fdd0e8f31fd93fb747f21785c794f0cb67fcfb691d"
+      },
+      "scope": "Source-bound headless browser input, save and rendered screenshots. Development seeds are not ordinary earned progression, elapsed endurance, native acceptance or owner visual approval.",
+      "transcript": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-browser-final.txt",
+        "sha256": "4e1dacace45179267723b61a3441f42b67a492c1026dd9c2c2480caf1bc0091d",
+        "bytes": 224,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-browser-4.log",
+        "copiedWithoutModification": true
+      },
+      "screenshots": [
+        {
+          "context": "lab-desktop",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\lab-desktop-initial-lab.png",
+              "sha256": "6edd144da209f067d469cbe412e934736a0fc63950afabec8479cb12e8d6c5d9",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            }
+          ]
+        },
+        {
+          "context": "lab-reopened",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\lab-reopened-ready-to-start.png",
+              "sha256": "660a142d8e471c0ea21e3996a0bced399547b8eb156648403a43bfdd70fc4604",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\lab-reopened-projects-active.png",
+              "sha256": "53b13e0eab0bca6d39768a8b286d7e109f77b4db443be93eb4df7841f04a0ca7",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\lab-reopened-portrait-detail.png",
+              "sha256": "ce265a8ffec31699b247804cd7765584a8473cbfccfac61f406e54c5305202e8",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\lab-reopened-portrait-list.png",
+              "sha256": "e883aae79442bf0cbe5719138e24649ff7bbebc0563e2b553b8c5916894c0887",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
+            }
+          ]
+        },
+        {
+          "context": "second-tab",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\second-tab-read-only-lab.png",
+              "sha256": "2ff4875a1efc4b4ffc27ba7d8c04adcc70d06f4c62970edb839c85b1b033d083",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\second-tab-bulk-desktop.png",
+              "sha256": "39b51fbea6a147ac2ddaa72bbc32f9046d88394b12379320835ddccb6c4ec737",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\second-tab-bulk-portrait.png",
+              "sha256": "88139808e81424530974a56ae6f0854285866bdef3c266b440d495a6c9e01a5a",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\second-tab-history-portrait.png",
+              "sha256": "22baf13399362f3133ec714ae2a6d5f5a26f4d498db50b1cc8fce9492cc093a2",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
+            }
+          ]
+        },
+        {
+          "context": "ordinary-fresh",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\ordinary-fresh-locked-lab.png",
+              "sha256": "8333bebab691c672b9c80d5e25abf0c9ad611147fdcb7acd0a6e8a98b7e0b9ed",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            }
+          ]
+        },
+        {
+          "context": "mature-speed",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\mature-speed-half-speed.png",
+              "sha256": "e7c849fb04a462728d4f855a802d8369dcec5b8cdfd1dca580169175c8a7b2ee",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\mature-speed-finalized-history.png",
+              "sha256": "ccc7bfb07f968fc3b6cd1144e13dd1cd10f256ac08e46b4c64afdb37aa007bd9",
+              "viewport": {
+                "width": 1366,
+                "height": 768
+              }
+            }
+          ]
+        }
+      ],
+      "currentListedInputAndPackageHashesMatch": true,
+      "fixtureManifest": {
+        "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-20261107-v7\\manifest.json",
+        "sha256": "129de7b5058fe08cf99d1f04744e9e7c34b37dbda11b34c055066f839be3244f",
+        "scope": "Explicit development seeds for browser qualification. Gifted Salvage/permanent levels and accelerated research time are not ordinary player progression or elapsed endurance evidence."
+      },
+      "closedCompletionObserved": true,
+      "initialCompletionMayPrecedeFirstLoad": false,
+      "visualReview": "Documentation author inspected final ready-to-start screenshot: Now and Next both say Applies to All loadouts; cost27Salvage/time18m and Start action visible. Owner comprehension/visual approval remains separate."
+    },
+    "planner": {
+      "status": "pass",
+      "receipt": {
+        "path": "campaign-unity/Evidence/planning-browser/2026-11-07T07-30-33-820Z/result.json",
+        "sha256": "49ad5702336795a52f1ea6db6d83fbb3df8a85ac36db73636bb7b6532316a82c",
+        "bytes": 104154374,
+        "availability": "local ignored Evidence; full receipt not bundled"
+      },
+      "checks": 15,
+      "checksPassed": 15,
+      "checksObserved": [
+        {
+          "name": "locked research explains the progression requirement before spending",
+          "pass": true
+        },
+        {
+          "name": "research rules are available on request",
+          "pass": true
+        },
+        {
+          "name": "empty history explains how to create a record",
+          "pass": true
+        },
+        {
+          "name": "history methodology is available on request",
+          "pass": true
+        },
+        {
+          "name": "planner offers current tier goal without spending",
+          "pass": true
+        },
+        {
+          "name": "ordinary pin action saves stable goal identity",
+          "pass": true
+        },
+        {
+          "name": "pin survives real reload",
+          "pass": true
+        },
+        {
+          "name": "budget alternatives disclose actual costs and unlocks",
+          "pass": true
+        },
+        {
+          "name": "compact ordinary scrolling reaches clear without changing progression",
+          "pass": true
+        },
+        {
+          "name": "planner routes to existing permanent upgrade owner",
+          "pass": true
+        },
+        {
+          "name": "one provisional run does not fabricate a comparison",
+          "pass": true
+        },
+        {
+          "name": "farming view states insufficient measurements",
+          "pass": true
+        },
+        {
+          "name": "comparison preserves checkpoint and currency",
+          "pass": true
+        },
+        {
+          "name": "closing comparison preserves manual pause",
+          "pass": true
+        },
+        {
+          "name": "no browser errors",
+          "pass": true
+        }
+      ],
+      "contexts": [
+        "planning"
+      ],
+      "browserErrors": 0,
+      "packaged": {
+        "client/public/last-stand/asset-manifest.json": "02387b017a4dc5de97f36fbfd916be5b96a84bfca15336caf2a09dd7d1b5b47e",
+        "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "7c780cd8c4e689c17eccd5937e7b968c45cd7dd62a062b82dd95a019379d0a97",
+        "campaign-unity/docs/last-stand-web/source-lock.json": "18098f43a8611df002d258cf4a9a47c98d3c055676ce12e6ec9137f108970c68",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.data": "9610e811e85c8a68d9d74752812b7568bed9960a163751efbf996062d96a9e4c",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.framework.js": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.loader.js": "322461f7a71bfa47844cac475896a5fc0e3c3c8484be0d034668e1010f996b49",
+        "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.wasm": "5a9c0f7aba1f4f9ddb3af68e229457f4e37ac31032e8229adb65216d12d96177",
+        "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+        "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+        "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+        "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+        "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+        "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+        "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+        "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+        "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+        "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+        "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+        "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+        "client/public/last-stand/index.html": "e6b58034bf2f6b8b725cece7f8bc78deb66a28769b09340056737d406512b1d8",
+        "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+      },
+      "inputs": {
+        "scripts/last-stand-planning-journey.mjs": "163c2bf405a54ca25b22c386b1a4df411e2bf55a13117e267ddc326f198f52c8",
+        "e2e/helpers/lastStandBrowserActor.mjs": "b49890a91d76b0e0c87023ec53a48cc56a21190e3f10478fd1f081fb588edc88",
+        "e2e/helpers/lastStandJourney.mjs": "2c26f912db31fccf278b084475d48667175566708ccbe01be37b4d965b387109",
+        "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+        "e2e/helpers/lastStandEncounterOracle.mjs": "2f632e706da25508beed83835bceb1035ed06c7ab3064a695d154b08e76bfb4c",
+        "e2e/helpers/lastStandJourneyHost.mjs": "b338184ad5758ebec540f1a1133e349b8321ffb4b82f06de889d7620ca178688",
+        "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212",
+        "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
+        "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+        "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+        "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+        "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+        "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+        "e2e/helpers/lastStandRuntimeObservation.mjs": "62ba1daf7f4cc0bbd9f261aa0253250590051c567f06433a7a3a079f89ee2490",
+        "e2e/helpers/lastStandWaveGuards.mjs": "36671a95a3de0ee8175c03fecde2c883a5903505c885778e272ed7214e87982d",
+        "e2e/helpers/lastStandTierJourney.mjs": "b0c4773efdc4b823f76666c47e4231879673a59a86043b89bc89eac89ebc1378",
+        "e2e/helpers/lastStandWaveJourney.mjs": "fea96edc5a0a38f9b7afc30774004e5423fd6a24476add255f182bf5326afd65",
+        "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+        "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+        "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+        "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+        "campaign-unity/Tools/contracts/last-stand-observation-v5.json": "528e93d56154e2b956eeacddfbf766a643340ff14a553b99b9a9fc709ed0a301",
+        "campaign-unity/Tools/contracts/last-stand-observation-v6.json": "7f65a4f71947f71f887453fdd0e8f31fd93fb747f21785c794f0cb67fcfb691d"
+      },
+      "scope": "Empty isolated profile; actual headless browser input, persistence and screenshots. No seeded rewards, device, hardware audio, endurance or owner acceptance.",
+      "transcript": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/planner-browser-final.txt",
+        "sha256": "fb516cbfcdcbe4138c6ee60d6c927583781083a1a3052e0f77df35c512afe4cd",
+        "bytes": 203,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-planner-browser-1.log",
+        "copiedWithoutModification": true
+      },
+      "screenshots": [
+        {
+          "context": "planning",
+          "captures": [
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-research-locked-desktop.png",
+              "sha256": "53e19df06f66902ebc6a52e7925106162412562d4cdfcfd1c4d208bfc1e85f36",
+              "viewport": {
+                "width": 1280,
+                "height": 800
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-research-help.png",
+              "sha256": "7ea372f490bd213eb9325b50cd68697d2f537dabc70fcb13c20e1d08617c67a2",
+              "viewport": {
+                "width": 1280,
+                "height": 800
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-history-empty.png",
+              "sha256": "8d6e7e3eb0d8a2ae8ed71eaf50785bb763b78be391e9ae75735139b1c765c74b",
+              "viewport": {
+                "width": 1280,
+                "height": 800
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-desktop-goal.png",
+              "sha256": "287d2367c3896474481dd2a37939d3512cef73c36a6e59cd5b7523eff9066463",
+              "viewport": {
+                "width": 1280,
+                "height": 800
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-desktop-budget.png",
+              "sha256": "673a6979d44263e57f7c71aad3df0253e3cd852a7fd5f88b7825dca7f596f174",
+              "viewport": {
+                "width": 1280,
+                "height": 800
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-touch-budget.png",
+              "sha256": "26da377fba7e9a91ce6a1f6ff1c90d99141b9a65537dbc07e1dbd03054b88ad3",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-compact-goals.png",
+              "sha256": "f76c47175c053707088a11fe657f518c699dd975886fbd6261af61c26961700d",
+              "viewport": {
+                "width": 568,
+                "height": 266
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-two-run-empty-comparison.png",
+              "sha256": "762eeae70056ddd0a080e85cd5b5d4b4bda99cd3a9bb1ff493710a31a4bdb618",
+              "viewport": {
+                "width": 1280,
+                "height": 800
+              }
+            },
+            {
+              "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\planning-farming-insufficient-data.png",
+              "sha256": "8788773f1a2f2dd1fbf5aeb713b972f09c909af7c543059c4eced6aa130bcd59",
+              "viewport": {
+                "width": 1280,
+                "height": 800
+              }
+            }
+          ]
+        }
+      ],
+      "currentListedInputAndPackageHashesMatch": true
+    },
+    "selectedRetainedScreenshots": [
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-ready-final.png",
+        "sha256": "660a142d8e471c0ea21e3996a0bced399547b8eb156648403a43bfdd70fc4604",
+        "bytes": 341793,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-28-39-401Z\\lab-reopened-ready-to-start.png",
+        "copiedWithoutModification": true
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/armory-preview-final.png",
+        "sha256": "c47746693817296c91d0c78387e0314f0733e3a0b0c2982bc40c5de82592c0d2",
+        "bytes": 661129,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-two-module-preview.png",
+        "copiedWithoutModification": true
+      }
+    ],
+    "priorBuildcraftReplays": [
+      {
+        "status": "pass",
+        "receipt": {
+          "path": "campaign-unity/Evidence/buildcraft-browser/2026-11-07T07-28-38-377Z/result.json",
+          "sha256": "d6b04144c2e8d4cd63ffba7a740ad254ebf8b38ff0810f3d3fc56d36c38b2c24",
+          "bytes": 37029957,
+          "availability": "local ignored Evidence; full receipt not bundled"
+        },
+        "checks": 21,
+        "checksPassed": 21,
+        "checksObserved": [
+          {
+            "name": "Fresh Armory clearly locks the second bay and disables its controls",
+            "pass": true
+          },
+          {
+            "name": "Locked fitting previews cannot be applied",
+            "pass": true
+          },
+          {
+            "name": "Cancel restores the saved primary fitting",
+            "pass": true
+          },
+          {
+            "name": "Both module callouts attach to the projected tank geometry",
+            "pass": true
+          },
+          {
+            "name": "Named preset and both bays commit together without spending resources",
+            "pass": true
+          },
+          {
+            "name": "Reload retains the two-bay build",
+            "pass": true
+          },
+          {
+            "name": "Earned third lab funds one combat project from the shared wallet",
+            "pass": true
+          },
+          {
+            "name": "Reload preserves the funded third lab without paying twice",
+            "pass": true
+          },
+          {
+            "name": "Tier 5 has its own environment",
+            "pass": true
+          },
+          {
+            "name": "Tier 6 has its own environment",
+            "pass": true
+          },
+          {
+            "name": "Deployed Arc and Shield are actual combat state",
+            "pass": true
+          },
+          {
+            "name": "Reload retains the last confirmed checkpoint",
+            "pass": true
+          },
+          {
+            "name": "Resume starts paused with its captured build, independent of the next build",
+            "pass": true
+          },
+          {
+            "name": "Saved wave 99 resumes into its actual Commander cohort through normal controls",
+            "pass": true
+          },
+          {
+            "name": "portrait supports named two-bay builds with full-sized controls",
+            "pass": true
+          },
+          {
+            "name": "compact supports named two-bay builds with full-sized controls",
+            "pass": true
+          },
+          {
+            "name": "fresh has zero browser errors",
+            "pass": true
+          },
+          {
+            "name": "prepared has zero browser errors",
+            "pass": true
+          },
+          {
+            "name": "commander has zero browser errors",
+            "pass": true
+          },
+          {
+            "name": "portrait has zero browser errors",
+            "pass": true
+          },
+          {
+            "name": "compact has zero browser errors",
+            "pass": true
+          }
+        ],
+        "contexts": [
+          "fresh",
+          "prepared",
+          "commander",
+          "portrait",
+          "compact"
+        ],
+        "browserErrors": 0,
+        "packaged": {
+          "client/public/last-stand/asset-manifest.json": "02387b017a4dc5de97f36fbfd916be5b96a84bfca15336caf2a09dd7d1b5b47e",
+          "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "7c780cd8c4e689c17eccd5937e7b968c45cd7dd62a062b82dd95a019379d0a97",
+          "campaign-unity/docs/last-stand-web/source-lock.json": "18098f43a8611df002d258cf4a9a47c98d3c055676ce12e6ec9137f108970c68",
+          "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.data": "9610e811e85c8a68d9d74752812b7568bed9960a163751efbf996062d96a9e4c",
+          "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.framework.js": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
+          "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.loader.js": "322461f7a71bfa47844cac475896a5fc0e3c3c8484be0d034668e1010f996b49",
+          "client/public/last-stand/Build/Web-20261107T072248Z-7c0959.wasm": "5a9c0f7aba1f4f9ddb3af68e229457f4e37ac31032e8229adb65216d12d96177",
+          "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+          "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+          "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+          "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+          "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+          "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+          "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+          "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+          "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+          "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+          "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+          "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+          "client/public/last-stand/index.html": "e6b58034bf2f6b8b725cece7f8bc78deb66a28769b09340056737d406512b1d8",
+          "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+        },
+        "inputs": {
+          "scripts/last-stand-buildcraft-journey.mjs": "cfc78709ae76b273f7c458695ca434760245c256591d4f2076c40579b378167c",
+          "scripts/last-stand-combat-depth-journey.mjs": "71c1a7e372424f76665248742319c9cfea998f0a937cc30030b12a73988ad540",
+          "e2e/helpers/lastStandBrowserActor.mjs": "b49890a91d76b0e0c87023ec53a48cc56a21190e3f10478fd1f081fb588edc88",
+          "e2e/helpers/lastStandTierJourney.mjs": "b0c4773efdc4b823f76666c47e4231879673a59a86043b89bc89eac89ebc1378",
+          "e2e/helpers/lastStandWaveJourney.mjs": "fea96edc5a0a38f9b7afc30774004e5423fd6a24476add255f182bf5326afd65",
+          "e2e/helpers/lastStandEvidenceDirectory.mjs": "6cbf7d4ba3ebf8bdb195fe2945cf046538b3eca66d554df58d5d94c0f6a92fdd",
+          "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+          "e2e/helpers/lastStandEncounterOracle.mjs": "2f632e706da25508beed83835bceb1035ed06c7ab3064a695d154b08e76bfb4c",
+          "e2e/helpers/lastStandJourneyHost.mjs": "b338184ad5758ebec540f1a1133e349b8321ffb4b82f06de889d7620ca178688",
+          "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212",
+          "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
+          "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+          "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+          "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+          "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+          "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+          "e2e/helpers/lastStandRuntimeObservation.mjs": "62ba1daf7f4cc0bbd9f261aa0253250590051c567f06433a7a3a079f89ee2490",
+          "e2e/helpers/lastStandWaveGuards.mjs": "36671a95a3de0ee8175c03fecde2c883a5903505c885778e272ed7214e87982d",
+          "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+          "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+          "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+          "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+          "campaign-unity/Tools/contracts/last-stand-observation-v5.json": "528e93d56154e2b956eeacddfbf766a643340ff14a553b99b9a9fc709ed0a301",
+          "campaign-unity/Tools/contracts/last-stand-observation-v6.json": "7f65a4f71947f71f887453fdd0e8f31fd93fb747f21785c794f0cb67fcfb691d"
+        },
+        "scope": "Actual packaged WebGL, trusted mouse/touch/keyboard, isolated development profiles. Gifted seed strength and synthetic prior research time are not earned balance, real-duration endurance, physical-device or owner acceptance.",
+        "transcript": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/buildcraft-browser-final.txt",
+          "sha256": "5512279b59072873a07f12d81cea3672654c92b8dc7ec46c5157553f3e85699c",
+          "bytes": 205,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-browser-5.log",
+          "copiedWithoutModification": true
+        },
+        "screenshots": [
+          {
+            "context": "fresh",
+            "captures": [
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\fresh-locked-arc-preview.png",
+                "sha256": "46f6ad1931c8e93b5e263f239c7f0aceae2ca9ab96e01112cf190561791124e2",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              }
+            ]
+          },
+          {
+            "context": "prepared",
+            "captures": [
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-two-module-preview.png",
+                "sha256": "c47746693817296c91d0c78387e0314f0733e3a0b0c2982bc40c5de82592c0d2",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-combat-research-ready.png",
+                "sha256": "a303c9874a6b3fc8fe35e1f7e6bf70aaae0a03efd1cbd0aed5a04acc7d001098",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-third-lab-funded.png",
+                "sha256": "9a8a685dae7dffdc13810347185145da9f54a48fcffa14c03e628078a6bc848b",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-tier-5.png",
+                "sha256": "da93ee5f5e54ecf65f7d51a84aa84c361ca64d93f39a7071fade32582f03914d",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-tier-6.png",
+                "sha256": "c099d157bd508ef24647a99b5a10f7cc4590a1558ae5f80524dde21240fdcdfb",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-paired-combat.png",
+                "sha256": "b8956735006a6600d569ae9f9779584f1cd196aeed4f7a74fe4d3bd0213a40c7",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\prepared-resumed-captured-build.png",
+                "sha256": "bdcb7135eedc28f5bd87523e09f02679053ce1aca099e9afe0bc30e02a9c370b",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              }
+            ]
+          },
+          {
+            "context": "commander",
+            "captures": [
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\commander-upcoming-commander-stats.png",
+                "sha256": "d48462aa02cd99fd1c4ee8e16a450eced1bd38a3e45cee7cfda9c34194854fac",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\commander-commander-encounter.png",
+                "sha256": "e374c51bbb767bfdc7a2313881e2e7ebcbfb7e77e236416b467bc4939ea19689",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              },
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\commander-current-commander-stats.png",
+                "sha256": "8e99d1e6f94bceae28e0d4d94140b947c5f0fff310f629078ec37a9f386f5190",
+                "viewport": {
+                  "width": 1280,
+                  "height": 900
+                }
+              }
+            ]
+          },
+          {
+            "context": "portrait",
+            "captures": [
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\portrait-applied.png",
+                "sha256": "c7f753a5f6e8e1d0fba44381fcab965e3f0875fe8a24b2dba22e1ea1cc8886e3",
+                "viewport": {
+                  "width": 390,
+                  "height": 844
+                }
+              }
+            ]
+          },
+          {
+            "context": "compact",
+            "captures": [
+              {
+                "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-28-38-377Z\\compact-applied.png",
+                "sha256": "7fd91802fde92180b660a5968ffb93eb471d2a13af372cfd519fb68e53b3038a",
+                "viewport": {
+                  "width": 568,
+                  "height": 266
+                }
+              }
+            ]
+          }
+        ],
+        "currentListedInputAndPackageHashesMatch": true,
+        "fixtureManifest": {
+          "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-presentation-20261107-v6\\manifest.json",
+          "sha256": "ea17f675f76111a58225372964865e0450fedf145afd6aadd35d7b27aebabbac"
+        },
+        "visualLimit": "Actual browser proves resumed wave100 Commander cohort. The screenshot named upcoming-commander-stats shows current100 before spawning and upcoming150. Pure-model regression proves99-to100 forecasting.",
+        "retentionReason": "This PASS21 used narrower third-Lab reload assertions. Final review found the coverage gap; later replay binds full research business fields and both fittings. Original result/transcript remain unchanged."
+      }
+    ]
+  },
+  "nativeWindows": {
+    "status": "blocked-before-input",
+    "receipt": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/native-player-result.json",
+      "sha256": "4e85f5a029db2c16aecc8561f4cd654109a92d9d97c399979eeaa6f7a2a57e67",
+      "bytes": 1042,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-native-player-result.json",
+      "copiedWithoutModification": true
+    },
+    "profile": "bc_20261107_a",
+    "ownerSaveSlotsBefore": 0,
+    "existingOwnerFiles": 2,
+    "ownerFilesUnchanged": true,
+    "ownedPlayerStopped": true,
+    "attempts": 2,
+    "error": "point (160, 354) is over PickerHost.exe \"\", not target window LastStand.exe \"Last Stand\"",
+    "observed": "Isolated current-player fresh garage rendered; no game-control click confirmed.",
+    "limit": "The two preserved owner files are Editor Analytics files; zero owner save slots existed. Build/render does not qualify input/lifecycle.",
+    "candidateLimit": "This input-blocked session used065017Windows; the corrected072525player has build proof only until a separate native session is recorded."
+  },
+  "android": {
+    "status": "Development APK build and debug signature pass; device pending",
+    "signatureReceipt": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/apk-signature-final.txt",
+      "sha256": "fef04c647470b99dc53d031dbec36ab476c551a18fd5163bf8118f0006019763",
+      "bytes": 877,
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-apk-signature-20261107.txt",
+      "availability": "retained repository evidence",
+      "copiedWithoutModification": false,
+      "sanitizedExcerpt": true,
+      "sanitization": {
+        "removedLineCount": 3,
+        "removedFields": [
+          "Signer #1 public key SHA-256 digest",
+          "Signer #1 public key SHA-1 digest",
+          "Signer #1 public key MD5 digest"
+        ],
+        "retained": "Verification verdict, signature scheme, signer/certificate fingerprints, key algorithm and key size.",
+        "reason": "Omit redundant public-key digests from repository excerpts; credential scanner unchanged."
+      },
+      "originalTranscript": {
+        "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-apk-signature-20261107.txt",
+        "sha256": "5eaaec5b29ba5d516d638b441edc64fc048c37f78362aa6feb7fbae44aeef276",
+        "bytes": 972,
+        "availability": "original local transcript; unchanged"
+      }
+    },
+    "signature": "APK v2 verifies with one Android Debug signer; not store signed",
+    "connectedDevice": false,
+    "limit": "No physical install, file-provider, lifecycle, thermal or hardware-audio session claimed.",
+    "candidateLimit": "Final072612APK v2 signature verifies with Android Debug signer; physical-device session pending.",
+    "priorSignatureReceipt": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/apk-signature.txt",
+      "sha256": "fef04c647470b99dc53d031dbec36ab476c551a18fd5163bf8118f0006019763",
+      "bytes": 877,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-apk-signature.log",
+      "copiedWithoutModification": false,
+      "sanitizedExcerpt": true,
+      "sanitization": {
+        "removedLineCount": 3,
+        "removedFields": [
+          "Signer #1 public key SHA-256 digest",
+          "Signer #1 public key SHA-1 digest",
+          "Signer #1 public key MD5 digest"
+        ],
+        "retained": "Verification verdict, signature scheme, signer/certificate fingerprints, key algorithm and key size.",
+        "reason": "Omit redundant public-key digests from repository excerpts; credential scanner unchanged."
+      },
+      "originalTranscript": {
+        "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-apk-signature.log",
+        "sha256": "5eaaec5b29ba5d516d638b441edc64fc048c37f78362aa6feb7fbae44aeef276",
+        "bytes": 972,
+        "availability": "original local transcript; unchanged"
+      }
+    },
+    "signatureEvidenceLimit": "Repository files are labeled sanitized excerpts: only three redundant public-key digest lines per transcript are omitted. Full originals remain local, with original path/SHA-256/size recorded in each reference. Certificate fingerprints and verification verdicts are retained."
+  },
+  "review": {
+    "status": "PASS with all three unique medium findings remediated",
+    "initial": {
+      "high": 0,
+      "uniqueMedium": 3,
+      "origin": "Parent formal reviewer-fleet handoff"
+    },
+    "targeted": {
+      "architecture": "PASS0",
+      "coverage": "PASS0",
+      "sourceCount": 14,
+      "sourceEpochSha256": "97b0ebbad7648c4db3c48659a0bf3740a799e2cc1a76b5d44d505eb00708b42a"
+    },
+    "finalTriageVerdict": "PASS0",
+    "latestVerificationOnly": {
+      "status": "PASS0",
+      "changedPaths": 4,
+      "focusedRegressionsIndependentlyPassed": 2,
+      "sourceEpochSha256": "746d621dcb67f57a47a6d7fc4048e85dfee542b46ee34d00c4d4ca4a82547354",
+      "origin": "Parent handoff: immutable18-source oracle and all browser source/package/fixture hashes verified"
+    },
+    "origin": "Parent formal review handoff; no persisted verdict packet found by index author. This is not represented as a saved native approval receipt.",
+    "coverageProof": {
+      "status": "pass",
+      "cases": 12,
+      "guardOrBoundaryMutantsDetected": 13,
+      "summary": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/verification/coverage-cov03.json",
+        "sha256": "13273a5579d6c9dbb1d4ea028c540409b995d5d41ab3c87b44953e3fb3594580",
+        "bytes": 3389,
+        "availability": "retained repository evidence"
+      },
+      "narrative": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/verification/coverage-cov03.md",
+        "sha256": "cc33e8a81edb5a8653e7a1b79c4169c73f081a47cfcbcd0f1c2d351c975fec39",
+        "bytes": 2462,
+        "availability": "retained repository evidence"
+      },
+      "transcript": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/verification/coverage-cov03.log",
+        "sha256": "b774e02117ec1e6de1de69a3b1278061fbd68c270e98bd5eb1370f83647215da",
+        "bytes": 6332,
+        "availability": "retained repository evidence"
+      },
+      "limit": "Temporary-source negative controls; production sources and numerical reports unchanged."
+    },
+    "sourceLimit": "Earlier epochs retain their original scope. The final reload test-only correction has independent inspection,13 passing WaveEvidence tests and a new successful21-check packaged replay; prior narrower PASS21 is retained separately.",
+    "finalReviewUpdate": {
+      "status": "PASS",
+      "origin": "Parent/root explicitly accepted root inspection plus documentation-agent independent review and13-test root execution, conditional on successful browser6; actual browser6 now passes21.",
+      "resolvedFinding": "Narrow third-Lab reload comparison coverage gap",
+      "pending": [],
+      "subsequentOwner": "Parent owns subsequent native progress, exact-head CI and PR delivery."
+    },
+    "attributeReview": {
+      "status": "PASS",
+      "reviewer": "Documentation agent independent review",
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/git-attributes-independent-final.json",
+        "sha256": "8eae99be22f1eeea6f1b21369a753f2faba28d80409e475c3c7f0eb3a9c4fc82",
+        "bytes": 31677,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-git-attributes-independent-final2.json",
+        "copiedWithoutModification": true
+      },
+      "attributeSha256": "2fadca7bce0a6cec51da05e37744372548595975378a90b5c293cd89d4c337bb",
+      "findings": []
+    }
+  },
+  "balance": {
+    "status": "Model frontier and farming measurements pass within recorded scope",
+    "index": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-summary.json",
+      "sha256": "a1072372e70bee9a3cbf691c3dc45d19081dfce5983ed173c0cd379d172332ce",
+      "bytes": 9144,
+      "availability": "retained repository evidence"
+    },
+    "narrative": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/balance.md",
+      "sha256": "c88374a1637f9728fa32be0fe12d5df778cef7e6f8b291addd8b94a568e7c389",
+      "bytes": 7819,
+      "availability": "retained repository evidence"
+    },
+    "comparisonWave": 500,
+    "comparisonCells": 168,
+    "singleFittings": 7,
+    "fittingPairs": 21,
+    "tiers": 6,
+    "earnedSeedSha256": "10420320d79a73248d314303d4f680f1d0f2ce9b46a219108f72cf6c2dbf11dc",
+    "distinctFrontierPairs": 6,
+    "universalDominators": [],
+    "sensitivityCells": 90,
+    "sensitivity": "Counterfactual +/-5percent price/damage variants; not alternate earned histories.",
+    "lowTouchWave5000ProjectedActiveHoursAt5x": 10.499236111111111,
+    "lowTouchPurchaseIntents": 41,
+    "retainedInitial150WaveComparison": "Failed3-pair criterion: only2 distinct frontier pairs. Preserved unchanged; then measured500-wave horizon without production retuning.",
+    "lowerTierFarming": "T1-3 reach2000; T4 ends1418 and T5 ends1174. Reports compare repeatable Salvage/hour with next-tier30/100 resets.",
+    "limit": "Production-model simulation with exact source archives. Projected10.499236h at5x is not a real10-12h soak, device performance or owner play-feel acceptance.",
+    "finalSourceScope": {
+      "measuredSourceEntries": 43,
+      "measuredToolEntries": 2,
+      "changedInputs": [
+        {
+          "path": "campaign-unity/Unity/Assets/Scripts/LastStandResearchPresentation.cs",
+          "measuredSha256": "0621d4211f82b48949b0af54912afa10782134b6af5ed36f34598112f78b734a",
+          "currentSha256": "4f7a7eb3e3e6e1583626e1b893dbc9d4ce61112f2f4dadedbede09cedac27ba3"
+        },
+        {
+          "path": "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs",
+          "measuredSha256": "f8275bda48955ea8fefc3f490a7bae74a1ec5b4079a868f80cd395485fec0136",
+          "currentSha256": "376c87d7f6f740e3b8753366f1d2d00e26a338f2608431766b51fffbc8df3560"
+        },
+        {
+          "path": "campaign-unity/Tools/last_stand_source_closure.py",
+          "measuredSha256": "d7bede24049e0c2890957bb9bc499bd82f980967425586ff7308bdaa07de04f5",
+          "currentSha256": "646af650e4633e1614b9f155128c8f8c9306105343e2bbaf1e65e46366d6cf21"
+        }
+      ],
+      "unchangedInputCount": 42,
+      "explanation": "ResearchPresentation changes shared applicability wording; Selection corrects Shield description; source_closure maintains wave-information/compiler membership. Numerical combat/economy/transaction source digests remain unchanged. Archived reports keep exact measured sources and all original artifact hashes; no exact final-source numerical replay is claimed.",
+      "separateChecks": "Applicability RED/intermediate failure/final19-case GREEN; captured85-module portable run includes selection/source-closure contracts; actual repaired encounter compiler check retained separately."
+    }
+  },
+  "delivery": {
+    "status": "Local snapshot; sprint hosted CI and final delivery not established here",
+    "integration": {
+      "pr": 543,
+      "head": "6f234a6f4efeb81c55d69de6dcb2216459172247",
+      "origin": "Parent reports merged main and content-verified fast-forward preserving dirty files/index. Integrates the prior committed baseline, not the uncommitted sprint."
+    },
+    "publicReleaseApproved": false,
+    "backendRolloutClaimed": false,
+    "storeSubmissionClaimed": false,
+    "limit": "Parent owns Git, exact-head CI, merge/disposition and deployment. Local receipts are not a public release or signing approval."
+  },
+  "remainingQualification": [
+    "Windows current-player input/lifecycle after PickerHost obstruction",
+    "Physical Android device lifecycle/file providers",
+    "Native-window background behavior",
+    "Real elapsed10-12h farming and frame/memory/thermal measurements",
+    "Hardware audio and owner listening acceptance",
+    "Owner comprehension and visual acceptance",
+    "Exact final-head hosted CI and delivery/release decisions"
+  ],
+  "nativeNodeGuards": {
+    "status": "failed with environment obstruction; not passed",
+    "checks": 305,
+    "passed": 304,
+    "failed": 1,
+    "skipped": 0,
+    "receipt": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/node-guards-initial.txt",
+      "sha256": "c0a366d0b6c7296744fabfd4742a87f199ac6e4294ce464e71316e7401a1d65d",
+      "bytes": 253815,
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-node-guards.log",
+      "copiedWithoutModification": true,
+      "availability": "retained repository evidence"
+    },
+    "affectedRetry": {
+      "checks": 1,
+      "passed": 0,
+      "failed": 1,
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/native-caption-attempt2.txt",
+        "sha256": "704ca49437dce12aaa1e1fb54dcfd86a1fc730a756785350b104625af560dd1c",
+        "bytes": 13568,
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-native-caption-attempt2.log",
+        "copiedWithoutModification": true,
+        "availability": "retained repository evidence"
+      }
+    },
+    "failingCase": "background guards reject frozen ticks and require separate native blur and hidden evidence",
+    "error": "Owned native foreground capability rejected: no-uncovered-owned-caption",
+    "limit": "Actual runner fails during owned-caption setup before SendInput. Parent diagnostics identify foreign PickerHost PID30468, Windows Security. This is not waived or relabeled a passing native proof."
+  },
+  "priorCandidateCaptures": [
+    {
+      "candidate": {
+        "build": "Web-20261107T064517Z-f125bc",
+        "workingTreeBaseCommitAtBuild": "219239001787993cf6e71fab33cd87a26f16eff7",
+        "branchBaseAtDocumentation": "6f234a6f4efeb81c55d69de6dcb2216459172247",
+        "editorVersion": "6000.3.27f2",
+        "editorRevision": "22188f149405",
+        "bindingMode": "SHA-256 of recorded source/tool/package closures",
+        "bindingLimit": "Builds include uncommitted sprint changes: Git HEAD alone does not identify the implementation. Full receipts retain target inventories. Parent reports content-verified fast-forward after PR543 to the same committed tree, preserving all342 dirty/untracked paths and index bytes. Subsequent test/helper edits retain their own identities.",
+        "currentSourceEligible": false,
+        "supersededBy": "Shared Research quote wording repair found during screenshot inspection: four global tracks incorrectly described next effect as only primary bay. All three target packages and relevant browser checks will be recaptured."
+      },
+      "builds": [
+        {
+          "id": "build-webgl-20261107T064517Z-f125bc",
+          "status": "pass",
+          "target": "webgl",
+          "configuration": "release",
+          "publish": false,
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261107T064517Z-f125bc/result.json",
+            "sha256": "1231c03e1e2f3144e8b297da4c1d46bd986373d7cc0c78684b7f8853c22b9250",
+            "bytes": 11919202,
+            "availability": "local ignored Evidence; full receipt not bundled"
+          },
+          "sourceHeadAtBuild": "219239001787993cf6e71fab33cd87a26f16eff7",
+          "sourceBeforeSha256": "7f615fabf4636ed452951df083b902013de268ce4035fb95fe560d2def48edd1",
+          "sourceAfterSha256": "7f615fabf4636ed452951df083b902013de268ce4035fb95fe560d2def48edd1",
+          "toolchainBeforeSha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52",
+          "toolchainAfterSha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52",
+          "artifactCount": 17,
+          "primaryArtifacts": {
+            "Build/Web-20261107T064517Z-f125bc.data": "195f17f142e21e5a9b1fda64af3e7003725ed8ca07e897c98e899d5ecaf85f19",
+            "Build/Web-20261107T064517Z-f125bc.wasm": "4ccf378195e29f597edfd64089818b2c21bfb52bd8f532e6beae1e9f28e7b333"
+          },
+          "playerReport": {
+            "result": "Succeeded",
+            "configuration": "release",
+            "options": []
+          },
+          "shaderDiagnostics": null,
+          "limit": "Successful local target build; not native input, physical-device, distribution or publication acceptance."
+        },
+        {
+          "id": "build-windows-20261107T065017Z-c9fe9c",
+          "status": "pass",
+          "target": "windows",
+          "configuration": "development",
+          "publish": false,
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261107T065017Z-c9fe9c/result.json",
+            "sha256": "02c0aa663327afade012bbb42eca60f8e250e2d1d1f95f1cf78838b5ad7aa2fa",
+            "bytes": 5397767,
+            "availability": "local ignored Evidence; full receipt not bundled"
+          },
+          "sourceHeadAtBuild": "219239001787993cf6e71fab33cd87a26f16eff7",
+          "sourceBeforeSha256": "7f615fabf4636ed452951df083b902013de268ce4035fb95fe560d2def48edd1",
+          "sourceAfterSha256": "7f615fabf4636ed452951df083b902013de268ce4035fb95fe560d2def48edd1",
+          "toolchainBeforeSha256": "39ba3d23d86935230692b27779c32ba08babbde7ce6828238d1b4b9375b0c534",
+          "toolchainAfterSha256": "39ba3d23d86935230692b27779c32ba08babbde7ce6828238d1b4b9375b0c534",
+          "artifactCount": 267,
+          "primaryArtifacts": {
+            "LastStand.exe": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0",
+            "UnityCrashHandler64.exe": "0490ff65de7f132273eda7fc7c7772b79fc9c4ef708b85609dbdf6994f4cba5d"
+          },
+          "playerReport": {
+            "configuration": "development",
+            "result": "Succeeded",
+            "version": "1.0",
+            "backend": "Mono2x",
+            "options": [
+              "Development"
+            ],
+            "bytes": 186547728,
+            "storeSigned": false
+          },
+          "shaderDiagnostics": {
+            "schema": "singedterra-shader-diagnostics/v1",
+            "phasesVerified": true,
+            "editorImportRefreshed": false,
+            "diagnostics": [],
+            "accepted": true
+          },
+          "limit": "Successful local target build; not native input, physical-device, distribution or publication acceptance."
+        },
+        {
+          "id": "build-android-20261107T065333Z-971255",
+          "status": "pass",
+          "target": "android",
+          "configuration": "development",
+          "publish": false,
+          "receipt": {
+            "path": "campaign-unity/Evidence/last-stand-architecture/build-android-20261107T065333Z-971255/result.json",
+            "sha256": "0ab08c3cda9eac449fefaf40ac59d2884f06d2705fb9afef877579f03a2bdd98",
+            "bytes": 15295359,
+            "availability": "local ignored Evidence; full receipt not bundled"
+          },
+          "sourceHeadAtBuild": "219239001787993cf6e71fab33cd87a26f16eff7",
+          "sourceBeforeSha256": "7f615fabf4636ed452951df083b902013de268ce4035fb95fe560d2def48edd1",
+          "sourceAfterSha256": "7f615fabf4636ed452951df083b902013de268ce4035fb95fe560d2def48edd1",
+          "toolchainBeforeSha256": "68b48ac13be1053675b50bce9cf6d3005cc7373ab9beafe31a707b8a3403ef24",
+          "toolchainAfterSha256": "68b48ac13be1053675b50bce9cf6d3005cc7373ab9beafe31a707b8a3403ef24",
+          "artifactCount": 2,
+          "primaryArtifacts": {
+            "LastStand.apk": "e236c7a81db1aac35b2e7a406341105b985c29830e540195195b2b206d2e5ffc"
+          },
+          "playerReport": {
+            "configuration": "development",
+            "result": "Succeeded",
+            "version": "1.0",
+            "backend": "IL2CPP",
+            "options": [
+              "Development"
+            ],
+            "bytes": 572427952,
+            "storeSigned": false
+          },
+          "shaderDiagnostics": {
+            "schema": "singedterra-shader-diagnostics/v1",
+            "phasesVerified": true,
+            "editorImportRefreshed": true,
+            "diagnostics": [
+              {
+                "line": 553,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(16) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 554,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(27) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 555,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(270) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 556,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(277) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 557,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Hammersley.hlsl(25) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 558,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float3' to smaller type 'min16float3', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(144) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 559,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(316) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 560,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(317) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 561,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(318) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 564,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(16) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 565,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(27) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 566,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(270) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 567,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(277) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 568,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Hammersley.hlsl(25) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 569,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float3' to smaller type 'min16float3', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(144) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 570,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(316) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 571,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(317) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 572,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(318) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 650,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(16) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 651,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(27) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 652,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(270) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 653,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(277) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 654,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Hammersley.hlsl(25) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 655,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float3' to smaller type 'min16float3', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(144) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 656,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(316) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 657,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(317) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 658,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(318) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 661,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(16) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 662,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(27) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 663,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(270) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 664,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'uint' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Fibonacci.hlsl(277) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 665,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Hammersley.hlsl(25) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 666,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float3' to smaller type 'min16float3', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(144) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 667,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(316) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 668,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(317) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              },
+              {
+                "line": 669,
+                "message": "Shader warning in 'TraceVirtualOffset': conversion from larger type 'float' to smaller type 'min16float', possible loss of data [-Wconversion] at C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/campaign-unity/Unity/Library/PackageCache/com.unity.render-pipelines.core@0bb36005e9ba/ShaderLibrary/Sampling/Sampling.hlsl(318) (on d3d11)",
+                "disposition": "reviewed-editor-import"
+              }
+            ],
+            "accepted": true
+          },
+          "limit": "Successful local target build; not native input, physical-device, distribution or publication acceptance."
+        }
+      ],
+      "browser": {
+        "priorBuildcraftAttempts": [
+          {
+            "status": "failed",
+            "receipt": {
+              "path": "campaign-unity/Evidence/buildcraft-browser/2026-11-07T06-58-03-494Z/result.json",
+              "sha256": "361a2e8c5483c3a43322af74ee40db4d57ff9aced448f3f5e7c20c26357faad2",
+              "bytes": 5904661,
+              "availability": "local ignored Evidence; full receipt not bundled"
+            },
+            "checks": 2,
+            "checksPassed": 2,
+            "description": "Failed: whole-profile equality rejected advancing research clock metadata."
+          },
+          {
+            "status": "failed",
+            "receipt": {
+              "path": "campaign-unity/Evidence/buildcraft-browser/2026-11-07T07-03-48-250Z/result.json",
+              "sha256": "853ae4908836ee987908b1c746c853c52328c89f96b866ef5b8be770ed77bc82",
+              "bytes": 13445073,
+              "availability": "local ignored Evidence; full receipt not bundled"
+            },
+            "checks": 8,
+            "checksPassed": 8,
+            "description": "Failed: fixture action expected Deploy where returning profile uses Redeploy."
+          }
+        ],
+        "limit": "Isolated development profiles use gifted strength and synthetic prior research time. Browser presentation proof is not earned progression, native background, device lifecycle or owner acceptance.",
+        "buildcraft": {
+          "status": "pass",
+          "receipt": {
+            "path": "campaign-unity/Evidence/buildcraft-browser/2026-11-07T07-06-45-546Z/result.json",
+            "sha256": "283cc35b2395bfb7b08e4cfdce95f1ee552371a1c6f93e741ae24e3f1fb367d9",
+            "bytes": 35312121,
+            "availability": "local ignored Evidence; full receipt not bundled"
+          },
+          "checks": 19,
+          "checksPassed": 19,
+          "description": "Pass: actual packaged buildcraft journey.",
+          "contexts": [
+            "fresh",
+            "prepared",
+            "commander",
+            "portrait",
+            "compact"
+          ],
+          "browserErrors": 0,
+          "checksObserved": [
+            {
+              "name": "Fresh Armory clearly locks the second bay and disables its controls",
+              "pass": true
+            },
+            {
+              "name": "Locked fitting previews cannot be applied",
+              "pass": true
+            },
+            {
+              "name": "Cancel restores the saved primary fitting",
+              "pass": true
+            },
+            {
+              "name": "Both module callouts attach to the projected tank geometry",
+              "pass": true
+            },
+            {
+              "name": "Named preset and both bays commit together without spending resources",
+              "pass": true
+            },
+            {
+              "name": "Reload retains the two-bay build",
+              "pass": true
+            },
+            {
+              "name": "Tier 5 has its own environment",
+              "pass": true
+            },
+            {
+              "name": "Tier 6 has its own environment",
+              "pass": true
+            },
+            {
+              "name": "Deployed Arc and Shield are actual combat state",
+              "pass": true
+            },
+            {
+              "name": "Reload retains the last confirmed checkpoint",
+              "pass": true
+            },
+            {
+              "name": "Resume starts paused with its captured build, independent of the next build",
+              "pass": true
+            },
+            {
+              "name": "Saved wave 99 resumes into its actual Commander cohort through normal controls",
+              "pass": true
+            },
+            {
+              "name": "portrait supports named two-bay builds with full-sized controls",
+              "pass": true
+            },
+            {
+              "name": "compact supports named two-bay builds with full-sized controls",
+              "pass": true
+            },
+            {
+              "name": "fresh has zero browser errors",
+              "pass": true
+            },
+            {
+              "name": "prepared has zero browser errors",
+              "pass": true
+            },
+            {
+              "name": "commander has zero browser errors",
+              "pass": true
+            },
+            {
+              "name": "portrait has zero browser errors",
+              "pass": true
+            },
+            {
+              "name": "compact has zero browser errors",
+              "pass": true
+            }
+          ],
+          "packaged": {
+            "client/public/last-stand/asset-manifest.json": "ed1ff970333984deaeb7785b9c3e5412c5c66df14dabdd415ff208dd5b8706ad",
+            "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "b60ca7ed8be739ed78721011d84153cec29b00cfc27e59ef6972edd1d3dd4b61",
+            "campaign-unity/docs/last-stand-web/source-lock.json": "4b172131e7b875b871078a706097543031229ff497e3f439e7f40fe5676c6fea",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.data": "195f17f142e21e5a9b1fda64af3e7003725ed8ca07e897c98e899d5ecaf85f19",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.framework.js": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.loader.js": "178f5ea84654c050a53d822325ee8a1c3e89c46cee100470d58bafa526211e5f",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.wasm": "4ccf378195e29f597edfd64089818b2c21bfb52bd8f532e6beae1e9f28e7b333",
+            "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+            "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+            "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+            "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+            "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+            "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+            "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+            "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+            "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+            "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+            "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+            "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+            "client/public/last-stand/index.html": "02d5ebaa4e2509a4651f085834ec412333bbcb8723c492aa5d47fde889f55029",
+            "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+          },
+          "inputs": {
+            "scripts/last-stand-buildcraft-journey.mjs": "29d19afec3b6776596ad38999f60db110395ccd77960f41565d72b44c21d7cb2",
+            "scripts/last-stand-combat-depth-journey.mjs": "71c1a7e372424f76665248742319c9cfea998f0a937cc30030b12a73988ad540",
+            "e2e/helpers/lastStandBrowserActor.mjs": "b49890a91d76b0e0c87023ec53a48cc56a21190e3f10478fd1f081fb588edc88",
+            "e2e/helpers/lastStandTierJourney.mjs": "b0c4773efdc4b823f76666c47e4231879673a59a86043b89bc89eac89ebc1378",
+            "e2e/helpers/lastStandWaveJourney.mjs": "fea96edc5a0a38f9b7afc30774004e5423fd6a24476add255f182bf5326afd65",
+            "e2e/helpers/lastStandEvidenceDirectory.mjs": "6cbf7d4ba3ebf8bdb195fe2945cf046538b3eca66d554df58d5d94c0f6a92fdd",
+            "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+            "e2e/helpers/lastStandEncounterOracle.mjs": "2f632e706da25508beed83835bceb1035ed06c7ab3064a695d154b08e76bfb4c",
+            "e2e/helpers/lastStandJourneyHost.mjs": "b338184ad5758ebec540f1a1133e349b8321ffb4b82f06de889d7620ca178688",
+            "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212",
+            "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
+            "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+            "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+            "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+            "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+            "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+            "e2e/helpers/lastStandRuntimeObservation.mjs": "62ba1daf7f4cc0bbd9f261aa0253250590051c567f06433a7a3a079f89ee2490",
+            "e2e/helpers/lastStandWaveGuards.mjs": "36671a95a3de0ee8175c03fecde2c883a5903505c885778e272ed7214e87982d",
+            "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+            "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+            "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+            "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+            "campaign-unity/Tools/contracts/last-stand-observation-v5.json": "528e93d56154e2b956eeacddfbf766a643340ff14a553b99b9a9fc709ed0a301",
+            "campaign-unity/Tools/contracts/last-stand-observation-v6.json": "7f65a4f71947f71f887453fdd0e8f31fd93fb747f21785c794f0cb67fcfb691d"
+          },
+          "fixtureManifest": {
+            "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-presentation-20261107-v5\\manifest.json",
+            "sha256": "48e08f86a8b5edcd3f8bee2cbd0d96a5b86b36e129f7a02c524d08166d1b6b38"
+          },
+          "scope": "Actual packaged WebGL, trusted mouse/touch/keyboard, isolated development profiles. Gifted seed strength and synthetic prior research time are not earned balance, real-duration endurance, physical-device or owner acceptance.",
+          "screenshots": [
+            {
+              "context": "fresh",
+              "captures": [
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\fresh-locked-arc-preview.png",
+                  "sha256": "46f6ad1931c8e93b5e263f239c7f0aceae2ca9ab96e01112cf190561791124e2",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                }
+              ]
+            },
+            {
+              "context": "prepared",
+              "captures": [
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\prepared-two-module-preview.png",
+                  "sha256": "c47746693817296c91d0c78387e0314f0733e3a0b0c2982bc40c5de82592c0d2",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                },
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\prepared-tier-5.png",
+                  "sha256": "45a71dede7c28a04a35770c49833cbc53209675de1cb5c8513d988638501ce6d",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                },
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\prepared-tier-6.png",
+                  "sha256": "cad77169041154b86098783f5171235a74ad5ac5bd7d2c478185bb1507f01322",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                },
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\prepared-paired-combat.png",
+                  "sha256": "92d6c41124ae64d34867f212b18fd080a0a0c3ae5cd6a3725f576ed127f3c1a1",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                },
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\prepared-resumed-captured-build.png",
+                  "sha256": "b8c61b2a547ef4eaa162e82712aaef0f307713727903cacc38cedfd26b74451d",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                }
+              ]
+            },
+            {
+              "context": "commander",
+              "captures": [
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\commander-upcoming-commander-stats.png",
+                  "sha256": "d48462aa02cd99fd1c4ee8e16a450eced1bd38a3e45cee7cfda9c34194854fac",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                },
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\commander-commander-encounter.png",
+                  "sha256": "9d3636338620449bbfb867269b5bb0d5bcee309aa9eaf69578de65710db6a910",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                },
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\commander-current-commander-stats.png",
+                  "sha256": "9dba67e6280dd6f52e50ba11afa4e411bc0ce9a276dd5e0c919a1382022057b2",
+                  "viewport": {
+                    "width": 1280,
+                    "height": 900
+                  }
+                }
+              ]
+            },
+            {
+              "context": "portrait",
+              "captures": [
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\portrait-applied.png",
+                  "sha256": "3d7789f2fb26e6eed31d25015c1bf689f5b7ec420ca10dbc819a9fdecac5c864",
+                  "viewport": {
+                    "width": 390,
+                    "height": 844
+                  }
+                }
+              ]
+            },
+            {
+              "context": "compact",
+              "captures": [
+                {
+                  "path": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\buildcraft-browser\\2026-11-07T07-06-45-546Z\\compact-applied.png",
+                  "sha256": "d11c6c22646589782302f5bad35c303cf2390fd7514f1b22d73045f51f6acfff",
+                  "viewport": {
+                    "width": 568,
+                    "height": 266
+                  }
+                }
+              ]
+            }
+          ],
+          "visualReview": "Parent inspected desktop Armory,390x844 portrait,568x266 compact and wave statistics. Screenshot upcoming-commander-stats shows current wave100 before spawning and upcoming150; browser proves resumed100 Commander cohort. Pure-model regression proves99-to100 forecast."
+        },
+        "research": {
+          "status": "passed",
+          "receipt": {
+            "path": "campaign-unity/Evidence/research-browser/2026-11-07T07-11-15-855Z/result.json",
+            "sha256": "cd5e15411ba351e5556834a6a1f156022805b0369706180faac0e7fa012d9ffa",
+            "bytes": 257857656,
+            "availability": "local ignored Evidence; full receipt not bundled"
+          },
+          "closedCompletionObserved": true,
+          "scope": "Current packaged Research journey; completion while closed is fixture-bounded, not a real-duration research or endurance soak.",
+          "priorAttempt": "Wrong default4173 instead of current4174 failed before game; final attempt uses a fresh v5 fixture at4174.",
+          "transcript": {
+            "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-browser-pre-wording.txt",
+            "sha256": "9cb399dbe9fb68cadd8fe2175564d5f615e60537ab0197a21560f33fff86d473",
+            "bytes": 224,
+            "availability": "retained repository evidence",
+            "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-browser-2.log",
+            "copiedWithoutModification": true
+          },
+          "checksObserved": [
+            {
+              "name": "closed tab retains funding and advances only research",
+              "pass": true
+            },
+            {
+              "name": "visible Start uses shared wallet once",
+              "pass": true
+            },
+            {
+              "name": "one funded queued project",
+              "pass": true
+            },
+            {
+              "name": "Suspend refunds active and promotes paid queue",
+              "pass": true
+            },
+            {
+              "name": "Switch keeps partial time and reconciles refund/replacement cost",
+              "pass": true
+            },
+            {
+              "name": "second tab remains read-only while the original owns the profile",
+              "pass": true
+            },
+            {
+              "name": "original owner retains its wallet and funded project",
+              "pass": true
+            },
+            {
+              "name": "reloaded second tab acquires ownership and funds one queue",
+              "pass": true
+            },
+            {
+              "name": "bulk selection is free and one click buys displayed aggregate",
+              "pass": true
+            },
+            {
+              "name": "ordinary fresh profile exposes locked Labs without purchasable action",
+              "pass": true
+            },
+            {
+              "name": "earned maximum stops at five",
+              "pass": true
+            },
+            {
+              "name": "half-step slowdown reaches pause",
+              "pass": true
+            },
+            {
+              "name": "explicit abandon finalizes one observed run",
+              "pass": true
+            }
+          ],
+          "checks": 13,
+          "checksPassed": 13,
+          "contexts": [
+            "lab-desktop",
+            "lab-reopened",
+            "second-tab",
+            "ordinary-fresh",
+            "mature-speed"
+          ],
+          "browserErrors": 0,
+          "packaged": {
+            "client/public/last-stand/asset-manifest.json": "ed1ff970333984deaeb7785b9c3e5412c5c66df14dabdd415ff208dd5b8706ad",
+            "campaign-unity/docs/last-stand-web/receipt-sanitized.json": "b60ca7ed8be739ed78721011d84153cec29b00cfc27e59ef6972edd1d3dd4b61",
+            "campaign-unity/docs/last-stand-web/source-lock.json": "4b172131e7b875b871078a706097543031229ff497e3f439e7f40fe5676c6fea",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.data": "195f17f142e21e5a9b1fda64af3e7003725ed8ca07e897c98e899d5ecaf85f19",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.framework.js": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.loader.js": "178f5ea84654c050a53d822325ee8a1c3e89c46cee100470d58bafa526211e5f",
+            "client/public/last-stand/Build/Web-20261107T064517Z-f125bc.wasm": "4ccf378195e29f597edfd64089818b2c21bfb52bd8f532e6beae1e9f28e7b333",
+            "client/public/last-stand/TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+            "client/public/last-stand/TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+            "client/public/last-stand/TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+            "client/public/last-stand/TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+            "client/public/last-stand/TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+            "client/public/last-stand/TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+            "client/public/last-stand/TemplateData/progress-bar-full-light.png": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+            "client/public/last-stand/TemplateData/style.css": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+            "client/public/last-stand/TemplateData/unity-logo-dark.png": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+            "client/public/last-stand/TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+            "client/public/last-stand/TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+            "client/public/last-stand/TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+            "client/public/last-stand/index.html": "02d5ebaa4e2509a4651f085834ec412333bbcb8723c492aa5d47fde889f55029",
+            "campaign-unity/docs/last-stand-ui/ui-native-binding.json": "cf3fa56068fcdce038249d302a71c01891efb6ea7f0cd7ff8bf334be0e06fcc6"
+          },
+          "inputs": {
+            "scripts/last-stand-research-journey.mjs": "836d5205d49b7572afe2825c871c2af364bb03cc0858ed21d767821c356258bb",
+            "e2e/helpers/lastStandJourney.mjs": "2c26f912db31fccf278b084475d48667175566708ccbe01be37b4d965b387109",
+            "e2e/helpers/lastStandJourneyActions.mjs": "fceaf6ad734296000e7ab504be1159122a3a4b89b195031d1f19c94dbcffafa3",
+            "e2e/helpers/lastStandEncounterOracle.mjs": "2f632e706da25508beed83835bceb1035ed06c7ab3064a695d154b08e76bfb4c",
+            "e2e/helpers/lastStandJourneyHost.mjs": "b338184ad5758ebec540f1a1133e349b8321ffb4b82f06de889d7620ca178688",
+            "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212",
+            "e2e/helpers/lastStandJourneyRuntime.mjs": "622fd50f72db5b04885845dc1cd5591c64a6fb425f08f3e0d455fbebb85d4890",
+            "e2e/helpers/lastStandMediaCapture.mjs": "0577ab7336a84c32b9539d4751d06c51788b9359be2bd3fa945b0b7fa670a79c",
+            "e2e/helpers/lastStandNativeDriver.mjs": "e5a2995551ef38bcd9574b7eff1c019624a0b8fb525fe710368cbcf83db17aef",
+            "e2e/helpers/lastStandProcessOwnership.mjs": "9b5037f785e7745fa18f27d1d627a241ef48e37fc81d9bad92db251a4e564160",
+            "e2e/helpers/lastStandProcessSupervisor.mjs": "c98bf9004bcf33419cadae75ca969b39cd3e8dbfea2abb821d264ca45ca001ba",
+            "e2e/helpers/lastStandRuntimeAdmission.mjs": "8c3982e4fe8e5addade94315408432c39d782e3ee5469e09ee99b4326ae3d65f",
+            "e2e/helpers/lastStandRuntimeObservation.mjs": "62ba1daf7f4cc0bbd9f261aa0253250590051c567f06433a7a3a079f89ee2490",
+            "e2e/helpers/lastStandWaveGuards.mjs": "36671a95a3de0ee8175c03fecde2c883a5903505c885778e272ed7214e87982d",
+            "e2e/helpers/lastStandTierJourney.mjs": "b0c4773efdc4b823f76666c47e4231879673a59a86043b89bc89eac89ebc1378",
+            "e2e/helpers/lastStandWaveJourney.mjs": "fea96edc5a0a38f9b7afc30774004e5423fd6a24476add255f182bf5326afd65",
+            "e2e/helpers/lastStandBrowserActor.mjs": "b49890a91d76b0e0c87023ec53a48cc56a21190e3f10478fd1f081fb588edc88",
+            "campaign-unity/Tools/contracts/last-stand-observation-v1.json": "41384e8b1f15f5535df2a7845a83feabac3979994fb1637f4609251645592a0d",
+            "campaign-unity/Tools/contracts/last-stand-observation-v2.json": "13e38bcc1e9576f35492fcbe564cfaae52f2406563cd76201fb13703b3db0f27",
+            "campaign-unity/Tools/contracts/last-stand-observation-v3.json": "c2b6f8901e6cb568098c6c3f035a499bacd01fa08aa6a021f4d785e7ef8c890b",
+            "campaign-unity/Tools/contracts/last-stand-observation-v4.json": "e3d4e897d59cbcf9d3d3982715818fdb8945a5d95747f8e10e5664231a49db64",
+            "campaign-unity/Tools/contracts/last-stand-observation-v5.json": "528e93d56154e2b956eeacddfbf766a643340ff14a553b99b9a9fc709ed0a301",
+            "campaign-unity/Tools/contracts/last-stand-observation-v6.json": "7f65a4f71947f71f887453fdd0e8f31fd93fb747f21785c794f0cb67fcfb691d"
+          },
+          "fixtureManifest": {
+            "path": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-20261107-v5\\manifest.json",
+            "sha256": "2d33c4738f0ae9757af70ef5d7269a2e01cb9c088b9c152ffa6c45b1f2af9166",
+            "scope": "Explicit development seeds for browser qualification. Gifted Salvage/permanent levels and accelerated research time are not ordinary player progression or elapsed endurance evidence."
+          },
+          "visualLimit": "Successful functional journey did not detect global-track next-effect wording defect later found by screenshot review; a corrected candidate is pending."
+        }
+      },
+      "webExportCapture": {
+        "build": "Web-20261107T064517Z-f125bc",
+        "sourceBeforeSha256": "4934ba47f7552b95d91a628db185b7b03e372116771886a2eef7255452a3fb50",
+        "sourceAfterSha256": "4934ba47f7552b95d91a628db185b7b03e372116771886a2eef7255452a3fb50",
+        "originalSourceLockSha256": "4b172131e7b875b871078a706097543031229ff497e3f439e7f40fe5676c6fea",
+        "originalSanitizedReceiptSha256": "b60ca7ed8be739ed78721011d84153cec29b00cfc27e59ef6972edd1d3dd4b61",
+        "immutableOriginalRawReceipt": {
+          "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261107T064517Z-f125bc/result.json",
+          "sha256": "10ba46afd3ccff5e2f4e020afecd71b968de619c31bc4f727695b3cb6180a158",
+          "bytes": 11915424,
+          "availability": "local ignored Evidence; full receipt not bundled"
+        },
+        "limit": "Mutable source-lock and sanitized export paths now describe the replacement candidate. Old hashes are capture identities; original raw receipt and build/browser receipts retain the old full evidence."
+      }
+    }
+  ],
+  "researchApplicabilityRepair": {
+    "status": "red then green",
+    "red": {
+      "cases": 2,
+      "failed": 2,
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt",
+        "sha256": "e0a2c392ae45eb311d4f6a8040890de0e1639b3081126e90c8e5e5ad9c07559b",
+        "bytes": 3011,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-applicability-red.log",
+        "copiedWithoutModification": true
+      }
+    },
+    "intermediate": {
+      "cases": 19,
+      "failed": 1,
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-intermediate.txt",
+        "sha256": "269585e1682024d7c8b9ec97d28e064ac867c7e5bb87d2636d340c57a5f4ab85",
+        "bytes": 4602,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-applicability-green.log",
+        "copiedWithoutModification": true
+      },
+      "note": "Filename says green; actual transcript fails the Global Planner applicability fixture and is retained as failed."
+    },
+    "green": {
+      "cases": 19,
+      "failed": 0,
+      "receipt": {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-green.txt",
+        "sha256": "f175ac79f2e33e35044a65a4596c858076da4479672e5a3a32d2eac77002e4a5",
+        "bytes": 3346,
+        "availability": "retained repository evidence",
+        "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-research-applicability-green-attempt2.log",
+        "copiedWithoutModification": true
+      }
+    },
+    "scope": "Shared global/cannon/bay applicability wording, Lab/Planner quotes, combat research and application parity. No numerical effect calibration changes."
+  },
+  "thirdLabReloadGuard": {
+    "status": "pass",
+    "cases": 13,
+    "passed": 13,
+    "failed": 0,
+    "skipped": 0,
+    "receipt": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/third-lab-wave-evidence-guards.txt",
+      "sha256": "dce4cf2e64b9a27cff754e5174f6e188eb5630801dac60920a58603f1726eb48",
+      "bytes": 1552,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-third-lab-guard-root.log",
+      "copiedWithoutModification": true
+    },
+    "sourceBindings": {
+      "scripts/last-stand-buildcraft-journey.mjs": "931a851521eac78503d739e94e807e1c59f7dc051fb1f5494c804235b5163e01",
+      "scripts/ci/lastStandWaveEvidence.test.mjs": "e2e8a46d59d953af1eef272e22c403d93baac3e098b65ad5389e9a1dfcad43a9"
+    },
+    "negativeControls": "Wallet, both fittings, completed ranks, active identity/track/rank/charged cost/duration/disappearance, queued project, next project identity and completion sequence changes all refuse.",
+    "origin": "Root independently ran all13 WaveEvidence checks; documentation author inspected the actual guard and assertions. Actual packaged replay separately passed21."
+  },
+  "gitEvidencePreservation": {
+    "status": "pass",
+    "attributes": {
+      "path": "campaign-unity/.gitattributes",
+      "sha256": "2fadca7bce0a6cec51da05e37744372548595975378a90b5c293cd89d4c337bb",
+      "bytes": 1903,
+      "availability": "retained repository evidence"
+    },
+    "history": [
+      {
+        "status": "fail",
+        "files": 55,
+        "changedByGit": 43,
+        "receipt": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/git-filter-red.json",
+          "sha256": "d88dc30aafea758350d7a70f7d03777e82a236a8b4c3ba6eff884b63d9821f99",
+          "bytes": 4176,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-git-evidence-red.json",
+          "copiedWithoutModification": true
+        }
+      },
+      {
+        "status": "fail",
+        "files": 55,
+        "changedByGit": 14,
+        "receipt": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/git-filter-parent-rule-failure.json",
+          "sha256": "c7629d9dfc61f83b9f95ef28fbd73cc0fe03f73d31f60a0d2533474f355e12ba",
+          "bytes": 1304,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-git-evidence-green.json",
+          "copiedWithoutModification": true
+        }
+      },
+      {
+        "status": "pass",
+        "files": 55,
+        "changedByGit": 0,
+        "receipt": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/git-filter-child-rule-pass.json",
+          "sha256": "367d58b5d40dd9535b1794ddbdbfc1bf850da0ea889b0539042d4658ed42a7fe",
+          "bytes": 65,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-git-evidence-green2.json",
+          "copiedWithoutModification": true
+        }
+      },
+      {
+        "status": "pass",
+        "files": 55,
+        "changedByGit": 0,
+        "receipt": {
+          "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/git-filter-root-final.json",
+          "sha256": "367d58b5d40dd9535b1794ddbdbfc1bf850da0ea889b0539042d4658ed42a7fe",
+          "bytes": 65,
+          "availability": "retained repository evidence",
+          "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-git-evidence-final.json",
+          "copiedWithoutModification": true
+        }
+      }
+    ],
+    "priorWhitespaceFindings": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/git-attributes-before-transcript-exceptions.json",
+      "sha256": "a15c4118da9a26ca74a6af82c4b826caa88d6f2e3739c3fd779804401e729678",
+      "bytes": 32974,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-git-attributes-independent-final.json",
+      "copiedWithoutModification": true
+    },
+    "independentFinalReview": {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/git-attributes-independent-final.json",
+      "sha256": "8eae99be22f1eeea6f1b21369a753f2faba28d80409e475c3c7f0eb3a9c4fc82",
+      "bytes": 31677,
+      "availability": "retained repository evidence",
+      "origin": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-git-attributes-independent-final2.json",
+      "copiedWithoutModification": true
+    },
+    "originalEvidenceFiles": 55,
+    "independentlyCheckedFilesBeforeReceipt": 62,
+    "rawByteChanges": 0,
+    "autocrlfModes": [
+      "false",
+      "true",
+      "input"
+    ],
+    "whitespaceFindings": 0,
+    "scope": "Only docs/last-stand-buildcraft/** has text normalization disabled. Existing CRLF is recognized while normal blank-at-eol,blank-at-eof,space-before-tab checks remain. Six exact immutable-transcript paths additionally exempt their recorded trailing spaces; report bytes are unchanged.",
+    "reviewPresentation": "Exactly five raw numerical JSON reports are linguist-generated; authored balance.md, validation.json and source/test code are not hidden.",
+    "limit": "Read-only filtering and no-index checks. Parent owns final staged-byte comparison and hosted checkout/CI; no staged or hosted result is inferred.",
+    "subsequentSignatureExcerpts": "After the captured Git audit, only the two new apk-signature transcript copies were changed into labeled excerpts. Original transcripts and captured audit hashes remain unchanged; new excerpt hashes and original transcript identities are bound here. The existing -text policy preserves their resulting bytes."
+  }
+}

@@ -113,8 +113,9 @@ namespace SingedTerra.LastStand
         static readonly LastStandEconomyDefinition legacy=new LastStandEconomyDefinition(LastStandUpgradeCatalog.LegacyEconomyVersion);
         static readonly LastStandEconomyDefinition previous=new LastStandEconomyDefinition(LastStandUpgradeCatalog.PreviousEconomyVersion);
         static readonly LastStandEconomyDefinition retained=new LastStandEconomyDefinition(LastStandUpgradeCatalog.RetainedEconomyVersion);
+        static readonly LastStandEconomyDefinition combatDepth=new LastStandEconomyDefinition(LastStandUpgradeCatalog.CombatDepthEconomyVersion);
         static readonly LastStandEconomyDefinition current=new LastStandEconomyDefinition(LastStandUpgradeCatalog.EconomyVersion);
-        public static IReadOnlyList<LastStandEconomyDefinition> All { get; } = Array.AsReadOnly(new[]{legacy,previous,retained,current});
+        public static IReadOnlyList<LastStandEconomyDefinition> All { get; } = Array.AsReadOnly(new[]{legacy,previous,retained,combatDepth,current});
         public static LastStandEconomyDefinition Get(string version)
         {
             foreach(var definition in All)if(version==definition.Version)return definition;

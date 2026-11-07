@@ -56,9 +56,9 @@ class FoundationBaselineTests(unittest.TestCase):
         cls.output.cleanup()
 
     def expected(self, kind):
-        # T-RULES intentionally assigns the next new run a new edition.
+        # T-COMPAT intentionally assigns the next new run the buildcraft edition.
         # All frozen numeric values and every retained-run row stay exact.
-        return [row.replace("research-farming-economy-v3", "combat-depth-economy-v4")
+        return [row.replace("research-farming-economy-v3", "buildcraft-economy-v5")
                 if row.startswith("redeploy|") else row for row in self.fixture[kind]]
 
     def test_refactor_preserves_frozen_model_and_save_fixtures(self):

@@ -48,7 +48,8 @@ function copyAdmissionInputs(checkout) {
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
     'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v5.json']) {
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json']) {
     mkdirSync(dirname(join(checkout, path)), { recursive: true });
     copyFileSync(join(root, path), join(checkout, path));
   }

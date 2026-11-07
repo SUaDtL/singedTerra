@@ -1,0 +1,6 @@
+$ node scripts/assets/verify-last-stand-source.mjs
+Last Stand source verified: 3669 available inputs; vendor inspected-present-bytes; retained local before/after pin; external toolchain bytes not inspected by this admission
+exit=0
+$ node scripts/assets/verify-last-stand.mjs
+Last Stand payload verified: 16 export assets from Web-20261107T072248Z-7c0959
+exit=0

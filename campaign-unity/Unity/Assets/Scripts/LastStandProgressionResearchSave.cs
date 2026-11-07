@@ -15,7 +15,7 @@ namespace SingedTerra.LastStand
             var s = state.Snapshot(); var ranks = Map(); var partials = Map(); var slots = new List<object>();
             foreach (var definition in LastStandResearchCatalog.Tracks)
             {
-                int index = (int)definition.Id;
+                int index = definition.StorageSlot;
                 ranks.Add(definition.Key, s.completedRanks[index]); partials.Add(definition.Key, ResearchProjectJson(s.partials[index]));
             }
             foreach (var slot in s.slots) slots.Add(Map("active", ResearchProjectJson(slot.active), "queued", ResearchProjectJson(slot.queued)));
@@ -23,12 +23,13 @@ namespace SingedTerra.LastStand
                 "lastObservedUtcMilliseconds", s.lastObservedUtcMilliseconds, "nextProjectIdentity", s.nextProjectIdentity,
                 "completionSequence", s.completionSequence, "completedRanks", ranks, "slots", slots, "partials", partials);
         }
-        static LastStandResearchProjectSnapshot ReadResearchProject(object value)
+        static LastStandResearchProjectSnapshot ReadResearchProject(object value,bool legacy=false)
         {
             if (value == null) return null;
             var p = LastStandSaveJson.Object(value);
             LastStandSaveJson.Fields(p, "identity", "track", "rank", "chargedCost", "durationMilliseconds", "earnedMilliseconds");
             if (!LastStandResearchCatalog.TryGet(Text(p, "track"), out var definition)) throw new FormatException("Unknown research track.");
+            if(legacy&&definition.StorageSlot>=LastStandResearchCatalog.LegacyTrackCount)throw new FormatException("Unknown legacy research track.");
             return new LastStandResearchProjectSnapshot { identity = ResearchLong(p, "identity"), track = definition.Id,
                 rank = Number(p, "rank"), chargedCost = ResearchLong(p, "chargedCost"),
                 durationMilliseconds = ResearchLong(p, "durationMilliseconds"), earnedMilliseconds = ResearchLong(p, "earnedMilliseconds") };
@@ -39,22 +40,26 @@ namespace SingedTerra.LastStand
             LastStandSaveJson.Fields(r, "version", "catalogVersion", "revision", "lastObservedUtcMilliseconds", "nextProjectIdentity",
                 "completionSequence", "completedRanks", "slots", "partials");
             var ranks = LastStandSaveJson.Object(r["completedRanks"]); var partials = LastStandSaveJson.Object(r["partials"]);
-            var keys = new List<string>(); foreach (var definition in LastStandResearchCatalog.Tracks) keys.Add(definition.Key);
+            string catalogVersion=Text(r,"catalogVersion");bool legacy=catalogVersion==LastStandResearchCatalog.LegacyVersion;
+            if(!legacy&&catalogVersion!=LastStandResearchCatalog.Version)throw new FormatException("Unknown research catalog.");
+            var keys = new List<string>(); foreach (var definition in LastStandResearchCatalog.Tracks)
+                if(!legacy||definition.StorageSlot<LastStandResearchCatalog.LegacyTrackCount)keys.Add(definition.Key);
             LastStandSaveJson.Fields(ranks, keys.ToArray()); LastStandSaveJson.Fields(partials, keys.ToArray());
             var slots = LastStandSaveJson.Array(r["slots"]);
-            if (slots.Count != LastStandResearchCatalog.SlotCount) throw new FormatException("Invalid research slot count.");
-            var result = new LastStandResearchSnapshot { version = Number(r, "version"), catalogVersion = Text(r, "catalogVersion"),
+            if (slots.Count != (legacy?LastStandResearchCatalog.LegacySlotCount:LastStandResearchCatalog.SlotCount)) throw new FormatException("Invalid research slot count.");
+            var result = new LastStandResearchSnapshot { version = Number(r, "version"), catalogVersion = LastStandResearchCatalog.Version,
                 revision = ResearchLong(r, "revision"), lastObservedUtcMilliseconds = ResearchLong(r, "lastObservedUtcMilliseconds"),
                 nextProjectIdentity = ResearchLong(r, "nextProjectIdentity"), completionSequence = ResearchLong(r, "completionSequence") };
             foreach (var definition in LastStandResearchCatalog.Tracks)
             {
-                int index = (int)definition.Id;
-                result.completedRanks[index] = Number(ranks, definition.Key); result.partials[index] = ReadResearchProject(partials[definition.Key]);
+                int index = definition.StorageSlot;
+                if(legacy&&index>=LastStandResearchCatalog.LegacyTrackCount)continue;
+                result.completedRanks[index] = Number(ranks, definition.Key); result.partials[index] = ReadResearchProject(partials[definition.Key],legacy);
             }
             for (int i = 0; i < slots.Count; i++)
             {
                 var slot = LastStandSaveJson.Object(slots[i]); LastStandSaveJson.Fields(slot, "active", "queued");
-                result.slots[i] = new LastStandResearchSlotSnapshot { active = ReadResearchProject(slot["active"]), queued = ReadResearchProject(slot["queued"]) };
+                result.slots[i] = new LastStandResearchSlotSnapshot { active = ReadResearchProject(slot["active"],legacy), queued = ReadResearchProject(slot["queued"],legacy) };
             }
             if (!LastStandResearchState.TryRestore(result, out var state)) throw new FormatException("Invalid research state.");
             return state;

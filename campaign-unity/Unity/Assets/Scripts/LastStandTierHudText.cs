@@ -10,8 +10,9 @@ namespace SingedTerra.LastStand
         public static string Seconds(int ticks) => (ticks / (float)TicksPerSecond).ToString("F1", CultureInfo.InvariantCulture);
         public static string Goal(int tier) => "Tier " + tier + " / Clear every enemy to advance";
         public static string WaveBest(int wave) => wave==0 ? "Best: no completed wave" : "Best: wave "+wave;
-        public static string WaveReceipt(int wave,int salvage,bool firstClear,string unlockedFitting,int unlockedTier)
-            =>LastStandMilestonePresentation.ConfirmedReceipt(wave,salvage,firstClear,unlockedFitting,unlockedTier);
+        public static string WaveReceipt(int wave,int salvage,bool firstClear,string unlockedFitting,int unlockedTier,
+            int equipmentBays=0,int researchLabs=0,bool combatResearch=false)
+            =>LastStandMilestonePresentation.ConfirmedReceipt(wave,salvage,firstClear,unlockedFitting,unlockedTier,equipmentBays,researchLabs,combatResearch);
         public static string NextMilestone(int tier,int wave)
             =>LastStandMilestonePresentation.NextGoal(tier,wave);
         public static string WaveProgress(int tier,int wave,int remaining)=>"T"+tier+" / WAVE "+wave+" / "+remaining+" LEFT";

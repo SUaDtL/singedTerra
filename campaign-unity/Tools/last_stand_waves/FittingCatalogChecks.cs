@@ -8,8 +8,9 @@ public static class FittingCatalogChecks
     public static void Main(string[] args)
     {
         var options=LastStandFittingCatalog.Options;
-        Need(options.Count==5,"five explicitly named fitting choices exist");
-        Need(options.Select(x=>x.Id).SequenceEqual(new[]{"repair","launcher","scattergun","mortar","railgun"}),"stable fitting order and appended armament IDs");
+        Need(options.Count==7,"seven explicitly named fitting choices exist");
+        Need(options.Select(x=>x.Id).SequenceEqual(new[]{"repair","launcher","scattergun","mortar","railgun","arc","shield"}),"stable fitting order and appended armament IDs");
+        Need(LastStandFittingCatalog.CombatDepth.Select(x=>x.Id).SequenceEqual(new[]{"repair","launcher","scattergun","mortar","railgun"}),"retained combat-depth roster stays fixed");
         Need(options[0].Unlocked && options[1].Unlocked && options.Skip(2).All(x=>!x.Unlocked),"existing fittings stay unlocked; milestone fittings start locked");
         var type=typeof(LastStandFittingCatalog);
         var id=type.GetMethod("Id"); var parse=type.GetMethod("Parse"); var available=type.GetMethod("OptionsFor");

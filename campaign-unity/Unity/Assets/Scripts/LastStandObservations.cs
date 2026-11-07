@@ -45,7 +45,14 @@ namespace SingedTerra.LastStand
                 masterVolume = loop.Preferences.Current.MasterVolume, effectsVolume = loop.Preferences.Current.EffectsVolume,
                 musicVolume = loop.Preferences.Current.MusicVolume,
                 appearance=Appearance(loop.AppearanceSaved),appearanceDraft=Appearance(loop.AppearanceDraft),
-                appearanceStatus=loop.AppearanceStatus,appearanceCanApply=loop.AppearanceCanApply }));
+                appearanceStatus=loop.AppearanceStatus,appearanceCanApply=loop.AppearanceCanApply,
+                armoryDraftPrimaryId=loop.ArmoryDraft.PrimaryId,armoryDraftSecondaryId=loop.ArmoryDraft.SecondaryId??"",
+                armoryCanApply=loop.ArmoryCanApply,armoryStatus=loop.ArmoryStatus,armoryPresetSlot=loop.ArmoryPresetSlot,
+                selectedPrimaryId=loop.Progression.SelectedLoadout.PrimaryId,selectedSecondaryId=loop.Progression.SelectedLoadout.SecondaryId??"",
+                activeSecondaryId=loop.Session.Model?.Loadout.SecondaryId??loop.Progression.Checkpoint?.Loadout.SecondaryId??"",
+                arcShots=loop.Session.Model?.ArcShots??0,arcDamage=loop.Session.Model?.CurrentArcDamage??LastStandUpgradeCatalog.BaseArcDamage,
+                shield=loop.Session.Model?.Shield??0,shieldCapacity=loop.Session.Model?.CurrentShieldCapacity??0,
+                equipmentBayCount=loop.Progression.EquipmentBayCount,researchLabCount=loop.Progression.UnlockedResearchLabCount }));
         }
         static AppearanceState Appearance(LastStandTankAppearance value)=>new AppearanceState{
             treads=value.Treads,hull=value.Hull,turret=value.Turret,barrel=value.Barrel,paint=value.Paint};
@@ -76,6 +83,9 @@ namespace SingedTerra.LastStand
             public AppearanceState appearance,appearanceDraft;
             public string appearanceStatus;
             public bool appearanceCanApply;
+            public string armoryDraftPrimaryId,armoryDraftSecondaryId,armoryStatus,selectedPrimaryId,selectedSecondaryId,activeSecondaryId;
+            public bool armoryCanApply;
+            public int armoryPresetSlot,arcShots,arcDamage,shield,shieldCapacity,equipmentBayCount,researchLabCount;
         }
         [Serializable] sealed class HitState { public int tick, cannonDamage, firstFoeHull, kills; }
     }

@@ -34,8 +34,15 @@ namespace SingedTerra.LastStand
         public string MilestoneId { get; }
         public string UnlockedFitting { get; }
         public int UnlockedTier { get; }
-        internal LastStandWaveReceipt(int wave,int salvage,string milestone,string fitting,int tier)
-        { Wave=wave; Salvage=salvage; MilestoneId=milestone; UnlockedFitting=fitting; UnlockedTier=tier; }
+        public int UnlockedEquipmentBays { get; }
+        public int UnlockedResearchLabs { get; }
+        public bool UnlockedCombatResearch { get; }
+        internal LastStandWaveReceipt(int wave,int salvage,string milestone,string fitting,int tier,
+            int equipmentBays=0,int researchLabs=0,bool combatResearch=false)
+        {
+            Wave=wave; Salvage=salvage; MilestoneId=milestone; UnlockedFitting=fitting; UnlockedTier=tier;
+            UnlockedEquipmentBays=equipmentBays;UnlockedResearchLabs=researchLabs;UnlockedCombatResearch=combatResearch;
+        }
     }
 
     // One local-only transaction owns both banked progression and the latest
@@ -59,6 +66,8 @@ namespace SingedTerra.LastStand
             public int Wallet, NextRunId, FinalizedRunId, SelectedTier=1;
             public int[] Levels=new int[LastStandUpgradeCatalog.Tracks.Count];
             public string SelectedFitting="repair";
+            public string SecondaryFitting;
+            public LastStandLoadoutPreset[] Presets=new LastStandLoadoutPreset[LastStandLoadoutPreset.MaximumPresets];
             public PendingDefeat Pending;
             public LastStandRunCheckpoint Checkpoint;
             public Dictionary<string,TierRecord> Tiers=new Dictionary<string,TierRecord>(StringComparer.Ordinal);
@@ -76,6 +85,7 @@ namespace SingedTerra.LastStand
                 foreach(var pair in Tiers)copy.Tiers.Add(pair.Key,pair.Value.Copy());
                 copy.FirstClears=new HashSet<string>(FirstClears,StringComparer.Ordinal);
                 copy.Fittings=new HashSet<string>(Fittings,StringComparer.Ordinal);
+                copy.Presets=(LastStandLoadoutPreset[])Presets.Clone();
                 copy.Research=Research?.Clone();
                 copy.History=History?.Copy();
                 return copy;
@@ -147,13 +157,9 @@ namespace SingedTerra.LastStand
         static bool ReconcileUnlocks(Record row)
         {
             bool changed=false;
-            foreach(var tier in LastStandTierCatalog.All)
-                if(tier.Playable&&tier.RequiredTier!=0&&!row.Tiers[tier.Key].Unlocked&&
-                    row.Tiers[LastStandTierCatalog.Get(tier.RequiredTier).Key].BestWave>=tier.RequiredWave)
-                {row.Tiers[tier.Key].Unlocked=true;changed=true;}
-            foreach(var fitting in LastStandFittingCatalog.Definitions)
-                if(fitting.Playable&&!fitting.InitiallyUnlocked&&row.Tiers[LastStandTierCatalog.Get(fitting.UnlockTier).Key].BestWave>=fitting.UnlockWave)
-                    changed=row.Fittings.Add(fitting.Id)||changed;
+            var earned=Entitlements(row);
+            foreach(int id in earned.Tiers){var tier=row.Tiers[LastStandTierCatalog.Get(id).Key];if(!tier.Unlocked){tier.Unlocked=true;changed=true;}}
+            foreach(string id in earned.Fittings)changed=row.Fittings.Add(id)||changed;
             return changed;
         }
         bool Reload()
@@ -197,7 +203,7 @@ namespace SingedTerra.LastStand
         {
             if(!Ready || HasCheckpoint || committed.Pending!=null || !IsFittingUnlocked(fitting)||!LastStandRunEdition.Current.Supports(LastStandFittingCatalog.Parse(fitting)))return false;
             if(fitting==SelectedFitting)return true;
-            var next=committed.Copy();next.SelectedFitting=fitting;return Commit(next,null);
+            var next=committed.Copy();next.SelectedFitting=fitting;next.SecondaryFitting=null;return Commit(next,null);
         }
         public bool TryDeploy()
         {
@@ -205,8 +211,8 @@ namespace SingedTerra.LastStand
                 !IsTierUnlocked(SelectedTier) || !IsFittingUnlocked(SelectedFitting)||!LastStandTierCatalog.Get(SelectedTier).Playable||
                 !LastStandRunEdition.Current.Supports(LastStandFittingCatalog.Parse(SelectedFitting)))return false;
             var next=committed.Copy();
-            next.Checkpoint=LastStandRunCheckpoint.Start(next.NextRunId,next.SelectedTier,next.SelectedFitting,next.Levels);
-            next.History.Begin(next.NextRunId,next.SelectedTier,next.SelectedFitting,next.Checkpoint.Shop.EconomyVersion,ResearchContext(next));
+            next.Checkpoint=LastStandRunCheckpoint.Start(next.NextRunId,next.SelectedTier,SelectedLoadout,next.Levels,LastStandRunEdition.Current,CaptureCombatResearch());
+            next.History.Begin(next.NextRunId,next.SelectedTier,next.Checkpoint.Loadout.ToString(),next.Checkpoint.Shop.EconomyVersion,ResearchContext(next));
             next.NextRunId++;
             return Commit(next,()=>LastReceipt=null);
         }
@@ -220,7 +226,7 @@ namespace SingedTerra.LastStand
                 model.Tick<=Checkpoint.Encounter.Tick || model.Kills<Checkpoint.Encounter.Kills)return false;
             // Both snapshots validate their own conservation and boundary invariants.
             var boundary=new LastStandRunCheckpoint(shop.RunId,model.CaptureCheckpoint(),shop.CaptureCheckpoint());
-            if(boundary.FittingId!=Checkpoint.FittingId)return false;
+            if(!boundary.Loadout.Equals(Checkpoint.Loadout)||!boundary.CombatResearch.Equals(Checkpoint.CombatResearch))return false;
             var next=committed.Copy();
             var tier=boundary.Edition.Tier(boundary.Tier);
             var reward=LastStandRewardCatalog.At(tier,boundary.CompletedWave,boundary.Edition);
@@ -241,23 +247,34 @@ namespace SingedTerra.LastStand
             if(first)
             {
                 next.FirstClears.Add(reward.Milestone.Id);
-                if(reward.Milestone.UnlockTierId!=0)
-                {
-                    unlockedTier=reward.Milestone.UnlockTierId;
-                    next.Tiers[LastStandTierCatalog.Get(unlockedTier).Key].Unlocked=true;
-                }
-                if(reward.Milestone.UnlockFittingId!=null)
-                {
-                    unlockedFitting=reward.Milestone.UnlockFittingId;
-                    next.Fittings.Add(unlockedFitting);
+                foreach(var grant in reward.Milestone.Rewards){
+                    if(grant.Kind==LastStandRewardKind.Tier){
+                        if(unlockedTier==0)unlockedTier=grant.Amount;
+                        next.Tiers[LastStandTierCatalog.Get(grant.Amount).Key].Unlocked=true;
+                    }
+                    if(grant.Kind==LastStandRewardKind.Fitting){
+                        if(unlockedFitting==null)unlockedFitting=grant.Id;
+                        next.Fittings.Add(grant.Id);
+                    }
                 }
             }
             if(boundary.Encounter.Hull==0)
             { next.History.Finish("defeat",ResearchContext(next,boundary.Shop));next.FinalizedRunId=boundary.RunId;next.Checkpoint=null; }
             else next.Checkpoint=boundary;
             ReconcileUnlocks(next);
+            // Retained runs keep their original reward tables, while permanent
+            // campaign entitlements reconcile against the newly earned best wave.
+            // Include those additions in the same durable receipt.
+            if(unlockedFitting==null)foreach(var fitting in LastStandFittingCatalog.Definitions)
+                if(next.Fittings.Contains(fitting.Id)&&!committed.Fittings.Contains(fitting.Id)){unlockedFitting=fitting.Id;break;}
+            if(unlockedTier==0)foreach(var definition in LastStandTierCatalog.All)
+                if(next.Tiers[definition.Key].Unlocked&&!committed.Tiers[definition.Key].Unlocked){unlockedTier=definition.Id;break;}
+            var beforeEntitlements=Entitlements(committed);var afterEntitlements=Entitlements(next);
             var receipt=new LastStandWaveReceipt(boundary.CompletedWave,(int)amount,
-                first?reward.Milestone.Id:null,unlockedFitting,unlockedTier);
+                first?reward.Milestone.Id:null,unlockedFitting,unlockedTier,
+                afterEntitlements.EquipmentBays>beforeEntitlements.EquipmentBays?afterEntitlements.EquipmentBays:0,
+                afterEntitlements.ResearchLabs>beforeEntitlements.ResearchLabs?afterEntitlements.ResearchLabs:0,
+                afterEntitlements.CombatResearch&&!beforeEntitlements.CombatResearch);
             return Commit(next,()=>LastReceipt=receipt);
         }
         public bool TryFinalizeRun(LastStandRunHistory history=null,string reason="defeat",LastStandShopState shop=null)
@@ -291,8 +308,9 @@ namespace SingedTerra.LastStand
             // Existing workshop tracks retain their dormant investment policy.
             // New armaments require the owned fitting selected for this purchase.
             var definition=LastStandUpgradeCatalog.Get(id);
-            if(definition.Applicability!=LastStandUpgradeApplicability.Mortar&&definition.Applicability!=LastStandUpgradeApplicability.Railgun)return true;
-            return IsFittingUnlocked(SelectedFitting)&&definition.IsEligible(LastStandFittingCatalog.Parse(SelectedFitting));
+            if(definition.Applicability!=LastStandUpgradeApplicability.Mortar&&definition.Applicability!=LastStandUpgradeApplicability.Railgun&&
+                definition.Applicability!=LastStandUpgradeApplicability.Arc&&definition.Applicability!=LastStandUpgradeApplicability.Shield)return true;
+            return SelectedLoadout.IsAvailable(EquipmentBayCount,IsFittingUnlocked)&&definition.IsEligible(SelectedLoadout);
         }
         public bool TryPurchasePermanent(LastStandUpgradeTrackId id,LastStandBulkQuantity quantity,long expectedRevision)
         {

@@ -198,14 +198,17 @@ function passiveBrowserProbe(){
     audioContexts:{created:contextsCreated,dropped:contextsDropped,retained:contexts.map(context=>({state:context.state,currentTime:context.currentTime,sampleRate:context.sampleRate}))}};}};
 }
 
+import {RESEARCH_FIXTURE_SOURCES} from './last-stand-research-journey.mjs';
 const root=resolve(import.meta.dirname,'..'),saveKey='singedTerra.lastStand.prototype.v1';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const inputPaths=['scripts/last-stand-wave-endurance.mjs','scripts/last-stand-wave-milestones.mjs',
+  'scripts/last-stand-research-journey.mjs','e2e/helpers/lastStandBrowserActor.mjs',
   'e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
   'e2e/helpers/lastStandWaveOracle.mjs','campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
   'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs'];
 const inputHashes=()=>Object.fromEntries(inputPaths.map(path=>[path,sha(readFileSync(resolve(root,path)))]));
 const compactState=state=>Object.fromEntries(['phase','saveState','runId','activeTier','wave','completedWave','checkpointWave','hasCheckpoint',
@@ -215,8 +218,8 @@ const compactState=state=>Object.fromEntries(['phase','saveState','runId','activ
 // envelope as the production serializer. Retained runs preserve their complete
 // combat/content/economy edition inside that current envelope, not an old schema.
 export function assertCurrentEnduranceSave(saved){
-  assert.equal(saved?.version,7,'Current endurance requires save version 7');
-  if(saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint);
+  assert.ok([7,8].includes(saved?.version),'Endurance requires explicit save version 7 or 8');
+  if(saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint,saved.version);
   return saved;
 }
 
@@ -236,6 +239,11 @@ export function admitResearchFixtures(fixtures,manifestPath,sourceRoot=root){
     const location=resolve(directory,fixture.savePath);assert.equal(realpathSync(location),location);
     assert.equal(sha(readFileSync(location)),fixture.saveSha256,'Fixture bytes changed');
     const save=assertCurrentEnduranceSave(JSON.parse(readFileSync(location)));
+    if(save.version===8){
+      assert.deepEqual(Object.keys(fixtures.sourceSha256).sort(),[...RESEARCH_FIXTURE_SOURCES].sort(),'Exact current production and generator source closure required');
+      assert.equal(save.research.catalogVersion,'research-v2');assert.equal(save.research.slots.length,3);
+      assert.deepEqual(Object.keys(save.research.completedRanks).sort(),['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics','armorPiercing','areaControl','fieldEngineering'].sort());
+    }
     if(fixture.id==='mature-5x'){
       assert.equal(fixture.requestedSpeed,5);assert.equal(save.research.completedRanks.gameSpeed,8,'Five times speed must be earned in fixture');
       assert.equal(save.checkpoint,null,'Mature fixture deploys through rendered input');

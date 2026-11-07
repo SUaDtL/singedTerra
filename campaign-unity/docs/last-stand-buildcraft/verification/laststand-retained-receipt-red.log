@@ -1,0 +1,30 @@
+test_campaign_expands_only_the_buildcraft_edition (test_foundation.BuildcraftFoundationTests.test_campaign_expands_only_the_buildcraft_edition) ... ok
+test_four_retained_checkpoint_payloads_survive_profile_migration (test_foundation.BuildcraftFoundationTests.test_four_retained_checkpoint_payloads_survive_profile_migration) ... ok
+test_four_retained_editions_keep_combat_prices_income_and_catalogs (test_foundation.BuildcraftFoundationTests.test_four_retained_editions_keep_combat_prices_income_and_catalogs) ... ok
+test_new_runs_have_a_distinct_buildcraft_edition (test_foundation.BuildcraftFoundationTests.test_new_runs_have_a_distinct_buildcraft_edition) ... ok
+test_preset_apply_is_atomic_and_only_affects_future_deployment (test_foundation.BuildcraftFoundationTests.test_preset_apply_is_atomic_and_only_affects_future_deployment) ... ok
+test_profile_schema_has_bounded_loadout_and_preset_fields (test_foundation.BuildcraftFoundationTests.test_profile_schema_has_bounded_loadout_and_preset_fields) ... ok
+test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks (test_foundation.BuildcraftFoundationTests.test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks) ... FAIL
+test_retained_run_clear_and_migration_reconcile_without_duplicate_currency (test_foundation.BuildcraftFoundationTests.test_retained_run_clear_and_migration_reconcile_without_duplicate_currency) ... ok
+test_two_bay_loadout_validates_and_resumes_both_fittings (test_foundation.BuildcraftFoundationTests.test_two_bay_loadout_validates_and_resumes_both_fittings) ... ok
+test_typed_bundles_grant_shared_permanent_entitlements (test_foundation.BuildcraftFoundationTests.test_typed_bundles_grant_shared_permanent_entitlements) ... ok
+test_unearned_preset_is_rejected_without_overwriting_save (test_foundation.BuildcraftFoundationTests.test_unearned_preset_is_rejected_without_overwriting_save) ... ok
+
+======================================================================
+FAIL: test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks (test_foundation.BuildcraftFoundationTests.test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_buildcraft\test_foundation.py", line 68, in test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks
+    self.case("retained-receipt")
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_buildcraft\test_foundation.py", line 34, in case
+    self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : System.Exception: retained receipt announces reconciled fitting beside old tier
+  at BuildcraftChecks.Main (System.String[] args) [0x0116c] in <7e55c19d35be4efaa1c8d2729f2c6540>:0 
+
+
+----------------------------------------------------------------------
+Ran 11 tests in 5.214s
+
+FAILED (failures=1)

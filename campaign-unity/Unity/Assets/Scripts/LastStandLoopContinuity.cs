@@ -160,7 +160,7 @@ namespace SingedTerra.LastStand
             Session.ReturnToInspection();
             Phase=Progression.PendingDefeat!=null?"result":"garage";Confirmation="";MenuPage="save";
             ApplyTierEnvironment(Progression.Checkpoint?.Tier??Progression.SelectedTier);
-            art.TrySelectFitting(Progression.Checkpoint?.FittingId??Progression.SelectedFitting);
+            art.TrySelectLoadout(Progression.Checkpoint?.Loadout??Progression.SelectedLoadout);
             Guidance.Dismiss();InitializeResearch();Session.RestoreProfileSpeed(Progression.MaximumGameSpeed,Preferences.Current.LastPositiveSpeed);
             BackupStatus=Progression.SaveState=="ready"
                 ? (Progression.HasCheckpoint
@@ -175,7 +175,7 @@ namespace SingedTerra.LastStand
             FinalizeShop(LastStandShopPurchaseLifecycle.Exited,Session.Model);
             runShop=null;liveHistory=null;FinalAccounting=null;
             Session.ReturnToInspection();Phase="garage";MenuPage="save";Confirmation="";
-            ApplyTierEnvironment(Progression.Checkpoint.Tier);art.TrySelectFitting(Progression.Checkpoint.FittingId);
+            ApplyTierEnvironment(Progression.Checkpoint.Tier);art.TrySelectLoadout(Progression.Checkpoint.Loadout);
             Guidance.Dismiss();Notice="Checkpoint kept. Resume returns to the last completed wave, paused.";
             BackupStatus=Notice;
             Refresh("checkpoint-garage");

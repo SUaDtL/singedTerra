@@ -35,6 +35,7 @@ namespace SingedTerra.LastStand
         public readonly LastStandRunHistoryHud History;
         public readonly LastStandPlannerHud Planner;
         public readonly LastStandAppearanceHud Appearance;
+        public readonly LastStandArmoryHud Armory;
         public bool HidesBackground=>activePage?.HidesBackground==true;
         public readonly Button Menu;
         public readonly Button[] Buttons;
@@ -51,26 +52,29 @@ namespace SingedTerra.LastStand
             History=new LastStandRunHistoryHud(root,font,loop.CloseMenu,loop.RefreshControls,metal,surface);
             Planner=new LastStandPlannerHud(loop,root,font,openWorkshop,canOpenWorkshop,metal,surface);
             Appearance=new LastStandAppearanceHud(loop,root,font,metal,surface);
+            Armory=new LastStandArmoryHud(loop,root,font,metal,surface);
             settingsPage=Register(null,new Page(Settings.Buttons,()=>Settings.InitialFocus,Settings.Refresh,Settings.Layout,Settings.Reveal,Settings.ScrollKeyboard));
             Register("research",new Page(Research.Buttons,()=>Research.InitialFocus,
-                visible=>Research.Refresh(visible,loop.ResearchSnapshot,loop.Progression.GetBestWave(1),loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus),
+                visible=>Research.Refresh(visible,loop.ResearchSnapshot,loop.Progression.GetBestWave(1),loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus,loop.Progression.GetBestWave(2),loop.Progression.SelectedLoadout),
                 Research.Layout,Research.Reveal,Research.ScrollKeyboard));
             Register("history",new Page(History.Buttons,()=>History.InitialFocus,
                 visible=>History.Refresh(visible,loop.RunHistorySnapshot),History.Layout,History.Reveal,History.ScrollKeyboard));
             Register("planner",new Page(Planner.Buttons,()=>Planner.InitialFocus,Planner.Refresh,Planner.Layout,Planner.Reveal,Planner.ScrollKeyboard));
             Register("appearance",new Page(Appearance.Buttons,()=>Appearance.InitialFocus,Appearance.Refresh,Appearance.Layout,Appearance.Reveal,Appearance.ScrollKeyboard,true));
+            Register("armory",new Page(Armory.Buttons,()=>Armory.InitialFocus,Armory.Refresh,Armory.Layout,Armory.Reveal,Armory.ScrollKeyboard,true));
             var buttons=new List<Button>();foreach(var page in orderedPages)buttons.AddRange(page.Buttons);Buttons=buttons.ToArray();
         }
         Page Register(string key,Page page)
         {if(key!=null)pages.Add(key,page);orderedPages.Add(page);return page;}
         public void BindKeyboard(LastStandHudKeyboard keyboard)
-        {Research.FocusRequested=keyboard.Focus;keyboard.Escape=()=>{if(loop.MenuOpen)loop.CloseMenu();else loop.OpenMenu();};keyboard.ScrollContent=Scroll;}
-        public void BeforeRefresh(Button researchEntry,Button waveInfo)
+        {Research.FocusRequested=keyboard.Focus;keyboard.Escape=()=>{if(loop.MenuOpen)loop.CloseMenu();else loop.OpenMenu();};keyboard.ScrollContent=Scroll;
+         keyboard.RevealInput=input=>{if(input==Armory.NameInput)Armory.RevealName();};}
+        public void BeforeRefresh(Button researchEntry,Button waveInfo,Button armoryEntry)
         {
             changed=wasOpen!=loop.MenuOpen||wasPage!=loop.MenuPage;
             if(!wasOpen&&loop.MenuOpen)
             {var selected=EventSystem.current?EventSystem.current.currentSelectedGameObject:null;
-             returnFocus=selected==researchEntry.gameObject?researchEntry:selected==waveInfo.gameObject?waveInfo:Menu;}
+             returnFocus=selected==researchEntry.gameObject?researchEntry:selected==waveInfo.gameObject?waveInfo:selected==armoryEntry.gameObject?armoryEntry:Menu;}
         }
         public void Refresh(LastStandHudKeyboard keyboard,Button[] background)
         {
@@ -79,10 +83,10 @@ namespace SingedTerra.LastStand
             keyboard.TrapFocus=loop.MenuOpen;
             if(loop.MenuOpen)foreach(var button in background)button.interactable=false;
         }
-        public void AfterRefresh(LastStandHudKeyboard keyboard,Button tierNext,Button fittingNext)
+        public void AfterRefresh(LastStandHudKeyboard keyboard,Button tierNext,Button armoryEntry)
         {
             if(changed)keyboard.Focus(activePage!=null?activePage.InitialFocus():
-                wasPage=="tier"?tierNext:wasPage=="fitting"?fittingNext:returnFocus??Menu);
+                wasPage=="tier"?tierNext:wasPage=="fitting"?armoryEntry:returnFocus??Menu);
             wasOpen=loop.MenuOpen;wasPage=loop.MenuPage;
         }
         public void Layout(float w,float h,float sx,float sy)

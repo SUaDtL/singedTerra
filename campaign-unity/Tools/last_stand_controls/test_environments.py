@@ -113,7 +113,7 @@ static class EnvironmentSourceChecks {
   public void Dispose()=>Invoke(Review,"OnDestroy");
  }
  static void Catalog(){
-  Need(LastStandEnvironmentCatalog.All.Count==4,"four authored definitions");
+  Need(LastStandEnvironmentCatalog.All.Count==6,"six authored definitions");
   Need(LastStandEnvironmentCatalog.Get("sunlit-ash").Id=="sunlit-ash","stable identity");
   Need(LastStandEnvironmentCatalog.Get("iron-perimeter").Name=="Iron Perimeter","authored name");
   Need(LastStandEnvironmentCatalog.Get("sunlit-ash").SunIntensity==1.65f,"preserve first treatment light");
@@ -121,6 +121,9 @@ static class EnvironmentSourceChecks {
   var cinder=LastStandEnvironmentCatalog.Get("cinder-basin");var foundry=LastStandEnvironmentCatalog.Get("storm-foundry");
   Need(cinder.Name=="Cinder Basin"&&foundry.Name=="Storm Foundry"&&cinder.TreatmentIndex==2&&foundry.TreatmentIndex==3,"stable campaign identities");
   Need(cinder.SunColor!=foundry.SunColor&&cinder.AmbientSky!=foundry.AmbientSky&&cinder.CameraPitch!=foundry.CameraPitch,"distinct campaign light and framing");
+  var glass=LastStandEnvironmentCatalog.Get("glass-wastes");var frost=LastStandEnvironmentCatalog.Get("frostline-relay");
+  Need(glass.TreatmentIndex==4&&frost.TreatmentIndex==5&&glass.Name=="Glass Wastes"&&frost.Name=="Frostline Relay","new tiers append stable environment identities");
+  Need(glass.SunColor!=frost.SunColor&&glass.AmbientSky!=frost.AmbientSky,"new environments have distinct treatments");
   LastStandEnvironmentDefinition found;
   foreach(var invalid in new[]{null,"","SUNLIT-ASH","tier-18"})Need(!LastStandEnvironmentCatalog.TryGet(invalid,out found)&&found==null,"exact known identities only");
   bool rejected=false;try{LastStandEnvironmentCatalog.Get("unknown");}catch(ArgumentOutOfRangeException){rejected=true;}

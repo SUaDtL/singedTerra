@@ -1,0 +1,191 @@
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_buildcraft", "-p", "test_foundation.py", "-v"]
+test_campaign_expands_only_the_buildcraft_edition (test_foundation.BuildcraftFoundationTests.test_campaign_expands_only_the_buildcraft_edition) ... ok
+test_four_retained_checkpoint_payloads_survive_profile_migration (test_foundation.BuildcraftFoundationTests.test_four_retained_checkpoint_payloads_survive_profile_migration) ... ok
+test_four_retained_editions_keep_combat_prices_income_and_catalogs (test_foundation.BuildcraftFoundationTests.test_four_retained_editions_keep_combat_prices_income_and_catalogs) ... ok
+test_new_runs_have_a_distinct_buildcraft_edition (test_foundation.BuildcraftFoundationTests.test_new_runs_have_a_distinct_buildcraft_edition) ... ok
+test_preset_apply_is_atomic_and_only_affects_future_deployment (test_foundation.BuildcraftFoundationTests.test_preset_apply_is_atomic_and_only_affects_future_deployment) ... ok
+test_profile_schema_has_bounded_loadout_and_preset_fields (test_foundation.BuildcraftFoundationTests.test_profile_schema_has_bounded_loadout_and_preset_fields) ... ok
+test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks (test_foundation.BuildcraftFoundationTests.test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks) ... ok
+test_retained_run_clear_and_migration_reconcile_without_duplicate_currency (test_foundation.BuildcraftFoundationTests.test_retained_run_clear_and_migration_reconcile_without_duplicate_currency) ... ok
+test_two_bay_loadout_validates_and_resumes_both_fittings (test_foundation.BuildcraftFoundationTests.test_two_bay_loadout_validates_and_resumes_both_fittings) ... ok
+test_typed_bundles_grant_shared_permanent_entitlements (test_foundation.BuildcraftFoundationTests.test_typed_bundles_grant_shared_permanent_entitlements) ... ok
+test_unearned_preset_is_rejected_without_overwriting_save (test_foundation.BuildcraftFoundationTests.test_unearned_preset_is_rejected_without_overwriting_save) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 5.813s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_buildcraft", "-p", "test_combat.py", "-v"]
+test_all_seven_singles_and_twenty_one_pairs_clear_restore_and_keep_common_effects_once (test_combat.BuildcraftCombatTests.test_all_seven_singles_and_twenty_one_pairs_clear_restore_and_keep_common_effects_once) ... ok
+test_arc_has_unique_bounded_falloff_targets_and_both_bays_tick (test_combat.BuildcraftCombatTests.test_arc_has_unique_bounded_falloff_targets_and_both_bays_tick) ... ok
+test_combat_contracts_reject_repeat_chain_early_recharge_and_single_bay_faults (test_combat.BuildcraftCombatTests.test_combat_contracts_reject_repeat_chain_early_recharge_and_single_bay_faults) ... ok
+test_combat_research_projects_shared_bounded_effects_once (test_combat.BuildcraftCombatTests.test_combat_research_projects_shared_bounded_effects_once) ... ok
+test_paid_shield_capacity_delta_and_recharge_ledger_survive_restore (test_combat.BuildcraftCombatTests.test_paid_shield_capacity_delta_and_recharge_ledger_survive_restore) ... ok
+test_pause_and_five_times_speed_preserve_shield_chain_and_telegraph_outcomes (test_combat.BuildcraftCombatTests.test_pause_and_five_times_speed_preserve_shield_chain_and_telegraph_outcomes) ... ok
+test_shield_absorbs_recharges_after_quiet_period_and_cannot_heal_without_bound (test_combat.BuildcraftCombatTests.test_shield_absorbs_recharges_after_quiet_period_and_cannot_heal_without_bound) ... ok
+test_support_is_finite_and_commanders_preserve_clear_and_telegraph_rules (test_combat.BuildcraftCombatTests.test_support_is_finite_and_commanders_preserve_clear_and_telegraph_rules) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 3.625s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_buildcraft", "-p", "test_balance.py", "-v"]
+test_fresh_earned_measurement_keeps_unavailable_pairs_and_currency_truthful (test_balance.BuildcraftBalanceTests.test_fresh_earned_measurement_keeps_unavailable_pairs_and_currency_truthful) ... ok
+test_report_rejects_gifted_currency_omitted_pairs_and_false_frontier (test_balance.BuildcraftBalanceTests.test_report_rejects_gifted_currency_omitted_pairs_and_false_frontier) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.220s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_buildcraft", "-p", "test_sensitivity.py", "-v"]
+test_catalog_shape_change_is_rejected_before_counterfactual_compilation (test_sensitivity.BuildcraftSensitivityTests.test_catalog_shape_change_is_rejected_before_counterfactual_compilation) ... ok
+test_disposable_parameter_changes_affect_only_current_prices_and_weapon_damage (test_sensitivity.BuildcraftSensitivityTests.test_disposable_parameter_changes_affect_only_current_prices_and_weapon_damage) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 2.329s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_combat_depth", "-p", "test_combat_balance.py", "-v"]
+SOURCE_BINDING {"Tools/last_stand_combat_depth/CombatBalanceChecks.cs": "47b9697ab711db98a32225d2c40d2d4b1c410176e7f1fb1d4c43064c74bad3cb", "Tools/last_stand_combat_depth/CombatBalanceMeasurements.cs": "b1cfd145f96986de141c0372d34deec3229fc92b8fcac2288570d0ae249ac97c", "Unity/Assets/Scripts/Application/LastStandResearchCoordinator.cs": "9e33d4351f7651539d1ef12200a57f09ff7041269958b11787c5d49d04890afe", "Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948", "Unity/Assets/Scripts/Content/LastStandLoadout.cs": "5217caab802e9d64408ea89047d0a40fa4a377a20c15796371840409b19c086a", "Unity/Assets/Scripts/Content/LastStandResearchDefinitions.cs": "890f1b208f256ab87a535e0164741e4dc47067f61ecad3d5d14d8ec0dbd4afdf", "Unity/Assets/Scripts/Content/LastStandRunEdition.cs": "b04100878240267162e73c2d6858ab420f393eea9bd48a379909fc0d8e9d1bbf", "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6", "Unity/Assets/Scripts/EncounterBuildcraft.cs": "0e816488dbc36785aa657053d5a6c47e227ef63b4816a0b86f0f81114d912a5d", "Unity/Assets/Scripts/EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d", "Unity/Assets/Scripts/EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98", "Unity/Assets/Scripts/EncounterModel.cs": "0f223e18de199afcdd421d8524e57a7126eb8b7e1ca2f47cc83f0ebebeccfdc7", "Unity/Assets/Scripts/EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47", "Unity/Assets/Scripts/LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967", "Unity/Assets/Scripts/LastStandLegacySave.cs": "b38fdc816dba108499cab8be707223b9e01673a9ca54b6fb590502ddb9bb4950", "Unity/Assets/Scripts/LastStandProgression.cs": "e379c288d709da7c783eee68af5197207379bce211d6fe02ab933933c3e55b54", "Unity/Assets/Scripts/LastStandProgressionAppearance.cs": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2", "Unity/Assets/Scripts/LastStandProgressionBackup.cs": "0450f9b44730799088205b72a69c353741250de532d0d648312ad3a8ce841b5e", "Unity/Assets/Scripts/LastStandProgressionLoadouts.cs": "ec73224676728da3d9e633886865f828b72448c4426a1498942ee01edc4d8f35", "Unity/Assets/Scripts/LastStandProgressionResearch.cs": "45ee05f70b7e27f9ebf8cbf36594c243106ff98dee8c4fa8faef5dc98d200be3", "Unity/Assets/Scripts/LastStandProgressionResearchSave.cs": "0d1272d0246b598e4347298933b15c80cbca8d62d66bdfee349a8fd3fa54724a", "Unity/Assets/Scripts/LastStandProgressionSave.cs": "1cb177179981d29d6537261d35669a723aca497cb4a098973a02943d97227552", "Unity/Assets/Scripts/LastStandResearchCatalog.cs": "a58024b2e7aa80d2339d8ff76b1ae5dfc2e9b72fbf15c2d319fcdcc0dd7feb80", "Unity/Assets/Scripts/LastStandResearchClock.cs": "a1e053f2dfbbf51704ee3eb5b8080d98cbb395c50bcbbf23e43a90b2b6e6807b", "Unity/Assets/Scripts/LastStandResearchPresentation.cs": "0621d4211f82b48949b0af54912afa10782134b6af5ed36f34598112f78b734a", "Unity/Assets/Scripts/LastStandResearchState.cs": "98480e9fb4ac2a730777f33762aa73123f9e0b0f4496da35f8f746bbbd7d40ca", "Unity/Assets/Scripts/LastStandRewardCatalog.cs": "f8b2e472e30ddde0660a45eb2e8934e8c8bee78e403efabd8cecf0d58eba0510", "Unity/Assets/Scripts/LastStandRunCheckpoint.cs": "dc4223891365724a7e79030528c05217509241bc58ab5a14fdb2ed9e334ba23e", "Unity/Assets/Scripts/LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a", "Unity/Assets/Scripts/LastStandRunHistory.cs": "bb59be7e86e0d46605a8fac4e7b9bac3540a17c25d3f770c9765fab4d79b7848", "Unity/Assets/Scripts/LastStandSaveJson.cs": "c1ae679d79966955ac63d8d10f7c3d0e5643f7f84ed2c3b9a8a06b88386abbc5", "Unity/Assets/Scripts/LastStandSelection.cs": "f8275bda48955ea8fefc3f490a7bae74a1ec5b4079a868f80cd395485fec0136", "Unity/Assets/Scripts/LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed", "Unity/Assets/Scripts/LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505", "Unity/Assets/Scripts/LastStandStore.cs": "e5d3f44f4fc686f6e4538c38ec4dd71d2ff2446389212e0fe71410a934b47f1d", "Unity/Assets/Scripts/LastStandTierCatalog.cs": "d2c51dd7e44dd8298c04dbf9c9d76d1b5500c6ba87954addef50ba68b85a223f", "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc", "Unity/Assets/Scripts/LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0", "Unity/Assets/Scripts/MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7"}
+test_actual_milestone_award_is_not_repeatable_farm_income (test_combat_balance.CombatBalanceTests.test_actual_milestone_award_is_not_repeatable_farm_income) ... ok
+test_actual_wave_transactions_and_repeat_deployments_conserve_earned_currency (test_combat_balance.CombatBalanceTests.test_actual_wave_transactions_and_repeat_deployments_conserve_earned_currency) ... ok
+test_changed_speed_time_bins_match_per_observation_history (test_combat_balance.CombatBalanceTests.test_changed_speed_time_bins_match_per_observation_history) ... ok
+test_confirmed_active_checkpoint_fork_abandons_without_new_rewards (test_combat_balance.CombatBalanceTests.test_confirmed_active_checkpoint_fork_abandons_without_new_rewards) ... ok
+test_early_income_cannot_cap_long_term_tracks (test_combat_balance.CombatBalanceTests.test_early_income_cannot_cap_long_term_tracks) ... ok
+test_equal_investment_matchup_tradeoffs (test_combat_balance.CombatBalanceTests.test_equal_investment_matchup_tradeoffs) ... ok
+test_large_measurement_report_preserves_complete_nested_records (test_combat_balance.CombatBalanceTests.test_large_measurement_report_preserves_complete_nested_records) ... ok
+test_lower_tier_farming_rate_excludes_first_clear (test_combat_balance.CombatBalanceTests.test_lower_tier_farming_rate_excludes_first_clear) ... ok
+test_production_spawn_and_reward_baselines_are_not_accelerated (test_combat_balance.CombatBalanceTests.test_production_spawn_and_reward_baselines_are_not_accelerated) ... ok
+test_reject_free_currency_research_and_first_clear_double_count (test_combat_balance.CombatBalanceTests.test_reject_free_currency_research_and_first_clear_double_count) ... ok
+test_report_rejects_missing_cells_foreign_profiles_and_extra_purchases (test_combat_balance.CombatBalanceTests.test_report_rejects_missing_cells_foreign_profiles_and_extra_purchases) ... ok
+test_research_cost_and_real_calendar_gate_speed (test_combat_balance.CombatBalanceTests.test_research_cost_and_real_calendar_gate_speed) ... ok
+test_role_effects_bind_actual_continuous_model_hits_and_unique_kills (test_combat_balance.CombatBalanceTests.test_role_effects_bind_actual_continuous_model_hits_and_unique_kills) ... ok
+test_single_max_purchase_uses_real_time_without_catchup_replay (test_combat_balance.CombatBalanceTests.test_single_max_purchase_uses_real_time_without_catchup_replay) ... ok
+test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks (test_combat_balance.CombatBalanceTests.test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks) ... ok
+test_support_buffers_and_healing_preserve_penetration_attribution (test_combat_balance.CombatBalanceTests.test_support_buffers_and_healing_preserve_penetration_attribution) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 2.591s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_combat_depth", "-p", "test_campaign.py", "-v"]
+test_compact_goal_names_actual_bonus_and_unlock (test_campaign.CampaignTests.test_compact_goal_names_actual_bonus_and_unlock) ... ok
+test_each_fitting_receipt_waits_for_the_actual_saved_milestone (test_campaign.CampaignTests.test_each_fitting_receipt_waits_for_the_actual_saved_milestone) ... ok
+test_manual_roadmap_is_shared_readonly_and_retains_run_edition (test_campaign.CampaignTests.test_manual_roadmap_is_shared_readonly_and_retains_run_edition) ... ok
+test_milestone_unlock_and_receipt_exactly_once (test_campaign.CampaignTests.test_milestone_unlock_and_receipt_exactly_once) ... ok
+test_only_first_locked_tier_visible (test_campaign.CampaignTests.test_only_first_locked_tier_visible) ... ok
+test_tier_unlock_does_not_promote_active_run (test_campaign.CampaignTests.test_tier_unlock_does_not_promote_active_run) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 14.150s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_controls", "-p", "test_environments.py", "-v"]
+test_active_model_and_presentation_refuse_changes (test_environments.EnvironmentSourceTests.test_active_model_and_presentation_refuse_changes) ... ok
+test_authored_catalog_is_readonly_and_exact (test_environments.EnvironmentSourceTests.test_authored_catalog_is_readonly_and_exact) ... ok
+test_campaign_bindings_preserve_idempotence_and_combat (test_environments.EnvironmentSourceTests.test_campaign_bindings_preserve_idempotence_and_combat) ... ok
+test_cleanup_ownership_fault_is_detected (test_environments.EnvironmentSourceTests.test_cleanup_ownership_fault_is_detected) ... ok
+test_combat_guard_fault_is_detected (test_environments.EnvironmentSourceTests.test_combat_guard_fault_is_detected) ... ok
+test_definition_routes_roots_and_lighting (test_environments.EnvironmentSourceTests.test_definition_routes_roots_and_lighting) ... ok
+test_duplicate_bindings_and_missing_light_refuse (test_environments.EnvironmentSourceTests.test_duplicate_bindings_and_missing_light_refuse) ... ok
+test_non_awarding_comparison_retains_treatment_switch (test_environments.EnvironmentSourceTests.test_non_awarding_comparison_retains_treatment_switch) ... ok
+test_render_cleanup_preserves_later_pipeline_owner (test_environments.EnvironmentSourceTests.test_render_cleanup_preserves_later_pipeline_owner) ... ok
+test_render_cleanup_restores_only_owned_fields (test_environments.EnvironmentSourceTests.test_render_cleanup_restores_only_owned_fields) ... ok
+test_reused_identity_does_not_recreate_environment (test_environments.EnvironmentSourceTests.test_reused_identity_does_not_recreate_environment) ... ok
+test_unknown_or_missing_content_does_not_mutate (test_environments.EnvironmentSourceTests.test_unknown_or_missing_content_does_not_mutate) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 3.137s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_controls", "-p", "test_selection.py", "-v"]
+test_immutable_capture (test_selection.SelectionTests.test_immutable_capture) ... ok
+test_invalid_catalog (test_selection.SelectionTests.test_invalid_catalog) ... ok
+test_invalid_input (test_selection.SelectionTests.test_invalid_input) ... ok
+test_large_catalog (test_selection.SelectionTests.test_large_catalog) ... ok
+test_locked_preview (test_selection.SelectionTests.test_locked_preview) ... ok
+test_negative_control_hidden_tiers_are_detected (test_selection.SelectionTests.test_negative_control_hidden_tiers_are_detected) ... ok
+test_negative_control_locked_commit_is_detected (test_selection.SelectionTests.test_negative_control_locked_commit_is_detected) ... ok
+test_real_fitting_catalog (test_selection.SelectionTests.test_real_fitting_catalog) ... ok
+test_single_choice (test_selection.SelectionTests.test_single_choice) ... ok
+test_stable_identity (test_selection.SelectionTests.test_stable_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 2.638s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_tiers", "-p", "test_tier_rules.py", "-v"]
+test_exact_tier_hull_scaling_and_legacy_parity (test_tier_rules.TierRulesTests.test_exact_tier_hull_scaling_and_legacy_parity) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.748s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_tiers", "-p", "test_tier_ui.py", "-v"]
+test_live_wave_heading_never_claims_saved_credit (test_tier_ui.TierHudTests.test_live_wave_heading_never_claims_saved_credit) ... ok
+test_tier_targets_and_summaries_fit_profiles (test_tier_ui.TierHudTests.test_tier_targets_and_summaries_fit_profiles) ... ok
+test_tier_text_reports_saved_and_unsaved_outcomes (test_tier_ui.TierHudTests.test_tier_text_reports_saved_and_unsaved_outcomes) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.927s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_waves", "-p", "test_catalogs.py", "-v"]
+test_eighteen_tiers_use_bounded_selection_and_keyed_records (test_catalogs.CatalogTests.test_eighteen_tiers_use_bounded_selection_and_keyed_records) ... ok
+test_finite_rosters_and_stable_reward_ids (test_catalogs.CatalogTests.test_finite_rosters_and_stable_reward_ids) ... ok
+test_generator_scales_beyond_two_thousand_waves (test_catalogs.CatalogTests.test_generator_scales_beyond_two_thousand_waves) ... ok
+test_invalid_catalogs_are_rejected (test_catalogs.CatalogTests.test_invalid_catalogs_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.991s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_waves", "-p", "test_fitting_catalog.py", "-v"]
+test_explicit_identity_and_milestone_availability (test_fitting_catalog.FittingCatalogTests.test_explicit_identity_and_milestone_availability) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.737s
+
+OK
+
+EXIT 0
+COMMAND ["C:\\Python314\\python.exe", "-B", "-m", "unittest", "discover", "-s", "campaign-unity\\Tools\\last_stand_waves", "-p", "test_wave_model.py", "-v"]
+test_authored_eighteen_tiers_resolve_and_restore_without_fallback (test_wave_model.WaveModelTests.test_authored_eighteen_tiers_resolve_and_restore_without_fallback) ... ok
+test_five_thousand_wave_restore_and_bounded_state (test_wave_model.WaveModelTests.test_five_thousand_wave_restore_and_bounded_state) ... ok
+test_long_run_has_bounded_state (test_wave_model.WaveModelTests.test_long_run_has_bounded_state) ... ok
+test_midwave_and_inconsistent_checkpoints_are_rejected (test_wave_model.WaveModelTests.test_midwave_and_inconsistent_checkpoints_are_rejected) ... ok
+test_pause_and_speed_preserve_wave_outcomes (test_wave_model.WaveModelTests.test_pause_and_speed_preserve_wave_outcomes) ... ok
+test_scattergun_hits_distinct_targets_without_repair (test_wave_model.WaveModelTests.test_scattergun_hits_distinct_targets_without_repair) ... ok
+test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull (test_wave_model.WaveModelTests.test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull) ... ok
+test_simultaneous_last_kill_and_defeat (test_wave_model.WaveModelTests.test_simultaneous_last_kill_and_defeat) ... ok
+test_two_thousand_wave_checkpoint_and_numeric_bounds (test_wave_model.WaveModelTests.test_two_thousand_wave_checkpoint_and_numeric_bounds) ... ok
+test_unspawned_or_live_enemy_prevents_clear (test_wave_model.WaveModelTests.test_unspawned_or_live_enemy_prevents_clear) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 9.628s
+
+OK
+
+EXIT 0

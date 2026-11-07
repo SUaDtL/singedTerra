@@ -51,10 +51,14 @@ namespace SingedTerra.LastStand
         public static IReadOnlyList<LastStandTierDefinition> Legacy { get; } = Array.AsReadOnly(new[] {
             new LastStandTierDefinition(1,1200,"playable-prototype-v1","sunlit-ash",1,1),
             new LastStandTierDefinition(2,1800,"playable-prototype-tier2-v1","iron-perimeter",5,4,1,1200) });
-        public static IReadOnlyList<LastStandTierDefinition> All { get; } = Array.AsReadOnly(new[] {
+        public static IReadOnlyList<LastStandTierDefinition> CombatDepth { get; } = Array.AsReadOnly(new[] {
             Legacy[0],new LastStandTierDefinition(2,"tier-2","playable-prototype-tier2-v1","iron-perimeter",5,4,1,300,true,LastStandEnemyCatalog.Mixed),
             new LastStandTierDefinition(3,"tier-3","cinder-basin","cinder-basin",1,1,2,300,true,LastStandEnemyCatalog.Cinder),
             new LastStandTierDefinition(4,"tier-4","storm-foundry","storm-foundry",1,1,3,300,true,LastStandEnemyCatalog.Foundry) });
+        public static IReadOnlyList<LastStandTierDefinition> All { get; } = Array.AsReadOnly(new[] {
+            CombatDepth[0],CombatDepth[1],CombatDepth[2],CombatDepth[3],
+            new LastStandTierDefinition(5,"tier-5","glass-wastes","glass-wastes",1,1,4,300,true,LastStandEnemyCatalog.Glass),
+            new LastStandTierDefinition(6,"tier-6","frostline-relay","frostline-relay",1,1,5,300,true,LastStandEnemyCatalog.Frost) });
         public static void Validate(IReadOnlyList<LastStandTierDefinition> definitions)
         {
             if(definitions==null || definitions.Count==0) throw new ArgumentException("A catalog requires tiers.");

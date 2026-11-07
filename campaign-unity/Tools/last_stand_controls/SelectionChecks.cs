@@ -96,7 +96,8 @@ static class SelectionChecks
     }
     static void FittingCatalog()
     {
-        Require(LastStandFittingCatalog.Options.Select(o => o.Id).SequenceEqual(new[] { "repair", "launcher", "scattergun", "mortar", "railgun" }), "real catalog contains the five implemented fitting identities");
+        Require(LastStandFittingCatalog.Options.Select(o => o.Id).SequenceEqual(new[] { "repair", "launcher", "scattergun", "mortar", "railgun", "arc", "shield" }), "real catalog contains seven implemented fitting identities");
+        Require(LastStandFittingCatalog.CombatDepth.Select(o=>o.Id).SequenceEqual(new[]{"repair","launcher","scattergun","mortar","railgun"}),"retained combat-depth roster remains exactly five identities");
         Require(LastStandFittingCatalog.Options.All(o => !string.IsNullOrWhiteSpace(o.Description)) &&
             LastStandFittingCatalog.Options.Take(2).All(o=>o.Unlocked) && !LastStandFittingCatalog.Options[2].Unlocked,
             "original fittings remain available and new milestone fitting provides its locked description");
@@ -108,6 +109,9 @@ static class SelectionChecks
         Require(selector.Move(1) && selector.Current.Id=="mortar" && !selector.Current.Unlocked,"Mortar remains a locked inspectable fitting");
         Require(selector.Move(1) && selector.Current.Id=="railgun" && !selector.Current.Unlocked,"Railgun remains a locked inspectable fitting");
         Reject<ArgumentException>(()=>selector.Reset("railgun"),"preview never grants a fitting");
+        Require(selector.Move(1)&&selector.Current.Id=="arc"&&!selector.Current.Unlocked,"Arc remains a locked inspectable fitting");
+        Require(selector.Move(1)&&selector.Current.Id=="shield"&&!selector.Current.Unlocked,"Shield remains a locked inspectable fitting");
+        Reject<ArgumentException>(()=>selector.Reset("shield"),"new preview never grants a fitting");
         Require(!selector.Move(1), "real fitting catalog has a bounded endpoint");
         Require(LastStandFittingCatalog.Legacy.Select(o=>o.Id).SequenceEqual(new[]{"repair","launcher","scattergun"}),"retained fitting roster remains exactly three identities");
     }

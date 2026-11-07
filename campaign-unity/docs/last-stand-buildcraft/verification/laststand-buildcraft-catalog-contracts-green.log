@@ -1,0 +1,108 @@
+last_stand_combat_depth/test_campaign.py
+test_compact_goal_names_actual_bonus_and_unlock (test_campaign.CampaignTests.test_compact_goal_names_actual_bonus_and_unlock) ... ok
+test_each_fitting_receipt_waits_for_the_actual_saved_milestone (test_campaign.CampaignTests.test_each_fitting_receipt_waits_for_the_actual_saved_milestone) ... ok
+test_manual_roadmap_is_shared_readonly_and_retains_run_edition (test_campaign.CampaignTests.test_manual_roadmap_is_shared_readonly_and_retains_run_edition) ... ok
+test_milestone_unlock_and_receipt_exactly_once (test_campaign.CampaignTests.test_milestone_unlock_and_receipt_exactly_once) ... ok
+test_only_first_locked_tier_visible (test_campaign.CampaignTests.test_only_first_locked_tier_visible) ... ok
+test_tier_unlock_does_not_promote_active_run (test_campaign.CampaignTests.test_tier_unlock_does_not_promote_active_run) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 14.044s
+
+OK
+last_stand_controls/test_environments.py
+test_active_model_and_presentation_refuse_changes (test_environments.EnvironmentSourceTests.test_active_model_and_presentation_refuse_changes) ... ok
+test_authored_catalog_is_readonly_and_exact (test_environments.EnvironmentSourceTests.test_authored_catalog_is_readonly_and_exact) ... ok
+test_campaign_bindings_preserve_idempotence_and_combat (test_environments.EnvironmentSourceTests.test_campaign_bindings_preserve_idempotence_and_combat) ... ok
+test_cleanup_ownership_fault_is_detected (test_environments.EnvironmentSourceTests.test_cleanup_ownership_fault_is_detected) ... ok
+test_combat_guard_fault_is_detected (test_environments.EnvironmentSourceTests.test_combat_guard_fault_is_detected) ... ok
+test_definition_routes_roots_and_lighting (test_environments.EnvironmentSourceTests.test_definition_routes_roots_and_lighting) ... ok
+test_duplicate_bindings_and_missing_light_refuse (test_environments.EnvironmentSourceTests.test_duplicate_bindings_and_missing_light_refuse) ... ok
+test_non_awarding_comparison_retains_treatment_switch (test_environments.EnvironmentSourceTests.test_non_awarding_comparison_retains_treatment_switch) ... ok
+test_render_cleanup_preserves_later_pipeline_owner (test_environments.EnvironmentSourceTests.test_render_cleanup_preserves_later_pipeline_owner) ... ok
+test_render_cleanup_restores_only_owned_fields (test_environments.EnvironmentSourceTests.test_render_cleanup_restores_only_owned_fields) ... ok
+test_reused_identity_does_not_recreate_environment (test_environments.EnvironmentSourceTests.test_reused_identity_does_not_recreate_environment) ... ok
+test_unknown_or_missing_content_does_not_mutate (test_environments.EnvironmentSourceTests.test_unknown_or_missing_content_does_not_mutate) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 3.023s
+
+OK
+last_stand_controls/test_selection.py
+test_immutable_capture (test_selection.SelectionTests.test_immutable_capture) ... ok
+test_invalid_catalog (test_selection.SelectionTests.test_invalid_catalog) ... ok
+test_invalid_input (test_selection.SelectionTests.test_invalid_input) ... ok
+test_large_catalog (test_selection.SelectionTests.test_large_catalog) ... ok
+test_locked_preview (test_selection.SelectionTests.test_locked_preview) ... ok
+test_negative_control_hidden_tiers_are_detected (test_selection.SelectionTests.test_negative_control_hidden_tiers_are_detected) ... ok
+test_negative_control_locked_commit_is_detected (test_selection.SelectionTests.test_negative_control_locked_commit_is_detected) ... ok
+test_real_fitting_catalog (test_selection.SelectionTests.test_real_fitting_catalog) ... ok
+test_single_choice (test_selection.SelectionTests.test_single_choice) ... ok
+test_stable_identity (test_selection.SelectionTests.test_stable_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 2.554s
+
+OK
+last_stand_tiers/test_tier_rules.py
+test_exact_tier_hull_scaling_and_legacy_parity (test_tier_rules.TierRulesTests.test_exact_tier_hull_scaling_and_legacy_parity) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.740s
+
+OK
+last_stand_tiers/test_tier_ui.py
+test_live_wave_heading_never_claims_saved_credit (test_tier_ui.TierHudTests.test_live_wave_heading_never_claims_saved_credit) ... ok
+test_tier_targets_and_summaries_fit_profiles (test_tier_ui.TierHudTests.test_tier_targets_and_summaries_fit_profiles) ... ok
+test_tier_text_reports_saved_and_unsaved_outcomes (test_tier_ui.TierHudTests.test_tier_text_reports_saved_and_unsaved_outcomes) ... FAIL
+
+======================================================================
+FAIL: test_tier_text_reports_saved_and_unsaved_outcomes (test_tier_ui.TierHudTests.test_tier_text_reports_saved_and_unsaved_outcomes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_tiers\test_tier_ui.py", line 41, in test_tier_text_reports_saved_and_unsaved_outcomes
+    self.case("text")
+    ~~~~~~~~~^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_tiers\test_tier_ui.py", line 34, in case
+    self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : next milestone advances without implying a run ending
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.898s
+
+FAILED (failures=1)
+last_stand_waves/test_catalogs.py
+test_eighteen_tiers_use_bounded_selection_and_keyed_records (test_catalogs.CatalogTests.test_eighteen_tiers_use_bounded_selection_and_keyed_records) ... ok
+test_finite_rosters_and_stable_reward_ids (test_catalogs.CatalogTests.test_finite_rosters_and_stable_reward_ids) ... ok
+test_generator_scales_beyond_two_thousand_waves (test_catalogs.CatalogTests.test_generator_scales_beyond_two_thousand_waves) ... ok
+test_invalid_catalogs_are_rejected (test_catalogs.CatalogTests.test_invalid_catalogs_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.869s
+
+OK
+last_stand_waves/test_fitting_catalog.py
+test_explicit_identity_and_milestone_availability (test_fitting_catalog.FittingCatalogTests.test_explicit_identity_and_milestone_availability) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.704s
+
+OK
+last_stand_waves/test_wave_model.py
+test_authored_eighteen_tiers_resolve_and_restore_without_fallback (test_wave_model.WaveModelTests.test_authored_eighteen_tiers_resolve_and_restore_without_fallback) ... ok
+test_five_thousand_wave_restore_and_bounded_state (test_wave_model.WaveModelTests.test_five_thousand_wave_restore_and_bounded_state) ... ok
+test_long_run_has_bounded_state (test_wave_model.WaveModelTests.test_long_run_has_bounded_state) ... ok
+test_midwave_and_inconsistent_checkpoints_are_rejected (test_wave_model.WaveModelTests.test_midwave_and_inconsistent_checkpoints_are_rejected) ... ok
+test_pause_and_speed_preserve_wave_outcomes (test_wave_model.WaveModelTests.test_pause_and_speed_preserve_wave_outcomes) ... ok
+test_scattergun_hits_distinct_targets_without_repair (test_wave_model.WaveModelTests.test_scattergun_hits_distinct_targets_without_repair) ... ok
+test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull (test_wave_model.WaveModelTests.test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull) ... ok
+test_simultaneous_last_kill_and_defeat (test_wave_model.WaveModelTests.test_simultaneous_last_kill_and_defeat) ... ok
+test_two_thousand_wave_checkpoint_and_numeric_bounds (test_wave_model.WaveModelTests.test_two_thousand_wave_checkpoint_and_numeric_bounds) ... ok
+test_unspawned_or_live_enemy_prevents_clear (test_wave_model.WaveModelTests.test_unspawned_or_live_enemy_prevents_clear) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 9.405s
+
+OK

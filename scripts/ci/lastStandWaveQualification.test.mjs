@@ -9,7 +9,7 @@ import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {WAVE_JOURNEY_INPUTS,hashWaveJourneyInputs} from '../../e2e/helpers/lastStandWaveJourney.mjs';
 import {currentQualificationInputs} from './lastStandQualification.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
-import {WAVE_ORACLE_SOURCES,CURRENT_WAVE_EDITION,waveOracleProfileKeys} from '../../e2e/helpers/lastStandWaveOracle.mjs';
+import {WAVE_ORACLE_SOURCES,CURRENT_WAVE_EDITION,COMBAT_DEPTH_WAVE_EDITION,waveOracleProfileKeys} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
 import {assertCombinedWaveQualification,assertWaveBinding,assertWaveLifecycle,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
@@ -114,12 +114,14 @@ function resumeFixture(){
   return {kind:'checkpoint-resume',saved,resumed,stable:{...resumed,action:'menu',t:1300},stored:clone(saved),observedClock:{t:1301,timeOrigin:1000}};
 }
 function backgroundFixture(){
-  const {before,after}=clone(intervalFixture().evidence),rules='last-stand-waves-v2';
-  after.loop={...after.loop,profileVersion:rules,fittingId:'repair',cannonDamage:30,wallet:1};
+  const {before,after}=clone(intervalFixture().evidence),rules=CURRENT_WAVE_EDITION.rulesVersion;
+  after.loop={...after.loop,profileVersion:rules,contentVersion:CURRENT_WAVE_EDITION.contentVersion,economyVersion:CURRENT_WAVE_EDITION.economyVersion,fittingId:'repair',cannonDamage:30,wallet:1};
   const checkpointState={...after.loop,t:220,action:'session',phase:'battle',saveState:'ready',paused:true,speed:0,
     pendingRunId:0,hasCheckpoint:true,checkpointBlocked:false,tick:3,wave:2,completedWave:1,checkpointWave:1,wallet:2};
-  const saved={...idleWaveFields({runId:19}),version:6,credits:2,pendingDefeat:null,checkpoint:{runId:19,
-    contentVersion:CURRENT_WAVE_EDITION.contentVersion,shop:{economyVersion:CURRENT_WAVE_EDITION.economyVersion},
+  const saved={...idleWaveFields({runId:19,profileVersion:8}),credits:2,pendingDefeat:null,checkpoint:{runId:19,
+    contentVersion:CURRENT_WAVE_EDITION.contentVersion,shop:{version:3,tier:1,fitting:1,economyVersion:CURRENT_WAVE_EDITION.economyVersion},
+    loadout:{primary:'repair',secondary:null},combatResearch:{armorPiercing:0,areaControl:0,fieldEngineering:0},
+    buildcraft:{arcShots:0,arcDamage:16,nextArcTick:1,shield:0,shieldCapacity:0,shieldRestored:0,shieldAbsorbed:0,nextShieldRechargeTick:20,lastShieldHitTick:0},
     encounter:{tier:1,fitting:1,rulesVersion:rules,tick:2,wave:1,completedWave:1,committedCannonDamage:30,
       mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40}}};
   return {kind:'background-wave',interval:{begin:100,recovered:195,before},after,checkpointState,saved};
@@ -131,7 +133,7 @@ test('saved background checkpoint wave must name its cleared cohort',()=>{
 });
 test('background armament counts may advance beyond the durable cleared boundary',()=>{
   const value=backgroundFixture();
-  value.saved.checkpoint.encounter.fitting=3;value.saved.checkpoint.encounter.mortarShots=1;
+  value.saved.checkpoint.encounter.fitting=3;value.saved.checkpoint.loadout.primary='mortar';value.saved.checkpoint.shop.fitting=3;value.saved.checkpoint.encounter.mortarShots=1;
   value.after.fitting='mortar';value.after.loop.fittingId='mortar';value.checkpointState.fittingId='mortar';
   value.after.loop.mortarShots=2;value.checkpointState.mortarShots=2;
   assert.equal(journey.validateBackgroundCheckpoint(value),true);
@@ -268,15 +270,15 @@ test('background terminal cannot move its interval start after the source-bound 
 function intervalFixture(kind='hidden'){
   const pause=kind==='explicit-pause';
   const id={load:kind==='hidden'?7:6,timeOrigin:7000,scope:'healthy'},model={...id,action:'tick',run:1,tick:0,
-    hp:120,kills:0,spawned:0,cannon:0,launcher:0,scattergun:0,mortar:0,railgun:0,mortarDamage:18,railgunDamage:40,
-    healed:0,closeHits:0,rangedHits:0,alive:0,wave:1,completedWave:0,
-    rules:'last-stand-waves-v2:playable-prototype-v1',contentVersion:CURRENT_WAVE_EDITION.contentVersion,economyVersion:CURRENT_WAVE_EDITION.economyVersion,
+    hp:120,kills:0,spawned:0,cannon:0,launcher:0,scattergun:0,mortar:0,railgun:0,mortarDamage:18,railgunDamage:40,arc:0,arcDamage:16,shield:0,shieldCapacity:0,shieldRestored:0,shieldAbsorbed:0,
+    secondaryFitting:'',armorPiercing:0,areaControl:0,fieldEngineering:0,healed:0,closeHits:0,rangedHits:0,alive:0,wave:1,completedWave:0,
+    rules:CURRENT_WAVE_EDITION.rulesVersion+':playable-prototype-v1',contentVersion:CURRENT_WAVE_EDITION.contentVersion,economyVersion:CURRENT_WAVE_EDITION.economyVersion,
     status:'Running',paused:false,failed:false,catchingUp:false,
     callbackSteps:1,selectedSpeed:1,effectiveSpeed:1,clockTimestamp:1,clockPending:0,terminalElapsed:0,fitting:'repair',tier:1};
   const sample=(t,extra={})=>{const row={...model,t,...extra};return {...row,hull:row.hp,loop:{...id,t:t+1,action:'session',phase:'battle',runId:19,
     sessionRun:row.run,tick:row.tick,kills:row.kills,paused:row.paused,activeTier:1,cannonDamage:20,hull:row.hp,
     profileVersion:CURRENT_WAVE_EDITION.rulesVersion,contentVersion:CURRENT_WAVE_EDITION.contentVersion,economyVersion:CURRENT_WAVE_EDITION.economyVersion,
-    mortarShots:row.mortar,railgunShots:row.railgun,mortarDamage:row.mortarDamage,railgunDamage:row.railgunDamage}};};
+    mortarShots:row.mortar,railgunShots:row.railgun,arcShots:row.arc,arcDamage:row.arcDamage,shield:row.shield,shieldCapacity:row.shieldCapacity,activeSecondaryId:'',mortarDamage:row.mortarDamage,railgunDamage:row.railgunDamage}};};
   const before=sample(90),paused=sample(100,{action:'pause',paused:true,reason:'user'}),
     returned=sample(10100,{action:'visibility',paused:true,reason:'user',clockTimestamp:11}),
     resumed=sample(10200,{action:'pause',clockTimestamp:11.1}),
@@ -295,11 +297,11 @@ function baseReport(expected,host='linux'){
     ...Object.fromEntries(['rendered_audio','native_blur','capture_cadence','procedural_cues'].map(k=>[k,host==='linux'?'unexecuted-requires-windows':'pass']))},
     binding:{current_head:head,portable_text_inputs:clone(expected.inputs),input_files:clone(expected.inputs),...rt,
       served:clone(expected.served),served_after:clone(expected.served)},
-    wave_model:{format:'st-last-stand-wave-model-oracle/2',edition:clone(CURRENT_WAVE_EDITION),host,source_lf_sha256:clone(expected.waveSources),
+    wave_model:{format:'st-last-stand-wave-model-oracle/3',edition:clone(CURRENT_WAVE_EDITION),host,source_lf_sha256:clone(expected.waveSources),
       qualification:'compiled actual wave model bound to inspected player export',export_binding:{build:rt.build,
         sourceInventorySha256:rt.source_inventory_sha256,receiptSha256:rt.receipt_sha256,sourceLockSha256:rt.source_lock_sha256,manifestSha256:rt.manifest_sha256},
       commands:[0,1].map(()=>({exit:0,error:null,argv:['mono','fixture'],stdoutSha256:hash,stderrSha256:hash})),
-      output_sha256:hash,executable_sha256:hash,profiles:clone(profiles),rows:80,maximumTicks:12000},
+      output_sha256:hash,executable_sha256:hash,profiles:clone(profiles),rows:profiles.length,maximumTicks:12000},
     checks:[{name:WAVE_ERROR_CHECK,pass:true}],actions:[],keyboard_actions:[],input_trace:{matched:true,actions:0,observed_edges:0,outer_keyboard_edges:2},
     keyboard_trace:{matched:true,actions:0,observed_edges:0},lifecycle:[],screenshots:[]};
 }
@@ -342,7 +344,7 @@ function matrixFixture(){
     }
     if(section==='entry'){
       report.actions=WAVE_ENTRY_ACTIONS.map(([name,action])=>({name,action,x:10,y:20}));
-      report.input_trace={matched:true,actions:9,observed_edges:18,outer_keyboard_edges:2};
+      report.input_trace={matched:true,actions:WAVE_ENTRY_ACTIONS.length,observed_edges:WAVE_ENTRY_ACTIONS.length*2,outer_keyboard_edges:2};
       report.retired_campaign_preservation={before_sha256:hash,after_launch_sha256:hash,native_return:'observed unchanged',retirement:'observed Last Stand only'};
       report.routes=clone(LAST_STAND_ENTRY_ROUTES);report.campaign_entry=p.entryViewports.map(viewport=>({viewport,order:['last-stand'],bounds:{x:0,y:0,width:44,height:44}}));
       report.lifecycle=[{kind:'new-run-cancel',layout:{selection:'ConfirmCancel'},confirmation:{runId:1},cancelled:{runId:1,paused:true},saved:JSON.stringify(resumeFixture().saved)}];
@@ -384,7 +386,7 @@ test('current aggregate retains ten real wave lifecycles, entry, recovery and ex
   for(const mutate of mutations){const copy=clone(reports);mutate(copy);assert.throws(()=>assertLastStandWaveMatrix(copy,expected));}
 });
 
-test('current entry producer uses the exact nine Linux pointer actions and current aggregate rejects contract drift',async()=>{
+test('current entry producer includes a verified pause and current aggregate rejects action drift',async()=>{
   const begin=source.indexOf("    if(section.entry){\n    await gameClick('Deploy','deploy');"),end=source.indexOf('    if(section.lifecycle){',begin);
   assert.ok(begin>0&&end>begin);
   const block=source.slice(begin,end).replace(/    if\(player\)\{[^\n]+\}\n/g,'');
@@ -436,10 +438,10 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   const expected=expectedFixture(),report=baseReport(expected),sha=b=>createHash('sha256').update(b).digest('hex');
   const raw=Buffer.from(profiles.flatMap(key=>(['1:repair:30','1:mortar:30'].includes(key)?[0,1,2,3,4]:[0,1,2]).map(tick=>{
     const checkpoint=['1:repair:30','1:mortar:30'].includes(key),cleared=checkpoint&&tick>=2,terminal=tick===(checkpoint?4:2),mortar=key==='1:mortar:30';
-    return key.replaceAll(':',',')+`,${tick},${terminal?0:120},${cleared?1:0},${cleared?1:0},${cleared?1:0},0,0,0,${terminal?1:0},0,0,${cleared?2:1},${cleared?1:0},${mortar&&tick>=2?tick-1:0},0,18,40,${mortar&&tick===2?60:tick===0||checkpoint&&tick===2?1:0},${tick===0||checkpoint&&tick===2?1:0},${terminal?'Defeated':'Running'}\r\n`;
+    return key.replaceAll(':',',')+`,${tick},${terminal?0:120},${cleared?1:0},${cleared?1:0},${cleared?1:0},0,0,0,${terminal?1:0},0,0,${cleared?2:1},${cleared?1:0},${mortar&&tick>=2?tick-1:0},0,18,40,${mortar&&tick===2?60:tick===0||checkpoint&&tick===2?1:0},${tick===0||checkpoint&&tick===2?1:0},0,16,0,0,0,0,${tick===0||checkpoint&&tick===2?1:0},${tick===0||checkpoint&&tick===2?20:0},0,${terminal?'Defeated':'Running'}\r\n`;
   })).join(''));
   const empty=Buffer.alloc(0),driver=Buffer.from('inert fixture, never executed'),exe=Buffer.from('not an executable');
-  const model=report.wave_model;model.rows=244;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
+  const model=report.wave_model;model.rows=profiles.length*3+4;model.inputs={'/inert/Program.cs':sha(driver)};model.executable_sha256=sha(exe);model.output_sha256=sha(raw);
   model.commands[0].stdoutSha256=sha(empty);model.commands[0].stderrSha256=sha(empty);model.commands[1].stdoutSha256=sha(raw);model.commands[1].stderrSha256=sha(empty);
   const put=(name,value)=>writeFileSync(join(root,name),typeof value==='object'&&!Buffer.isBuffer(value)?JSON.stringify(value):value);
   put('wave-model-oracle/binding.json',model);put('wave-model-oracle/commands.json',{inputs:model.inputs,commands:model.commands});
@@ -485,7 +487,7 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
   // A cleared Mortar boundary has one shot, while both later witnesses have
   // two. Each observation must bind its own oracle tick, not stale save counts.
-  const mortarBoundary=clone(olderBoundary),mortarRaw=clone(olderRaw);
+  const mortarBoundary=clone(olderBoundary),mortarRaw=clone(olderRaw);mortarBoundary.saved.checkpoint.loadout.primary='mortar';mortarBoundary.saved.checkpoint.shop.fitting=3;
   Object.assign(mortarBoundary.saved.checkpoint.encounter,{fitting:3,mortarShots:1,nextMortarTick:60});
   Object.assign(mortarBoundary.after,{fitting:'mortar',mortar:2});
   Object.assign(mortarBoundary.after.loop,{fittingId:'mortar',mortarShots:2});

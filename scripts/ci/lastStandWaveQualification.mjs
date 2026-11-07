@@ -59,7 +59,7 @@ export function assertWaveBinding(report,{head,inputs,runtime,served,waveSources
   for(const item of Object.values(served)){sha(item.sha256);assert.ok(Number.isSafeInteger(item.bytes)&&item.bytes>0);}
   for(const key of WAVE_RUNTIME_KEYS){assert.ok(runtime[key]);assert.equal(report.binding[key],runtime[key],'Changed runtime binding: '+key);}
   assert.deepEqual(report.binding.served,served);assert.deepEqual(report.binding.served_after,served,'Runtime drift during execution');
-  const wave=report.wave_model;assert.equal(wave?.format,'st-last-stand-wave-model-oracle/2');assert.deepEqual(wave.edition,CURRENT_WAVE_EDITION);assert.equal(wave.host,host);
+  const wave=report.wave_model;assert.equal(wave?.format,'st-last-stand-wave-model-oracle/3');assert.deepEqual(wave.edition,CURRENT_WAVE_EDITION);assert.equal(wave.host,host);
   assert.deepEqual(Object.keys(waveSources).sort(),[...WAVE_ORACLE_SOURCES].sort());
   assert.deepEqual(wave.source_lf_sha256,waveSources,'Wave oracle compiled different production sources');
   assert.equal(wave.qualification,'compiled actual wave model bound to inspected player export');
@@ -69,7 +69,7 @@ export function assertWaveBinding(report,{head,inputs,runtime,served,waveSources
   for(const command of wave.commands){sha(command.stdoutSha256);sha(command.stderrSha256);assert.ok(command.argv?.length>=2);}
   sha(wave.output_sha256);sha(wave.executable_sha256);assert.equal(wave.commands[1].stdoutSha256,wave.output_sha256);
   assert.deepEqual([...wave.profiles].sort(),waveOracleProfileKeys().sort());
-  assert.ok(Number.isSafeInteger(wave.rows)&&wave.rows>=80);assert.ok(Number.isInteger(wave.maximumTicks)&&wave.maximumTicks>=100&&wave.maximumTicks<=24000);
+  assert.ok(Number.isSafeInteger(wave.rows)&&wave.rows>=waveOracleProfileKeys().length);assert.ok(Number.isInteger(wave.maximumTicks)&&wave.maximumTicks>=100&&wave.maximumTicks<=24000);
   assert.equal(report.input_trace?.matched,true);assert.equal(report.input_trace.actions,report.actions?.length);
   assert.equal(report.input_trace.observed_edges,report.actions.length*2,'Exact planned pointer edges required');
   assert.equal(report.keyboard_trace?.matched,true);assert.equal(report.keyboard_trace.actions,report.keyboard_actions?.length);
@@ -85,15 +85,19 @@ function assertOracleCheckpoint(checkpoint,row){
   assert.equal(checkpoint.contentVersion,row.contentVersion,'Saved checkpoint content differs from source oracle');
   assert.equal(checkpoint.shop?.economyVersion,row.economyVersion,'Saved checkpoint economy differs from source oracle');
   if(Object.hasOwn(e,'scattergunShots'))assert.equal(e.scattergunShots,row.scattergun,'Saved scattergun counter differs');
-  if(e.rulesVersion==='last-stand-waves-v2')for(const [field,key]of [['mortarShots','mortar'],['railgunShots','railgun'],
+  if(e.rulesVersion!=='last-stand-waves-v1')for(const [field,key]of [['mortarShots','mortar'],['railgunShots','railgun'],
     ['mortarDamage','mortarDamage'],['railgunDamage','railgunDamage'],['nextMortarTick','nextMortarTick'],['nextRailgunTick','nextRailgunTick']])
     assert.equal(e[field],row[key],'Saved armament differs from actual source boundary: '+field);
+  if(e.rulesVersion==='last-stand-waves-v3')for(const [field,key] of [['arcShots','arc'],...['arcDamage','shield','shieldCapacity','shieldRestored','shieldAbsorbed','nextArcTick','nextShieldRechargeTick','lastShieldHitTick'].map(key=>[key,key])])
+    assert.equal(checkpoint.buildcraft[field],row[key],'Saved buildcraft differs from actual source boundary: '+field);
 }
 function assertOracleArmamentState(state,profile){
   const row=profile[state.tick];assert.ok(row,'Observed tick absent from source oracle');
   for(const [field,key]of [['mortarShots','mortar'],['railgunShots','railgun'],
     ['mortarDamage','mortarDamage'],['railgunDamage','railgunDamage']])
     assert.equal(state[field],row[key],'Observed armament differs from actual source tick: '+field);
+  if(row.rulesVersion==='last-stand-waves-v3')for(const [field,key] of [['arcShots','arc'],...['arcDamage','shield','shieldCapacity'].map(key=>[key,key])])
+    assert.equal(state[field],row[key],'Observed buildcraft differs from actual source tick: '+field);
 }
 function assertWaveIntervalClock(record){
   const e=record.evidence;assert.equal(e?.clock?.basis,'admitted-clock/v1','Current wave interval requires actual admitted clock evidence');
@@ -112,7 +116,7 @@ export function assertWaveLifecycle(report) {
   assertIdleWaveSave(background.saved);assert.ok(cp&&cp.runId>resume.saved.checkpoint.runId);
   assert.ok(cp.encounter.completedWave>=1);assert.equal(background.saved.pendingDefeat,null);
   validateBackgroundCheckpoint(background);
-  assert.ok(['last-stand-waves-v1','last-stand-waves-v2'].includes(cp.encounter.rulesVersion));assert.equal(cp.encounter.rulesVersion,background.after.loop.profileVersion);assert.equal(cp.encounter.tier,background.after.loop.activeTier);
+  assert.ok(['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(cp.encounter.rulesVersion));assert.equal(cp.encounter.rulesVersion,background.after.loop.profileVersion);assert.equal(cp.encounter.tier,background.after.loop.activeTier);
   assert.ok(background.interval?.begin<background.interval.recovered);
   assert.ok(background.after.t>=background.interval.recovered);assert.equal(background.after.load,background.interval.before.load);
   assert.equal(background.after.timeOrigin,background.interval.before.timeOrigin);
@@ -227,7 +231,7 @@ export function verifyWaveFiles(resultPath,report) {
   for(const [i,command]of model.commands.entries())for(const stream of ['stdout','stderr'])
     assert.equal(digest(bytes(`wave-model-oracle/${i?'run':'compile'}.${stream}`)),command[stream+'Sha256']);
   const raw=bytes('wave-model-oracle/run.stdout');assert.equal(digest(raw),model.output_sha256);
-  const profiles=parseWaveOracleCsv(raw,{edition:model.edition,format:2});assert.deepEqual(Object.keys(profiles),model.profiles);
+  const profiles=parseWaveOracleCsv(raw,{edition:model.edition,format:3});assert.deepEqual(Object.keys(profiles),model.profiles);
   assert.equal(Object.values(profiles).reduce((sum,p)=>sum+Object.keys(p).length,0),model.rows);
   const telemetry=read('runtime-telemetry.json'),trace=read('input-trace.json');
   assert.deepEqual(validateGameplayInput(trace,report.actions),report.input_trace);

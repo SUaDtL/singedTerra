@@ -15,26 +15,27 @@ namespace SingedTerra.LastStand
         public Action Escape { get; set; }
         public Action<string> ScrollContent { get; set; }
         public Func<bool> CanScrollContent { get; set; }
+        public Action<InputField> RevealInput { get; set; }
         bool ScrollAvailable=>TrapFocus||CanScrollContent?.Invoke()==true;
-        Button[] actions;
+        Selectable[] actions;
         GameObject priorSelection;
         bool phaseChanged;
         Action<Button> revealSelection;
-        readonly List<Button> ordered = new List<Button>();
+        readonly List<Selectable> ordered = new List<Selectable>();
 #if UNITY_WEBGL && !UNITY_EDITOR
         [System.Runtime.InteropServices.DllImport("__Internal")]
         static extern void JS_Eval_EvalJS(string script);
 #endif
-        public void Initialize(Button[] controls, Action<Button> reveal = null)
+        public void Initialize(Selectable[] controls, Action<Button> reveal = null)
         { actions = controls; revealSelection = reveal; }
-        public void Focus(Button button)
+        public void Focus(Selectable button)
         {
             if (EventSystem.current && button && button.IsActive() && button.IsInteractable())
-                EventSystem.current.SetSelectedGameObject(button.gameObject);
+            {EventSystem.current.SetSelectedGameObject(button.gameObject);if(button is InputField input)RevealInput?.Invoke(input);}
         }
         public void Selected(Button button)
         { if (button && button.IsActive() && button.IsInteractable()) revealSelection?.Invoke(button); }
-        Vector3 LayoutPosition(Button button)
+        Vector3 LayoutPosition(Selectable button)
         {
             var point = transform.InverseTransformPoint(button.transform.position);
             var scroll = button.GetComponentInParent<ScrollRect>();
@@ -90,15 +91,16 @@ namespace SingedTerra.LastStand
         {
             var events = EventSystem.current; if (!events || actions == null) return;
             if(direction=="scroll-up" || direction=="scroll-down" || direction=="scroll-start" || direction=="scroll-end")
-            { if(ScrollAvailable)ScrollContent?.Invoke(direction);return; }
+            {var input=events.currentSelectedGameObject?events.currentSelectedGameObject.GetComponent<InputField>():null;
+             if((!input||!input.isFocused)&&ScrollAvailable)ScrollContent?.Invoke(direction);return; }
             Refresh();
             if (direction == "leave") { events.SetSelectedGameObject(null); return; }
             int index = ordered.FindIndex(button => button.gameObject == events.currentSelectedGameObject);
             bool backwards = direction == "previous" || direction == "enter-last";
             int next = direction == "enter-first" ? 0 : direction == "enter-last" ? ordered.Count-1 :
                 index < 0 ? backwards ? ordered.Count-1 : 0 : index + (backwards ? -1 : 1);
-            if (next >= 0 && next < ordered.Count) { events.SetSelectedGameObject(ordered[next].gameObject); return; }
-            if (TrapFocus && ordered.Count > 0) { events.SetSelectedGameObject(ordered[backwards ? ordered.Count-1 : 0].gameObject); return; }
+            if (next >= 0 && next < ordered.Count) { Focus(ordered[next]); return; }
+            if (TrapFocus && ordered.Count > 0) { Focus(ordered[backwards ? ordered.Count-1 : 0]); return; }
             events.SetSelectedGameObject(null);
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Constant DOM focus notification only. No player/state input is
@@ -108,6 +110,18 @@ namespace SingedTerra.LastStand
         }
         void Update()
         {
+            var selected=EventSystem.current?EventSystem.current.currentSelectedGameObject:null;
+            var input=selected?selected.GetComponent<InputField>():null;
+            if(input && input.isFocused)
+            {
+                // Text editing owns Home/End, arrows and Escape. Tab still
+                // follows the same bounded modal order, including this field.
+                if(Input.GetKeyDown(KeyCode.Escape))input.DeactivateInputField();
+#if !UNITY_WEBGL || UNITY_EDITOR
+                if(Input.GetKeyDown(KeyCode.Tab))NavigateKeyboard(Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift)?"previous":"next");
+#endif
+                return;
+            }
             if (Input.GetKeyDown(KeyCode.Escape)) Escape?.Invoke();
             if(ScrollAvailable)
             {

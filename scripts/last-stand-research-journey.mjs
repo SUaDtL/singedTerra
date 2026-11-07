@@ -10,6 +10,7 @@ import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,fet
   assertServedBytes,LAST_STAND_HELPER_INPUTS} from '../e2e/helpers/lastStandJourney.mjs';
 import {createLastStandBrowserActor,lastStandObservedControls as controls} from '../e2e/helpers/lastStandBrowserActor.mjs';
 import {WAVE_JOURNEY_PROBE} from '../e2e/helpers/lastStandWaveJourney.mjs';
+import {WAVE_ORACLE_SOURCES} from '../e2e/helpers/lastStandWaveOracle.mjs';
 
 const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototype.v1';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -19,10 +20,22 @@ const inputs=['scripts/last-stand-research-journey.mjs','e2e/helpers/lastStandJo
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v5.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json'];
 export function researchJourneyInputHashes(sourceRoot=root){return Object.fromEntries(inputs.map(path=>[path,sha(readFileSync(resolve(sourceRoot,path)))]));}
 const hashes=researchJourneyInputHashes;
 const tracks=['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics'];
+export const RESEARCH_FIXTURE_SOURCES=Object.freeze([
+  ...WAVE_ORACLE_SOURCES.map(name=>'campaign-unity/Unity/Assets/Scripts/'+name),
+  ...['LastStandProgression','LastStandProgressionLoadouts','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
+    'LastStandSaveJson','LastStandProgressionAppearance','Content/LastStandTankAppearance','LastStandProgressionBackup','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
+    'LastStandResearchState','LastStandResearchCatalog','LastStandResearchClock','Content/LastStandResearchDefinitions']
+    .map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
+  'campaign-unity/Tools/last_stand_research/QualificationFixtureGenerator.cs',
+  'campaign-unity/Tools/last_stand_research/generate_qualification_fixtures.py',
+  'campaign-unity/Tools/last_stand_source_closure.py','campaign-unity/Tools/last_stand_test_runtime.py',
+  'campaign-unity/Tools/last_stand_research/fixtures/legacy-v4.json',
+  'campaign-unity/Tools/last_stand_research/fixtures/legacy-v4.manifest.json']);
 
 export function admitResearchFixtures(manifest,manifestPath,sourceRoot=root){
   assert.equal(manifest.schema,'last-stand-research-qualification-fixtures/v1');
@@ -42,10 +55,14 @@ export function admitResearchFixtures(manifest,manifestPath,sourceRoot=root){
     assert.equal(row.savePath,row.id+'.json','Named relative sibling save required');
     const file=resolve(directory,row.savePath);assert.equal(realpathSync(file),file,'Fixture cannot escape through a link');
     assert.equal(sha(readFileSync(file)),row.saveSha256,'Exact production-generated fixture bytes');
-    const saved=JSON.parse(readFileSync(file,'utf8'));assert.equal(saved.version,7,'Current research fixture requires save version 7');assert.equal(saved.checkpoint,null);
+    const saved=JSON.parse(readFileSync(file,'utf8'));assert.ok([7,8].includes(saved.version),'Research fixture requires explicit save version 7 or 8');assert.equal(saved.checkpoint,null);
+    if(saved.version===8){
+      assert.deepEqual(Object.keys(sources).sort(),[...RESEARCH_FIXTURE_SOURCES].sort(),'Exact current production and generator source closure required');
+      assert.equal(saved.research.catalogVersion,'research-v2');assert.equal(saved.research.slots.length,3);
+    }
     assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
     assert.equal(saved.research.lastObservedUtcMilliseconds,row.createdUtcMilliseconds);
-    assert.deepEqual(Object.keys(saved.research.completedRanks).sort(),[...tracks].sort());
+    assert.deepEqual(Object.keys(saved.research.completedRanks).sort(),(saved.version===8?[...tracks,'armorPiercing','areaControl','fieldEngineering']:[...tracks]).sort());
   }
 }
 

@@ -1,12 +1,44 @@
 import {findLastStandSettingsViewport} from '../../e2e/helpers/lastStandControlReveal.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {runInNewContext} from 'node:vm';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
-import { validateWaveMilestoneText, validateWaveResume, validateWaveCommit, validateWaveAbandon } from '../../e2e/helpers/lastStandWaveJourney.mjs';
+import { WAVE_JOURNEY_PROBE, validateEarlyWaveCommits, validateWaveMilestoneText, validateWaveResume, validateWaveCommit, validateWaveAbandon } from '../../e2e/helpers/lastStandWaveJourney.mjs';
+import {capturePausedJourneyCheckpoint} from '../../e2e/helpers/lastStandJourneyRuntime.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 
 // Invented observations exercise the acceptance reader, never qualify a player.
 const clone=value=>structuredClone(value);
+test('passive wave probe captures each durable boundary before delayed host input',()=>{
+  const output=[];let raw=null,reads=0;
+  const browser={console:{log:(...args)=>output.push(args)},performance:{now:()=>100,timeOrigin:50},
+    window:{addEventListener(){}},localStorage:{getItem:key=>{assert.equal(key,'singedTerra.lastStand.prototype.v1');reads++;return raw;}}};
+  runInNewContext(WAVE_JOURNEY_PROBE,browser);
+  const emit=(wave,ready=true)=>{
+    raw=JSON.stringify({checkpoint:{runId:1,encounter:{completedWave:wave}},credits:wave});
+    browser.console.log('ST_LS_STATE '+JSON.stringify({hasCheckpoint:true,runId:1,checkpointWave:wave,saveState:ready?'ready':'pending'}));
+  };
+  emit(0);emit(1);emit(1);emit(2,false);emit(2);
+  // Host input arrives only now; latest storage alone has lost the first boundary.
+  const captured=output.filter(row=>row[0].startsWith('ST_WAVE_OBSERVATION ')).map(row=>JSON.parse(row[0].slice(20)))
+    .filter(row=>row.checkpoint!==undefined).map(row=>JSON.parse(row.checkpoint));
+  assert.deepEqual(captured.map(row=>row.checkpoint.encounter.completedWave),[0,1,2]);
+  assert.deepEqual(captured.map(row=>row.credits),[0,1,2]);assert.equal(reads,3);
+});
+test('Return and reload capture only after verified pause despite delayed native input',async()=>{
+  let wave=0,paused=false;
+  const value=await capturePausedJourneyCheckpoint({
+    pause:async()=>{await Promise.resolve();wave++;paused=true;},
+    readState:()=>({phase:'battle',paused,speed:paused?0:1,saveState:'ready',checkpointBlocked:false}),
+    readSave:async()=>JSON.stringify({checkpoint:{wave},wallet:wave})});
+  // Later focus traversal cannot advance a paused game.
+  await Promise.resolve();if(!paused)wave++;
+  assert.equal(JSON.parse(value.saved).checkpoint.wave,wave);assert.equal(wave,1);
+  for(const changed of [{phase:'garage'},{paused:false},{speed:1},{saveState:'pending'},{checkpointBlocked:true}]){
+    await assert.rejects(capturePausedJourneyCheckpoint({pause:async()=>{},readState:()=>({...value.state,...changed}),
+      readSave:async()=>{assert.fail('Unverified pause must not be read as a stable checkpoint');}}));
+  }
+});
 test('wave milestone assertions admit current displayed labels and reject missing disclosures',()=>{
   const validate=(_assert,text)=>validateWaveMilestoneText(text);
   // Relevant text transcribed from PR547 job123226012352's rendered-menu failure.
@@ -53,6 +85,30 @@ test('wave commits require sequential wave and actual durable reward/ledger chan
     v=>v.after.checkpoint.encounter.completedWave=2,v=>v.after.checkpoint.shop.uniqueKills=5,
     v=>v.state.checkpointWave=0,v=>v.state.wave=1,v=>v.after.pendingDefeat={reward:1}]){
     const broken=clone(observation);mutate(broken);assert.throws(()=>validateWaveCommit(broken));
+  }
+});
+
+test('delayed pause still proves each individual committed cohort and rejects gaps or extra rewards',()=>{
+  const first=fixture(),second=clone(first);
+  second.saved.credits=2;Object.assign(second.saved.checkpoint.encounter,{wave:2,completedWave:2,kills:12});
+  second.saved.checkpoint.shop.uniqueKills=12;
+  Object.assign(second.afterResume,{wave:3,completedWave:2,checkpointWave:2,wallet:2,kills:12});
+  const starting=clone(first.saved);starting.credits=0;starting.checkpoint.encounter.completedWave=0;
+  starting.checkpoint.encounter.kills=0;starting.checkpoint.shop.uniqueKills=0;
+  const value={starting,initial:{data:starting,state:{...first.afterResume,checkpointWave:0,completedWave:0,wave:1,wallet:0},load:1,timeOrigin:1000,t:10},
+    commits:[{data:first.saved,state:first.afterResume,load:1,timeOrigin:1000,t:20},
+      {data:second.saved,state:second.afterResume,load:1,timeOrigin:1000,t:30}],
+    pausedSave:clone(second.saved),pausedState:{...second.afterResume,load:1,timeOrigin:1000,t:40,tick:300}};
+  assert.doesNotThrow(()=>validateEarlyWaveCommits(value));
+  for(const mutate of [v=>v.commits.shift(),v=>v.commits.pop(),v=>v.commits[1].data.credits++,
+    v=>v.commits[1].data.checkpoint.runId++,v=>v.commits.splice(1,0,clone(v.commits[0])),
+    v=>v.pausedSave.credits++,v=>v.commits[1].data.checkpoint.encounter.completedWave=10,
+    ...Object.entries({phase:'garage',paused:false,speed:1,saveState:'pending',checkpointBlocked:true,
+      runId:2,profileVersion:'unknown',activeTier:2,fittingId:'launcher',completedWave:3,checkpointWave:3,wave:4,wallet:3,
+      timeOrigin:999,load:2,t:25}).map(([key,replacement])=>v=>v.pausedState[key]=replacement),
+    v=>v.commits[1].state.runId=999,v=>v.commits[1].timeOrigin=999,v=>v.commits[1].load=2,
+    v=>v.commits[1].t=-1,v=>v.commits[1].t=19,v=>v.initial.timeOrigin=0]){
+    const broken=clone(value);mutate(broken);assert.throws(()=>validateEarlyWaveCommits(broken));
   }
 });
 test('confirmed abandon invalidates only the run and preserves banked progression through reload',()=>{

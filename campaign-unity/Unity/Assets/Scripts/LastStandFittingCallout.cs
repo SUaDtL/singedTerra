@@ -27,6 +27,7 @@ namespace SingedTerra.LastStand
         public RectTransform DecorationRoot => layer;
         float nextObservation;
         bool observedVisible;
+        bool requestedVisible;
         string observedTarget;
         int observedWidth, observedHeight;
 
@@ -87,9 +88,11 @@ namespace SingedTerra.LastStand
         }
         public void Refresh(bool visible)
         {
+            requestedVisible=visible;
             UpdateDecoration(visible);
             Observe();
         }
+        void LateUpdate(){UpdateDecoration(requestedVisible);Observe();}
         void UpdateDecoration(bool visible)
         {
             if (!layer) return;
@@ -127,6 +130,16 @@ namespace SingedTerra.LastStand
             // No misleading line when a panel covers the attachment.
             var panel = Rect.MinMaxRect(bottomLeft.x,bottomLeft.y,topRight.x,topRight.y);
             if (!Finite(bottomLeft.x) || !Finite(bottomLeft.y) || !Finite(topRight.x) || !Finite(topRight.y) || panel.Contains(end)) return;
+            // A scrolling editor can move a bay label behind its viewport.
+            // Follow actual geometry each frame and never point from hidden text.
+            var mask=card.GetComponentInParent<RectMask2D>();
+            if(mask)
+            {
+                mask.rectTransform.GetWorldCorners(cardCorners);
+                var lo=RectTransformUtility.WorldToScreenPoint(UiCamera,cardCorners[0]);
+                var hi=RectTransformUtility.WorldToScreenPoint(UiCamera,cardCorners[2]);
+                if(!Rect.MinMaxRect(lo.x,lo.y,hi.x,hi.y).Contains(panel.center))return;
+            }
             float ratio = Finite(PixelRatio) && PixelRatio > 0 ? PixelRatio : 1;
             float thickness = 1.35f * ratio;
             bool beside = end.x > panel.xMax + 12 * ratio || end.x < panel.xMin - 12 * ratio;

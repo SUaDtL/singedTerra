@@ -3,7 +3,7 @@ import {lastStandDeploymentControl,assertIdleWaveSave} from '../../e2e/helpers/l
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertWaveBinding,assertWaveLifecycle,requireWaveChecks,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_CONTRACT} from './lastStandWaveQualification.mjs';
 
-export const WAVE_ENTRY_ACTIONS=Object.freeze([['Deploy','deploy'],['Deploy','resume'],['Menu','menu'],['MenuAbandon','confirmation'],
+export const WAVE_ENTRY_ACTIONS=Object.freeze([['Deploy','deploy'],['SpeedRate','session'],['Deploy','resume'],['Menu','menu'],['MenuAbandon','confirmation'],
   ['ConfirmCancel','confirmation-cancel'],['SettingsClose','menu-close'],['Menu','menu'],['MenuAbandon','confirmation'],['ConfirmProceed','abandon']]);
 function captureIdentity(capture,selected){
   assert.deepEqual(capture.viewport,{width:selected.width,height:selected.height});

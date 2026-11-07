@@ -114,7 +114,8 @@ def main():
                 {'ST-LS-INTEL-SPEC', 'ST-LS-INTEL-PLAN'},
                 {'ST-LS-CLARITY-SPEC', 'ST-LS-CLARITY-PLAN'},
                 {'ST-LS-CONTINUITY-SPEC', 'ST-LS-CONTINUITY-PLAN'},
-                {'ST-LS-TANK-SPEC', 'ST-LS-TANK-PLAN'}),
+                {'ST-LS-TANK-SPEC', 'ST-LS-TANK-PLAN'},
+                {'ST-LS-BUILDCRAFT-SPEC', 'ST-LS-BUILDCRAFT-PLAN'}),
                 'Supply the caller-observed Last Stand spec/plan identity pair')
         for identity in record['approved_artifacts'].values():
             require(set(identity) == {'revision', 'model_sha256', 'normative_sha256'}

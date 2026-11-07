@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><meta name="ca-artifact-format" content="codearbiter.artifact/0.1.0"><title>Last Stand — Buildcraft, mid-game campaign and playtest readiness · codeArbiter</title><style>
+:root{color-scheme:light;--ink:#172332;--muted:#516173;--line:#d5dde5;--paper:#fff;--soft:#f4f6f9;--accent:#81530b;--nav:#101923;--gold:#efba4a;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box;min-width:0}html{scroll-behavior:auto;scroll-padding-top:1rem}body{margin:0;background:var(--soft);color:var(--ink);overflow-wrap:anywhere}a{color:#235a86;text-decoration-thickness:.08em;text-underline-offset:.16em}a:focus-visible,summary:focus-visible{outline:3px solid #b36b00;outline-offset:4px}a:hover{text-decoration:underline}.skip{position:absolute;left:1rem;top:-8rem;z-index:5;background:white;padding:1rem}.skip:focus{top:1rem}.layout{display:grid;grid-template-columns:17rem minmax(0,1fr);max-width:112rem;margin:auto}.sidebar{background:var(--nav);color:#dbe4ee;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto}.sidebar img{max-width:100%;height:40px;width:auto;object-fit:contain;object-position:left}.sidebar h2{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#b3c2d1;margin-top:2rem}.sidebar a{display:block;color:#dbe4ee;padding:.4rem 0;text-decoration:none;font-size:.9rem}.sidebar a:hover{color:var(--gold)}.sidebar p{font-size:.8rem;color:#aebdcc}.sidebar .companion{border-top:1px solid #3a4654;margin-top:1.5rem;padding-top:1.5rem}.main{padding:3rem clamp(1rem,4vw,5rem);max-width:90rem}.hero{padding-bottom:2rem;border-bottom:3px solid #26374a;margin-bottom:2rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.status{display:inline-block;font-size:.77rem;font-weight:700;background:#ece6db;color:#624513;padding:.3rem .65rem;border:1px solid #cec2ae;border-radius:.3rem}.hero h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15;letter-spacing:-.035em;margin:1.2rem 0}.deck{font-size:1.1rem;max-width:75ch}.meta{display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}h2{font-size:1.6rem;line-height:1.3}h3{font-size:1.15rem;line-height:1.35}.group{margin:2.5rem 0}.group>h2{padding-bottom:.65rem;border-bottom:1px solid var(--line)}.record{padding:1.5rem;background:var(--paper);border:1px solid var(--line);border-radius:.5rem;margin:1rem 0;box-shadow:0 1px 2px #17233205}.record .record{box-shadow:none;background:var(--soft);padding:1rem}.record-head{display:flex;gap:.65rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.85rem}.record-head h3{margin:0;flex:1 1 20rem}.id{font:700 .78rem/1.5 ui-monospace,Consolas,monospace;color:#654f28;text-decoration:none;background:#f1ece0;border-radius:.2rem;padding:.15rem .4rem}.kind,.badge{font-size:.73rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.retired{border-style:dashed;background:#f7f7f7}.field{margin:.9rem 0}.label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:.25rem}.field p{margin:.2rem 0;white-space:pre-wrap}.missing{font-size:.9rem;color:#765810;font-style:italic}.items{padding-left:1.4rem;margin:.4rem 0}.items li{margin:.4rem 0}.fields{border-left:2px solid var(--line);padding-left:1rem}.table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:.3rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:.9rem;table-layout:fixed}th,td{padding:.7rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#e9eef3;font-weight:700}tr:last-child td{border:0}pre{padding:1rem;background:#edf1f5;border:1px solid var(--line);border-radius:.3rem;white-space:pre-wrap;overflow-wrap:anywhere;font:.84rem/1.6 ui-monospace,Consolas,monospace}code{font-family:ui-monospace,Consolas,monospace}.refs{font-size:.82rem;display:flex;gap:.6rem;flex-wrap:wrap}.block{margin:.8rem 0}.block p{white-space:pre-wrap}.notice{border-left:4px solid #a37825;padding:.8rem 1rem;background:#f4eddc}.footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem;margin-top:3rem}.digest{font: .75rem/1.6 ui-monospace,Consolas,monospace;word-break:break-all}details{border:1px solid var(--line);border-radius:.3rem;padding:.7rem 1rem}summary{cursor:pointer;font-weight:600}.back{font-size:.8rem;float:right;margin-left:1rem}.record:target{outline:3px solid #b5812a;outline-offset:3px}@media(max-width:850px){.layout{display:block}.sidebar{position:relative;height:auto;padding:1.2rem 1rem}.sidebar nav{display:flex;flex-wrap:wrap;gap:.1rem 1rem}.sidebar nav a{padding:.2rem 0}.sidebar h2,.sidebar .identity{display:none}.sidebar .companion{margin-top:.7rem;padding-top:.7rem}.main{padding:1.5rem 1rem}.record{padding:1rem}.hero h1{font-size:2rem}table{font-size:.82rem}.record-head h3{flex-basis:100%}}@media print{.layout{display:block}.sidebar,.skip,.back{display:none}.main{max-width:none;padding:0}.record{box-shadow:none;break-inside:avoid;border-color:#888}.record .record{break-inside:auto}.hero h1{font-size:26pt}.group{break-before:auto}.group>h2{break-after:avoid}a{color:inherit}.table-wrap{overflow:visible}body{font-size:10pt;background:white}pre{white-space:pre-wrap}details{display:block}.footer{font-size:8pt}}
+</style></head><body><a class="skip" href="#main-content">Skip to document</a><div class="layout"><aside class="sidebar"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==" alt="codeArbiter"><p class="identity">ST-LS-BUILDCRAFT-SPEC</p><h2>In this document</h2><nav aria-label="Document sections"><a href="#group-intent">Intent</a><a href="#group-scope">Scope</a><a href="#group-non_goals">Non goals</a><a href="#group-approach">Approach</a><a href="#group-constraints">Constraints</a><a href="#group-decisions">Decisions</a><a href="#group-criteria">Criteria</a><a href="#group-open_decisions">Open decisions</a><a href="#group-sections">Sections</a><a href="#group-sources">Sources</a><a href="#group-baseline">Baseline</a><a href="#group-retired_symbols">Retired symbols</a></nav><a class="companion" href="../plans/last-stand-buildcraft-and-midgame.html">Open companion implementation plan</a><p>Generated from the embedded model. Edit through the artifact engine, not the HTML view.</p></aside><main class="main" id="main-content"><header class="hero"><p class="eyebrow">codeArbiter / spec</p><span class="status">DRAFT · progress and verification tracked separately</span><h1>Last Stand — Buildcraft, mid-game campaign and playtest readiness</h1><p class="deck">Approved sprint: two-bay builds and saved loadouts, new fittings/research, six-tier authored campaign, earned balance and actual candidate qualification. Includes integration and merges of the existing PR stack and applicable dependency work after required checks.</p><div class="meta"><span>ST-LS-BUILDCRAFT-SPEC</span><span>Revision 4 · schema 0.3.2</span><span>74 addressable records</span></div></header><section class="group" id="group-intent"><a class="back" href="#main-content">Top</a><h2>Intent</h2>
+<!-- CA:BEGIN:INT-BUILDCRAFT -->
+<article class="record" id="INT-BUILDCRAFT" data-ca-symbol="INT-BUILDCRAFT" data-ca-kind="intent"><div class="record-head"><a class="id" href="#INT-BUILDCRAFT">INT-BUILDCRAFT</a><h3>Intent</h3></div><div class="field"><span class="label">Caller</span>Last Stand owner and returning farming players</div><div class="field"><span class="label">Outcome</span>Players can earn and compare distinct builds, pursue six authored tiers without abandoning profitable lower-tier farms, and trust that progress and readable controls survive longer sessions and restarts.</div><div class="field"><span class="label">Problem</span>The integrated game has shared foundations but only one auxiliary at a time, four economy/speed research tracks and four tiers. It needs interacting build choices and meaningful mid-game goals, while actual platform and long-run release proof still lags implementation.</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-REQUEST">SRC-REQUEST</a></li><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li><li><a href="#SRC-BASE">SRC-BASE</a></li></ul></div></article>
+<!-- CA:END:INT-BUILDCRAFT -->
+</section><section class="group" id="group-scope"><a class="back" href="#main-content">Top</a><h2>Scope</h2>
+<!-- CA:BEGIN:S-ARMORY -->
+<article class="record" id="S-ARMORY" data-ca-symbol="S-ARMORY" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-ARMORY">S-ARMORY</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Two fixed functional bays (second earned), three presets, seven total fittings and actual tank callouts.</div></article>
+<!-- CA:END:S-ARMORY -->
+
+<!-- CA:BEGIN:S-RESEARCH -->
+<article class="record" id="S-RESEARCH" data-ca-symbol="S-RESEARCH" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-RESEARCH">S-RESEARCH</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Three combat tracks and a third earned lab using the existing Salvage and real-time research authority.</div></article>
+<!-- CA:END:S-RESEARCH -->
+
+<!-- CA:BEGIN:S-CAMPAIGN -->
+<article class="record" id="S-CAMPAIGN" data-ca-symbol="S-CAMPAIGN" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-CAMPAIGN">S-CAMPAIGN</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Two new tiers/environments, two support roles, one boss variation and typed milestone bundles through deep waves.</div></article>
+<!-- CA:END:S-CAMPAIGN -->
+
+<!-- CA:BEGIN:S-FARMING -->
+<article class="record" id="S-FARMING" data-ca-symbol="S-FARMING" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-FARMING">S-FARMING</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Earned economy/pair calibration, comparable run history and a real-duration farming trial.</div></article>
+<!-- CA:END:S-FARMING -->
+
+<!-- CA:BEGIN:S-READINESS -->
+<article class="record" id="S-READINESS" data-ca-symbol="S-READINESS" data-ca-kind="scope"><div class="record-head"><a class="id" href="#S-READINESS">S-READINESS</a><h3>Scope</h3></div><div class="field"><span class="label">Statement</span>Sibling-screen clarity, retained-save migration, target builds/lifecycle/input/audio checks and dependency-stack delivery planning.</div></article>
+<!-- CA:END:S-READINESS -->
+</section><section class="group" id="group-non_goals"><a class="back" href="#main-content">Top</a><h2>Non goals</h2>
+<!-- CA:BEGIN:N-SERVICE -->
+<article class="record" id="N-SERVICE" data-ca-symbol="N-SERVICE" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-SERVICE">N-SERVICE</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No accounts, cloud save, multiplayer campaign, paid shop, premium currency, ads or combat progress while closed.</div></article>
+<!-- CA:END:N-SERVICE -->
+
+<!-- CA:BEGIN:N-LOOT -->
+<article class="record" id="N-LOOT" data-ca-symbol="N-LOOT" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-LOOT">N-LOOT</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No randomized module rarity, inventory grind, procedural equipment grid, more than two bays or stat-bearing cosmetics.</div></article>
+<!-- CA:END:N-LOOT -->
+
+<!-- CA:BEGIN:N-ENDLESS -->
+<article class="record" id="N-ENDLESS" data-ca-symbol="N-ENDLESS" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-ENDLESS">N-ENDLESS</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No claim to complete an 18-tier/endgame campaign; author six tiers while preserving deep and continuing waves.</div></article>
+<!-- CA:END:N-ENDLESS -->
+
+<!-- CA:BEGIN:N-REWRITE -->
+<article class="record" id="N-REWRITE" data-ca-symbol="N-REWRITE" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-REWRITE">N-REWRITE</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No replacement wallet, save store, UI framework, renderer or verification monolith; keep classic artillery behavior separate.</div></article>
+<!-- CA:END:N-REWRITE -->
+
+<!-- CA:BEGIN:N-PUBLISH -->
+<article class="record" id="N-PUBLISH" data-ca-symbol="N-PUBLISH" data-ca-kind="non_goals"><div class="record-head"><a class="id" href="#N-PUBLISH">N-PUBLISH</a><h3>Non goals</h3></div><div class="field"><span class="label">Statement</span>No new paid service, store submission, signing identity or public release-version choice. The owner has authorized repository integration and merges; actual deployment caused by the existing merge workflow is observed separately from native/device acceptance.</div></article>
+<!-- CA:END:N-PUBLISH -->
+</section><section class="group" id="group-approach"><a class="back" href="#main-content">Top</a><h2>Approach</h2>
+<!-- CA:BEGIN:APP-EXTEND -->
+<article class="record" id="APP-EXTEND" data-ca-symbol="APP-EXTEND" data-ca-kind="approach"><div class="record-head"><a class="id" href="#APP-EXTEND">APP-EXTEND</a><h3>Approach</h3></div><div class="field"><span class="label">Binding decision refs</span><ul class="items"><li><a href="#DEC-BAYS">DEC-BAYS</a></li><li><a href="#DEC-CONTENT">DEC-CONTENT</a></li><li><a href="#DEC-RESEARCH">DEC-RESEARCH</a></li><li><a href="#DEC-COMPAT">DEC-COMPAT</a></li></ul></div><div class="field"><span class="label">Choice</span>Extend the current local, catalog-driven platform with two fixed functional bays and versioned immutable run effects. Keep shared saves, wallets, quotes, pages and verification owners.</div><div class="field"><span class="label">Tradeoff</span>Two bays create 21 distinct pairs from seven fittings and meaningful specialization, but multiply compatibility, balance and rig work. Cap at two bays and three presets this sprint; sequence the edition migration before new content. Do not add a modular grid, random loot or another economy.</div></article>
+<!-- CA:END:APP-EXTEND -->
+</section><section class="group" id="group-constraints"><a class="back" href="#main-content">Top</a><h2>Constraints</h2>
+<!-- CA:BEGIN:K-LOCAL -->
+<article class="record" id="K-LOCAL" data-ca-symbol="K-LOCAL" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#K-LOCAL">K-LOCAL</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>C-BUILDS</li><li>C-RESEARCH</li><li>C-CAMPAIGN</li><li>C-RESUME</li><li>C-OWNERS</li><li>C-PLATFORM</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Keep local browser/native persistence, one save/transaction owner and no paid currency, account service or cloud-sync promise.</div></article>
+<!-- CA:END:K-LOCAL -->
+
+<!-- CA:BEGIN:K-EDITION -->
+<article class="record" id="K-EDITION" data-ca-symbol="K-EDITION" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#K-EDITION">K-EDITION</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>C-BUILDS</li><li>C-FITTINGS</li><li>C-RESEARCH</li><li>C-WAVES</li><li>C-CAMPAIGN</li><li>C-ECONOMY</li><li>C-RESUME</li><li>C-OWNERS</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Version every changed run mechanic and reward projection. Freeze all four supported tuples (waves-v1/content-v1 with economies v1, v2 or v3; waves-v2/content-v2 with economy v4) before adding the next tuple. Old paid checkpoints retain their loadout, payouts, stats and wave rules; preserve established live GameSpeed and SalvageRecovery behavior.</div></article>
+<!-- CA:END:K-EDITION -->
+
+<!-- CA:BEGIN:K-CLOCK -->
+<article class="record" id="K-CLOCK" data-ca-symbol="K-CLOCK" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#K-CLOCK">K-CLOCK</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>C-RESEARCH</li><li>C-WAVES</li><li>C-RESUME</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Research advances by real time while closed; combat does not. Speed remains 0–5x in 0.5 steps with earned caps. Resume at the last completed wave, paused.</div></article>
+<!-- CA:END:K-CLOCK -->
+
+<!-- CA:BEGIN:K-STYLE -->
+<article class="record" id="K-STYLE" data-ca-symbol="K-STYLE" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#K-STYLE">K-STYLE</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>C-BUILDS</li><li>C-FITTINGS</li><li>C-CAMPAIGN</li><li>C-SCREENS</li><li>C-PRESENTATION</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Keep cosmetics stat-free, shared chrome/page navigation and independent guidance/purchase-prompt settings. Preserve keyboard/touch use and at least 44px interactive targets.</div></article>
+<!-- CA:END:K-STYLE -->
+
+<!-- CA:BEGIN:K-PROOF -->
+<article class="record" id="K-PROOF" data-ca-symbol="K-PROOF" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#K-PROOF">K-PROOF</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>C-ECONOMY</li><li>C-RESUME</li><li>C-SCREENS</li><li>C-PRESENTATION</li><li>C-PLATFORM</li><li>C-DELIVERY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li><li><a href="#SRC-BALANCE">SRC-BALANCE</a></li></ul></div><div class="field"><span class="label">Statement</span>Never substitute build success, seeded currency, a fast simulation or a screenshot for player-input, earned progression, physical-device, listening or real-duration evidence. Preserve owner saves and raw historical reports.</div></article>
+<!-- CA:END:K-PROOF -->
+
+<!-- CA:BEGIN:K-DELIVERY -->
+<article class="record" id="K-DELIVERY" data-ca-symbol="K-DELIVERY" data-ca-kind="constraints"><div class="record-head"><a class="id" href="#K-DELIVERY">K-DELIVERY</a><h3>Constraints</h3></div><div class="field"><span class="label">Applies to</span><ul class="items"><li>C-DELIVERY</li></ul></div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-BASE">SRC-BASE</a></li><li><a href="#SRC-ADR">SRC-ADR</a></li></ul></div><div class="field"><span class="label">Statement</span>Current baseline is the integrated release-foundation branch. Respect the 543/544/546 dependency chain, retained ADR ancestry, separate merge/publication authority and classic-mode boundaries.</div></article>
+<!-- CA:END:K-DELIVERY -->
+</section><section class="group" id="group-decisions"><a class="back" href="#main-content">Top</a><h2>Decisions</h2>
+<!-- CA:BEGIN:DEC-BAYS -->
+<article class="record" id="DEC-BAYS" data-ca-symbol="DEC-BAYS" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-BAYS">DEC-BAYS</a><h3>Build structure</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Propose two fixed bays with no duplicate fittings; second bay at T1 wave 750, three saved presets.</div><div class="field"><span class="label">Rationale</span>A bounded second bay creates complementary builds while preserving familiar selection and manageable coverage.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-EXECUTION">SRC-EXECUTION</a></div></article>
+<!-- CA:END:DEC-BAYS -->
+
+<!-- CA:BEGIN:DEC-CONTENT -->
+<article class="record" id="DEC-CONTENT" data-ca-symbol="DEC-CONTENT" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-CONTENT">DEC-CONTENT</a><h3>Campaign depth</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Propose T5 Glass Wastes and T6 Frostline Relay, Shield Carrier/Medic roles and a 100-wave Siege Commander variation on those tiers.</div><div class="field"><span class="label">Rationale</span>Adds authored combat reasons for builds rather than only larger health values; working names can change without changing scope.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-EXECUTION">SRC-EXECUTION</a></div></article>
+<!-- CA:END:DEC-CONTENT -->
+
+<!-- CA:BEGIN:DEC-RESEARCH -->
+<article class="record" id="DEC-RESEARCH" data-ca-symbol="DEC-RESEARCH" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-RESEARCH">DEC-RESEARCH</a><h3>Specialization and lab capacity</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Propose Armor Piercing, Area Control and Field Engineering (20 ranks each), unlocked at T1 wave 500, and Lab 3 at T2 wave 500.</div><div class="field"><span class="label">Rationale</span>Uses existing currency/timer tradeoffs and provides earned capacity as the research catalog grows. Exact effects/cost curves are calibrated in the balance task.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-EXECUTION">SRC-EXECUTION</a></div></article>
+<!-- CA:END:DEC-RESEARCH -->
+
+<!-- CA:BEGIN:DEC-COMPAT -->
+<article class="record" id="DEC-COMPAT" data-ca-symbol="DEC-COMPAT" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-COMPAT">DEC-COMPAT</a><h3>Existing paid runs</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Preserve every supported edition; only new deployments use the new mechanics/economy.</div><div class="field"><span class="label">Rationale</span>This is the owner&#39;s established saved-run rule and is required across all new content.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-PRODUCT">SRC-PRODUCT</a></div></article>
+<!-- CA:END:DEC-COMPAT -->
+
+<!-- CA:BEGIN:DEC-FARMING -->
+<article class="record" id="DEC-FARMING" data-ca-symbol="DEC-FARMING" data-ca-kind="decisions"><div class="record-head"><a class="id" href="#DEC-FARMING">DEC-FARMING</a><h3>Progression pacing</h3></div><div class="field"><span class="label">Authority</span>inherited</div><div class="field"><span class="label">Choice</span>Retain 300-wave access, meaningful deep farms and the 5000-wave 10–12 hour 5x mature-run reference.</div><div class="field"><span class="label">Rationale</span>These are distinct access, comfort and pacing concepts, not forced promotion milestones.</div><div class="field"><span class="label">Source ref</span><a href="#SRC-PRODUCT">SRC-PRODUCT</a></div></article>
+<!-- CA:END:DEC-FARMING -->
+</section><section class="group" id="group-criteria"><a class="back" href="#main-content">Top</a><h2>Criteria</h2>
+<!-- CA:BEGIN:C-BUILDS -->
+<article class="record" id="C-BUILDS" data-ca-symbol="C-BUILDS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-BUILDS">C-BUILDS</a><h3>Two-bay Armory and three saved loadouts</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-LOCAL">K-LOCAL</a></li><li><a href="#K-EDITION">K-EDITION</a></li><li><a href="#K-STYLE">K-STYLE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Each bay accepts one unlocked fitting; duplicates are rejected. Before the unlock, the second bay explains its milestone and cannot apply.</li><li>Editing is a staged preview with explicit Apply/Cancel; Apply uses the profile coordinator. A loadout change affects the next deployment only, never a live or retained checkpoint.</li><li>Presets store stable fitting IDs and bounded plain-text names, not copies of prices or mutable stats. Selecting a preset shows compatible, locked and missing states without silently removing equipment.</li><li>Expose effect summaries and fitting-to-tank callouts through shared projections; no expanding row of per-fitting buttons.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-ARMORY">S-ARMORY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-BUILDS -->
+<article class="record" id="SC-BUILDS" data-ca-symbol="SC-BUILDS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-BUILDS">SC-BUILDS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A T1 wave 749 profile with a retained one-fitting run</div><div class="field"><span class="label">Then</span>Bay two unlocks once; Cancel changes nothing; Apply saves the future build while the retained run stays unchanged.</div><div class="field"><span class="label">When</span>Clear wave 750, preview two distinct fittings, cancel once, then Apply</div></article>
+<!-- CA:END:SC-BUILDS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Retain the automatic cannon; let players prepare one auxiliary initially and unlock a second at Tier 1 wave 750. Offer three named loadout presets in the existing garage.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-BUILDS -->
+<article class="record" id="V-BUILDS" data-ca-symbol="V-BUILDS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-BUILDS">V-BUILDS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Locked second bay, duplicate fitting, stale writer, invalid preset IDs, Cancel, save failure and active-run Apply all preserve authoritative progress.</div><div class="field"><span class="label">Oracle</span>Each bay accepts one unlocked fitting; duplicates are rejected. Before the unlock, the second bay explains its milestone and cannot apply. Editing is a staged preview with explicit Apply/Cancel; Apply uses the profile coordinator. A loadout change affects the next deployment only, never a live or retained checkpoint. Presets store stable fitting IDs and bounded plain-text names, not copies of prices or mutable stats. Selecting a preset shows compatible, locked and missing states without silently removing equipment. Expose effect summaries and fitting-to-tank callouts through shared projections; no expanding row of per-fitting buttons.</div><div class="field"><span class="label">Planned target</span>Portable loadout/save tests plus actual Armory keyboard/touch and deploy/resume journey.</div></article>
+<!-- CA:END:V-BUILDS -->
+</div></article>
+<!-- CA:END:C-BUILDS -->
+
+<!-- CA:BEGIN:C-FITTINGS -->
+<article class="record" id="C-FITTINGS" data-ca-symbol="C-FITTINGS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-FITTINGS">C-FITTINGS</a><h3>Two complementary fittings</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-EDITION">K-EDITION</a></li><li><a href="#K-STYLE">K-STYLE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Arc Emitter unlocks at Tier 2 wave 300; each pulse visits a bounded number of distinct enemies once, with explicit range and falloff.</li><li>Reactive Shield unlocks at Tier 3 wave 100; capacity, recharge delay and damage absorption are visible, bounded and fixed-step deterministic.</li><li>All seven single-fitting choices and 21 distinct pairs are valid after unlocks. Cannon plus both equipped effects run through the existing combat owner; unequipped effects never execute.</li><li>Shield/repair combinations cannot create unlimited invulnerability or heal beyond hull cap; module damage and defenses share the same presentation and combat calculations.</li><li>Add Arc Output (Attack) and Shield Capacity (Defense) to the existing shared upgrade catalog: proposed 5000 total / 2500 permanent caps, run-local Scrap and permanent Salvage quotes, and existing bulk quantities. A fitting-specific track applies when either bay contains that fitting; common upgrades apply once, never twice. Workshop purchases retain value while unequipped. Recharge timing stays bounded through the fitting/research projection, not a hidden third price formula.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-ARMORY">S-ARMORY</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-FITTINGS -->
+<article class="record" id="SC-FITTINGS" data-ca-symbol="SC-FITTINGS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-FITTINGS">SC-FITTINGS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>An unlocked Arc/Shield loadout and a finite enemy group</div><div class="field"><span class="label">Then</span>Damage and shield values match fixed-step outcomes; no duplicate chain target, overflow, excess healing or reward.</div><div class="field"><span class="label">When</span>Run equal inputs at different presentation speeds, exhaust shield and remove chain targets</div></article>
+<!-- CA:END:SC-FITTINGS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-ENEMIES">SRC-ENEMIES</a></li></ul></div><div class="field"><span class="label">Statement</span>Add Arc Emitter (bounded chain damage) and Reactive Shield (bounded renewable protection) to the existing five fittings.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-FITTINGS -->
+<article class="record" id="V-FITTINGS" data-ca-symbol="V-FITTINGS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-FITTINGS">V-FITTINGS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Repeat-chain, zero targets, shield exhaustion/recharge, simultaneous damage, duplicate fit and extreme-value cases must fail safely without overflow or duplicate rewards.</div><div class="field"><span class="label">Oracle</span>Arc Emitter unlocks at Tier 2 wave 300; each pulse visits a bounded number of distinct enemies once, with explicit range and falloff. Reactive Shield unlocks at Tier 3 wave 100; capacity, recharge delay and damage absorption are visible, bounded and fixed-step deterministic. All seven single-fitting choices and 21 distinct pairs are valid after unlocks. Cannon plus both equipped effects run through the existing combat owner; unequipped effects never execute. Shield/repair combinations cannot create unlimited invulnerability or heal beyond hull cap; module damage and defenses share the same presentation and combat calculations.</div><div class="field"><span class="label">Planned target</span>Direct combat tests and equal-budget pair measurements, with normal-speed visible effects.</div></article>
+<!-- CA:END:V-FITTINGS -->
+</div></article>
+<!-- CA:END:C-FITTINGS -->
+
+<!-- CA:BEGIN:C-RESEARCH -->
+<article class="record" id="C-RESEARCH" data-ca-symbol="C-RESEARCH" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-RESEARCH">C-RESEARCH</a><h3>Combat research and a third earned lab</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-LOCAL">K-LOCAL</a></li><li><a href="#K-EDITION">K-EDITION</a></li><li><a href="#K-CLOCK">K-CLOCK</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Armor Piercing increases bounded armor penetration; Area Control increases applicable splash/chain effectiveness; Field Engineering improves applicable repair/shield recovery. Each quote names the affected fittings and shows the before/after effect.</li><li>Tracks unlock at Tier 1 wave 500. Existing four tracks, paid elapsed research, queues and two lab unlocks retain their accounting.</li><li>Shared Salvage funds all seven tracks and Workshop; no new currency, free ranks or automatic paid repeat.</li><li>Only the three new combat tracks are captured for a deployment. Preserve existing live GameSpeed admission and wave-settlement SalvageRecovery behavior, existing ResearchSpeed semantics and all paid timers/queues. Lab and Planner consume the same quote authority; completing a new combat rank changes future deployments without modifying an active checkpoint.</li><li>Costs/durations are calibrated against earned income; twenty ranks are a cap, not an early-game completion target.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-RESEARCH">S-RESEARCH</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-RESEARCH -->
+<article class="record" id="SC-RESEARCH" data-ca-symbol="SC-RESEARCH" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-RESEARCH">SC-RESEARCH</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>An old two-lab profile with paid partial research and an active run</div><div class="field"><span class="label">Then</span>Paid work is retained, real time alone advances research, and new combat effects apply on the next deployment.</div><div class="field"><span class="label">When</span>Earn Lab 3, start a combat track, close/reopen and complete it</div></article>
+<!-- CA:END:SC-RESEARCH -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Add Armor Piercing, Area Control and Field Engineering research, initially 20 ranks each, and unlock a third concurrent lab at Tier 2 wave 500.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-RESEARCH -->
+<article class="record" id="V-RESEARCH" data-ca-symbol="V-RESEARCH" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-RESEARCH">V-RESEARCH</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Clock rollback, close/reopen, switching/refunds, insufficient funds, old two-lab saves and research completing during an active old-edition run preserve elapsed work and currency.</div><div class="field"><span class="label">Oracle</span>Armor Piercing increases bounded armor penetration; Area Control increases applicable splash/chain effectiveness; Field Engineering improves applicable repair/shield recovery. Each quote names the affected fittings and shows the before/after effect. Tracks unlock at Tier 1 wave 500. Existing four tracks, paid elapsed research, queues and two lab unlocks retain their accounting. Shared Salvage funds all seven tracks and Workshop; no new currency, free ranks or automatic paid repeat. Completion updates permanent profile progression; a deployed run retains its captured combat effects until the next deployment. Quotes, Planner and Lab consume the same authority. Costs/durations are calibrated against earned income; twenty ranks are a cap, not an early-game completion target.</div><div class="field"><span class="label">Planned target</span>Research/quote/coordinator regressions, save roundtrip and real UI start/suspend/resume journeys.</div></article>
+<!-- CA:END:V-RESEARCH -->
+</div></article>
+<!-- CA:END:C-RESEARCH -->
+
+<!-- CA:BEGIN:C-WAVES -->
+<article class="record" id="C-WAVES" data-ca-symbol="C-WAVES" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-WAVES">C-WAVES</a><h3>Support enemies and a readable boss encounter</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-EDITION">K-EDITION</a></li><li><a href="#K-CLOCK">K-CLOCK</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Shield Carrier lends a bounded damage buffer to a capped number of nearby allies; it is itself damageable and never makes an enemy invulnerable.</li><li>Medic has a finite per-wave healing budget, cannot resurrect enemies and cannot create a permanent healing loop.</li><li>On Tiers 5 and 6, each 100th wave uses a telegraphed Siege Commander variation; the existing Siege Elite remains the intervening 50-wave encounter.</li><li>Current-wave intelligence and next milestone/boss preview show actual HP, armor, damage, value and special rules from the spawning/combat projection.</li><li>Waves still end only after all their enemies are defeated; encounter variety does not require continuous manual input and never raises the current bounded population cap merely to make difficulty.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CAMPAIGN">S-CAMPAIGN</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-WAVES -->
+<article class="record" id="SC-WAVES" data-ca-symbol="SC-WAVES" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-WAVES">SC-WAVES</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A new-tier wave containing support enemies and an authored boss</div><div class="field"><span class="label">Then</span>Support is finite and damageable; telegraphs/stats match combat; the wave clears once after the last enemy.</div><div class="field"><span class="label">When</span>Exhaust healing, kill support in different orders, then defeat all enemies</div></article>
+<!-- CA:END:SC-WAVES -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-ENEMIES">SRC-ENEMIES</a></li></ul></div><div class="field"><span class="label">Statement</span>Add Shield Carrier and Medic support roles plus a Siege Commander encounter to new-tier recipes.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-WAVES -->
+<article class="record" id="V-WAVES" data-ca-symbol="V-WAVES" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-WAVES">V-WAVES</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Destroy support first/last, simultaneous kills, empty aura targets, healing-budget exhaustion, pause/speed changes and high waves preserve deterministic clear/reward behavior.</div><div class="field"><span class="label">Oracle</span>Shield Carrier lends a bounded damage buffer to a capped number of nearby allies; it is itself damageable and never makes an enemy invulnerable. Medic has a finite per-wave healing budget, cannot resurrect enemies and cannot create a permanent healing loop. On Tiers 5 and 6, each 100th wave uses a telegraphed Siege Commander variation; the existing Siege Elite remains the intervening 50-wave encounter. Current-wave intelligence and next milestone/boss preview show actual HP, armor, damage, value and special rules from the spawning/combat projection. Waves still end only after all their enemies are defeated; encounter variety does not require continuous manual input and never raises the current bounded population cap merely to make difficulty.</div><div class="field"><span class="label">Planned target</span>Direct deterministic encounter fixtures, combat-info parity and actual wave-clear/boss presentation journey.</div></article>
+<!-- CA:END:V-WAVES -->
+</div></article>
+<!-- CA:END:C-WAVES -->
+
+<!-- CA:BEGIN:C-CAMPAIGN -->
+<article class="record" id="C-CAMPAIGN" data-ca-symbol="C-CAMPAIGN" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-CAMPAIGN">C-CAMPAIGN</a><h3>Six authored tiers with durable milestone rewards</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-LOCAL">K-LOCAL</a></li><li><a href="#K-EDITION">K-EDITION</a></li><li><a href="#K-STYLE">K-STYLE</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Tier 5 unlocks by clearing Tier 4 wave 300; Tier 6 unlocks by clearing Tier 5 wave 300. Unlocking never forces promotion or changes the selected tier.</li><li>Keep current tiers and deep-wave farms. The selector shows unlocked tiers plus the first locked tier only, with a live environment preview.</li><li>New milestone bundles support Salvage, fitting, lab and bay unlocks without duplicated hand-coded wave checks or a one-reward-type limitation.</li><li>Retain stable claimed milestone identity and atomic first-clear claims. Pay on successful completed-wave save; interruption, restore and repeat farming cannot duplicate or erase a claim.</li><li>Author rewards through waves 300, 500, 750, 1000, 1500, 2000, 3000, 4000 and 5000, preserving existing early milestones and allowing continued waves beyond the authored track.</li><li>A shared entitlement reconciler runs on profile migration and each accepted completed-wave save, including retained editions. It derives newly earned bay/lab/fitting access from durable best waves while preserving edition-specific payouts and prior claim IDs.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-CAMPAIGN">S-CAMPAIGN</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-CAMPAIGN -->
+<article class="record" id="SC-CAMPAIGN" data-ca-symbol="SC-CAMPAIGN" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-CAMPAIGN">SC-CAMPAIGN</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A player earns T2 wave 300 while the save write can be interrupted</div><div class="field"><span class="label">Then</span>All entitlements settle atomically exactly once, prior Salvage is not duplicated, and tier selection does not force promotion.</div><div class="field"><span class="label">When</span>Settle the combined tier/fitting/resource reward, restart and replay the claim</div></article>
+<!-- CA:END:SC-CAMPAIGN -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Extend the campaign with Tier 5 Glass Wastes and Tier 6 Frostline Relay, distinct environments and composition identities.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-CAMPAIGN -->
+<article class="record" id="V-CAMPAIGN" data-ca-symbol="V-CAMPAIGN" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-CAMPAIGN">V-CAMPAIGN</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Same-wave multiple unlocks, already-claimed milestones, interrupted saves, skipped versions and the hidden tier beyond the next locked one are covered.</div><div class="field"><span class="label">Oracle</span>Tier 5 unlocks by clearing Tier 4 wave 300; Tier 6 unlocks by clearing Tier 5 wave 300. Unlocking never forces promotion or changes the selected tier. Keep current tiers and deep-wave farms. The selector shows unlocked tiers plus the first locked tier only, with a live environment preview. New milestone bundles support Salvage, fitting, lab and bay unlocks without duplicated hand-coded wave checks or a one-reward-type limitation. Retain stable claimed milestone identity and atomic first-clear claims. Pay on successful completed-wave save; interruption, restore and repeat farming cannot duplicate or erase a claim. Author rewards through waves 300, 500, 750, 1000, 1500, 2000, 3000, 4000 and 5000, preserving existing early milestones and allowing continued waves beyond the authored track.</div><div class="field"><span class="label">Planned target</span>Catalog/reward/save tests and earned milestone/environment selector journey.</div></article>
+<!-- CA:END:V-CAMPAIGN -->
+</div></article>
+<!-- CA:END:C-CAMPAIGN -->
+
+<!-- CA:BEGIN:C-ECONOMY -->
+<article class="record" id="C-ECONOMY" data-ca-symbol="C-ECONOMY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-ECONOMY">C-ECONOMY</a><h3>Earned build choices and credible farming pace</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-EDITION">K-EDITION</a></li><li><a href="#K-PROOF">K-PROOF</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Compare all 21 pairs at equal Workshop/research budget across swarm, armor and support encounters; at least three distinct pairs must be on the measured damage/survival/farming frontier and no pair may dominate every tested scenario.</li><li>Report milestone acquisition, Scrap purchase cadence, Salvage/hour, research wait and Workshop opportunity cost from fresh profiles without gifted currency. Keep high-wave lower-tier farming competitive with shallow higher-tier resets.</li><li>Deep-level upgrade cost and effect curves must produce useful incremental purchases without early 5000-level gold boxing; no blanket linear +5-cost patch.</li><li>Use 300-wave tier access and approximately 2000-wave farming comfort as distinct progression intentions. The mature 5000-wave, 10–12 real-hour at 5x reference is a pacing goal, not a claim that Tier 10 exists or a forced 2000-wave unlock.</li><li>Measure real candidate pace separately from model throughput. Show unavailable earned paths rather than quietly replacing them with maxed saves; obtain owner play-feel review before calling balance accepted.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-FARMING">S-FARMING</a></li></ul></div><div class="field"><span class="label">Kind</span>behavior</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-ECONOMY -->
+<article class="record" id="SC-ECONOMY" data-ca-symbol="SC-ECONOMY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-ECONOMY">SC-ECONOMY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Fresh profiles and equal-budget pair branches using earned resources</div><div class="field"><span class="label">Then</span>Report acquisition times, opportunity costs and pair frontiers with limits; do not use gifted saves to claim earned progression.</div><div class="field"><span class="label">When</span>Measure deep lower-tier farms, shallow higher-tier resets and alternative spend policies</div></article>
+<!-- CA:END:SC-ECONOMY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-BALANCE">SRC-BALANCE</a></li><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Calibrate the new content using actually earned profiles and equal-budget comparisons, with explicit limits on what was measured.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-ECONOMY -->
+<article class="record" id="V-ECONOMY" data-ca-symbol="V-ECONOMY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-ECONOMY">V-ECONOMY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Include shallow-reset farming, one-bay starter builds, shield/repair stalemates, extreme levels, alternate spending policies and small perturbations of costs/damage.</div><div class="field"><span class="label">Oracle</span>Compare all 21 pairs at equal Workshop/research budget across swarm, armor and support encounters; at least three distinct pairs must be on the measured damage/survival/farming frontier and no pair may dominate every tested scenario. Report milestone acquisition, Scrap purchase cadence, Salvage/hour, research wait and Workshop opportunity cost from fresh profiles without gifted currency. Keep high-wave lower-tier farming competitive with shallow higher-tier resets. Deep-level upgrade cost and effect curves must produce useful incremental purchases without early 5000-level gold boxing; no blanket linear +5-cost patch. Use 300-wave tier access and approximately 2000-wave farming comfort as distinct progression intentions. The mature 5000-wave, 10–12 real-hour at 5x reference is a pacing goal, not a claim that Tier 10 exists or a forced 2000-wave unlock. Measure real candidate pace separately from model throughput. Show unavailable earned paths rather than quietly replacing them with maxed saves; obtain owner play-feel review before calling balance accepted.</div><div class="field"><span class="label">Planned target</span>Extended existing earned balance harness and source-bound full-duration farming observations.</div></article>
+<!-- CA:END:V-ECONOMY -->
+</div></article>
+<!-- CA:END:C-ECONOMY -->
+
+<!-- CA:BEGIN:C-RESUME -->
+<article class="record" id="C-RESUME" data-ca-symbol="C-RESUME" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-RESUME">C-RESUME</a><h3>Lossless upgrade and retained run behavior</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-LOCAL">K-LOCAL</a></li><li><a href="#K-EDITION">K-EDITION</a></li><li><a href="#K-CLOCK">K-CLOCK</a></li><li><a href="#K-PROOF">K-PROOF</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Snapshot all four supported tuples: waves-v1/content-v1 with long-run-economy-v1, research-farming-economy-v2 or research-farming-economy-v3; waves-v2/content-v2 with combat-depth-economy-v4. Resolve the next tuple explicitly; do not treat all non-legacy runs as the mutable current edition.</li><li>Old single fittings migrate into bay one with bay two empty for future runs; old active runs keep their original one-fitting model, purchases, effects and payouts.</li><li>Preserve appearance, preferences, claims, Workshop, paid research and checkpoint resources through upgrade, import/export, previous-save recovery and abrupt restart.</li><li>Unsupported future/corrupt/oversized data remains refused with original bytes preserved. Validation bounds preset names, IDs, arrays and file sizes; a failed write cannot replace good state.</li><li>Reconcile new profile entitlements both on migration and after accepted clears by retained runs; new bay/lab/fitting availability applies to future deployments without changing retained-run rewards or duplicating Salvage.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-READINESS">S-READINESS</a></li></ul></div><div class="field"><span class="label">Kind</span>compatibility</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-RESUME -->
+<article class="record" id="SC-RESUME" data-ca-symbol="SC-RESUME" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-RESUME">SC-RESUME</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Archived checkpoints from every supported run edition with paid upgrades</div><div class="field"><span class="label">Then</span>Original effects, payouts, hull, upgrades, preferences and paid research survive; the last completed wave resumes paused.</div><div class="field"><span class="label">When</span>Upgrade, export/import, simulate an interrupted write and resume</div></article>
+<!-- CA:END:SC-RESUME -->
+
+<!-- CA:BEGIN:SC-RETAINED-UNLOCK -->
+<article class="record" id="SC-RETAINED-UNLOCK" data-ca-symbol="SC-RETAINED-UNLOCK" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-RETAINED-UNLOCK">SC-RETAINED-UNLOCK</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>An old-edition active T1 run is saved at wave 749 when the update is installed.</div><div class="field"><span class="label">Then</span>Bay two becomes available for the next deployment exactly once; the retained run still has one bay and its original reward accounting.</div><div class="field"><span class="label">When</span>Clear wave 750 and reload the profile.</div></article>
+<!-- CA:END:SC-RETAINED-UNLOCK -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Upgrade existing profiles without invalidating saved paid work or reinterpreting any supported run edition.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-RESUME -->
+<article class="record" id="V-RESUME" data-ca-symbol="V-RESUME" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-RESUME">V-RESUME</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Replay representative saves from every supported version and edition; mutate unknown IDs, duplicate rewards, costs and checkpoint hashes; simulate stale writer and interrupted transaction.</div><div class="field"><span class="label">Oracle</span>Snapshot all four supported tuples: waves-v1/content-v1 with long-run-economy-v1, research-farming-economy-v2 or research-farming-economy-v3; waves-v2/content-v2 with combat-depth-economy-v4. Resolve the next tuple explicitly; do not treat all non-legacy runs as the mutable current edition. Old single fittings migrate into bay one with bay two empty for future runs; old active runs keep their original one-fitting model, purchases, effects and payouts. Preserve appearance, preferences, claims, Workshop, paid research and checkpoint resources through upgrade, import/export, previous-save recovery and abrupt restart. Unsupported future/corrupt/oversized data remains refused with original bytes preserved. Validation bounds preset names, IDs, arrays and file sizes; a failed write cannot replace good state. Reconcile new profile entitlements both on migration and after accepted clears by retained runs; new bay/lab/fitting availability applies to future deployments without changing retained-run rewards or duplicating Salvage.</div><div class="field"><span class="label">Planned target</span>Save compatibility corpus, checkpoint replay, portable backups and isolated real-platform recovery.</div></article>
+<!-- CA:END:V-RESUME -->
+</div></article>
+<!-- CA:END:C-RESUME -->
+
+<!-- CA:BEGIN:C-SCREENS -->
+<article class="record" id="C-SCREENS" data-ca-symbol="C-SCREENS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-SCREENS">C-SCREENS</a><h3>One understandable preparation and progression flow</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-STYLE">K-STYLE</a></li><li><a href="#K-PROOF">K-PROOF</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>From the garage the player can identify the next unlock, choose/equip a build, see its effect and deploy without reading implementation prose.</li><li>Lab shows the locked milestone or usable slot and an explicit Start action with cost/time; no AVAILABLE label for an action the player cannot take.</li><li>Planner and history compare saved builds with tier, wave, elapsed real time, earned resources and rules/content/economy edition; incompatible comparisons are labeled.</li><li>Locked, unaffordable, maxed, busy, stale-save and failed-save states have a concrete next action. Compact/touch layouts keep totals, prices and primary actions together.</li><li>Use shared focus/scroll/back behavior and chrome; independently disable optional prompts. Test the sibling screens, not just the new Armory.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-READINESS">S-READINESS</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-SCREENS -->
+<article class="record" id="SC-SCREENS" data-ca-symbol="SC-SCREENS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-SCREENS">SC-SCREENS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>A fresh player with zero labs and a returning player with an idle unlocked lab</div><div class="field"><span class="label">Then</span>The first sees the required milestone; the second sees an explicit affordable Start or shortfall, with consistent focus/back behavior.</div><div class="field"><span class="label">When</span>Open Lab on compact and desktop layouts, then follow the main action</div></article>
+<!-- CA:END:SC-SCREENS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Make Armory, Lab, Workshop, tier rewards and Planner a coherent preparation flow using the existing shared page and quote interfaces.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-SCREENS -->
+<article class="record" id="V-SCREENS" data-ca-symbol="V-SCREENS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-SCREENS">V-SCREENS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Review fresh, returning, zero-funds, all-labs-busy, long-name, short-window and keyboard-only sessions; no player must guess how to start research.</div><div class="field"><span class="label">Oracle</span>From the garage the player can identify the next unlock, choose/equip a build, see its effect and deploy without reading implementation prose. Lab shows the locked milestone or usable slot and an explicit Start action with cost/time; no AVAILABLE label for an action the player cannot take. Planner and history compare saved builds with tier, wave, elapsed real time, earned resources and rules/content/economy edition; incompatible comparisons are labeled. Locked, unaffordable, maxed, busy, stale-save and failed-save states have a concrete next action. Compact/touch layouts keep totals, prices and primary actions together. Use shared focus/scroll/back behavior and chrome; independently disable optional prompts. Test the sibling screens, not just the new Armory.</div><div class="field"><span class="label">Planned target</span>Actual screen journeys at desktop and compact sizes plus owner comprehension review.</div></article>
+<!-- CA:END:V-SCREENS -->
+</div></article>
+<!-- CA:END:C-SCREENS -->
+
+<!-- CA:BEGIN:C-PRESENTATION -->
+<article class="record" id="C-PRESENTATION" data-ca-symbol="C-PRESENTATION" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-PRESENTATION">C-PRESENTATION</a><h3>Readable fitted tank and battlefield identities</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-STYLE">K-STYLE</a></li><li><a href="#K-PROOF">K-PROOF</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Selection highlights and callout anchors attach to the actual fitted parts across all supported cosmetic assemblies; silhouettes do not overlap controls or misrepresent the selected bay.</li><li>Both fittings have distinct readable effects at 0.5x, 1x and 5x with reduced-effects preferences respected.</li><li>New environments preserve enemy/telegraph contrast and retain shared scalable chrome; no hand-painted copies of UI controls.</li><li>Ship only reviewed art/audio with source provenance and rights recorded. New sprint visual proposals do not silently resolve the older Q-ART owner decision.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-ARMORY">S-ARMORY</a></li><li><a href="#S-CAMPAIGN">S-CAMPAIGN</a></li></ul></div><div class="field"><span class="label">Kind</span>interface</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-PRESENTATION -->
+<article class="record" id="SC-PRESENTATION" data-ca-symbol="SC-PRESENTATION" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-PRESENTATION">SC-PRESENTATION</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Two fittings mounted on mixed cosmetic parts with reduced effects enabled</div><div class="field"><span class="label">Then</span>Callouts point to actual parts, both effects remain distinguishable and reduced-effects settings are honored without changing stats.</div><div class="field"><span class="label">When</span>Select each bay, preview new terrains and play at 0.5x, 1x and 5x</div></article>
+<!-- CA:END:SC-PRESENTATION -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-PRODUCT">SRC-PRODUCT</a></li></ul></div><div class="field"><span class="label">Statement</span>Integrate two simultaneously visible fittings and new battlefields into the existing tank rig and presentation owners.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-PRESENTATION -->
+<article class="record" id="V-PRESENTATION" data-ca-symbol="V-PRESENTATION" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-PRESENTATION">V-PRESENTATION</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Exercise extreme supported hull/turret/cannon/tread combinations, both bay positions, locked preview, flash reduction and dense wave effects.</div><div class="field"><span class="label">Oracle</span>Selection highlights and callout anchors attach to the actual fitted parts across all supported cosmetic assemblies; silhouettes do not overlap controls or misrepresent the selected bay. Both fittings have distinct readable effects at 0.5x, 1x and 5x with reduced-effects preferences respected. New environments preserve enemy/telegraph contrast and retain shared scalable chrome; no hand-painted copies of UI controls. Ship only reviewed art/audio with source provenance and rights recorded. New sprint visual proposals do not silently resolve the older Q-ART owner decision.</div><div class="field"><span class="label">Planned target</span>Rig anchoring checks, visual captures of actual builds and owner normal-speed art/listening review.</div></article>
+<!-- CA:END:V-PRESENTATION -->
+</div></article>
+<!-- CA:END:C-PRESENTATION -->
+
+<!-- CA:BEGIN:C-OWNERS -->
+<article class="record" id="C-OWNERS" data-ca-symbol="C-OWNERS" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-OWNERS">C-OWNERS</a><h3>Shared authorities and bounded extension points</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-LOCAL">K-LOCAL</a></li><li><a href="#K-EDITION">K-EDITION</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>One typed loadout/effect projection supplies combat, Armory, Planner and checkpoint serialization.</li><li>One typed milestone bundle supplies preview, first-clear settlement and unlock availability.</li><li>Keep retained compatibility implementations and independent test oracles distinct; remove superseded live paths only after parity coverage.</li><li>Validate IDs, references, unlock acyclicity and bounded counts at catalog admission. New tests join the maintained inventory, not a parallel runner.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-ARMORY">S-ARMORY</a></li><li><a href="#S-RESEARCH">S-RESEARCH</a></li><li><a href="#S-CAMPAIGN">S-CAMPAIGN</a></li></ul></div><div class="field"><span class="label">Kind</span>invariant</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-OWNERS -->
+<article class="record" id="SC-OWNERS" data-ca-symbol="SC-OWNERS" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-OWNERS">SC-OWNERS</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>Catalog admission receives duplicate or dangling IDs and a cyclic unlock</div><div class="field"><span class="label">Then</span>Invalid content is refused; valid surfaces share one projection and do not independently recalculate prices or effects.</div><div class="field"><span class="label">When</span>Load the candidate content and compare Armory/Lab/Planner quotes to combat projections</div></article>
+<!-- CA:END:SC-OWNERS -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-CONTENT">SRC-CONTENT</a></li><li><a href="#SRC-TESTS">SRC-TESTS</a></li></ul></div><div class="field"><span class="label">Statement</span>Extend existing catalogs, coordinators, combat simulation and UI contracts; do not build a second progression system.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-OWNERS -->
+<article class="record" id="V-OWNERS" data-ca-symbol="V-OWNERS" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-OWNERS">V-OWNERS</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Reject dangling fitting/research/tier IDs, cyclic unlocks, duplicated rewards and a UI-only formula that diverges from the authoritative quote.</div><div class="field"><span class="label">Oracle</span>One typed loadout/effect projection supplies combat, Armory, Planner and checkpoint serialization. One typed milestone bundle supplies preview, first-clear settlement and unlock availability. Keep retained compatibility implementations and independent test oracles distinct; remove superseded live paths only after parity coverage. Validate IDs, references, unlock acyclicity and bounded counts at catalog admission. New tests join the maintained inventory, not a parallel runner.</div><div class="field"><span class="label">Planned target</span>Source review plus unchanged existing suites and direct tests of new owners.</div></article>
+<!-- CA:END:V-OWNERS -->
+</div></article>
+<!-- CA:END:C-OWNERS -->
+
+<!-- CA:BEGIN:C-PLATFORM -->
+<article class="record" id="C-PLATFORM" data-ca-symbol="C-PLATFORM" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-PLATFORM">C-PLATFORM</a><h3>A candidate tested through actual play and recovery</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-PROOF">K-PROOF</a></li><li><a href="#K-LOCAL">K-LOCAL</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Use task-owned isolated profiles and record unchanged owner save hashes. Resolve Windows input and browser background obstructions before claiming those checks passed.</li><li>Exercise ordinary earn/buy/clear/equip/research/resume, minimize/background, forced stop, cold restart, preferences and backup/restore on actual targets.</li><li>Complete at least one 10–12 hour real-time 5x farming soak on the declared primary browser or Windows target; capture full process/WASM/native memory as applicable, frame pacing, save health and recovered checkpoint.</li><li>Run a recorded physical Android sustained-play/lifecycle session with device/OS, frame/thermal/memory and hardware-audio observations. Full-duration Android qualification stays open unless separately performed.</li><li>Every Q row links its current candidate/evidence and precise limits. An unavailable device or owner review is a pending qualification, not a fabricated pass.</li><li>Declare target hardware/OS, build flags and measurement methods before the final run. Proposed foreground budgets: primary desktop median at least 55 fps and p95 frame time at most 33.3 ms; Android median at least 30 fps and p95 at most 50 ms; no recurring stalls above 250 ms or unexplained process-memory growth above 10% after warm-up under comparable repeating workload. Record absolute peak memory against a predeclared device budget. A miss requires a fix or an explicit revised target, never a post-hoc pass.</li><li>Android qualification requires at least 60 minutes of sustained foreground play, ten background/foreground cycles, three forced-stop/relaunch cycles, and real file-provider backup/restore and hardware-audio checks. Record thermal status; severe/critical thermal throttling fails the declared target. If full thermal/memory instrumentation is unavailable, leave that obligation pending.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-READINESS">S-READINESS</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-PLATFORM -->
+<article class="record" id="SC-PLATFORM" data-ca-symbol="SC-PLATFORM" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-PLATFORM">SC-PLATFORM</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>An identified candidate using isolated profiles on declared targets</div><div class="field"><span class="label">Then</span>Retain matched input/save/audio/performance evidence and owner-save hashes; missing or failed target proof stays explicitly pending.</div><div class="field"><span class="label">When</span>Play and interrupt/relaunch it; perform the full-duration primary-target soak and physical Android session</div></article>
+<!-- CA:END:SC-PLATFORM -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Qualify the changed game on a matching browser, Windows player and physical Android candidate while retaining the single release matrix.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-PLATFORM -->
+<article class="record" id="V-PLATFORM" data-ca-symbol="V-PLATFORM" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-PLATFORM">V-PLATFORM</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Failed save, repeated background/foreground, audio restart bursts, aborted run, stalled wave and growing memory all remain actionable failures.</div><div class="field"><span class="label">Oracle</span>Use task-owned isolated profiles and record unchanged owner save hashes. Resolve Windows input and browser background obstructions before claiming those checks passed. Exercise ordinary earn/buy/clear/equip/research/resume, minimize/background, forced stop, cold restart, preferences and backup/restore on actual targets. Complete at least one 10–12 hour real-time 5x farming soak on the declared primary browser or Windows target; capture full process/WASM/native memory as applicable, frame pacing, save health and recovered checkpoint. Run a recorded physical Android sustained-play/lifecycle session with device/OS, frame/thermal/memory and hardware-audio observations. Full-duration Android qualification stays open unless separately performed. Every Q row links its current candidate/evidence and precise limits. An unavailable device or owner review is a pending qualification, not a fabricated pass.</div><div class="field"><span class="label">Planned target</span>Actual-target sessions, long-duration trace, native input receipt and updated Q-PACKAGE through Q-DELIVERY matrix.</div></article>
+<!-- CA:END:V-PLATFORM -->
+</div></article>
+<!-- CA:END:C-PLATFORM -->
+
+<!-- CA:BEGIN:C-DELIVERY -->
+<article class="record" id="C-DELIVERY" data-ca-symbol="C-DELIVERY" data-ca-kind="criteria"><div class="record-head"><a class="id" href="#C-DELIVERY">C-DELIVERY</a><h3>Reviewable integration and honest release status</h3><span class="badge">must</span></div><div class="field"><span class="label">Applicability</span><div class="fields"><div class="field"><span class="label">Mode</span>unconditional</div><div class="field"><span class="label">Rationale</span>Required for the proposed sprint outcome.</div></div></div><div class="field"><span class="label">Constraint refs</span><ul class="items"><li><a href="#K-DELIVERY">K-DELIVERY</a></li><li><a href="#K-PROOF">K-PROOF</a></li></ul></div><div class="field"><span class="label">Guarantees</span><ul class="items"><li>Integrate the existing #543/#544/#546 stack including #547, repairing lost ADR source ancestry before merge. Use real merge commits where required; preserve current paid-run behavior and verify each actual merge candidate.</li><li>Review open dependency PRs for inclusion or supersession; integrate applicable reviewed updates and reconcile superseded PRs after containment is proven. Do not roll back newer versions already present.</li><li>Required local checks, exact-head hosted CI, independent review and candidate packaging have separate records.</li><li>Do not mark #67 delivered on main merely because its implementation merged into #546; keep #110 license-policy and #69/#47 classic multiplayer decisions outside this sprint unless explicitly resolved.</li><li>Execute authorized repository merges after required exact-head CI and review; verify post-merge workflows and any automatic deployment separately. Store submission, signing identity and a new public version remain separate decisions. Preserve frozen historical evidence.</li></ul></div><div class="field"><span class="label">Intent refs</span><ul class="items"><li><a href="#S-READINESS">S-READINESS</a></li></ul></div><div class="field"><span class="label">Kind</span>operational</div><div class="field"><span class="label">Preconditions</span><ul class="items"><li>The reviewed sprint is authorized for implementation; checks below are planned, not executed.</li></ul></div><div class="field"><span class="label">Scenarios</span>
+<!-- CA:BEGIN:SC-DELIVERY -->
+<article class="record" id="SC-DELIVERY" data-ca-symbol="SC-DELIVERY" data-ca-kind="scenarios"><div class="record-head"><a class="id" href="#SC-DELIVERY">SC-DELIVERY</a><h3>Scenarios</h3></div><div class="field"><span class="label">Given</span>The open 543/544/546 stack with 547 already integrated only into 546</div><div class="field"><span class="label">Then</span>Report implementation, checks, merge and publication independently; preserve ADR ancestry and do not call a stacked merge a main deployment.</div><div class="field"><span class="label">When</span>Prepare the sprint PR and inspect exact base/head, source package and CI</div></article>
+<!-- CA:END:SC-DELIVERY -->
+</div><div class="field"><span class="label">Source refs</span><ul class="items"><li><a href="#SRC-BASE">SRC-BASE</a></li><li><a href="#SRC-RELEASE">SRC-RELEASE</a></li></ul></div><div class="field"><span class="label">Statement</span>Deliver a reviewed candidate against the real dependency stack without conflating local success, CI, merge and publication.</div><div class="field"><span class="label">Trigger</span>The player or verification journey exercises this capability on a matching candidate.</div><div class="field"><span class="label">Verification</span>
+<!-- CA:BEGIN:V-DELIVERY -->
+<article class="record" id="V-DELIVERY" data-ca-symbol="V-DELIVERY" data-ca-kind="verification"><div class="record-head"><a class="id" href="#V-DELIVERY">V-DELIVERY</a><h3>Verification</h3></div><div class="field"><span class="label">Evidence state</span>planned</div><div class="field"><span class="label">Method</span>automated_and_review</div><div class="field"><span class="label">Negative control</span>Base branch drift, stale CI, unmatched source/package, missing ADR ancestry and unrun device checks prevent a false release-ready claim.</div><div class="field"><span class="label">Oracle</span>Integrate the existing #543/#544/#546 stack including #547, repairing lost ADR source ancestry before merge. Use real merge commits where required; preserve current paid-run behavior and verify each actual merge candidate. Review open dependency PRs for inclusion or supersession; integrate applicable reviewed updates and reconcile superseded PRs after containment is proven. Do not roll back newer versions already present. Required local checks, exact-head hosted CI, independent review and candidate packaging have separate records. Do not mark #67 delivered on main merely because its implementation merged into #546; keep #110 license-policy and #69/#47 classic multiplayer decisions outside this sprint unless explicitly resolved. Execute authorized repository merges after required exact-head CI and review; verify post-merge workflows and any automatic deployment separately. Store submission, signing identity and a new public version remain separate decisions. Preserve frozen historical evidence.</div><div class="field"><span class="label">Planned target</span>Read-only live PR/ref checks, exact-head CI/review and source-bound packaging receipts during authorized implementation delivery.</div></article>
+<!-- CA:END:V-DELIVERY -->
+</div></article>
+<!-- CA:END:C-DELIVERY -->
+</section><section class="group" id="group-open_decisions"><a class="back" href="#main-content">Top</a><h2>Open decisions</h2><span class="missing">None recorded</span></section><section class="group" id="group-sections"><a class="back" href="#main-content">Top</a><h2>Sections</h2>
+<!-- CA:BEGIN:SEC-REVIEW -->
+<article class="record" id="SEC-REVIEW" data-ca-symbol="SEC-REVIEW" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-REVIEW">SEC-REVIEW</a><h3>What the owner is reviewing</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>The owner authorized this product package and execution on November 7, including integration and merges. Earlier proposed milestones and bounded two-bay design are now the working scope. Ordinary implementation/calibration refinements do not require a second artifact approval; material outcome changes still go to the owner.</p></div><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Milestone (proposal)</th><th scope="col">Permanent unlock</th></tr></thead><tbody><tr><td>T1 wave 500</td><td>Combat research tracks; keep existing Mortar unlock</td></tr><tr><td>T1 wave 750</td><td>Second functional equipment bay</td></tr><tr><td>T2 wave 300</td><td>Arc Emitter; keep the tier unlock at the same milestone</td></tr><tr><td>T2 wave 500</td><td>Third research lab</td></tr><tr><td>T3 wave 100</td><td>Reactive Shield</td></tr><tr><td>T4 wave 300 / T5 wave 300</td><td>Tier 5 / Tier 6</td></tr></tbody></table></div></div><div class="block"><p>Unlocks are finite first-clear rewards. Research ranks and Workshop levels remain paid progression. No existing earned reward is removed. A new-edition migration must reconcile an already-earned milestone to its new entitlement exactly once without duplicating its earlier Salvage.</p></div></div></article>
+<!-- CA:END:SEC-REVIEW -->
+
+<!-- CA:BEGIN:SEC-SMARTS -->
+<article class="record" id="SEC-SMARTS" data-ca-symbol="SEC-SMARTS" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-SMARTS">SEC-SMARTS</a><h3>Why bounded two-bay buildcraft</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><div class="table-wrap"><table><thead><tr><th scope="col">Lens</th><th scope="col">Expand one exclusive fitting</th><th scope="col">Two fixed bays (recommended)</th></tr></thead><tbody><tr><td>Scalable</td><td>More choices stay exclusive; little synergy as catalog grows.</td><td>Seven fittings yield 21 pairs; fixed two-bay cap limits combinatorics.</td></tr><tr><td>Maintainable</td><td>Smallest migration and rig change.</td><td>Shared loadout/effect owner prevents per-screen combination logic; costs more upfront.</td></tr><tr><td>Available</td><td>Existing selection survives content growth.</td><td>Retained editions and staged Apply keep old saves usable; no remote dependency.</td></tr><tr><td>Reliable</td><td>Fewer interactions to balance and serialize.</td><td>Needs explicit snapshot, atomic apply and bounded defense interactions; planned before content.</td></tr><tr><td>Testable</td><td>Seven single paths.</td><td>Seven singles plus 21 pairs are finite and directly measurable; not arbitrary module graphs.</td></tr><tr><td>Securable</td><td>Existing finite IDs.</td><td>Same allowlisted local data boundary with bounded presets, no new network or executable content.</td></tr></tbody></table></div></div><div class="block"><p>Recommendation: two fixed bays because meaningful build combinations are the product outcome, while bounded scope and shared owners keep the extra work reviewable. Cost/schedule: this is a multi-package sprint with compatibility and balance work, not a small fitting feature. Play-feel and Android thermal suitability are Unknown until measured; they are acceptance-critical, but not blockers to drafting this proposal. If they fail, fix/tune the candidate or seek an explicit scope change; do not call them passed.</p></div></div></article>
+<!-- CA:END:SEC-SMARTS -->
+
+<!-- CA:BEGIN:SEC-BASELINE -->
+<article class="record" id="SEC-BASELINE" data-ca-symbol="SEC-BASELINE" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-BASELINE">SEC-BASELINE</a><h3>Current state and delivery boundary</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><p>Baseline 219239001787993cf6e71fab33cd87a26f16eff7 includes merged PR 547 on codex/last-stand-release-foundation. Open draft chain: #546 targets research-farming (#544), which targets waves-and-resume (#543), which targets main. Integration is unfinished; the next plan must not treat this game as already deployed from main.</p></div><div class="block"><p>Existing playable scope: four tiers, five exclusive fittings, four research tracks, two labs and cosmetic customization. Research/Planner/shared chrome, retained run editions and checkpoint recovery already exist. Extend those owners rather than recreating their features.</p></div><div class="block"><p>The established release matrix stays the single current acceptance index. Historical plan statuses and raw reports are retained. A no-device result is recorded as pending; owner art/comprehension/listening acceptance is separate from screenshots or automated checks.</p></div></div></article>
+<!-- CA:END:SEC-BASELINE -->
+
+<!-- CA:BEGIN:SEC-BOUNDARIES -->
+<article class="record" id="SEC-BOUNDARIES" data-ca-symbol="SEC-BOUNDARIES" data-ca-kind="sections"><div class="record-head"><a class="id" href="#SEC-BOUNDARIES">SEC-BOUNDARIES</a><h3>Balancing and release limits</h3></div><div class="field"><span class="label">Blocks</span><div class="block"><ul class="items"><li>Use actual earned profiles for progression claims; gifted late-game fixtures are only isolated mechanic probes.</li><li>Do not promise mature Tier 10 farming in a six-tier sprint. Calibrate the duration reference at measured comparable depth and report which earned state can reach it.</li><li>Close platform obligations only for the exact tested candidate and scope. Android store release needs a separate release/device qualification decision.</li><li>Keep old issue decisions (#110 dependency license policy and #69 private room policy) visible without inventing approval or mixing classic multiplayer into Last Stand.</li></ul></div></div></article>
+<!-- CA:END:SEC-BOUNDARIES -->
+</section><section class="group" id="group-sources"><a class="back" href="#main-content">Top</a><h2>Sources</h2>
+<!-- CA:BEGIN:SRC-REQUEST -->
+<article class="record" id="SRC-REQUEST" data-ca-symbol="SRC-REQUEST" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-REQUEST">SRC-REQUEST</a><h3>Next large sprint</h3></div><div class="field"><span class="label">Locator</span>Conversation, 2026-11-06</div><div class="field"><span class="label">Note</span>The owner requests a substantial next sprint plan after PR 547, following an in-place codeArbiter update. This turn authorizes planning, not feature implementation or merging.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-REQUEST -->
+
+<!-- CA:BEGIN:SRC-PRODUCT -->
+<article class="record" id="SRC-PRODUCT" data-ca-symbol="SRC-PRODUCT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-PRODUCT">SRC-PRODUCT</a><h3>Established Last Stand direction</h3></div><div class="field"><span class="label">Locator</span>Conversation: waves, farming, research, UI, architecture and tank customization</div><div class="field"><span class="label">Note</span>Enemy-clear waves; checkpoint resume; mature 5,000-wave farming reference of 10–12 real hours at 5x; shared Salvage; scalable controls; cosmetic freedom; releasable game.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-PRODUCT -->
+
+<!-- CA:BEGIN:SRC-BASE -->
+<article class="record" id="SRC-BASE" data-ca-symbol="SRC-BASE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-BASE">SRC-BASE</a><h3>Integrated PR 547 source</h3></div><div class="field"><span class="label">Locator</span>219239001787993cf6e71fab33cd87a26f16eff7</div><div class="field"><span class="label">Note</span>547 merged into release-foundation, not main. Open draft stack is 546 -&gt; 544 -&gt; 543 -&gt; main. Existing source and reports are the baseline, not proof of current device qualification.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span>https://github.com/SUaDtL/singedTerra/pull/547</div></article>
+<!-- CA:END:SRC-BASE -->
+
+<!-- CA:BEGIN:SRC-CONTENT -->
+<article class="record" id="SRC-CONTENT" data-ca-symbol="SRC-CONTENT" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-CONTENT">SRC-CONTENT</a><h3>Authored content and retained editions</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs; LastStandTierCatalog.cs; LastStandSelection.cs; LastStandResearchCatalog.cs; LastStandRewardCatalog.cs</div><div class="field"><span class="label">Note</span>Four tiers, five exclusive auxiliary fittings, four research tracks and two labs. Rewards currently encode one fitting and one tier per milestone; new mixed unlocks require a shared typed reward contract.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-CONTENT -->
+
+<!-- CA:BEGIN:SRC-ENEMIES -->
+<article class="record" id="SRC-ENEMIES" data-ca-symbol="SRC-ENEMIES" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ENEMIES">SRC-ENEMIES</a><h3>Wave and enemy authorities</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs; LastStandWaveCatalog.cs; EncounterModel.cs</div><div class="field"><span class="label">Note</span>Close, Ranged, Swarmer, Armored Brute and Siege Elite exist. Bounded deterministic recipes, capped arithmetic and shared enemy projections must be extended, not copied.</div><div class="field"><span class="label">Type</span>repository</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ENEMIES -->
+
+<!-- CA:BEGIN:SRC-RELEASE -->
+<article class="record" id="SRC-RELEASE" data-ca-symbol="SRC-RELEASE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-RELEASE">SRC-RELEASE</a><h3>Single release qualification matrix</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md#acceptance-matrix</div><div class="field"><span class="label">Note</span>Q-PACKAGE through Q-DELIVERY retain actual-source limits. Windows input, physical Android, long-duration farming, listening and owner comprehension remain open.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-RELEASE -->
+
+<!-- CA:BEGIN:SRC-BALANCE -->
+<article class="record" id="SRC-BALANCE" data-ca-symbol="SRC-BALANCE" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-BALANCE">SRC-BALANCE</a><h3>Earned progression measurements</h3></div><div class="field"><span class="label">Locator</span>campaign-unity/docs/last-stand-combat-depth/balance.md</div><div class="field"><span class="label">Note</span>Existing earned-budget policy and equal-budget branches are useful controls. Gifted probes, modeled time and short smoke runs are not earned endgame or real endurance.</div><div class="field"><span class="label">Type</span>local_document</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-BALANCE -->
+
+<!-- CA:BEGIN:SRC-ADR -->
+<article class="record" id="SRC-ADR" data-ca-symbol="SRC-ADR" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-ADR">SRC-ADR</a><h3>Deployment recovery decision</h3></div><div class="field"><span class="label">Locator</span>.codearbiter/decisions/0020-recovery-safe-battle-console-loading.md</div><div class="field"><span class="label">Note</span>Retain startup-loaded classic semantic controls, battle-only mounting and lazy Pixi. Last Stand work must not undo this accepted recovery design.</div><div class="field"><span class="label">Type</span>decision_record</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-ADR -->
+
+<!-- CA:BEGIN:SRC-TESTS -->
+<article class="record" id="SRC-TESTS" data-ca-symbol="SRC-TESTS" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-TESTS">SRC-TESTS</a><h3>Maintained verification inventory</h3></div><div class="field"><span class="label">Locator</span>package.json; campaign-unity/Tools/last_stand_test_inventory.py; scripts/ci/lastStandQualification.mjs</div><div class="field"><span class="label">Note</span>Use the actual portable inventory, bounded imported-player journeys, source/package admission and platform receipts. New checks are proposals until run.</div><div class="field"><span class="label">Type</span>test_reference</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-TESTS -->
+
+<!-- CA:BEGIN:SRC-EXECUTION -->
+<article class="record" id="SRC-EXECUTION" data-ca-symbol="SRC-EXECUTION" data-ca-kind="sources"><div class="record-head"><a class="id" href="#SRC-EXECUTION">SRC-EXECUTION</a><h3>Owner authorizes sprint execution and integration merges</h3></div><div class="field"><span class="label">Locator</span>Conversation, 2026-11-07</div><div class="field"><span class="label">Note</span>Owner: Perform all integration and memes as part of this sprint additions and execute. Assistant stated that memes is interpreted as merges. This authorizes the presented sprint, its commits/PRs, integration of the existing stack and applicable dependency work, and merges after required CI/review. It does not grant store publication or bypass failed checks.</div><div class="field"><span class="label">Type</span>user_request</div><div class="field"><span class="label">Url</span><span class="missing">Not yet supplied</span></div></article>
+<!-- CA:END:SRC-EXECUTION -->
+</section><section class="group" id="group-baseline"><a class="back" href="#main-content">Top</a><h2>Baseline</h2><div class="fields"><div class="field"><span class="label">Commit</span>219239001787993cf6e71fab33cd87a26f16eff7</div><div class="field"><span class="label">Observed date</span>2026-11-06</div><div class="field"><span class="label">Repository</span>https://github.com/SUaDtL/singedTerra</div></div></section><section class="group" id="group-retired_symbols"><a class="back" href="#main-content">Top</a><h2>Retired symbols</h2><span class="missing">None recorded</span></section><section class="group" id="group-governs"><a class="back" href="#main-content">Top</a><h2>Governs</h2><ul class="items"><li>campaign-unity/Unity/Assets/Scripts</li><li>campaign-unity/Tools</li><li>campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md</li><li>scripts/ci</li><li>scripts/assets</li></ul></section><section class="group"><h2>Governance record</h2><p class="notice">Hash consistency establishes content identity, not who approved it. Explicit verification or approval claims require their own evidence; recorded progress does not establish those claims.</p><div class="fields"><div class="field"><span class="label">Approvals</span><span class="missing">None recorded</span></div><div class="field"><span class="label">Review notes</span><span class="missing">None recorded</span></div><div class="field"><span class="label">State</span>draft</div></div></section><footer class="footer"><p>codearbiter-html/0.1.0 · self-contained, static HTML · no runtime network resources</p><p class="digest">Normative SHA-256: 79632cc0dcd764140dd4af8076600f1bfe68774b58a1249d89aa935acada4557<br>Model SHA-256: 0205b6237d4b6c33b08ce65ddb5320a2693b917e6d8687234100982acb1bf045</p></footer></main></div>
+<script id="ca-artifact-model" type="application/json">
+{
+  "artifact_id": "ST-LS-BUILDCRAFT-SPEC",
+  "format": "codearbiter.artifact",
+  "format_version": "0.1.0",
+  "governance": {
+    "approvals": [],
+    "review_notes": [],
+    "state": "draft"
+  },
+  "integrity": {
+    "model_sha256": "0205b6237d4b6c33b08ce65ddb5320a2693b917e6d8687234100982acb1bf045",
+    "normative_sha256": "79632cc0dcd764140dd4af8076600f1bfe68774b58a1249d89aa935acada4557",
+    "symbol_count": 74
+  },
+  "kind": "spec",
+  "normative": {
+    "approach": {
+      "binding_decision_refs": [
+        "DEC-BAYS",
+        "DEC-CONTENT",
+        "DEC-RESEARCH",
+        "DEC-COMPAT"
+      ],
+      "choice": "Extend the current local, catalog-driven platform with two fixed functional bays and versioned immutable run effects. Keep shared saves, wallets, quotes, pages and verification owners.",
+      "id": "APP-EXTEND",
+      "tradeoff": "Two bays create 21 distinct pairs from seven fittings and meaningful specialization, but multiply compatibility, balance and rig work. Cap at two bays and three presets this sprint; sequence the edition migration before new content. Do not add a modular grid, random loot or another economy."
+    },
+    "baseline": {
+      "commit": "219239001787993cf6e71fab33cd87a26f16eff7",
+      "observed_date": "2026-11-06",
+      "repository": "https://github.com/SUaDtL/singedTerra"
+    },
+    "constraints": [
+      {
+        "applies_to": [
+          "C-BUILDS",
+          "C-RESEARCH",
+          "C-CAMPAIGN",
+          "C-RESUME",
+          "C-OWNERS",
+          "C-PLATFORM"
+        ],
+        "id": "K-LOCAL",
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Keep local browser/native persistence, one save/transaction owner and no paid currency, account service or cloud-sync promise."
+      },
+      {
+        "applies_to": [
+          "C-BUILDS",
+          "C-FITTINGS",
+          "C-RESEARCH",
+          "C-WAVES",
+          "C-CAMPAIGN",
+          "C-ECONOMY",
+          "C-RESUME",
+          "C-OWNERS"
+        ],
+        "id": "K-EDITION",
+        "source_refs": [
+          "SRC-CONTENT",
+          "SRC-PRODUCT"
+        ],
+        "statement": "Version every changed run mechanic and reward projection. Freeze all four supported tuples (waves-v1/content-v1 with economies v1, v2 or v3; waves-v2/content-v2 with economy v4) before adding the next tuple. Old paid checkpoints retain their loadout, payouts, stats and wave rules; preserve established live GameSpeed and SalvageRecovery behavior."
+      },
+      {
+        "applies_to": [
+          "C-RESEARCH",
+          "C-WAVES",
+          "C-RESUME"
+        ],
+        "id": "K-CLOCK",
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Research advances by real time while closed; combat does not. Speed remains 0–5x in 0.5 steps with earned caps. Resume at the last completed wave, paused."
+      },
+      {
+        "applies_to": [
+          "C-BUILDS",
+          "C-FITTINGS",
+          "C-CAMPAIGN",
+          "C-SCREENS",
+          "C-PRESENTATION"
+        ],
+        "id": "K-STYLE",
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Keep cosmetics stat-free, shared chrome/page navigation and independent guidance/purchase-prompt settings. Preserve keyboard/touch use and at least 44px interactive targets."
+      },
+      {
+        "applies_to": [
+          "C-ECONOMY",
+          "C-RESUME",
+          "C-SCREENS",
+          "C-PRESENTATION",
+          "C-PLATFORM",
+          "C-DELIVERY"
+        ],
+        "id": "K-PROOF",
+        "source_refs": [
+          "SRC-RELEASE",
+          "SRC-BALANCE"
+        ],
+        "statement": "Never substitute build success, seeded currency, a fast simulation or a screenshot for player-input, earned progression, physical-device, listening or real-duration evidence. Preserve owner saves and raw historical reports."
+      },
+      {
+        "applies_to": [
+          "C-DELIVERY"
+        ],
+        "id": "K-DELIVERY",
+        "source_refs": [
+          "SRC-BASE",
+          "SRC-ADR"
+        ],
+        "statement": "Current baseline is the integrated release-foundation branch. Respect the 543/544/546 dependency chain, retained ADR ancestry, separate merge/publication authority and classic-mode boundaries."
+      }
+    ],
+    "criteria": [
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-LOCAL",
+          "K-EDITION",
+          "K-STYLE"
+        ],
+        "guarantees": [
+          "Each bay accepts one unlocked fitting; duplicates are rejected. Before the unlock, the second bay explains its milestone and cannot apply.",
+          "Editing is a staged preview with explicit Apply/Cancel; Apply uses the profile coordinator. A loadout change affects the next deployment only, never a live or retained checkpoint.",
+          "Presets store stable fitting IDs and bounded plain-text names, not copies of prices or mutable stats. Selecting a preset shows compatible, locked and missing states without silently removing equipment.",
+          "Expose effect summaries and fitting-to-tank callouts through shared projections; no expanding row of per-fitting buttons."
+        ],
+        "id": "C-BUILDS",
+        "intent_refs": [
+          "S-ARMORY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "A T1 wave 749 profile with a retained one-fitting run",
+            "id": "SC-BUILDS",
+            "then": "Bay two unlocks once; Cancel changes nothing; Apply saves the future build while the retained run stays unchanged.",
+            "when": "Clear wave 750, preview two distinct fittings, cancel once, then Apply"
+          }
+        ],
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Retain the automatic cannon; let players prepare one auxiliary initially and unlock a second at Tier 1 wave 750. Offer three named loadout presets in the existing garage.",
+        "title": "Two-bay Armory and three saved loadouts",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-BUILDS",
+          "method": "automated_and_review",
+          "negative_control": "Locked second bay, duplicate fitting, stale writer, invalid preset IDs, Cancel, save failure and active-run Apply all preserve authoritative progress.",
+          "oracle": "Each bay accepts one unlocked fitting; duplicates are rejected. Before the unlock, the second bay explains its milestone and cannot apply. Editing is a staged preview with explicit Apply/Cancel; Apply uses the profile coordinator. A loadout change affects the next deployment only, never a live or retained checkpoint. Presets store stable fitting IDs and bounded plain-text names, not copies of prices or mutable stats. Selecting a preset shows compatible, locked and missing states without silently removing equipment. Expose effect summaries and fitting-to-tank callouts through shared projections; no expanding row of per-fitting buttons.",
+          "planned_target": "Portable loadout/save tests plus actual Armory keyboard/touch and deploy/resume journey."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-EDITION",
+          "K-STYLE"
+        ],
+        "guarantees": [
+          "Arc Emitter unlocks at Tier 2 wave 300; each pulse visits a bounded number of distinct enemies once, with explicit range and falloff.",
+          "Reactive Shield unlocks at Tier 3 wave 100; capacity, recharge delay and damage absorption are visible, bounded and fixed-step deterministic.",
+          "All seven single-fitting choices and 21 distinct pairs are valid after unlocks. Cannon plus both equipped effects run through the existing combat owner; unequipped effects never execute.",
+          "Shield/repair combinations cannot create unlimited invulnerability or heal beyond hull cap; module damage and defenses share the same presentation and combat calculations.",
+          "Add Arc Output (Attack) and Shield Capacity (Defense) to the existing shared upgrade catalog: proposed 5000 total / 2500 permanent caps, run-local Scrap and permanent Salvage quotes, and existing bulk quantities. A fitting-specific track applies when either bay contains that fitting; common upgrades apply once, never twice. Workshop purchases retain value while unequipped. Recharge timing stays bounded through the fitting/research projection, not a hidden third price formula."
+        ],
+        "id": "C-FITTINGS",
+        "intent_refs": [
+          "S-ARMORY"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "An unlocked Arc/Shield loadout and a finite enemy group",
+            "id": "SC-FITTINGS",
+            "then": "Damage and shield values match fixed-step outcomes; no duplicate chain target, overflow, excess healing or reward.",
+            "when": "Run equal inputs at different presentation speeds, exhaust shield and remove chain targets"
+          }
+        ],
+        "source_refs": [
+          "SRC-CONTENT",
+          "SRC-ENEMIES"
+        ],
+        "statement": "Add Arc Emitter (bounded chain damage) and Reactive Shield (bounded renewable protection) to the existing five fittings.",
+        "title": "Two complementary fittings",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-FITTINGS",
+          "method": "automated_and_review",
+          "negative_control": "Repeat-chain, zero targets, shield exhaustion/recharge, simultaneous damage, duplicate fit and extreme-value cases must fail safely without overflow or duplicate rewards.",
+          "oracle": "Arc Emitter unlocks at Tier 2 wave 300; each pulse visits a bounded number of distinct enemies once, with explicit range and falloff. Reactive Shield unlocks at Tier 3 wave 100; capacity, recharge delay and damage absorption are visible, bounded and fixed-step deterministic. All seven single-fitting choices and 21 distinct pairs are valid after unlocks. Cannon plus both equipped effects run through the existing combat owner; unequipped effects never execute. Shield/repair combinations cannot create unlimited invulnerability or heal beyond hull cap; module damage and defenses share the same presentation and combat calculations.",
+          "planned_target": "Direct combat tests and equal-budget pair measurements, with normal-speed visible effects."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-LOCAL",
+          "K-EDITION",
+          "K-CLOCK"
+        ],
+        "guarantees": [
+          "Armor Piercing increases bounded armor penetration; Area Control increases applicable splash/chain effectiveness; Field Engineering improves applicable repair/shield recovery. Each quote names the affected fittings and shows the before/after effect.",
+          "Tracks unlock at Tier 1 wave 500. Existing four tracks, paid elapsed research, queues and two lab unlocks retain their accounting.",
+          "Shared Salvage funds all seven tracks and Workshop; no new currency, free ranks or automatic paid repeat.",
+          "Only the three new combat tracks are captured for a deployment. Preserve existing live GameSpeed admission and wave-settlement SalvageRecovery behavior, existing ResearchSpeed semantics and all paid timers/queues. Lab and Planner consume the same quote authority; completing a new combat rank changes future deployments without modifying an active checkpoint.",
+          "Costs/durations are calibrated against earned income; twenty ranks are a cap, not an early-game completion target."
+        ],
+        "id": "C-RESEARCH",
+        "intent_refs": [
+          "S-RESEARCH"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "An old two-lab profile with paid partial research and an active run",
+            "id": "SC-RESEARCH",
+            "then": "Paid work is retained, real time alone advances research, and new combat effects apply on the next deployment.",
+            "when": "Earn Lab 3, start a combat track, close/reopen and complete it"
+          }
+        ],
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Add Armor Piercing, Area Control and Field Engineering research, initially 20 ranks each, and unlock a third concurrent lab at Tier 2 wave 500.",
+        "title": "Combat research and a third earned lab",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-RESEARCH",
+          "method": "automated_and_review",
+          "negative_control": "Clock rollback, close/reopen, switching/refunds, insufficient funds, old two-lab saves and research completing during an active old-edition run preserve elapsed work and currency.",
+          "oracle": "Armor Piercing increases bounded armor penetration; Area Control increases applicable splash/chain effectiveness; Field Engineering improves applicable repair/shield recovery. Each quote names the affected fittings and shows the before/after effect. Tracks unlock at Tier 1 wave 500. Existing four tracks, paid elapsed research, queues and two lab unlocks retain their accounting. Shared Salvage funds all seven tracks and Workshop; no new currency, free ranks or automatic paid repeat. Completion updates permanent profile progression; a deployed run retains its captured combat effects until the next deployment. Quotes, Planner and Lab consume the same authority. Costs/durations are calibrated against earned income; twenty ranks are a cap, not an early-game completion target.",
+          "planned_target": "Research/quote/coordinator regressions, save roundtrip and real UI start/suspend/resume journeys."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-EDITION",
+          "K-CLOCK"
+        ],
+        "guarantees": [
+          "Shield Carrier lends a bounded damage buffer to a capped number of nearby allies; it is itself damageable and never makes an enemy invulnerable.",
+          "Medic has a finite per-wave healing budget, cannot resurrect enemies and cannot create a permanent healing loop.",
+          "On Tiers 5 and 6, each 100th wave uses a telegraphed Siege Commander variation; the existing Siege Elite remains the intervening 50-wave encounter.",
+          "Current-wave intelligence and next milestone/boss preview show actual HP, armor, damage, value and special rules from the spawning/combat projection.",
+          "Waves still end only after all their enemies are defeated; encounter variety does not require continuous manual input and never raises the current bounded population cap merely to make difficulty."
+        ],
+        "id": "C-WAVES",
+        "intent_refs": [
+          "S-CAMPAIGN"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "A new-tier wave containing support enemies and an authored boss",
+            "id": "SC-WAVES",
+            "then": "Support is finite and damageable; telegraphs/stats match combat; the wave clears once after the last enemy.",
+            "when": "Exhaust healing, kill support in different orders, then defeat all enemies"
+          }
+        ],
+        "source_refs": [
+          "SRC-ENEMIES"
+        ],
+        "statement": "Add Shield Carrier and Medic support roles plus a Siege Commander encounter to new-tier recipes.",
+        "title": "Support enemies and a readable boss encounter",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-WAVES",
+          "method": "automated_and_review",
+          "negative_control": "Destroy support first/last, simultaneous kills, empty aura targets, healing-budget exhaustion, pause/speed changes and high waves preserve deterministic clear/reward behavior.",
+          "oracle": "Shield Carrier lends a bounded damage buffer to a capped number of nearby allies; it is itself damageable and never makes an enemy invulnerable. Medic has a finite per-wave healing budget, cannot resurrect enemies and cannot create a permanent healing loop. On Tiers 5 and 6, each 100th wave uses a telegraphed Siege Commander variation; the existing Siege Elite remains the intervening 50-wave encounter. Current-wave intelligence and next milestone/boss preview show actual HP, armor, damage, value and special rules from the spawning/combat projection. Waves still end only after all their enemies are defeated; encounter variety does not require continuous manual input and never raises the current bounded population cap merely to make difficulty.",
+          "planned_target": "Direct deterministic encounter fixtures, combat-info parity and actual wave-clear/boss presentation journey."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-LOCAL",
+          "K-EDITION",
+          "K-STYLE"
+        ],
+        "guarantees": [
+          "Tier 5 unlocks by clearing Tier 4 wave 300; Tier 6 unlocks by clearing Tier 5 wave 300. Unlocking never forces promotion or changes the selected tier.",
+          "Keep current tiers and deep-wave farms. The selector shows unlocked tiers plus the first locked tier only, with a live environment preview.",
+          "New milestone bundles support Salvage, fitting, lab and bay unlocks without duplicated hand-coded wave checks or a one-reward-type limitation.",
+          "Retain stable claimed milestone identity and atomic first-clear claims. Pay on successful completed-wave save; interruption, restore and repeat farming cannot duplicate or erase a claim.",
+          "Author rewards through waves 300, 500, 750, 1000, 1500, 2000, 3000, 4000 and 5000, preserving existing early milestones and allowing continued waves beyond the authored track.",
+          "A shared entitlement reconciler runs on profile migration and each accepted completed-wave save, including retained editions. It derives newly earned bay/lab/fitting access from durable best waves while preserving edition-specific payouts and prior claim IDs."
+        ],
+        "id": "C-CAMPAIGN",
+        "intent_refs": [
+          "S-CAMPAIGN"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "A player earns T2 wave 300 while the save write can be interrupted",
+            "id": "SC-CAMPAIGN",
+            "then": "All entitlements settle atomically exactly once, prior Salvage is not duplicated, and tier selection does not force promotion.",
+            "when": "Settle the combined tier/fitting/resource reward, restart and replay the claim"
+          }
+        ],
+        "source_refs": [
+          "SRC-CONTENT",
+          "SRC-PRODUCT"
+        ],
+        "statement": "Extend the campaign with Tier 5 Glass Wastes and Tier 6 Frostline Relay, distinct environments and composition identities.",
+        "title": "Six authored tiers with durable milestone rewards",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-CAMPAIGN",
+          "method": "automated_and_review",
+          "negative_control": "Same-wave multiple unlocks, already-claimed milestones, interrupted saves, skipped versions and the hidden tier beyond the next locked one are covered.",
+          "oracle": "Tier 5 unlocks by clearing Tier 4 wave 300; Tier 6 unlocks by clearing Tier 5 wave 300. Unlocking never forces promotion or changes the selected tier. Keep current tiers and deep-wave farms. The selector shows unlocked tiers plus the first locked tier only, with a live environment preview. New milestone bundles support Salvage, fitting, lab and bay unlocks without duplicated hand-coded wave checks or a one-reward-type limitation. Retain stable claimed milestone identity and atomic first-clear claims. Pay on successful completed-wave save; interruption, restore and repeat farming cannot duplicate or erase a claim. Author rewards through waves 300, 500, 750, 1000, 1500, 2000, 3000, 4000 and 5000, preserving existing early milestones and allowing continued waves beyond the authored track.",
+          "planned_target": "Catalog/reward/save tests and earned milestone/environment selector journey."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-EDITION",
+          "K-PROOF"
+        ],
+        "guarantees": [
+          "Compare all 21 pairs at equal Workshop/research budget across swarm, armor and support encounters; at least three distinct pairs must be on the measured damage/survival/farming frontier and no pair may dominate every tested scenario.",
+          "Report milestone acquisition, Scrap purchase cadence, Salvage/hour, research wait and Workshop opportunity cost from fresh profiles without gifted currency. Keep high-wave lower-tier farming competitive with shallow higher-tier resets.",
+          "Deep-level upgrade cost and effect curves must produce useful incremental purchases without early 5000-level gold boxing; no blanket linear +5-cost patch.",
+          "Use 300-wave tier access and approximately 2000-wave farming comfort as distinct progression intentions. The mature 5000-wave, 10–12 real-hour at 5x reference is a pacing goal, not a claim that Tier 10 exists or a forced 2000-wave unlock.",
+          "Measure real candidate pace separately from model throughput. Show unavailable earned paths rather than quietly replacing them with maxed saves; obtain owner play-feel review before calling balance accepted."
+        ],
+        "id": "C-ECONOMY",
+        "intent_refs": [
+          "S-FARMING"
+        ],
+        "kind": "behavior",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "Fresh profiles and equal-budget pair branches using earned resources",
+            "id": "SC-ECONOMY",
+            "then": "Report acquisition times, opportunity costs and pair frontiers with limits; do not use gifted saves to claim earned progression.",
+            "when": "Measure deep lower-tier farms, shallow higher-tier resets and alternative spend policies"
+          }
+        ],
+        "source_refs": [
+          "SRC-BALANCE",
+          "SRC-PRODUCT"
+        ],
+        "statement": "Calibrate the new content using actually earned profiles and equal-budget comparisons, with explicit limits on what was measured.",
+        "title": "Earned build choices and credible farming pace",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-ECONOMY",
+          "method": "automated_and_review",
+          "negative_control": "Include shallow-reset farming, one-bay starter builds, shield/repair stalemates, extreme levels, alternate spending policies and small perturbations of costs/damage.",
+          "oracle": "Compare all 21 pairs at equal Workshop/research budget across swarm, armor and support encounters; at least three distinct pairs must be on the measured damage/survival/farming frontier and no pair may dominate every tested scenario. Report milestone acquisition, Scrap purchase cadence, Salvage/hour, research wait and Workshop opportunity cost from fresh profiles without gifted currency. Keep high-wave lower-tier farming competitive with shallow higher-tier resets. Deep-level upgrade cost and effect curves must produce useful incremental purchases without early 5000-level gold boxing; no blanket linear +5-cost patch. Use 300-wave tier access and approximately 2000-wave farming comfort as distinct progression intentions. The mature 5000-wave, 10–12 real-hour at 5x reference is a pacing goal, not a claim that Tier 10 exists or a forced 2000-wave unlock. Measure real candidate pace separately from model throughput. Show unavailable earned paths rather than quietly replacing them with maxed saves; obtain owner play-feel review before calling balance accepted.",
+          "planned_target": "Extended existing earned balance harness and source-bound full-duration farming observations."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-LOCAL",
+          "K-EDITION",
+          "K-CLOCK",
+          "K-PROOF"
+        ],
+        "guarantees": [
+          "Snapshot all four supported tuples: waves-v1/content-v1 with long-run-economy-v1, research-farming-economy-v2 or research-farming-economy-v3; waves-v2/content-v2 with combat-depth-economy-v4. Resolve the next tuple explicitly; do not treat all non-legacy runs as the mutable current edition.",
+          "Old single fittings migrate into bay one with bay two empty for future runs; old active runs keep their original one-fitting model, purchases, effects and payouts.",
+          "Preserve appearance, preferences, claims, Workshop, paid research and checkpoint resources through upgrade, import/export, previous-save recovery and abrupt restart.",
+          "Unsupported future/corrupt/oversized data remains refused with original bytes preserved. Validation bounds preset names, IDs, arrays and file sizes; a failed write cannot replace good state.",
+          "Reconcile new profile entitlements both on migration and after accepted clears by retained runs; new bay/lab/fitting availability applies to future deployments without changing retained-run rewards or duplicating Salvage."
+        ],
+        "id": "C-RESUME",
+        "intent_refs": [
+          "S-READINESS"
+        ],
+        "kind": "compatibility",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "Archived checkpoints from every supported run edition with paid upgrades",
+            "id": "SC-RESUME",
+            "then": "Original effects, payouts, hull, upgrades, preferences and paid research survive; the last completed wave resumes paused.",
+            "when": "Upgrade, export/import, simulate an interrupted write and resume"
+          },
+          {
+            "given": "An old-edition active T1 run is saved at wave 749 when the update is installed.",
+            "id": "SC-RETAINED-UNLOCK",
+            "then": "Bay two becomes available for the next deployment exactly once; the retained run still has one bay and its original reward accounting.",
+            "when": "Clear wave 750 and reload the profile."
+          }
+        ],
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Upgrade existing profiles without invalidating saved paid work or reinterpreting any supported run edition.",
+        "title": "Lossless upgrade and retained run behavior",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-RESUME",
+          "method": "automated_and_review",
+          "negative_control": "Replay representative saves from every supported version and edition; mutate unknown IDs, duplicate rewards, costs and checkpoint hashes; simulate stale writer and interrupted transaction.",
+          "oracle": "Snapshot all four supported tuples: waves-v1/content-v1 with long-run-economy-v1, research-farming-economy-v2 or research-farming-economy-v3; waves-v2/content-v2 with combat-depth-economy-v4. Resolve the next tuple explicitly; do not treat all non-legacy runs as the mutable current edition. Old single fittings migrate into bay one with bay two empty for future runs; old active runs keep their original one-fitting model, purchases, effects and payouts. Preserve appearance, preferences, claims, Workshop, paid research and checkpoint resources through upgrade, import/export, previous-save recovery and abrupt restart. Unsupported future/corrupt/oversized data remains refused with original bytes preserved. Validation bounds preset names, IDs, arrays and file sizes; a failed write cannot replace good state. Reconcile new profile entitlements both on migration and after accepted clears by retained runs; new bay/lab/fitting availability applies to future deployments without changing retained-run rewards or duplicating Salvage.",
+          "planned_target": "Save compatibility corpus, checkpoint replay, portable backups and isolated real-platform recovery."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-STYLE",
+          "K-PROOF"
+        ],
+        "guarantees": [
+          "From the garage the player can identify the next unlock, choose/equip a build, see its effect and deploy without reading implementation prose.",
+          "Lab shows the locked milestone or usable slot and an explicit Start action with cost/time; no AVAILABLE label for an action the player cannot take.",
+          "Planner and history compare saved builds with tier, wave, elapsed real time, earned resources and rules/content/economy edition; incompatible comparisons are labeled.",
+          "Locked, unaffordable, maxed, busy, stale-save and failed-save states have a concrete next action. Compact/touch layouts keep totals, prices and primary actions together.",
+          "Use shared focus/scroll/back behavior and chrome; independently disable optional prompts. Test the sibling screens, not just the new Armory."
+        ],
+        "id": "C-SCREENS",
+        "intent_refs": [
+          "S-READINESS"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "A fresh player with zero labs and a returning player with an idle unlocked lab",
+            "id": "SC-SCREENS",
+            "then": "The first sees the required milestone; the second sees an explicit affordable Start or shortfall, with consistent focus/back behavior.",
+            "when": "Open Lab on compact and desktop layouts, then follow the main action"
+          }
+        ],
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Make Armory, Lab, Workshop, tier rewards and Planner a coherent preparation flow using the existing shared page and quote interfaces.",
+        "title": "One understandable preparation and progression flow",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-SCREENS",
+          "method": "automated_and_review",
+          "negative_control": "Review fresh, returning, zero-funds, all-labs-busy, long-name, short-window and keyboard-only sessions; no player must guess how to start research.",
+          "oracle": "From the garage the player can identify the next unlock, choose/equip a build, see its effect and deploy without reading implementation prose. Lab shows the locked milestone or usable slot and an explicit Start action with cost/time; no AVAILABLE label for an action the player cannot take. Planner and history compare saved builds with tier, wave, elapsed real time, earned resources and rules/content/economy edition; incompatible comparisons are labeled. Locked, unaffordable, maxed, busy, stale-save and failed-save states have a concrete next action. Compact/touch layouts keep totals, prices and primary actions together. Use shared focus/scroll/back behavior and chrome; independently disable optional prompts. Test the sibling screens, not just the new Armory.",
+          "planned_target": "Actual screen journeys at desktop and compact sizes plus owner comprehension review."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-STYLE",
+          "K-PROOF"
+        ],
+        "guarantees": [
+          "Selection highlights and callout anchors attach to the actual fitted parts across all supported cosmetic assemblies; silhouettes do not overlap controls or misrepresent the selected bay.",
+          "Both fittings have distinct readable effects at 0.5x, 1x and 5x with reduced-effects preferences respected.",
+          "New environments preserve enemy/telegraph contrast and retain shared scalable chrome; no hand-painted copies of UI controls.",
+          "Ship only reviewed art/audio with source provenance and rights recorded. New sprint visual proposals do not silently resolve the older Q-ART owner decision."
+        ],
+        "id": "C-PRESENTATION",
+        "intent_refs": [
+          "S-ARMORY",
+          "S-CAMPAIGN"
+        ],
+        "kind": "interface",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "Two fittings mounted on mixed cosmetic parts with reduced effects enabled",
+            "id": "SC-PRESENTATION",
+            "then": "Callouts point to actual parts, both effects remain distinguishable and reduced-effects settings are honored without changing stats.",
+            "when": "Select each bay, preview new terrains and play at 0.5x, 1x and 5x"
+          }
+        ],
+        "source_refs": [
+          "SRC-PRODUCT"
+        ],
+        "statement": "Integrate two simultaneously visible fittings and new battlefields into the existing tank rig and presentation owners.",
+        "title": "Readable fitted tank and battlefield identities",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-PRESENTATION",
+          "method": "automated_and_review",
+          "negative_control": "Exercise extreme supported hull/turret/cannon/tread combinations, both bay positions, locked preview, flash reduction and dense wave effects.",
+          "oracle": "Selection highlights and callout anchors attach to the actual fitted parts across all supported cosmetic assemblies; silhouettes do not overlap controls or misrepresent the selected bay. Both fittings have distinct readable effects at 0.5x, 1x and 5x with reduced-effects preferences respected. New environments preserve enemy/telegraph contrast and retain shared scalable chrome; no hand-painted copies of UI controls. Ship only reviewed art/audio with source provenance and rights recorded. New sprint visual proposals do not silently resolve the older Q-ART owner decision.",
+          "planned_target": "Rig anchoring checks, visual captures of actual builds and owner normal-speed art/listening review."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-LOCAL",
+          "K-EDITION"
+        ],
+        "guarantees": [
+          "One typed loadout/effect projection supplies combat, Armory, Planner and checkpoint serialization.",
+          "One typed milestone bundle supplies preview, first-clear settlement and unlock availability.",
+          "Keep retained compatibility implementations and independent test oracles distinct; remove superseded live paths only after parity coverage.",
+          "Validate IDs, references, unlock acyclicity and bounded counts at catalog admission. New tests join the maintained inventory, not a parallel runner."
+        ],
+        "id": "C-OWNERS",
+        "intent_refs": [
+          "S-ARMORY",
+          "S-RESEARCH",
+          "S-CAMPAIGN"
+        ],
+        "kind": "invariant",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "Catalog admission receives duplicate or dangling IDs and a cyclic unlock",
+            "id": "SC-OWNERS",
+            "then": "Invalid content is refused; valid surfaces share one projection and do not independently recalculate prices or effects.",
+            "when": "Load the candidate content and compare Armory/Lab/Planner quotes to combat projections"
+          }
+        ],
+        "source_refs": [
+          "SRC-CONTENT",
+          "SRC-TESTS"
+        ],
+        "statement": "Extend existing catalogs, coordinators, combat simulation and UI contracts; do not build a second progression system.",
+        "title": "Shared authorities and bounded extension points",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-OWNERS",
+          "method": "automated_and_review",
+          "negative_control": "Reject dangling fitting/research/tier IDs, cyclic unlocks, duplicated rewards and a UI-only formula that diverges from the authoritative quote.",
+          "oracle": "One typed loadout/effect projection supplies combat, Armory, Planner and checkpoint serialization. One typed milestone bundle supplies preview, first-clear settlement and unlock availability. Keep retained compatibility implementations and independent test oracles distinct; remove superseded live paths only after parity coverage. Validate IDs, references, unlock acyclicity and bounded counts at catalog admission. New tests join the maintained inventory, not a parallel runner.",
+          "planned_target": "Source review plus unchanged existing suites and direct tests of new owners."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-PROOF",
+          "K-LOCAL"
+        ],
+        "guarantees": [
+          "Use task-owned isolated profiles and record unchanged owner save hashes. Resolve Windows input and browser background obstructions before claiming those checks passed.",
+          "Exercise ordinary earn/buy/clear/equip/research/resume, minimize/background, forced stop, cold restart, preferences and backup/restore on actual targets.",
+          "Complete at least one 10–12 hour real-time 5x farming soak on the declared primary browser or Windows target; capture full process/WASM/native memory as applicable, frame pacing, save health and recovered checkpoint.",
+          "Run a recorded physical Android sustained-play/lifecycle session with device/OS, frame/thermal/memory and hardware-audio observations. Full-duration Android qualification stays open unless separately performed.",
+          "Every Q row links its current candidate/evidence and precise limits. An unavailable device or owner review is a pending qualification, not a fabricated pass.",
+          "Declare target hardware/OS, build flags and measurement methods before the final run. Proposed foreground budgets: primary desktop median at least 55 fps and p95 frame time at most 33.3 ms; Android median at least 30 fps and p95 at most 50 ms; no recurring stalls above 250 ms or unexplained process-memory growth above 10% after warm-up under comparable repeating workload. Record absolute peak memory against a predeclared device budget. A miss requires a fix or an explicit revised target, never a post-hoc pass.",
+          "Android qualification requires at least 60 minutes of sustained foreground play, ten background/foreground cycles, three forced-stop/relaunch cycles, and real file-provider backup/restore and hardware-audio checks. Record thermal status; severe/critical thermal throttling fails the declared target. If full thermal/memory instrumentation is unavailable, leave that obligation pending."
+        ],
+        "id": "C-PLATFORM",
+        "intent_refs": [
+          "S-READINESS"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "An identified candidate using isolated profiles on declared targets",
+            "id": "SC-PLATFORM",
+            "then": "Retain matched input/save/audio/performance evidence and owner-save hashes; missing or failed target proof stays explicitly pending.",
+            "when": "Play and interrupt/relaunch it; perform the full-duration primary-target soak and physical Android session"
+          }
+        ],
+        "source_refs": [
+          "SRC-RELEASE"
+        ],
+        "statement": "Qualify the changed game on a matching browser, Windows player and physical Android candidate while retaining the single release matrix.",
+        "title": "A candidate tested through actual play and recovery",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-PLATFORM",
+          "method": "automated_and_review",
+          "negative_control": "Failed save, repeated background/foreground, audio restart bursts, aborted run, stalled wave and growing memory all remain actionable failures.",
+          "oracle": "Use task-owned isolated profiles and record unchanged owner save hashes. Resolve Windows input and browser background obstructions before claiming those checks passed. Exercise ordinary earn/buy/clear/equip/research/resume, minimize/background, forced stop, cold restart, preferences and backup/restore on actual targets. Complete at least one 10–12 hour real-time 5x farming soak on the declared primary browser or Windows target; capture full process/WASM/native memory as applicable, frame pacing, save health and recovered checkpoint. Run a recorded physical Android sustained-play/lifecycle session with device/OS, frame/thermal/memory and hardware-audio observations. Full-duration Android qualification stays open unless separately performed. Every Q row links its current candidate/evidence and precise limits. An unavailable device or owner review is a pending qualification, not a fabricated pass.",
+          "planned_target": "Actual-target sessions, long-duration trace, native input receipt and updated Q-PACKAGE through Q-DELIVERY matrix."
+        }
+      },
+      {
+        "applicability": {
+          "mode": "unconditional",
+          "rationale": "Required for the proposed sprint outcome."
+        },
+        "constraint_refs": [
+          "K-DELIVERY",
+          "K-PROOF"
+        ],
+        "guarantees": [
+          "Integrate the existing #543/#544/#546 stack including #547, repairing lost ADR source ancestry before merge. Use real merge commits where required; preserve current paid-run behavior and verify each actual merge candidate.",
+          "Review open dependency PRs for inclusion or supersession; integrate applicable reviewed updates and reconcile superseded PRs after containment is proven. Do not roll back newer versions already present.",
+          "Required local checks, exact-head hosted CI, independent review and candidate packaging have separate records.",
+          "Do not mark #67 delivered on main merely because its implementation merged into #546; keep #110 license-policy and #69/#47 classic multiplayer decisions outside this sprint unless explicitly resolved.",
+          "Execute authorized repository merges after required exact-head CI and review; verify post-merge workflows and any automatic deployment separately. Store submission, signing identity and a new public version remain separate decisions. Preserve frozen historical evidence."
+        ],
+        "id": "C-DELIVERY",
+        "intent_refs": [
+          "S-READINESS"
+        ],
+        "kind": "operational",
+        "obligation": "must",
+        "preconditions": [
+          "The reviewed sprint is authorized for implementation; checks below are planned, not executed."
+        ],
+        "scenarios": [
+          {
+            "given": "The open 543/544/546 stack with 547 already integrated only into 546",
+            "id": "SC-DELIVERY",
+            "then": "Report implementation, checks, merge and publication independently; preserve ADR ancestry and do not call a stacked merge a main deployment.",
+            "when": "Prepare the sprint PR and inspect exact base/head, source package and CI"
+          }
+        ],
+        "source_refs": [
+          "SRC-BASE",
+          "SRC-RELEASE"
+        ],
+        "statement": "Deliver a reviewed candidate against the real dependency stack without conflating local success, CI, merge and publication.",
+        "title": "Reviewable integration and honest release status",
+        "trigger": "The player or verification journey exercises this capability on a matching candidate.",
+        "verification": {
+          "evidence_state": "planned",
+          "id": "V-DELIVERY",
+          "method": "automated_and_review",
+          "negative_control": "Base branch drift, stale CI, unmatched source/package, missing ADR ancestry and unrun device checks prevent a false release-ready claim.",
+          "oracle": "Integrate the existing #543/#544/#546 stack including #547, repairing lost ADR source ancestry before merge. Use real merge commits where required; preserve current paid-run behavior and verify each actual merge candidate. Review open dependency PRs for inclusion or supersession; integrate applicable reviewed updates and reconcile superseded PRs after containment is proven. Do not roll back newer versions already present. Required local checks, exact-head hosted CI, independent review and candidate packaging have separate records. Do not mark #67 delivered on main merely because its implementation merged into #546; keep #110 license-policy and #69/#47 classic multiplayer decisions outside this sprint unless explicitly resolved. Execute authorized repository merges after required exact-head CI and review; verify post-merge workflows and any automatic deployment separately. Store submission, signing identity and a new public version remain separate decisions. Preserve frozen historical evidence.",
+          "planned_target": "Read-only live PR/ref checks, exact-head CI/review and source-bound packaging receipts during authorized implementation delivery."
+        }
+      }
+    ],
+    "decisions": [
+      {
+        "authority": "inherited",
+        "choice": "Propose two fixed bays with no duplicate fittings; second bay at T1 wave 750, three saved presets.",
+        "id": "DEC-BAYS",
+        "rationale": "A bounded second bay creates complementary builds while preserving familiar selection and manageable coverage.",
+        "source_ref": "SRC-EXECUTION",
+        "topic": "Build structure"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Propose T5 Glass Wastes and T6 Frostline Relay, Shield Carrier/Medic roles and a 100-wave Siege Commander variation on those tiers.",
+        "id": "DEC-CONTENT",
+        "rationale": "Adds authored combat reasons for builds rather than only larger health values; working names can change without changing scope.",
+        "source_ref": "SRC-EXECUTION",
+        "topic": "Campaign depth"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Propose Armor Piercing, Area Control and Field Engineering (20 ranks each), unlocked at T1 wave 500, and Lab 3 at T2 wave 500.",
+        "id": "DEC-RESEARCH",
+        "rationale": "Uses existing currency/timer tradeoffs and provides earned capacity as the research catalog grows. Exact effects/cost curves are calibrated in the balance task.",
+        "source_ref": "SRC-EXECUTION",
+        "topic": "Specialization and lab capacity"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Preserve every supported edition; only new deployments use the new mechanics/economy.",
+        "id": "DEC-COMPAT",
+        "rationale": "This is the owner's established saved-run rule and is required across all new content.",
+        "source_ref": "SRC-PRODUCT",
+        "topic": "Existing paid runs"
+      },
+      {
+        "authority": "inherited",
+        "choice": "Retain 300-wave access, meaningful deep farms and the 5000-wave 10–12 hour 5x mature-run reference.",
+        "id": "DEC-FARMING",
+        "rationale": "These are distinct access, comfort and pacing concepts, not forced promotion milestones.",
+        "source_ref": "SRC-PRODUCT",
+        "topic": "Progression pacing"
+      }
+    ],
+    "governs": [
+      "campaign-unity/Unity/Assets/Scripts",
+      "campaign-unity/Tools",
+      "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md",
+      "scripts/ci",
+      "scripts/assets"
+    ],
+    "intent": {
+      "caller": "Last Stand owner and returning farming players",
+      "id": "INT-BUILDCRAFT",
+      "outcome": "Players can earn and compare distinct builds, pursue six authored tiers without abandoning profitable lower-tier farms, and trust that progress and readable controls survive longer sessions and restarts.",
+      "problem": "The integrated game has shared foundations but only one auxiliary at a time, four economy/speed research tracks and four tiers. It needs interacting build choices and meaningful mid-game goals, while actual platform and long-run release proof still lags implementation.",
+      "source_refs": [
+        "SRC-REQUEST",
+        "SRC-PRODUCT",
+        "SRC-BASE"
+      ]
+    },
+    "non_goals": [
+      {
+        "id": "N-SERVICE",
+        "statement": "No accounts, cloud save, multiplayer campaign, paid shop, premium currency, ads or combat progress while closed."
+      },
+      {
+        "id": "N-LOOT",
+        "statement": "No randomized module rarity, inventory grind, procedural equipment grid, more than two bays or stat-bearing cosmetics."
+      },
+      {
+        "id": "N-ENDLESS",
+        "statement": "No claim to complete an 18-tier/endgame campaign; author six tiers while preserving deep and continuing waves."
+      },
+      {
+        "id": "N-REWRITE",
+        "statement": "No replacement wallet, save store, UI framework, renderer or verification monolith; keep classic artillery behavior separate."
+      },
+      {
+        "id": "N-PUBLISH",
+        "statement": "No new paid service, store submission, signing identity or public release-version choice. The owner has authorized repository integration and merges; actual deployment caused by the existing merge workflow is observed separately from native/device acceptance."
+      }
+    ],
+    "open_decisions": [],
+    "retired_symbols": [],
+    "scope": [
+      {
+        "id": "S-ARMORY",
+        "statement": "Two fixed functional bays (second earned), three presets, seven total fittings and actual tank callouts."
+      },
+      {
+        "id": "S-RESEARCH",
+        "statement": "Three combat tracks and a third earned lab using the existing Salvage and real-time research authority."
+      },
+      {
+        "id": "S-CAMPAIGN",
+        "statement": "Two new tiers/environments, two support roles, one boss variation and typed milestone bundles through deep waves."
+      },
+      {
+        "id": "S-FARMING",
+        "statement": "Earned economy/pair calibration, comparable run history and a real-duration farming trial."
+      },
+      {
+        "id": "S-READINESS",
+        "statement": "Sibling-screen clarity, retained-save migration, target builds/lifecycle/input/audio checks and dependency-stack delivery planning."
+      }
+    ],
+    "sections": [
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "The owner authorized this product package and execution on November 7, including integration and merges. Earlier proposed milestones and bounded two-bay design are now the working scope. Ordinary implementation/calibration refinements do not require a second artifact approval; material outcome changes still go to the owner.",
+            "type": "paragraph"
+          },
+          {
+            "columns": [
+              "Milestone (proposal)",
+              "Permanent unlock"
+            ],
+            "refs": [],
+            "rows": [
+              [
+                "T1 wave 500",
+                "Combat research tracks; keep existing Mortar unlock"
+              ],
+              [
+                "T1 wave 750",
+                "Second functional equipment bay"
+              ],
+              [
+                "T2 wave 300",
+                "Arc Emitter; keep the tier unlock at the same milestone"
+              ],
+              [
+                "T2 wave 500",
+                "Third research lab"
+              ],
+              [
+                "T3 wave 100",
+                "Reactive Shield"
+              ],
+              [
+                "T4 wave 300 / T5 wave 300",
+                "Tier 5 / Tier 6"
+              ]
+            ],
+            "type": "table"
+          },
+          {
+            "refs": [],
+            "text": "Unlocks are finite first-clear rewards. Research ranks and Workshop levels remain paid progression. No existing earned reward is removed. A new-edition migration must reconcile an already-earned milestone to its new entitlement exactly once without duplicating its earlier Salvage.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-REVIEW",
+        "title": "What the owner is reviewing"
+      },
+      {
+        "blocks": [
+          {
+            "columns": [
+              "Lens",
+              "Expand one exclusive fitting",
+              "Two fixed bays (recommended)"
+            ],
+            "refs": [],
+            "rows": [
+              [
+                "Scalable",
+                "More choices stay exclusive; little synergy as catalog grows.",
+                "Seven fittings yield 21 pairs; fixed two-bay cap limits combinatorics."
+              ],
+              [
+                "Maintainable",
+                "Smallest migration and rig change.",
+                "Shared loadout/effect owner prevents per-screen combination logic; costs more upfront."
+              ],
+              [
+                "Available",
+                "Existing selection survives content growth.",
+                "Retained editions and staged Apply keep old saves usable; no remote dependency."
+              ],
+              [
+                "Reliable",
+                "Fewer interactions to balance and serialize.",
+                "Needs explicit snapshot, atomic apply and bounded defense interactions; planned before content."
+              ],
+              [
+                "Testable",
+                "Seven single paths.",
+                "Seven singles plus 21 pairs are finite and directly measurable; not arbitrary module graphs."
+              ],
+              [
+                "Securable",
+                "Existing finite IDs.",
+                "Same allowlisted local data boundary with bounded presets, no new network or executable content."
+              ]
+            ],
+            "type": "table"
+          },
+          {
+            "refs": [],
+            "text": "Recommendation: two fixed bays because meaningful build combinations are the product outcome, while bounded scope and shared owners keep the extra work reviewable. Cost/schedule: this is a multi-package sprint with compatibility and balance work, not a small fitting feature. Play-feel and Android thermal suitability are Unknown until measured; they are acceptance-critical, but not blockers to drafting this proposal. If they fail, fix/tune the candidate or seek an explicit scope change; do not call them passed.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-SMARTS",
+        "title": "Why bounded two-bay buildcraft"
+      },
+      {
+        "blocks": [
+          {
+            "refs": [],
+            "text": "Baseline 219239001787993cf6e71fab33cd87a26f16eff7 includes merged PR 547 on codex/last-stand-release-foundation. Open draft chain: #546 targets research-farming (#544), which targets waves-and-resume (#543), which targets main. Integration is unfinished; the next plan must not treat this game as already deployed from main.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "Existing playable scope: four tiers, five exclusive fittings, four research tracks, two labs and cosmetic customization. Research/Planner/shared chrome, retained run editions and checkpoint recovery already exist. Extend those owners rather than recreating their features.",
+            "type": "paragraph"
+          },
+          {
+            "refs": [],
+            "text": "The established release matrix stays the single current acceptance index. Historical plan statuses and raw reports are retained. A no-device result is recorded as pending; owner art/comprehension/listening acceptance is separate from screenshots or automated checks.",
+            "type": "paragraph"
+          }
+        ],
+        "id": "SEC-BASELINE",
+        "title": "Current state and delivery boundary"
+      },
+      {
+        "blocks": [
+          {
+            "items": [
+              "Use actual earned profiles for progression claims; gifted late-game fixtures are only isolated mechanic probes.",
+              "Do not promise mature Tier 10 farming in a six-tier sprint. Calibrate the duration reference at measured comparable depth and report which earned state can reach it.",
+              "Close platform obligations only for the exact tested candidate and scope. Android store release needs a separate release/device qualification decision.",
+              "Keep old issue decisions (#110 dependency license policy and #69 private room policy) visible without inventing approval or mixing classic multiplayer into Last Stand."
+            ],
+            "refs": [],
+            "type": "list"
+          }
+        ],
+        "id": "SEC-BOUNDARIES",
+        "title": "Balancing and release limits"
+      }
+    ],
+    "sources": [
+      {
+        "id": "SRC-REQUEST",
+        "locator": "Conversation, 2026-11-06",
+        "note": "The owner requests a substantial next sprint plan after PR 547, following an in-place codeArbiter update. This turn authorizes planning, not feature implementation or merging.",
+        "title": "Next large sprint",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-PRODUCT",
+        "locator": "Conversation: waves, farming, research, UI, architecture and tank customization",
+        "note": "Enemy-clear waves; checkpoint resume; mature 5,000-wave farming reference of 10–12 real hours at 5x; shared Salvage; scalable controls; cosmetic freedom; releasable game.",
+        "title": "Established Last Stand direction",
+        "type": "user_request",
+        "url": null
+      },
+      {
+        "id": "SRC-BASE",
+        "locator": "219239001787993cf6e71fab33cd87a26f16eff7",
+        "note": "547 merged into release-foundation, not main. Open draft stack is 546 -\u003e 544 -\u003e 543 -\u003e main. Existing source and reports are the baseline, not proof of current device qualification.",
+        "title": "Integrated PR 547 source",
+        "type": "repository",
+        "url": "https://github.com/SUaDtL/singedTerra/pull/547"
+      },
+      {
+        "id": "SRC-CONTENT",
+        "locator": "campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs; LastStandTierCatalog.cs; LastStandSelection.cs; LastStandResearchCatalog.cs; LastStandRewardCatalog.cs",
+        "note": "Four tiers, five exclusive auxiliary fittings, four research tracks and two labs. Rewards currently encode one fitting and one tier per milestone; new mixed unlocks require a shared typed reward contract.",
+        "title": "Authored content and retained editions",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-ENEMIES",
+        "locator": "campaign-unity/Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs; LastStandWaveCatalog.cs; EncounterModel.cs",
+        "note": "Close, Ranged, Swarmer, Armored Brute and Siege Elite exist. Bounded deterministic recipes, capped arithmetic and shared enemy projections must be extended, not copied.",
+        "title": "Wave and enemy authorities",
+        "type": "repository",
+        "url": null
+      },
+      {
+        "id": "SRC-RELEASE",
+        "locator": "campaign-unity/docs/LAST-STAND-RELEASE-READINESS.md#acceptance-matrix",
+        "note": "Q-PACKAGE through Q-DELIVERY retain actual-source limits. Windows input, physical Android, long-duration farming, listening and owner comprehension remain open.",
+        "title": "Single release qualification matrix",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-BALANCE",
+        "locator": "campaign-unity/docs/last-stand-combat-depth/balance.md",
+        "note": "Existing earned-budget policy and equal-budget branches are useful controls. Gifted probes, modeled time and short smoke runs are not earned endgame or real endurance.",
+        "title": "Earned progression measurements",
+        "type": "local_document",
+        "url": null
+      },
+      {
+        "id": "SRC-ADR",
+        "locator": ".codearbiter/decisions/0020-recovery-safe-battle-console-loading.md",
+        "note": "Retain startup-loaded classic semantic controls, battle-only mounting and lazy Pixi. Last Stand work must not undo this accepted recovery design.",
+        "title": "Deployment recovery decision",
+        "type": "decision_record",
+        "url": null
+      },
+      {
+        "id": "SRC-TESTS",
+        "locator": "package.json; campaign-unity/Tools/last_stand_test_inventory.py; scripts/ci/lastStandQualification.mjs",
+        "note": "Use the actual portable inventory, bounded imported-player journeys, source/package admission and platform receipts. New checks are proposals until run.",
+        "title": "Maintained verification inventory",
+        "type": "test_reference",
+        "url": null
+      },
+      {
+        "id": "SRC-EXECUTION",
+        "locator": "Conversation, 2026-11-07",
+        "note": "Owner: Perform all integration and memes as part of this sprint additions and execute. Assistant stated that memes is interpreted as merges. This authorizes the presented sprint, its commits/PRs, integration of the existing stack and applicable dependency work, and merges after required CI/review. It does not grant store publication or bypass failed checks.",
+        "title": "Owner authorizes sprint execution and integration merges",
+        "type": "user_request",
+        "url": null
+      }
+    ],
+    "summary": "Approved sprint: two-bay builds and saved loadouts, new fittings/research, six-tier authored campaign, earned balance and actual candidate qualification. Includes integration and merges of the existing PR stack and applicable dependency work after required checks.",
+    "title": "Last Stand — Buildcraft, mid-game campaign and playtest readiness"
+  },
+  "presentation": {
+    "brand_name": "codeArbiter",
+    "companion_path": "../plans/last-stand-buildcraft-and-midgame.html",
+    "logo_data_uri": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMjgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjgiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZUFyYml0ZXIiPgogIDx0aXRsZT5jb2RlQXJiaXRlcjwvdGl0bGU+CiAgPGRlc2M+QW4gdW5wcm92ZW4gY29tbWl0IGNyb3NzZXMgYSBnb3Zlcm5lZCBnYXRlIGFuZCBsZWF2ZXMgYXMgYSBwcm92ZW4gZGVjaXNpb24uPC9kZXNjPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJjYS1nYXRlLWdvbGQiIHgxPSI2IiB5MT0iNCIgeDI9IjI2IiB5Mj0iMjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2YzYzk1OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkODk5MjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8ZyBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImNvbW1pdC1saW5lIgogICAgICBkPSJNMiAyMGgyNCIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjNDY1NTY1IgogICAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgLz4KICAgIDxjaXJjbGUKICAgICAgZGF0YS1icmFuZC1lbGVtZW50PSJ1bnByb3Zlbi1ub2RlIgogICAgICBjeD0iNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyIgogICAgICBmaWxsPSIjMDkwZDEyIgogICAgICBzdHJva2U9IiM3ZjhkOWQiCiAgICAgIHN0cm9rZS13aWR0aD0iMS4zIgogICAgLz4KICAgIDxnCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0iZ2F0ZS1wb3N0cyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSJ1cmwoI2NhLWdhdGUtZ29sZCkiCiAgICAgIHN0cm9rZS13aWR0aD0iMi4xNSIKICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgPgogICAgICA8cGF0aCBkPSJNMTEgMTB2MTIiLz4KICAgICAgPHBhdGggZD0iTTE3IDEwdjEyIi8+CiAgICA8L2c+CiAgICA8cmVjdAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9ImdhdGUtYmVhbSIKICAgICAgeD0iNiIKICAgICAgeT0iNyIKICAgICAgd2lkdGg9IjE2IgogICAgICBoZWlnaHQ9IjIuNzUiCiAgICAgIHJ4PSIuNTUiCiAgICAgIGZpbGw9InVybCgjY2EtZ2F0ZS1nb2xkKSIKICAgIC8+CiAgICA8cGF0aAogICAgICBkYXRhLWJyYW5kLWVsZW1lbnQ9InRlcm1pbmFsLWNoZXZyb24iCiAgICAgIGQ9Im0xMS45IDMuNSAyLjEgMyAyLjEtMyIKICAgICAgZmlsbD0ibm9uZSIKICAgICAgc3Ryb2tlPSIjZjNjOTU4IgogICAgICBzdHJva2Utd2lkdGg9IjEuNTUiCiAgICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIKICAgIC8+CiAgICA8Y2lyY2xlCiAgICAgIGRhdGEtYnJhbmQtZWxlbWVudD0icHJvdmVuLW5vZGUiCiAgICAgIGN4PSIyNCIKICAgICAgY3k9IjIwIgogICAgICByPSIyLjU1IgogICAgICBmaWxsPSIjZTVhZDJjIgogICAgLz4KICA8L2c+CgogIDx0ZXh0CiAgICB4PSIzNCIKICAgIHk9IjIwLjc1IgogICAgZm9udC1mYW1pbHk9IidNYW5yb3BlIFZhcmlhYmxlJywgJ1NlZ29lIFVJIFZhcmlhYmxlJywgJ1NlZ29lIFVJJywgc2Fucy1zZXJpZiIKICAgIGZvbnQtc2l6ZT0iMTYiCiAgICBsZXR0ZXItc3BhY2luZz0iLS4yNSIKICA+CiAgICA8dHNwYW4gZmlsbD0iI2U3ZWRmNCIgZm9udC13ZWlnaHQ9IjQzMCI+Y29kZTwvdHNwYW4+PHRzcGFuIGZpbGw9IiNlNmFkMmMiIGZvbnQtd2VpZ2h0PSI3NTAiPkFyYml0ZXI8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+Cg==",
+    "logo_git_blob": null,
+    "logo_origin": "embedded codeArbiter logo",
+    "renderer": "codearbiter-html/0.1.0",
+    "stylesheet_sha256": "584ac549e16aeccd18359cafd3cbfc49339b11d6bf0cbd07727324d93acc6405"
+  },
+  "revision": 4,
+  "schema_version": "0.3.2",
+  "slug": "last-stand-buildcraft-and-midgame"
+}
+</script>
+</body></html>

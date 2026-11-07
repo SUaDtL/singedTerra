@@ -83,30 +83,44 @@ public static class CombatBalanceMeasurements
     }
     public sealed class RoleEffects
     {
-        readonly long[,] totalDamage=new long[8,5],totalKills=new long[8,5],totalArmor=new long[8,5];
-        long[,] waveDamage=new long[8,5],waveKills=new long[8,5],waveArmor=new long[8,5];
-        readonly long[] laterDamage=new long[EncounterModel.Capacity];
+        static readonly int WeaponCount=Enum.GetValues(typeof(EncounterEventKind)).Length,EnemyCount=Enum.GetValues(typeof(FoeKind)).Length;
+        readonly long[,] totalDamage=new long[WeaponCount,EnemyCount],totalKills=new long[WeaponCount,EnemyCount],totalArmor=new long[WeaponCount,EnemyCount];
+        long[,] waveDamage=new long[WeaponCount,EnemyCount],waveKills=new long[WeaponCount,EnemyCount],waveArmor=new long[WeaponCount,EnemyCount];
+        readonly long[] laterDamage=new long[EncounterModel.Capacity],laterHealing=new long[EncounterModel.Capacity],pendingShield=new long[EncounterModel.Capacity];
+        readonly List<long> shieldBeforeHit=new List<long>();
         readonly List<object> witnesses=new List<object>();int wave,areaCasts,extraTargets;long bypass,healed;
-        readonly long[] incoming=new long[5],rawIncoming=new long[5];
-        static bool Outgoing(EncounterEventKind kind)=>kind==EncounterEventKind.Cannon||kind==EncounterEventKind.Launcher||kind==EncounterEventKind.Scattergun||kind==EncounterEventKind.Mortar||kind==EncounterEventKind.Railgun;
+        readonly long[] incoming=new long[EnemyCount],rawIncoming=new long[EnemyCount];
+        static bool Outgoing(EncounterEventKind kind)=>kind==EncounterEventKind.Cannon||kind==EncounterEventKind.Launcher||kind==EncounterEventKind.Scattergun||kind==EncounterEventKind.Mortar||kind==EncounterEventKind.Railgun||kind==EncounterEventKind.Arc;
         static int Raw(EncounterModel m,EncounterEventKind kind)
         {switch(kind){case EncounterEventKind.Cannon:return m.CurrentCannonDamage;case EncounterEventKind.Launcher:return m.CurrentLauncherDamage;
-            case EncounterEventKind.Scattergun:return m.CurrentScattergunDamage;case EncounterEventKind.Mortar:return m.CurrentMortarDamage;default:return m.CurrentRailgunDamage;}}
+            case EncounterEventKind.Scattergun:return m.CurrentScattergunDamage;case EncounterEventKind.Mortar:return m.CurrentMortarDamage;case EncounterEventKind.Arc:return m.CurrentArcDamage;default:return m.CurrentRailgunDamage;}}
         public void Observe(EncounterModel model)
         {
-            if(wave!=model.Wave){wave=model.Wave;waveDamage=new long[8,5];waveKills=new long[8,5];waveArmor=new long[8,5];}
-            if(model.Events.Count==0)return;Array.Clear(laterDamage,0,laterDamage.Length);int mortarTargets=0;long tickBypass=0;
+            if(wave!=model.Wave){wave=model.Wave;waveDamage=new long[WeaponCount,EnemyCount];waveKills=new long[WeaponCount,EnemyCount];waveArmor=new long[WeaponCount,EnemyCount];}
+            if(model.Events.Count==0)return;
+            Array.Clear(laterDamage,0,laterDamage.Length);Array.Clear(laterHealing,0,laterHealing.Length);Array.Clear(pendingShield,0,pendingShield.Length);shieldBeforeHit.Clear();
+            foreach(var hit in model.Events){
+                long absorbed=0;if(hit.Kind==EncounterEventKind.EnemyShield)pendingShield[hit.Slot]+=hit.Amount;
+                else if(Outgoing(hit.Kind)){absorbed=pendingShield[hit.Slot];pendingShield[hit.Slot]=0;}
+                shieldBeforeHit.Add(absorbed);
+            }
+            int mortarTargets=0;long tickBypass=0;
             for(int n=model.Events.Count-1;n>=0;n--){var hit=model.Events[n];
                 if(hit.Kind==EncounterEventKind.Repair){healed+=hit.Amount;continue;}
+                if(hit.Kind==EncounterEventKind.EnemyRepair){laterHealing[hit.Slot]+=hit.Amount;continue;}
                 if(hit.Kind==EncounterEventKind.CloseHit||hit.Kind==EncounterEventKind.RangedHit){var attacker=model.Foes[hit.Slot];incoming[(int)attacker.Kind]+=hit.Amount;rawIncoming[(int)attacker.Kind]+=attacker.Damage;continue;}
                 if(!Outgoing(hit.Kind))continue;
-                var foe=model.Foes[hit.Slot];int weapon=(int)hit.Kind,kind=(int)foe.Kind;long priorHull=foe.Hull+laterDamage[hit.Slot]+hit.Amount;
+                var foe=model.Foes[hit.Slot];int weapon=(int)hit.Kind,kind=(int)foe.Kind;long priorHull=foe.Hull+laterDamage[hit.Slot]-laterHealing[hit.Slot]+hit.Amount;
                 long mitigation=Math.Min(priorHull,Raw(model,hit.Kind))-hit.Amount;Require(mitigation>=0,"Observed hit exceeds raw weapon damage");
                 totalDamage[weapon,kind]+=hit.Amount;waveDamage[weapon,kind]+=hit.Amount;
                 totalArmor[weapon,kind]+=mitigation;waveArmor[weapon,kind]+=mitigation;
                 if(hit.Killed){totalKills[weapon,kind]++;waveKills[weapon,kind]++;}
                 if(hit.Kind==EncounterEventKind.Mortar)mortarTargets++;
-                if(hit.Kind==EncounterEventKind.Railgun){long advantage=hit.Amount-Math.Min(priorHull,Math.Max(1,model.CurrentRailgunDamage-foe.Armor));Require(advantage>=0,"Penetration cannot reduce damage");tickBypass+=advantage;}
+                if(hit.Kind==EncounterEventKind.Railgun){
+                    int armor=Math.Max(0,foe.Armor-model.CombatResearch.ArmorPenetration);
+                    long unpenetrated=Math.Max(1,model.CurrentRailgunDamage-armor-shieldBeforeHit[n]);
+                    long advantage=hit.Amount-Math.Min(priorHull,unpenetrated);Require(advantage>=0,"Penetration cannot reduce damage");tickBypass+=advantage;
+                }
                 laterDamage[hit.Slot]+=hit.Amount;
             }
             if(mortarTargets>1){areaCasts++;extraTargets+=mortarTargets-1;if(areaCasts==1)witnesses.Add(D("effect","mortar-multiple-targets","wave",wave,"tick",model.Tick,"targets",mortarTargets));}
@@ -114,8 +128,8 @@ public static class CombatBalanceMeasurements
         }
         static List<object> Rows(long[,] damage,long[,] kills,long[,] armor)
         {
-            var rows=new List<object>();foreach(var weapon in new[]{EncounterEventKind.Cannon,EncounterEventKind.Launcher,EncounterEventKind.Scattergun,EncounterEventKind.Mortar,EncounterEventKind.Railgun})
-                foreach(var kind in new[]{FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.ArmoredBrute,FoeKind.SiegeElite})
+            var rows=new List<object>();foreach(var weapon in new[]{EncounterEventKind.Cannon,EncounterEventKind.Launcher,EncounterEventKind.Scattergun,EncounterEventKind.Mortar,EncounterEventKind.Railgun,EncounterEventKind.Arc})
+                foreach(FoeKind kind in Enum.GetValues(typeof(FoeKind)))
                     if(damage[(int)weapon,(int)kind]>0)rows.Add(D("weapon",weapon.ToString(),"enemy",kind.ToString(),"effectiveDamage",damage[(int)weapon,(int)kind],"kills",kills[(int)weapon,(int)kind],"armorPreventedDamage",armor[(int)weapon,(int)kind]));
             return rows;
         }
@@ -136,22 +150,29 @@ public static class CombatBalanceMeasurements
     {
         if(value is Dictionary<string,object> map){writer.Write('{');bool first=true;foreach(var pair in map){if(!first)writer.Write(',');first=false;writer.Write(LastStandSaveJson.Write(pair.Key));writer.Write(':');WriteReport(writer,pair.Value);}writer.Write('}');}
         else if(!(value is string)&&value is System.Collections.IEnumerable rows){writer.Write('[');bool first=true;foreach(var row in rows){if(!first)writer.Write(',');first=false;WriteReport(writer,row);}writer.Write(']');}
+        else if(value is double number){Require(!Double.IsNaN(number)&&!Double.IsInfinity(number),"Non-finite measurement");writer.Write(number.ToString("R",CultureInfo.InvariantCulture));}
         else writer.Write(LastStandSaveJson.Write(value));
     }
     static LastStandUpgradeTrackId Aux(LastStandFitting fitting)
     {
         switch(fitting){case LastStandFitting.Launcher:return LastStandUpgradeTrackId.LauncherAttack;
         case LastStandFitting.Repair:return LastStandUpgradeTrackId.FieldRepair;case LastStandFitting.Scattergun:return LastStandUpgradeTrackId.ScattergunAttack;
-        case LastStandFitting.Mortar:return LastStandUpgradeTrackId.MortarAttack;default:return LastStandUpgradeTrackId.RailgunAttack;}
+        case LastStandFitting.Mortar:return LastStandUpgradeTrackId.MortarAttack;case LastStandFitting.Arc:return LastStandUpgradeTrackId.ArcOutput;
+        case LastStandFitting.Shield:return LastStandUpgradeTrackId.ShieldCapacity;default:return LastStandUpgradeTrackId.RailgunAttack;}
     }
     static LastStandUpgradeTrackId[] Order(LastStandFitting fitting,bool auxiliary=true)
     {return auxiliary?new[]{LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.HullCapacity,LastStandUpgradeTrackId.ScrapYield,
         LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.CannonCycle,Aux(fitting),LastStandUpgradeTrackId.Armor}:
         new[]{LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.HullCapacity,LastStandUpgradeTrackId.ScrapYield,
         LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.CannonCycle,LastStandUpgradeTrackId.Armor};}
+    static LastStandUpgradeTrackId[] Order(LastStandLoadout loadout,bool auxiliary=true)
+    {
+        var order=new List<LastStandUpgradeTrackId>(Order(loadout.Primary,auxiliary));
+        if(auxiliary&&loadout.Secondary.HasValue)order.Add(Aux(loadout.Secondary.Value));return order.ToArray();
+    }
     public static void BuyPermanent(Context c,long spendingLimit,bool auxiliary)
     {
-        var p=c.Profile;var order=Order(LastStandFittingCatalog.Parse(p.SelectedFitting),auxiliary);
+        var p=c.Profile;var order=Order(p.SelectedLoadout,auxiliary);
         for(int attempts=0;attempts<100000;attempts++){
             bool candidate=false;
             for(int scan=0;scan<order.Length;scan++){
@@ -166,15 +187,18 @@ public static class CombatBalanceMeasurements
         }
         throw new InvalidOperationException("Permanent policy intent bound exceeded");
     }
-    public static void FundResearch(Context c)
+    public static void FundResearch(Context c,bool combat=false,bool speedOnly=false)
     {
-        var order=new[]{LastStandResearchTrackId.GameSpeed,LastStandResearchTrackId.ResearchSpeed,LastStandResearchTrackId.SalvageRecovery,LastStandResearchTrackId.ScrapLogistics};
+        var order=speedOnly?new[]{LastStandResearchTrackId.GameSpeed}:combat?new[]{LastStandResearchTrackId.GameSpeed,LastStandResearchTrackId.ResearchSpeed,LastStandResearchTrackId.SalvageRecovery,LastStandResearchTrackId.ScrapLogistics,
+            LastStandResearchTrackId.ArmorPiercing,LastStandResearchTrackId.AreaControl,LastStandResearchTrackId.FieldEngineering}:
+            new[]{LastStandResearchTrackId.GameSpeed,LastStandResearchTrackId.ResearchSpeed,LastStandResearchTrackId.SalvageRecovery,LastStandResearchTrackId.ScrapLogistics};
         Require(c.Research.Reconcile(),"Research reconciliation before funding");
-        int slots=LastStandResearchCatalog.UnlockedSlots(c.Profile.GetBestWave(1));
+        int slots=c.Profile.UnlockedResearchLabCount;
         for(int slot=0;slot<slots;slot++){
             var snapshot=c.Profile.ResearchSnapshot;if(snapshot.slots[slot].active!=null)continue;
             for(int scan=0;scan<order.Length;scan++){
                 var track=order[c.ResearchCursor%order.Length];var definition=LastStandResearchCatalog.Get(track);int rank=snapshot.Rank(track)+1;
+                if(!LastStandResearchCatalog.IsUnlocked(definition,c.Profile.GetBestWave(1))){c.ResearchCursor++;continue;}
                 bool occupied=false;foreach(var other in snapshot.slots)if(other.active!=null&&other.active.track==track)occupied=true;
                 if(rank>definition.MaximumRank||occupied){c.ResearchCursor++;continue;}
                 long cost=definition.Cost(rank);if(cost>c.Gross/2-c.ResearchSpent||cost>c.Profile.Wallet)return;
@@ -189,8 +213,9 @@ public static class CombatBalanceMeasurements
     }
     public static Dictionary<string,object> BuySplit(Context c)
     {
-        var fitting=LastStandFittingCatalog.Parse(c.Profile.SelectedFitting);long before=c.PermanentSpent;int wallet=c.Profile.Wallet;
-        long common=SpendAffordable(c,Order(fitting,false),wallet/2),auxiliary=SpendAffordable(c,new[]{Aux(fitting)},wallet-wallet/2);
+        var loadout=c.Profile.SelectedLoadout;long before=c.PermanentSpent;int wallet=c.Profile.Wallet;
+        var auxiliaries=loadout.Secondary.HasValue?new[]{Aux(loadout.Primary),Aux(loadout.Secondary.Value)}:new[]{Aux(loadout.Primary)};
+        long common=SpendAffordable(c,Order(loadout,false),wallet/2),auxiliary=SpendAffordable(c,auxiliaries,wallet-wallet/2);
         c.Audit();return D("policy","split-common-aux-affordable-v1","walletBefore",wallet,"commonBudget",wallet/2,"auxiliaryBudget",wallet-wallet/2,
             "commonSpent",common,"auxiliarySpent",auxiliary,"walletAfter",c.Profile.Wallet,"permanentSpentBefore",before,"permanentSpentAfter",c.PermanentSpent,"allocatedProfileSha256",Hash(c.Store.Raw));
     }
@@ -206,12 +231,12 @@ public static class CombatBalanceMeasurements
     }
     static int BuyRun(EncounterModel model,LastStandShopState shop,ref int cursor,bool bulk,int maximum)
     {
-        var order=Order(shop.Fitting);int accepted=0;
+        var order=Order(shop.Loadout);int accepted=0;
         for(int attempt=0;attempt<maximum;attempt++){
             bool candidate=false;
             for(int scan=0;scan<order.Length;scan++){
                 var id=order[cursor%order.Length];var checkpoint=shop.CaptureCheckpoint();var def=shop.GetDefinition(id);
-                if(!def.IsEligible(shop.Fitting)||checkpoint.PermanentLevels[(int)id]+checkpoint.RunPurchases[(int)id]>=def.TotalCap){cursor++;continue;}
+                if(!def.IsEligible(shop.Loadout)||checkpoint.PermanentLevels[(int)id]+checkpoint.RunPurchases[(int)id]>=def.TotalCap){cursor++;continue;}
                 candidate=true;var intent=new LastStandShopPurchaseIntent(shop.RunId,shop.Version,id,bulk?LastStandBulkQuantity.Max:LastStandBulkQuantity.One);
                 var result=shop.TryPurchase(intent);if(!result.Accepted){Require(result.Refusal==LastStandShopPurchaseRefusal.InsufficientScrap,"Unexpected run purchase refusal");return accepted;}
                 accepted++;cursor++;model.ApplyShopProjection(shop);break;
@@ -223,7 +248,9 @@ public static class CombatBalanceMeasurements
     public static Dictionary<string,object> Run(Context c,int tier,string fitting,string policy,int speedHalf,int maxTicks,int stopWave=5000,Action<Context,EncounterModel> confirmedBoundary=null)
     {
         Require(policy=="none"||policy=="max900"||policy=="afterKill","Unknown policy");
-        var p=c.Profile;Require(p.TrySelectTier(tier)&&p.TrySelectFitting(fitting),"Unearned tier/fitting");
+        var parts=fitting.Split('+');Require(parts.Length<=2,"Unbounded comparison loadout");
+        var loadout=new LastStandLoadout(parts[0],parts.Length==2?parts[1]:null);
+        var p=c.Profile;Require(p.TrySelectTier(tier)&&p.TryApplyLoadout(loadout),"Unearned tier/fitting");
         Require(speedHalf==0||LastStandSpeedPolicy.Allows(speedHalf*.5,p.MaximumGameSpeed),"Unearned speed");
         Require(p.TryDeploy(),"Actual deployment");var model=p.Checkpoint.RestoreModel();var shop=p.Checkpoint.RestoreShop();
         var history=new LastStandRunHistory(p.HistorySnapshot);var cadence=new Cadence();var outcomes=new Dictionary<string,object>();var time=new TimeLedger();var effects=new RoleEffects();
@@ -461,10 +488,12 @@ public static class CombatBalanceMeasurements
             "seeds",seedRows,"matrix",matrix,"matrixTicks",used,"farmingComparisons",Farming(seeds),"unlockCohorts",UnlockComparisons(unlocks),"hypotheticalProbes",Hypothetical(),"earlyAffordabilityBounds",EarlyAffordabilityBounds(),
             "qualification","Bounded production-model pilot. No live player/render/device/endurance qualification. Unreached budgets and waves do not satisfy balance acceptance.");
     }
+#if !BUILDCRAFT_BALANCE
     public static int Main(string[] args)
     {
         try {if(args.Length==2&&args[0]=="check"){CombatBalanceChecks.Run(args[1]);Console.WriteLine("PASS "+args[1]);}
             else {WriteReport(Console.Out,Measure());Console.WriteLine();}return 0;}
         catch(Exception e){Console.Error.WriteLine(e);return 1;}
     }
+#endif
 }

@@ -26,7 +26,11 @@ static class ResearchEngineChecks
     }
     static void Catalog()
     {
-        Check(LastStandResearchCatalog.Tracks.Count == 4, "Four tracks");
+        Check(LastStandResearchCatalog.Tracks.Count == 7, "Seven tracks retain the four original identities");
+        Check(LastStandResearchCatalog.SlotCount == 3, "Three bounded research labs");
+        foreach (var key in new[] { "armorPiercing", "areaControl", "fieldEngineering" })
+            Check(LastStandResearchCatalog.TryGet(key, out var added) && added.MaximumRank == 20,
+                "Combat track has twenty authored ranks: " + key);
         long speedDuration = 0;
         foreach (var d in LastStandResearchCatalog.Tracks)
         {

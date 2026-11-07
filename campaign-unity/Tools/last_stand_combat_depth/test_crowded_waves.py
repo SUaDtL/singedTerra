@@ -7,6 +7,7 @@ import subprocess
 import sys
 import hashlib
 import os
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 import measure_crowded_waves as crowded_measurement
@@ -23,6 +24,42 @@ CONTINUITY_PATHS = (
 
 
 class CrowdedWaveTests(unittest.TestCase):
+    def test_retained_archive_refuses_changed_unsafe_or_duplicate_sources(self):
+        with tempfile.TemporaryDirectory(prefix="st-retained-archive-") as temp:
+            folder = Path(temp)
+            archive = folder / "sources.zip"
+            manifest = folder / "sources.json"
+            original = crowded_measurement.retained_fixture.read_bytes()
+            record = json.loads(crowded_measurement.retained_manifest.read_text())
+            archive.write_bytes(original + b"changed")
+            manifest.write_text(json.dumps(record))
+            with self.assertRaisesRegex(ValueError, "archive changed"):
+                crowded_measurement.extract_retained_sources(archive, manifest, folder / "rejected")
+            self.assertFalse((folder / "rejected").exists())
+            for name in ("../outside.py", "/absolute.py", "Tools/duplicate.py"):
+                with zipfile.ZipFile(archive, "w") as output:
+                    output.writestr(name, b"pass")
+                    if "duplicate" in name:
+                        with self.assertWarns(UserWarning):output.writestr(name, b"pass")
+                changed = {**record, "archiveSha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+                           "files": {name: {"bytes": 4, "sha256": hashlib.sha256(b"pass").hexdigest()}}}
+                manifest.write_text(json.dumps(changed))
+                with self.subTest(name=name), self.assertRaisesRegex(ValueError, "member|membership"):
+                    crowded_measurement.extract_retained_sources(archive, manifest, folder / "rejected")
+                self.assertFalse((folder / "rejected").exists())
+
+    def test_retained_replay_cannot_replace_original_repository_reports(self):
+        repository_project = Path(__file__).resolve().parents[2]
+        original = repository_project / "docs/last-stand-combat-depth/crowded-wave-calibrated-report.json"
+        before = original.read_bytes()
+        with tempfile.TemporaryDirectory(prefix="st-retained-reference-") as temp:
+            alias = Path(temp) / "alias.json"
+            os.link(original, alias)
+            for target in (original, alias):
+                with self.assertRaisesRegex(ValueError, "immutable measurement reference"):
+                    crowded_measurement.measure(target)
+            self.assertEqual(original.read_bytes(), before)
+
     def test_current_closure_cannot_add_omit_duplicate_or_redirect_measured_sources(self):
         selected = crowded_measurement.sources()
         crowded_measurement.admit_source_closure(selected)

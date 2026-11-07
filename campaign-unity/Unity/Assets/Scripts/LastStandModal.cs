@@ -34,6 +34,7 @@ namespace SingedTerra.LastStand
         public Text Text(string name,Transform parent,int size)=>ui.Text(name,parent,size);
         public Button Button(string name,string label,Transform parent,Action handler,int size=16)
         {var button=ui.Button(name,label,parent,handler,size);Buttons.Add(button);return button;}
+        public InputField Input(string name,Transform parent,int maximumLength,Action<string> changed)=>ui.Input(name,parent,maximumLength,changed);
         public void Style(Button button,bool available,bool selected)=>LastStandUiPrimitives.Style(button,available,selected);
         public LastStandScrollPane Pane(string name,bool scrollStatus=false)
         {
@@ -69,6 +70,12 @@ namespace SingedTerra.LastStand
         public float Selector(Component label,Button previous,Button next,float x,float y,float width)
         {
             var text=label is Text value?value:label.GetComponentInChildren<Text>();
+            if(width<196)
+            {
+                float height=Preferred(text,width)+8;Place(label,x,y,width,height);
+                Place(previous,x,y+height+4,44,44);Place(next,x+width-44,y+height+4,44,44);
+                return y+height+60;
+            }
             float row=Math.Max(44,Preferred(text,width-104)+8);
             float buttonTop=y+(row-44)/2;
             Place(previous,x,buttonTop,44,44);Place(label,x+52,y,width-104,row);

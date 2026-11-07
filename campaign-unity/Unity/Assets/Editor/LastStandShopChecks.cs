@@ -55,7 +55,17 @@ public static class LastStandShopChecks
             Invoke(Art, "Start"); Invoke(Art.GetComponent<ArtHud>(), "Start");
             Loop = Art.GetComponent<LastStandLoopController>(); Session = Loop.Session;
             SetField(Session, "focused", true); SetField(Session, "applicationPaused", false);
-            if (Art.showingLauncher != launcher) Art.ToggleAttachment();
+            if(Loop.Progression.SaveState=="ready")
+            {
+                string fitting=launcher?"launcher":"repair";
+                if(Loop.Progression.SelectedFitting!=fitting)
+                    Require(Loop.Progression.TrySelectFitting(fitting),"fixture persists its intended fitting before action accounting");
+                Require(Art.TrySelectLoadout(Loop.Progression.SelectedLoadout),"fixture projects the selected loadout before actions");
+                Loop.RestoreGaragePreview();Loop.RefreshControls();
+            }
+            // Loading/migrating research time and arranging a durable loadout
+            // are fixture setup. Assertions count only the subsequent action.
+            Storage.Writes=Storage.SuccessfulWrites=0;
         }
         public double Timestamp => ((LastStandRunClock)typeof(EncounterSession).GetField("runClock", Private)
             .GetValue(Session)).LastTimestamp;
@@ -110,12 +120,13 @@ public static class LastStandShopChecks
         Require(property != null, "actual session exposes its deployed run ledger");
         return (LastStandShopState)property.GetValue(session);
     }
-    static void Fresh(LastStandShopState shop, int runId, bool launcher, int[] levels)
+    static void Fresh(LastStandShopState shop, int runId, bool launcher, int[] levels,bool paused=false)
     {
         Require(shop != null && shop.RunId == runId && shop.Fitting ==
             (launcher ? LastStandFitting.Launcher : LastStandFitting.Repair), "fresh ledger belongs to reserved run and fitting");
-        Require(shop.Scrap == 0 && shop.EarnedScrap == 0 && shop.SpentScrap == 0 && shop.UniqueKills == 0 && shop.Version == 0,
-            "deployment starts zero Scrap accounting and initial revision");
+        Require(shop.Scrap == 0 && shop.EarnedScrap == 0 && shop.SpentScrap == 0 && shop.UniqueKills == 0 &&
+            shop.Version==(paused?0:1)&&shop.PurchaseLifecycle==(paused?LastStandShopPurchaseLifecycle.Paused:LastStandShopPurchaseLifecycle.Running),
+            "restored starting checkpoint has zero Scrap accounting and its exact admission epoch");
         foreach (var track in LastStandUpgradeCatalog.Tracks)
         {
             var actual = shop.GetTrack(track.Id);
@@ -138,7 +149,7 @@ public static class LastStandShopChecks
             f.Loop.Progression.NextRunId == 8 && model.Tick == 0, "one verified reservation precedes actual deployment");
         Require(model.CurrentMaximumHull == 150 && model.Hull == 150 && model.CurrentCannonDamage == 50 &&
             model.CommittedCannonDamage == 50 && model.CurrentCannonPeriod == 19 &&
-            model.CurrentLauncherDamage == (launcher ? 20 : 12) && model.CurrentRepairAmount == (launcher ? 3 : 5),
+            model.CurrentLauncherDamage == 20 && model.HasLauncher==launcher && model.CurrentRepairAmount == (launcher ? 3 : 5),
             "all fitting-specific committed effects initialize actual combat before its first tick");
         var shop = Shop(f.Session); Fresh(shop, 7, launcher, Levels);
         string frozen = model.Snapshot();
@@ -147,11 +158,16 @@ public static class LastStandShopChecks
         Require(f.Session.Model == model && Shop(f.Session) == shop && model.Snapshot() == frozen &&
             model.HasLauncher == launcher && f.Art.showingLauncher == launcher && f.Storage.Writes == 1,
             "duplicate deploy and attempted fitting switch cannot replace running snapshot");
+        string committed=f.Storage.Value;int priorWrites=f.Storage.Writes;
         f.Storage.Value = Save(new int[6], 90);
         f.Loop.RetrySave();
-        Require(f.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.HullCapacity) == 0 &&
+        Require(f.Loop.Progression.SaveHealth==LastStandSaveHealth.Conflict&&f.Storage.Writes==priorWrites&&
+            f.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.HullCapacity) == 2 &&
             Shop(f.Session) == shop && shop.GetTrack(LastStandUpgradeTrackId.HullCapacity).PermanentLevel == 2 &&
-            model.Snapshot() == frozen, "later committed storage observation cannot mutate live permanent baseline");
+            model.Snapshot() == frozen, "foreign storage is refused without replacing the committed or live permanent baseline");
+        f.Storage.Value=committed;f.Loop.RetrySave();
+        Require(f.Loop.Progression.SaveState=="ready"&&model.Snapshot()==frozen&&f.Storage.Writes==priorWrites,
+            "restoring the confirmed test-owned record clears the conflict without replay or write");
         int admitted = 0; bool cannon = false, auxiliary = false, armor = false;
         f.Session.Stepped += current =>
         {
@@ -168,7 +184,7 @@ public static class LastStandShopChecks
             foreach (var evt in current.Events)
             {
                 if (evt.Kind == EncounterEventKind.Cannon) { cannon = true; Require(evt.Amount == 50, "actual cannon uses committed P"); }
-                if (evt.Kind == EncounterEventKind.Launcher) { auxiliary = true; Require(evt.Amount == 20, "actual launcher uses committed P"); }
+                if (evt.Kind == EncounterEventKind.Launcher) { auxiliary = true; Require(launcher&&evt.Amount == 20, "only the fitted actual launcher uses committed P"); }
                 if (evt.Kind == EncounterEventKind.Repair) { auxiliary = true; Require(evt.Amount > 0 && evt.Amount <= 5, "actual repair obeys committed P and clamp"); }
                 if (evt.Kind == EncounterEventKind.CloseHit || evt.Kind == EncounterEventKind.RangedHit)
                 { armor = true; Require(evt.Amount == Math.Max(1, current.Foes[evt.Slot].Damage - 3), "actual incoming hit uses committed armor"); }
@@ -195,25 +211,30 @@ public static class LastStandShopChecks
             "old run has nonzero temporary purchase state");
         f.Session.ReturnToInspection(); f.Loop.Progression.AbandonRun();
         SetField(f.Loop, "<Phase>k__BackingField", "garage");
-        f.Art.ToggleAttachment(); f.Loop.Deploy();
+        Require(f.Loop.Progression.TrySelectFitting("launcher"),"next build selects its durable fitting");
+        f.Loop.RestoreGaragePreview();int writesBeforeRedeploy=f.Storage.SuccessfulWrites;f.Loop.Deploy();
         var next = Shop(f.Session); Fresh(next, 8, true, new int[6]);
-        Require(next != prior && f.Session.Model != model && f.Storage.SuccessfulWrites == 2 &&
+        Require(next != prior && f.Session.Model != model && f.Storage.SuccessfulWrites == writesBeforeRedeploy+1 &&
             f.Session.Model.CurrentCannonDamage == 20, "relaunch owns a fresh ledger/model without old currency or levels");
     }
     static void SaveAndFocusAdmission()
     {
         foreach (bool readFailure in new[] { false, true })
         {
-            var storage = new MemoryStorage { Value = Save(Levels), FailWrite = !readFailure, FailReadBack = readFailure };
+            var storage = new MemoryStorage { Value = Save(Levels) };
             var f = new Fixture(true, Levels, storage);
+            storage.FailWrite=!readFailure;storage.FailReadBack=readFailure;
             f.Loop.Deploy();
             Require(f.Session.Model == null && Shop(f.Session) == null && f.Loop.Progression.ActiveRunId == 0 &&
                 f.Loop.Progression.SaveState == "retry" && !f.Loop.Audio.Unlocked && f.Loop.Audio.Suspended,
                 "unconfirmed reservation creates no ledger/model or audio admission");
             storage.FailWrite = storage.FailReadBack = false;
-            f.Loop.RetrySave(); Fresh(Shop(f.Session), 7, true, Levels);
+            f.Loop.RetrySave();
+            Require(f.Session.Model==null&&f.Loop.Phase=="garage"&&f.Loop.Progression.HasCheckpoint&&storage.SuccessfulWrites==1,
+                "reservation Retry confirms once and offers explicit Resume");
+            f.Loop.Deploy();Fresh(Shop(f.Session),7,true,Levels,true);
             Require(f.Session.Model != null && f.Loop.Phase == "battle" && storage.SuccessfulWrites == 1 &&
-                f.Loop.Progression.NextRunId == 8, "manual retry starts the same once-confirmed reservation");
+                f.Loop.Progression.NextRunId == 8&&f.Session.ManualPaused, "explicit Resume restores the confirmed reservation paused without another write");
             var model = f.Session.Model; var shop = Shop(f.Session); int writes = storage.Writes;
             f.Loop.RetrySave();
             Require(f.Session.Model == model && Shop(f.Session) == shop && storage.Writes == writes,
@@ -771,19 +792,35 @@ public static class LastStandShopChecks
         { Camera.targetTexture = null; UnityEngine.Object.DestroyImmediate(texture); EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
     }
     static void SelectUiFitting(ShopUiFixture f, bool launcher)
+        => SelectUiFitting(f,launcher?"launcher":"repair");
+    static void SelectUiFitting(ShopUiFixture f,string fitting)
     {
-        if(f.Game.Art.showingLauncher==launcher)return;
+        if(f.Game.Loop.FittingId==fitting)return;
         bool reopen=f.Button("ShopClose").IsActive();
         if(reopen)f.Click("ShopClose");
         int writes=f.Game.Storage.Writes, wallet=f.Game.Loop.Progression.Wallet;
-        Require(f.Game.Loop.MenuPage=="","inline fitting starts outside a modal");
-        f.Click(launcher ? "FittingNext" : "FittingPrevious");
-        Require(f.Game.Art.showingLauncher==launcher && f.Game.Loop.FittingId==(launcher ? "launcher" : "repair"),
-            "ordinary inline arrow equips the explicit fitting identity");
+        string saved=f.Game.Storage.Value,original=f.Game.Loop.Progression.SelectedLoadout.PrimaryId;
+        Require(f.Game.Loop.MenuPage=="","build selection starts outside a modal");
+        var definitions=LastStandFittingCatalog.Definitions;int wanted=-1;
+        for(int i=0;i<definitions.Count;i++)if(definitions[i].Id==fitting)wanted=i;
+        Require(wanted>=0,"requested fitting has a catalog identity");f.Click("ArmoryEntry");
+        for(int step=0;step<definitions.Count&&f.Game.Loop.ArmoryDraft.PrimaryId!=fitting;step++)
+        {
+            string before=f.Game.Loop.ArmoryDraft.PrimaryId;int current=-1;
+            for(int i=0;i<definitions.Count;i++)if(definitions[i].Id==before)current=i;
+            Require(current>=0,"preview retains a catalog identity");
+            f.Click(current<wanted?"ArmoryBay1Next":"ArmoryBay1Previous");
+            Require(f.Game.Loop.ArmoryDraft.PrimaryId!=before&&f.Game.Storage.Value==saved&&
+                f.Game.Loop.Progression.SelectedLoadout.PrimaryId==original,"ordinary Armory arrow previews without committing");
+        }
+        Require(f.Game.Loop.ArmoryDraft.PrimaryId==fitting&&f.Button("ArmoryApply").IsInteractable(),"explicit requested build is admitted");
+        f.Click("ArmoryApply");f.Click("ArmoryCancel");
+        Require(f.Game.Art.FittingId==fitting && f.Game.Loop.FittingId==fitting,
+            "ordinary Armory Apply equips the explicit fitting identity");
         Require(f.Game.Loop.MenuPage=="" && f.Game.Session.Model==null &&
             f.Game.Storage.Writes==writes+1 && f.Game.Loop.Progression.Wallet==wallet &&
-            f.Game.Loop.Progression.SelectedFitting==(launcher?"launcher":"repair"),
-            "inline fitting saves its selection once without deploying or buying");
+            f.Game.Loop.Progression.SelectedLoadout.PrimaryId==fitting,
+            "Armory saves its selection once without deploying or buying");
         if(reopen)f.Click("ShopEntry");
     }
     static void FittedCardVisibility()
@@ -816,8 +853,8 @@ public static class LastStandShopChecks
                 }
                 if (!run && choice == 0) SelectUiFitting(f,!f.Game.Art.showingLauncher);
             }
-            Require(f.Game.Storage.Writes == writes && f.Game.Loop.Progression.Wallet == wallet,
-                "visibility and fitting changes do not purchase or write saves");
+            Require(f.Game.Storage.Writes == writes+(run?0:1) && f.Game.Loop.Progression.Wallet == wallet,
+                "browsing does not write; the one explicit Armory Apply saves only its fitting selection");
         }
     }
     static void ShopReadableComposition()
@@ -833,8 +870,10 @@ public static class LastStandShopChecks
             Require(!f.Text("ShopCard_hullCapacityPrice").gameObject.activeInHierarchy,
                 "price appears once on the purchase action");
             Require(f.Text("ShopEntryText").text == "CLOSE SHOP", "open entry makes close action explicit");
-            if (!run) Require(!f.Text("PhaseDetail").text.Contains("Cannon Attack") && !f.Text("PhaseDetail").text.Contains("Salvage"),
-                "open context does not repeat the selected card or wallet");
+            if (!run&&f.Text("PhaseDetail").gameObject.activeInHierarchy)
+                Require(f.Text("PhaseDetail").text==LastStandTierHudText.WaveBest(f.Game.Loop.Progression.GetBestWave(f.Game.Loop.Progression.SelectedTier))+"\n"+
+                    LastStandTierHudText.NextMilestone(f.Game.Loop.Progression.SelectedTier,f.Game.Loop.Progression.GetBestWave(f.Game.Loop.Progression.SelectedTier))&&
+                    !f.Text("PhaseDetail").text.Contains("Wallet"),"open context shows the earned-wave goal, including its reward, without repeating the wallet");
             foreach (string key in new[] { "hullCapacity", "armor" })
                 Require(!f.Root.Find("ShopPanel/ShopViewport/ShopContent/ShopCard_" + key + "/ConsoleFrame"),
                     "internal rows avoid repeated ornamental frames");
@@ -1852,23 +1891,41 @@ public static class LastStandShopChecks
             f.Click("ShopClose"); Require(!f.Button("ShopClose").IsActive(), "permanent close returns to garage controls");
         }
     }
+    static string CurrentCatalogWorkshopSave()
+    {
+        // Gifted UI fixture only: valid current milestone/entitlement records
+        // allow exercising every card. This does not prove earned progression.
+        var storage=new MemoryStorage{Value=Save(new int[LastStandUpgradeCatalog.Tracks.Count],wallet:1000)};
+        var progression=LastStandProgression.Load(storage);
+        var record=typeof(LastStandProgression).GetField("committed",Private).GetValue(progression);
+        var tiers=(System.Collections.IDictionary)record.GetType().GetField("Tiers").GetValue(record);
+        var clears=(HashSet<string>)record.GetType().GetField("FirstClears").GetValue(record);clears.Clear();
+        foreach(var definition in LastStandTierCatalog.All)
+        {
+            int wave=definition.Id==1?750:definition.Id==2?500:definition.Id==3?100:0;
+            var tier=tiers[definition.Key];var flags=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
+            tier.GetType().GetField("BestWave",flags).SetValue(tier,wave);
+            tier.GetType().GetField("Unlocked",flags).SetValue(tier,definition.Id<=3);
+            foreach(var milestone in LastStandRewardCatalog.Milestones(definition))if(milestone.Wave<=wave)clears.Add(milestone.Id);
+        }
+        var fittings=(HashSet<string>)record.GetType().GetField("Fittings").GetValue(record);
+        foreach(var fitting in LastStandFittingCatalog.Definitions)if(fitting.Playable)fittings.Add(fitting.Id);
+        storage.Value=(string)typeof(LastStandProgression).GetMethod("Serialize",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new[]{record});
+        Require(LastStandProgression.Load(storage).SaveState=="ready","current gifted workshop profile passes actual save validation");
+        return storage.Value;
+    }
     static void WorkshopPricesAndNextRun(bool launcher)
     {
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664),
-            new MemoryStorage { Value = Save(new int[8], wallet: 1000, allFittings: true) }))
+            new MemoryStorage { Value = CurrentCatalogWorkshopSave() }))
         {
             f.Click("ShopEntry"); int wallet = 1000;
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
             {
-                string wanted=definition.Applicability==LastStandUpgradeApplicability.Scattergun?"scattergun":
-                    definition.Applicability==LastStandUpgradeApplicability.Launcher?"launcher":"repair";
-                if(f.Game.Loop.FittingId!=wanted)
-                {
-                    f.Click("ShopClose");
-                    for(int step=0;step<3 && f.Game.Loop.FittingId!=wanted;step++)f.Click("FittingNext");
-                    Require(f.Game.Loop.FittingId==wanted,"current catalog fitting can be selected");
-                    f.Click("ShopEntry");
-                }
+                string wanted=null;
+                foreach(var fitting in LastStandFittingCatalog.Definitions)
+                    if(fitting.Playable&&definition.IsEligible(fitting.Mechanic)){wanted=fitting.Id;break;}
+                Require(wanted!=null,"current track has an eligible playable fitting");SelectUiFitting(f,wanted);
                 f.Click("ShopTab" + definition.Category);
                 for (int level = 0; level < 3; level++)
                 {
@@ -1886,12 +1943,13 @@ public static class LastStandShopChecks
             }
             var reloaded = LastStandProgression.Load(f.Game.Storage);
             foreach (var definition in LastStandUpgradeCatalog.Tracks)
-                Require(reloaded.GetPermanentLevel(definition.Id)==3,"all eight verified levels survive reload "+definition.Key);
+                Require(reloaded.GetPermanentLevel(definition.Id)==3,"every current track's verified levels survive reload "+definition.Key);
             f.Click("ShopClose");
             string selected=launcher?"repair":"launcher";
-            for(int step=0;step<3 && f.Game.Loop.FittingId!=selected;step++)f.Click("FittingNext");
+            SelectUiFitting(f,selected);
             f.Click("Redeploy");
-            Fresh(Shop(f.Game.Session),7,!launcher,new[] {3,3,3,3,3,3,3,3});
+            var expectedLevels=new int[LastStandUpgradeCatalog.Tracks.Count];for(int i=0;i<expectedLevels.Length;i++)expectedLevels[i]=3;
+            Fresh(Shop(f.Game.Session),7,!launcher,expectedLevels);
             Require(f.Game.Session.Model.CommittedCannonDamage==50 && !f.Button("ShopClose").IsActive(),
                 "next deployment uses the verified baseline and closes permanent cards");
         }
@@ -1913,24 +1971,44 @@ public static class LastStandShopChecks
     }
     static void WorkshopClaimAndSaveErrors(bool launcher)
     {
+        // Retained pending awards still require Claim; current wave outcomes
+        // have already banked rewards and require Continue without paying again.
+        using(var f=new ShopUiFixture(false,new Vector2Int(1366,664),new MemoryStorage{Value=
+            "{\"version\":1,\"credits\":20,\"permanentLevel\":0,\"nextRunId\":8,\"lastFinalizedRunId\":6,"+
+            "\"pendingDefeat\":{\"runId\":7,\"elapsedTicks\":33,\"kills\":4,\"reward\":1}}"}))
+        {
+            int writes=f.Game.Storage.Writes,wallet=f.Game.Loop.Progression.Wallet;
+            Require(f.Game.Loop.Phase=="result"&&f.Game.Loop.Progression.PendingDefeat!=null,"actual retained pending award owns Claim");
+            f.Button("ShopEntry").onClick.Invoke();f.Button("ShopCard_armorBuy").onClick.Invoke();
+            Require(!f.Button("ShopEntry").IsActive()&&!f.Button("ShopClose").IsActive()&&
+                f.Game.Loop.Progression.PendingDefeat!=null&&f.Game.Storage.Writes==writes&&f.Game.Loop.Progression.Wallet==wallet,
+                "retained pending reward cannot open, auto-Claim or purchase through stale callbacks");
+            f.Click("Claim");Require(f.Game.Loop.Progression.PendingDefeat==null&&f.Game.Loop.Progression.Wallet==wallet+1&&f.Button("ShopEntry").IsActive(),
+                "only manual verified Claim opens retained permanent admission");
+            f.Click("ShopEntry");f.Click("ShopTabDefense");f.Click("ShopCard_armorBuy");
+            Require(f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.Armor)==1&&
+                f.Game.Loop.Progression.Wallet==wallet+1-LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).PermanentPrice(1)&&f.Game.Storage.Writes==writes+2,
+                "retained Claim and actual permanent purchase each commit exactly once");
+        }
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664)))
         {
             WorkshopPendingResult(f); int writes = f.Game.Storage.Writes, wallet = f.Game.Loop.Progression.Wallet;
             f.Button("ShopEntry").onClick.Invoke(); f.Button("ShopCard_armorBuy").onClick.Invoke();
             Require(!f.Button("ShopEntry").IsActive() && !f.Button("ShopClose").IsActive() &&
-                f.Game.Loop.Progression.PendingDefeat != null && f.Game.Storage.Writes == writes && f.Game.Loop.Progression.Wallet == wallet,
-                "pending reward cannot open, auto-Claim or purchase through stale callbacks");
-            f.Click("Claim"); Require(f.Game.Loop.Progression.PendingDefeat == null && f.Game.Loop.Progression.Wallet == wallet + 1 &&
-                f.Button("ShopEntry").IsActive(), "only manual verified Claim opens post-Claim permanent admission");
+                f.Game.Loop.Progression.PendingDefeat == null && f.Game.Storage.Writes == writes && f.Game.Loop.Progression.Wallet == wallet,
+                "current outcome cannot open or purchase through stale callbacks before Continue");
+            f.Click("Claim"); Require(f.Game.Loop.Progression.PendingDefeat == null && f.Game.Loop.Progression.Wallet == wallet &&
+                f.Button("ShopEntry").IsActive(), "Continue opens permanent admission without another reward");
             f.Click("ShopEntry"); f.Click("ShopTabDefense"); f.Click("ShopCard_armorBuy");
             Require(f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.Armor) == 1 &&
-                f.Game.Loop.Progression.Wallet == wallet + 1 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).PermanentPrice(1) && f.Game.Storage.Writes == writes + 2,
-                "post-Claim actual permanent purchase uses Salvage exactly once");
+                f.Game.Loop.Progression.Wallet == wallet - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).PermanentPrice(1) && f.Game.Storage.Writes == writes + 1,
+                "post-Continue actual permanent purchase uses Salvage exactly once");
         }
         foreach (bool readFailure in new[] { false, true })
         using (var f = new ShopUiFixture(launcher, new Vector2Int(1366,664)))
         {
             SelectUiFitting(f,false);
+            int confirmedBeforePurchase=f.Game.Storage.SuccessfulWrites;
             f.Click("ShopEntry"); f.Click("ShopTabUtility");
             f.Game.Storage.FailWrite = !readFailure; f.Game.Storage.FailReadBack = readFailure;
             f.Click("ShopCard_fieldRepairBuy");
@@ -1942,7 +2020,7 @@ public static class LastStandShopChecks
                 !f.Button("Purchase").IsInteractable() && f.Button("RetrySave").IsInteractable(), "unconfirmed write blocks destructive actions and exposes manual Retry Save");
             f.Game.Storage.FailWrite = f.Game.Storage.FailReadBack = false; f.Click("RetrySave");
             Require(f.Game.Loop.Progression.Wallet == 20 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).PermanentPrice(1) && f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.FieldRepair) == 1 &&
-                f.Game.Storage.SuccessfulWrites == 1 && f.Game.Loop.Notice.Contains("Field Repair"), "retry reconciles chosen non-Cannon candidate once with confirmed feedback");
+                f.Game.Storage.SuccessfulWrites == confirmedBeforePurchase+1 && f.Game.Loop.Notice.Contains("Upgrade saved"), "retry reconciles chosen non-Cannon candidate once with confirmed feedback");
             int attempts = f.Game.Storage.Writes; f.Game.Loop.RetrySave(); f.Refresh();
             Require(f.Game.Storage.Writes == attempts && f.Game.Loop.Progression.Wallet == 20 - LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).PermanentPrice(1) &&
                 f.Game.Loop.Progression.GetPermanentLevel(LastStandUpgradeTrackId.FieldRepair) == 1, "repeated manual retry never charges a second purchase");

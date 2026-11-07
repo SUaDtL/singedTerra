@@ -7,46 +7,54 @@ import { spawnSync } from 'node:child_process';
 import { verifyLastStandSource } from '../../scripts/assets/verify-last-stand-source.mjs';
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
-export const WAVE_ORACLE_SOURCES=Object.freeze(['EncounterModel.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
+export const WAVE_ORACLE_SOURCES=Object.freeze(['EncounterModel.cs','EncounterBuildcraft.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
   'LastStandWaveCatalog.cs','LastStandRewardCatalog.cs','LastStandSelection.cs','LastStandUpgradeCatalog.cs','LastStandEconomyCatalog.cs','MechanicsShopModel.cs',
-  'LastStandShopState.cs','LastStandRunClock.cs','LastStandSpeedPolicy.cs','Content/LastStandRunEdition.cs','Content/LastStandEnemyCatalog.cs','EncounterFoeKind.cs','EncounterGeometry.cs']);
+  'LastStandShopState.cs','LastStandRunClock.cs','LastStandSpeedPolicy.cs','Content/LastStandRunEdition.cs','Content/LastStandLoadout.cs','Content/LastStandEnemyCatalog.cs','EncounterFoeKind.cs','EncounterGeometry.cs']);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const fileSha=path=>sha(readFileSync(path));
 
-export const CURRENT_WAVE_EDITION=Object.freeze({rulesVersion:'last-stand-waves-v2',contentVersion:'last-stand-content-v2',economyVersion:'combat-depth-economy-v4'});
+export const COMBAT_DEPTH_WAVE_EDITION=Object.freeze({rulesVersion:'last-stand-waves-v2',contentVersion:'last-stand-content-v2',economyVersion:'combat-depth-economy-v4'});
+export const CURRENT_WAVE_EDITION=Object.freeze({rulesVersion:'last-stand-waves-v3',contentVersion:'last-stand-content-v3',economyVersion:'buildcraft-economy-v5'});
 const RETAINED_ECONOMIES=['long-run-economy-v1','research-farming-economy-v2','research-farming-economy-v3'];
 export function waveOracleProfileKeys(edition=CURRENT_WAVE_EDITION){
   const current=edition.rulesVersion===CURRENT_WAVE_EDITION.rulesVersion;
+  const depth=edition.rulesVersion===COMBAT_DEPTH_WAVE_EDITION.rulesVersion;
   if(current)assert.deepEqual(edition,CURRENT_WAVE_EDITION,'Unsupported oracle edition');
+  else if(depth)assert.deepEqual(edition,COMBAT_DEPTH_WAVE_EDITION,'Unsupported retained combat-depth edition');
   else {
     assert.ok(RETAINED_ECONOMIES.includes(edition.economyVersion),'Unsupported oracle economy');
     assert.deepEqual(edition,{rulesVersion:'last-stand-waves-v1',contentVersion:'last-stand-content-v1',economyVersion:edition.economyVersion},'Unsupported retained oracle edition');
   }
-  return (current?[1,2,3,4]:[1,2]).flatMap(tier=>(current?['repair','launcher','scattergun','mortar','railgun']:['repair','launcher','scattergun'])
+  return (current?[1,2,3,4,5,6]:depth?[1,2,3,4]:[1,2]).flatMap(tier=>(current?['repair','launcher','scattergun','mortar','railgun','arc','shield']:depth?['repair','launcher','scattergun','mortar','railgun']:['repair','launcher','scattergun'])
     .flatMap(fitting=>[20,30,40,50].map(damage=>`${tier}:${fitting}:${damage}`)));
 }
 
-export function parseWaveOracleCsv(raw,{edition=CURRENT_WAVE_EDITION,format='auto'}={}) {
+export function parseWaveOracleCsv(raw,{edition,format='auto'}={}) {
   assert.ok(Buffer.isBuffer(raw),'Wave oracle requires observed raw output bytes');
   const bytes=raw.subarray(raw.subarray(0,3).equals(Buffer.from([239,187,191]))?3:0);
   const text=bytes.toString('utf8');
   assert.ok(text.endsWith('\r\n'),'Incomplete wave oracle output');
   const profiles={},counts={};
-  // Archived v1 reader fixtures keep their original 17-field contract. A v2
-  // qualification explicitly requires 23 fields and the bound edition below.
-  const archived=text.slice(0,text.indexOf('\r\n')).split(',').length===17;
-  assert.ok(format==='auto'||format===1||format===2,'Unknown oracle format');
-  if(format!=='auto')assert.equal(archived,format===1,'Oracle fields differ from declared format');
-  const identities=new Set(archived?waveOracleProfileKeys({rulesVersion:'last-stand-waves-v1',contentVersion:'last-stand-content-v1',economyVersion:'research-farming-economy-v3'}):waveOracleProfileKeys(edition));
+  // Each wire format retains an exact column count and edition mapping.
+  const count=text.slice(0,text.indexOf('\r\n')).split(',').length;
+  const detected=({17:1,23:2,32:3})[count];
+  assert.ok(detected,'Unknown oracle field count');
+  assert.ok(format==='auto'||[1,2,3].includes(format),'Unknown oracle format');
+  if(format!=='auto')assert.equal(detected,format,'Oracle fields differ from declared format');
+  const archived=detected===1,buildcraft=detected===3;
+  edition??=buildcraft?CURRENT_WAVE_EDITION:archived?{rulesVersion:'last-stand-waves-v1',contentVersion:'last-stand-content-v1',economyVersion:'research-farming-economy-v3'}:COMBAT_DEPTH_WAVE_EDITION;
+  assert.equal(edition.rulesVersion==='last-stand-waves-v3',buildcraft,'Oracle format must match buildcraft edition');
+  if(archived)assert.equal(edition.rulesVersion,'last-stand-waves-v1','Archive format retains original rules');
+  const identities=new Set(waveOracleProfileKeys(edition));
   for(const line of text.slice(0,-2).split('\r\n')) {
     const cells=line.split(',');
-    assert.equal(cells.length,archived?17:23,'Wave oracle field count');
+    assert.equal(cells.length,count,'Wave oracle field count');
     const [tier,fitting,damage,...rest]=cells,status=rest.pop();
     assert.ok(identities.has(`${tier}:${fitting}:${damage}`) && ['Running','Defeated'].includes(status),'Unknown wave oracle identity/status');
     assert.ok(rest.every(value=>/^(?:0|[1-9]\d*)$/.test(value)),'Wave oracle requires exact integers');
     const values=rest.map(Number);assert.ok(values.every(Number.isSafeInteger),'Wave oracle integer overflow');
     const [tick,hp,kills,spawned,cannon,launcher,scattergun,healed,closeHits,rangedHits,alive,wave,completedWave,mortar,railgun,
-      mortarDamage,railgunDamage,nextMortarTick,nextRailgunTick]=values;
+      mortarDamage,railgunDamage,nextMortarTick,nextRailgunTick,arc,arcDamage,shield,shieldCapacity,shieldRestored,shieldAbsorbed,nextArcTick,nextShieldRechargeTick,lastShieldHitTick]=values;
     const key=`${tier}:${fitting}:${damage}`,profile=profiles[key]??={};
     assert.equal(tick,counts[key]??0,'Missing or duplicate wave oracle tick');counts[key]=tick+1;
     assert.ok(wave>=1 && completedWave<=wave && (completedWave===wave || completedWave===wave-1), 'Invalid wave boundary');
@@ -60,6 +68,11 @@ export function parseWaveOracleCsv(raw,{edition=CURRENT_WAVE_EDITION,format='aut
     }
     profile[tick]={tick,hp,kills,spawned,cannon,launcher,scattergun,healed,closeHits,rangedHits,alive,wave,completedWave,status};
     if(!archived)Object.assign(profile[tick],{mortar,railgun,mortarDamage,railgunDamage,nextMortarTick,nextRailgunTick,...edition});
+    if(buildcraft){
+      assert.ok(arcDamage>=16&&shield<=shieldCapacity&&lastShieldHitTick<=tick,'Invalid buildcraft oracle state');
+      Object.assign(profile[tick],{arc,arcDamage,shield,shieldCapacity,shieldRestored,shieldAbsorbed,nextArcTick,nextShieldRechargeTick,lastShieldHitTick,
+        fitting,secondaryFitting:'',armorPiercing:0,areaControl:0,fieldEngineering:0});
+    }
   }
   assert.deepEqual(Object.keys(profiles).sort(),[...identities].sort(),'Incomplete wave oracle profile set');
   return profiles;
@@ -70,7 +83,7 @@ export function parseWaveOracleCsv(raw,{edition=CURRENT_WAVE_EDITION,format='aut
 // Browser qualification always requires the inspected export binding. Local
 // development tests may explicitly request source-only proof, which is labeled.
 export function buildWaveOracle(output,{requireExport=true,maximumTicks=12000,edition=CURRENT_WAVE_EDITION}={}) {
-  const expectedProfiles=waveOracleProfileKeys(edition);
+  const expectedProfiles=waveOracleProfileKeys(edition),format=edition.rulesVersion===CURRENT_WAVE_EDITION.rulesVersion?3:2;
   assert.ok(Number.isInteger(maximumTicks) && maximumTicks>=100 && maximumTicks<=24000,'Wave oracle tick bound');
   const directory=join(output,'wave-model-oracle');mkdirSync(directory,{recursive:false});
   const scripts=join(ROOT,'campaign-unity/Unity/Assets/Scripts');
@@ -101,7 +114,7 @@ class Program {static void Main(){
   EncounterCheckpoint boundary=model.CaptureCheckpoint();
   string name=fitting.Id;
   while(true){
-   Console.WriteLine(string.Join(",",tier.Id,name,damage,model.Tick,model.Hull,model.Kills,model.Spawned,model.CannonShots,model.LauncherShots,model.ScattergunShots,model.Restored,model.CloseHits,model.RangedHits,model.ActiveCount,model.Wave,model.CompletedWave,model.MortarShots,model.RailgunShots,model.CurrentMortarDamage,model.CurrentRailgunDamage,boundary?.NextMortarTick??0,boundary?.NextRailgunTick??0,model.Status));
+   Console.WriteLine(string.Join(",",tier.Id,name,damage,model.Tick,model.Hull,model.Kills,model.Spawned,model.CannonShots,model.LauncherShots,model.ScattergunShots,model.Restored,model.CloseHits,model.RangedHits,model.ActiveCount,model.Wave,model.CompletedWave,model.MortarShots,model.RailgunShots,model.CurrentMortarDamage,model.CurrentRailgunDamage,boundary?.NextMortarTick??0,boundary?.NextRailgunTick??0${format===3?",model.ArcShots,model.CurrentArcDamage,model.Shield,model.CurrentShieldCapacity,model.ShieldRestored,model.ShieldAbsorbed,boundary?.Buildcraft?.NextArcTick??0,boundary?.Buildcraft?.NextShieldRechargeTick??0,boundary?.Buildcraft?.LastShieldHitTick??0":""},model.Status));
    if(model.Status!=EncounterStatus.Running || model.Tick>=${maximumTicks})break;
    model.Step();boundary=model.AwaitingWaveCommit?model.CaptureCheckpoint():null;
    if(model.AwaitingWaveCommit && model.Status==EncounterStatus.Running)model.ContinueAfterCheckpoint();
@@ -121,10 +134,10 @@ class Program {static void Main(){
     return result.stdout;
   }
   execute('compile',[compiler,'-nologo',...(process.platform==='linux'?['-langversion:7.2']:[]),`-out:${executable}`,...sources,driver]);
-  const raw=execute('run',[executable]);const profiles=parseWaveOracleCsv(raw,{edition,format:2});
+  const raw=execute('run',[executable]);const profiles=parseWaveOracleCsv(raw,{edition,format});
   assert.deepEqual(Object.keys(profiles).sort(),expectedProfiles.sort());
   for(const [path,hash] of Object.entries(before))assert.equal(fileSha(path),hash,'Wave oracle inputs changed during execution');
-  const binding={format:'st-last-stand-wave-model-oracle/2',edition,host:process.platform,source_lf_sha256:sourceLF,
+  const binding={format:'st-last-stand-wave-model-oracle/'+format,edition,host:process.platform,source_lf_sha256:sourceLF,
     commands,inputs:before,executable_sha256:fileSha(executable),output_sha256:sha(raw),maximumTicks,
     profiles:Object.keys(profiles),rows:Object.values(profiles).reduce((n,p)=>n+Object.keys(p).length,0),
     export_binding:exportBinding,qualification:requireExport?'compiled actual wave model bound to inspected player export':'source-only; no player export qualification'};

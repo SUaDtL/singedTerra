@@ -34,6 +34,7 @@ class CombatFeedbackTests(unittest.TestCase):
     def test_current_geometry_and_retained_position(self): self.check_case(self._testMethodName)
     def test_campaign_weapon_feedback(self): self.check_case(self._testMethodName)
     def test_role_silhouettes_and_persistent_warning(self): self.check_case(self._testMethodName)
+    def test_arc_chain_and_shield_feedback(self): self.check_case(self._testMethodName)
 
 
 if __name__ == "__main__":

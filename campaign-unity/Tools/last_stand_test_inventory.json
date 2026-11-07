@@ -124,6 +124,7 @@
       "reason": "Strict current and retained diagnostic schema admission against maintained readers; no player qualification",
       "cases": [
         "ObservationVersionTests.test_appearance_v5_requires_every_control_and_scroll_field",
+        "ObservationVersionTests.test_buildcraft_v6_requires_armory_and_expanded_research_exactly",
         "ObservationVersionTests.test_continuity_requires_each_new_control_and_its_exact_version",
         "ObservationVersionTests.test_current_schema_cannot_be_downgraded_or_mislabeled",
         "ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired",
@@ -161,6 +162,7 @@
       "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
       "cases": [
         "WaveOracleTests.test_browser_oracle_compiles_its_complete_bound_source_list",
+        "WaveOracleTests.test_retained_combat_depth_oracle_keeps_four_tiers_five_fittings",
         "WaveOracleTests.test_retained_oracle_uses_original_complete_edition"
       ]
     },
@@ -172,6 +174,92 @@
       "cases": [
         "WebArtifactBindingTests.test_current_depth_and_retained_sprint_identities_are_metadata",
         "WebArtifactBindingTests.test_mixed_unknown_or_malformed_metadata_cannot_reach_build"
+      ]
+    },
+    {
+      "path": "last_stand_buildcraft/test_balance.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production C# buildcraft contract checks; no rendered acceptance",
+      "cases": [
+        "BuildcraftBalanceTests.test_fresh_earned_measurement_keeps_unavailable_pairs_and_currency_truthful",
+        "BuildcraftBalanceTests.test_report_rejects_gifted_currency_omitted_pairs_and_false_frontier"
+      ]
+    },
+    {
+      "path": "last_stand_buildcraft/test_combat.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production C# buildcraft contract checks; no rendered acceptance",
+      "cases": [
+        "BuildcraftCombatTests.test_all_seven_singles_and_twenty_one_pairs_clear_restore_and_keep_common_effects_once",
+        "BuildcraftCombatTests.test_arc_acquisition_and_hops_include_exact_boundaries_and_exclude_outside",
+        "BuildcraftCombatTests.test_arc_has_unique_bounded_falloff_targets_and_both_bays_tick",
+        "BuildcraftCombatTests.test_carrier_and_medic_aura_boundaries_affect_only_expected_identities",
+        "BuildcraftCombatTests.test_combat_contracts_reject_repeat_chain_early_recharge_and_single_bay_faults",
+        "BuildcraftCombatTests.test_combat_research_projects_shared_bounded_effects_once",
+        "BuildcraftCombatTests.test_paid_shield_capacity_delta_and_recharge_ledger_survive_restore",
+        "BuildcraftCombatTests.test_pause_and_five_times_speed_preserve_shield_chain_and_telegraph_outcomes",
+        "BuildcraftCombatTests.test_range_target_and_budget_guard_removals_are_detected",
+        "BuildcraftCombatTests.test_shield_absorbs_recharges_after_quiet_period_and_cannot_heal_without_bound",
+        "BuildcraftCombatTests.test_support_is_finite_and_commanders_preserve_clear_and_telegraph_rules",
+        "BuildcraftCombatTests.test_support_limits_three_targets_and_conserves_finite_budgets"
+      ]
+    },
+    {
+      "path": "last_stand_buildcraft/test_foundation.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production C# retained-edition, loadout, save transaction and reward-entitlement contracts; no rendered acceptance",
+      "cases": [
+        "BuildcraftFoundationTests.test_campaign_expands_only_the_buildcraft_edition",
+        "BuildcraftFoundationTests.test_four_retained_checkpoint_payloads_survive_profile_migration",
+        "BuildcraftFoundationTests.test_four_retained_editions_keep_combat_prices_income_and_catalogs",
+        "BuildcraftFoundationTests.test_new_runs_have_a_distinct_buildcraft_edition",
+        "BuildcraftFoundationTests.test_preset_apply_is_atomic_and_only_affects_future_deployment",
+        "BuildcraftFoundationTests.test_profile_schema_has_bounded_loadout_and_preset_fields",
+        "BuildcraftFoundationTests.test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks",
+        "BuildcraftFoundationTests.test_retained_run_clear_and_migration_reconcile_without_duplicate_currency",
+        "BuildcraftFoundationTests.test_two_bay_loadout_validates_and_resumes_both_fittings",
+        "BuildcraftFoundationTests.test_typed_bundles_grant_shared_permanent_entitlements",
+        "BuildcraftFoundationTests.test_unearned_preset_is_rejected_without_overwriting_save"
+      ]
+    },
+    {
+      "path": "last_stand_buildcraft/test_sensitivity.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Temporary parameter probes preserve all four retained editions and bound counterfactual scope; not player qualification",
+      "cases": [
+        "BuildcraftSensitivityTests.test_catalog_shape_change_is_rejected_before_counterfactual_compilation",
+        "BuildcraftSensitivityTests.test_disposable_parameter_changes_affect_only_current_prices_and_weapon_damage"
+      ]
+    },
+    {
+      "path": "last_stand_buildcraft_ui/test_armory_hud.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported Unity scene and Editor process; portable checks do not qualify the surface",
+      "cases": [
+        "ArmoryHudTests.test_imported_build_preview_apply_resume_and_accessibility"
+      ]
+    },
+    {
+      "path": "last_stand_buildcraft_ui/test_armory_session.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production C# local Armory draft and restore-generation contracts; no rendered acceptance",
+      "cases": [
+        "ArmorySessionTests.test_preview_presets_cancel_names_and_replacement_protection"
+      ]
+    },
+    {
+      "path": "last_stand_buildcraft_ui/test_wave_information.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production C# buildcraft contract checks; no rendered acceptance",
+      "cases": [
+        "BuildcraftWaveInformationTests.test_finite_support_details_and_secondary_bay_ownership"
       ]
     },
     {
@@ -246,7 +334,8 @@
         "CombatBalanceTests.test_research_cost_and_real_calendar_gate_speed",
         "CombatBalanceTests.test_role_effects_bind_actual_continuous_model_hits_and_unique_kills",
         "CombatBalanceTests.test_single_max_purchase_uses_real_time_without_catchup_replay",
-        "CombatBalanceTests.test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks"
+        "CombatBalanceTests.test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks",
+        "CombatBalanceTests.test_support_buffers_and_healing_preserve_penetration_attribution"
       ]
     },
     {
@@ -263,7 +352,9 @@
         "CrowdedWaveTests.test_current_execution_helper_does_not_relabel_frozen_capture",
         "CrowdedWaveTests.test_fresh_lf_checkout_without_archive_creates_owned_destinations",
         "CrowdedWaveTests.test_observer_rejects_changed_or_missing_canonical_seam",
-        "CrowdedWaveTests.test_rejects_impossible_currency_pressure_and_disconnected_hull"
+        "CrowdedWaveTests.test_rejects_impossible_currency_pressure_and_disconnected_hull",
+        "CrowdedWaveTests.test_retained_archive_refuses_changed_unsafe_or_duplicate_sources",
+        "CrowdedWaveTests.test_retained_replay_cannot_replace_original_repository_reports"
       ]
     },
     {
@@ -314,6 +405,7 @@
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
       "reason": "Python/Node and actual Mono production-source checks; no Editor or rendered acceptance",
       "cases": [
+        "PresentationFixtureTests.test_commander_fixture_is_a_real_wave99_boundary_with_disclosed_strength",
         "PresentationFixtureTests.test_elite_fixture_is_a_real_wave49_boundary_with_disclosed_strength",
         "PresentationFixtureTests.test_output_is_fresh_contained_and_preserves_exact_save_bytes",
         "PresentationFixtureTests.test_roster_unlocks_follow_continuous_actual_transactions",
@@ -642,6 +734,18 @@
         "ShaderBuildLogTests.test_review_never_covers_errors_other_shaders_or_changed_source",
         "ShaderBuildLogTests.test_review_requires_complete_unambiguous_import_and_player_phases",
         "ShaderBuildLogTests.test_reviewed_editor_import_is_reported_without_rejecting_player"
+      ]
+    },
+    {
+      "path": "last_stand_research/test_combat_research.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production C# research funding and deployment snapshot contracts; no rendered acceptance",
+      "cases": [
+        "CombatResearchTests.test_completion_keeps_active_snapshot_and_updates_next_deployment",
+        "CombatResearchTests.test_earned_tracks_three_labs_and_six_prepaid_completions",
+        "CombatResearchTests.test_lab_planner_quotes_share_cost_effects_and_applicability",
+        "CombatResearchTests.test_legacy_two_lab_paid_work_migrates_losslessly"
       ]
     },
     {
@@ -1204,6 +1308,7 @@
       "owner": "Qualified Unity host: named unittest entrypoint",
       "reason": "Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface",
       "cases": [
+        "CombatFeedbackTests.test_arc_chain_and_shield_feedback",
         "CombatFeedbackTests.test_campaign_weapon_feedback",
         "CombatFeedbackTests.test_current_geometry_and_retained_position",
         "CombatFeedbackTests.test_event_time_destruction",

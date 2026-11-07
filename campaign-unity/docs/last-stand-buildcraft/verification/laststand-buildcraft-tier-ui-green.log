@@ -1,0 +1,8 @@
+test_live_wave_heading_never_claims_saved_credit (test_tier_ui.TierHudTests.test_live_wave_heading_never_claims_saved_credit) ... ok
+test_tier_targets_and_summaries_fit_profiles (test_tier_ui.TierHudTests.test_tier_targets_and_summaries_fit_profiles) ... ok
+test_tier_text_reports_saved_and_unsaved_outcomes (test_tier_ui.TierHudTests.test_tier_text_reports_saved_and_unsaved_outcomes) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.906s
+
+OK

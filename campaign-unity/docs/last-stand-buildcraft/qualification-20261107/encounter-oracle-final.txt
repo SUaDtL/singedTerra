@@ -1,0 +1,7 @@
+Retained actual encounter compiler evidence: C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Evidence\last-stand-playable-loop\t06\encounter-oracle-regression-b669e5f469644425bbd3f8ec557bce30
+test_browser_encounter_oracle_compiles_complete_current_source_and_preserves_reference (last_stand_architecture.test_encounter_oracle.EncounterOracleTests.test_browser_encounter_oracle_compiles_complete_current_source_and_preserves_reference) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.659s
+
+OK

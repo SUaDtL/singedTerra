@@ -1,0 +1,326 @@
+{
+  "schema": 1,
+  "qualification": "Production-model numerical evidence; no owner play-feel, rendered/native, elapsed-endurance or hosted-CI acceptance inferred.",
+  "seed": {
+    "profileSha256": "10420320d79a73248d314303d4f680f1d0f2ce9b46a219108f72cf6c2dbf11dc",
+    "grossSalvage": 515420,
+    "wallet": 216658,
+    "permanentSpent": 223570,
+    "researchSpent": 75192,
+    "calendarMilliseconds": 3706634758,
+    "maximumSpeed": 5,
+    "equipmentBays": 2,
+    "bestWaves": [
+      5000,
+      349,
+      399,
+      533,
+      534,
+      0
+    ],
+    "researchRanks": [
+      8,
+      7,
+      7,
+      6,
+      5,
+      5,
+      5
+    ]
+  },
+  "frontier": {
+    "allPairsEarned": true,
+    "frontiers": [
+      {
+        "tier": 1,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+arc"
+        ]
+      },
+      {
+        "tier": 2,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+arc"
+        ]
+      },
+      {
+        "tier": 3,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+mortar"
+        ]
+      },
+      {
+        "tier": 4,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+mortar",
+          "launcher+railgun"
+        ]
+      },
+      {
+        "tier": 5,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+mortar"
+        ]
+      },
+      {
+        "tier": 6,
+        "measuredPairs": 21,
+        "pairs": [
+          "repair+scattergun",
+          "repair+mortar",
+          "scattergun+mortar"
+        ]
+      }
+    ],
+    "distinctFrontierPairs": [
+      "launcher+arc",
+      "launcher+mortar",
+      "launcher+railgun",
+      "repair+scattergun",
+      "repair+mortar",
+      "scattergun+mortar"
+    ],
+    "universalDominators": [],
+    "passes": true,
+    "metrics": [
+      "highestClearedWave",
+      "finalHull",
+      "effectiveDamagePerSimulationSecond",
+      "repeatableSalvagePerActiveHour"
+    ]
+  },
+  "comparisonCells": 168,
+  "comparisonWave": 500,
+  "retainedInitial150WaveFrontier": {
+    "allPairsEarned": true,
+    "frontiers": [
+      {
+        "tier": 1,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+arc"
+        ]
+      },
+      {
+        "tier": 2,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+arc"
+        ]
+      },
+      {
+        "tier": 3,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+arc"
+        ]
+      },
+      {
+        "tier": 4,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+arc"
+        ]
+      },
+      {
+        "tier": 5,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+mortar"
+        ]
+      },
+      {
+        "tier": 6,
+        "measuredPairs": 21,
+        "pairs": [
+          "launcher+mortar"
+        ]
+      }
+    ],
+    "distinctFrontierPairs": [
+      "launcher+arc",
+      "launcher+mortar"
+    ],
+    "universalDominators": [],
+    "passes": false,
+    "metrics": [
+      "highestClearedWave",
+      "finalHull",
+      "effectiveDamagePerSimulationSecond",
+      "repeatableSalvagePerActiveHour"
+    ]
+  },
+  "lowTouchWave5000": {
+    "highestClearedWave": 5000,
+    "activeMilliseconds": 37797250,
+    "purchaseIntents": 41,
+    "purchaseOpportunities": 41,
+    "outcome": "requested-boundary"
+  },
+  "lowTouchProjectedActiveHours": 10.499236111111111,
+  "farming": [
+    {
+      "tier": 1,
+      "completedWave": 2000,
+      "outcome": "requested-boundary",
+      "repeatableSalvagePerActiveHour": 6534.779466684039,
+      "nextTierWave30Rate": 2328.589909443726,
+      "nextTierWave100Rate": 1877.2956060399945
+    },
+    {
+      "tier": 2,
+      "completedWave": 2000,
+      "outcome": "requested-boundary",
+      "repeatableSalvagePerActiveHour": 10208.721128171548,
+      "nextTierWave30Rate": 2286.336418072945,
+      "nextTierWave100Rate": 1827.5725069527216
+    },
+    {
+      "tier": 3,
+      "completedWave": 2000,
+      "outcome": "requested-boundary",
+      "repeatableSalvagePerActiveHour": 11108.600553606824,
+      "nextTierWave30Rate": 2273.957769355712,
+      "nextTierWave100Rate": 1805.1800819743612
+    },
+    {
+      "tier": 4,
+      "completedWave": 1418,
+      "outcome": "defeat",
+      "repeatableSalvagePerActiveHour": 9482.255448549031,
+      "nextTierWave30Rate": 2300.9495982468957,
+      "nextTierWave100Rate": 1798.826852053009
+    },
+    {
+      "tier": 5,
+      "completedWave": 1174,
+      "outcome": "defeat",
+      "repeatableSalvagePerActiveHour": 10582.525021027695,
+      "nextTierWave30Rate": 2247.5918658580094,
+      "nextTierWave100Rate": 1607.018088657713
+    }
+  ],
+  "sensitivityVariants": 5,
+  "sensitivityCells": 90,
+  "finalPortableModules": 13,
+  "finalPortableCases": 86,
+  "finalPortableExitCodes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "productionCalibrationChangesAfterMeasurement": false,
+  "artifacts": {
+    "balance.md": {
+      "sha256": "c88374a1637f9728fa32be0fe12d5df778cef7e6f8b291addd8b94a568e7c389",
+      "bytes": 7819
+    },
+    "buildcraft-balance-500-wave-report.funding.json": {
+      "sha256": "f4a1177232a269c4aa8b36a5dd2b4929819733d83753cbd1b8bbad5e769a2204",
+      "bytes": 107446
+    },
+    "buildcraft-balance-500-wave-report.inputs.json": {
+      "sha256": "ee908afe02c24b1e8a3f6a1c1167409735754c333db3bf5f2de5b7a1e13687f1",
+      "bytes": 5874
+    },
+    "buildcraft-balance-500-wave-report.json": {
+      "sha256": "3ef7b290830933e784ff7ab1c6e984028f4c9f1d88e99286e93ef8cd8fff97c5",
+      "bytes": 2471390
+    },
+    "buildcraft-balance-500-wave-report.progress.log": {
+      "sha256": "f2a3c28d119ce4e88e24db65a6a59b7f58364267be8aaf04193d40aec8bf1081",
+      "bytes": 1607
+    },
+    "buildcraft-balance-500-wave-report.sources.zip": {
+      "sha256": "7ecd5e9bc2c1e076de76499149458e1690bd42ee3017615bae5ab690b0c05bf5",
+      "bytes": 123916
+    },
+    "buildcraft-balance-initial-report.progress.log": {
+      "sha256": "6c5047fd130bc7d415018fa199f3eda23c1e8e09889e649a9689be9fd0fa84ac",
+      "bytes": 2488
+    },
+    "buildcraft-balance-report.funding.json": {
+      "sha256": "f4a1177232a269c4aa8b36a5dd2b4929819733d83753cbd1b8bbad5e769a2204",
+      "bytes": 107446
+    },
+    "buildcraft-balance-report.inputs.json": {
+      "sha256": "d05efcfd65dd5ddb6e5ddc4521b558a729108067ba95ba21a9d69934b717a1d1",
+      "bytes": 5874
+    },
+    "buildcraft-balance-report.json": {
+      "sha256": "1113384e9057441c8c1d55e1e329b77cb93457c0651af4acf9d6ea50e17b7a10",
+      "bytes": 1681780
+    },
+    "buildcraft-balance-report.progress.log": {
+      "sha256": "f2a3c28d119ce4e88e24db65a6a59b7f58364267be8aaf04193d40aec8bf1081",
+      "bytes": 1607
+    },
+    "buildcraft-balance-report.sources.zip": {
+      "sha256": "2359517bd4cf1db3b1326de19529779904d2484eb118c336b2b765b876af9454",
+      "bytes": 123919
+    },
+    "buildcraft-farming-report.json": {
+      "sha256": "8331d9a2213b7ba55905579ee111cbf761a9dc3c93c04fb79da0f7f5616c02bb",
+      "bytes": 147874
+    },
+    "buildcraft-farming-report.sources.zip": {
+      "sha256": "d5f6eefeda24a5a2f950584fc031b4803098b0723cb7c3f830c6e44d5845c98d",
+      "bytes": 122553
+    },
+    "buildcraft-sensitivity-500-wave-report.json": {
+      "sha256": "506934a3075e67f54213a6bd2ab66ead2734b824600415e7d2da003d53d0a7fc",
+      "bytes": 1503707
+    },
+    "buildcraft-sensitivity-500-wave-report.sources.zip": {
+      "sha256": "f09ad644a6d49c426540ddb83837b6c248bf9b0bd5b6d784884658b184caa034",
+      "bytes": 123407
+    },
+    "buildcraft-sensitivity-report.json": {
+      "sha256": "6d495d2b0a8ddc44d4154c96f414894e8acf3126c2dc86bfb7f9e06c76b3aa60",
+      "bytes": 928781
+    },
+    "buildcraft-sensitivity-report.sources.zip": {
+      "sha256": "b37f9480c919648e2f134eca97a857257c237ba7420d5b9ff1718d978448e828",
+      "bytes": 120056
+    },
+    "verification/final-portable.log": {
+      "sha256": "b960280839a94e02338ef7efb4ea61539730b645a802bf89cd0ed6879186a80a",
+      "bytes": 21293
+    },
+    "verification/laststand-buildcraft-catalog-contracts-green.log": {
+      "sha256": "8c27651713749c6914b8dc93b50d88b5d3ec42a6f0b912b933816b5d9e8b661e",
+      "bytes": 8201
+    },
+    "verification/laststand-buildcraft-tier-ui-green.log": {
+      "sha256": "c004c5862a264b8dad32c6fe2018ea50ac990aa5e2b570dab174b4bf1ebb46da",
+      "bytes": 499
+    },
+    "verification/laststand-retained-receipt-red.log": {
+      "sha256": "564fa02e37395eb004932ab70d8bfb73b27f7b218659f69e4299fc451abd139a",
+      "bytes": 3193
+    },
+    "verification/laststand-support-observer-green.log": {
+      "sha256": "9cf86e6be996c7e0622853fd0320489609d47a42ce1569d1bdcf6db0a49d6332",
+      "bytes": 7501
+    },
+    "verification/laststand-support-observer-red.log": {
+      "sha256": "948bc34cf8412141349153cfb572ff42fc6b5a583f384a94a577d5fc63c2b134",
+      "bytes": 9115
+    }
+  }
+}

@@ -185,9 +185,20 @@ namespace SingedTerra.LastStand
             return text.ToString();
         }
         static string FittingName(string id)
-        {foreach(var fitting in LastStandFittingCatalog.Definitions)if(fitting.Id==id)return fitting.Name;return "Unlisted armament";}
+        {
+            // The history field holds the captured build, never the player's
+            // currently selected preset. Older single-fitting records stay intact.
+            var ids=id.Split('+');if(ids.Length<1||ids.Length>2)return "Unlisted build";
+            var labels=new List<string>();
+            foreach(string item in ids)
+            {
+                string label=null;foreach(var fitting in LastStandFittingCatalog.Definitions)if(fitting.Id==item){label=fitting.Name;break;}
+                if(label==null)return "Unlisted build";labels.Add(label);
+            }
+            return String.Join(" + ",labels);
+        }
         static string RewardRules(string version)=>version==LastStandUpgradeCatalog.EconomyVersion?"Current reward rules":
-            version==LastStandUpgradeCatalog.RetainedEconomyVersion||version==LastStandUpgradeCatalog.PreviousEconomyVersion||
+            version==LastStandUpgradeCatalog.CombatDepthEconomyVersion||version==LastStandUpgradeCatalog.RetainedEconomyVersion||version==LastStandUpgradeCatalog.PreviousEconomyVersion||
             version==LastStandUpgradeCatalog.LegacyEconomyVersion?"Earlier reward rules":"Unlisted reward rules";
         public void Layout(float w,float h,float sx,float sy)
         {

@@ -195,9 +195,8 @@ namespace SingedTerra.LastStand
         {
             bool run = CanOpenRunShop(), permanent = CanOpenPermanentShop(); var owner = loop.Shop;
             bool active = run || permanent;
-            var fitting = LastStandFittingCatalog.Parse(loop.FittingId);
             shopView = run ? LastStandShopPresentation.ProjectRun(owner,loop.ShopQuantity) : permanent ?
-                LastStandShopPresentation.ProjectPermanent(loop.Progression,fitting,loop.ShopQuantity) : null;
+                LastStandShopPresentation.ProjectPermanent(loop.Progression,loop.Progression.SelectedLoadout,loop.ShopQuantity) : null;
             shopProfileRevision=loop.Progression.Revision;
             Entry.gameObject.SetActive(active); StyleAction(Entry,false,active);
             Entry.GetComponentInChildren<Text>(true).text = shopOpen ? "CLOSE SHOP" : run ? "SHOP" : "MECHANICS SHOP";

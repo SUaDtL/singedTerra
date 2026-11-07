@@ -101,6 +101,18 @@ public static class LastStandControlsChecks
     }
     static void Require(bool value,string message)
     { if(!value)throw new InvalidOperationException("Controls integration: "+message); }
+    static void Equip(Fixture f,string id)
+    {
+        if(f.Loop.Progression.SelectedLoadout.PrimaryId==id)return;
+        f.Click("ArmoryEntry");
+        var ids=LastStandFittingCatalog.Definitions.Select(d=>d.Id).ToArray();int wanted=Array.IndexOf(ids,id);
+        Require(wanted>=0,"authored fitting identity "+id);
+        for(int count=0;f.Loop.ArmoryDraft.PrimaryId!=id&&count<ids.Length;count++)
+            f.Click(Array.IndexOf(ids,f.Loop.ArmoryDraft.PrimaryId)<wanted?"ArmoryBay1Next":"ArmoryBay1Previous");
+        Require(f.Loop.ArmoryDraft.PrimaryId==id,"bounded Armory preview reaches requested fitting");
+        f.Click("ArmoryApply");Require(f.Loop.Progression.SelectedLoadout.PrimaryId==id,"Apply commits the preview");
+        f.Click("ArmoryCancel");Require(!f.Loop.MenuOpen&&f.Loop.FittingId==id,"close restores the committed build");
+    }
     static object Get(object value,string field) => value.GetType().GetField(field,Private).GetValue(value);
     static void Set(object value,string field,object data) => value.GetType().GetField(field,Private).SetValue(value,data);
     static void Invoke(object value,string method,params object[] arguments)
@@ -492,14 +504,15 @@ public static class LastStandControlsChecks
         Require(f.Button("TierNext").IsActive()&&f.Button("TierNext").IsInteractable()&&!f.Button("TierPrevious").IsInteractable(),
             "compact tier card exposes the first locked preview and a bounded previous arrow");
         Require(f.Canvas.GetComponentsInChildren<Text>().Single(t=>t.name=="GarageTierName").text.Contains("TIER 1"),"tier card names the selected battlefield");
-        Require(f.Canvas.GetComponentsInChildren<Text>().Single(t=>t.name=="GarageFittingName").text=="FIELD REPAIR", "inline fitting card names actual selected identity");
+        Require(f.Canvas.GetComponentsInChildren<Text>().Single(t=>t.name=="GarageFittingDescription").text.StartsWith("Field repair",StringComparison.OrdinalIgnoreCase), "garage build card names actual selected identity");
         Require(f.Button("Menu").transform.parent.name=="LastStandLoopHud"&&f.Button("ShopEntry").GetComponentInChildren<Text>().text=="UPGRADES",
             "floating menu and secondary upgrades are separate from the hero selectors");
-        f.Click("FittingNext");
-        Require(f.Loop.FittingId=="launcher"&&f.Loop.MenuPage==""&&!f.Button("FittingNext").IsInteractable(),
-            "inline fitting arrow changes identity without opening a modal or wrapping");
-        f.Click("FittingPrevious");
-        Require(f.Loop.FittingId=="repair"&&!f.Button("FittingPrevious").IsInteractable(),"previous restores first catalog fitting");
+        string saved=f.Game.Value;f.Click("ArmoryEntry");
+        Require(!f.Button("ArmoryBay1Previous").IsInteractable(),"first fitting has a bounded previous control");
+        f.Click("ArmoryBay1Next");Require(f.Loop.ArmoryDraft.PrimaryId=="launcher"&&f.Art.launcherModule.activeSelf&&f.Game.Value==saved,
+            "Armory previews actual launcher without saving");
+        f.Click("ArmoryCancel");Require(f.Loop.FittingId=="repair"&&f.Game.Value==saved,"Cancel restores the existing build");
+        Equip(f,"launcher");Equip(f,"repair");
         GarageAndCombatGeometry();
     }
 
@@ -599,12 +612,12 @@ public static class LastStandControlsChecks
                 var upgrades=ScreenBounds(f,f.Button("ShopEntry").GetComponent<RectTransform>());
                 Require(deploy.width*deploy.height>upgrades.width*upgrades.height,profile+" Deploy has stronger area than Upgrades");
                 f.Click("TierNext");AssertVisibleGeometry(f,profile,"locked preview");f.Click("TierPrevious");
-                f.Click("FittingNext");AssertVisibleGeometry(f,profile,"launcher fitting");
+                Equip(f,"launcher");AssertVisibleGeometry(f,profile,"launcher fitting");
                 // The established 568x196 fixture is a garage/recovery-only
                 // viewport; combat keeps the maintained eight field profiles.
                 if(profile.y<240)continue;
                 f.Click("Deploy");AssertVisibleGeometry(f,profile,"combat");
-                Require(new[]{"Pause","ToggleMute","Effects","TierPrevious","TierNext","FittingPrevious","FittingNext"}.All(id=>!f.Button(id).IsActive()),
+                Require(new[]{"Pause","ToggleMute","Effects","TierPrevious","TierNext","ArmoryEntry"}.All(id=>!f.Button(id).IsActive()),
                     profile+" combat shows only the compact rate controls, floating Menu and separate Run Upgrades");
                 var speed=ScreenBounds(f,f.Button("SpeedRate").GetComponent<RectTransform>());
                 var shop=ScreenBounds(f,f.Button("ShopEntry").GetComponent<RectTransform>());
@@ -622,7 +635,7 @@ public static class LastStandControlsChecks
             finally { camera.targetTexture=null;UnityEngine.Object.DestroyImmediate(texture); }
         }
     }
-    static string EarnedSecondTierSave()
+    internal static string EarnedSecondTierSave()
     {
         var store=new Storage();LastStandProgression.Load(store);
         // Numerical build setup only. Tier and armament unlocks are earned by
@@ -648,12 +661,13 @@ public static class LastStandControlsChecks
         f.Click("TierNext");
         Require(f.Loop.GarageTierSelection.Current.Unlocked&&f.Loop.Progression.SelectedTier==2&&f.Loop.EnvironmentId=="iron-perimeter",
             "unlocked choice commits exact selected tier and environment");
-        Require(!f.Button("FittingPrevious").IsInteractable()&&f.Loop.GarageFittingSelection.Current.Id=="repair","fitting starts at explicit current identity");
-        f.Click("FittingNext");
-        Require(f.Loop.FittingId=="launcher","fitting arrow equips explicit launcher identity");
-        f.Click("FittingNext");
-        Require(f.Loop.FittingId=="scattergun"&&!f.Button("FittingNext").IsInteractable(),"fitting selector includes the wave-100 unlock and stops at the catalog endpoint");
-        f.Click("FittingPrevious");f.Click("Redeploy");
+        Require(f.Loop.Progression.SelectedLoadout.PrimaryId=="repair","build starts at its saved identity");
+        Equip(f,"launcher");Equip(f,"scattergun");
+        f.Click("ArmoryEntry");
+        for(int count=0;f.Button("ArmoryBay1Next").IsInteractable()&&count<LastStandFittingCatalog.Definitions.Count;count++)f.Click("ArmoryBay1Next");
+        Require(!f.Button("ArmoryBay1Next").IsInteractable()&&!f.Button("ArmoryApply").IsInteractable(),"Armory reaches bounded catalog endpoint and refuses an unearned fitting");
+        f.Click("ArmoryCancel");Require(f.Loop.FittingId=="scattergun","cancel returns to earned selected build");
+        Equip(f,"launcher");f.Click("Redeploy");
         Require(f.Loop.Session.Model!=null&&f.Loop.Session.Model.HasLauncher&&f.Loop.Progression.ActiveTier==2,"deployment captures chosen fitting and tier");
         string snapshot=f.Loop.Session.Model.Snapshot();
         f.Loop.MoveGarageTier(-1);f.Loop.MoveGarageFitting(-1);f.Loop.OpenSelector("tier");f.Loop.MoveSelection(-1);f.Loop.SelectTier(1);

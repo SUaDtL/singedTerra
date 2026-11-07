@@ -18,6 +18,11 @@ SCRIPTS = ROOT / "campaign-unity/Unity/Assets/Scripts"
 
 class WaveOracleTests(unittest.TestCase):
     def test_browser_oracle_compiles_its_complete_bound_source_list(self):
+        self.check_edition({"rulesVersion": "last-stand-waves-v3", "contentVersion": "last-stand-content-v3",
+                            "economyVersion": "buildcraft-economy-v5"}, (1, 2, 3, 4, 5, 6),
+                           ("repair", "launcher", "scattergun", "mortar", "railgun", "arc", "shield"))
+
+    def test_retained_combat_depth_oracle_keeps_four_tiers_five_fittings(self):
         self.check_edition({"rulesVersion": "last-stand-waves-v2", "contentVersion": "last-stand-content-v2",
                             "economyVersion": "combat-depth-economy-v4"}, (1, 2, 3, 4),
                            ("repair", "launcher", "scattergun", "mortar", "railgun"))
@@ -55,7 +60,7 @@ console.log(JSON.stringify({sources:WAVE_ORACLE_SOURCES,binding}));
                 self.assertIn(str(path).replace("\\", "/"), [value.replace("\\", "/")
                               for value in binding["commands"][0]["argv"]])
             self.assertEqual([command["exit"] for command in binding["commands"]], [0, 0])
-            self.assertEqual(binding["format"], "st-last-stand-wave-model-oracle/2")
+            self.assertEqual(binding["format"], "st-last-stand-wave-model-oracle/3" if edition["rulesVersion"] == "last-stand-waves-v3" else "st-last-stand-wave-model-oracle/2")
             self.assertEqual(binding["edition"], edition)
             expected = {f"{tier}:{fitting}:{damage}" for tier, fitting, damage in
                         itertools.product(tiers, fittings, (20, 30, 40, 50))}

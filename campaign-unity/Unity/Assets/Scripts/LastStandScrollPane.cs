@@ -31,7 +31,7 @@ namespace SingedTerra.LastStand
         {Content.sizeDelta=new Vector2(Content.sizeDelta.x,Math.Max(height,contentHeight)*sy);Clamp();}
         public void Clamp(){scroll.StopMovement();Content.anchoredPosition=new Vector2(0,Mathf.Clamp(Content.anchoredPosition.y,0,MaximumOffset*sy));}
         public void Reset(){scroll.StopMovement();Content.anchoredPosition=Vector2.zero;}
-        public void Reveal(Button button)
+        public void Reveal(Selectable button)
         {
             if(!button||!button.transform.IsChildOf(Content))return;
             var rect=(RectTransform)button.transform;float y=-rect.anchoredPosition.y,offset=Content.anchoredPosition.y;

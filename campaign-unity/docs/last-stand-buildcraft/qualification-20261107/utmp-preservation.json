@@ -1,0 +1,14 @@
+{
+  "protectedFiles": 107,
+  "restored": [
+    {
+      "path": "campaign-unity/Unity/.utmp/Debug/1s1g1a1b/arm64-v8a/configure_fingerprint.bin",
+      "postBuildSha256": "eaa3d39b32c9b179a11eafcdd143d9fa9bdd29532aa3322b1016be4b9ccbe75d",
+      "restoredSha256": "c57c4302690c50dd38d8a86069924e5ee86b6c6863b58734ada005cf42d90399"
+    }
+  ],
+  "utc": "2026-11-07T07:28:03.393588+00:00",
+  "postBuildArchive": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-post-android-utmp-20261107.zip",
+  "postBuildArchiveSha256": "d8b0d4235295f129d88e8e4c34c66a2d65c765fc37d8b68c5101d04ffaa72fad",
+  "allOriginalBytesPreserved": true
+}

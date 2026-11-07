@@ -14,7 +14,7 @@ class AppearanceDraftTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="st-appearance-draft-") as folder:
             executable = Path(folder) / "AppearanceDraftChecks.exe"
             sources = [scripts / name for name in (
-                "Content/LastStandTankAppearance.cs", "LastStandAppearanceSession.cs")]
+                "Content/LastStandTankAppearance.cs", "Application/LastStandValueDraft.cs", "LastStandAppearanceSession.cs")]
             sources.append(Path(__file__).with_name("AppearanceDraftChecks.cs"))
             result = compile_csharp(executable, sources, warnings_as_errors=True, timeout_seconds=60)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

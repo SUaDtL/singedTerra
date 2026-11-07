@@ -44,7 +44,7 @@ static class WaveModelChecks
                         }
                     }
                     try {resolver.Invoke(null,new object[]{19,tiers});throw new Exception("Unknown tier resolved.");}catch(TargetInvocationException e){Check(e.InnerException is ArgumentOutOfRangeException,"Unknown tier rejects explicitly.");}
-                    Check(LastStandTierCatalog.Legacy.Count==2&&LastStandTierCatalog.All.Count==4,"Historical identities and reserved campaign shape remain explicit.");
+                    Check(LastStandTierCatalog.Legacy.Count==2&&LastStandTierCatalog.CombatDepth.Count==4&&LastStandTierCatalog.All.Count==6,"Historical identities and expanded campaign shape remain explicit.");
                     foreach(var shipped in LastStandTierCatalog.All)if(shipped.Playable)Check(EncounterProfile.ForTier(shipped.Id).TierDefinition==shipped,"Default resolver retains available authored identity.");
                     foreach(var retained in LastStandTierCatalog.Legacy)Check(EncounterProfile.ForTier(retained.Id,LastStandRunEdition.Legacy(LastStandUpgradeCatalog.RetainedEconomyVersion)).Id==LastStandWaveCatalog.RulesVersion+":"+retained.EncounterProfileId,"Retained profile identity is unchanged.");
                     break;

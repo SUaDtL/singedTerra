@@ -1,0 +1,1 @@
+{"status":"passed","output":"C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\research-browser\\2026-11-07T07-11-15-855Z","checks":13,"closedCompletionObserved":true}

@@ -29,6 +29,7 @@ namespace SingedTerra.LastStand
         public readonly FoeKind Kind;
         public readonly string Name;
         public readonly int Hull,Armor,Damage,Speed,StopDistance,AttackIntervalTicks,TelegraphTicks,RewardMultiplier;
+        public readonly int ShieldBuffer,HealingBudget,HealingPerPulse,SupportRadius,SupportTargets,SupportPeriod;
         internal LastStandEnemyStats(LastStandEnemyDefinition definition,LastStandWaveDefinition wave)
         {
             Kind=definition.Kind;Name=definition.Name;
@@ -36,6 +37,11 @@ namespace SingedTerra.LastStand
             Armor=(int)Math.Min(LastStandWaveCatalog.MaximumCombatValue,(4L+((long)wave.Wave-1)/12)*definition.ArmorScale);
             Speed=definition.Speed;StopDistance=definition.StopDistance;AttackIntervalTicks=definition.AttackIntervalTicks;
             TelegraphTicks=definition.TelegraphTicks;RewardMultiplier=definition.RewardMultiplier;
+            ShieldBuffer=Kind==FoeKind.ShieldCarrier?Math.Max(1,Hull/2):0;
+            HealingBudget=Kind==FoeKind.Medic?Math.Max(1,Hull/2):0;
+            HealingPerPulse=Kind==FoeKind.Medic?Math.Max(1,Hull/20):0;
+            SupportRadius=ShieldBuffer>0||HealingBudget>0?9000:0;
+            SupportTargets=SupportRadius>0?3:0;SupportPeriod=SupportRadius>0?40:0;
         }
         static int Scale(int value,int percent)=>(int)Math.Min(LastStandWaveCatalog.MaximumCombatValue,Math.Max(1,((long)value*percent+99)/100));
     }
@@ -44,13 +50,16 @@ namespace SingedTerra.LastStand
     // spawning, combat information and income; presentation does not recalculate it.
     public static class LastStandEnemyCatalog
     {
-        public const string Onboarding="onboarding",Mixed="mixed-pressure",Cinder="cinder-pressure",Foundry="foundry-pressure";
+        public const string Onboarding="onboarding",Mixed="mixed-pressure",Cinder="cinder-pressure",Foundry="foundry-pressure",Glass="glass-support",Frost="frost-support";
         public static IReadOnlyList<LastStandEnemyDefinition> All { get; }=Array.AsReadOnly(new[]{
             new LastStandEnemyDefinition(FoeKind.Close,"Close",100,100,0,50,4800,20,0,1),
             new LastStandEnemyDefinition(FoeKind.Ranged,"Ranged",100,100,0,40,12000,30,0,1),
             new LastStandEnemyDefinition(FoeKind.Swarmer,"Swarmer",45,50,0,100,4800,15,0,1),
             new LastStandEnemyDefinition(FoeKind.ArmoredBrute,"Armored Brute",240,150,1,25,4800,40,0,2),
-            new LastStandEnemyDefinition(FoeKind.SiegeElite,"Siege Elite",800,400,2,20,15000,120,30,8)
+            new LastStandEnemyDefinition(FoeKind.SiegeElite,"Siege Elite",800,400,2,20,15000,120,30,8),
+            new LastStandEnemyDefinition(FoeKind.ShieldCarrier,"Shield Carrier",180,80,1,35,12000,40,0,2),
+            new LastStandEnemyDefinition(FoeKind.Medic,"Medic",150,70,0,35,12000,40,0,2),
+            new LastStandEnemyDefinition(FoeKind.SiegeCommander,"Siege Commander",1200,600,3,18,15000,180,60,12)
         });
         static readonly IReadOnlyDictionary<string,FoeKind[]> recipes=new Dictionary<string,FoeKind[]>(StringComparer.Ordinal){
             {Mixed,new[]{FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.ArmoredBrute,FoeKind.Swarmer,
@@ -58,7 +67,11 @@ namespace SingedTerra.LastStand
             {Cinder,new[]{FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.ArmoredBrute,FoeKind.ArmoredBrute,
                 FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.Swarmer,FoeKind.ArmoredBrute}},
             {Foundry,new[]{FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.ArmoredBrute,FoeKind.ArmoredBrute,
-                FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.ArmoredBrute,FoeKind.ArmoredBrute}}
+                FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.ArmoredBrute,FoeKind.ArmoredBrute}},
+            {Glass,new[]{FoeKind.ShieldCarrier,FoeKind.Swarmer,FoeKind.Ranged,FoeKind.Close,FoeKind.ArmoredBrute,
+                FoeKind.Medic,FoeKind.Swarmer,FoeKind.Ranged,FoeKind.Close,FoeKind.Swarmer}},
+            {Frost,new[]{FoeKind.Medic,FoeKind.ArmoredBrute,FoeKind.Ranged,FoeKind.Close,FoeKind.ShieldCarrier,
+                FoeKind.ArmoredBrute,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.Close,FoeKind.ArmoredBrute}}
         };
         public static LastStandEnemyDefinition Get(FoeKind kind)
         {foreach(var definition in All)if(definition.Kind==kind)return definition;throw new ArgumentOutOfRangeException(nameof(kind));}
@@ -74,7 +87,7 @@ namespace SingedTerra.LastStand
                     throw new ArgumentException("Invalid enemy definition.");
             foreach(var recipe in recipes.Values) {
                 if(recipe.Length!=10)throw new ArgumentException("Enemy recipes must have a bounded ten-slot period.");
-                foreach(var kind in recipe)if(!kinds.Contains(kind)||kind==FoeKind.SiegeElite)throw new ArgumentException("Invalid ordinary enemy recipe.");
+                foreach(var kind in recipe)if(!kinds.Contains(kind)||Get(kind).TelegraphTicks>0)throw new ArgumentException("Invalid ordinary enemy recipe.");
             }
         }
         public static FoeKind KindFor(LastStandTierDefinition tier,int wave,int ordinal,LastStandRunEdition edition)
@@ -85,7 +98,8 @@ namespace SingedTerra.LastStand
             if(edition.IsLegacy||tier.EnemyMixId==Onboarding)
                 return LastStandWaveCatalog.IsRanged(wave,ordinal,edition)?FoeKind.Ranged:FoeKind.Close;
             ValidateMix(tier.EnemyMixId);
-            if(wave%50==0&&ordinal==group.EnemyCount-1)return FoeKind.SiegeElite;
+            if(wave%50==0&&ordinal==group.EnemyCount-1)
+                return edition.IsBuildcraft&&tier.Id>=5&&wave%100==0?FoeKind.SiegeCommander:FoeKind.SiegeElite;
             var recipe=recipes[tier.EnemyMixId];return recipe[(int)(((long)wave-1+ordinal)%recipe.Length)];
         }
         public static LastStandEnemyStats For(LastStandTierDefinition tier,int wave,int ordinal,LastStandRunEdition edition)
@@ -94,6 +108,7 @@ namespace SingedTerra.LastStand
         {
             if(edition==null)throw new ArgumentNullException(nameof(edition));
             if(edition.IsLegacy&&kind!=FoeKind.Close&&kind!=FoeKind.Ranged)throw new ArgumentException("Enemy is unavailable in this edition.");
+            if(!edition.IsBuildcraft&&(int)kind>(int)FoeKind.SiegeElite)throw new ArgumentException("Enemy is unavailable in this edition.");
             return new LastStandEnemyStats(Get(kind),wave);
         }
     }

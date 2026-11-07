@@ -16,7 +16,7 @@ const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototyp
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const MILESTONE_FIXTURE_SOURCES=Object.freeze([
   ...WAVE_ORACLE_SOURCES.map(name=>'campaign-unity/Unity/Assets/Scripts/'+name),
-  ...['LastStandProgression','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
+  ...['LastStandProgression','LastStandProgressionLoadouts','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
     'LastStandSaveJson','LastStandProgressionAppearance','Content/LastStandTankAppearance','LastStandProgressionBackup','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
     'LastStandResearchState','LastStandResearchCatalog','LastStandResearchClock','Content/LastStandResearchDefinitions']
     .map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
@@ -25,8 +25,8 @@ export const MILESTONE_FIXTURE_SOURCES=Object.freeze([
   'campaign-unity/Tools/last_stand_source_closure.py','campaign-unity/Tools/last_stand_test_runtime.py']);
 export function admitMilestoneSaves(saved,expected,fixture){
   for(const value of [saved,expected]){
-    assert.equal(value?.version,7,'Current milestone requires save version 7');
-    assertWaveCheckpointEdition(value.checkpoint);
+    assert.ok([7,8].includes(value?.version),'Supported milestone requires save version 7 or 8');
+    assertWaveCheckpointEdition(value.checkpoint,value.version);
   }
   assert.deepEqual(assertWaveCheckpointEdition(saved.checkpoint),assertWaveCheckpointEdition(expected.checkpoint),
     'Expected milestone must retain its saved edition');
@@ -267,7 +267,8 @@ export const MILESTONE_RUNNER_INPUTS=Object.freeze(['scripts/last-stand-wave-mil
   ...LAST_STAND_HELPER_INPUTS,'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v5.json']);
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json']);
 export function hashMilestoneRunnerInputs({directory=root,readFile=readFileSync,resolvePath=resolve,hashBytes=hash}={}) {
   return Object.fromEntries(MILESTONE_RUNNER_INPUTS.map(path=>[path,hashBytes(readFile(resolvePath(directory,path)))]));
 }

@@ -44,6 +44,7 @@ class CombatBalanceTests(unittest.TestCase):
     def test_role_effects_bind_actual_continuous_model_hits_and_unique_kills(self): self.case("role-events")
     def test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks(self): self.case("split-investment")
     def test_confirmed_active_checkpoint_fork_abandons_without_new_rewards(self): self.case("active-fork")
+    def test_support_buffers_and_healing_preserve_penetration_attribution(self): self.case("support-attribution")
 
     def test_report_rejects_missing_cells_foreign_profiles_and_extra_purchases(self):
         report = json.loads((PROJECT / "docs/last-stand-combat-depth/combat-balance-calibrated-report.json").read_text())

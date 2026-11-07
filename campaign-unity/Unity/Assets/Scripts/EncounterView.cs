@@ -21,7 +21,7 @@ namespace SingedTerra.Encounter
         readonly float[] life = new float[12];
         readonly bool[] mortarPresented=new bool[EncounterModel.Capacity];
         readonly List<Material> materials = new List<Material>();
-        Material closePaint, rangedPaint, rubber, health, shell, rocket, incoming, repair, scatter,mortar,railgun;
+        Material closePaint, rangedPaint, rubber, health, shell, rocket, incoming, repair, scatter,mortar,railgun,arc,shield;
         int nextTrail;
         bool currentGeometry;
         public bool FullEffects { get; private set; } = true;
@@ -58,6 +58,7 @@ namespace SingedTerra.Encounter
             repair = Paint(basis, new Color(.25f,.9f,.65f));
             scatter = Paint(basis, new Color(1f,.70f,.40f));
             mortar=Paint(basis,new Color(.94f,.66f,.33f));railgun=Paint(basis,new Color(.56f,.87f,1f));
+            arc=Paint(basis,new Color(.70f,.92f,.45f));shield=Paint(basis,new Color(.42f,.75f,1f));
             review=owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             if(review){reviewVisuals=new SingedTerra.VisualReview.ReviewCombatVisuals(review,owner,transform);review.Changed+=reviewVisuals.FaceCamera;}
             for (int i = 0; i < (review ? 0 : units.Length); i++)
@@ -94,6 +95,7 @@ namespace SingedTerra.Encounter
         public void Render(EncounterModel model)
         {
             BindModel(model);
+            owner.SetShieldCharge(model.Shield,model.CurrentShieldCapacity);
             if(reviewVisuals!=null){reviewVisuals.Render(model);VisibleUnits=reviewVisuals.Active;return;}
             VisibleUnits = 0;
             for (int i = 0; i < units.Length; i++)
@@ -141,6 +143,19 @@ namespace SingedTerra.Encounter
                     owner.PlayFittingShot(LastStandFitting.Railgun,target);
                     Trace(owner.FittingMuzzle(LastStandFitting.Railgun),target,railgun);
                 }
+                else if(e.Kind==EncounterEventKind.Arc)
+                {
+                    bool first=e.AimSlot==e.Slot;
+                    if(first)owner.PlayFittingShot(LastStandFitting.Arc,target);
+                    Trace(first?owner.FittingMuzzle(LastStandFitting.Arc):Position(model.Foes[e.AimSlot]),target,arc);
+                }
+                else if(e.Kind==EncounterEventKind.ShieldAbsorb||e.Kind==EncounterEventKind.ShieldRecharge)
+                {
+                    owner.PlayShieldPulse(e.Kind==EncounterEventKind.ShieldRecharge);
+                    owner.SetShieldCharge(model.Shield,model.CurrentShieldCapacity);
+                }
+                else if(e.Kind==EncounterEventKind.EnemyShield||e.Kind==EncounterEventKind.EnemyRepair)
+                    Trace(target+Vector3.up*.85f,target,e.Kind==EncounterEventKind.EnemyShield?shield:repair);
                 else if (e.Kind == EncounterEventKind.Repair)
                     Trace(Center(repairMeshes), center, repair);
                 else if(e.Kind==EncounterEventKind.CloseHit || e.Kind==EncounterEventKind.RangedHit)Trace(target, center, incoming);

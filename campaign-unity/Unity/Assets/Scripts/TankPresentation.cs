@@ -13,15 +13,19 @@ namespace SingedTerra.Art
         public LastStandTankVisuals tankVisualsPrefab;
         public LastStandTankVisuals TankVisuals { get; private set; }
         public GameObject scattergunModule { get; private set; }
+        LastStandShieldModule shieldModule;
         sealed class ModuleBinding
         {
             public GameObject Root;public Renderer[] Renderers;public Func<Vector3> Muzzle;
+            public Vector3 HomePosition,SecondaryOffset;
             public Action<Vector3> Fire;public Action<float> Advance;public Action Clear,Restore;
         }
         readonly Dictionary<LastStandFitting,ModuleBinding> modules=new Dictionary<LastStandFitting,ModuleBinding>();
         public LastStandFitting Fitting { get; private set; }=LastStandFitting.Repair;
+        public LastStandLoadout Loadout { get; private set; }=LastStandLoadout.Single(LastStandFitting.Repair);
         public GameObject ActiveFittingModule => Module(Fitting);
         public Renderer[] ActiveFittingRenderers=>modules.TryGetValue(Fitting,out var binding)?binding.Renderers:Array.Empty<Renderer>();
+        public Renderer[] FittingRenderers(LastStandFitting fitting)=>modules.TryGetValue(fitting,out var binding)?binding.Renderers:Array.Empty<Renderer>();
         public Vector3 ScattergunMuzzle=>FittingMuzzle(LastStandFitting.Scattergun);
         GameObject Module(LastStandFitting fitting)=>modules.TryGetValue(fitting,out var binding)?binding.Root:null;
         public Vector3 FittingMuzzle(LastStandFitting fitting)=>modules[fitting].Muzzle();
@@ -30,8 +34,14 @@ namespace SingedTerra.Art
         {
             var renderers=root.GetComponentsInChildren<Renderer>(true);
             if(renderers.Length==0)throw new InvalidOperationException("Fitting has no visible geometry: "+fitting);
-            modules.Add(fitting,new ModuleBinding{Root=root,Renderers=renderers,Muzzle=muzzle??(()=>{
-                var bounds=renderers[0].bounds;foreach(var renderer in renderers)bounds.Encapsulate(renderer.bounds);return bounds.center;
+            var bounds=renderers[0].bounds;foreach(var renderer in renderers)bounds.Encapsulate(renderer.bounds);
+            var forward=Vector3.ProjectOnPlane(this.muzzle.position-barrel.position,Vector3.up).normalized;
+            var right=Vector3.Cross(Vector3.up,forward);
+            float lateral=Vector3.Dot(bounds.center-tank.position,right);
+            if(Mathf.Abs(lateral)<.6f)lateral=.85f;
+            modules.Add(fitting,new ModuleBinding{Root=root,Renderers=renderers,HomePosition=root.transform.localPosition,
+                SecondaryOffset=root.transform.parent.InverseTransformVector(-2*lateral*right),Muzzle=muzzle??(()=>{
+                var current=renderers[0].bounds;foreach(var renderer in renderers)current.Encapsulate(renderer.bounds);return current.center;
             }),Fire=fire,Advance=advance,Clear=clear,Restore=restore});
         }
         public bool battlefield, showingLauncher, animate=true;
@@ -79,10 +89,14 @@ namespace SingedTerra.Art
             var scattergun=scattergunModule.AddComponent<LastStandScattergunModule>();scattergun.Initialize(this);
             var mortarRoot=new GameObject("Attachment_Mortar");var mortar=mortarRoot.AddComponent<LastStandMortarModule>();mortar.Initialize(this);
             var railgunRoot=new GameObject("Attachment_Railgun");var railgun=railgunRoot.AddComponent<LastStandRailgunModule>();railgun.Initialize(this);
+            var arcRoot=new GameObject("Attachment_Arc");var arc=arcRoot.AddComponent<LastStandArcModule>();arc.Initialize(this);
+            var shieldRoot=new GameObject("Attachment_Shield");shieldModule=shieldRoot.AddComponent<LastStandShieldModule>();shieldModule.Initialize(this);
             Bind(LastStandFitting.Repair,repairModule);Bind(LastStandFitting.Launcher,launcherModule);
             Bind(LastStandFitting.Scattergun,scattergunModule,()=>scattergun.MuzzlePosition,scattergun.Fire,scattergun.Advance,scattergun.Clear,scattergun.RestoreMount);
             Bind(LastStandFitting.Mortar,mortarRoot,()=>mortar.MuzzlePosition,mortar.Fire,mortar.Advance,mortar.Clear,mortar.RestoreMount);
             Bind(LastStandFitting.Railgun,railgunRoot,()=>railgun.MuzzlePosition,railgun.Fire,railgun.Advance,railgun.Clear,railgun.RestoreMount);
+            Bind(LastStandFitting.Arc,arcRoot,()=>arc.MuzzlePosition,arc.Fire,arc.Advance,arc.Clear,arc.RestoreMount);
+            Bind(LastStandFitting.Shield,shieldRoot,advance:shieldModule.Advance,clear:shieldModule.Clear,restore:shieldModule.RestoreMount);
             Fitting=LastStandFitting.Repair;showingLauncher=false;
             foreach(var item in modules)item.Value.Root.SetActive(item.Key==Fitting);
             initialized=true;
@@ -239,19 +253,29 @@ namespace SingedTerra.Art
         public string FittingId => LastStandFittingCatalog.Id(Fitting);
         public bool TrySelectFitting(string id)
         {
-            if(EncounterActive)return false;
-            LastStandFitting selected;
-            try { selected=LastStandFittingCatalog.Parse(id); } catch(ArgumentException){return false;}
+            try{return TrySelectLoadout(new LastStandLoadout(id));}catch(ArgumentException){return false;}
+        }
+        public bool TrySelectLoadout(LastStandLoadout loadout)
+        {
+            if(EncounterActive||loadout==null)return false;
             EnsureInitialized();
-            if(!Module(selected))return false;
-            Fitting=selected;showingLauncher=selected==LastStandFitting.Launcher;
-            foreach(var item in modules)item.Value.Root.SetActive(item.Key==selected);Report("attachment");
+            if(!Module(loadout.Primary)||loadout.Secondary.HasValue&&!Module(loadout.Secondary.Value))return false;
+            bool changed=!Loadout.Equals(loadout);Loadout=loadout;Fitting=loadout.Primary;showingLauncher=loadout.Contains(LastStandFitting.Launcher);
+            foreach(var item in modules)
+            {
+                var binding=item.Value;
+                binding.Root.transform.localPosition=binding.HomePosition+(loadout.Secondary==item.Key?binding.SecondaryOffset:Vector3.zero);
+                binding.Root.SetActive(loadout.Contains(item.Key));
+            }
+            if(changed)InvalidateGarageFraming();Report("attachment");
             return true;
         }
         public void PlayScattergunShot(Vector3 target)
         { PlayFittingShot(LastStandFitting.Scattergun,target); }
         public void PlayFittingShot(LastStandFitting fitting,Vector3 target)
-        { if(EncounterActive&&Fitting==fitting&&modules.TryGetValue(fitting,out var binding))binding.Fire?.Invoke(target); }
+        { if(EncounterActive&&Loadout.Contains(fitting)&&modules.TryGetValue(fitting,out var binding))binding.Fire?.Invoke(target); }
+        public void SetShieldCharge(int current,int capacity){if(shieldModule)shieldModule.SetCharge(current,capacity);}
+        public void PlayShieldPulse(bool recharging){if(EncounterActive&&Loadout.Contains(LastStandFitting.Shield))shieldModule.Pulse(recharging);}
         public void PreviewMotion()
         {
             if(EncounterActive||recoilTime>0)return;

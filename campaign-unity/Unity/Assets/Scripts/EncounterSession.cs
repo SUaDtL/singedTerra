@@ -368,7 +368,9 @@ namespace SingedTerra.Encounter
         {
             public string action, rules, status, fitting, reason, summary,contentVersion,economyVersion;
             public int run, tick, hp, maxHp, spawned, kills, cannon, launcher, scattergun,mortar,railgun,healed, closeHits, rangedHits;
-            public int mortarDamage,railgunDamage;
+            public int mortarDamage,railgunDamage,arc,arcDamage,shield,shieldCapacity,shieldRestored,shieldAbsorbed;
+            public string secondaryFitting;
+            public int armorPiercing,areaControl,fieldEngineering;
             public int alive, visibleUnits, pool;
             public int wave,completedWave,remainingWaveEnemies;
             public bool awaitingWaveCommit,checkpointBlocked;
@@ -400,6 +402,11 @@ namespace SingedTerra.Encounter
                 scattergun=model?.ScattergunShots??0,mortar=model?.MortarShots??0,railgun=model?.RailgunShots??0,
                 mortarDamage=model?.CurrentMortarDamage??LastStandUpgradeCatalog.BaseMortarDamage,
                 railgunDamage=model?.CurrentRailgunDamage??LastStandUpgradeCatalog.BaseRailgunDamage,
+                arc=model?.ArcShots??0,arcDamage=model?.CurrentArcDamage??LastStandUpgradeCatalog.BaseArcDamage,
+                shield=model?.Shield??0,shieldCapacity=model?.CurrentShieldCapacity??0,
+                shieldRestored=model?.ShieldRestored??0,shieldAbsorbed=model?.ShieldAbsorbed??0,
+                secondaryFitting=model?.Loadout.SecondaryId??"",armorPiercing=model?.CombatResearch.ArmorPiercing??0,
+                areaControl=model?.CombatResearch.AreaControl??0,fieldEngineering=model?.CombatResearch.FieldEngineering??0,
                 healed = model?.Restored ?? 0, closeHits = model?.CloseHits ?? 0, rangedHits = model?.RangedHits ?? 0,
                 alive = model?.ActiveCount ?? 0, visibleUnits = View.VisibleUnits, pool = View.PoolSize,
                 wave=model?.Wave??0,completedWave=model?.CompletedWave??0,remainingWaveEnemies=model?.RemainingWaveEnemies??0,

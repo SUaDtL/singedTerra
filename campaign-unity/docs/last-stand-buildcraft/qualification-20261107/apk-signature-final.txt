@@ -1,0 +1,17 @@
+Sanitized apksigner verification excerpt.
+Three redundant public-key digest lines omitted; certificate fingerprints and signature verdict retained.
+
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: C=US, O=Android, CN=Android Debug
+Signer #1 certificate SHA-256 digest: e2c40987bc902f2100095847eec6184db9cabaa957d75c4b88282f5b2792002d
+Signer #1 certificate SHA-1 digest: c705f62611cd1b33db7b303d8fa80f3db007d0f2
+Signer #1 certificate MD5 digest: 7eea5d49dc68c9c9e6d7382cfc01d840
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 2048

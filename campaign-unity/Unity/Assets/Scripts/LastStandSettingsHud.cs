@@ -58,6 +58,7 @@ namespace SingedTerra.LastStand
             Button("MenuResume","RESUME / CLOSE",content,loop.CloseMenu);
             Button("MenuSettings","SETTINGS",content,() => loop.OpenMenu("settings"));
             Button("MenuAppearance","TANK APPEARANCE",content,loop.OpenAppearance);
+            Button("MenuArmory","ARMORY & BUILDS",content,loop.OpenArmory);
             Button("MenuHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
             Button("MenuGuidance","",content,FollowGuidance);
             Button("GuidanceDismiss","DISMISS THIS TIP",content,() => {var action=loop.ContextGuidance;if(action!=null)loop.Guidance.DismissContext(action.Id);loop.RefreshControls();});
@@ -162,7 +163,8 @@ namespace SingedTerra.LastStand
                     if(guidance!=null)
                     {body.text+="\n\n"+guidance.Body;Show("MenuGuidance",guidance.Label,guidance.Destination!="workshop"||canOpenWorkshop());Show("GuidanceDismiss");}
                     Show("MenuResume"); Show("MenuSettings");
-                    if(loop.Phase=="garage"||loop.Phase=="workshop")Show("MenuAppearance",enabled:loop.CanCustomizeAppearance);
+                    if(loop.Phase=="garage"||loop.Phase=="workshop")
+                    {Show("MenuArmory",enabled:loop.CanCustomizeBuild);Show("MenuAppearance",enabled:loop.CanCustomizeAppearance);}
                     Show("MenuHelp"); Show("MenuMilestones");
                     Show("MenuWaveInfo",enabled:loop.CanInspectWave);
                     Show("MenuResearch",loop.Progression.GetBestWave(1)>=25?"RESEARCH LAB":"RESEARCH LAB - T1 WAVE 25");

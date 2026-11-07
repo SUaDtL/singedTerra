@@ -44,6 +44,7 @@ test('continuity provenance binds current reader, actor, v4 and transport/core o
   for(const path of ['scripts/last-stand-continuity.mjs','scripts/ci/lastStandContinuity.test.mjs',
     'e2e/helpers/lastStandBrowserActor.mjs','campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
     'campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs',
     'campaign-unity/Unity/Assets/Scripts/LastStandLoopContinuity.cs',
     'campaign-unity/Unity/Assets/Plugins/WebGL/LastStandBackup.jslib'])assert.match(hashes[path],/^[a-f0-9]{64}$/);

@@ -15,7 +15,8 @@ const inputs=['scripts/last-stand-planning-journey.mjs','e2e/helpers/lastStandBr
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json','campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v5.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json'];
 const hashes=()=>Object.fromEntries(inputs.map(path=>[path,createHash('sha256').update(readFileSync(resolve(root,path))).digest('hex')]));
 const base=admitJourneyBase(process.env.E2E_LIVE_URL??'http://127.0.0.1:4174/singedTerra/');
 for(const tool of ['verify-last-stand-source.mjs','verify-last-stand.mjs'])

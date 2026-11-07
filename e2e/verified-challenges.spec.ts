@@ -83,7 +83,7 @@ async function launchQualification(page: Page, testInfo: TestInfo): Promise<void
   await expect(page.locator('[data-battle-console-surface]')).toHaveAttribute('data-battle-console-ready', 'true');
 }
 
-async function setQualifyingSolutionAndFire(page: Page): Promise<void> {
+async function setQualifyingSolutionAndFire(page: Page, beforeFire?: () => Promise<void>): Promise<void> {
   const angle = page.locator(ANGLE);
   const power = page.locator(POWER);
   await expect(angle).toHaveText('45°');
@@ -96,6 +96,7 @@ async function setQualifyingSolutionAndFire(page: Page): Promise<void> {
   await expect(power).toHaveText('100');
   const fire = page.getByRole('button', { name: 'Fire Baby Missile', exact: true });
   await expect(fire).toBeEnabled();
+  await beforeFire?.();
   await fire.click();
   await expect(fire).toBeDisabled();
 }
@@ -174,10 +175,19 @@ for (const scenario of [
 
 test('[mocked network fixture] pending completion becomes a bounded retry and recovers the committed receipt', async ({ page }, testInfo) => {
   test.setTimeout(45_000);
+  const clockStart = new Date('2026-01-01T00:00:00Z');
+  await page.clock.install({ time: clockStart });
   const fixture = await installVerifiedNetworkFixture(page, { holdCompletion: true, busyCompletionOnce: true });
   await launchQualification(page, testInfo);
-  await setQualifyingSolutionAndFire(page);
-  await expect.poll(() => fixture.requests.complete.length, { timeout: 30_000 }).toBe(1);
+  // Pause before the request can start, so slow assertions cannot consume its
+  // production timeout or the later Retry-After window. Ordinary inputs and
+  // controlled animation frames still drive the actual combat and payoff.
+  await setQualifyingSolutionAndFire(page, () => page.clock.pauseAt(clockStart.getTime() + 60_000));
+  await expect.poll(async () => {
+    if (fixture.requests.complete.length === 0) await page.clock.runFor(100);
+    return fixture.requests.complete.length;
+  }, { timeout: 30_000, intervals: [0] }).toBe(1);
+  await page.clock.runFor(1_500);
   const report = page.locator('[data-ui="verified-challenge-report"]');
   await expect(report.getByRole('heading', { name: 'Objective cleared locally', exact: true })).toBeVisible();
   await expect(report).toContainText('Awaiting a verified receipt');
@@ -191,8 +201,14 @@ test('[mocked network fixture] pending completion becomes a bounded retry and re
   await expect(report).toContainText('Reward status is unconfirmed until the server receipt is recovered');
   const retry = report.getByRole('button', { name: 'Retry verification', exact: true });
   await expect(retry).toBeDisabled();
-  await expect(report).toContainText(/Retry available in 00:0[01]|Retry available now/);
+  await expect(report).toContainText('Retry available in 00:01');
+  await page.clock.runFor(999);
+  await expect(retry).toBeDisabled();
+  expect(fixture.requests.complete).toHaveLength(1);
+  expect(fixture.requests.get).toHaveLength(0);
+  await page.clock.runFor(1);
   await expect(retry).toBeEnabled({ timeout: 3_000 });
+  await expect(report).toContainText('Retry available now');
   await page.screenshot({ path: testInfo.outputPath('verified-challenge-retryable.png') });
   await retry.click();
   await expect(report.getByRole('heading', { name: 'Crosswind Qualification verified', exact: true })).toBeVisible();

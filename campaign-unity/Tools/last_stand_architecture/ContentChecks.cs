@@ -6,8 +6,8 @@ static class ContentChecks
 {
     static void Require(bool value,string message) { if(!value)throw new Exception(message); }
     static void Reject(Action action) { try { action(); } catch(ArgumentException) { return; } throw new Exception("Invalid content admitted"); }
-    static LastStandResearchDefinition Extra(int slot=4,string key="previewRecovery") =>
-        new LastStandResearchDefinition((LastStandResearchTrackId)900,key,"Preview Recovery",20,slot,
+    static LastStandResearchDefinition Extra(int slot=-1,string key="previewRecovery") =>
+        new LastStandResearchDefinition((LastStandResearchTrackId)900,key,"Preview Recovery",20,slot<0?LastStandResearchCatalog.TrackCount:slot,
             LastStandResearchCurve.Polynomial(7,1,50), LastStandResearchCurve.Polynomial(1,0,100),
             LastStandResearchEffect.Salvage,2,true);
     static LastStandResearchDefinitions Expanded()
@@ -40,7 +40,7 @@ static class ContentChecks
         var playerSelector=new LastStandSelection(playerOptions,"2",true);
         Require(playerSelector.Move(1)&&playerSelector.Current.Id=="3"&&playerSelector.Current.Name=="Tier 3 - Preview Basin",
             "Player selector did not receive authored tier through its persisted identity adapter");
-        Require(content.FittingOptions(id=>id=="scattergun").Count==5,"Manifest fitting projection omitted content");
+        Require(content.FittingOptions(id=>id=="scattergun").Count==LastStandFittingCatalog.Definitions.Count,"Manifest fitting projection omitted content");
         Require(LastStandContentCatalog.Legacy.FittingOptions(_=>true).Count==3,"Retained manifest keeps its three fitting identities");
         var wave=LastStandWaveCatalog.ForWave(content.Tier(3),30);
         Require(wave.EnemyHull==1960&&wave.EnemyDamage==90,"Authored tier did not reach wave rules");
@@ -51,7 +51,7 @@ static class ContentChecks
         Reject(()=>Extra(4,"bad\nkey"));
         Reject(()=>new LastStandResearchDefinitions("research-v1",Expanded().Tracks));
         var overflow=new List<LastStandResearchDefinition>(LastStandResearchCatalog.Tracks);
-        for(int i=0;i<22;i++)overflow.Add(new LastStandResearchDefinition((LastStandResearchTrackId)(100+i),"overflow"+i,"Overflow",10000,4+i,
+        for(int i=0;i<22;i++)overflow.Add(new LastStandResearchDefinition((LastStandResearchTrackId)(100+i),"overflow"+i,"Overflow",10000,LastStandResearchCatalog.TrackCount+i,
             LastStandResearchCurve.Polynomial(1,0,1000000),LastStandResearchCurve.Polynomial(1,0,1000000),LastStandResearchEffect.Salvage,10000,true));
         Reject(()=>new LastStandResearchDefinitions("overflow-v1",overflow));
         var duplicate=new List<LastStandResearchDefinition>(LastStandResearchCatalog.Tracks) { Extra(3) };
@@ -69,7 +69,7 @@ static class ContentChecks
     {
         var rows=new List<LastStandResearchDefinition>(LastStandResearchCatalog.Tracks); rows.Reverse();
         var reordered=new LastStandResearchDefinitions(LastStandResearchCatalog.Version,rows);
-        var s=LastStandResearchState.Create(1000).Snapshot();s.completedRanks=new[]{1,2,3,4};s.completionSequence=10;s.nextProjectIdentity=11;
+        var s=LastStandResearchState.Create(1000).Snapshot();Array.Copy(new[]{1,2,3,4},s.completedRanks,4);s.completionSequence=10;s.nextProjectIdentity=11;
         Require(LastStandResearchState.TryRestore(s,reordered,out var state),"Reordering changed legacy interpretation");
         Require(state.Rank(LastStandResearchTrackId.GameSpeed)==1&&state.Rank(LastStandResearchTrackId.ScrapLogistics)==4,"Legacy slots remapped");
         Require(state.Snapshot().completedRanks[2]==3,"Legacy serialized slot changed");

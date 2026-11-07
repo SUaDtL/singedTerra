@@ -1,0 +1,37 @@
+{
+  "sourceHead": "95979868060909b31bc6f6aaec4f1bfb9cacb713",
+  "sourceSha256": "1cc12dd7642ce1cc5b39df2482c9d2c68d3a14b7ba107bf782f165a1485f08da",
+  "receipts": [
+    {
+      "target": "webgl",
+      "status": "pass",
+      "configuration": "release",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261107T072248Z-7c0959/result.json",
+      "receiptSha256": "ac41c43f1567c33e6dd799e5a11d508f179f7574dedd6f4edad704b3b7ea1c22",
+      "build": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Builds\\Web-20261107T072248Z-7c0959",
+      "artifactCount": 17,
+      "toolchainBeforeAfterMatch": true
+    },
+    {
+      "target": "windows",
+      "status": "pass",
+      "configuration": "development",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261107T072525Z-eeff11/result.json",
+      "receiptSha256": "bc133bf4e5d04d70063529c256f3bc5daea9e35334621317eb2997bdd4f777a2",
+      "build": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Builds\\LastStand-windows-20261107T072525Z-eeff11",
+      "artifactCount": 267,
+      "toolchainBeforeAfterMatch": true
+    },
+    {
+      "target": "android",
+      "status": "pass",
+      "configuration": "development",
+      "receipt": "campaign-unity/Evidence/last-stand-architecture/build-android-20261107T072612Z-b092d0/result.json",
+      "receiptSha256": "683db77c555a93b979d6e09d552cf8c1d8c70ecbfad0f03adcfd055bf3faca69",
+      "build": "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Builds\\LastStand-android-20261107T072612Z-b092d0",
+      "artifactCount": 2,
+      "toolchainBeforeAfterMatch": true
+    }
+  ],
+  "preservation": "C:\\Users\\brenn\\AppData\\Local\\Temp\\laststand-buildcraft-final-utmp-restoration-20261107.json"
+}

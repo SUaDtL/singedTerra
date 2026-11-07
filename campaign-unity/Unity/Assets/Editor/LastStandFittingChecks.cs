@@ -101,7 +101,7 @@ public static class LastStandFittingChecks
         foreach(var size in new[]{new Vector2Int(1366,768),new Vector2Int(390,688),new Vector2Int(844,266)})
         using(var f=new Fixture(size.x,size.y))
         {
-            var projection=LastStandHudLayout.Project(size.x,size.y,"garage",new[]{"Deploy","ShopEntry","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext"});
+            var projection=LastStandHudLayout.Project(size.x,size.y,"garage",new[]{"Deploy","ShopEntry","Menu","TierPrevious","TierNext","ArmoryEntry"});
             LastStandHudLayout.Bounds open=default(LastStandHudLayout.Bounds);bool found=false;
             foreach(var slot in projection.Slots)if(slot.Id=="GaragePreview"){open=slot.Bounds;found=true;}
             Need(found && open.Height>0 && open.Width>0,"garage defines actual open hero space");
@@ -213,7 +213,7 @@ public static class LastStandFittingChecks
         using(var f=new Fixture(size.x,size.y))
         {
             var modules=new Dictionary<string,GameObject>();
-            foreach(string id in new[]{"repair","launcher","scattergun","mortar","railgun"})
+            foreach(string id in new[]{"repair","launcher","scattergun","mortar","railgun","arc","shield"})
             {
                 Need(f.Art.TrySelectFitting(id),"actual fitting selection: "+id);f.Refresh();Attached(f);
                 var module=f.Art.ActiveFittingModule;modules.Add(id,module);
@@ -221,7 +221,7 @@ public static class LastStandFittingChecks
                 Need(f.Art.TrySelectFitting(id)&&f.Art.ActiveFittingModule==module,"same fitting reuses its owned module");
                 Invoke(f.Art,"Start");Need(f.Art.ActiveFittingModule==module&&f.Art.FittingId==id,"late Start cannot reset selected module");
             }
-            Need(modules.Values.Distinct().Count()==5,"five independent module identities");
+            Need(modules.Values.Distinct().Count()==7,"seven independent module identities");
             foreach(var item in modules)
             {
                 Need(f.Art.TrySelectFitting(item.Key),"revisit fitting");f.Refresh();Attached(f);
