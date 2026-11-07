@@ -325,6 +325,21 @@ test('removed classification, result validation, shards and optionalized work ar
   ]) assert.throws(() => assertWorkflow(ci.replace(from, to)), from);
 });
 test('all candidate shards prove the same bytes before and after execution', () => assertCandidateMatrix(pages));
+
+function assertCandidateJourneyEvidence(source) {
+  const candidate=job(source,'candidate-test');
+  assert.match(candidate,/name: Upload candidate browser artifacts\n        if: always\(\)/,
+    'Successful and failed candidate journey evidence must survive the runner');
+  assert.match(candidate,/            campaign-unity\/Evidence\/last-stand-playable-loop\/t06\/\*\*/,
+    'The separately owned journey state and failure records must be retained');
+}
+test('Pages retains Last Stand evidence from successful and failed candidate runs',()=>assertCandidateJourneyEvidence(pages));
+test('Pages refuses missing or failure-only candidate journey evidence',()=>{
+  for(const [from,to] of [
+    ['Upload candidate browser artifacts\n        if: always()','Upload candidate browser artifacts\n        if: failure()'],
+    ['            campaign-unity/Evidence/last-stand-playable-loop/t06/**',''],
+  ])assert.throws(()=>assertCandidateJourneyEvidence(pages.replace(from,to)));
+});
 test('candidate matrix rejects omitted coverage or digest verification', () => {
   for (const [from, to] of [
     ['lane: [core-1, core-2, product]', 'lane: [core-1, product]'],

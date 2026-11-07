@@ -21,6 +21,24 @@ export async function capturePausedJourneyCheckpoint({pause,readState,readSave})
   return {state,saved:await readSave()};
 }
 
+// A wave may legitimately pay Salvage before slow host input pauses combat.
+// Startup chooses Workshop for that wallet; readiness still binds the exact run.
+export function validateSavedRunReady({state,saved,expectedRunId}) {
+  const checkpoint=saved?.checkpoint;
+  assert.ok(Number.isSafeInteger(expectedRunId)&&expectedRunId>0,'A real prior run is required');
+  assert.ok(checkpoint?.encounter,'A complete saved checkpoint is required');
+  assert.ok(Number.isSafeInteger(saved.credits)&&saved.credits>=0,'A valid saved wallet is required');
+  assert.equal(saved.pendingDefeat,null,'An unfinished run cannot have a pending defeat');
+  assert.equal(checkpoint.runId,expectedRunId,'Saved checkpoint belongs to the prior run');
+  assert.equal(state.action,'ready');assert.equal(state.saveState,'ready');
+  assert.equal(state.hasCheckpoint,true);assert.equal(state.checkpointBlocked,false);
+  assert.equal(state.pendingRunId,0);assert.equal(state.runId,expectedRunId);
+  assert.equal(state.checkpointWave,checkpoint.encounter.completedWave);
+  assert.equal(state.wallet,saved.credits,'Ready wallet equals the preserved save');
+  assert.equal(state.phase,saved.credits>0?'workshop':'garage','Ready phase follows the saved wallet');
+  return true;
+}
+
 // Each operation receives the live caller state at invocation. Tests supply
 // explicit inert adapters; the runner uses these same imported operations.
 export function throwJourneyObserverFailure(error) { if(error)throw error; }

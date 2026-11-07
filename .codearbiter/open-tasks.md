@@ -161,6 +161,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [x] Keep saved-run readiness and Pages evidence valid after earned waves  (from github:SUaDtL/singedTerra:actions:42366477784:job:128385725709)  (done 2026-11-07)
+  - Work origin: github:SUaDtL/singedTerra:actions:42366477784:job:128385725709
+  - Desc: Repair the confirmed funded-workshop rejection in the Return qualification and retain Pages journey diagnostics without changing game behavior; deliver through reviewed CI and verified publication.
+  - Work type: fix
+  - Work ID: WORK-9BD25C2F22964F5C415B5C11C316DD57
+  - Work operation ID: work-fd71c89c83e2c3770b65717723ed78373175bef2
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.

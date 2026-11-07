@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
 import { WAVE_JOURNEY_PROBE, validateEarlyWaveCommits, validateWaveMilestoneText, validateWaveResume, validateWaveCommit, validateWaveAbandon } from '../../e2e/helpers/lastStandWaveJourney.mjs';
-import {capturePausedJourneyCheckpoint} from '../../e2e/helpers/lastStandJourneyRuntime.mjs';
+import {capturePausedJourneyCheckpoint,validateSavedRunReady} from '../../e2e/helpers/lastStandJourneyRuntime.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 
 // Invented observations exercise the acceptance reader, never qualify a player.
@@ -39,6 +39,21 @@ test('Return and reload capture only after verified pause despite delayed native
       readSave:async()=>{assert.fail('Unverified pause must not be read as a stable checkpoint');}}));
   }
 });
+test('saved-run readiness follows earned Salvage without relaxing checkpoint identity',()=>{
+  const saved={credits:0,pendingDefeat:null,checkpoint:{runId:7,encounter:{completedWave:2}}};
+  const state={action:'ready',saveState:'ready',hasCheckpoint:true,checkpointBlocked:false,
+    pendingRunId:0,runId:7,checkpointWave:2,wallet:0,phase:'garage'};
+  for(const credits of [0,1,25])assert.equal(validateSavedRunReady({
+    state:{...state,wallet:credits,phase:credits>0?'workshop':'garage'},saved:{...saved,credits},expectedRunId:7}),true);
+  for(const changed of [{action:'deploy'},{saveState:'pending'},{hasCheckpoint:false},{checkpointBlocked:true},
+    {pendingRunId:7},{runId:8},{checkpointWave:3},{wallet:1},{phase:'workshop'},{phase:'battle'},{phase:'result'}])
+    assert.throws(()=>validateSavedRunReady({state:{...state,...changed},saved,expectedRunId:7}));
+  for(const changed of [{checkpoint:null},{pendingDefeat:{runId:7}},{credits:-1},
+    {checkpoint:{runId:8,encounter:{completedWave:2}}}])
+    assert.throws(()=>validateSavedRunReady({state,saved:{...saved,...changed},expectedRunId:7}));
+  assert.throws(()=>validateSavedRunReady({state,saved,expectedRunId:0}));
+});
+
 test('wave milestone assertions admit current displayed labels and reject missing disclosures',()=>{
   const validate=(_assert,text)=>validateWaveMilestoneText(text);
   // Relevant text transcribed from PR547 job123226012352's rendered-menu failure.

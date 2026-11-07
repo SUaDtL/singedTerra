@@ -1,4 +1,4 @@
-import {verifyRetiredCampaignReturn,resumeReturnedJourney,capturePausedJourneyCheckpoint} from './lastStandJourneyRuntime.mjs';
+import {verifyRetiredCampaignReturn,resumeReturnedJourney,capturePausedJourneyCheckpoint,validateSavedRunReady} from './lastStandJourneyRuntime.mjs';
 export {verifyRetiredCampaignReturn,resumeReturnedJourney} from './lastStandJourneyRuntime.mjs';
 export {changeLastStandSetting,lastStandDeploymentControl,validateKeyboardSubmit} from './lastStandJourneyActions.mjs';
 import {admitJourneyPage,deployObservedJourney,purchaseJourneyCannon} from './lastStandJourneyRuntime.mjs';
@@ -1733,7 +1733,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     await verifyRetiredCampaignReturn({report,selected,check,page});
     start=states.length;await outerPointer(page.locator('[data-command-action]'));
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.hasCheckpoint && restored.runId===returnBefore.runId && restored.phase==='garage',
+    check(validateSavedRunReady({state:restored,saved:JSON.parse(returnSave),expectedRunId:returnBefore.runId}),
       'unfinished Return offers explicit saved-run resume',restored);
     await resumeReturnedJourney({resize,captureViewport,gameClick});
     const checkpoint=JSON.parse(returnSave).checkpoint;
@@ -1751,7 +1751,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const {saved:beforeReload}=await stableCheckpoint();
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);
-    check(restored.hasCheckpoint && ['garage','workshop'].includes(restored.phase) && restored.runId===returnBefore.runId &&
+    check(validateSavedRunReady({state:restored,saved:JSON.parse(beforeReload),expectedRunId:returnBefore.runId}) &&
       assertWaveSavePreserved(JSON.parse(beforeReload),JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY))),
       'unfinished reload preserves complete checkpoint',restored);
     await gameClick('Menu','menu');await gameClick('MenuAbandon','confirmation');await gameClick('ConfirmProceed','abandon');

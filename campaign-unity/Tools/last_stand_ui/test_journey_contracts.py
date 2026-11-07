@@ -90,6 +90,8 @@ MAINTAINED_COMPLETE = ('every CI and Pages browser installer prepares the offici
  'Last Stand has one maintained shared journey and both entrypoints',
  'removed classification, result validation, shards and optionalized work are rejected',
  'all candidate shards prove the same bytes before and after execution',
+ 'Pages retains Last Stand evidence from successful and failed candidate runs',
+ 'Pages refuses missing or failure-only candidate journey evidence',
  'candidate matrix rejects omitted coverage or digest verification',
  'rejects nonlocal, wrong-base and credentialed journey admission',
  'native Chrome enforces deny-external proxy before startup',
